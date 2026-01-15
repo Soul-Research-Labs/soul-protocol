@@ -366,9 +366,47 @@ Properties:
 
 ---
 
-## References
+## V3 Contract Enhancements
 
-1. [Groth16: On the Size of Pairing-based Non-interactive Arguments](https://eprint.iacr.org/2016/260.pdf)
-2. [BLS12-381: Pairing-Friendly Curves](https://electriccoin.co/blog/new-snark-curve/)
-3. [Tornado Cash: Privacy on Ethereum](https://tornado.cash/Tornado.cash_whitepaper_v1.4.pdf)
-4. [Zcash Protocol Specification](https://zips.z.cash/protocol/protocol.pdf)
+### ConfidentialStateContainerV3
+
+The V3 version adds production-ready features:
+
+| Feature | Description |
+|---------|-------------|
+| **Role-Based Access** | AccessControl with OPERATOR_ROLE, EMERGENCY_ROLE, VERIFIER_ADMIN_ROLE |
+| **State Versioning** | Each state tracks version number for upgrade tracking |
+| **State Status** | Active, Locked, Frozen, Retired states |
+| **Batch Operations** | `batchRegisterStates()` for gas efficiency |
+| **Meta-Transactions** | `registerStateWithSignature()` for gasless UX |
+| **State History** | Full audit trail of state transitions |
+| **Emergency Controls** | Lock, freeze, and pause functionality |
+
+### NullifierRegistryV3
+
+Enhanced with merkle tree support for light client verification:
+
+| Feature | Description |
+|---------|-------------|
+| **Incremental Merkle Tree** | 32-depth tree supporting ~4 billion nullifiers |
+| **Historical Roots** | Ring buffer of 100 valid roots for delayed verification |
+| **Cross-Chain Sync** | `receiveCrossChainNullifiers()` for bridge integration |
+| **Batch Operations** | `batchRegisterNullifiers()` and `batchExists()` |
+| **Rich Metadata** | Timestamp, block number, source chain, registrar |
+| **Merkle Proofs** | `verifyMerkleProof()` for inclusion proofs |
+
+### CrossChainProofHubV3
+
+Production-ready cross-chain proof relay:
+
+| Feature | Description |
+|---------|-------------|
+| **Optimistic Verification** | Challenge period before finalization |
+| **Instant Verification** | Higher fee for immediate verification |
+| **Challenge System** | Dispute resolution with slashing |
+| **Relayer Staking** | Economic security with deposits |
+| **Batch Submissions** | Merkle root-based batch proofs |
+| **Fee Management** | Configurable fees and withdrawal |
+
+---
+
