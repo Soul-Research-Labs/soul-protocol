@@ -4,7 +4,7 @@
   "description": "Privacy Interoperability Layer - Optimized ZK Circuits",
   "main": "build/index.js",
   "scripts": {
-    "setup": "npm run compile && npm run setup:powers && npm run setup:keys",
+    "setup": "./setup.sh",
     "compile": "npm run compile:state && npm run compile:transfer && npm run compile:merkle && npm run compile:crosschain && npm run compile:compliance",
     "compile:state": "circom state_commitment.circom --r1cs --wasm --sym -o build/state_commitment",
     "compile:transfer": "circom state_transfer.circom --r1cs --wasm --sym -o build/state_transfer",
@@ -22,18 +22,22 @@
     "export:solidity:state": "snarkjs zkey export solidityverifier build/state_commitment/circuit_final.zkey ../contracts/verifiers/StateCommitmentVerifier.sol",
     "export:solidity:transfer": "snarkjs zkey export solidityverifier build/state_transfer/circuit_final.zkey ../contracts/verifiers/StateTransferVerifier.sol",
     "export:solidity:crosschain": "snarkjs zkey export solidityverifier build/cross_chain_proof/circuit_final.zkey ../contracts/verifiers/CrossChainVerifier.sol",
-    "test": "npm run test:state && npm run test:transfer",
-    "test:state": "node test/state_commitment.test.js",
-    "test:transfer": "node test/state_transfer.test.js",
+    "test": "mocha test/*.test.js --timeout 100000 --exit",
+    "test:state": "mocha test/state_commitment.test.js --timeout 100000 --exit",
+    "test:transfer": "mocha test/state_transfer.test.js --timeout 100000 --exit",
     "benchmark": "node benchmark/circuit_benchmark.js"
   },
   "dependencies": {
     "circomlib": "^2.0.5",
-    "snarkjs": "^0.7.3",
-    "ffjavascript": "^0.3.0"
+    "circomlibjs": "^0.1.7",
+    "ffjavascript": "^0.3.0",
+    "snarkjs": "^0.7.3"
   },
   "devDependencies": {
-    "@types/node": "^20.10.0"
+    "@types/node": "^20.10.0",
+    "chai": "^4.3.7",
+    "circom_tester": "^0.0.19",
+    "mocha": "^10.2.0"
   },
   "circuitStats": {
     "state_commitment": {

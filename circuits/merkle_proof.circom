@@ -28,8 +28,16 @@ template MerkleProof(DEPTH) {
     hashes[0] <== leaf;
     
     component hashers[DEPTH];
-    component muxLeft[DEPTH];
-    component muxRight[DEPTH];
+    
+    // Declare signals outside loop for Circom 2.x compatibility
+    signal left[DEPTH];
+    signal right[DEPTH];
+    
+    // Intermediate signals to avoid non-quadratic constraints
+    signal leftPart1[DEPTH];
+    signal leftPart2[DEPTH];
+    signal rightPart1[DEPTH];
+    signal rightPart2[DEPTH];
     
     for (var i = 0; i < DEPTH; i++) {
         // Ensure pathIndices is binary
@@ -41,13 +49,19 @@ template MerkleProof(DEPTH) {
         
         hashers[i] = Poseidon(2);
         
+        // Break into quadratic constraints
         // Left input: current hash if pathIndices=0, sibling if pathIndices=1
-        signal left <== (1 - pathIndices[i]) * hashes[i] + pathIndices[i] * siblings[i];
-        // Right input: sibling if pathIndices=0, current hash if pathIndices=1
-        signal right <== pathIndices[i] * hashes[i] + (1 - pathIndices[i]) * siblings[i];
+        leftPart1[i] <== (1 - pathIndices[i]) * hashes[i];
+        leftPart2[i] <== pathIndices[i] * siblings[i];
+        left[i] <== leftPart1[i] + leftPart2[i];
         
-        hashers[i].inputs[0] <== left;
-        hashers[i].inputs[1] <== right;
+        // Right input: sibling if pathIndices=0, current hash if pathIndices=1
+        rightPart1[i] <== pathIndices[i] * hashes[i];
+        rightPart2[i] <== (1 - pathIndices[i]) * siblings[i];
+        right[i] <== rightPart1[i] + rightPart2[i];
+        
+        hashers[i].inputs[0] <== left[i];
+        hashers[i].inputs[1] <== right[i];
         
         hashes[i + 1] <== hashers[i].out;
     }

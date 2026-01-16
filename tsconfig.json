@@ -16,6 +16,14 @@
   },
   "include": [
     "./test/**/*.ts",
-    "./scripts/**/*.ts"
+    "./scripts/**/*.ts",
+    "./sdk/**/*.ts",
+    "./relayer/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "artifacts",
+    "cache"
   ]
 }

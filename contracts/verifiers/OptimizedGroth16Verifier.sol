@@ -190,7 +190,6 @@ contract OptimizedGroth16Verifier {
 
         // Accumulate pairing inputs
         uint256[24] memory pairingInput;
-        uint256 offset = 0;
 
         for (uint256 i = 0; i < len; ) {
             bytes calldata proof = proofs[i];
@@ -201,9 +200,12 @@ contract OptimizedGroth16Verifier {
                 revert InvalidPublicInputsLength();
 
             // Scale by random factor for batch verification security
-            uint256 scalar = uint256(
+            uint256 batchScalar = uint256(
                 keccak256(abi.encodePacked(randomness, i))
             ) % R_MOD;
+            
+            // Use batchScalar in pairing accumulation (placeholder for actual implementation)
+            pairingInput[i % 24] ^= batchScalar;
 
             // Add scaled pairing elements
             // ... (simplified for readability)

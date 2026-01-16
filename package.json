@@ -31,5 +31,10 @@
     "ts-node": "^10.9.2",
     "typechain": "^8.3.2",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "circomlibjs": "^0.1.7",
+    "ffjavascript": "^0.3.1",
+    "snarkjs": "^0.7.6"
   }
 }
