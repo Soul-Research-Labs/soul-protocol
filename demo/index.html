@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PIL Protocol Demo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.umd.min.js"></script>
+  <style>
+    .gradient-bg {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .pulse {
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+  </style>
+</head>
+<body class="min-h-screen gradient-bg text-white">
+  <!-- Header -->
+  <header class="p-6 flex justify-between items-center">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+        <span class="text-purple-600 font-bold text-xl">P</span>
+      </div>
+      <span class="text-2xl font-bold">PIL Protocol</span>
+    </div>
+    <div>
+      <button id="connectBtn" class="bg-white text-purple-600 px-6 py-2 rounded-full font-semibold hover:bg-opacity-90 transition">
+        Connect Wallet
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container mx-auto px-6 py-12">
+    <!-- Hero Section -->
+    <section class="text-center mb-16">
+      <h1 class="text-5xl font-bold mb-4">Privacy Interoperability Layer</h1>
+      <p class="text-xl text-purple-200 mb-8">Create, verify, and relay privacy-preserving containers across chains</p>
+      <div id="connectionStatus" class="hidden">
+        <span class="inline-flex items-center gap-2 bg-green-500 bg-opacity-20 px-4 py-2 rounded-full">
+          <span class="w-2 h-2 bg-green-400 rounded-full pulse"></span>
+          <span id="walletAddress" class="text-sm">Connected: 0x...</span>
+        </span>
+      </div>
+    </section>
+
+    <!-- Stats Grid -->
+    <section class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-16">
+      <div class="card rounded-xl p-6 text-center">
+        <div class="text-3xl font-bold mb-2" id="statContainers">0</div>
+        <div class="text-purple-200">Active Containers</div>
+      </div>
+      <div class="card rounded-xl p-6 text-center">
+        <div class="text-3xl font-bold mb-2" id="statProofs">0</div>
+        <div class="text-purple-200">Proofs Verified</div>
+      </div>
+      <div class="card rounded-xl p-6 text-center">
+        <div class="text-3xl font-bold mb-2" id="statChains">7</div>
+        <div class="text-purple-200">Supported Chains</div>
+      </div>
+      <div class="card rounded-xl p-6 text-center">
+        <div class="text-3xl font-bold mb-2" id="statTVL">$0</div>
+        <div class="text-purple-200">Total Value Locked</div>
+      </div>
+    </section>
+
+    <!-- Action Cards -->
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+      <!-- Create Container -->
+      <div class="card rounded-xl p-8">
+        <h2 class="text-2xl font-bold mb-6">Create Container</h2>
+        <form id="createForm" class="space-y-4">
+          <div>
+            <label class="block text-sm text-purple-200 mb-2">Target Chain</label>
+            <select id="targetChain" class="w-full bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg px-4 py-3">
+              <option value="42161">Arbitrum</option>
+              <option value="10">Optimism</option>
+              <option value="8453">Base</option>
+              <option value="324">zkSync</option>
+              <option value="534352">Scroll</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm text-purple-200 mb-2">Secret (for proof)</label>
+            <input type="password" id="secret" placeholder="Enter secret..." 
+              class="w-full bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg px-4 py-3">
+          </div>
+          <div>
+            <label class="block text-sm text-purple-200 mb-2">Amount</label>
+            <input type="text" id="amount" placeholder="0.0 ETH" 
+              class="w-full bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg px-4 py-3">
+          </div>
+          <button type="submit" class="w-full bg-white text-purple-600 py-3 rounded-lg font-semibold hover:bg-opacity-90 transition">
+            Create Container
+          </button>
+        </form>
+      </div>
+
+      <!-- Consume Container -->
+      <div class="card rounded-xl p-8">
+        <h2 class="text-2xl font-bold mb-6">Consume Container</h2>
+        <form id="consumeForm" class="space-y-4">
+          <div>
+            <label class="block text-sm text-purple-200 mb-2">Container ID</label>
+            <input type="text" id="containerId" placeholder="0x..." 
+              class="w-full bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg px-4 py-3">
+          </div>
+          <div>
+            <label class="block text-sm text-purple-200 mb-2">Secret</label>
+            <input type="password" id="consumeSecret" placeholder="Enter secret..." 
+              class="w-full bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg px-4 py-3">
+          </div>
+          <div id="containerInfo" class="hidden bg-white bg-opacity-5 rounded-lg p-4">
+            <div class="flex justify-between text-sm mb-2">
+              <span class="text-purple-200">Status:</span>
+              <span id="containerStatus">-</span>
+            </div>
+            <div class="flex justify-between text-sm mb-2">
+              <span class="text-purple-200">Created:</span>
+              <span id="containerCreated">-</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-purple-200">Chain:</span>
+              <span id="containerChain">-</span>
+            </div>
+          </div>
+          <button type="submit" class="w-full bg-white text-purple-600 py-3 rounded-lg font-semibold hover:bg-opacity-90 transition">
+            Consume Container
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Recent Activity -->
+    <section class="card rounded-xl p-8">
+      <h2 class="text-2xl font-bold mb-6">Recent Activity</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr class="text-left text-purple-200 text-sm">
+              <th class="pb-4">Type</th>
+              <th class="pb-4">Container ID</th>
+              <th class="pb-4">From/To</th>
+              <th class="pb-4">Time</th>
+              <th class="pb-4">Status</th>
+            </tr>
+          </thead>
+          <tbody id="activityTable">
+            <tr class="border-t border-white border-opacity-10">
+              <td class="py-4">
+                <span class="bg-green-500 bg-opacity-20 text-green-400 px-2 py-1 rounded text-sm">Create</span>
+              </td>
+              <td class="py-4 font-mono text-sm">0x1234...5678</td>
+              <td class="py-4 text-sm">Ethereum → Arbitrum</td>
+              <td class="py-4 text-sm text-purple-200">2 min ago</td>
+              <td class="py-4">
+                <span class="text-green-400">✓ Confirmed</span>
+              </td>
+            </tr>
+            <tr class="border-t border-white border-opacity-10">
+              <td class="py-4">
+                <span class="bg-blue-500 bg-opacity-20 text-blue-400 px-2 py-1 rounded text-sm">Consume</span>
+              </td>
+              <td class="py-4 font-mono text-sm">0xabcd...ef01</td>
+              <td class="py-4 text-sm">Arbitrum</td>
+              <td class="py-4 text-sm text-purple-200">5 min ago</td>
+              <td class="py-4">
+                <span class="text-green-400">✓ Confirmed</span>
+              </td>
+            </tr>
+            <tr class="border-t border-white border-opacity-10">
+              <td class="py-4">
+                <span class="bg-yellow-500 bg-opacity-20 text-yellow-400 px-2 py-1 rounded text-sm">Relay</span>
+              </td>
+              <td class="py-4 font-mono text-sm">0x9876...5432</td>
+              <td class="py-4 text-sm">Optimism → Base</td>
+              <td class="py-4 text-sm text-purple-200">12 min ago</td>
+              <td class="py-4">
+                <span class="text-yellow-400 pulse">⏳ Pending</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="p-6 text-center text-purple-200 text-sm">
+    <p>PIL Protocol v2 - Privacy Interoperability Layer</p>
+    <div class="flex justify-center gap-6 mt-4">
+      <a href="#" class="hover:text-white transition">Documentation</a>
+      <a href="#" class="hover:text-white transition">GitHub</a>
+      <a href="#" class="hover:text-white transition">Discord</a>
+      <a href="#" class="hover:text-white transition">Twitter</a>
+    </div>
+  </footer>
+
+  <!-- Toast Notifications -->
+  <div id="toast" class="fixed bottom-6 right-6 hidden">
+    <div class="card rounded-lg p-4 flex items-center gap-3">
+      <span id="toastIcon">✓</span>
+      <span id="toastMessage">Operation successful</span>
+    </div>
+  </div>
+
+  <script>
+    // App State
+    let provider = null;
+    let signer = null;
+    let address = null;
+
+    // Contract addresses (update after deployment)
+    const CONTRACTS = {
+      PC3: '0x0000000000000000000000000000000000000000',
+      ORCHESTRATOR: '0x0000000000000000000000000000000000000000',
+    };
+
+    // Connect wallet
+    document.getElementById('connectBtn').addEventListener('click', async () => {
+      try {
+        if (!window.ethereum) {
+          showToast('❌', 'Please install MetaMask');
+          return;
+        }
+
+        provider = new ethers.BrowserProvider(window.ethereum);
+        const accounts = await provider.send('eth_requestAccounts', []);
+        signer = await provider.getSigner();
+        address = accounts[0];
+
+        document.getElementById('connectBtn').textContent = `${address.slice(0, 6)}...${address.slice(-4)}`;
+        document.getElementById('walletAddress').textContent = `Connected: ${address.slice(0, 6)}...${address.slice(-4)}`;
+        document.getElementById('connectionStatus').classList.remove('hidden');
+
+        showToast('✓', 'Wallet connected!');
+        loadStats();
+      } catch (err) {
+        console.error(err);
+        showToast('❌', 'Connection failed');
+      }
+    });
+
+    // Create container
+    document.getElementById('createForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      if (!signer) {
+        showToast('❌', 'Please connect wallet first');
+        return;
+      }
+
+      const targetChain = document.getElementById('targetChain').value;
+      const secret = document.getElementById('secret').value;
+      const amount = document.getElementById('amount').value;
+
+      showToast('⏳', 'Creating container...');
+
+      // Simulate proof generation
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // In production, would call actual contract
+      const mockContainerId = '0x' + Array.from({length: 64}, () => 
+        Math.floor(Math.random() * 16).toString(16)).join('');
+
+      showToast('✓', `Container created: ${mockContainerId.slice(0, 10)}...`);
+      
+      // Add to activity table
+      addActivity('Create', mockContainerId, `Ethereum → Chain ${targetChain}`);
+    });
+
+    // Consume container
+    document.getElementById('consumeForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      if (!signer) {
+        showToast('❌', 'Please connect wallet first');
+        return;
+      }
+
+      const containerId = document.getElementById('containerId').value;
+      const secret = document.getElementById('consumeSecret').value;
+
+      if (!containerId) {
+        showToast('❌', 'Please enter container ID');
+        return;
+      }
+
+      showToast('⏳', 'Consuming container...');
+
+      // Simulate
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      showToast('✓', 'Container consumed!');
+      addActivity('Consume', containerId, 'Current Chain');
+    });
+
+    // Lookup container
+    document.getElementById('containerId').addEventListener('blur', async (e) => {
+      const id = e.target.value;
+      if (id && id.length > 10) {
+        document.getElementById('containerInfo').classList.remove('hidden');
+        document.getElementById('containerStatus').textContent = 'Active';
+        document.getElementById('containerCreated').textContent = '2 hours ago';
+        document.getElementById('containerChain').textContent = 'Ethereum';
+      }
+    });
+
+    // Load stats
+    async function loadStats() {
+      // In production, fetch from subgraph
+      document.getElementById('statContainers').textContent = '1,234';
+      document.getElementById('statProofs').textContent = '5,678';
+      document.getElementById('statTVL').textContent = '$2.4M';
+    }
+
+    // Add activity row
+    function addActivity(type, containerId, chain) {
+      const table = document.getElementById('activityTable');
+      const row = document.createElement('tr');
+      row.className = 'border-t border-white border-opacity-10';
+      
+      const typeColor = type === 'Create' ? 'green' : type === 'Consume' ? 'blue' : 'yellow';
+      
+      row.innerHTML = `
+        <td class="py-4">
+          <span class="bg-${typeColor}-500 bg-opacity-20 text-${typeColor}-400 px-2 py-1 rounded text-sm">${type}</span>
+        </td>
+        <td class="py-4 font-mono text-sm">${containerId.slice(0, 6)}...${containerId.slice(-4)}</td>
+        <td class="py-4 text-sm">${chain}</td>
+        <td class="py-4 text-sm text-purple-200">Just now</td>
+        <td class="py-4">
+          <span class="text-green-400">✓ Confirmed</span>
+        </td>
+      `;
+      
+      table.insertBefore(row, table.firstChild);
+    }
+
+    // Show toast
+    function showToast(icon, message) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastIcon').textContent = icon;
+      document.getElementById('toastMessage').textContent = message;
+      toast.classList.remove('hidden');
+      
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 3000);
+    }
+
+    // Initial stats
+    loadStats();
+  </script>
+</body>
+</html>

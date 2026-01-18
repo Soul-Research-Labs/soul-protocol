@@ -1,0 +1,22 @@
+{
+  "name": "pil-forta-agent",
+  "version": "1.0.0",
+  "description": "Forta Agent for PIL Protocol Monitoring",
+  "main": "src/agent.js",
+  "scripts": {
+    "start": "npm run start:dev",
+    "start:dev": "nodemon --watch src --watch forta.config.json -e js --exec 'npx forta-agent run'",
+    "start:prod": "forta-agent run --prod",
+    "tx": "forta-agent run --tx",
+    "block": "forta-agent run --block",
+    "range": "forta-agent run --range",
+    "test": "jest"
+  },
+  "dependencies": {
+    "forta-agent": "^0.1.48"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2"
+  }
+}

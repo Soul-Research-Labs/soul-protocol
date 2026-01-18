@@ -1,0 +1,40 @@
+# Prometheus configuration for PIL monitoring
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Hardhat node metrics
+  - job_name: 'hardhat'
+    static_configs:
+      - targets: ['hardhat-node:8545']
+    metrics_path: /metrics
+    scheme: http
+
+  # Graph node metrics
+  - job_name: 'graph-node'
+    static_configs:
+      - targets: ['graph-node:8040']
+
+  # Relayer metrics
+  - job_name: 'relayer'
+    static_configs:
+      - targets: ['relayer:4000']
+    metrics_path: /metrics
+    scheme: http
+
+  # Frontend health
+  - job_name: 'frontend'
+    static_configs:
+      - targets: ['frontend:3000']
+    metrics_path: /api/health
+    scheme: http

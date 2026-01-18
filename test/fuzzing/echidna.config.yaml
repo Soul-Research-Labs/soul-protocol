@@ -1,0 +1,41 @@
+# Echidna Configuration for PIL Fuzzing
+# Run: echidna . --contract EchidnaPC3 --config test/fuzzing/echidna.config.yaml
+
+# Test configuration
+testMode: assertion
+testLimit: 50000
+seqLen: 100
+
+# Shrinking
+shrinkLimit: 5000
+
+# Contract deployment
+deployer: "0x10000"
+sender: ["0x10000", "0x20000", "0x30000"]
+
+# Coverage
+coverage: true
+corpusDir: "echidna-corpus"
+
+# Gas limits
+gasLimit: 12500000
+maxGasPerTx: 10000000
+
+# Timeouts
+timeout: 300
+
+# Solidity compiler
+solcArgs: "--optimize --optimize-runs 200"
+
+# Filtering
+filterBlacklist: true
+filterFunctions: []
+
+# Dictionary
+dictFreq: 0.40
+
+# Assertions
+checkAsserts: true
+
+# Property testing
+prefix: "echidna_"

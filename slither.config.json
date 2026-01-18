@@ -1,0 +1,19 @@
+{
+  "detectors_to_exclude": [
+    "conformance-to-solidity-naming-conventions",
+    "too-many-digits"
+  ],
+  "exclude_informational": true,
+  "exclude_low": false,
+  "exclude_medium": false,
+  "exclude_high": false,
+  "exclude_dependencies": true,
+  "filter_paths": [
+    "node_modules",
+    "lib",
+    "test"
+  ],
+  "solc_remaps": [
+    "@openzeppelin/=node_modules/@openzeppelin/"
+  ]
+}

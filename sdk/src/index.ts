@@ -22,6 +22,37 @@ import {
   MultiChainProofManager,
 } from "./proof-translator/adapters/ChainAdapter";
 
+// PIL v2 Primitives
+import {
+  ProofCarryingContainerClient,
+  PolicyBoundProofsClient,
+  ExecutionAgnosticStateCommitmentsClient,
+  CrossDomainNullifierAlgebraClient,
+  PILv2ClientFactory,
+  // Types
+  Container,
+  ContainerCreationParams,
+  VerificationResult,
+  DisclosurePolicy,
+  PolicyCreationParams,
+  BoundProofParams,
+  BackendType,
+  ExecutionBackend,
+  BackendRegistrationParams,
+  CommitmentParams,
+  AttestationParams,
+  CommitmentStats,
+  Domain,
+  DomainNullifier,
+  DomainRegistrationParams,
+  NullifierRegistrationParams,
+  DerivedNullifierParams,
+  NullifierStats,
+  PILv2Config,
+  TransactionOptions,
+  ProofBundle,
+} from "./client/PILv2Primitives";
+
 export {
   // Core SDK
   PILSDK,
@@ -48,4 +79,34 @@ export {
   SubstrateChainAdapter,
   createChainAdapter,
   MultiChainProofManager,
+
+  // PIL v2 Primitives
+  ProofCarryingContainerClient,
+  PolicyBoundProofsClient,
+  ExecutionAgnosticStateCommitmentsClient,
+  CrossDomainNullifierAlgebraClient,
+  PILv2ClientFactory,
+
+  // PIL v2 Types
+  Container,
+  ContainerCreationParams,
+  VerificationResult,
+  DisclosurePolicy,
+  PolicyCreationParams,
+  BoundProofParams,
+  BackendType,
+  ExecutionBackend,
+  BackendRegistrationParams,
+  CommitmentParams,
+  AttestationParams,
+  CommitmentStats,
+  Domain,
+  DomainNullifier,
+  DomainRegistrationParams,
+  NullifierRegistrationParams,
+  DerivedNullifierParams,
+  NullifierStats,
+  PILv2Config,
+  TransactionOptions,
+  ProofBundle,
 };

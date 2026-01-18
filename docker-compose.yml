@@ -1,0 +1,235 @@
+version: '3.8'
+
+services:
+  # Hardhat Local Node
+  hardhat-node:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.hardhat
+    container_name: pil-hardhat-node
+    ports:
+      - "8545:8545"
+    volumes:
+      - ./contracts:/app/contracts
+      - ./scripts:/app/scripts
+      - hardhat-artifacts:/app/artifacts
+      - hardhat-cache:/app/cache
+    command: npx hardhat node --hostname 0.0.0.0
+    networks:
+      - pil-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8545"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Contract Deployer
+  deployer:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.hardhat
+    container_name: pil-deployer
+    depends_on:
+      hardhat-node:
+        condition: service_healthy
+    volumes:
+      - ./contracts:/app/contracts
+      - ./scripts:/app/scripts
+      - hardhat-artifacts:/app/artifacts
+      - ./deployments:/app/deployments
+    environment:
+      - NETWORK_URL=http://hardhat-node:8545
+      - PRIVATE_KEY=${DEPLOYER_PRIVATE_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}
+    command: npx hardhat run scripts/deployAll.js --network localhost
+    networks:
+      - pil-network
+
+  # Frontend Application
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../docker/Dockerfile.frontend
+    container_name: pil-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_NETWORK=localhost
+      - NEXT_PUBLIC_RPC_URL=http://localhost:8545
+      - NEXT_PUBLIC_CHAIN_ID=31337
+    depends_on:
+      - deployer
+    networks:
+      - pil-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Graph Node
+  graph-node:
+    image: graphprotocol/graph-node:latest
+    container_name: pil-graph-node
+    ports:
+      - "8000:8000"  # GraphQL HTTP
+      - "8001:8001"  # GraphQL WS
+      - "8020:8020"  # JSON-RPC admin
+      - "8030:8030"  # Index node server
+      - "8040:8040"  # Metrics
+    environment:
+      postgres_host: postgres
+      postgres_user: graph-node
+      postgres_pass: let-me-in
+      postgres_db: graph-node
+      ipfs: 'ipfs:5001'
+      ethereum: 'localhost:http://hardhat-node:8545'
+      GRAPH_LOG: info
+      GRAPH_ETHEREUM_CLEANUP_BLOCKS: 'true'
+    depends_on:
+      - ipfs
+      - postgres
+      - hardhat-node
+    networks:
+      - pil-network
+
+  # IPFS for Graph Node
+  ipfs:
+    image: ipfs/kubo:latest
+    container_name: pil-ipfs
+    ports:
+      - "5001:5001"  # API
+      - "4001:4001"  # Swarm
+    volumes:
+      - ipfs-data:/data/ipfs
+    networks:
+      - pil-network
+
+  # PostgreSQL for Graph Node
+  postgres:
+    image: postgres:15
+    container_name: pil-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: graph-node
+      POSTGRES_PASSWORD: let-me-in
+      POSTGRES_DB: graph-node
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=C"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - pil-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U graph-node"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Subgraph Deployer
+  subgraph-deployer:
+    build:
+      context: ./subgraph
+      dockerfile: ../docker/Dockerfile.subgraph
+    container_name: pil-subgraph-deployer
+    depends_on:
+      - graph-node
+      - deployer
+    environment:
+      - GRAPH_NODE_URL=http://graph-node:8020
+      - IPFS_URL=http://ipfs:5001
+    command: |
+      sh -c "
+        sleep 30 &&
+        npm run codegen &&
+        npm run build &&
+        npm run create-local &&
+        npm run deploy-local
+      "
+    networks:
+      - pil-network
+
+  # Relayer Service
+  relayer:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.relayer
+    container_name: pil-relayer
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - RPC_URL=http://hardhat-node:8545
+      - PRIVATE_KEY=${RELAYER_PRIVATE_KEY:-0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d}
+      - DATABASE_URL=postgres://graph-node:let-me-in@postgres:5432/relayer
+    depends_on:
+      - hardhat-node
+      - deployer
+      - postgres
+    networks:
+      - pil-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis for caching
+  redis:
+    image: redis:7-alpine
+    container_name: pil-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - pil-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Prometheus for metrics
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: pil-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - pil-network
+
+  # Grafana for dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: pil-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - pil-network
+
+networks:
+  pil-network:
+    driver: bridge
+
+volumes:
+  hardhat-artifacts:
+  hardhat-cache:
+  postgres-data:
+  ipfs-data:
+  redis-data:
+  prometheus-data:
+  grafana-data:

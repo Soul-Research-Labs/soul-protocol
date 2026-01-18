@@ -1,0 +1,24 @@
+{
+  "agentId": "pil-protocol-monitor",
+  "name": "PIL Protocol Monitor",
+  "description": "Monitors PIL Protocol contracts for security events and anomalies",
+  "version": "1.0.0",
+  "documentation": "https://docs.pil.network/monitoring",
+  "repository": "https://github.com/pil-protocol/forta-agent",
+  "licenseUrl": "https://github.com/pil-protocol/forta-agent/blob/main/LICENSE",
+  "chainIds": [1, 11155111, 42161, 10, 8453],
+  "chainSettings": {
+    "1": {
+      "shards": 1,
+      "target": 2
+    },
+    "42161": {
+      "shards": 1,
+      "target": 2
+    },
+    "10": {
+      "shards": 1,
+      "target": 2
+    }
+  }
+}

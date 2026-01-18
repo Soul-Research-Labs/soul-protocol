@@ -1,0 +1,143 @@
+specVersion: 0.0.5
+schema:
+  file: ./schema.graphql
+dataSources:
+  # ProofCarryingContainer (PC³)
+  - kind: ethereum
+    name: ProofCarryingContainer
+    network: sepolia
+    source:
+      address: "0x0000000000000000000000000000000000000000" # Update after deployment
+      abi: ProofCarryingContainer
+      startBlock: 0 # Update to deployment block
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Container
+        - Nullifier
+        - Policy
+        - ContainerVerification
+      abis:
+        - name: ProofCarryingContainer
+          file: ./abis/ProofCarryingContainer.json
+      eventHandlers:
+        - event: ContainerCreated(indexed bytes32,indexed bytes32,indexed bytes32,bytes32,uint64)
+          handler: handleContainerCreated
+        - event: ContainerVerified(indexed bytes32,indexed address,bool,string)
+          handler: handleContainerVerified
+        - event: ContainerConsumed(indexed bytes32,indexed bytes32,indexed address)
+          handler: handleContainerConsumed
+        - event: PolicyAdded(indexed bytes32)
+          handler: handlePolicyAdded
+        - event: PolicyRemoved(indexed bytes32)
+          handler: handlePolicyRemoved
+      file: ./src/proof-carrying-container.ts
+
+  # PolicyBoundProofs (PBP)
+  - kind: ethereum
+    name: PolicyBoundProofs
+    network: sepolia
+    source:
+      address: "0x0000000000000000000000000000000000000000" # Update after deployment
+      abi: PolicyBoundProofs
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - PolicyDefinition
+        - ComplianceProof
+      abis:
+        - name: PolicyBoundProofs
+          file: ./abis/PolicyBoundProofs.json
+      eventHandlers:
+        - event: PolicyCreated(indexed bytes32,indexed bytes32,address,uint256)
+          handler: handlePolicyCreated
+        - event: PolicyDeactivated(indexed bytes32)
+          handler: handlePolicyDeactivated
+        - event: ComplianceVerified(indexed bytes32,indexed address,bool)
+          handler: handleComplianceVerified
+      file: ./src/policy-bound-proofs.ts
+
+  # ExecutionAgnosticStateCommitments (EASC)
+  - kind: ethereum
+    name: ExecutionAgnosticStateCommitments
+    network: sepolia
+    source:
+      address: "0x0000000000000000000000000000000000000000"
+      abi: ExecutionAgnosticStateCommitments
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - StateCommitment
+        - StateTransition
+      abis:
+        - name: ExecutionAgnosticStateCommitments
+          file: ./abis/ExecutionAgnosticStateCommitments.json
+      eventHandlers:
+        - event: CommitmentCreated(indexed bytes32,indexed bytes32,indexed bytes32,address)
+          handler: handleCommitmentCreated
+        - event: StateTransitionRecorded(indexed bytes32,bytes32,bytes32,uint256)
+          handler: handleStateTransitionRecorded
+      file: ./src/state-commitments.ts
+
+  # CrossDomainNullifierAlgebra (CDNA)
+  - kind: ethereum
+    name: CrossDomainNullifierAlgebra
+    network: sepolia
+    source:
+      address: "0x0000000000000000000000000000000000000000"
+      abi: CrossDomainNullifierAlgebra
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - NullifierConsumption
+        - Domain
+      abis:
+        - name: CrossDomainNullifierAlgebra
+          file: ./abis/CrossDomainNullifierAlgebra.json
+      eventHandlers:
+        - event: NullifierConsumed(indexed bytes32,indexed uint256,indexed address,uint256)
+          handler: handleNullifierConsumed
+        - event: DomainRegistered(indexed uint256,string)
+          handler: handleDomainRegistered
+        - event: CrossDomainNullifierRelayed(indexed bytes32,indexed uint256,indexed uint256)
+          handler: handleCrossDomainNullifierRelayed
+      file: ./src/cross-domain-nullifier.ts
+
+  # PILv2Orchestrator
+  - kind: ethereum
+    name: PILv2Orchestrator
+    network: sepolia
+    source:
+      address: "0x0000000000000000000000000000000000000000"
+      abi: PILv2Orchestrator
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Operation
+        - User
+        - SystemStats
+      abis:
+        - name: PILv2Orchestrator
+          file: ./abis/PILv2Orchestrator.json
+      eventHandlers:
+        - event: OperationExecuted(indexed bytes32,indexed address,bool,string)
+          handler: handleOperationExecuted
+        - event: PrimitiveUpdated(indexed bytes32,indexed address,indexed address)
+          handler: handlePrimitiveUpdated
+        - event: PrimitiveStatusChanged(indexed bytes32,bool)
+          handler: handlePrimitiveStatusChanged
+      file: ./src/orchestrator.ts

@@ -1,0 +1,10 @@
+{
+  "PC3.createContainer": 878358,
+  "PC3.verifyContainer (view)": 91851,
+  "PC3.consumeContainer": 60540,
+  "PBP.registerPolicy": 285577,
+  "EASC.createCommitment": 189815,
+  "CDNA.registerDomain": 252640,
+  "CDNA.isNullifierValid (view)": 24760,
+  "Orchestrator.getContainerDomain (view)": 23700
+}

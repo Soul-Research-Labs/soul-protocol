@@ -58,6 +58,53 @@ async function main() {
   deployed.compliance = await compliance.getAddress();
   console.log("   PILComplianceV2 deployed to:", deployed.compliance);
 
+  // ========== PIL v2 PRIMITIVES ==========
+
+  // 7. Deploy ProofCarryingContainer (PC³)
+  console.log("\n7. Deploying ProofCarryingContainer (PC³)...");
+  const ProofCarryingContainer = await ethers.getContractFactory("ProofCarryingContainer");
+  const proofCarryingContainer = await ProofCarryingContainer.deploy(deployed.verifier);
+  await proofCarryingContainer.waitForDeployment();
+  deployed.proofCarryingContainer = await proofCarryingContainer.getAddress();
+  console.log("   ProofCarryingContainer deployed to:", deployed.proofCarryingContainer);
+
+  // 8. Deploy PolicyBoundProofs (PBP)
+  console.log("\n8. Deploying PolicyBoundProofs (PBP)...");
+  const PolicyBoundProofs = await ethers.getContractFactory("PolicyBoundProofs");
+  const policyBoundProofs = await PolicyBoundProofs.deploy(deployed.verifier);
+  await policyBoundProofs.waitForDeployment();
+  deployed.policyBoundProofs = await policyBoundProofs.getAddress();
+  console.log("   PolicyBoundProofs deployed to:", deployed.policyBoundProofs);
+
+  // 9. Deploy ExecutionAgnosticStateCommitments (EASC)
+  console.log("\n9. Deploying ExecutionAgnosticStateCommitments (EASC)...");
+  const ExecutionAgnosticStateCommitments = await ethers.getContractFactory("ExecutionAgnosticStateCommitments");
+  const executionAgnosticStateCommitments = await ExecutionAgnosticStateCommitments.deploy();
+  await executionAgnosticStateCommitments.waitForDeployment();
+  deployed.executionAgnosticStateCommitments = await executionAgnosticStateCommitments.getAddress();
+  console.log("   ExecutionAgnosticStateCommitments deployed to:", deployed.executionAgnosticStateCommitments);
+
+  // 10. Deploy CrossDomainNullifierAlgebra (CDNA)
+  console.log("\n10. Deploying CrossDomainNullifierAlgebra (CDNA)...");
+  const CrossDomainNullifierAlgebra = await ethers.getContractFactory("CrossDomainNullifierAlgebra");
+  const crossDomainNullifierAlgebra = await CrossDomainNullifierAlgebra.deploy(deployed.verifier);
+  await crossDomainNullifierAlgebra.waitForDeployment();
+  deployed.crossDomainNullifierAlgebra = await crossDomainNullifierAlgebra.getAddress();
+  console.log("   CrossDomainNullifierAlgebra deployed to:", deployed.crossDomainNullifierAlgebra);
+
+  // 11. Deploy PILv2Orchestrator (Integrator)
+  console.log("\n11. Deploying PILv2Orchestrator...");
+  const PILv2Orchestrator = await ethers.getContractFactory("PILv2Orchestrator");
+  const pilv2Orchestrator = await PILv2Orchestrator.deploy(
+    deployed.proofCarryingContainer,
+    deployed.policyBoundProofs,
+    deployed.executionAgnosticStateCommitments,
+    deployed.crossDomainNullifierAlgebra
+  );
+  await pilv2Orchestrator.waitForDeployment();
+  deployed.pilv2Orchestrator = await pilv2Orchestrator.getAddress();
+  console.log("   PILv2Orchestrator deployed to:", deployed.pilv2Orchestrator);
+
   // Summary
   console.log("\n" + "=".repeat(60));
   console.log("PIL V3 DEPLOYMENT SUMMARY");

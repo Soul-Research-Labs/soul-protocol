@@ -5,12 +5,15 @@
   "main": "build/index.js",
   "scripts": {
     "setup": "./setup.sh",
-    "compile": "npm run compile:state && npm run compile:transfer && npm run compile:merkle && npm run compile:crosschain && npm run compile:compliance",
+    "compile": "npm run compile:state && npm run compile:transfer && npm run compile:merkle && npm run compile:crosschain && npm run compile:compliance && npm run compile:container && npm run compile:policy && npm run compile:nullifier",
     "compile:state": "circom state_commitment.circom --r1cs --wasm --sym -o build/state_commitment",
     "compile:transfer": "circom state_transfer.circom --r1cs --wasm --sym -o build/state_transfer",
     "compile:merkle": "circom merkle_proof.circom --r1cs --wasm --sym -o build/merkle_proof",
     "compile:crosschain": "circom cross_chain_proof.circom --r1cs --wasm --sym -o build/cross_chain_proof",
     "compile:compliance": "circom compliance_proof.circom --r1cs --wasm --sym -o build/compliance_proof",
+    "compile:container": "circom container.circom --r1cs --wasm --sym -o build/container",
+    "compile:policy": "circom policy.circom --r1cs --wasm --sym -o build/policy",
+    "compile:nullifier": "circom nullifier.circom --r1cs --wasm --sym -o build/nullifier",
     "setup:powers": "snarkjs powersoftau new bn128 16 build/pot16_0000.ptau -v && snarkjs powersoftau contribute build/pot16_0000.ptau build/pot16_0001.ptau --name='PIL Contribution' -v && snarkjs powersoftau prepare phase2 build/pot16_0001.ptau build/pot16_final.ptau -v",
     "setup:keys": "npm run setup:keys:state && npm run setup:keys:transfer && npm run setup:keys:merkle && npm run setup:keys:crosschain && npm run setup:keys:compliance",
     "setup:keys:state": "snarkjs groth16 setup build/state_commitment/state_commitment.r1cs build/pot16_final.ptau build/state_commitment/circuit_0000.zkey && snarkjs zkey contribute build/state_commitment/circuit_0000.zkey build/state_commitment/circuit_final.zkey --name='PIL' -v && snarkjs zkey export verificationkey build/state_commitment/circuit_final.zkey build/state_commitment/verification_key.json",
@@ -63,6 +66,21 @@
     "compliance_proof": {
       "constraints": "~4,500",
       "provingTime": "~1.8s",
+      "proofSize": "192 bytes"
+    },
+    "container_validity": {
+      "constraints": "~3,200",
+      "provingTime": "~1.4s",
+      "proofSize": "192 bytes"
+    },
+    "policy_compliance": {
+      "constraints": "~6,500",
+      "provingTime": "~2.5s",
+      "proofSize": "192 bytes"
+    },
+    "nullifier_derivation": {
+      "constraints": "~2,500",
+      "provingTime": "~1.1s",
       "proofSize": "192 bytes"
     }
   }

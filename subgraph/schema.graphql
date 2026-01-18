@@ -1,0 +1,383 @@
+# PIL v2 Subgraph Schema
+# Privacy Interoperability Layer - TheGraph Indexing
+
+# =============================================================================
+# PC³ - Proof Carrying Containers
+# =============================================================================
+
+type Container @entity {
+  "Unique container ID (bytes32)"
+  id: ID!
+  
+  "State commitment hash"
+  stateCommitment: Bytes!
+  
+  "Nullifier hash"
+  nullifier: Bytes!
+  
+  "Associated policy hash"
+  policyHash: Bytes
+  
+  "Origin chain ID"
+  chainId: BigInt!
+  
+  "Creation timestamp"
+  createdAt: BigInt!
+  
+  "Block number when created"
+  blockNumber: BigInt!
+  
+  "Transaction hash of creation"
+  transactionHash: Bytes!
+  
+  "Creator address"
+  creator: Bytes!
+  
+  "Whether container is verified"
+  isVerified: Boolean!
+  
+  "Whether container is consumed"
+  isConsumed: Boolean!
+  
+  "Consumer address (if consumed)"
+  consumer: Bytes
+  
+  "Consumed timestamp"
+  consumedAt: BigInt
+  
+  "Verification history"
+  verifications: [ContainerVerification!]! @derivedFrom(field: "container")
+}
+
+type ContainerVerification @entity {
+  "Unique ID: containerId-verifier-timestamp"
+  id: ID!
+  
+  "Reference to container"
+  container: Container!
+  
+  "Verifier address"
+  verifier: Bytes!
+  
+  "Verification success"
+  success: Boolean!
+  
+  "Failure reason (if any)"
+  reason: String
+  
+  "Verification timestamp"
+  timestamp: BigInt!
+  
+  "Block number"
+  blockNumber: BigInt!
+}
+
+type Policy @entity {
+  "Policy hash"
+  id: ID!
+  
+  "Whether policy is active"
+  isActive: Boolean!
+  
+  "Added timestamp"
+  addedAt: BigInt!
+  
+  "Removed timestamp (if removed)"
+  removedAt: BigInt
+  
+  "Block number when added"
+  blockNumber: BigInt!
+  
+  "Transaction hash"
+  transactionHash: Bytes!
+  
+  "Containers using this policy"
+  containers: [Container!]! @derivedFrom(field: "policyHash")
+}
+
+# =============================================================================
+# PBP - Policy Bound Proofs
+# =============================================================================
+
+type PolicyDefinition @entity {
+  "Policy ID (bytes32)"
+  id: ID!
+  
+  "Policy type hash"
+  policyType: Bytes!
+  
+  "Creator address"
+  creator: Bytes!
+  
+  "Threshold value"
+  threshold: BigInt!
+  
+  "Whether policy is active"
+  isActive: Boolean!
+  
+  "Expiry timestamp"
+  expiry: BigInt
+  
+  "Created timestamp"
+  createdAt: BigInt!
+  
+  "Block number"
+  blockNumber: BigInt!
+  
+  "Compliance proofs for this policy"
+  complianceProofs: [ComplianceProof!]! @derivedFrom(field: "policy")
+}
+
+type ComplianceProof @entity {
+  "Unique ID: policyId-subject-timestamp"
+  id: ID!
+  
+  "Reference to policy"
+  policy: PolicyDefinition!
+  
+  "Subject address"
+  subject: Bytes!
+  
+  "Compliance result"
+  compliant: Boolean!
+  
+  "Verification timestamp"
+  timestamp: BigInt!
+  
+  "Block number"
+  blockNumber: BigInt!
+}
+
+# =============================================================================
+# EASC - Execution Agnostic State Commitments
+# =============================================================================
+
+type StateCommitment @entity {
+  "Commitment ID (bytes32)"
+  id: ID!
+  
+  "State root hash"
+  stateRoot: Bytes!
+  
+  "Execution environment hash"
+  executionEnvHash: Bytes!
+  
+  "Creator address"
+  creator: Bytes!
+  
+  "Created timestamp"
+  createdAt: BigInt!
+  
+  "Last updated timestamp"
+  lastUpdated: BigInt!
+  
+  "Number of transitions"
+  transitionCount: BigInt!
+  
+  "Block number"
+  blockNumber: BigInt!
+  
+  "State transitions"
+  transitions: [StateTransition!]! @derivedFrom(field: "commitment")
+}
+
+type StateTransition @entity {
+  "Unique ID: commitmentId-transitionIndex"
+  id: ID!
+  
+  "Reference to commitment"
+  commitment: StateCommitment!
+  
+  "Previous state root"
+  previousRoot: Bytes!
+  
+  "New state root"
+  newRoot: Bytes!
+  
+  "Transition index"
+  index: BigInt!
+  
+  "Timestamp"
+  timestamp: BigInt!
+  
+  "Block number"
+  blockNumber: BigInt!
+}
+
+# =============================================================================
+# CDNA - Cross Domain Nullifier Algebra
+# =============================================================================
+
+type NullifierConsumption @entity {
+  "Nullifier hash"
+  id: ID!
+  
+  "Nullifier bytes"
+  nullifier: Bytes!
+  
+  "Domain ID where consumed"
+  domainId: BigInt!
+  
+  "Consumer address"
+  consumer: Bytes!
+  
+  "Consumed timestamp"
+  consumedAt: BigInt!
+  
+  "Block number"
+  blockNumber: BigInt!
+  
+  "Transaction hash"
+  transactionHash: Bytes!
+  
+  "Whether relayed to other domains"
+  isRelayed: Boolean!
+  
+  "Relay events"
+  relays: [NullifierRelay!]! @derivedFrom(field: "nullifier")
+}
+
+type NullifierRelay @entity {
+  "Unique ID: nullifierId-targetDomain"
+  id: ID!
+  
+  "Reference to nullifier"
+  nullifier: NullifierConsumption!
+  
+  "Source domain ID"
+  sourceDomain: BigInt!
+  
+  "Target domain ID"
+  targetDomain: BigInt!
+  
+  "Relay timestamp"
+  timestamp: BigInt!
+  
+  "Block number"
+  blockNumber: BigInt!
+}
+
+type Domain @entity {
+  "Domain ID"
+  id: ID!
+  
+  "Domain name"
+  name: String!
+  
+  "Registered timestamp"
+  registeredAt: BigInt!
+  
+  "Block number"
+  blockNumber: BigInt!
+  
+  "Total nullifiers consumed in this domain"
+  totalNullifiers: BigInt!
+}
+
+# =============================================================================
+# Orchestrator & Operations
+# =============================================================================
+
+type Operation @entity {
+  "Operation ID (bytes32)"
+  id: ID!
+  
+  "User who initiated"
+  user: User!
+  
+  "Operation success"
+  success: Boolean!
+  
+  "Message/reason"
+  message: String
+  
+  "Timestamp"
+  timestamp: BigInt!
+  
+  "Block number"
+  blockNumber: BigInt!
+  
+  "Transaction hash"
+  transactionHash: Bytes!
+}
+
+type User @entity {
+  "User address"
+  id: ID!
+  
+  "Total operations"
+  totalOperations: BigInt!
+  
+  "Successful operations"
+  successfulOperations: BigInt!
+  
+  "Failed operations"
+  failedOperations: BigInt!
+  
+  "First operation timestamp"
+  firstOperationAt: BigInt
+  
+  "Last operation timestamp"
+  lastOperationAt: BigInt
+  
+  "User operations"
+  operations: [Operation!]! @derivedFrom(field: "user")
+  
+  "Containers created by user"
+  containersCreated: [Container!]!
+}
+
+type SystemStats @entity {
+  "Singleton ID: 'stats'"
+  id: ID!
+  
+  "Total containers"
+  totalContainers: BigInt!
+  
+  "Total verified containers"
+  totalVerified: BigInt!
+  
+  "Total consumed containers"
+  totalConsumed: BigInt!
+  
+  "Total policies"
+  totalPolicies: BigInt!
+  
+  "Active policies"
+  activePolicies: BigInt!
+  
+  "Total state commitments"
+  totalCommitments: BigInt!
+  
+  "Total nullifiers consumed"
+  totalNullifiers: BigInt!
+  
+  "Total operations"
+  totalOperations: BigInt!
+  
+  "Successful operations"
+  successfulOperations: BigInt!
+  
+  "Total unique users"
+  totalUsers: BigInt!
+  
+  "Last updated timestamp"
+  lastUpdated: BigInt!
+}
+
+type PrimitiveStatus @entity {
+  "Primitive ID (bytes32 hash of name)"
+  id: ID!
+  
+  "Primitive name"
+  name: String!
+  
+  "Contract address"
+  contractAddress: Bytes!
+  
+  "Whether active"
+  isActive: Boolean!
+  
+  "Last updated timestamp"
+  lastUpdated: BigInt!
+}

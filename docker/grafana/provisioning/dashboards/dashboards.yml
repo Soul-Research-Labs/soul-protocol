@@ -1,0 +1,14 @@
+# Grafana dashboard provisioning
+apiVersion: 1
+
+providers:
+  - name: 'PIL Dashboards'
+    orgId: 1
+    folder: 'PIL'
+    folderUid: 'pil'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/json

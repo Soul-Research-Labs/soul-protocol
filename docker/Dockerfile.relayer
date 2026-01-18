@@ -1,0 +1,134 @@
+# Relayer Service Dockerfile
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install dependencies for native modules
+RUN apk add --no-cache python3 make g++ git curl
+
+# Create package.json for relayer
+COPY <<EOF package.json
+{
+  "name": "pil-relayer",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "ethers": "^6.9.0",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "pg": "^8.11.3"
+  }
+}
+EOF
+
+# Install dependencies
+RUN npm install
+
+# Copy relayer source
+COPY sdk/src/relayer/ ./src/
+
+# Create simple relayer if not exists
+RUN mkdir -p src && cat <<'EOF' > src/index.js
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import { ethers } from 'ethers';
+
+const app = express();
+app.use(cors());
+app.use(helmet());
+app.use(express.json());
+
+const PORT = process.env.PORT || 4000;
+const RPC_URL = process.env.RPC_URL || 'http://localhost:8545';
+const PRIVATE_KEY = process.env.PRIVATE_KEY;
+
+let provider, wallet;
+
+try {
+  provider = new ethers.JsonRpcProvider(RPC_URL);
+  if (PRIVATE_KEY) {
+    wallet = new ethers.Wallet(PRIVATE_KEY, provider);
+    console.log(`Relayer wallet: ${wallet.address}`);
+  }
+} catch (err) {
+  console.error('Failed to initialize provider:', err);
+}
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+});
+
+// Relay transaction
+app.post('/relay', async (req, res) => {
+  try {
+    const { to, data, value = '0' } = req.body;
+    
+    if (!wallet) {
+      return res.status(500).json({ error: 'Relayer wallet not configured' });
+    }
+    
+    const tx = await wallet.sendTransaction({
+      to,
+      data,
+      value: ethers.parseEther(value),
+    });
+    
+    const receipt = await tx.wait();
+    
+    res.json({
+      success: true,
+      txHash: receipt.hash,
+      blockNumber: receipt.blockNumber,
+    });
+  } catch (err) {
+    console.error('Relay error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get gas price
+app.get('/gas-price', async (req, res) => {
+  try {
+    const feeData = await provider.getFeeData();
+    res.json({
+      gasPrice: feeData.gasPrice?.toString(),
+      maxFeePerGas: feeData.maxFeePerGas?.toString(),
+      maxPriorityFeePerGas: feeData.maxPriorityFeePerGas?.toString(),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get relayer info
+app.get('/info', async (req, res) => {
+  try {
+    const balance = wallet ? await provider.getBalance(wallet.address) : '0';
+    const network = await provider.getNetwork();
+    
+    res.json({
+      address: wallet?.address || 'not configured',
+      balance: ethers.formatEther(balance),
+      chainId: network.chainId.toString(),
+      rpcUrl: RPC_URL,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`PIL Relayer running on port ${PORT}`);
+});
+EOF
+
+EXPOSE 4000
+
+CMD ["npm", "start"]
