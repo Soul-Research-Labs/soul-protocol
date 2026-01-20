@@ -1,8 +1,8 @@
-# PIL Protocol - Certora Formal Verification
+# Soul Protocol - Certora Formal Verification Suite
 
 ## Overview
 
-This directory contains formal verification specifications for PIL Protocol using Certora Prover.
+This directory contains comprehensive formal verification specifications for Soul Protocol using Certora Prover. The verification suite covers all major protocol components including JAM-style computations, mixnet delivery proofs, and cross-chain message lifecycle.
 
 ## Setup
 
@@ -21,33 +21,108 @@ pip install certora-cli
 ### Running Verification
 
 ```bash
-# Run all specifications
-certoraRun certora.conf
+# Run complete verification suite
+./scripts/run_formal_verification.sh
 
-# Run specific spec
-certoraRun contracts/PC3.sol --verify ProofCarryingContainer:specs/PC3.spec
+# Run specific verification
+./scripts/run_formal_verification.sh --mrp      # Mixnet Receipt Proofs
+./scripts/run_formal_verification.sh --jam      # JAM Computations
+./scripts/run_formal_verification.sh --controlplane  # 5-Stage Lifecycle
+./scripts/run_formal_verification.sh --sptc     # Proof Translation
+./scripts/run_formal_verification.sh --network  # Network-Wide Invariants
+./scripts/run_formal_verification.sh --core     # Core PIL Contracts
+
+# Run individual spec
+certoraRun certora/conf/verify_jam.conf
 ```
 
 ## Specifications
 
-### PC3.spec - Proof Carrying Container
+### Core Protocol Specs
+
+#### PC3.spec - Proof Carrying Container
 
 Key properties verified:
-
 1. **No Double Consumption**: A container can only be consumed once
 2. **Creator Immutability**: Container creator cannot change after creation
 3. **State Consistency**: Container state transitions are valid
 4. **Nullifier Uniqueness**: Each nullifier is unique per container
 
-### PBP.spec - Policy Bound Proofs
+#### PBP.spec - Policy Bound Proofs
 
 1. **Policy Immutability**: Registered policies cannot be modified
 2. **Verification Determinism**: Same proof + policy = same result
 3. **Access Control**: Only authorized addresses can register policies
 
-### EASC.spec - Execution Agnostic State Commitments
+#### EASC.spec - Execution Agnostic State Commitments
 
 1. **Commitment Integrity**: State roots cannot be modified
+
+### JAM & Control Plane Specs
+
+#### JoinableConfidentialComputation.spec - JAM Core
+
+Key properties verified:
+1. **Fragment Lifecycle**: Valid Pending → Verified → Joined transitions
+2. **Join Integrity**: Only verified fragments can be joined
+3. **Fragment Uniqueness**: Fragments cannot be in multiple active joins
+4. **Backend Compatibility**: Only compatible backends can be joined
+5. **Access Control**: Role-based execution and verification
+
+#### SoulControlPlane.spec - 5-Stage Message Lifecycle
+
+Key properties verified:
+1. **Stage Progression**: IntentCommitted → Executed → ProofGenerated → Verified → Materialized
+2. **No Stage Skipping**: Must progress through each stage in order
+3. **Nullifier Uniqueness**: No message nullifier reuse
+4. **Materialization Finality**: Materialized messages cannot change
+5. **Role Enforcement**: Correct roles for each stage transition
+
+### Mixnet Receipt Proofs (MRP) Specs
+
+#### MixnetReceiptProofs.spec
+
+Key properties verified:
+1. **Nullifier Uniqueness**: No receipt nullifier reuse
+2. **Hop Chain Integrity**: Valid hop chain structure
+3. **Batch Size Enforcement**: Minimum batch size requirements
+4. **Challenge Stake Requirements**: Proper stake for challenges
+
+#### MixnetNodeRegistry.spec
+
+Key properties verified:
+1. **Stake Requirements**: Minimum stake enforced
+2. **Node State Machine**: Valid registration/activation/exit transitions
+3. **Slashing Bounds**: Slashing cannot exceed stake
+4. **Active Nodes Bounded**: Active ≤ Total nodes
+
+#### AnonymousDeliveryVerifier.spec
+
+Key properties verified:
+1. **Claim Integrity**: Delivery claims cannot be modified
+2. **Verification Timing**: Proper verification delay enforcement
+3. **Nullifier Uniqueness**: No claim nullifier reuse
+
+### Cross-System Specs
+
+#### SPTC.spec - Semantic Proof Translation Certificate
+
+Key properties verified:
+1. **Certificate Immutability**: Issued certificates cannot be modified
+2. **Translation Validity**: Valid proof system translations
+3. **Fee Accounting**: Proper fee collection and distribution
+
+#### NetworkWideInvariants.spec - Cross-Contract Properties
+
+Key properties verified:
+1. **Global Nullifier Uniqueness**: Nullifiers unique across all contracts
+2. **Message Flow Consistency**: Cross-contract message integrity
+3. **Economic Bounds**: Fees, stakes, slashing within bounds
+4. **Pause Propagation**: Emergency stop affects all dependent contracts
+
+#### CDNA.spec - Cross Domain Nullifier Algebra
+
+1. **Nullifier Finality**: Consumed nullifiers remain consumed
 2. **Verification Soundness**: Valid proofs verify correctly
 3. **Chain Separation**: Commitments are chain-specific
 

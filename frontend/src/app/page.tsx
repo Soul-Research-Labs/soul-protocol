@@ -1,6 +1,5 @@
 'use client';
 
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount } from 'wagmi';
 import Header from '@/components/Header';
 import Dashboard from '@/components/Dashboard';
@@ -10,7 +9,7 @@ export default function Home() {
   const { isConnected } = useAccount();
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen bg-gradient-to-br from-pil-dark to-slate-900">
       <Header />
       {isConnected ? <Dashboard /> : <LandingHero />}
     </main>

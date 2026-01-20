@@ -7,6 +7,8 @@ node_modules/
 dist/
 build/
 out/
+.next/
+.turbo/
 
 # Hardhat
 artifacts/
@@ -15,6 +17,32 @@ typechain/
 typechain-types/
 coverage/
 coverage.json
+
+# Foundry
+forge-cache/
+broadcast/
+
+# Gambit (Mutation Testing)
+gambit_out/
+gambit_results/
+.gambit/
+collect.json
+
+# Slither (Static Analysis)
+slither-report.txt
+slither-report.json
+slither.db.json
+
+# Certora
+.certora_internal/
+.certora_config/
+.certora_sources/
+certora_out/
+.certora/
+certora/.certora_internal/
+*.cvl.json
+.last_confs/
+emv_*
 
 # Deployment
 deployments/
@@ -57,6 +85,7 @@ lerna-debug.log*
 
 # TypeScript
 *.tsbuildinfo
+next-env.d.ts
 
 # Temporary files
 tmp/
@@ -74,6 +103,15 @@ private-keys.json
 yarn.lock
 pnpm-lock.yaml
 
+# Frontend specific
+frontend/.next/
+frontend/out/
+frontend/.vercel/
+
+# Storybook
+storybook-static/
+
 # Misc
 *.bak
 *.orig
+.vercel

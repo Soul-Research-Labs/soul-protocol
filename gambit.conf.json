@@ -1,0 +1,18 @@
+{
+    "filename": "contracts/primitives/ProofCarryingContainer.sol",
+    "sourceroot": ".",
+    "solc_remappings": [
+        "@openzeppelin=node_modules/@openzeppelin"
+    ],
+    "solc_optimize": true,
+    "num_mutants": 50,
+    "contract": "ProofCarryingContainer",
+    "mutations": [
+        "binary-op-mutation",
+        "unary-operator-mutation",
+        "require-mutation",
+        "swap-arguments-operator-mutation",
+        "assignment-mutation",
+        "delete-expression-mutation"
+    ]
+}

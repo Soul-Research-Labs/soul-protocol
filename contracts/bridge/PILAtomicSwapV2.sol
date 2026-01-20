@@ -220,10 +220,19 @@ contract PILAtomicSwapV2 is Ownable, ReentrancyGuard, Pausable {
             )
         );
 
-        // Calculate fee
-        uint256 fee = (amount * protocolFeeBps) / 10000;
-        uint256 netAmount = amount - fee;
+        // Calculate fee with cached storage read and unchecked math (saves ~60 gas)
+        uint256 _protocolFeeBps = protocolFeeBps; // Cache SLOAD
+        uint256 fee;
+        uint256 netAmount;
+        unchecked {
+            fee = (amount * _protocolFeeBps) / 10000;
+            netAmount = amount - fee; // Safe: fee < amount always since feeBps <= 100
+        }
         collectedFees[token] += fee;
+
+        // Cache timestamp to avoid multiple reads (saves ~3 gas each)
+        uint256 currentTime = block.timestamp;
+        uint256 deadline = currentTime + timeLock;
 
         // Create swap
         swaps[swapId] = Swap({
@@ -233,7 +242,7 @@ contract PILAtomicSwapV2 is Ownable, ReentrancyGuard, Pausable {
             token: token,
             amount: netAmount,
             hashLock: hashLock,
-            timeLock: block.timestamp + timeLock,
+            timeLock: deadline,
             status: SwapStatus.Created,
             commitment: commitment
         });
@@ -247,7 +256,7 @@ contract PILAtomicSwapV2 is Ownable, ReentrancyGuard, Pausable {
             token,
             netAmount,
             hashLock,
-            block.timestamp + timeLock
+            deadline
         );
     }
 
@@ -281,15 +290,23 @@ contract PILAtomicSwapV2 is Ownable, ReentrancyGuard, Pausable {
     ) external nonReentrant whenNotPaused {
         Swap storage swap = swaps[swapId];
 
+        // Cache storage reads (saves ~100 gas per avoided SLOAD)
+        uint256 _timeLock = swap.timeLock;
+        bytes32 _hashLock = swap.hashLock;
+        address _token = swap.token;
+        address _recipient = swap.recipient;
+        uint256 _amount = swap.amount;
+
         if (swap.status != SwapStatus.Created) revert SwapNotPending();
-        if (block.timestamp + TIMESTAMP_BUFFER >= swap.timeLock)
+        if (block.timestamp + TIMESTAMP_BUFFER >= _timeLock)
             revert SwapExpired();
 
+        // Cache commit timestamp (saves SLOAD)
+        uint256 _commitTime = commitTimestamps[swapId][msg.sender];
+
         // Verify commit was made at least 1 block ago (prevent same-block reveal)
-        if (commitTimestamps[swapId][msg.sender] == 0)
-            revert InvalidCommitHash();
-        if (block.timestamp < commitTimestamps[swapId][msg.sender] + 12)
-            revert CommitTooRecent();
+        if (_commitTime == 0) revert InvalidCommitHash();
+        if (block.timestamp < _commitTime + 12) revert CommitTooRecent();
 
         // Verify commit hash matches
         bytes32 expectedCommit = keccak256(
@@ -299,7 +316,7 @@ contract PILAtomicSwapV2 is Ownable, ReentrancyGuard, Pausable {
             revert InvalidCommitHash();
 
         // Verify secret
-        if (keccak256(abi.encodePacked(secret)) != swap.hashLock)
+        if (keccak256(abi.encodePacked(secret)) != _hashLock)
             revert InvalidSecret();
 
         // Clear commit data
@@ -308,12 +325,12 @@ contract PILAtomicSwapV2 is Ownable, ReentrancyGuard, Pausable {
 
         swap.status = SwapStatus.Claimed;
 
-        // Transfer to recipient
-        if (swap.token == address(0)) {
-            (bool success, ) = swap.recipient.call{value: swap.amount}("");
+        // Transfer to recipient using cached values
+        if (_token == address(0)) {
+            (bool success, ) = _recipient.call{value: _amount}("");
             if (!success) revert TransferFailed();
         } else {
-            IERC20(swap.token).safeTransfer(swap.recipient, swap.amount);
+            IERC20(_token).safeTransfer(_recipient, _amount);
         }
 
         emit SwapClaimed(swapId, msg.sender, secret);
@@ -328,23 +345,30 @@ contract PILAtomicSwapV2 is Ownable, ReentrancyGuard, Pausable {
     ) external nonReentrant whenNotPaused {
         Swap storage swap = swaps[swapId];
 
+        // Cache storage reads (saves ~100 gas per avoided SLOAD)
+        address _recipient = swap.recipient;
+        address _token = swap.token;
+        uint256 _amount = swap.amount;
+        uint256 _timeLock = swap.timeLock;
+        bytes32 _hashLock = swap.hashLock;
+
         // Only allow recipient to use direct claim (still has some MEV risk)
-        require(msg.sender == swap.recipient, "Use commit-reveal pattern");
+        require(msg.sender == _recipient, "Use commit-reveal pattern");
 
         if (swap.status != SwapStatus.Created) revert SwapNotPending();
-        if (block.timestamp + TIMESTAMP_BUFFER >= swap.timeLock)
+        if (block.timestamp + TIMESTAMP_BUFFER >= _timeLock)
             revert SwapExpired();
-        if (keccak256(abi.encodePacked(secret)) != swap.hashLock)
+        if (keccak256(abi.encodePacked(secret)) != _hashLock)
             revert InvalidSecret();
 
         swap.status = SwapStatus.Claimed;
 
-        // Transfer to recipient
-        if (swap.token == address(0)) {
-            (bool success, ) = swap.recipient.call{value: swap.amount}("");
+        // Transfer to recipient using cached values
+        if (_token == address(0)) {
+            (bool success, ) = _recipient.call{value: _amount}("");
             if (!success) revert TransferFailed();
         } else {
-            IERC20(swap.token).safeTransfer(swap.recipient, swap.amount);
+            IERC20(_token).safeTransfer(_recipient, _amount);
         }
 
         emit SwapClaimed(swapId, msg.sender, secret);
@@ -355,20 +379,26 @@ contract PILAtomicSwapV2 is Ownable, ReentrancyGuard, Pausable {
     function refund(bytes32 swapId) external nonReentrant {
         Swap storage swap = swaps[swapId];
 
+        // Cache storage reads (saves ~100 gas per avoided SLOAD)
+        address _initiator = swap.initiator;
+        address _token = swap.token;
+        uint256 _amount = swap.amount;
+        uint256 _timeLock = swap.timeLock;
+
         if (swap.status != SwapStatus.Created) revert SwapNotPending();
-        if (block.timestamp < swap.timeLock) revert SwapNotExpired();
+        if (block.timestamp < _timeLock) revert SwapNotExpired();
 
         swap.status = SwapStatus.Refunded;
 
-        // Refund to initiator
-        if (swap.token == address(0)) {
-            (bool success, ) = swap.initiator.call{value: swap.amount}("");
+        // Refund to initiator using cached values
+        if (_token == address(0)) {
+            (bool success, ) = _initiator.call{value: _amount}("");
             if (!success) revert TransferFailed();
         } else {
-            IERC20(swap.token).safeTransfer(swap.initiator, swap.amount);
+            IERC20(_token).safeTransfer(_initiator, _amount);
         }
 
-        emit SwapRefunded(swapId, swap.initiator);
+        emit SwapRefunded(swapId, _initiator);
     }
 
     /// @notice Gets swap details by hash lock

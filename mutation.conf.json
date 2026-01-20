@@ -1,0 +1,27 @@
+{
+    "gambit": {
+        "filename": "contracts/primitives/ProofCarryingContainer.sol",
+        "solc_remappings": [
+            "@openzeppelin=node_modules/@openzeppelin"
+        ],
+        "solc_optimize": true,
+        "num_mutants": 20,
+        "mutations": [
+            "binary-op-mutation",
+            "require-mutation",
+            "assignment-mutation",
+            "delete-expression-mutation"
+        ]
+    },
+    "certora": {
+        "files": [
+            "contracts/primitives/ProofCarryingContainer.sol"
+        ],
+        "verify": "ProofCarryingContainer:specs/PC3.spec",
+        "msg": "PIL Mutation Testing",
+        "packages": [
+            "@openzeppelin/contracts=node_modules/@openzeppelin/contracts"
+        ],
+        "solc_optimize": "200"
+    }
+}

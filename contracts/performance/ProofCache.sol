@@ -93,7 +93,8 @@ contract ProofCache {
         bytes calldata proof,
         uint256[] calldata publicInputs
     ) external pure returns (bytes32) {
-        return keccak256(abi.encodePacked(proof, publicInputs));
+        // Using abi.encode to prevent hash collisions with dynamic types
+        return keccak256(abi.encode(proof, publicInputs));
     }
 
     /**

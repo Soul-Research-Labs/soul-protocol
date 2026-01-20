@@ -218,6 +218,7 @@ contract CrossChainProofHubV3 is AccessControl, ReentrancyGuard, Pausable {
     error UnauthorizedRelayer();
     error WithdrawFailed();
     error InsufficientFee(uint256 provided, uint256 required);
+    error ZeroAddress();
 
     /*//////////////////////////////////////////////////////////////
                               CONSTANTS
@@ -837,7 +838,24 @@ contract CrossChainProofHubV3 is AccessControl, ReentrancyGuard, Pausable {
         maxValuePerHour = _maxValuePerHour;
     }
 
-    /// @notice Withdraws accumulated fees\n    /// @param to Recipient address\n    /// @dev Uses nonReentrant to prevent race condition\n    function withdrawFees(address to) external nonReentrant onlyRole(DEFAULT_ADMIN_ROLE) {\n        uint256 amount = accumulatedFees;\n        if (amount == 0) revert WithdrawFailed();\n        \n        // CEI pattern: clear state before external call\n        accumulatedFees = 0;\n        \n        (bool success, ) = to.call{value: amount}(\"\");\n        if (!success) revert WithdrawFailed();\n    }\n\n    /// @notice Pauses the contract
+    /// @notice Withdraws accumulated fees
+    /// @param to Recipient address
+    /// @dev Uses nonReentrant to prevent race condition
+    function withdrawFees(
+        address to
+    ) external nonReentrant onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (to == address(0)) revert ZeroAddress();
+        uint256 amount = accumulatedFees;
+        if (amount == 0) revert WithdrawFailed();
+
+        // CEI pattern: clear state before external call
+        accumulatedFees = 0;
+
+        (bool success, ) = to.call{value: amount}("");
+        if (!success) revert WithdrawFailed();
+    }
+
+    /// @notice Pauses the contract
     function pause() external onlyRole(EMERGENCY_ROLE) {
         _pause();
     }

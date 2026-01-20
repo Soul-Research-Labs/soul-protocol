@@ -121,6 +121,7 @@ contract PILComplianceV2 is Ownable, ReentrancyGuard, Pausable {
     error AddressIsSanctioned();
     error RestrictedJurisdiction();
     error InsufficientKYCTier();
+    error ZeroAddress();
 
     /// @notice Modifier for authorized providers
     modifier onlyProvider() {
@@ -139,6 +140,7 @@ contract PILComplianceV2 is Ownable, ReentrancyGuard, Pausable {
     /// @notice Authorizes a KYC provider
     /// @param provider The provider address
     function authorizeProvider(address provider) external onlyOwner {
+        if (provider == address(0)) revert ZeroAddress();
         authorizedProviders[provider] = true;
         emit KYCProviderAuthorized(provider);
     }
@@ -146,6 +148,7 @@ contract PILComplianceV2 is Ownable, ReentrancyGuard, Pausable {
     /// @notice Revokes a KYC provider
     /// @param provider The provider address
     function revokeProvider(address provider) external onlyOwner {
+        if (provider == address(0)) revert ZeroAddress();
         authorizedProviders[provider] = false;
         emit KYCProviderRevoked(provider);
     }
@@ -153,6 +156,7 @@ contract PILComplianceV2 is Ownable, ReentrancyGuard, Pausable {
     /// @notice Authorizes an auditor
     /// @param auditor The auditor address
     function authorizeAuditor(address auditor) external onlyOwner {
+        if (auditor == address(0)) revert ZeroAddress();
         authorizedAuditors[auditor] = true;
         emit AuditorAuthorized(auditor);
     }
@@ -160,6 +164,7 @@ contract PILComplianceV2 is Ownable, ReentrancyGuard, Pausable {
     /// @notice Revokes an auditor
     /// @param auditor The auditor address
     function revokeAuditor(address auditor) external onlyOwner {
+        if (auditor == address(0)) revert ZeroAddress();
         authorizedAuditors[auditor] = false;
         emit AuditorRevoked(auditor);
     }
@@ -261,6 +266,7 @@ contract PILComplianceV2 is Ownable, ReentrancyGuard, Pausable {
     /// @notice Sanctions an address
     /// @param user The address to sanction
     function sanctionAddress(address user) external onlyOwner {
+        if (user == address(0)) revert ZeroAddress();
         sanctionedAddresses[user] = true;
         kycRecords[user].status = KYCStatus.Rejected;
         emit AddressSanctioned(user);
@@ -269,6 +275,7 @@ contract PILComplianceV2 is Ownable, ReentrancyGuard, Pausable {
     /// @notice Removes sanction from an address
     /// @param user The address to unsanction
     function unsanctionAddress(address user) external onlyOwner {
+        if (user == address(0)) revert ZeroAddress();
         sanctionedAddresses[user] = false;
         emit AddressUnsanctioned(user);
     }
