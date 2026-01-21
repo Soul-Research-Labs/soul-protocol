@@ -196,22 +196,106 @@ Due to Solidity stack depth limitations with complex structs, simplified harness
 
 ## Running Verifications
 
-To run all verifications:
+### Quick Start
 
 ```bash
+# Set your Certora API key
 export CERTORAKEY=<your-api-key>
-./scripts/run_formal_verification.sh --all
+
+# Run all verifications
+./scripts/run-formal-verification.sh all
+
+# Run critical verifications only (faster)
+./scripts/run-formal-verification.sh quick
+
+# Run a single verification
+./scripts/run-formal-verification.sh single verify_pc3.conf
+
+# List available configurations
+./scripts/run-formal-verification.sh list
+
+# Generate verification report
+./scripts/run-formal-verification.sh report
 ```
 
-Or run individual verifications:
+### Manual Verification
+
+Or run individual verifications directly:
 
 ```bash
-certoraRun certora/conf/verify.conf
-certoraRun certora/conf/verify_sptc.conf
-certoraRun certora/conf/verify_controlplane.conf
-certoraRun certora/conf/verify_jam.conf
-certoraRun certora/conf/verify_mrp.conf
+certoraRun certora/conf/verify_pc3.conf
+certoraRun certora/conf/verify_zkslocks_enhanced.conf
+certoraRun certora/conf/verify_crosschain.conf
+certoraRun certora/conf/verify_security.conf
 ```
+
+## Enhanced Verification (v3.0)
+
+### New Specifications Added
+
+| Specification | Description | Properties |
+|--------------|-------------|------------|
+| CrossChainBridges.spec | All bridge adapters | 30+ rules |
+| SecurityInvariants.spec | Global safety properties | 40+ invariants |
+| ZKBoundStateLocksEnhanced.spec | Extended ZK-SLocks | 15+ rules |
+
+### Cross-Chain Bridge Coverage
+
+| Bridge | Adapter | Verified Properties |
+|--------|---------|-------------------|
+| Solana | SolanaBridgeAdapter | VAA replay, nonce, programs |
+| LayerZero | LayerZeroBridgeAdapter | GUID dedup, peer auth, gas |
+| Chainlink | ChainlinkBridgeAdapter | CCIP dedup, sender auth, tokens |
+| StarkNet | StarkNetBridgeAdapter | Message consumption, contracts |
+| Bitcoin | BitcoinBridgeAdapter | TX hash dedup, confirmations |
+| BitVM | BitVMBridgeAdapter | Proof dedup, challenges |
+| Aztec | AztecBridgeAdapter | Nullifier, double-spend |
+
+### Security Invariants Categories
+
+1. **Nullifier Security** (4 invariants)
+   - Uniqueness across contracts
+   - Permanence (temporal logic)
+   - Commitment binding
+   - Cross-domain isolation
+
+2. **Proof Verification** (4 properties)
+   - Soundness guarantee
+   - Non-malleability
+   - Expiration enforcement
+   - Registry consistency
+
+3. **Bridge Security** (5 invariants)
+   - Asset conservation
+   - Message authenticity
+   - Ordering per channel
+   - Timeout safety
+   - Oracle front-running prevention
+
+4. **ZK-SLocks** (5 properties)
+   - State machine validity
+   - Bond requirements
+   - Challenge window
+   - Reward guarantees
+   - Lock-commitment binding
+
+5. **TEE Attestation** (4 properties)
+   - Freshness checks
+   - Quote verification
+   - Identity binding
+   - Revocation enforcement
+
+6. **Economic Security** (4 properties)
+   - Staking minimums
+   - Slashing bounds
+   - Fee distribution fairness
+   - MEV prevention
+
+7. **Governance Security** (4 properties)
+   - Proposal delays
+   - Quorum requirements
+   - Vote finality
+   - Emergency constraints
 
 ## Next Steps
 
@@ -219,3 +303,6 @@ certoraRun certora/conf/verify_mrp.conf
 2. Address any counterexamples found
 3. Add additional properties as needed
 4. Integrate verification into CI/CD pipeline
+5. Extend coverage to new bridge adapters
+6. Add Halmos symbolic execution tests
+7. Implement Kontrol K-framework proofs

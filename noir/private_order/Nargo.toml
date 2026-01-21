@@ -1,0 +1,8 @@
+[package]
+name = "private_order"
+type = "bin"
+authors = ["PIL Team"]
+compiler_version = ">=0.30.0"
+description = "Private order commitment and verification circuit for PIL Exchange"
+
+[dependencies]

@@ -446,12 +446,17 @@ contract IdempotentExecutor is AccessControl, ReentrancyGuard, Pausable {
      * @notice Record execution failure
      * @param executionId Execution that failed
      * @param failureReason Reason for failure (will be hashed for privacy)
-     * @return canRetry True if retry is possible
+     * @return retryPossible True if retry is possible
      */
     function failExecution(
         bytes32 executionId,
         string calldata failureReason
-    ) external onlyRole(EXECUTOR_ROLE) nonReentrant returns (bool canRetry) {
+    )
+        external
+        onlyRole(EXECUTOR_ROLE)
+        nonReentrant
+        returns (bool retryPossible)
+    {
         ExecutionRecord storage execution = executions[executionId];
 
         if (execution.state != ExecutionState.Executing) {
@@ -470,11 +475,11 @@ contract IdempotentExecutor is AccessControl, ReentrancyGuard, Pausable {
         _executeRollback(executionId);
 
         // Check if can retry
-        canRetry =
+        retryPossible =
             execution.attemptCount < execution.maxAttempts &&
             block.timestamp < execution.expiresAt;
 
-        if (canRetry) {
+        if (retryPossible) {
             execution.state = ExecutionState.Failed;
         } else {
             execution.state = ExecutionState.Abandoned;
@@ -486,7 +491,7 @@ contract IdempotentExecutor is AccessControl, ReentrancyGuard, Pausable {
         }
 
         emit ExecutionFailed(executionId, failureHash);
-        return canRetry;
+        return retryPossible;
     }
 
     /*//////////////////////////////////////////////////////////////

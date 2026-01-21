@@ -178,17 +178,19 @@ describe("Semantic Proof Translation Certificates (SPTC)", function () {
 
         await sptc.write.translateAndCertify(
           [
-            1, // GROTH16_BN254
-            3, // PLONK
-            0, // Arithmetic
-            sourceProofHash,
-            sourceVK,
-            [keccak256(toBytes("input1"))],
-            targetProofHash,
-            targetVK,
-            [keccak256(toBytes("input1_translated"))],
-            statementHash,
-            semanticCommitment,
+            {
+              sourceSystem: 1, // GROTH16_BN254
+              targetSystem: 3, // PLONK
+              domain: 0, // Arithmetic
+              sourceProofHash,
+              sourceVerifyingKeyHash: sourceVK,
+              targetProofHash,
+              targetVerifyingKeyHash: targetVK,
+              statementHash,
+              semanticCommitment
+            },
+            [keccak256(toBytes("input1"))], // sourcePublicInputs
+            [keccak256(toBytes("input1_translated"))], // targetPublicInputs
             translationProof
           ],
           { account: translator.account }
@@ -239,15 +241,19 @@ describe("Semantic Proof Translation Certificates (SPTC)", function () {
 
         await sptc.write.translateAndCertify(
           [
-            1, 3, 0,
-            sourceProofHash,
-            keccak256(toBytes("source_vk")),
-            [],
-            targetProofHash,
-            keccak256(toBytes("target_vk")),
-            [],
-            statementHash,
-            keccak256(toBytes("semantic")),
+            {
+              sourceSystem: 1,
+              targetSystem: 3,
+              domain: 0,
+              sourceProofHash,
+              sourceVerifyingKeyHash: keccak256(toBytes("source_vk")),
+              targetProofHash,
+              targetVerifyingKeyHash: keccak256(toBytes("target_vk")),
+              statementHash,
+              semanticCommitment: keccak256(toBytes("semantic"))
+            },
+            [], // sourcePublicInputs
+            [], // targetPublicInputs
             toHex(toBytes("translation_proof"))
           ],
           { account: translator.account }
@@ -283,15 +289,19 @@ describe("Semantic Proof Translation Certificates (SPTC)", function () {
 
         await sptc.write.translateAndCertify(
           [
-            1, 3, 0,
-            keccak256(toBytes("source")),
-            keccak256(toBytes("svk")),
-            [],
-            keccak256(toBytes("target")),
-            keccak256(toBytes("tvk")),
-            [],
-            keccak256(toBytes("stmt")),
-            keccak256(toBytes("semantic")),
+            {
+              sourceSystem: 1,
+              targetSystem: 3,
+              domain: 0,
+              sourceProofHash: keccak256(toBytes("source")),
+              sourceVerifyingKeyHash: keccak256(toBytes("svk")),
+              targetProofHash: keccak256(toBytes("target")),
+              targetVerifyingKeyHash: keccak256(toBytes("tvk")),
+              statementHash: keccak256(toBytes("stmt")),
+              semanticCommitment: keccak256(toBytes("semantic"))
+            },
+            [], // sourcePublicInputs
+            [], // targetPublicInputs
             toHex(toBytes("proof"))
           ],
           { account: translator.account }
@@ -790,15 +800,19 @@ describe("Semantic Proof Translation Certificates (SPTC)", function () {
 
       await sptc.write.translateAndCertify(
         [
-          1, 3, 0,
-          sourceProof,
-          keccak256(toBytes("svk")),
-          [],
-          targetProof,
-          keccak256(toBytes("tvk")),
-          [],
-          statement,
-          keccak256(toBytes("semantic")),
+          {
+            sourceSystem: 1,
+            targetSystem: 3,
+            domain: 0,
+            sourceProofHash: sourceProof,
+            sourceVerifyingKeyHash: keccak256(toBytes("svk")),
+            targetProofHash: targetProof,
+            targetVerifyingKeyHash: keccak256(toBytes("tvk")),
+            statementHash: statement,
+            semanticCommitment: keccak256(toBytes("semantic"))
+          },
+          [], // sourcePublicInputs
+          [], // targetPublicInputs
           toHex(toBytes("proof"))
         ],
         { account: translator.account }

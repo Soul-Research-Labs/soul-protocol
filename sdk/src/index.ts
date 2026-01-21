@@ -53,6 +53,41 @@ import {
   ProofBundle,
 } from "./client/PILv2Primitives";
 
+// Bridge Adapters
+import {
+  BridgeFactory,
+  BaseBridgeAdapter,
+  CardanoBridgeAdapterSDK,
+  CosmosBridgeAdapterSDK,
+  PolkadotBridgeAdapterSDK,
+  NEARBridgeAdapterSDK,
+  zkSyncBridgeAdapterSDK,
+  AvalancheBridgeAdapterSDK,
+  ArbitrumBridgeAdapterSDK,
+  SupportedChain,
+  BridgeConfig,
+  BridgeStatus,
+  BridgeFees,
+  BridgeTransferParams,
+  BridgeTransferResult,
+} from "./bridges";
+
+// React Hooks (lazy loaded)
+export * as ReactHooks from "./react/hooks";
+
+// Research Implementations - Advanced Features
+// ZK Systems (SP1, Plonky3, Jolt, Binius)
+export * as ZKSystems from "./zkSystems";
+
+// Recursive Proofs (Nova-style IVC, Folding, Aggregation)
+export * as RecursiveProofs from "./recursive";
+
+// MPC (Threshold Signatures, Compliance, DKG)
+export * as MPC from "./mpc";
+
+// FHE (Fully Homomorphic Encryption)
+export * as FHE from "./fhe";
+
 export {
   // Core SDK
   PILSDK,
@@ -79,6 +114,23 @@ export {
   SubstrateChainAdapter,
   createChainAdapter,
   MultiChainProofManager,
+
+  // Bridge Adapters
+  BridgeFactory,
+  BaseBridgeAdapter,
+  CardanoBridgeAdapterSDK,
+  CosmosBridgeAdapterSDK,
+  PolkadotBridgeAdapterSDK,
+  NEARBridgeAdapterSDK,
+  zkSyncBridgeAdapterSDK,
+  AvalancheBridgeAdapterSDK,
+  ArbitrumBridgeAdapterSDK,
+  SupportedChain,
+  BridgeConfig,
+  BridgeStatus,
+  BridgeFees,
+  BridgeTransferParams,
+  BridgeTransferResult,
 
   // PIL v2 Primitives
   ProofCarryingContainerClient,

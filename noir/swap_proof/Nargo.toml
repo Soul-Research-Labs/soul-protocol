@@ -1,0 +1,8 @@
+[package]
+name = "swap_proof"
+type = "bin"
+authors = ["PIL Team"]
+compiler_version = ">=0.30.0"
+description = "AMM swap proof circuit for PIL Exchange with constant product verification"
+
+[dependencies]

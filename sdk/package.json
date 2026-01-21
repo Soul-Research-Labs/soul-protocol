@@ -1,23 +1,85 @@
 {
-  "name": "pil-sdk",
-  "version": "0.1.0",
+  "name": "@pil/sdk",
+  "version": "1.0.0",
+  "description": "Privacy Interoperability Layer SDK - Cross-chain privacy middleware for Web3",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "pil": "./dist/cli/index.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./bridges": {
+      "import": "./dist/bridges/index.js",
+      "types": "./dist/bridges/index.d.ts"
+    },
+    "./react": {
+      "import": "./dist/react/hooks.js",
+      "types": "./dist/react/hooks.d.ts"
+    },
+    "./cli": {
+      "import": "./dist/cli/index.js",
+      "types": "./dist/cli/index.d.ts"
+    }
+  },
   "scripts": {
     "build": "tsc",
-    "test": "mocha -r ts-node/register test/**/*.ts"
+    "build:watch": "tsc --watch",
+    "test": "mocha -r ts-node/register test/**/*.ts",
+    "test:coverage": "nyc mocha -r ts-node/register test/**/*.ts",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "privacy",
+    "zk",
+    "zero-knowledge",
+    "bridge",
+    "cross-chain",
+    "cardano",
+    "polkadot",
+    "cosmos",
+    "ethereum",
+    "web3"
+  ],
+  "author": "PIL Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pil-project/pil-sdk.git"
   },
   "dependencies": {
+    "commander": "^11.0.0",
     "ethers": "^6.0.0",
     "snarkjs": "^0.7.3",
     "circomlibjs": "^0.1.7",
     "ffjavascript": "^0.3.0"
   },
   "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/snarkjs": "^0.7.0",
     "typescript": "^5.0.0",
     "ts-node": "^10.0.0",
     "mocha": "^10.0.0",
     "chai": "^4.3.0",
-    "@types/snarkjs": "^0.7.0"
+    "nyc": "^15.0.0",
+    "eslint": "^8.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0"
+  },
+  "peerDependencies": {
+    "react": ">=17.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

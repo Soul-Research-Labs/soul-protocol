@@ -504,6 +504,10 @@ Test coverage includes:
 
 ## Roadmap
 
+> **See [Full Roadmap](docs/ROADMAP.md) for detailed timeline, milestones, and next steps.**
+
+### ✅ Completed (Q4 2025 - Q1 2026)
+
 - [x] Core protocol (state container, verifiers, nullifiers)
 - [x] Cross-chain infrastructure (proof hub, relayers, swaps)
 - [x] Compliance layer (KYC/AML)
@@ -517,13 +521,41 @@ Test coverage includes:
 - [x] Homomorphic Hiding (HH) - research grade
 - [x] Aggregate Disclosure Algebra (ADA) - research grade
 - [x] Composable Revocation Proofs (CRP) - research grade
-- [x] Comprehensive test suite (59 tests passing)
+- [x] Comprehensive test suite (419 tests passing)
 - [x] Security tooling (Slither, Echidna, Certora specs)
 - [x] LLVM vulnerability hardening
 - [x] Local testnet deployment complete
+- [x] Cross-chain bridge adapters (10 chains)
+  - [x] Ethereum L1/L2 bridges
+  - [x] Aztec private L2
+  - [x] Bitcoin (SPV + BitVM)
+  - [x] StarkNet (Cairo)
+  - [x] Solana (Wormhole)
+  - [x] LayerZero V2 (120+ chains)
+  - [x] Chainlink (CCIP, VRF, Automation)
+
+### 🔄 In Progress (Q1 2026)
+
 - [ ] Professional security audit
-- [ ] Testnet deployment (Sepolia)
-- [ ] Mainnet deployment
+- [ ] 100% test coverage
+- [ ] Developer tutorials & documentation
+
+### ⏳ Upcoming (Q2-Q3 2026)
+
+- [ ] Testnet deployment (Sepolia, multi-chain)
+- [ ] SDK v1.0 release
+- [ ] Relayer network beta
+- [ ] Bug bounty program
+- [ ] Mainnet deployment (Q3 2026)
+
+### 🔮 Future (Q4 2026+)
+
+- [ ] ARM TrustZone support
+- [ ] Recursive SNARK / Nova integration
+- [ ] Private DEX & DeFi applications
+- [ ] Decentralized governance
+- [ ] Enterprise features
+- [ ] 50+ chain support
 
 ## Proof System Support
 

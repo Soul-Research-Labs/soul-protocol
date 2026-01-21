@@ -1,0 +1,488 @@
+# =============================================================================
+# PIL Private Exchange - Subgraph Schema Extension
+# =============================================================================
+
+# Add these entities to the existing subgraph/schema.graphql file
+
+# =============================================================================
+# Private Exchange Entities
+# =============================================================================
+
+"""
+Deposit into the private exchange
+"""
+type ExchangeDeposit @entity {
+  "Unique ID: txHash-logIndex"
+  id: ID!
+  
+  "Depositor address"
+  depositor: Bytes!
+  
+  "Token address"
+  token: Token!
+  
+  "Amount deposited"
+  amount: BigInt!
+  
+  "Commitment hash (privacy-preserving)"
+  commitment: Bytes!
+  
+  "Block timestamp"
+  timestamp: BigInt!
+  
+  "Block number"
+  blockNumber: BigInt!
+  
+  "Transaction hash"
+  transactionHash: Bytes!
+}
+
+"""
+Withdrawal from the private exchange
+"""
+type ExchangeWithdrawal @entity {
+  "Unique ID: txHash-logIndex"
+  id: ID!
+  
+  "Recipient address"
+  recipient: Bytes!
+  
+  "Token address"
+  token: Token!
+  
+  "Amount withdrawn"
+  amount: BigInt!
+  
+  "Nullifier (prevents double-spend)"
+  nullifier: Bytes!
+  
+  "Whether withdrawal was to stealth address"
+  isStealthWithdrawal: Boolean!
+  
+  "Block timestamp"
+  timestamp: BigInt!
+  
+  "Block number"
+  blockNumber: BigInt!
+  
+  "Transaction hash"
+  transactionHash: Bytes!
+}
+
+"""
+ERC20 Token entity
+"""
+type Token @entity {
+  "Token address"
+  id: ID!
+  
+  "Token symbol"
+  symbol: String!
+  
+  "Token name"
+  name: String!
+  
+  "Token decimals"
+  decimals: Int!
+  
+  "Total deposited in exchange"
+  totalDeposited: BigInt!
+  
+  "Is supported by exchange"
+  isSupported: Boolean!
+  
+  "Minimum deposit amount"
+  minDeposit: BigInt!
+  
+  "Maximum deposit amount"
+  maxDeposit: BigInt!
+}
+
+"""
+AMM Liquidity Pool
+"""
+type Pool @entity {
+  "Pool ID (bytes32)"
+  id: ID!
+  
+  "Token A"
+  tokenA: Token!
+  
+  "Token B"
+  tokenB: Token!
+  
+  "Reserve of token A"
+  reserveA: BigInt!
+  
+  "Reserve of token B"
+  reserveB: BigInt!
+  
+  "Total liquidity tokens"
+  totalLiquidity: BigInt!
+  
+  "Fee in basis points"
+  fee: Int!
+  
+  "Total volume in token A"
+  volumeA: BigInt!
+  
+  "Total volume in token B"
+  volumeB: BigInt!
+  
+  "Number of swaps"
+  swapCount: BigInt!
+  
+  "Creation timestamp"
+  createdAt: BigInt!
+  
+  "Last update timestamp"
+  lastUpdatedAt: BigInt!
+  
+  "Creator address"
+  creator: Bytes!
+  
+  "Liquidity positions"
+  positions: [LiquidityPosition!]! @derivedFrom(field: "pool")
+  
+  "Swap history"
+  swaps: [Swap!]! @derivedFrom(field: "pool")
+}
+
+"""
+User liquidity position in a pool
+"""
+type LiquidityPosition @entity {
+  "Unique ID: poolId-provider"
+  id: ID!
+  
+  "The pool"
+  pool: Pool!
+  
+  "Liquidity provider address"
+  provider: Bytes!
+  
+  "Liquidity tokens held"
+  liquidity: BigInt!
+  
+  "Share of pool (basis points)"
+  share: Int!
+  
+  "Created timestamp"
+  createdAt: BigInt!
+  
+  "Last updated timestamp"
+  lastUpdatedAt: BigInt!
+}
+
+"""
+Private swap execution
+"""
+type Swap @entity {
+  "Unique ID: txHash-logIndex"
+  id: ID!
+  
+  "The pool used"
+  pool: Pool!
+  
+  "Swap ID (bytes32)"
+  swapId: Bytes!
+  
+  "Token swapped from"
+  tokenIn: Token!
+  
+  "Token swapped to"
+  tokenOut: Token!
+  
+  "Amount of tokenIn"
+  amountIn: BigInt!
+  
+  "Amount of tokenOut"
+  amountOut: BigInt!
+  
+  "Fee paid"
+  fee: BigInt!
+  
+  "Block timestamp"
+  timestamp: BigInt!
+  
+  "Block number"
+  blockNumber: BigInt!
+  
+  "Transaction hash"
+  transactionHash: Bytes!
+}
+
+"""
+Private limit/market order
+"""
+type Order @entity {
+  "Order ID (bytes32)"
+  id: ID!
+  
+  "Order creator"
+  creator: Bytes!
+  
+  "Token to sell"
+  tokenIn: Token!
+  
+  "Token to buy"
+  tokenOut: Token!
+  
+  "Amount to sell"
+  amountIn: BigInt!
+  
+  "Minimum amount to receive"
+  minAmountOut: BigInt!
+  
+  "Order type: 0=Market, 1=Limit"
+  orderType: Int!
+  
+  "Order side: 0=Buy, 1=Sell"
+  side: Int!
+  
+  "Order deadline"
+  deadline: BigInt!
+  
+  "Amount filled"
+  filledAmount: BigInt!
+  
+  "Order status: OPEN, PARTIAL, FILLED, CANCELLED"
+  status: String!
+  
+  "Created timestamp"
+  createdAt: BigInt!
+  
+  "Last updated timestamp"
+  lastUpdatedAt: BigInt!
+  
+  "Transaction hash"
+  transactionHash: Bytes!
+  
+  "Fills for this order"
+  fills: [OrderFill!]! @derivedFrom(field: "order")
+}
+
+"""
+Order fill event
+"""
+type OrderFill @entity {
+  "Unique ID: txHash-logIndex"
+  id: ID!
+  
+  "The order being filled"
+  order: Order!
+  
+  "Amount filled"
+  amount: BigInt!
+  
+  "Price at fill"
+  price: BigInt!
+  
+  "Counterparty order"
+  counterpartyOrder: Order
+  
+  "Block timestamp"
+  timestamp: BigInt!
+  
+  "Transaction hash"
+  transactionHash: Bytes!
+}
+
+"""
+Cross-chain order
+"""
+type CrossChainOrder @entity {
+  "Order ID (bytes32)"
+  id: ID!
+  
+  "Creator address"
+  creator: Bytes!
+  
+  "Source token"
+  sourceToken: Token!
+  
+  "Destination token address"
+  destToken: Bytes!
+  
+  "Destination chain ID"
+  destChainId: BigInt!
+  
+  "Amount to swap"
+  amount: BigInt!
+  
+  "Minimum amount out"
+  minAmountOut: BigInt!
+  
+  "Deadline"
+  deadline: BigInt!
+  
+  "Status: PENDING, EXECUTING, COMPLETED, FAILED"
+  status: String!
+  
+  "PC3 container ID (if created)"
+  containerId: Bytes
+  
+  "Created timestamp"
+  createdAt: BigInt!
+  
+  "Completed timestamp"
+  completedAt: BigInt
+  
+  "Transaction hash"
+  transactionHash: Bytes!
+}
+
+"""
+Stealth address meta-address registration
+"""
+type StealthMetaAddress @entity {
+  "User address"
+  id: ID!
+  
+  "Spending public key X"
+  spendingPubKeyX: BigInt!
+  
+  "Spending public key Y"
+  spendingPubKeyY: BigInt!
+  
+  "Viewing public key X"
+  viewingPubKeyX: BigInt!
+  
+  "Viewing public key Y"
+  viewingPubKeyY: BigInt!
+  
+  "Registration timestamp"
+  registeredAt: BigInt!
+  
+  "Last updated timestamp"
+  lastUpdatedAt: BigInt!
+  
+  "Is active"
+  isActive: Boolean!
+  
+  "Transaction hash"
+  transactionHash: Bytes!
+  
+  "Incoming payments"
+  incomingPayments: [StealthPayment!]! @derivedFrom(field: "recipient")
+}
+
+"""
+Stealth payment announcement
+"""
+type StealthPayment @entity {
+  "Unique ID: txHash-logIndex"
+  id: ID!
+  
+  "Stealth address"
+  stealthAddress: Bytes!
+  
+  "Recipient meta-address (if known)"
+  recipient: StealthMetaAddress
+  
+  "Sender address"
+  sender: Bytes!
+  
+  "Token"
+  token: Token!
+  
+  "Amount"
+  amount: BigInt!
+  
+  "Ephemeral public key X"
+  ephemeralPubKeyX: BigInt!
+  
+  "Ephemeral public key Y"
+  ephemeralPubKeyY: BigInt!
+  
+  "View tag"
+  viewTag: Int!
+  
+  "Is claimed"
+  isClaimed: Boolean!
+  
+  "Claimed by"
+  claimedBy: Bytes
+  
+  "Claimed at"
+  claimedAt: BigInt
+  
+  "Block timestamp"
+  timestamp: BigInt!
+  
+  "Block number"
+  blockNumber: BigInt!
+  
+  "Transaction hash"
+  transactionHash: Bytes!
+}
+
+"""
+Daily exchange statistics
+"""
+type DailyExchangeStats @entity {
+  "Date in YYYY-MM-DD format"
+  id: ID!
+  
+  "Total volume in USD"
+  volumeUSD: BigDecimal!
+  
+  "Number of swaps"
+  swapCount: BigInt!
+  
+  "Number of deposits"
+  depositCount: BigInt!
+  
+  "Number of withdrawals"
+  withdrawalCount: BigInt!
+  
+  "Number of orders created"
+  orderCount: BigInt!
+  
+  "Number of orders filled"
+  fillCount: BigInt!
+  
+  "Unique users"
+  uniqueUsers: BigInt!
+  
+  "Total fees collected in USD"
+  feesUSD: BigDecimal!
+  
+  "TVL at end of day in USD"
+  tvlUSD: BigDecimal!
+}
+
+"""
+Hourly pool statistics
+"""
+type HourlyPoolStats @entity {
+  "ID: poolId-hourTimestamp"
+  id: ID!
+  
+  "The pool"
+  pool: Pool!
+  
+  "Hour start timestamp"
+  hourStartTimestamp: BigInt!
+  
+  "Reserve A at hour end"
+  reserveA: BigInt!
+  
+  "Reserve B at hour end"
+  reserveB: BigInt!
+  
+  "Volume in token A"
+  volumeA: BigInt!
+  
+  "Volume in token B"
+  volumeB: BigInt!
+  
+  "Number of swaps"
+  swapCount: BigInt!
+  
+  "Fees collected in token A"
+  feesA: BigInt!
+  
+  "Fees collected in token B"
+  feesB: BigInt!
+}
