@@ -85,5 +85,14 @@
     "ffjavascript": "^0.3.1",
     "forge-std": "^1.1.2",
     "snarkjs": "^0.7.6"
+  },
+  "overrides": {
+    "elliptic": "^6.6.1",
+    "lodash-es": "^4.17.21",
+    "diff": "^7.0.0",
+    "undici": "^6.23.0",
+    "@ethersproject/signing-key": {
+      "elliptic": "^6.6.1"
+    }
   }
 }
