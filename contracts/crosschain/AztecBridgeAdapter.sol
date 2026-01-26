@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "../interfaces/IAztecBridgeAdapter.sol";
+import "../interfaces/IProofVerifier.sol";
 
 /**
  * @title AztecBridgeAdapter
@@ -113,6 +114,15 @@ contract AztecBridgeAdapter is
 
     /// @notice Bridge is configured
     bool public isConfigured;
+
+    /// @notice PIL proof verifier (Groth16)
+    IProofVerifier public pilVerifier;
+
+    /// @notice PLONK verifier for Aztec proofs
+    IProofVerifier public plonkVerifier;
+
+    /// @notice Cross-chain proof verifier
+    address public crossChainVerifier;
 
     /*//////////////////////////////////////////////////////////////
                                MAPPINGS
@@ -250,6 +260,26 @@ contract AztecBridgeAdapter is
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_treasury == address(0)) revert ZeroAddress();
         treasury = _treasury;
+    }
+
+    /**
+     * @notice Configure proof verifiers
+     * @param _pilVerifier PIL Groth16 verifier
+     * @param _plonkVerifier PLONK verifier for Aztec proofs
+     * @param _crossChainVerifier Cross-chain proof verifier
+     */
+    function configureVerifiers(
+        address _pilVerifier,
+        address _plonkVerifier,
+        address _crossChainVerifier
+    ) external onlyRole(OPERATOR_ROLE) {
+        if (_pilVerifier == address(0) || _plonkVerifier == address(0) || _crossChainVerifier == address(0)) {
+            revert ZeroAddress();
+        }
+
+        pilVerifier = IProofVerifier(_pilVerifier);
+        plonkVerifier = IProofVerifier(_plonkVerifier);
+        crossChainVerifier = _crossChainVerifier;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -649,50 +679,60 @@ contract AztecBridgeAdapter is
                         INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /**
-     * @dev Verify PIL commitment ownership proof
-     * @param commitment PIL commitment
-     * @param nullifier Nullifier being revealed
-     * @param proof ZK proof
-     * @return valid Whether proof is valid
-     */
     function _verifyPILOwnershipProof(
         bytes32 commitment,
         bytes32 nullifier,
         bytes calldata proof
-    ) internal pure returns (bool valid) {
-        // Simplified verification - would call PIL proof verifier
-        // In production: call PILVerifier.verifyOwnership(commitment, nullifier, proof)
-        return proof.length >= 256 && commitment != bytes32(0) && nullifier != bytes32(0);
+    ) internal view returns (bool valid) {
+        // Check if verifier is configured
+        if (address(pilVerifier) == address(0)) {
+            // Fallback: basic validation if no verifier configured
+            return proof.length >= 256 && commitment != bytes32(0) && nullifier != bytes32(0);
+        }
+
+        // Construct public inputs for PIL ownership proof
+        // Public inputs: [commitment, nullifier, domain_separator]
+        uint256[] memory publicInputs = new uint256[](3);
+        publicInputs[0] = uint256(commitment);
+        publicInputs[1] = uint256(nullifier);
+        publicInputs[2] = uint256(keccak256("PIL_OWNERSHIP"));
+
+        // Call the Groth16 verifier
+        try pilVerifier.verify(proof, publicInputs) returns (bool result) {
+            return result;
+        } catch {
+            return false;
+        }
     }
 
-    /**
-     * @dev Verify Aztec note creation proof
-     * @param noteHash Created note hash
-     * @param recipient Aztec recipient
-     * @param amount Note amount
-     * @param proof Aztec proof
-     * @return valid Whether proof is valid
-     */
     function _verifyAztecNoteCreation(
         bytes32 noteHash,
         bytes32 recipient,
         uint256 amount,
         bytes calldata proof
-    ) internal pure returns (bool valid) {
-        // Simplified verification - would call Aztec proof verifier
-        // In production: verify UltraPLONK proof via Barretenberg verifier
-        return proof.length >= 256 && noteHash != bytes32(0) && recipient != bytes32(0) && amount > 0;
+    ) internal view returns (bool valid) {
+        // Check if PLONK verifier is configured
+        if (address(plonkVerifier) == address(0)) {
+            // Fallback: basic validation if no verifier configured
+            return proof.length >= 256 && noteHash != bytes32(0) && recipient != bytes32(0) && amount > 0;
+        }
+
+        // Construct public inputs for Aztec note creation
+        // Public inputs: [noteHash, recipient, amount, domain_separator]
+        uint256[] memory publicInputs = new uint256[](4);
+        publicInputs[0] = uint256(noteHash);
+        publicInputs[1] = uint256(recipient);
+        publicInputs[2] = amount;
+        publicInputs[3] = uint256(keccak256("AZTEC_NOTE_CREATION"));
+
+        // Call the PLONK verifier (UltraPLONK compatible)
+        try plonkVerifier.verify(proof, publicInputs) returns (bool result) {
+            return result;
+        } catch {
+            return false;
+        }
     }
 
-    /**
-     * @dev Verify Aztec note ownership proof
-     * @param noteHash Note hash being spent
-     * @param nullifier Nullifier being revealed
-     * @param amount Note amount
-     * @param proof Aztec proof
-     * @return valid Whether proof is valid
-     */
     function _verifyAztecNoteOwnership(
         bytes32 noteHash,
         bytes32 nullifier,
@@ -701,10 +741,31 @@ contract AztecBridgeAdapter is
     ) internal view returns (bool valid) {
         // Verify against synced Aztec state
         if (latestRollupId == 0) return false;
-        
-        // Simplified verification - would verify Merkle proof against dataTreeRoot
-        // In production: verify note exists in data tree and nullifier not in nullifier tree
-        return proof.length >= 256 && noteHash != bytes32(0) && nullifier != bytes32(0) && amount > 0;
+
+        // Get the latest synced state
+        AztecStateSync storage syncedState = aztecStateSyncs[latestRollupId];
+
+        // Check if PLONK verifier is configured
+        if (address(plonkVerifier) == address(0)) {
+            // Fallback: basic validation
+            return proof.length >= 256 && noteHash != bytes32(0) && nullifier != bytes32(0) && amount > 0;
+        }
+
+        // Construct public inputs for Aztec note ownership
+        // Includes data tree root from synced state for Merkle verification
+        uint256[] memory publicInputs = new uint256[](5);
+        publicInputs[0] = uint256(noteHash);
+        publicInputs[1] = uint256(nullifier);
+        publicInputs[2] = amount;
+        publicInputs[3] = uint256(syncedState.dataTreeRoot);  // Merkle root
+        publicInputs[4] = uint256(syncedState.nullifierTreeRoot);  // Nullifier tree root
+
+        // Call the PLONK verifier
+        try plonkVerifier.verify(proof, publicInputs) returns (bool result) {
+            return result;
+        } catch {
+            return false;
+        }
     }
 
     /**
@@ -731,37 +792,118 @@ contract AztecBridgeAdapter is
         );
     }
 
-    /**
-     * @dev Verify cross-domain proof
-     * @param proofType Type of proof
-     * @param sourceCommitment Source commitment
-     * @param targetCommitment Target commitment
-     * @param proof Proof data
-     * @param publicInputsHash Public inputs hash
-     * @return valid Whether proof is valid
-     */
     function _verifyCrossDomainProofInternal(
         ProofType proofType,
         bytes32 sourceCommitment,
         bytes32 targetCommitment,
         bytes calldata proof,
         bytes32 publicInputsHash
-    ) internal pure returns (bool valid) {
-        // Verify proof translation between PIL (Groth16) and Aztec (UltraPLONK)
-        // In production: call appropriate verifier based on proofType
+    ) internal view returns (bool valid) {
+        // Select verifier based on proof type
         if (proofType == ProofType.PIL_TO_AZTEC) {
-            // Translate Groth16 to UltraPLONK verification
-            return proof.length >= 288; // Groth16 proof size
+            // Use Groth16 verifier for PIL proofs
+            if (address(pilVerifier) == address(0)) {
+                return proof.length >= 288;  // Fallback: Groth16 proof size check
+            }
+
+            uint256[] memory publicInputs = new uint256[](4);
+            publicInputs[0] = uint256(sourceCommitment);
+            publicInputs[1] = uint256(targetCommitment);
+            publicInputs[2] = uint256(publicInputsHash);
+            publicInputs[3] = uint256(keccak256("PIL_TO_AZTEC"));
+
+            try pilVerifier.verify(proof, publicInputs) returns (bool result) {
+                return result;
+            } catch {
+                return false;
+            }
         } else if (proofType == ProofType.AZTEC_TO_PIL) {
-            // Translate UltraPLONK to Groth16 verification
-            return proof.length >= 512; // UltraPLONK proof size (approx)
+            // Use PLONK verifier for Aztec proofs
+            if (address(plonkVerifier) == address(0)) {
+                return proof.length >= 512;  // Fallback: UltraPLONK proof size check
+            }
+
+            uint256[] memory publicInputs = new uint256[](4);
+            publicInputs[0] = uint256(sourceCommitment);
+            publicInputs[1] = uint256(targetCommitment);
+            publicInputs[2] = uint256(publicInputsHash);
+            publicInputs[3] = uint256(keccak256("AZTEC_TO_PIL"));
+
+            try plonkVerifier.verify(proof, publicInputs) returns (bool result) {
+                return result;
+            } catch {
+                return false;
+            }
         } else {
-            // Bidirectional - verify both
-            return proof.length >= 512 && 
-                   sourceCommitment != bytes32(0) && 
-                   targetCommitment != bytes32(0) &&
-                   publicInputsHash != bytes32(0);
+            // Bidirectional - verify with cross-chain verifier
+            // This would use a specialized verifier that handles both proof systems
+            if (crossChainVerifier == address(0)) {
+                return proof.length >= 512 && 
+                       sourceCommitment != bytes32(0) && 
+                       targetCommitment != bytes32(0) &&
+                       publicInputsHash != bytes32(0);
+            }
+
+            // Call cross-chain verifier interface
+            // In production: CrossChainProofVerifier.verifyProof(...)
+            (bool success, bytes memory result) = crossChainVerifier.staticcall(
+                abi.encodeWithSignature(
+                    "verifyProof(uint256[2],uint256[2][2],uint256[2],uint256[7])",
+                    _extractG1Point(proof, 0),
+                    _extractG2Point(proof, 64),
+                    _extractG1Point(proof, 192),
+                    _buildPublicSignals(sourceCommitment, targetCommitment, publicInputsHash)
+                )
+            );
+
+            if (success && result.length >= 32) {
+                return abi.decode(result, (bool));
+            }
+            return false;
         }
+    }
+
+    /**
+     * @dev Extract G1 point from proof bytes
+     */
+    function _extractG1Point(
+        bytes calldata proof,
+        uint256 offset
+    ) internal pure returns (uint256[2] memory point) {
+        require(proof.length >= offset + 64, "Invalid proof length");
+        point[0] = uint256(bytes32(proof[offset:offset + 32]));
+        point[1] = uint256(bytes32(proof[offset + 32:offset + 64]));
+    }
+
+    /**
+     * @dev Extract G2 point from proof bytes
+     */
+    function _extractG2Point(
+        bytes calldata proof,
+        uint256 offset
+    ) internal pure returns (uint256[2][2] memory point) {
+        require(proof.length >= offset + 128, "Invalid proof length");
+        point[0][0] = uint256(bytes32(proof[offset:offset + 32]));
+        point[0][1] = uint256(bytes32(proof[offset + 32:offset + 64]));
+        point[1][0] = uint256(bytes32(proof[offset + 64:offset + 96]));
+        point[1][1] = uint256(bytes32(proof[offset + 96:offset + 128]));
+    }
+
+    /**
+     * @dev Build public signals array for cross-chain verification
+     */
+    function _buildPublicSignals(
+        bytes32 sourceCommitment,
+        bytes32 targetCommitment,
+        bytes32 publicInputsHash
+    ) internal pure returns (uint256[7] memory signals) {
+        signals[0] = uint256(sourceCommitment) >> 128;  // High bits
+        signals[1] = uint256(sourceCommitment) & type(uint128).max;  // Low bits
+        signals[2] = uint256(targetCommitment) >> 128;
+        signals[3] = uint256(targetCommitment) & type(uint128).max;
+        signals[4] = uint256(publicInputsHash) >> 128;
+        signals[5] = uint256(publicInputsHash) & type(uint128).max;
+        signals[6] = uint256(keccak256("BIDIRECTIONAL"));
     }
 
     receive() external payable {}
