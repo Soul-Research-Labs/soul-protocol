@@ -8,7 +8,7 @@ import {IProofVerifier} from "../interfaces/IProofVerifier.sol";
 
 /**
  * @title ZKBoundStateLocks (ZK-SLocks)
- * @author PIL v2 - Privacy Interoperability Layer
+ * @author Soul v2 - Soul Protocol
  * @notice Cross-Chain Confidential State Lock Manager - Novel Primitive
  * @dev Core contract managing zero-knowledge bound state locks for privacy-preserving cross-chain state transitions
  *
@@ -34,7 +34,7 @@ import {IProofVerifier} from "../interfaces/IProofVerifier.sol";
  * - Privacy-Preserving: No plaintext state exposure at any layer
  * - Composable: Multiple locks can reference the same state commitment
  *
- * INTEGRATION WITH PIL:
+ * INTEGRATION WITH Soul:
  * - Uses CDNA for cross-domain nullifier generation
  * - Integrates with PC³ for self-authenticating containers
  * - Leverages EASC for execution-agnostic commitments

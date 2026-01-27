@@ -1,8 +1,8 @@
-# PIL Kernel Architecture: Aztec-Inspired Constitutional Privacy Layer
+# Soul Kernel Architecture: Aztec-Inspired Constitutional Privacy Layer
 
 > "If privacy invariants are not structurally enforced, they will be violated." — Aztec
 
-PIL implements a kernel-based architecture making privacy violations **structurally impossible** in cross-chain operations.
+Soul implements a kernel-based architecture making privacy violations **structurally impossible** in cross-chain operations.
 
 ---
 
@@ -10,18 +10,18 @@ PIL implements a kernel-based architecture making privacy violations **structura
 
 ### Core Principles (Learned from Aztec)
 
-| Principle | Aztec Approach | PIL Implementation |
+| Principle | Aztec Approach | Soul Implementation |
 |-----------|----------------|-------------------|
-| Constitutional Layer | Kernel circuit | PILKernelProof |
+| Constitutional Layer | Kernel circuit | SoulKernelProof |
 | Privacy by Default | All txs private | Mandatory containers |
 | State Consumption | Note consumption | Linear state semantics |
 | Hidden Control Flow | Private call stack | Execution indirection |
 | Circuit-Enforced Policy | Kernel constraints | PBP inside kernel |
 | Recursive Composition | Proof aggregation | Multi-hop verification |
 
-### What PIL Does Differently
+### What Soul Does Differently
 
-PIL is **strictly more complex** than Aztec because it handles:
+Soul is **strictly more complex** than Aztec because it handles:
 - **Proof translation** between heterogeneous chains
 - **Policy enforcement** across jurisdictions
 - **Relayer mixnets** for metadata resistance
@@ -31,11 +31,11 @@ This requires **stricter invariants**, a **stronger kernel**, and **fewer escape
 
 ---
 
-## 2. PIL Kernel Proof
+## 2. Soul Kernel Proof
 
-### Contract: `PILKernelProof.sol`
+### Contract: `SoulKernelProof.sol`
 
-The PIL Kernel is the **constitutional layer** that every cross-chain action must pass through.
+The Soul Kernel is the **constitutional layer** that every cross-chain action must pass through.
 
 ### 7 Mandatory Invariants
 
@@ -43,7 +43,7 @@ Every cross-chain action proof must verify:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     PIL KERNEL INVARIANTS                        │
+│                     Soul KERNEL INVARIANTS                        │
 ├─────────────────────────────────────────────────────────────────┤
 │ 1. CONTAINER WELL-FORMED                                         │
 │    ├─ Confidential container is properly structured              │
@@ -268,7 +268,7 @@ struct ConfidentialContainerWrapper {
 
 ### What This Means
 
-| Approach | Risk Level | PIL Implementation |
+| Approach | Risk Level | Soul Implementation |
 |----------|------------|-------------------|
 | SDK logic | ⛔ HIGH | Not allowed |
 | Relayer behavior | ⛔ HIGH | Not allowed |
@@ -340,26 +340,26 @@ Kernel 0 (depth 0)
 
 ## 8. Comparison with Aztec
 
-### What PIL Adopts from Aztec
+### What Soul Adopts from Aztec
 
-| Aztec Pattern | PIL Implementation | Status |
+| Aztec Pattern | Soul Implementation | Status |
 |---------------|-------------------|--------|
-| Kernel circuit | `PILKernelProof.sol` | ✅ Implemented |
+| Kernel circuit | `SoulKernelProof.sol` | ✅ Implemented |
 | Privacy by default | Mandatory containers | ✅ Implemented |
 | State consumption | `LinearStateManager.sol` | ✅ Implemented |
 | Hidden control flow | `ExecutionIndirectionLayer.sol` | ✅ Implemented |
 | Circuit-enforced policy | PBP inside kernel | ✅ Implemented |
 | Recursive composition | Phase 1 logical recursion | ✅ Implemented |
 
-### What PIL Does NOT Copy from Aztec
+### What Soul Does NOT Copy from Aztec
 
-| Aztec Pattern | Why Not for PIL |
+| Aztec Pattern | Why Not for Soul |
 |---------------|-----------------|
-| Note-centric UX | PIL is state-centric for enterprises |
-| Single-chain assumptions | PIL is cross-chain native |
-| L2 rollup mental model | PIL is chain-agnostic |
-| Tight coupling to one VM | PIL supports multiple backends |
-| User-as-prover everywhere | PIL supports institutional users |
+| Note-centric UX | Soul is state-centric for enterprises |
+| Single-chain assumptions | Soul is cross-chain native |
+| L2 rollup mental model | Soul is chain-agnostic |
+| Tight coupling to one VM | Soul supports multiple backends |
+| User-as-prover everywhere | Soul supports institutional users |
 
 ---
 
@@ -368,7 +368,7 @@ Kernel 0 (depth 0)
 ### Contract Deployment Order
 
 1. Deploy `IProofVerifier` (mock or real)
-2. Deploy `PILKernelProof` with verifier address
+2. Deploy `SoulKernelProof` with verifier address
 3. Deploy `LinearStateManager`
 4. Deploy `ExecutionIndirectionLayer`
 5. Grant roles between contracts
@@ -377,7 +377,7 @@ Kernel 0 (depth 0)
 
 ```
                     ┌─────────────────────┐
-                    │   PILKernelProof    │
+                    │   SoulKernelProof    │
                     │   (Constitutional)  │
                     └─────────────────────┘
                               │
@@ -393,7 +393,7 @@ Kernel 0 (depth 0)
                               │
                               ▼
               ┌─────────────────────────────┐
-              │   Existing PIL Primitives   │
+              │   Existing Soul Primitives   │
               │   (ZK-SLocks, PC³, CDNA)    │
               └─────────────────────────────┘
 ```
@@ -401,7 +401,7 @@ Kernel 0 (depth 0)
 ### Role Setup
 
 ```solidity
-// PILKernelProof roles
+// SoulKernelProof roles
 pilKernel.grantRole(KERNEL_ADMIN_ROLE, admin);
 pilKernel.grantRole(VERIFIER_ROLE, linearStateManager);
 pilKernel.grantRole(BACKEND_ROLE, executionIndirection);
@@ -418,7 +418,7 @@ executionIndirection.grantRole(EXECUTOR_ROLE, pilKernel);
 
 ## Summary
 
-The PIL Kernel Architecture adopts Aztec's **discipline** while solving a **harder problem**: private state mobility across heterogeneous chains.
+The Soul Kernel Architecture adopts Aztec's **discipline** while solving a **harder problem**: private state mobility across heterogeneous chains.
 
 ### Key Takeaways
 
@@ -433,7 +433,7 @@ The PIL Kernel Architecture adopts Aztec's **discipline** while solving a **hard
 
 | File | Purpose |
 |------|---------|
-| `contracts/kernel/PILKernelProof.sol` | Constitutional kernel layer |
+| `contracts/kernel/SoulKernelProof.sol` | Constitutional kernel layer |
 | `contracts/kernel/LinearStateManager.sol` | Linear state semantics |
 | `contracts/kernel/ExecutionIndirectionLayer.sol` | Hidden control flow |
 

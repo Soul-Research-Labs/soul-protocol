@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title BridgeWatchtower
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Decentralized watchtower network for bridge security monitoring
  * @dev Implements:
  *      - Distributed proof verification

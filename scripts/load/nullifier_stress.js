@@ -1,7 +1,7 @@
 /**
- * PIL Protocol Load Testing - Nullifier Stress Test
+ * Soul Protocol Load Testing - Nullifier Stress Test
  * K6 load test for nullifier registry under extreme load
- * Author: PIL Protocol Team
+ * Author: Soul Protocol Team
  * Date: January 2026
  */
 
@@ -282,7 +282,7 @@ export function testCollision() {
  * Setup function
  */
 export function setup() {
-  console.log('Starting PIL Nullifier Stress Test');
+  console.log('Starting Soul Nullifier Stress Test');
   console.log(`Target: ${BASE_URL}`);
   console.log(`Registry: ${NULLIFIER_REGISTRY}`);
   console.log(`Pre-generated nullifiers: ${preGeneratedNullifiers.length}`);
@@ -332,7 +332,7 @@ function generateSummary(data) {
   const m = data.metrics;
   
   let s = '\n' + '='.repeat(60) + '\n';
-  s += '       PIL NULLIFIER STRESS TEST SUMMARY\n';
+  s += '       Soul NULLIFIER STRESS TEST SUMMARY\n';
   s += '='.repeat(60) + '\n\n';
   
   s += '📊 OPERATIONS\n';

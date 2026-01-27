@@ -7,7 +7,7 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title ExecutionIndirectionLayer
- * @author Soul Protocol - Privacy Interoperability Layer
+ * @author Soul Protocol - Soul Protocol
  * @notice Hides Execution Backend and Control Flow from External Observers
  * @dev Private control flow is as important as private data (Aztec lesson)
  *

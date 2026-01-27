@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // K Framework Specification for ZK Circuit Constraint Verification
 //
-// This specification formalizes the constraint system used in PIL's
+// This specification formalizes the constraint system used in Soul's
 // zero-knowledge circuits, ensuring soundness and completeness properties.
 //
 // ZK CIRCUIT CONSTRAINT SYSTEM:
@@ -189,7 +189,7 @@ module ZK-CONSTRAINTS-CIRCUITS
     imports ZK-CONSTRAINTS-PLONK
 
     // ============================================
-    // PIL CIRCUIT DEFINITIONS
+    // Soul CIRCUIT DEFINITIONS
     // ============================================
 
     // Cross-Domain Nullifier Circuit
@@ -337,11 +337,11 @@ module ZK-CONSTRAINTS-COMPLETENESS
         true
 endmodule
 
-module ZK-CONSTRAINTS-PIL-SPECIFIC
+module ZK-CONSTRAINTS-Soul-SPECIFIC
     imports ZK-CONSTRAINTS-COMPLETENESS
 
     // ============================================
-    // PIL-SPECIFIC CONSTRAINT PROPERTIES
+    // Soul-SPECIFIC CONSTRAINT PROPERTIES
     // ============================================
 
     // Property 1: Cross-Domain Consistency
@@ -372,7 +372,7 @@ module ZK-CONSTRAINTS-PIL-SPECIFIC
 endmodule
 
 module ZK-CONSTRAINTS-SECURITY-BOUNDS
-    imports ZK-CONSTRAINTS-PIL-SPECIFIC
+    imports ZK-CONSTRAINTS-Soul-SPECIFIC
 
     // ============================================
     // SECURITY BOUNDS
@@ -413,6 +413,6 @@ module ZK-CONSTRAINTS
     imports ZK-CONSTRAINTS-SOUNDNESS
     imports ZK-CONSTRAINTS-ZERO-KNOWLEDGE
     imports ZK-CONSTRAINTS-COMPLETENESS
-    imports ZK-CONSTRAINTS-PIL-SPECIFIC
+    imports ZK-CONSTRAINTS-Soul-SPECIFIC
     imports ZK-CONSTRAINTS-SECURITY-BOUNDS
 endmodule

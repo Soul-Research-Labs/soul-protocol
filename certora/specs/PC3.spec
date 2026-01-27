@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Privacy Interoperability Layer - ProofCarryingCrossChainCommitment (PC3)
+ * Soul Protocol - ProofCarryingCrossChainCommitment (PC3)
  */
 
 methods {

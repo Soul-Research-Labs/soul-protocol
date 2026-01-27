@@ -8,17 +8,17 @@ import "../interfaces/IBitcoinBridgeAdapter.sol";
 
 /**
  * @title BitcoinBridgeAdapter
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Bridge adapter for Bitcoin network integration
  * @dev Enables cross-chain privacy-preserving operations between Bitcoin and Ethereum
  *
  * BITCOIN INTEGRATION ARCHITECTURE:
  * ┌─────────────────────────────────────────────────────────────────────────┐
- * │                    PIL <-> Bitcoin Network Bridge                        │
+ * │                    Soul <-> Bitcoin Network Bridge                        │
  * ├─────────────────────────────────────────────────────────────────────────┤
  * │                                                                          │
  * │  ┌───────────────────┐           ┌───────────────────┐                  │
- * │  │   PIL Protocol    │           │  Bitcoin Network  │                  │
+ * │  │   Soul Protocol    │           │  Bitcoin Network  │                  │
  * │  │  (Ethereum L1)    │           │   (UTXO Chain)    │                  │
  * │  │  ┌─────────────┐  │           │  ┌─────────────┐  │                  │
  * │  │  │ HTLC        │  │◄─────────►│  │ HTLC Script │  │                  │

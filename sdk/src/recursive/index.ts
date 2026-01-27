@@ -1,5 +1,5 @@
 /**
- * PIL Recursive Proof SDK
+ * Soul Recursive Proof SDK
  * 
  * Implements:
  * - Nova-style Incremental Verifiable Computation (IVC)
@@ -14,7 +14,7 @@ import { ethers } from "ethers";
 // Types
 // ============================================
 
-export interface PILState {
+export interface SoulState {
     merkleRoot: string;
     totalSupply: bigint;
     nonce: bigint;
@@ -30,7 +30,7 @@ export interface FoldedInstance {
 }
 
 export interface IVCProof {
-    currentState: PILState;
+    currentState: SoulState;
     foldedInstance: FoldedInstance;
     stepProof: Uint8Array;
     previousStateHash: string;
@@ -61,12 +61,12 @@ export interface RecursionConfig {
 // IVC Manager
 // ============================================
 
-export class PILIVCManager {
-    private currentState: PILState;
+export class SoulIVCManager {
+    private currentState: SoulState;
     private foldingHistory: FoldedInstance[] = [];
     private config: RecursionConfig;
 
-    constructor(initialState: PILState, config: RecursionConfig = { maxBatchSize: 32, targetGasSavings: 70 }) {
+    constructor(initialState: SoulState, config: RecursionConfig = { maxBatchSize: 32, targetGasSavings: 70 }) {
         this.currentState = initialState;
         this.config = config;
     }
@@ -74,7 +74,7 @@ export class PILIVCManager {
     /**
      * Create genesis IVC state
      */
-    static createGenesis(): PILState {
+    static createGenesis(): SoulState {
         return {
             merkleRoot: ethers.ZeroHash,
             totalSupply: 0n,
@@ -86,14 +86,14 @@ export class PILIVCManager {
     /**
      * Get current state
      */
-    getState(): PILState {
+    getState(): SoulState {
         return { ...this.currentState };
     }
 
     /**
-     * Hash PIL state for commitments
+     * Hash Soul state for commitments
      */
-    hashState(state: PILState): string {
+    hashState(state: SoulState): string {
         return ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(
             ["bytes32", "uint256", "uint256", "uint256"],
             [state.merkleRoot, state.totalSupply, state.nonce, state.lastUpdateBlock]
@@ -112,7 +112,7 @@ export class PILIVCManager {
         const previousStateHash = this.hashState(this.currentState);
 
         // Update state
-        const newState: PILState = {
+        const newState: SoulState = {
             merkleRoot: newMerkleRoot,
             totalSupply: this.currentState.totalSupply + supplyDelta,
             nonce: this.currentState.nonce + 1n,
@@ -189,8 +189,8 @@ export class PILIVCManager {
      * Generate step proof
      */
     private async generateStepProof(
-        _oldState: PILState,
-        _newState: PILState,
+        _oldState: SoulState,
+        _newState: SoulState,
         _witness: Uint8Array
     ): Promise<Uint8Array> {
         // Mock proof generation
@@ -205,7 +205,7 @@ export class PILIVCManager {
      */
     private async generateTransitionProof(
         _previousHash: string,
-        _newState: PILState,
+        _newState: SoulState,
         _foldedInstance: FoldedInstance
     ): Promise<Uint8Array> {
         const proof = new Uint8Array(128);
@@ -246,7 +246,7 @@ export class PILIVCManager {
      * Export state for persistence
      */
     export(): {
-        state: PILState;
+        state: SoulState;
         history: FoldedInstance[];
     } {
         return {
@@ -258,7 +258,7 @@ export class PILIVCManager {
     /**
      * Import state from persistence
      */
-    import(data: { state: PILState; history: FoldedInstance[] }): void {
+    import(data: { state: SoulState; history: FoldedInstance[] }): void {
         this.currentState = data.state;
         this.foldingHistory = data.history;
     }
@@ -268,7 +268,7 @@ export class PILIVCManager {
 // Proof Aggregator
 // ============================================
 
-export class PILProofAggregator {
+export class SoulProofAggregator {
     private pendingProofs: ProofInput[] = [];
     private config: RecursionConfig;
     private aggregatedProofs: AggregatedProof[] = [];
@@ -496,7 +496,7 @@ export interface CrossSystemProof {
     intermediateHash: string;
 }
 
-export class PILCrossSystemRecursor {
+export class SoulCrossSystemRecursor {
     private wrapperCircuits: Map<string, Uint8Array> = new Map();
 
     /**
@@ -586,7 +586,7 @@ export class PILCrossSystemRecursor {
 // On-Chain Verifier Client
 // ============================================
 
-export class PILRecursiveVerifierClient {
+export class SoulRecursiveVerifierClient {
     private provider: ethers.Provider;
     private verifierContract: ethers.Contract;
 
@@ -668,29 +668,29 @@ export class PILRecursiveVerifierClient {
 // ============================================
 
 export function createIVCManager(
-    initialState?: PILState,
+    initialState?: SoulState,
     config?: RecursionConfig
-): PILIVCManager {
-    return new PILIVCManager(
-        initialState || PILIVCManager.createGenesis(),
+): SoulIVCManager {
+    return new SoulIVCManager(
+        initialState || SoulIVCManager.createGenesis(),
         config
     );
 }
 
-export function createProofAggregator(config?: RecursionConfig): PILProofAggregator {
-    return new PILProofAggregator(config);
+export function createProofAggregator(config?: RecursionConfig): SoulProofAggregator {
+    return new SoulProofAggregator(config);
 }
 
-export function createCrossSystemRecursor(): PILCrossSystemRecursor {
-    return new PILCrossSystemRecursor();
+export function createCrossSystemRecursor(): SoulCrossSystemRecursor {
+    return new SoulCrossSystemRecursor();
 }
 
 export function createVerifierClient(
     provider: ethers.Provider,
     verifierAddress: string,
     abi: ethers.InterfaceAbi
-): PILRecursiveVerifierClient {
-    return new PILRecursiveVerifierClient(provider, verifierAddress, abi);
+): SoulRecursiveVerifierClient {
+    return new SoulRecursiveVerifierClient(provider, verifierAddress, abi);
 }
 
 // ============================================
@@ -698,10 +698,10 @@ export function createVerifierClient(
 // ============================================
 
 export default {
-    PILIVCManager,
-    PILProofAggregator,
-    PILCrossSystemRecursor,
-    PILRecursiveVerifierClient,
+    SoulIVCManager,
+    SoulProofAggregator,
+    SoulCrossSystemRecursor,
+    SoulRecursiveVerifierClient,
     createIVCManager,
     createProofAggregator,
     createCrossSystemRecursor,

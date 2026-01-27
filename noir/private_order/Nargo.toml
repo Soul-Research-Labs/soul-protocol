@@ -1,8 +1,8 @@
 [package]
 name = "private_order"
 type = "bin"
-authors = ["PIL Team"]
+authors = ["Soul Team"]
 compiler_version = ">=0.30.0"
-description = "Private order commitment and verification circuit for PIL Exchange"
+description = "Private order commitment and verification circuit for Soul Exchange"
 
 [dependencies]

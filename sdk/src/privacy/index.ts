@@ -1,6 +1,6 @@
 /**
  * @title Cross-Chain Privacy SDK
- * @description Main entry point for PIL cross-chain privacy operations
+ * @description Main entry point for Soul cross-chain privacy operations
  */
 
 // Stealth Address exports

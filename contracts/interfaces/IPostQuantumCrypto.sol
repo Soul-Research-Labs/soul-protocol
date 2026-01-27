@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 /**
  * @title IPostQuantumCrypto
- * @author Soul Protocol - PIL v2
+ * @author Soul Protocol - Soul v2
  * @notice Interface for Post-Quantum Cryptographic operations
  * @dev Defines standard interfaces for NIST PQC algorithms:
  *      - CRYSTALS-Dilithium (Digital Signatures)

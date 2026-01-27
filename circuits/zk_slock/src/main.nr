@@ -21,7 +21,7 @@
 //!
 //! CIRCUIT COMPLEXITY: ~15,000 constraints (optimized for gas efficiency)
 //!
-//! PIL v2 INTEGRATION:
+//! Soul v2 INTEGRATION:
 //! - Compatible with CDNA (Cross-Domain Nullifier Algebra)
 //! - Works with PC³ (Proof-Carrying Containers)
 //! - Leverages EASC (Execution-Agnostic State Commitments)

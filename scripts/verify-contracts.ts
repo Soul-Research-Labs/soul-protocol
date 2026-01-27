@@ -1,7 +1,7 @@
 /**
  * Contract Verification Script for Etherscan
  * 
- * This script verifies all deployed PIL v2 contracts on Etherscan.
+ * This script verifies all deployed Soul v2 contracts on Etherscan.
  * Run after deployment to testnet or mainnet.
  * 
  * Usage: npx hardhat run scripts/verify-contracts.ts --network sepolia
@@ -71,12 +71,12 @@ function loadDeploymentInfo(network: string): DeployedContract[] {
       address: contracts.crossChainHub, 
       constructorArgs: [contracts.verifier] 
     },
-    { name: "PILAtomicSwapV2", address: contracts.atomicSwap, constructorArgs: [] },
+    { name: "SoulAtomicSwapV2", address: contracts.atomicSwap, constructorArgs: [] },
     
     // Compliance
-    { name: "PILComplianceV2", address: contracts.compliance, constructorArgs: [] },
+    { name: "SoulComplianceV2", address: contracts.compliance, constructorArgs: [] },
     
-    // Core PIL v2 Components
+    // Core Soul v2 Components
     { 
       name: "PC3", 
       address: contracts.pc3, 

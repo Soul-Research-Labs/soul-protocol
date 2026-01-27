@@ -105,7 +105,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --controlplane Run SoulControlPlane verification only"
             echo "  --sptc         Run SPTC verification only"
             echo "  --network      Run network-wide invariants verification only"
-            echo "  --core         Run core PIL verification only"
+            echo "  --core         Run core Soul verification only"
             echo "  --help         Show this help message"
             echo ""
             echo "Without options, runs all verification jobs."
@@ -127,8 +127,8 @@ if [ "$RUN_ALL" = true ]; then
     echo "Running complete verification suite..."
     echo ""
     
-    # 1. Core PIL Verification
-    run_verification "certora/conf/verify.conf" "Core PIL Contracts"
+    # 1. Core Soul Verification
+    run_verification "certora/conf/verify.conf" "Core Soul Contracts"
     
     # 2. MRP - Mixnet Receipt Proofs
     run_verification "certora/conf/verify_mrp.conf" "Mixnet Receipt Proofs (MRP)"

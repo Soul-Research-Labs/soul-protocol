@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Certora CVL Specification for Optimism Bridge Adapter
-// Privacy Interoperability Layer (PIL) - Formal Verification
+// Soul Protocol (Soul) - Formal Verification
 
 /*
  * =============================================================================
@@ -268,14 +268,14 @@ rule messageNullifierUniqueness(bytes32 messageId1, bytes32 messageId2) {
 /// @title Cross-domain nullifier determinism
 /// @notice Same input always produces same nullifier
 rule crossDomainNullifierDeterminism(bytes32 opNullifier, bytes32 domain) {
-    bytes32 pilNf1 = keccak256(abi.encodePacked(opNullifier, domain, "OP2PIL"));
-    bytes32 pilNf2 = keccak256(abi.encodePacked(opNullifier, domain, "OP2PIL"));
+    bytes32 pilNf1 = keccak256(abi.encodePacked(opNullifier, domain, "OP2Soul"));
+    bytes32 pilNf2 = keccak256(abi.encodePacked(opNullifier, domain, "OP2Soul"));
     
     assert pilNf1 == pilNf2, "Cross-domain nullifier must be deterministic";
 }
 
 /// @title Cross-domain direction matters
-/// @notice OP->PIL differs from PIL->OP
+/// @notice OP->Soul differs from Soul->OP
 rule crossDomainDirectionMatters(bytes32 nullifier, bytes32 domainA, bytes32 domainB) {
     require domainA != domainB;
     

@@ -1,6 +1,6 @@
 /**
- * @title PIL Security Invariants - Comprehensive Formal Verification
- * @notice Global security properties that must hold across all PIL contracts
+ * @title Soul Security Invariants - Comprehensive Formal Verification
+ * @notice Global security properties that must hold across all Soul contracts
  * @dev Run with: certoraRun certora/conf/verify_security.conf
  */
 

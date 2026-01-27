@@ -8,7 +8,7 @@ import "../interfaces/IPostQuantumCrypto.sol";
 
 /**
  * @title HybridCryptoVerifier
- * @author Soul Protocol - PIL v2
+ * @author Soul Protocol - Soul v2
  * @notice Hybrid cryptography combining classical (ECDSA/EdDSA) with post-quantum signatures
  * @dev Implements "belt and suspenders" approach for crypto-agile security:
  *
@@ -46,7 +46,7 @@ contract HybridCryptoVerifier is
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Domain separator for hybrid key derivation
-    bytes32 public constant HYBRID_DOMAIN = keccak256("PIL.HybridCrypto.v1");
+    bytes32 public constant HYBRID_DOMAIN = keccak256("Soul.HybridCrypto.v1");
 
     /// @notice Minimum security level (bits)
     uint256 public constant MIN_SECURITY_BITS = 128;
@@ -500,7 +500,7 @@ contract HybridCryptoVerifier is
         override
         returns (string memory scheme)
     {
-        return "PIL-Hybrid-v1";
+        return "Soul-Hybrid-v1";
     }
 
     /**

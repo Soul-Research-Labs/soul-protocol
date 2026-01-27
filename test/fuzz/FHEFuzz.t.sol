@@ -6,7 +6,7 @@ import "forge-std/console.sol";
 
 /**
  * @title FHEFuzz
- * @author Privacy Interoperability Layer
+ * @author Soul Protocol
  * @notice Comprehensive fuzz tests for FHE (Fully Homomorphic Encryption) contracts
  * @dev Tests FHE operations, access control, oracle consensus, and cross-chain bridges
  *

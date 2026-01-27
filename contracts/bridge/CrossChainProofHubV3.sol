@@ -7,7 +7,7 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {SecurityModule} from "../security/SecurityModule.sol";
 
 /// @title CrossChainProofHubV3
-/// @author PIL Protocol
+/// @author Soul Protocol
 /// @notice Production-ready cross-chain proof relay with optimistic verification and dispute resolution
 /// @dev Implements batching, challenge periods, and gas-efficient proof storage
 ///

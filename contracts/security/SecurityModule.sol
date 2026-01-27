@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 /**
  * @title SecurityModule
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Comprehensive security module providing zero-day attack mitigations
  * @dev Inherit this contract to add rate limiting, circuit breakers, flash loan guards,
  *      and withdrawal limits to any contract

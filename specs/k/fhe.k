@@ -1,5 +1,5 @@
 // K Framework Specification for FHE (Fully Homomorphic Encryption) Operations
-// Privacy Interoperability Layer
+// Soul Protocol
 // 
 // This specification formalizes:
 // - FHE type system and ciphertext operations

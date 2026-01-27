@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================================================
-# PIL Formal Verification Runner
-# Comprehensive verification suite for Soul Network Privacy Interoperability Layer
+# Soul Formal Verification Runner
+# Comprehensive verification suite for Soul Network Soul Protocol
 # ============================================================================
 
 set -e
@@ -112,7 +112,7 @@ run_all_verifications() {
     echo "================================"
     
     security_verifications=(
-        "verify_timelock.conf:PILTimelock"
+        "verify_timelock.conf:SoulTimelock"
         "verify_tee.conf:TEEAttestation"
         "verify_security.conf:GlobalSecurityInvariants"
     )
@@ -151,7 +151,7 @@ run_all_verifications() {
     relayer_verifications=(
         "verify_proofhub.conf:CrossChainProofHub"
         "verify_nullifier.conf:NullifierRegistry"
-        "verify_atomicswap.conf:PILAtomicSwap"
+        "verify_atomicswap.conf:SoulAtomicSwap"
     )
     
     for v in "${relayer_verifications[@]}"; do
@@ -251,7 +251,7 @@ generate_report() {
     local report_file="$OUTPUT_DIR/verification_report_${TIMESTAMP}.md"
     
     cat > "$report_file" << EOF
-# PIL Formal Verification Report
+# Soul Formal Verification Report
 
 **Generated:** $(date)
 **Verification Suite Version:** 3.0
@@ -309,7 +309,7 @@ EOF
 # ============================================================================
 
 usage() {
-    echo "PIL Formal Verification Runner"
+    echo "Soul Formal Verification Runner"
     echo ""
     echo "Usage: $0 [command] [options]"
     echo ""

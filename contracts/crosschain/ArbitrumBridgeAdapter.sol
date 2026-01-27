@@ -7,17 +7,17 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title ArbitrumBridgeAdapter
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Bridge adapter for Arbitrum One and Nova integration
  * @dev Enables cross-chain interoperability with Arbitrum L2 rollups
  *
  * ARBITRUM INTEGRATION:
  * ┌─────────────────────────────────────────────────────────────────────────┐
- * │                    PIL <-> Arbitrum Bridge                              │
+ * │                    Soul <-> Arbitrum Bridge                              │
  * ├─────────────────────────────────────────────────────────────────────────┤
  * │                                                                         │
  * │  ┌───────────────────┐           ┌───────────────────┐                 │
- * │  │   PIL Protocol    │           │   Arbitrum        │                 │
+ * │  │   Soul Protocol    │           │   Arbitrum        │                 │
  * │  │  (L1 Ethereum)    │           │   (L2 Rollup)     │                 │
  * │  │  ┌─────────────┐  │           │  ┌─────────────┐  │                 │
  * │  │  │ Delayed     │  │           │  │ ArbOS       │  │                 │

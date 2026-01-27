@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /**
  * @title RelayerStaking
- * @notice Staking and slashing mechanism for PIL relayers
+ * @notice Staking and slashing mechanism for Soul relayers
  * @dev Relayers must stake tokens to participate in the network
  */
 contract RelayerStaking is AccessControl, ReentrancyGuard {
@@ -17,7 +17,7 @@ contract RelayerStaking is AccessControl, ReentrancyGuard {
     bytes32 public constant SLASHER_ROLE = keccak256("SLASHER_ROLE");
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
-    // Staking token (PIL token)
+    // Staking token (Soul token)
     IERC20 public immutable stakingToken;
 
     // Minimum stake required to be an active relayer

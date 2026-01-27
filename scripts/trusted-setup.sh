@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# PIL Protocol - ZK Circuit Trusted Setup Ceremony
+# Soul Protocol - ZK Circuit Trusted Setup Ceremony
 # This script manages the trusted setup process for Groth16 circuits
 #
 # Usage: ./trusted-setup.sh [phase1|phase2|verify|all]
@@ -71,7 +71,7 @@ phase1_ceremony() {
     snarkjs powersoftau contribute \
         "$PTAU_DIR/pot${PTAU_POWER}_0000.ptau" \
         "$PTAU_DIR/pot${PTAU_POWER}_0001.ptau" \
-        --name="PIL Coordinator" \
+        --name="Soul Coordinator" \
         --entropy="$(openssl rand -hex 64)"
 
     log_success "Phase 1 initial contribution complete"
@@ -188,7 +188,7 @@ phase2_ceremony() {
     snarkjs zkey contribute \
         "$zkey_dir/${circuit_name}_0000.zkey" \
         "$zkey_dir/${circuit_name}_0001.zkey" \
-        --name="PIL Coordinator Phase2" \
+        --name="Soul Coordinator Phase2" \
         --entropy="$(openssl rand -hex 64)"
 
     log_success "Phase 2 initial setup complete for: $circuit_name"
@@ -318,7 +318,7 @@ setup_all() {
 
 # Print usage
 print_usage() {
-    echo "PIL Protocol - Trusted Setup Ceremony"
+    echo "Soul Protocol - Trusted Setup Ceremony"
     echo ""
     echo "Usage: ./trusted-setup.sh <command> [options]"
     echo ""

@@ -1,5 +1,5 @@
 /**
- * PIL SDK - Privacy Interoperability Layer
+ * Soul SDK - Soul Protocol
  * 
  * Optimized exports with tree-shaking support.
  * Use subpath imports for smaller bundles:
@@ -8,7 +8,7 @@
  * - @pil/sdk/react - React hooks
  */
 
-import { PILSDK } from "./client/PILSDK";
+import { SoulSDK } from "./client/SoulSDK";
 import { CryptoModule } from "./utils/crypto";
 import ProofTranslator, {
   parseSnarkjsProof,
@@ -32,13 +32,13 @@ import {
   MultiChainProofManager,
 } from "./proof-translator/adapters/ChainAdapter";
 
-// PIL v2 Primitives
+// Soul v2 Primitives
 import {
   ProofCarryingContainerClient,
   PolicyBoundProofsClient,
   ExecutionAgnosticStateCommitmentsClient,
   CrossDomainNullifierAlgebraClient,
-  PILv2ClientFactory,
+  Soulv2ClientFactory,
   // Types
   Container,
   ContainerCreationParams,
@@ -58,10 +58,10 @@ import {
   NullifierRegistrationParams,
   DerivedNullifierParams,
   NullifierStats,
-  PILv2Config,
+  Soulv2Config,
   TransactionOptions,
   ProofBundle,
-} from "./client/PILv2Primitives";
+} from "./client/Soulv2Primitives";
 
 // Bridge Adapters
 import {
@@ -121,7 +121,7 @@ export {
 
 export {
   // Core SDK
-  PILSDK,
+  SoulSDK,
   CryptoModule,
 
   // Proof Translator
@@ -164,14 +164,14 @@ export {
   BridgeTransferParams,
   BridgeTransferResult,
 
-  // PIL v2 Primitives
+  // Soul v2 Primitives
   ProofCarryingContainerClient,
   PolicyBoundProofsClient,
   ExecutionAgnosticStateCommitmentsClient,
   CrossDomainNullifierAlgebraClient,
-  PILv2ClientFactory,
+  Soulv2ClientFactory,
 
-  // PIL v2 Types
+  // Soul v2 Types
   Container,
   ContainerCreationParams,
   VerificationResult,
@@ -190,7 +190,7 @@ export {
   NullifierRegistrationParams,
   DerivedNullifierParams,
   NullifierStats,
-  PILv2Config,
+  Soulv2Config,
   TransactionOptions,
   ProofBundle,
 };

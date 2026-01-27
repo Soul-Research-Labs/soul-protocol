@@ -458,7 +458,7 @@ Computation is inherently async:
 
 | Soul Component | JAM Integration |
 |----------------|-----------------|
-| `PILKernelProof` | Submits fragments to `JoinableConfidentialComputation` |
+| `SoulKernelProof` | Submits fragments to `JoinableConfidentialComputation` |
 | `SoulControlPlane` | Uses `AccumulatedProofState` for state |
 | `PolicyEngine` | Replaced/augmented by `ExecutionIndifferentPolicyEngine` |
 | `ParallelKernelVerifier` | Works with `StatelessKernelVerifier` |

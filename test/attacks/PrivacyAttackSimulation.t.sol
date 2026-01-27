@@ -5,7 +5,7 @@ import {Test, console2} from "forge-std/Test.sol";
 
 /**
  * @title PrivacyAttackSimulation
- * @notice Simulates attacks against PIL privacy contracts
+ * @notice Simulates attacks against Soul privacy contracts
  * @dev Tests resilience against known privacy attack vectors
  */
 contract PrivacyAttackSimulation is Test {

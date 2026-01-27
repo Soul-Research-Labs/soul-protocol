@@ -1,8 +1,8 @@
-# Post-Quantum Cryptography (PQC) for PIL v2
+# Post-Quantum Cryptography (PQC) for Soul v2
 
 ## Overview
 
-The Privacy Interoperability Layer (PIL) v2 includes comprehensive post-quantum cryptography support to protect against future quantum computer attacks. This implementation follows NIST's post-quantum cryptography standards and provides multiple verification approaches optimized for different security and cost requirements.
+The Soul Protocol (Soul) v2 includes comprehensive post-quantum cryptography support to protect against future quantum computer attacks. This implementation follows NIST's post-quantum cryptography standards and provides multiple verification approaches optimized for different security and cost requirements.
 
 ## Threat Model
 
@@ -12,7 +12,7 @@ The Privacy Interoperability Layer (PIL) v2 includes comprehensive post-quantum 
 2. **Grover's Algorithm**: Reduces symmetric key security by half
 3. **Harvest-Now-Decrypt-Later**: Adversaries collect encrypted data today to decrypt with future quantum computers
 
-### Why PQC for PIL?
+### Why PQC for Soul?
 
 - Cross-chain messages may be archived indefinitely
 - Long-term confidentiality requirements for encrypted containers
@@ -237,7 +237,7 @@ function verifyDilithium(
     bytes calldata message
 ) external returns (bool) {
     // Use EVM precompile when available
-    return DILITHIUM_PRECOMPILE.verify(signature, publicKey, message);
+    return DILITHIUM_PRECOMSoulE.verify(signature, publicKey, message);
 }
 ```
 

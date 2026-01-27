@@ -7,7 +7,7 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title CrossL2Atomicity
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Cross-L2 atomic operations with Superchain interop and Arbitrum Nitro
  * @dev Implements atomic cross-L2 transactions without L1 settlement
  *

@@ -1,5 +1,5 @@
 // K Framework Formal Specification for Base (OP Stack L2)
-// Privacy Interoperability Layer (PIL) - Base Bridge Formalization
+// Soul Protocol (Soul) - Base Bridge Formalization
 
 module BASE-TYPES
     imports INT
@@ -144,10 +144,10 @@ module BASE-KECCAK
     rule deriveBaseNullifier(MessageId, Domain, Timestamp) =>
         keccak256(MessageId +Bytes Domain +Bytes Int2Bytes(Timestamp, BE, Unsigned) +Bytes b"BASE_NULLIFIER")
 
-    // Derive cross-domain PIL nullifier
-    syntax Bytes ::= derivePILNullifier(Bytes, Bytes) [function]
-    rule derivePILNullifier(BaseNullifier, Domain) =>
-        keccak256(BaseNullifier +Bytes Domain +Bytes b"BASE2PIL")
+    // Derive cross-domain Soul nullifier
+    syntax Bytes ::= deriveSoulNullifier(Bytes, Bytes) [function]
+    rule deriveSoulNullifier(BaseNullifier, Domain) =>
+        keccak256(BaseNullifier +Bytes Domain +Bytes b"BASE2Soul")
 
 endmodule
 
@@ -226,7 +226,7 @@ module BASE-BRIDGE-SECURITY
     syntax Bool ::= crossDomainNullifierDeterministic(Bytes, Bytes) [function]
     rule crossDomainNullifierDeterministic(MsgId1, MsgId2) =>
         (MsgId1 ==K MsgId2) impliesBool
-        (deriveBaseNullifier(MsgId1, b"PIL", 0) ==K deriveBaseNullifier(MsgId2, b"PIL", 0))
+        (deriveBaseNullifier(MsgId1, b"Soul", 0) ==K deriveBaseNullifier(MsgId2, b"Soul", 0))
 
     // INVARIANT 4: Different messages produce different nullifiers
     syntax Bool ::= differentMessagesUniqueNullifiers(Bytes, Bytes, Bytes) [function]
@@ -250,7 +250,7 @@ module BASE-BRIDGE-SECURITY
     syntax Bool ::= crossDomainDirectionMatters(Bytes, Bytes, Bytes) [function]
     rule crossDomainDirectionMatters(Nf, DomainA, DomainB) =>
         (DomainA =/=K DomainB) impliesBool
-        (derivePILNullifier(Nf, DomainA) =/=K derivePILNullifier(Nf, DomainB))
+        (deriveSoulNullifier(Nf, DomainA) =/=K deriveSoulNullifier(Nf, DomainB))
 
     // INVARIANT 9: CCTP domain validity
     syntax Bool ::= cctpDomainValid(Int) [function]
@@ -317,7 +317,7 @@ module BASE-BRIDGE
          </base>
          requires isWithdrawalCompletable(W[WId], T)
           andBool nullifierUnique(NullifierHash, Nfs)
-         where NullifierHash = deriveBaseNullifier(WId, b"PIL", T)
+         where NullifierHash = deriveBaseNullifier(WId, b"Soul", T)
 
     // CCTP Transfer (USDC)
     rule <base>

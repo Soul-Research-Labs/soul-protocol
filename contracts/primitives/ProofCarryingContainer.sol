@@ -8,7 +8,7 @@ import "../interfaces/IProofVerifier.sol";
 import "../verifiers/VerifierRegistry.sol";
 
 /// @title ProofCarryingContainer (PC³)
-/// @author Soul Protocol - PIL v2
+/// @author Soul Protocol - Soul v2
 /// @notice Self-authenticating confidential containers that carry their own correctness and policy proofs
 /// @dev MVP Implementation - Encrypted state that is portable and verifiable without external context
 ///

@@ -10,7 +10,7 @@ import "../interfaces/IProofVerifier.sol";
 import "../verifiers/VerifierRegistry.sol";
 
 /// @title ProofCarryingContainerUpgradeable (PC³)
-/// @author Soul Protocol - PIL v2
+/// @author Soul Protocol - Soul v2
 /// @notice Upgradeable version of PC³ using UUPS proxy pattern
 /// @dev Self-authenticating confidential containers with embedded ZK proofs
 contract ProofCarryingContainerUpgradeable is

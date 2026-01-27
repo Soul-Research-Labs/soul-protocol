@@ -1,7 +1,7 @@
 {
   "name": "@pil/sdk",
   "version": "1.0.0",
-  "description": "Privacy Interoperability Layer SDK - Cross-chain privacy middleware with post-quantum cryptography for Web3",
+  "description": "Soul Protocol SDK - Cross-chain privacy middleware with post-quantum cryptography for Web3",
   "main": "dist/index.js",
   "module": "dist/esm/index.js",
   "types": "dist/index.d.ts",
@@ -89,7 +89,7 @@
     "hybrid-signatures",
     "quantum-resistant"
   ],
-  "author": "PIL Team",
+  "author": "Soul Team",
   "license": "MIT",
   "homepage": "https://github.com/pil-project/pil-sdk#readme",
   "bugs": {

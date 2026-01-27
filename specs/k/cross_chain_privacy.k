@@ -2,7 +2,7 @@
  * K Framework Formal Specification for Cross-Chain Privacy
  *
  * @title Cross-Chain Privacy Algebra Specification
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Formal verification of cross-chain privacy primitives
  *
  * MODULES:
@@ -24,7 +24,7 @@ module CROSS-CHAIN-PRIVACY-SYNTAX
 
     syntax ChainDomain ::= chainDomain(Int, Bytes)   // (chainId, domainTag)
     syntax NullifierType ::= "MONERO" | "ZCASH" | "SECRET" | "OASIS" | "RAILGUN" 
-                           | "TORNADO" | "AZTEC" | "PIL_NATIVE"
+                           | "TORNADO" | "AZTEC" | "Soul_NATIVE"
 
     // =========================================================================
     // NULLIFIER TYPES
@@ -36,7 +36,7 @@ module CROSS-CHAIN-PRIVACY-SYNTAX
         ChainDomain,    // source domain
         ChainDomain     // target domain
     )
-    syntax PILBinding ::= pilBinding(Nullifier, Bytes)   // (sourceNf, pilTag)
+    syntax SoulBinding ::= pilBinding(Nullifier, Bytes)   // (sourceNf, pilTag)
 
     // =========================================================================
     // STEALTH ADDRESS TYPES
@@ -109,7 +109,7 @@ module CROSS-CHAIN-PRIVACY-SYNTAX
     // Nullifier operations
     syntax Bytes ::= deriveNullifier(Bytes, Int, Int)           [function]
     syntax Bytes ::= deriveCrossDomainNullifier(Bytes, ChainDomain, ChainDomain)  [function]
-    syntax Bytes ::= derivePILBinding(Bytes)                    [function]
+    syntax Bytes ::= deriveSoulBinding(Bytes)                    [function]
     syntax Bool ::= isNullifierValid(Nullifier)                 [function]
     syntax Bool ::= areNullifiersLinked(Nullifier, Nullifier)   [function]
 
@@ -142,11 +142,11 @@ module NULLIFIER-ALGEBRA
 
     syntax Bytes ::= "NULLIFIER_DOMAIN"      [function]
     syntax Bytes ::= "CROSS_DOMAIN_TAG"      [function]
-    syntax Bytes ::= "PIL_BINDING_TAG"       [function]
+    syntax Bytes ::= "Soul_BINDING_TAG"       [function]
 
-    rule NULLIFIER_DOMAIN => Keccak256(b"PIL_UNIFIED_NULLIFIER_V1")
+    rule NULLIFIER_DOMAIN => Keccak256(b"Soul_UNIFIED_NULLIFIER_V1")
     rule CROSS_DOMAIN_TAG => Keccak256(b"CROSS_DOMAIN")
-    rule PIL_BINDING_TAG => Keccak256(b"PIL_BINDING")
+    rule Soul_BINDING_TAG => Keccak256(b"Soul_BINDING")
 
     // =========================================================================
     // NULLIFIER DERIVATION
@@ -175,11 +175,11 @@ module NULLIFIER-ALGEBRA
                   CROSS_DOMAIN_TAG)
 
     /**
-     * PIL binding - canonical identifier across all chains
-     * pilBinding = H(nullifier || PIL_BINDING_TAG)
+     * Soul binding - canonical identifier across all chains
+     * pilBinding = H(nullifier || Soul_BINDING_TAG)
      */
-    rule derivePILBinding(NULLIFIER) =>
-        Keccak256(NULLIFIER +Bytes PIL_BINDING_TAG)
+    rule deriveSoulBinding(NULLIFIER) =>
+        Keccak256(NULLIFIER +Bytes Soul_BINDING_TAG)
 
     // =========================================================================
     // NULLIFIER VALIDATION
@@ -189,10 +189,10 @@ module NULLIFIER-ALGEBRA
         lengthBytes(NF) ==Int 32 andBool NF =/=Bytes b""
 
     /**
-     * Two nullifiers are linked if they share the same PIL binding
+     * Two nullifiers are linked if they share the same Soul binding
      */
     rule areNullifiersLinked(nullifier(NF1), nullifier(NF2)) =>
-        derivePILBinding(NF1) ==Bytes derivePILBinding(NF2)
+        deriveSoulBinding(NF1) ==Bytes deriveSoulBinding(NF2)
 
 endmodule
 
@@ -205,7 +205,7 @@ module STEALTH-ADDRESS-ALGEBRA
     // =========================================================================
 
     syntax Bytes ::= "STEALTH_DOMAIN"    [function]
-    rule STEALTH_DOMAIN => Keccak256(b"PIL_STEALTH_ADDRESS_V1")
+    rule STEALTH_DOMAIN => Keccak256(b"Soul_STEALTH_ADDRESS_V1")
 
     // =========================================================================
     // ECDH SHARED SECRET
@@ -436,13 +436,13 @@ module CROSS-CHAIN-PRIVACY-SECURITY
                 deriveCrossDomainNullifier(NF, DOMAIN_B, DOMAIN_A)
 
     /**
-     * INVARIANT: PIL Binding Determinism
+     * INVARIANT: Soul Binding Determinism
      * 
-     * Same nullifier always produces same PIL binding
+     * Same nullifier always produces same Soul binding
      */
     rule [pil-binding-determinism]:
-        <k> checkPILBindingDeterminism(NF) => true </k>
-        ensures derivePILBinding(NF) ==Bytes derivePILBinding(NF)
+        <k> checkSoulBindingDeterminism(NF) => true </k>
+        ensures deriveSoulBinding(NF) ==Bytes deriveSoulBinding(NF)
 
     /**
      * INVARIANT: Stealth Address Unlinkability

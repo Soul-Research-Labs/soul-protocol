@@ -5,7 +5,7 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /// @title NullifierRegistryV3
-/// @author PIL Protocol
+/// @author Soul Protocol
 /// @notice Production-ready nullifier registry with merkle tree support for light client verification
 /// @dev Implements incremental merkle tree, cross-chain sync, and efficient batch operations
 contract NullifierRegistryV3 is AccessControl, Pausable {

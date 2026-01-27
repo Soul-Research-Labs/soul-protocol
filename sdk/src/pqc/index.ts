@@ -1,7 +1,7 @@
 /**
- * PIL Protocol - Post-Quantum Cryptography SDK
+ * Soul Protocol - Post-Quantum Cryptography SDK
  * 
- * This module provides TypeScript bindings for PIL's post-quantum
+ * This module provides TypeScript bindings for Soul's post-quantum
  * cryptographic primitives, including Dilithium signatures, SPHINCS+,
  * and Kyber key encapsulation.
  */

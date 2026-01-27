@@ -1,4 +1,4 @@
-# PIL Project Context
+# Soul Project Context
 
 Cross-chain ZK privacy middleware for confidential state transfer across L2 networks.
 
@@ -22,7 +22,7 @@ docs/          # Documentation
 ## Key Contracts
 - `CrossChainProofHubV3` - Main proof aggregation hub
 - `ZKBoundStateLocks` - Cross-chain state locks with ZK unlock
-- `PILAtomicSwapV2` - Private atomic swaps
+- `SoulAtomicSwapV2` - Private atomic swaps
 - `UnifiedNullifierManager` - Cross-domain nullifier tracking
 - `StealthAddressRegistry` - ERC-5564 stealth addresses
 

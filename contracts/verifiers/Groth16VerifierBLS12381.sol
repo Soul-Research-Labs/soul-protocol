@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 /// @title Groth16VerifierBLS12381
-/// @author PIL Protocol
+/// @author Soul Protocol
 /// @notice Groth16 verifier for BLS12-381 curve using EIP-2537 precompiles
 /// @dev Uses BLS12-381 precompiles (0x0a-0x12) for pairing operations
 /// @notice EIP-2537 is expected to be active on Ethereum post-Pectra upgrade

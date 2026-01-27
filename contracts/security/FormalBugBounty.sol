@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /**
  * @title FormalBugBounty
- * @author PIL Security Team
+ * @author Soul Security Team
  * @notice On-chain bug bounty program with automated payouts and responsible disclosure
  * @dev Implements formal verification-backed bounty tiers and cryptographic disclosure
  */
@@ -52,7 +52,7 @@ contract FormalBugBounty is AccessControl, ReentrancyGuard, Pausable {
         bytes32 id;
         address submitter;
         bytes32 commitmentHash; // Hash of encrypted report
-        bytes encryptedReport; // Encrypted with PIL public key
+        bytes encryptedReport; // Encrypted with Soul public key
         Severity severity;
         BountyStatus status;
         DisclosurePhase disclosure;
@@ -123,7 +123,7 @@ contract FormalBugBounty is AccessControl, ReentrancyGuard, Pausable {
     uint256 public reservedForPayouts;
     uint256 public totalPaidOut;
 
-    // PIL public key for encrypted submissions
+    // Soul public key for encrypted submissions
     bytes public pilPublicKey;
 
     // Statistics
@@ -234,7 +234,7 @@ contract FormalBugBounty is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Submit a bug bounty report
-     * @param encryptedReport Report encrypted with PIL public key
+     * @param encryptedReport Report encrypted with Soul public key
      * @param severity Claimed severity level
      * @param affectedContracts List of affected contract addresses
      * @param proofOfConcept Hash of proof of concept
@@ -609,7 +609,7 @@ contract FormalBugBounty is AccessControl, ReentrancyGuard, Pausable {
     // ============ Admin Functions ============
 
     /**
-     * @notice Update PIL public key for encrypted submissions
+     * @notice Update Soul public key for encrypted submissions
      * @param newKey New public key
      */
     function updatePublicKey(

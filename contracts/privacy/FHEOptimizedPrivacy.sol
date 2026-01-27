@@ -27,7 +27,7 @@ contract FHEOptimizedPrivacy is AccessControl, ReentrancyGuard, Pausable {
     bytes32 public constant ORACLE_ROLE = keccak256("ORACLE_ROLE");
 
     /// @notice Domain separator
-    bytes32 public constant FHE_OPT_DOMAIN = keccak256("PIL_FHE_OPTIMIZED_V1");
+    bytes32 public constant FHE_OPT_DOMAIN = keccak256("Soul_FHE_OPTIMIZED_V1");
 
     /// @notice Maximum batch size for operations
     uint256 public constant MAX_BATCH_SIZE = 256;

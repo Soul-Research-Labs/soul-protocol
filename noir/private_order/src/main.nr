@@ -1,7 +1,7 @@
 use std::hash::poseidon;
 
 /// @title PrivateOrderCircuit
-/// @notice Private Order Circuit for PIL Exchange
+/// @notice Private Order Circuit for Soul Exchange
 /// 
 /// Proves:
 /// 1. Order commitment is correctly formed

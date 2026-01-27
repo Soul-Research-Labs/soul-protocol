@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 
 /**
  * @title BitVMVerifier
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice On-chain verification for BitVM fraud proofs
  * @dev Verifies gate computations, bit commitments, and Merkle proofs for circuits
  *

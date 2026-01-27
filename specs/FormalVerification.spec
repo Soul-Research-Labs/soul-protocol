@@ -1,11 +1,11 @@
 /**
- * @title PIL v2 Formal Verification Specifications
+ * @title Soul v2 Formal Verification Specifications
  * @author Soul Protocol
- * @notice Certora-style specifications for formal verification of PIL v2 contracts
+ * @notice Certora-style specifications for formal verification of Soul v2 contracts
  * @dev These specifications define invariants, pre/post conditions, and safety properties
  *
  * To run verification with Certora:
- * $ certoraRun specs/PIL.spec --contract ProofCarryingContainer
+ * $ certoraRun specs/Soul.spec --contract ProofCarryingContainer
  *
  * To run verification with Scribble:
  * $ scribble contracts/primitives/ProofCarryingContainer.sol --output-mode files
@@ -197,11 +197,11 @@
  */
 
 /*//////////////////////////////////////////////////////////////
-                    PILV2ORCHESTRATOR
+                    SoulV2ORCHESTRATOR
 //////////////////////////////////////////////////////////////*/
 
 /**
- * INVARIANTS for PILv2Orchestrator
+ * INVARIANTS for Soulv2Orchestrator
  *
  * INV-ORCH-001: Contract references are immutable
  *   □(pc3 = initial_pc3 ∧ pbp = initial_pbp ∧ 
@@ -218,7 +218,7 @@
  */
 
 /**
- * SAFETY PROPERTIES for PILv2Orchestrator
+ * SAFETY PROPERTIES for Soulv2Orchestrator
  *
  * SAFE-ORCH-001: Atomic transition guarantee
  *   createCoordinatedTransition(t) successful ⟹
@@ -235,11 +235,11 @@
  */
 
 /*//////////////////////////////////////////////////////////////
-                    PILTIMELOCK
+                    SoulTIMELOCK
 //////////////////////////////////////////////////////////////*/
 
 /**
- * INVARIANTS for PILTimelock
+ * INVARIANTS for SoulTimelock
  *
  * INV-TL-001: Delay bounds
  *   MIN_DELAY_FLOOR ≤ minDelay ≤ MAX_DELAY
@@ -262,7 +262,7 @@
  */
 
 /**
- * SAFETY PROPERTIES for PILTimelock
+ * SAFETY PROPERTIES for SoulTimelock
  *
  * SAFE-TL-001: Execution requires sufficient delay
  *   ∀ op: execute(op) successful ⟹ 
@@ -327,9 +327,9 @@
  *     "contracts/primitives/PolicyBoundProofs.sol",
  *     "contracts/primitives/ExecutionAgnosticStateCommitments.sol",
  *     "contracts/primitives/CrossDomainNullifierAlgebra.sol",
- *     "contracts/security/PILTimelock.sol"
+ *     "contracts/security/SoulTimelock.sol"
  *   ],
- *   "verify": "ProofCarryingContainer:specs/PIL.spec",
+ *   "verify": "ProofCarryingContainer:specs/Soul.spec",
  *   "rule_sanity": "basic",
  *   "multi_assert_check": true,
  *   "optimistic_loop": true,

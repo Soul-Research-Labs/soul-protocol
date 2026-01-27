@@ -16,7 +16,7 @@ contract NovaRecursiveVerifier is AccessControl, ReentrancyGuard {
     // =========================================================================
 
     /// @notice Domain separator
-    bytes32 public constant NOVA_DOMAIN = keccak256("PIL_NOVA_IVC_V1");
+    bytes32 public constant NOVA_DOMAIN = keccak256("Soul_NOVA_IVC_V1");
 
     /// @notice Pasta curve (Pallas) field modulus
     uint256 public constant PALLAS_MODULUS =

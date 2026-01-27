@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Privacy Interoperability Layer - ExecutionAgnosticStateCommitments (EASC)
+ * Soul Protocol - ExecutionAgnosticStateCommitments (EASC)
  */
 
 methods {

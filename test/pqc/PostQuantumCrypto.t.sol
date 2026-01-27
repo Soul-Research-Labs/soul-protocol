@@ -10,7 +10,7 @@ import "../../contracts/pqc/lib/HybridSignatureLib.sol";
 
 /**
  * @title PostQuantumCryptoTest
- * @notice Comprehensive tests for PIL post-quantum cryptography implementation
+ * @notice Comprehensive tests for Soul post-quantum cryptography implementation
  */
 contract PostQuantumCryptoTest is Test {
     DilithiumVerifier public dilithiumVerifier;

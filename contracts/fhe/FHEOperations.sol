@@ -6,7 +6,7 @@ import "./FHETypes.sol";
 
 /**
  * @title FHEOperations
- * @author Privacy Interoperability Layer
+ * @author Soul Protocol
  * @notice Library for FHE operations with type-safe wrappers
  * @dev Provides convenient functions for encrypted computations via FHEGateway
  *

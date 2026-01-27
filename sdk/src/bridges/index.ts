@@ -1,5 +1,5 @@
 /**
- * PIL SDK - Bridge Adapters Module
+ * Soul SDK - Bridge Adapters Module
  * 
  * Provides TypeScript interfaces and implementations for all supported bridge adapters
  */

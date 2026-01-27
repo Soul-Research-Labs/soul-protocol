@@ -261,10 +261,10 @@ module LINEA-SYNTAX
     // Semantically: keccak256(messageHash || blockNumber || commitment || "LINEA_NULLIFIER")
 
     syntax Bytes ::= deriveCrossDomainNullifier(Bytes, Int)  [function]  // lineaNullifier, targetDomain
-    // Semantically: keccak256(lineaNullifier || targetDomain || "LINEA2PIL")
+    // Semantically: keccak256(lineaNullifier || targetDomain || "LINEA2Soul")
 
-    syntax Bytes ::= derivePILBinding(Bytes, Bytes)  [function]  // lineaNullifier, pilDomain
-    // Semantically: keccak256(lineaNullifier || pilDomain || "PIL_BINDING")
+    syntax Bytes ::= deriveSoulBinding(Bytes, Bytes)  [function]  // lineaNullifier, pilDomain
+    // Semantically: keccak256(lineaNullifier || pilDomain || "Soul_BINDING")
 
     // =========================================================================
     // MESSAGE FEE CALCULATION

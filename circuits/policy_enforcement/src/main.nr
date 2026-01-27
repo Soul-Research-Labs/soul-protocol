@@ -12,7 +12,7 @@
 //! - Selective disclosure for auditing
 //! - Multi-party policy satisfaction
 //!
-//! PIL v2 INTEGRATION:
+//! Soul v2 INTEGRATION:
 //! - Extends PBP (Policy Bound Proofs)
 //! - Works with ZK-SLocks for policy-gated unlocks
 //! - Compatible with PDIA (Privacy Dial Architecture)

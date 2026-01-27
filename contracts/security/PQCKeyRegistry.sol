@@ -8,9 +8,9 @@ import "../interfaces/IPostQuantumCrypto.sol";
 
 /**
  * @title PQCKeyRegistry
- * @author Soul Protocol - PIL v2
+ * @author Soul Protocol - Soul v2
  * @notice Registry for post-quantum public keys with lifecycle management
- * @dev Manages PQC key registration, rotation, and revocation for the PIL ecosystem
+ * @dev Manages PQC key registration, rotation, and revocation for the Soul ecosystem
  *
  * Features:
  * - Multi-algorithm key support (Dilithium, SPHINCS+, Falcon, Kyber)

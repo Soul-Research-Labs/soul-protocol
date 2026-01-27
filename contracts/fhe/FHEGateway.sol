@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title FHEGateway
- * @author Privacy Interoperability Layer
+ * @author Soul Protocol
  * @notice Gateway contract for Full Homomorphic Encryption (FHE) coprocessor integration
  * @dev Implements fhEVM-compatible interface for TFHE-rs coprocessor
  *

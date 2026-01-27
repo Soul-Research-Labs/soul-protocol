@@ -5,7 +5,7 @@ import {Test, console2} from "forge-std/Test.sol";
 
 /**
  * @title PrivacyInvariants
- * @notice Invariant tests for PIL privacy contracts
+ * @notice Invariant tests for Soul privacy contracts
  * @dev Tests critical privacy invariants using Foundry's invariant testing
  */
 contract PrivacyInvariants is Test {

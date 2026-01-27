@@ -1,6 +1,6 @@
-# Getting Started with PIL
+# Getting Started with Soul
 
-> **Privacy Interoperability Layer** - Cross-chain privacy infrastructure for Ethereum L2s
+> **Soul Protocol** - Cross-chain privacy infrastructure for Ethereum L2s
 
 [![npm](https://img.shields.io/badge/npm-@pil/sdk-blue.svg)](https://www.npmjs.com/package/@pil/sdk)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -48,8 +48,8 @@ npm install @pil/sdk
 ### From Source
 
 ```bash
-git clone https://github.com/soul-research-labs/PIL.git
-cd PIL
+git clone https://github.com/soul-research-labs/Soul.git
+cd Soul
 npm install
 npm run build
 ```
@@ -68,10 +68,10 @@ npx pil-sdk --version
 ### 1. Initialize the SDK
 
 ```typescript
-import { PILSDK } from '@pil/sdk';
+import { SoulSDK } from '@pil/sdk';
 
 // Create SDK instance
-const pil = new PILSDK({
+const pil = new SoulSDK({
   rpcUrl: 'https://eth-sepolia.g.alchemy.com/v2/YOUR_KEY',
   privateKey: process.env.PRIVATE_KEY,  // Optional: for signing transactions
   network: 'sepolia'
@@ -79,7 +79,7 @@ const pil = new PILSDK({
 
 // Connect to deployed contracts
 await pil.connect();
-console.log('✅ Connected to PIL Protocol');
+console.log('✅ Connected to Soul Protocol');
 ```
 
 ### 2. Create Your First ZK-Bound State Lock
@@ -131,7 +131,7 @@ console.log('🔓 State unlocked successfully!');
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    PIL CORE PRIMITIVES                           │
+│                    Soul CORE PRIMITIVES                           │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐           │
@@ -162,11 +162,11 @@ console.log('🔓 State unlocked successfully!');
 ## Complete Example: Private Cross-Chain Transfer
 
 ```typescript
-import { PILSDK, generateProof, BridgeFactory } from '@pil/sdk';
+import { SoulSDK, generateProof, BridgeFactory } from '@pil/sdk';
 
 async function privateTransfer() {
   // 1. Initialize SDK
-  const pil = new PILSDK({
+  const pil = new SoulSDK({
     rpcUrl: process.env.SEPOLIA_RPC_URL,
     privateKey: process.env.PRIVATE_KEY,
     network: 'sepolia'
@@ -235,7 +235,7 @@ privateTransfer().catch(console.error);
 ### Debug Mode
 
 ```typescript
-const pil = new PILSDK({
+const pil = new SoulSDK({
   rpcUrl: process.env.RPC_URL,
   privateKey: process.env.PRIVATE_KEY,
   network: 'sepolia',
@@ -277,7 +277,7 @@ BASE_RPC_URL=https://base-sepolia.g.alchemy.com/v2/YOUR_KEY
 ### Join the Community
 
 - 💬 [Discord](https://discord.gg/pil-network) - Get help, share ideas
-- 🐙 [GitHub Issues](https://github.com/soul-research-labs/PIL/issues) - Report bugs
+- 🐙 [GitHub Issues](https://github.com/soul-research-labs/Soul/issues) - Report bugs
 - 🐦 [Twitter](https://twitter.com/pil_protocol) - Latest updates
 
 ---

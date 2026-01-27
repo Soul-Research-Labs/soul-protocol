@@ -7,7 +7,7 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title LinearStateManager
- * @author Soul Protocol - Privacy Interoperability Layer
+ * @author Soul Protocol - Soul Protocol
  * @notice Enforces Aztec-Style Linear State Semantics for Cross-Chain State
  * @dev STATE IS CREATED, CONSUMED, NEVER MUTATED IN PLACE
  *

@@ -3,7 +3,7 @@ pragma solidity ^0.8.22;
 
 /**
  * @title SPHINCSPlusVerifier
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice On-chain verifier for SPHINCS+ (SLH-DSA) post-quantum signatures
  * @dev Implements verification for SPHINCS+ hash-based signatures.
  *      SPHINCS+ is stateless and based only on hash functions, making it
@@ -24,7 +24,7 @@ contract SPHINCSPlusVerifier is Ownable {
     // =============================================================================
 
     /// @notice Proposed precompile address for SPHINCS+ verification
-    address public constant SPHINCS_PRECOMPILE = address(0x0E);
+    address public constant SPHINCS_PRECOMSoulE = address(0x0E);
 
     /// @notice Parameter set sizes
     uint256 public constant SPHINCS_128S_PK_SIZE = 32;
@@ -208,7 +208,7 @@ contract SPHINCSPlusVerifier is Ownable {
             signature
         );
 
-        (bool success, bytes memory result) = SPHINCS_PRECOMPILE.staticcall(
+        (bool success, bytes memory result) = SPHINCS_PRECOMSoulE.staticcall(
             input
         );
 

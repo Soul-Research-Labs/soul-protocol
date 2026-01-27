@@ -11,7 +11,7 @@
 //! - Prove non-reuse without global registry
 //! - Link nullifiers for cross-chain auditing
 //!
-//! PIL v2 INTEGRATION:
+//! Soul v2 INTEGRATION:
 //! - Extends CDNA (Cross-Domain Nullifier Algebra)
 //! - Works with ZK-SLocks for cross-chain locks
 //! - Compatible with PC³ containers

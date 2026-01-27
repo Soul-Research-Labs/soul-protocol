@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Privacy Interoperability Layer - ConfidentialStateContainer
+ * Soul Protocol - ConfidentialStateContainer
  */
 
 using ConfidentialStateContainerV3 as csc;

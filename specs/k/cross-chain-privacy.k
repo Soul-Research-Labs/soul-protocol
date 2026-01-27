@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 /**
  * @title Cross-Chain Privacy K Framework Specification
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Formal specification for cross-chain privacy algebra
  */
 
@@ -129,7 +129,7 @@ module CROSS-CHAIN-PRIVACY-SEMANTICS
     syntax Hash ::= "STEALTH_DOMAIN" [function]
     syntax Hash ::= "RINGCT_DOMAIN" [function]
     syntax Hash ::= "CROSS_DOMAIN_TAG" [function]
-    syntax Hash ::= "PIL_BINDING_TAG" [function]
+    syntax Hash ::= "Soul_BINDING_TAG" [function]
 
     // ==========================================================================
     // STEALTH ADDRESS OPERATIONS
@@ -183,13 +183,13 @@ module CROSS-CHAIN-PRIVACY-SEMANTICS
         hash(concat(SourceNf, concat(intToBytes(SourceChain), concat(intToBytes(DestChain), "CROSS_DOMAIN"))))
 
     /**
-     * Derive PIL unified nullifier
-     * nf_pil = H(nf_source || domain || "PIL_BINDING")
+     * Derive Soul unified nullifier
+     * nf_pil = H(nf_source || domain || "Soul_BINDING")
      */
-    syntax Hash ::= derivePILNullifier(Hash, Hash) [function]
+    syntax Hash ::= deriveSoulNullifier(Hash, Hash) [function]
     
-    rule derivePILNullifier(SourceNf, Domain) =>
-        hash(concat(SourceNf, concat(Domain, "PIL_BINDING")))
+    rule deriveSoulNullifier(SourceNf, Domain) =>
+        hash(concat(SourceNf, concat(Domain, "Soul_BINDING")))
 
     // ==========================================================================
     // PEDERSEN COMMITMENT OPERATIONS
@@ -270,7 +270,7 @@ module CROSS-CHAIN-PRIVACY-SEMANTICS
         binding(
             nf(H, T, SrcChain),
             nf(deriveCrossDomainNullifier(H, SrcChain, DstChain), CROSS_DOMAIN, DstChain),
-            derivePILNullifier(H, chainDomainHash(SrcChain)),
+            deriveSoulNullifier(H, chainDomainHash(SrcChain)),
             SrcChain,
             DstChain
         )
@@ -282,7 +282,7 @@ module CROSS-CHAIN-PRIVACY-SEMANTICS
     
     rule verifyBinding(binding(SrcNf, DstNf, PilNf, SrcChain, DstChain)) =>
         nfHash(DstNf) ==K deriveCrossDomainNullifier(nfHash(SrcNf), SrcChain, DstChain)
-        andBool PilNf ==K derivePILNullifier(nfHash(SrcNf), chainDomainHash(SrcChain))
+        andBool PilNf ==K deriveSoulNullifier(nfHash(SrcNf), chainDomainHash(SrcChain))
 
     // ==========================================================================
     // PRIVACY LEVEL OPERATIONS
@@ -382,9 +382,9 @@ module CROSS-CHAIN-PRIVACY-PROPERTIES
         [trusted]
 
     /**
-     * PROPERTY 6: PIL nullifiers are unique per domain
+     * PROPERTY 6: Soul nullifiers are unique per domain
      */
-    claim derivePILNullifier(Nf, Domain1) =/=K derivePILNullifier(Nf, Domain2)
+    claim deriveSoulNullifier(Nf, Domain1) =/=K deriveSoulNullifier(Nf, Domain2)
         requires Domain1 =/=K Domain2
         [trusted]
 

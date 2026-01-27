@@ -3,7 +3,7 @@ pragma solidity ^0.8.22;
 
 /**
  * @title PQCProtectedLock
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Extension for ZK-SLocks with post-quantum cryptographic protection
  * @dev Adds hybrid signature verification to lock operations, providing
  *      quantum-resistant security for high-value or long-duration locks.
@@ -183,7 +183,7 @@ contract PQCProtectedLock is AccessControl, Pausable, ReentrancyGuard {
                 keccak256(
                     "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
                 ),
-                keccak256("PILPQCProtectedLock"),
+                keccak256("SoulPQCProtectedLock"),
                 keccak256("1"),
                 block.chainid,
                 address(this)

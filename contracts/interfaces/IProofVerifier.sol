@@ -5,7 +5,7 @@ pragma solidity ^0.8.20;
  * @title IProofVerifier
  * @author Soul Protocol
  * @notice Standard interface for ZK proof verifiers
- * @dev All PIL v2 proof verifiers must implement this interface
+ * @dev All Soul v2 proof verifiers must implement this interface
  */
 interface IProofVerifier {
     /**

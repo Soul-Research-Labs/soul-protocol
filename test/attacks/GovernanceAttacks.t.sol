@@ -6,7 +6,7 @@ import "forge-std/console.sol";
 
 /**
  * @title Governance Attack Simulation Tests
- * @notice Tests governance attack vectors against PIL contracts
+ * @notice Tests governance attack vectors against Soul contracts
  * @dev Part of security:attack test suite
  */
 contract GovernanceAttacks is Test {

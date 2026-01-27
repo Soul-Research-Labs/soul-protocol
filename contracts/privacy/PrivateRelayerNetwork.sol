@@ -8,7 +8,7 @@ import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol
 
 /**
  * @title PrivateRelayerNetwork
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Privacy-preserving relayer network with commit-reveal MEV protection
  * @dev Implements stake-weighted VRF-based relayer selection and stealth fee payments
  *
@@ -77,7 +77,7 @@ contract PrivateRelayerNetwork is
     uint256 public constant MIN_RELAYERS = 3;
 
     /// @notice VRF domain separator
-    bytes32 public constant VRF_DOMAIN = keccak256("PIL_RELAYER_VRF_V1");
+    bytes32 public constant VRF_DOMAIN = keccak256("Soul_RELAYER_VRF_V1");
 
     /// @notice Cooldown period after slashing
     uint256 public constant SLASH_COOLDOWN = 1 days;

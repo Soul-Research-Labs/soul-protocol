@@ -7,7 +7,7 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title LayerZeroAdapter
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice LayerZero Ultra Light Node (ULN) integration for cross-chain messaging
  * @dev Implements LayerZero's ULN verification for enhanced cross-chain security
  *
@@ -18,7 +18,7 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
  * │  Source Chain                          Destination Chain        │
  * │  ┌────────────┐     ┌──────────┐      ┌────────────┐           │
  * │  │ OApp       │────▶│ Endpoint │─────▶│ OApp       │           │
- * │  │ (PIL)      │     │          │      │ (PIL)      │           │
+ * │  │ (Soul)      │     │          │      │ (Soul)      │           │
  * │  └────────────┘     └────┬─────┘      └────────────┘           │
  * │                          │                                      │
  * │                    ┌─────▼─────┐                                │
@@ -157,7 +157,7 @@ contract LayerZeroAdapter is ReentrancyGuard, AccessControl, Pausable {
     /// @notice DVN confirmations per message
     mapping(bytes32 => mapping(address => bool)) public dvnConfirmations;
 
-    /// @notice PIL proof hub on each chain
+    /// @notice Soul proof hub on each chain
     mapping(uint32 => address) public pilHubs;
 
     /*//////////////////////////////////////////////////////////////
@@ -413,9 +413,9 @@ contract LayerZeroAdapter is ReentrancyGuard, AccessControl, Pausable {
     }
 
     /**
-     * @notice Set PIL hub address for a chain
+     * @notice Set Soul hub address for a chain
      * @param eid Endpoint ID
-     * @param hub PIL hub address
+     * @param hub Soul hub address
      */
     function setPilHub(
         uint32 eid,

@@ -1,5 +1,5 @@
 #!/bin/bash
-# PIL Watchtower Deployment Script
+# Soul Watchtower Deployment Script
 # Deploys the anomaly detection watchtower infrastructure
 
 set -e
@@ -16,7 +16,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}╔═══════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║       PIL Watchtower Deployment Script                    ║${NC}"
+echo -e "${BLUE}║       Soul Watchtower Deployment Script                    ║${NC}"
 echo -e "${BLUE}╚═══════════════════════════════════════════════════════════╝${NC}"
 echo ""
 

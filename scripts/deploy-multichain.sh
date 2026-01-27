@@ -1,8 +1,8 @@
 #!/bin/bash
 # ==============================================================================
-# PIL v2 Multi-Chain Deployment Script
+# Soul v2 Multi-Chain Deployment Script
 # ==============================================================================
-# Deploys PIL v2 contracts to multiple EVM chains:
+# Deploys Soul v2 contracts to multiple EVM chains:
 # - Ethereum Mainnet
 # - Polygon
 # - Arbitrum One
@@ -133,7 +133,7 @@ verify_contracts() {
         "PolicyBoundProofs"
         "ExecutionAgnosticStateCommitments"
         "CrossDomainNullifierAlgebra"
-        "PILv2Orchestrator"
+        "Soulv2Orchestrator"
         "HomomorphicHiding"
         "ComposableRevocationProofs"
     )

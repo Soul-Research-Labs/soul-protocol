@@ -1,7 +1,7 @@
 [package]
 name = "proof_carrying_container"
 type = "bin"
-authors = ["Privacy Interoperability Layer"]
+authors = ["Soul Protocol"]
 compiler_version = ">=1.0.0"
 description = "Self-authenticating confidential containers (PC³) circuit"
 

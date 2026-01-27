@@ -1,10 +1,10 @@
-# @pil/sdk - Privacy Interoperability Layer SDK
+# @pil/sdk - Soul Protocol SDK
 
 [![npm version](https://badge.fury.io/js/%40pil%2Fsdk.svg)](https://www.npmjs.com/package/@pil/sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 
-The official TypeScript SDK for the Privacy Interoperability Layer (PIL) - a cross-chain privacy middleware with post-quantum cryptography support.
+The official TypeScript SDK for the Soul Protocol (Soul) - a cross-chain privacy middleware with post-quantum cryptography support.
 
 ## Features
 
@@ -31,15 +31,15 @@ pnpm add @pil/sdk
 ### Basic Usage
 
 ```typescript
-import { PILSDK, PQCClient, BridgeFactory } from '@pil/sdk';
+import { SoulSDK, PQCClient, BridgeFactory } from '@pil/sdk';
 import { ethers } from 'ethers';
 
 // Initialize the SDK
 const provider = new ethers.JsonRpcProvider('https://sepolia.infura.io/v3/YOUR_KEY');
 const signer = new ethers.Wallet('YOUR_PRIVATE_KEY', provider);
 
-// Create a PIL SDK instance
-const pil = new PILSDK({
+// Create a Soul SDK instance
+const pil = new SoulSDK({
   provider,
   signer,
   network: 'sepolia',
@@ -119,10 +119,10 @@ const solidity = createVerifyCalldata(proof, publicSignals);
 ### React Hooks
 
 ```typescript
-import { usePIL, usePQC, useBridge } from '@pil/sdk/react';
+import { useSoul, usePQC, useBridge } from '@pil/sdk/react';
 
 function MyComponent() {
-  const { sdk, loading, error } = usePIL();
+  const { sdk, loading, error } = useSoul();
   const { pqcEnabled, configureAccount } = usePQC();
   const { lock, unlock, status } = useBridge('cardano');
 
@@ -133,7 +133,7 @@ function MyComponent() {
 ## Modules
 
 ### Core
-- `PILSDK` - Main SDK entry point
+- `SoulSDK` - Main SDK entry point
 - `CryptoModule` - Cryptographic utilities
 
 ### Bridges
@@ -186,12 +186,12 @@ pil bridge status --id abc123 --chain cardano
 
 ```bash
 # Network configuration
-PIL_NETWORK=sepolia
-PIL_RPC_URL=https://sepolia.infura.io/v3/YOUR_KEY
+Soul_NETWORK=sepolia
+Soul_RPC_URL=https://sepolia.infura.io/v3/YOUR_KEY
 
 # Contract addresses
-PIL_REGISTRY_ADDRESS=0x...
-PIL_PQC_REGISTRY_ADDRESS=0x...
+Soul_REGISTRY_ADDRESS=0x...
+Soul_PQC_REGISTRY_ADDRESS=0x...
 
 # Bridge configuration
 CARDANO_RPC_URL=https://...

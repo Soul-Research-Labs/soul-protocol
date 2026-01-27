@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /// @title ProofAggregator
-/// @author PIL Protocol
+/// @author Soul Protocol
 /// @notice Aggregates multiple ZK proofs into a single proof for gas-efficient batch verification
 /// @dev Supports recursive proof aggregation and merkle-based batch verification
 contract ProofAggregator is AccessControl, ReentrancyGuard {

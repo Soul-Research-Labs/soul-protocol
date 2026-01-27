@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Certora CVL Specification for Arbitrum Bridge Adapter
-// Privacy Interoperability Layer (PIL) - Formal Verification
+// Soul Protocol (Soul) - Formal Verification
 
 /*
  * =============================================================================
@@ -329,16 +329,16 @@ rule nullifierConsumptionPermanent(bytes32 nullifier) {
 }
 
 /// @title Cross-domain nullifier binding determinism
-/// @notice Same Arbitrum nullifier + domain should always produce same PIL nullifier
+/// @notice Same Arbitrum nullifier + domain should always produce same Soul nullifier
 rule crossDomainNullifierDeterminism(bytes32 arbNullifier, bytes32 domain) {
-    bytes32 pilNf1 = keccak256(abi.encodePacked(arbNullifier, domain, "ARB2PIL"));
-    bytes32 pilNf2 = keccak256(abi.encodePacked(arbNullifier, domain, "ARB2PIL"));
+    bytes32 pilNf1 = keccak256(abi.encodePacked(arbNullifier, domain, "ARB2Soul"));
+    bytes32 pilNf2 = keccak256(abi.encodePacked(arbNullifier, domain, "ARB2Soul"));
     
     assert pilNf1 == pilNf2, "Cross-domain nullifier must be deterministic";
 }
 
 /// @title Cross-domain direction matters
-/// @notice ARB->PIL nullifier should differ from PIL->ARB
+/// @notice ARB->Soul nullifier should differ from Soul->ARB
 rule crossDomainDirectionMatters(bytes32 nullifier, bytes32 domainA, bytes32 domainB) {
     require domainA != domainB;
     

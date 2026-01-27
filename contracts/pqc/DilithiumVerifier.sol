@@ -3,7 +3,7 @@ pragma solidity ^0.8.22;
 
 /**
  * @title DilithiumVerifier
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice On-chain verifier for NIST ML-DSA (Dilithium) post-quantum signatures
  * @dev Implements verification for Dilithium3 and Dilithium5 parameter sets.
  *      This is a placeholder implementation that uses a precompile address.
@@ -23,7 +23,7 @@ contract DilithiumVerifier is Ownable {
 
     /// @notice Proposed precompile address for Dilithium verification
     /// @dev This would be assigned by an EIP in the future
-    address public constant DILITHIUM_PRECOMPILE = address(0x0D);
+    address public constant DILITHIUM_PRECOMSoulE = address(0x0D);
 
     /// @notice Dilithium3 public key size (bytes)
     uint256 public constant DILITHIUM3_PK_SIZE = 1952;
@@ -266,7 +266,7 @@ contract DilithiumVerifier is Ownable {
         uint256 gasToUse = gasOverride > 0 ? gasOverride : gasleft();
 
         // Call precompile
-        (bool success, bytes memory result) = DILITHIUM_PRECOMPILE.staticcall{
+        (bool success, bytes memory result) = DILITHIUM_PRECOMSoulE.staticcall{
             gas: gasToUse
         }(input);
 

@@ -1,8 +1,8 @@
 [package]
 name = "zk_slock"
 type = "bin"
-authors = ["PIL v2 Team"]
+authors = ["Soul v2 Team"]
 compiler_version = ">=0.30.0"
-description = "ZK-Bound State Lock Circuit - Core PIL v2 Primitive"
+description = "ZK-Bound State Lock Circuit - Core Soul v2 Primitive"
 
 [dependencies]

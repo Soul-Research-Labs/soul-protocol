@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 /**
  * @title SeraphisFullProtocol
  * @notice Full Seraphis protocol implementation tracking Monero's adoption
- * @dev Based on MRL-0015 Seraphis specification with PIL extensions:
+ * @dev Based on MRL-0015 Seraphis specification with Soul extensions:
  *      - Full Jamtis addressing with subaddress support
  *      - Grootle membership proofs
  *      - Forward secrecy via ephemeral keys
@@ -25,7 +25,7 @@ contract SeraphisFullProtocol is AccessControl, ReentrancyGuard, Pausable {
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
 
     /// @notice Domain separator
-    bytes32 public constant SERAPHIS_DOMAIN = keccak256("PIL_SERAPHIS_FULL_V1");
+    bytes32 public constant SERAPHIS_DOMAIN = keccak256("Soul_SERAPHIS_FULL_V1");
 
     /// @notice Ed25519 curve order (for Monero compatibility)
     uint256 public constant ED25519_ORDER =

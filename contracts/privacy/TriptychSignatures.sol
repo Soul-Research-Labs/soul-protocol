@@ -17,7 +17,7 @@ contract TriptychSignatures is AccessControl, ReentrancyGuard {
     // =========================================================================
 
     /// @notice Domain separator for Triptych
-    bytes32 public constant TRIPTYCH_DOMAIN = keccak256("PIL_TRIPTYCH_V1");
+    bytes32 public constant TRIPTYCH_DOMAIN = keccak256("Soul_TRIPTYCH_V1");
 
     /// @notice BN254 curve order
     uint256 public constant CURVE_ORDER =

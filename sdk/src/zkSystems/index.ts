@@ -1,5 +1,5 @@
 /**
- * PIL Multi-ZK System SDK
+ * Soul Multi-ZK System SDK
  * 
  * Provides unified interface for multiple ZK proving systems:
  * - SP1 (Succinct)
@@ -52,7 +52,7 @@ export interface ZKSystemConfig {
 // Abstract Base Client
 // ============================================
 
-export abstract class PILZKClient {
+export abstract class SoulZKClient {
     protected config: ZKSystemConfig;
     protected system: ProofSystem;
 
@@ -111,7 +111,7 @@ export interface SP1Proof {
     vkeyHash: string;
 }
 
-export class PILSP1Client extends PILZKClient {
+export class SoulSP1Client extends SoulZKClient {
     private programELF?: Uint8Array;
     private vkey?: string;
 
@@ -248,7 +248,7 @@ export interface Plonky3Proof {
     evaluations: string[];
 }
 
-export class PILPlonky3Client extends PILZKClient {
+export class SoulPlonky3Client extends SoulZKClient {
     private circuitConfig?: unknown;
 
     constructor(config: ZKSystemConfig = {}) {
@@ -378,7 +378,7 @@ export interface JoltProof {
     memoryProof: Uint8Array;
 }
 
-export class PILJoltClient extends PILZKClient {
+export class SoulJoltClient extends SoulZKClient {
     private programBytes?: Uint8Array;
     private preprocessedData?: unknown;
 
@@ -545,7 +545,7 @@ export interface BiniusProof {
     tensorCheckpoint: Uint8Array;
 }
 
-export class PILBiniusClient extends PILZKClient {
+export class SoulBiniusClient extends SoulZKClient {
     private circuitDefinition?: unknown;
 
     constructor(config: ZKSystemConfig = {}) {
@@ -690,8 +690,8 @@ export class PILBiniusClient extends PILZKClient {
 // Universal Client
 // ============================================
 
-export class PILUniversalZKClient {
-    private clients: Map<ProofSystem, PILZKClient> = new Map();
+export class SoulUniversalZKClient {
+    private clients: Map<ProofSystem, SoulZKClient> = new Map();
     private provider?: ethers.Provider;
     private universalVerifier?: ethers.Contract;
 
@@ -702,21 +702,21 @@ export class PILUniversalZKClient {
     /**
      * Initialize client for a proof system
      */
-    initClient(system: ProofSystem, config: ZKSystemConfig = {}): PILZKClient {
-        let client: PILZKClient;
+    initClient(system: ProofSystem, config: ZKSystemConfig = {}): SoulZKClient {
+        let client: SoulZKClient;
 
         switch (system) {
             case ProofSystem.SP1:
-                client = new PILSP1Client(config);
+                client = new SoulSP1Client(config);
                 break;
             case ProofSystem.Plonky3:
-                client = new PILPlonky3Client(config);
+                client = new SoulPlonky3Client(config);
                 break;
             case ProofSystem.Jolt:
-                client = new PILJoltClient(config);
+                client = new SoulJoltClient(config);
                 break;
             case ProofSystem.Binius:
-                client = new PILBiniusClient(config);
+                client = new SoulBiniusClient(config);
                 break;
             default:
                 throw new Error(`Unsupported proof system: ${system}`);
@@ -729,7 +729,7 @@ export class PILUniversalZKClient {
     /**
      * Get initialized client
      */
-    getClient(system: ProofSystem): PILZKClient | undefined {
+    getClient(system: ProofSystem): SoulZKClient | undefined {
         return this.clients.get(system);
     }
 
@@ -833,24 +833,24 @@ export class PILUniversalZKClient {
 // Factory Functions
 // ============================================
 
-export function createSP1Client(config?: ZKSystemConfig): PILSP1Client {
-    return new PILSP1Client(config);
+export function createSP1Client(config?: ZKSystemConfig): SoulSP1Client {
+    return new SoulSP1Client(config);
 }
 
-export function createPlonky3Client(config?: ZKSystemConfig): PILPlonky3Client {
-    return new PILPlonky3Client(config);
+export function createPlonky3Client(config?: ZKSystemConfig): SoulPlonky3Client {
+    return new SoulPlonky3Client(config);
 }
 
-export function createJoltClient(config?: ZKSystemConfig): PILJoltClient {
-    return new PILJoltClient(config);
+export function createJoltClient(config?: ZKSystemConfig): SoulJoltClient {
+    return new SoulJoltClient(config);
 }
 
-export function createBiniusClient(config?: ZKSystemConfig): PILBiniusClient {
-    return new PILBiniusClient(config);
+export function createBiniusClient(config?: ZKSystemConfig): SoulBiniusClient {
+    return new SoulBiniusClient(config);
 }
 
-export function createUniversalClient(provider?: ethers.Provider): PILUniversalZKClient {
-    return new PILUniversalZKClient(provider);
+export function createUniversalClient(provider?: ethers.Provider): SoulUniversalZKClient {
+    return new SoulUniversalZKClient(provider);
 }
 
 // ============================================
@@ -859,11 +859,11 @@ export function createUniversalClient(provider?: ethers.Provider): PILUniversalZ
 
 export default {
     ProofSystem,
-    PILSP1Client,
-    PILPlonky3Client,
-    PILJoltClient,
-    PILBiniusClient,
-    PILUniversalZKClient,
+    SoulSP1Client,
+    SoulPlonky3Client,
+    SoulJoltClient,
+    SoulBiniusClient,
+    SoulUniversalZKClient,
     createSP1Client,
     createPlonky3Client,
     createJoltClient,

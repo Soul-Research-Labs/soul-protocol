@@ -1,6 +1,6 @@
 import crypto from "crypto";
 
-export interface PILConfig {
+export interface SoulConfig {
   curve: string;
   relayerEndpoint: string;
   proverUrl: string;
@@ -8,7 +8,7 @@ export interface PILConfig {
 }
 
 /** Payload can be any JSON-serializable object */
-export type PILPayload = Record<string, unknown>;
+export type SoulPayload = Record<string, unknown>;
 
 /** Disclosure policy defines what information can be revealed */
 export interface DisclosurePolicy {
@@ -31,7 +31,7 @@ export interface CircuitWitnesses {
 export interface SendParams {
   sourceChain: string;
   destChain: string;
-  payload: PILPayload;
+  payload: SoulPayload;
   circuitId: string;
   disclosurePolicy: DisclosurePolicy;
   inputs?: CircuitInputs;

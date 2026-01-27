@@ -16,13 +16,13 @@ interface IAztecBridgeAdapter {
 
     /// @notice Cross-domain proof types
     enum ProofType {
-        PIL_TO_AZTEC,
-        AZTEC_TO_PIL,
+        Soul_TO_AZTEC,
+        AZTEC_TO_Soul,
         BIDIRECTIONAL
     }
 
-    /// @notice PIL to Aztec bridge request
-    struct PILToAztecRequest {
+    /// @notice Soul to Aztec bridge request
+    struct SoulToAztecRequest {
         bytes32 requestId;
         bytes32 pilCommitment;
         bytes32 pilNullifier;
@@ -35,8 +35,8 @@ interface IAztecBridgeAdapter {
         bytes32 resultingNoteHash;
     }
 
-    /// @notice Aztec to PIL bridge request
-    struct AztecToPILRequest {
+    /// @notice Aztec to Soul bridge request
+    struct AztecToSoulRequest {
         bytes32 requestId;
         bytes32 aztecNoteHash;
         bytes32 aztecNullifier;
@@ -73,26 +73,26 @@ interface IAztecBridgeAdapter {
     }
 
     // Events
-    event PILToAztecInitiated(
+    event SoulToAztecInitiated(
         bytes32 indexed requestId,
         bytes32 indexed pilCommitment,
         bytes32 aztecRecipient,
         uint256 amount
     );
 
-    event PILToAztecCompleted(
+    event SoulToAztecCompleted(
         bytes32 indexed requestId,
         bytes32 indexed resultingNoteHash
     );
 
-    event AztecToPILInitiated(
+    event AztecToSoulInitiated(
         bytes32 indexed requestId,
         bytes32 indexed aztecNoteHash,
         address pilRecipient,
         uint256 amount
     );
 
-    event AztecToPILCompleted(
+    event AztecToSoulCompleted(
         bytes32 indexed requestId,
         bytes32 indexed pilCommitment
     );
@@ -117,7 +117,7 @@ interface IAztecBridgeAdapter {
         address _outbox
     ) external;
 
-    function bridgePILToAztec(
+    function bridgeSoulToAztec(
         bytes32 pilCommitment,
         bytes32 pilNullifier,
         bytes32 aztecRecipient,
@@ -127,13 +127,13 @@ interface IAztecBridgeAdapter {
         bytes calldata proof
     ) external payable;
 
-    function completePILToAztec(
+    function completeSoulToAztec(
         bytes32 requestId,
         bytes32 resultingNoteHash,
         bytes calldata proof
     ) external;
 
-    function bridgeAztecToPIL(
+    function bridgeAztecToSoul(
         bytes32 aztecNoteHash,
         bytes32 aztecNullifier,
         address pilRecipient,
@@ -159,13 +159,13 @@ interface IAztecBridgeAdapter {
         bytes32 publicInputsHash
     ) external returns (bytes32 proofId);
 
-    function getPILToAztecRequest(
+    function getSoulToAztecRequest(
         bytes32 requestId
-    ) external view returns (PILToAztecRequest memory);
+    ) external view returns (SoulToAztecRequest memory);
 
-    function getAztecToPILRequest(
+    function getAztecToSoulRequest(
         bytes32 requestId
-    ) external view returns (AztecToPILRequest memory);
+    ) external view returns (AztecToSoulRequest memory);
 
     function getCrossDomainProof(
         bytes32 proofId
@@ -179,7 +179,7 @@ interface IAztecBridgeAdapter {
 
     function isNoteMirrored(bytes32 noteHash) external view returns (bool);
 
-    function isPILCommitmentRegistered(
+    function isSoulCommitmentRegistered(
         bytes32 commitment
     ) external view returns (bool);
 

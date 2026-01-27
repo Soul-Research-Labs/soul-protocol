@@ -7,8 +7,8 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title EmergencyRecovery
- * @author PIL Protocol
- * @notice Comprehensive emergency recovery system for the PIL network
+ * @author Soul Protocol
+ * @notice Comprehensive emergency recovery system for the Soul network
  * @dev Implements multi-stage recovery with graduated response levels
  *
  * Recovery Stages:
@@ -467,7 +467,7 @@ contract EmergencyRecovery is AccessControl, ReentrancyGuard, Pausable {
      * @param owner The asset owner
      * @param token The token address (address(0) for ETH)
      * @param amount The amount frozen
-     * @param commitment Associated state commitment (for PIL states)
+     * @param commitment Associated state commitment (for Soul states)
      * @param reason Reason for freezing
      */
     function freezeAssets(

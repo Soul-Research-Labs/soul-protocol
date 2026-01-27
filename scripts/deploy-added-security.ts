@@ -23,7 +23,7 @@ interface DeploymentResult {
 
 async function main() {
   console.log("\n" + "=".repeat(60));
-  console.log("   PIL Added Security Deployment");
+  console.log("   Soul Added Security Deployment");
   console.log("=".repeat(60) + "\n");
 
   const [deployer] = await hre.viem.getWalletClients();
@@ -56,7 +56,7 @@ async function main() {
 
   // 2. FormalBugBounty (needs a reward token - deploy mock or use existing)
   console.log("2/6 Deploying MockERC20 for BugBounty rewards...");
-  const bountyToken = await hre.viem.deployContract("MockERC20", ["PIL Bug Bounty Token", "PILBB", 18n]);
+  const bountyToken = await hre.viem.deployContract("MockERC20", ["Soul Bug Bounty Token", "SoulBB", 18n]);
   console.log("   ✅ BountyToken:", bountyToken.address);
 
   console.log("   Deploying FormalBugBounty...");
@@ -119,7 +119,7 @@ async function main() {
   // Fund bug bounty with tokens
   console.log("   Minting bounty tokens...");
   await bountyToken.write.mint([bugBounty.address, parseEther("1000000")]);
-  console.log("   ✅ Minted 1,000,000 PILBB to FormalBugBounty");
+  console.log("   ✅ Minted 1,000,000 SoulBB to FormalBugBounty");
 
   // Deploy orchestrator
   console.log("\n7/7 Deploying AddedSecurityOrchestrator...");
@@ -180,7 +180,7 @@ async function main() {
 
   console.log("Run these commands to verify contracts on Etherscan:\n");
   console.log(`npx hardhat verify --network sepolia ${runtimeMonitor.address}`);
-  console.log(`npx hardhat verify --network sepolia ${bountyToken.address} "PIL Bug Bounty Token" "PILBB" 18`);
+  console.log(`npx hardhat verify --network sepolia ${bountyToken.address} "Soul Bug Bounty Token" "SoulBB" 18`);
   console.log(`npx hardhat verify --network sepolia ${bugBounty.address} ${bountyToken.address}`);
   console.log(`npx hardhat verify --network sepolia ${attestation.address}`);
   console.log(`npx hardhat verify --network sepolia ${emergency.address}`);

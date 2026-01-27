@@ -1,5 +1,5 @@
 // K Framework Formal Specification for Scroll zkEVM
-// Privacy Interoperability Layer (PIL) - Scroll Bridge Formalization
+// Soul Protocol (Soul) - Scroll Bridge Formalization
 
 module SCROLL-TYPES
     imports INT
@@ -158,10 +158,10 @@ module SCROLL-KECCAK
     rule deriveScrollNullifier(MessageId, Domain, Timestamp) =>
         keccak256(MessageId +Bytes Domain +Bytes Int2Bytes(Timestamp, BE, Unsigned) +Bytes b"SCROLL_NULLIFIER")
 
-    // Derive cross-domain PIL nullifier
-    syntax Bytes ::= derivePILNullifier(Bytes, Bytes) [function]
-    rule derivePILNullifier(ScrollNullifier, Domain) =>
-        keccak256(ScrollNullifier +Bytes Domain +Bytes b"SCROLL2PIL")
+    // Derive cross-domain Soul nullifier
+    syntax Bytes ::= deriveSoulNullifier(Bytes, Bytes) [function]
+    rule deriveSoulNullifier(ScrollNullifier, Domain) =>
+        keccak256(ScrollNullifier +Bytes Domain +Bytes b"SCROLL2Soul")
 
 endmodule
 
@@ -263,7 +263,7 @@ module SCROLL-BRIDGE-SECURITY
     syntax Bool ::= crossDomainNullifierDeterministic(Bytes, Bytes) [function]
     rule crossDomainNullifierDeterministic(MsgId1, MsgId2) =>
         (MsgId1 ==K MsgId2) impliesBool
-        (deriveScrollNullifier(MsgId1, b"PIL", 0) ==K deriveScrollNullifier(MsgId2, b"PIL", 0))
+        (deriveScrollNullifier(MsgId1, b"Soul", 0) ==K deriveScrollNullifier(MsgId2, b"Soul", 0))
 
     // INVARIANT 4: Different messages produce different nullifiers
     syntax Bool ::= differentMessagesUniqueNullifiers(Bytes, Bytes, Bytes) [function]
@@ -298,7 +298,7 @@ module SCROLL-BRIDGE-SECURITY
     syntax Bool ::= crossDomainDirectionMatters(Bytes, Bytes, Bytes) [function]
     rule crossDomainDirectionMatters(Nf, DomainA, DomainB) =>
         (DomainA =/=K DomainB) impliesBool
-        (derivePILNullifier(Nf, DomainA) =/=K derivePILNullifier(Nf, DomainB))
+        (deriveSoulNullifier(Nf, DomainA) =/=K deriveSoulNullifier(Nf, DomainB))
 
 endmodule
 
@@ -359,7 +359,7 @@ module SCROLL-BRIDGE
          </scroll>
          requires isWithdrawalClaimable(W[WId], B[getBatchIndex(W[WId])])
           andBool nullifierUnique(NullifierHash, Nfs)
-         where NullifierHash = deriveScrollNullifier(WId, b"PIL", T)
+         where NullifierHash = deriveScrollNullifier(WId, b"Soul", T)
 
     // Helper functions
     syntax BatchStatus ::= getStatus(ScrollBatch) [function]

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Certora CVL Specification for Polygon zkEVM Bridge Adapter
-// Privacy Interoperability Layer (PIL) - Formal Verification
+// Soul Protocol (Soul) - Formal Verification
 
 /*
  * =============================================================================
@@ -84,8 +84,8 @@ rule nullifierUniqueness(uint32 depositCount1, uint32 depositCount2, uint32 orig
 
 /// @title Cross-domain nullifier determinism
 rule crossDomainNullifierDeterminism(bytes32 polygonNullifier, bytes32 domain) {
-    bytes32 pilNf1 = keccak256(abi.encodePacked(polygonNullifier, domain, "POLYGONZKEVM2PIL"));
-    bytes32 pilNf2 = keccak256(abi.encodePacked(polygonNullifier, domain, "POLYGONZKEVM2PIL"));
+    bytes32 pilNf1 = keccak256(abi.encodePacked(polygonNullifier, domain, "POLYGONZKEVM2Soul"));
+    bytes32 pilNf2 = keccak256(abi.encodePacked(polygonNullifier, domain, "POLYGONZKEVM2Soul"));
     
     assert pilNf1 == pilNf2, "Cross-domain nullifier must be deterministic";
 }

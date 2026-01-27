@@ -1,6 +1,6 @@
 /**
- * @fileoverview Stress Tests for Privacy Interoperability Layer
- * @description Comprehensive stress testing suite for battle-testing the PIL codebase
+ * @fileoverview Stress Tests for Soul Protocol
+ * @description Comprehensive stress testing suite for battle-testing the Soul codebase
  * @version 1.0.0
  */
 

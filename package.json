@@ -1,8 +1,8 @@
 {
-  "name": "privacy-interoperability-layer",
+  "name": "@soul/sdk",
   "version": "1.0.0",
   "type": "module",
-  "description": "Privacy Interoperability Layer - Cross-chain private state and ZK proof middleware",
+  "description": "Soul Protocol - Cross-chain private state and ZK proof middleware",
   "scripts": {
     "compile": "hardhat compile",
     "compile:forge": "forge build",

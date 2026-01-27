@@ -1,4 +1,4 @@
-// PIL Recursive Proof Library
+// Soul Recursive Proof Library
 // Nova-style Incrementally Verifiable Computation (IVC) for proof aggregation
 
 use dep::std::hash::poseidon;
@@ -8,8 +8,8 @@ use dep::std::hash::poseidon2;
 // State Structures
 // ============================================
 
-/// Accumulated PIL state for IVC
-struct PILState {
+/// Accumulated Soul state for IVC
+struct SoulState {
     /// Merkle root of commitment tree
     commitment_root: Field,
     /// Hash of accumulated nullifier set
@@ -22,10 +22,10 @@ struct PILState {
     chain_id: Field,
 }
 
-impl PILState {
+impl SoulState {
     /// Create genesis state
     fn genesis(chain_id: Field) -> Self {
-        PILState {
+        SoulState {
             commitment_root: 0,
             nullifier_set_hash: 0,
             transfer_count: 0,
@@ -53,7 +53,7 @@ impl PILState {
         amount: Field,
         new_merkle_root: Field
     ) -> Self {
-        PILState {
+        SoulState {
             commitment_root: new_merkle_root,
             nullifier_set_hash: poseidon::bn254::hash_2([self.nullifier_set_hash, nullifier]),
             transfer_count: self.transfer_count + 1,

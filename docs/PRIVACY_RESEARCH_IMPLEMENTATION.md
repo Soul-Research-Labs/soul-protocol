@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document summarizes the advanced privacy research implementations for the Privacy Interoperability Layer (PIL). All implementations are based on cutting-edge cryptographic research and are designed for production use after thorough security audits.
+This document summarizes the advanced privacy research implementations for the Soul Protocol (Soul). All implementations are based on cutting-edge cryptographic research and are designed for production use after thorough security audits.
 
 ## Implemented Privacy Technologies
 

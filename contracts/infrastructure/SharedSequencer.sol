@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title SharedSequencer
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Shared sequencer infrastructure for multi-L2 coordination
  * @dev Enables atomic cross-L2 transactions with shared ordering guarantees
  *

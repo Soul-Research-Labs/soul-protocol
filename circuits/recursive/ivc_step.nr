@@ -1,9 +1,9 @@
-// PIL IVC Step Circuit
+// Soul IVC Step Circuit
 // Proves a single step in the incrementally verifiable computation chain
 
 use dep::std::hash::poseidon;
 use dep::recursive::{
-    PILState, FoldedInstance, IVCProof, SparseMerkleProof,
+    SoulState, FoldedInstance, IVCProof, SparseMerkleProof,
     generate_challenge, hash_groth16_proof
 };
 
@@ -35,8 +35,8 @@ struct IVCStepWitness {
     prev_instance: FoldedInstance,
     /// Transfer data for this step
     transfer: TransferData,
-    /// Previous PIL state
-    prev_state: PILState,
+    /// Previous Soul state
+    prev_state: SoulState,
     /// Randomness for commitment
     commitment_randomness: Field,
 }
@@ -172,7 +172,7 @@ fn genesis(
     commitment_randomness: Field,
 ) {
     // Create genesis state
-    let genesis_state = PILState::genesis(chain_id);
+    let genesis_state = SoulState::genesis(chain_id);
     
     // Verify genesis state hash (should be deterministic)
     let computed_genesis_hash = genesis_state.hash();

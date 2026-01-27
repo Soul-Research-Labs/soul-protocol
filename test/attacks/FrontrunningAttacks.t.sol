@@ -6,7 +6,7 @@ import "forge-std/console.sol";
 
 /**
  * @title Frontrunning Attack Simulation Tests
- * @notice Tests frontrunning/MEV attack vectors against PIL contracts
+ * @notice Tests frontrunning/MEV attack vectors against Soul contracts
  * @dev Part of security:attack test suite
  */
 contract FrontrunningAttacks is Test {

@@ -7,7 +7,7 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title L2ProofRouter
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Optimized proof routing for cross-L2 transfers with caching and batching
  * @dev Routes proofs efficiently across L2 networks with compression and aggregation
  *
@@ -116,7 +116,7 @@ contract L2ProofRouter is ReentrancyGuard, AccessControl, Pausable {
         NOVA_IVC, // Nova folding proof
         RECURSIVE, // Recursively aggregated proof
         STATE_PROOF, // Merkle state proof
-        NULLIFIER_PROOF // PIL nullifier proof
+        NULLIFIER_PROOF // Soul nullifier proof
     }
 
     /// @notice Routing paths
@@ -251,7 +251,7 @@ contract L2ProofRouter is ReentrancyGuard, AccessControl, Pausable {
     /// @notice Global batch nonce
     uint256 public batchNonce;
 
-    /// @notice PIL Hub address
+    /// @notice Soul Hub address
     address public pilHub;
 
     /// @notice Direct L2 Messenger address
@@ -279,7 +279,7 @@ contract L2ProofRouter is ReentrancyGuard, AccessControl, Pausable {
      * @param destChainId Destination chain ID
      * @param proofData Proof bytes
      * @param publicInputs Public inputs
-     * @param nullifierBinding Optional PIL nullifier
+     * @param nullifierBinding Optional Soul nullifier
      * @return proofId Unique proof identifier
      */
     function submitProof(

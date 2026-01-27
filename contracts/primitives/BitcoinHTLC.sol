@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title BitcoinHTLC
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Hash Time-Locked Contract for Bitcoin atomic swaps
  * @dev Enables trustless cross-chain swaps between Bitcoin and Ethereum
  *

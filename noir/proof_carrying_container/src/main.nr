@@ -8,7 +8,7 @@ use std::hash::poseidon;
 ///   3. Policy compliance
 ///   4. Nullifier correctness
 /// 
-/// This is the core circuit for PIL v2's flagship abstraction.
+/// This is the core circuit for Soul v2's flagship abstraction.
 
 struct ContainerValidityInputs<let STATE_FIELDS: u32> {
     // Private inputs

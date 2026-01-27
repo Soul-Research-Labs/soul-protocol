@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title ThresholdSignature
- * @author PIL Security Team
+ * @author Soul Security Team
  * @notice t-of-n Threshold Signature Scheme for multi-party security
  * @dev Implements threshold ECDSA and BLS signature verification
  */

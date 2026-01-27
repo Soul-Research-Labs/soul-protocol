@@ -309,7 +309,7 @@ The Control Plane integrates with the existing Kernel Layer:
 ┌────────────────────────────────────────────────────────────────────┐
 │                          Kernel Layer                               │
 │  ┌────────────────┐  ┌──────────────────────┐  ┌────────────────┐  │
-│  │ PILKernelProof │  │  LinearStateManager  │  │ExecutionIndirection│
+│  │ SoulKernelProof │  │  LinearStateManager  │  │ExecutionIndirection│
 │  │  (Invariants)  │  │  (State Consumption) │  │  (Hidden Flow)   │  │
 │  └────────────────┘  └──────────────────────┘  └────────────────┘  │
 └────────────────────────────────────────────────────────────────────┘

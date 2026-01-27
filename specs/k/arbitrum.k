@@ -1,5 +1,5 @@
 // K Framework Formal Specification for Arbitrum Nitro
-// Privacy Interoperability Layer (PIL) - Arbitrum Bridge Formalization
+// Soul Protocol (Soul) - Arbitrum Bridge Formalization
 
 module ARBITRUM-TYPES
     imports INT
@@ -178,10 +178,10 @@ module ARBITRUM-KECCAK
     rule deriveArbitrumNullifier(DepositId, Domain, Timestamp) =>
         keccak256(DepositId +Bytes Domain +Bytes Int2Bytes(Timestamp, BE, Unsigned) +Bytes b"ARBITRUM_NULLIFIER")
 
-    // Derive cross-domain PIL nullifier
-    syntax Bytes ::= derivePILNullifier(Bytes, Bytes) [function]
-    rule derivePILNullifier(ArbitrumNullifier, Domain) =>
-        keccak256(ArbitrumNullifier +Bytes Domain +Bytes b"ARB2PIL")
+    // Derive cross-domain Soul nullifier
+    syntax Bytes ::= deriveSoulNullifier(Bytes, Bytes) [function]
+    rule deriveSoulNullifier(ArbitrumNullifier, Domain) =>
+        keccak256(ArbitrumNullifier +Bytes Domain +Bytes b"ARB2Soul")
 
 endmodule
 
@@ -364,8 +364,8 @@ module ARBITRUM-BRIDGE-SECURITY
     syntax Bool ::= crossDomainNullifierDeterministic(Bytes, Bytes, Bytes, Bytes) [function]
     rule crossDomainNullifierDeterministic(DepositId1, DepositId2, Domain1, Domain2) =>
         (DepositId1 ==K DepositId2 andBool Domain1 ==K Domain2) impliesBool
-        (derivePILNullifier(deriveArbitrumNullifier(DepositId1, Domain1, 0), Domain1) ==K
-         derivePILNullifier(deriveArbitrumNullifier(DepositId2, Domain2, 0), Domain2))
+        (deriveSoulNullifier(deriveArbitrumNullifier(DepositId1, Domain1, 0), Domain1) ==K
+         deriveSoulNullifier(deriveArbitrumNullifier(DepositId2, Domain2, 0), Domain2))
 
     // INVARIANT 6: Different deposits produce different nullifiers
     syntax Bool ::= differentDepositsUniqueNullifiers(Bytes, Bytes, Bytes) [function]
@@ -477,7 +477,7 @@ module ARBITRUM-BRIDGE
          </arbitrum>
          requires isWithdrawalClaimable(W[WithdrawalId], T)
           andBool nullifierUnique(NullifierHash, Nfs)
-         where NullifierHash = deriveArbitrumNullifier(WithdrawalId, b"PIL", T)
+         where NullifierHash = deriveArbitrumNullifier(WithdrawalId, b"Soul", T)
 
     // Helper functions for state updates
     syntax L1ToL2Deposit ::= updateDepositStatus(L1ToL2Deposit, TransferStatus) [function]

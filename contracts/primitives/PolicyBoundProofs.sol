@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /// @title PolicyBoundProofs (PBP)
-/// @author Soul Protocol - PIL v2
+/// @author Soul Protocol - Soul v2
 /// @notice Proofs that are cryptographically scoped by disclosure policy
 /// @dev MVP Implementation - Makes compliance a cryptographic invariant
 ///

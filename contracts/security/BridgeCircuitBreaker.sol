@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title BridgeCircuitBreaker
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Automatic circuit breaker with anomaly detection for bridge operations
  * @dev Implements runtime protection:
  *      - Auto-pause on large withdrawals

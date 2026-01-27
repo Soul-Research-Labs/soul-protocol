@@ -7,7 +7,7 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title GriefingProtection
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Protection against griefing and DoS attacks
  * @dev Implements gas limits, refund caps, and anti-DoS mechanisms
  *

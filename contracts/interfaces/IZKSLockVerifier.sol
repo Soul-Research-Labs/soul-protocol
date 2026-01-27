@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 /**
  * @title IZKSLockVerifier - Standard Interface for Noir ZK Verifiers
- * @author PIL v2 - Privacy Interoperability Layer
+ * @author Soul v2 - Soul Protocol
  * @dev Defines the standard interface for Noir-generated verifier contracts
  *
  * NOIR INTEGRATION:

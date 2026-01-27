@@ -8,7 +8,7 @@ import "../interfaces/IPostQuantumCrypto.sol";
 
 /**
  * @title PostQuantumSignatureVerifier
- * @author Soul Protocol - PIL v2
+ * @author Soul Protocol - Soul v2
  * @notice On-chain verification of post-quantum digital signatures
  * @dev Implements verification for NIST standardized PQC algorithms:
  *

@@ -7,17 +7,17 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title BaseBridgeAdapter
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Bridge adapter for Base L2 integration (Coinbase's OP Stack chain)
  * @dev Enables cross-chain interoperability with Base using the OP Stack CrossDomainMessenger
  *
  * BASE INTEGRATION:
  * ┌─────────────────────────────────────────────────────────────────────────┐
- * │                    PIL <-> Base Bridge                                  │
+ * │                    Soul <-> Base Bridge                                  │
  * ├─────────────────────────────────────────────────────────────────────────┤
  * │                                                                         │
  * │  ┌───────────────────┐           ┌───────────────────┐                 │
- * │  │   PIL Protocol    │           │   Base            │                 │
+ * │  │   Soul Protocol    │           │   Base            │                 │
  * │  │  (L1 Ethereum)    │           │   (L2 OP Stack)   │                 │
  * │  │  ┌─────────────┐  │           │  ┌─────────────┐  │                 │
  * │  │  │ L1 Cross    │  │           │  │ L2 Cross    │  │                 │
@@ -188,7 +188,7 @@ contract BaseBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     /// @notice BasePortal address (L1)
     address public basePortal;
 
-    /// @notice L2 target contract (PIL adapter on Base)
+    /// @notice L2 target contract (Soul adapter on Base)
     address public l2Target;
 
     /// @notice CCTP TokenMessenger address

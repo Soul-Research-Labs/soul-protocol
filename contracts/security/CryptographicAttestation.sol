@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 /**
  * @title CryptographicAttestation
- * @author PIL Security Team
+ * @author Soul Security Team
  * @notice TEE-based attestation and remote verification for watchtower nodes
  * @dev Implements SGX/TDX-style attestation quotes and verification
  */

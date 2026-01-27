@@ -1,12 +1,12 @@
 /**
- * PIL SDK - React Hooks
+ * Soul SDK - React Hooks
  * 
- * React hooks for integrating PIL privacy and bridge features into React applications
+ * React hooks for integrating Soul privacy and bridge features into React applications
  */
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { ethers } from 'ethers';
-import { PILSDK as PILClient } from '../client/PILSDK';
+import { SoulSDK as SoulClient } from '../client/SoulSDK';
 import { 
   BridgeFactory, 
   BaseBridgeAdapter, 
@@ -19,7 +19,7 @@ import {
 // Types
 // ============================================
 
-export interface UsePILConfig {
+export interface UseSoulConfig {
   chainId: number;
   privacyPoolAddress: string;
   bridgeRouterAddress: string;
@@ -46,7 +46,7 @@ export interface BridgeParams {
   depositNote?: DepositNote;
 }
 
-export interface PILState {
+export interface SoulState {
   isConnected: boolean;
   address: string | null;
   balance: bigint;
@@ -55,12 +55,12 @@ export interface PILState {
 }
 
 // ============================================
-// Main PIL Hook
+// Main Soul Hook
 // ============================================
 
-export function usePIL(config: UsePILConfig) {
-  const [client, setClient] = useState<PILClient | null>(null);
-  const [state, setState] = useState<PILState>({
+export function useSoul(config: UseSoulConfig) {
+  const [client, setClient] = useState<SoulClient | null>(null);
+  const [state, setState] = useState<SoulState>({
     isConnected: false,
     address: null,
     balance: 0n,
@@ -76,7 +76,7 @@ export function usePIL(config: UsePILConfig) {
       setIsLoading(true);
       setError(null);
 
-      const pilClient = new PILClient({
+      const pilClient = new SoulClient({
         curve: 'bn254',
         relayerEndpoint: config.rpcUrl || 'https://relay.pil.network',
         proverUrl: 'https://prover.pil.network',
@@ -89,7 +89,7 @@ export function usePIL(config: UsePILConfig) {
       const provider = signer.provider!;
       const balance = await provider.getBalance(address);
 
-      setState((prev: PILState) => ({
+      setState((prev: SoulState) => ({
         ...prev,
         isConnected: true,
         address,
@@ -127,7 +127,7 @@ export function usePIL(config: UsePILConfig) {
 // Privacy Pool Hook
 // ============================================
 
-export function usePrivacyPool(client: PILClient | null) {
+export function usePrivacyPool(client: SoulClient | null) {
   const [deposits, setDeposits] = useState<DepositNote[]>([]);
   const [isDepositing, setIsDepositing] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
@@ -220,7 +220,7 @@ export function usePrivacyPool(client: PILClient | null) {
 // ============================================
 
 export function useBridge(
-  client: PILClient | null,
+  client: SoulClient | null,
   provider: ethers.Provider | null,
   signer: ethers.Signer | null
 ) {

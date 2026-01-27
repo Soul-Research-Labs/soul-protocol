@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
  * @title HoneyPotDetector
  * @notice Detects honey pot contracts and malicious destinations before transfers
  * @dev Uses simulation, heuristics, and community reporting to identify traps
- * @author PIL Protocol Team
+ * @author Soul Protocol Team
  * @custom:security-contact security@pil.network
  */
 contract HoneyPotDetector is AccessControl, ReentrancyGuard {

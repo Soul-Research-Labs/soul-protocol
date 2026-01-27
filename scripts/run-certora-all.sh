@@ -1,5 +1,5 @@
 #!/bin/bash
-# Comprehensive Certora Verification Script for PIL
+# Comprehensive Certora Verification Script for Soul
 # Runs all Certora specifications in parallel batches
 
 set -e
@@ -15,7 +15,7 @@ if [ -z "$CERTORAKEY" ]; then
 fi
 
 echo "==========================================="
-echo "  PIL Certora Formal Verification Suite   "
+echo "  Soul Certora Formal Verification Suite   "
 echo "==========================================="
 echo ""
 echo "Starting verification at $(date)"

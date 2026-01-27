@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Privacy Interoperability Layer - ComposableRevocationProofs
+ * Soul Protocol - ComposableRevocationProofs
  * 
  * This spec verifies critical invariants for the Composable Revocation Proofs (CRP)
  * which enables privacy-preserving credential revocation with composable proofs

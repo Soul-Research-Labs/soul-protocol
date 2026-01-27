@@ -7,8 +7,8 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title EconomicSecurityModule
- * @author PIL Protocol
- * @notice Economic security mechanisms for PIL protocol
+ * @author Soul Protocol
+ * @notice Economic security mechanisms for Soul protocol
  * @dev Implements bonded operations, insurance fund, and slashing
  *
  * Security Properties:

@@ -1,7 +1,7 @@
 use std::hash::poseidon;
 
 /// @title BalanceProofCircuit
-/// @notice Balance Proof Circuit for PIL Exchange
+/// @notice Balance Proof Circuit for Soul Exchange
 /// 
 /// Proves:
 /// 1. User has a specific balance in the balance tree

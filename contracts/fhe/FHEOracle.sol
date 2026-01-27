@@ -8,7 +8,7 @@ import "./FHETypes.sol";
 
 /**
  * @title FHEOracle
- * @author Privacy Interoperability Layer
+ * @author Soul Protocol
  * @notice Decentralized FHE computation oracle network
  * @dev Manages off-chain FHE computations with multi-oracle consensus
  *

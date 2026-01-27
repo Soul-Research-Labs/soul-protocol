@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Privacy Interoperability Layer - PolicyBoundProofs (PBP)
+ * Soul Protocol - PolicyBoundProofs (PBP)
  */
 
 methods {

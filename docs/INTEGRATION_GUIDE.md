@@ -1,6 +1,6 @@
-# PIL Integration Guide
+# Soul Integration Guide
 
-> **Step-by-step guide to integrate PIL into your application**
+> **Step-by-step guide to integrate Soul into your application**
 
 [![SDK](https://img.shields.io/badge/SDK-@pil/sdk-blue.svg)]()
 
@@ -19,7 +19,7 @@
 
 ---
 
-Integrate the Privacy Interoperability Layer into your application.
+Integrate the Soul Protocol into your application.
 
 ## Installation
 
@@ -34,18 +34,18 @@ npm install @pil/sdk ethers
 ### Step 1: Initialize the Client
 
 ```typescript
-import { PILClient, PILClientConfig } from '@pil/sdk';
+import { SoulClient, SoulClientConfig } from '@pil/sdk';
 import { ethers } from 'ethers';
 
 // Configuration
-const config: PILClientConfig = {
+const config: SoulClientConfig = {
   network: 'mainnet',
   rpcUrl: process.env.RPC_URL!,
   privateKey: process.env.PRIVATE_KEY, // Optional for read-only
 };
 
 // Create client
-const client = new PILClient(config);
+const client = new SoulClient(config);
 
 // Verify connection
 const isConnected = await client.isConnected();
@@ -83,7 +83,7 @@ console.log(`Transaction: ${result.txHash}`);
 
 ```typescript
 // On the destination chain
-const destClient = new PILClient({
+const destClient = new SoulClient({
   network: 'arbitrum',
   rpcUrl: process.env.ARBITRUM_RPC_URL!,
   privateKey: process.env.PRIVATE_KEY,
@@ -175,7 +175,7 @@ await client.getCDNA().registerNullifier({
 ### Complete Bridge Flow
 
 ```typescript
-import { PILClient, OperationType } from '@pil/sdk';
+import { SoulClient, OperationType } from '@pil/sdk';
 
 async function bridgeWithPrivacy(
   sourceChain: number,
@@ -184,13 +184,13 @@ async function bridgeWithPrivacy(
   recipient: string
 ) {
   // 1. Initialize clients for both chains
-  const sourceClient = new PILClient({
+  const sourceClient = new SoulClient({
     network: getNetworkName(sourceChain),
     rpcUrl: getRpcUrl(sourceChain),
     privateKey: process.env.PRIVATE_KEY,
   });
 
-  const targetClient = new PILClient({
+  const targetClient = new SoulClient({
     network: getNetworkName(targetChain),
     rpcUrl: getRpcUrl(targetChain),
     privateKey: process.env.PRIVATE_KEY,
@@ -251,7 +251,7 @@ async function bridgeWithPrivacy(
 async function multiChainDeploy(chains: number[], proof: Uint8Array) {
   const results = await Promise.all(
     chains.map(async (chainId) => {
-      const client = new PILClient({
+      const client = new SoulClient({
         network: getNetworkName(chainId),
         rpcUrl: getRpcUrl(chainId),
         privateKey: process.env.PRIVATE_KEY,
@@ -323,12 +323,12 @@ if (!isValid) {
 ## Error Handling
 
 ```typescript
-import { PILError, ErrorCode, isRecoverableError } from '@pil/sdk';
+import { SoulError, ErrorCode, isRecoverableError } from '@pil/sdk';
 
 try {
   await client.getPC3().createContainer(params);
 } catch (error) {
-  if (error instanceof PILError) {
+  if (error instanceof SoulError) {
     switch (error.code) {
       case ErrorCode.PROOF_INVALID: throw new Error('Regenerate proof');
       case ErrorCode.INSUFFICIENT_GAS: /* retry with higher gas */ break;
@@ -343,15 +343,15 @@ try {
 ## Testing
 
 ```typescript
-import { PILClient, MockProvider, LocalTestnet } from '@pil/sdk/testing';
+import { SoulClient, MockProvider, LocalTestnet } from '@pil/sdk/testing';
 
 // Unit test with mocks
 const mockProvider = new MockProvider();
-const client = new PILClient({ provider: mockProvider });
+const client = new SoulClient({ provider: mockProvider });
 
 // E2E test with local testnet
 const testnet = await LocalTestnet.start();
-const client = new PILClient({ rpcUrl: testnet.rpcUrl, contracts: testnet.deployedContracts });
+const client = new SoulClient({ rpcUrl: testnet.rpcUrl, contracts: testnet.deployedContracts });
 ```
 
 ---

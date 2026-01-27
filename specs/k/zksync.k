@@ -1,5 +1,5 @@
 // K Framework Formal Specification for zkSync Era
-// Privacy Interoperability Layer (PIL) - zkSync Bridge Formalization
+// Soul Protocol (Soul) - zkSync Bridge Formalization
 
 module ZKSYNC-TYPES
     imports INT
@@ -179,10 +179,10 @@ module ZKSYNC-KECCAK
     rule deriveZkSyncNullifier(TransferId, Domain, Timestamp) =>
         keccak256(TransferId +Bytes Domain +Bytes Int2Bytes(Timestamp, BE, Unsigned) +Bytes b"ZKSYNC_NULLIFIER")
 
-    // Derive cross-domain PIL nullifier
-    syntax Bytes ::= derivePILNullifier(Bytes, Bytes) [function]
-    rule derivePILNullifier(ZkSyncNullifier, Domain) =>
-        keccak256(ZkSyncNullifier +Bytes Domain +Bytes b"ZKSYNC2PIL")
+    // Derive cross-domain Soul nullifier
+    syntax Bytes ::= deriveSoulNullifier(Bytes, Bytes) [function]
+    rule deriveSoulNullifier(ZkSyncNullifier, Domain) =>
+        keccak256(ZkSyncNullifier +Bytes Domain +Bytes b"ZKSYNC2Soul")
 
 endmodule
 
@@ -294,7 +294,7 @@ module ZKSYNC-BRIDGE-SECURITY
     syntax Bool ::= crossDomainNullifierDeterministic(Bytes, Bytes) [function]
     rule crossDomainNullifierDeterministic(Id1, Id2) =>
         (Id1 ==K Id2) impliesBool
-        (deriveZkSyncNullifier(Id1, b"PIL", 0) ==K deriveZkSyncNullifier(Id2, b"PIL", 0))
+        (deriveZkSyncNullifier(Id1, b"Soul", 0) ==K deriveZkSyncNullifier(Id2, b"Soul", 0))
 
     // INVARIANT 4: Different transfers produce different nullifiers
     syntax Bool ::= differentTransfersUniqueNullifiers(Bytes, Bytes, Bytes) [function]
@@ -329,7 +329,7 @@ module ZKSYNC-BRIDGE-SECURITY
     syntax Bool ::= crossDomainDirectionMatters(Bytes, Bytes, Bytes) [function]
     rule crossDomainDirectionMatters(Nf, DomainA, DomainB) =>
         (DomainA =/=K DomainB) impliesBool
-        (derivePILNullifier(Nf, DomainA) =/=K derivePILNullifier(Nf, DomainB))
+        (deriveSoulNullifier(Nf, DomainA) =/=K deriveSoulNullifier(Nf, DomainB))
 
 endmodule
 
@@ -398,7 +398,7 @@ module ZKSYNC-BRIDGE
          </zksync>
          requires isWithdrawalFinalizable(W[WId], B[getBatchNumber(W[WId])])
           andBool nullifierUnique(NullifierHash, Nfs)
-         where NullifierHash = deriveZkSyncNullifier(WId, b"PIL", T)
+         where NullifierHash = deriveZkSyncNullifier(WId, b"Soul", T)
 
     // Verify and Execute Batch
     rule <zksync>

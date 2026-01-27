@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Privacy Interoperability Layer - ZKBoundStateLocks (ZK-SLocks)
+ * Soul Protocol - ZKBoundStateLocks (ZK-SLocks)
  */
 
 methods {

@@ -1,8 +1,8 @@
-# Soul Network - Privacy Interoperability Layer (PIL)
+# Soul Network - Soul Protocol (Soul)
 
 ## Type Documentation
 
-This document provides comprehensive type definitions for the Privacy Interoperability Layer (PIL), a cross-chain middleware for private state transfer and zero-knowledge proof verification across heterogeneous blockchain networks.
+This document provides comprehensive type definitions for the Soul Protocol (Soul), a cross-chain middleware for private state transfer and zero-knowledge proof verification across heterogeneous blockchain networks.
 
 ---
 
@@ -886,7 +886,7 @@ enum BitVMChain {
 
 ## Privacy Primitives
 
-### PIL v2 Primitive Types
+### Soul v2 Primitive Types
 
 ```typescript
 /**
@@ -1204,7 +1204,7 @@ event BridgeOperationCompleted(
 ## Type Aliases
 
 ```typescript
-// Common type aliases used throughout PIL
+// Common type aliases used throughout Soul
 type bytes32 = string;        // 32-byte hex string
 type bytes = string;          // Variable length hex string
 type address = string;        // 20-byte Ethereum address
@@ -1225,7 +1225,7 @@ type bool = boolean;          // Boolean value
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2024-01 | Initial type definitions |
-| 1.1.0 | 2024-06 | Added PIL v2 primitives |
+| 1.1.0 | 2024-06 | Added Soul v2 primitives |
 | 1.2.0 | 2024-09 | Added Bitcoin/BitVM types |
 | 1.3.0 | 2025-01 | Added StarkNet types |
 | 1.4.0 | 2026-01 | Added Solana, LayerZero, Chainlink types |

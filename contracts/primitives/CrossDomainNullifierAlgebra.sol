@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /// @title CrossDomainNullifierAlgebra (CDNA)
-/// @author Soul Protocol - PIL v2
+/// @author Soul Protocol - Soul v2
 /// @notice Domain-separated nullifiers that compose across chains, epochs, and applications
 /// @dev MVP Implementation - Enables cross-chain double-spend prevention without global state
 ///

@@ -3,9 +3,9 @@ pragma solidity ^0.8.22;
 
 /**
  * @title PQCRegistry
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Central registry for post-quantum cryptography primitives
- * @dev Manages verifiers, KEMs, and hybrid signature schemes for PIL protocol.
+ * @dev Manages verifiers, KEMs, and hybrid signature schemes for Soul protocol.
  *      Provides a unified interface for post-quantum operations across the protocol.
  *
  * SECURITY ARCHITECTURE:

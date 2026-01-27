@@ -7,7 +7,7 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title HyperlaneAdapter
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Hyperlane Interchain Security Module (ISM) integration
  * @dev Implements Hyperlane's modular security for cross-chain messaging
  *
@@ -180,7 +180,7 @@ contract HyperlaneAdapter is ReentrancyGuard, AccessControl, Pausable {
     /// @notice Inbound nonce per domain
     mapping(uint32 => uint256) public inboundNonce;
 
-    /// @notice PIL hub addresses per domain
+    /// @notice Soul hub addresses per domain
     mapping(uint32 => address) public pilHubs;
 
     /*//////////////////////////////////////////////////////////////
@@ -572,9 +572,9 @@ contract HyperlaneAdapter is ReentrancyGuard, AccessControl, Pausable {
     }
 
     /**
-     * @notice Set PIL hub for a domain
+     * @notice Set Soul hub for a domain
      * @param domain Domain ID
-     * @param hub PIL hub address
+     * @param hub Soul hub address
      */
     function setPilHub(
         uint32 domain,

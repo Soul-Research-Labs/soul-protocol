@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
  * @title EnhancedKillSwitch
  * @notice Multi-level emergency response system with graduated shutdown capabilities
  * @dev Implements 5 emergency levels from WARNING to LOCKED with different restrictions
- * @author PIL Protocol Team
+ * @author Soul Protocol Team
  * @custom:security-contact security@pil.network
  */
 contract EnhancedKillSwitch is AccessControl, ReentrancyGuard, Pausable {

@@ -1,10 +1,10 @@
 #!/bin/bash
-# Mutation Testing Runner for PIL
+# Mutation Testing Runner for Soul
 # Requires: pip install gambit-sol
 
 set -e
 
-echo "🧬 PIL Mutation Testing Suite"
+echo "🧬 Soul Mutation Testing Suite"
 echo "=============================="
 echo ""
 

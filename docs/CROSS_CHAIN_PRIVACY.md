@@ -66,7 +66,7 @@ contracts/crosschain/
 
 ## Privacy Levels
 
-PIL supports five privacy levels, configurable per transfer:
+Soul supports five privacy levels, configurable per transfer:
 
 | Level | ID | Sender | Receiver | Amount | Proof |
 |-------|-----|--------|----------|--------|-------|
@@ -408,8 +408,8 @@ scale = 1 / 1.61
 │  CROSS-DOMAIN NULLIFIER (for bridging):                                 │
 │  nf_cross = H(nf_source || sourceChain || destChain || "CROSS_DOMAIN")  │
 │                                                                          │
-│  PIL UNIFIED NULLIFIER:                                                 │
-│  nf_pil = H(nf_source || domain || "PIL_BINDING")                       │
+│  Soul UNIFIED NULLIFIER:                                                 │
+│  nf_pil = H(nf_source || domain || "Soul_BINDING")                       │
 │                                                                          │
 │  PROPERTIES:                                                            │
 │  ┌─────────────────────────────────────────────────────────────────┐   │
@@ -425,8 +425,8 @@ scale = 1 / 1.61
 │  │ 4. SOUNDNESS:                                                    │   │
 │  │    Cannot create valid nullifier without secret                  │   │
 │  │                                                                  │   │
-│  │ 5. CROSS-DOMAIN LINKABILITY (for PIL only):                      │   │
-│  │    PIL can link source/dest nullifiers to prevent double-spend   │   │
+│  │ 5. CROSS-DOMAIN LINKABILITY (for Soul only):                      │   │
+│  │    Soul can link source/dest nullifiers to prevent double-spend   │   │
 │  └─────────────────────────────────────────────────────────────────┘   │
 │                                                                          │
 └─────────────────────────────────────────────────────────────────────────┘
@@ -435,7 +435,7 @@ scale = 1 / 1.61
 ### Nullifier Flow
 
 ```
-Source Chain                    PIL                      Destination Chain
+Source Chain                    Soul                      Destination Chain
      │                           │                              │
      │  1. Spend note            │                              │
      │  nf_src = H(secret||cm)   │                              │
@@ -444,7 +444,7 @@ Source Chain                    PIL                      Destination Chain
      │                           │  2. Derive cross-domain nf   │
      │                           │  nf_cross = H(nf_src||...)   │
      │                           │                              │
-     │                           │  3. Derive PIL nullifier     │
+     │                           │  3. Derive Soul nullifier     │
      │                           │  nf_pil = H(nf_src||domain)  │
      │                           │                              │
      │                           │  4. Register binding         │

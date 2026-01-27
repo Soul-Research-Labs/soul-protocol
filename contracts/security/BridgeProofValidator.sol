@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title BridgeProofValidator
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Proof validation with expiry timestamps and challenge periods
  * @dev Implements bridge-specific security:
  *      - Proof expiry timestamps

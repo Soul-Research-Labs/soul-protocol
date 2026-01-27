@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Privacy Interoperability Layer - TEEAttestation
+ * Soul Protocol - TEEAttestation
  * 
  * This spec verifies critical invariants for the TEE Attestation contract
  * which enables remote attestation verification for trusted execution environments

@@ -1,7 +1,7 @@
 [package]
 name = "state_commitment"
 type = "bin"
-authors = ["Privacy Interoperability Layer"]
+authors = ["Soul Protocol"]
 compiler_version = ">=1.0.0"
 description = "Optimized circuit for proving knowledge of state preimage using Poseidon hash"
 

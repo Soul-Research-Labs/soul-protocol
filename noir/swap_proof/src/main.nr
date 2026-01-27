@@ -1,7 +1,7 @@
 use std::hash::poseidon;
 
 /// @title SwapProofCircuit
-/// @notice Swap Proof Circuit for PIL Exchange AMM
+/// @notice Swap Proof Circuit for Soul Exchange AMM
 /// 
 /// Proves:
 /// 1. User has sufficient input tokens

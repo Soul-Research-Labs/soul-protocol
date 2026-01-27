@@ -8,7 +8,7 @@ import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol
 
 /**
  * @title UnifiedNullifierManager
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Unified nullifier registry for cross-domain double-spend prevention
  * @dev Implements Cross-Domain Nullifier Algebra (CDNA) for multi-chain privacy
  *
@@ -23,8 +23,8 @@ import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol
  * │  Cross-Domain Nullifier (for bridging):                                 │
  * │  nf_cross = H(nf_source || sourceChain || destChain || "CROSS_DOMAIN")  │
  * │                                                                          │
- * │  PIL Binding:                                                           │
- * │  nf_pil = H(nf_source || domain || "PIL_BINDING")                       │
+ * │  Soul Binding:                                                           │
+ * │  nf_pil = H(nf_source || domain || "Soul_BINDING")                       │
  * │                                                                          │
  * │  Properties:                                                            │
  * │  1. Uniqueness: Same note → same nullifier (per domain)                 │
@@ -60,13 +60,13 @@ contract UnifiedNullifierManager is
 
     /// @notice Domain separator for nullifier derivation
     bytes32 public constant NULLIFIER_DOMAIN =
-        keccak256("PIL_UNIFIED_NULLIFIER_V1");
+        keccak256("Soul_UNIFIED_NULLIFIER_V1");
 
     /// @notice Cross-domain separator
     bytes32 public constant CROSS_DOMAIN_TAG = keccak256("CROSS_DOMAIN");
 
-    /// @notice PIL binding tag
-    bytes32 public constant PIL_BINDING_TAG = keccak256("PIL_BINDING");
+    /// @notice Soul binding tag
+    bytes32 public constant Soul_BINDING_TAG = keccak256("Soul_BINDING");
 
     /// @notice Chain-specific tags
     bytes32 public constant ZCASH_TAG = keccak256("ZCASH");
@@ -137,7 +137,7 @@ contract UnifiedNullifierManager is
     struct CrossDomainBinding {
         bytes32 sourceNullifier;
         bytes32 destNullifier;
-        bytes32 pilNullifier; // Unified PIL nullifier
+        bytes32 pilNullifier; // Unified Soul nullifier
         uint256 sourceChainId;
         uint256 destChainId;
         bytes32 sourceDomain;
@@ -185,10 +185,10 @@ contract UnifiedNullifierManager is
     /// @notice Chain domains: chainId => domain
     mapping(uint256 => ChainDomain) public chainDomains;
 
-    /// @notice PIL unified nullifiers: source nullifier => PIL nullifier
+    /// @notice Soul unified nullifiers: source nullifier => Soul nullifier
     mapping(bytes32 => bytes32) public pilNullifiers;
 
-    /// @notice Reverse lookup: PIL nullifier => source nullifiers
+    /// @notice Reverse lookup: Soul nullifier => source nullifiers
     mapping(bytes32 => bytes32[]) public reversePilLookup;
 
     /// @notice Nullifier batches: batchId => batch
@@ -246,7 +246,7 @@ contract UnifiedNullifierManager is
         bytes32 merkleRoot
     );
 
-    event PILNullifierDerived(
+    event SoulNullifierDerived(
         bytes32 indexed sourceNullifier,
         bytes32 indexed pilNullifier,
         bytes32 domain
@@ -398,15 +398,15 @@ contract UnifiedNullifierManager is
             expiresAt: expiresAt
         });
 
-        // Derive PIL unified nullifier
-        pilNullifier = derivePILNullifier(nullifier, domain.domainTag);
+        // Derive Soul unified nullifier
+        pilNullifier = deriveSoulNullifier(nullifier, domain.domainTag);
         pilNullifiers[nullifier] = pilNullifier;
         reversePilLookup[pilNullifier].push(nullifier);
 
         totalNullifiers++;
 
         emit NullifierRegistered(nullifier, commitment, chainId, nullifierType);
-        emit PILNullifierDerived(nullifier, pilNullifier, domain.domainTag);
+        emit SoulNullifierDerived(nullifier, pilNullifier, domain.domainTag);
 
         return pilNullifier;
     }
@@ -487,9 +487,9 @@ contract UnifiedNullifierManager is
             )
         );
 
-        // Derive unified PIL nullifier
+        // Derive unified Soul nullifier
         pilNullifier = keccak256(
-            abi.encodePacked(sourceNullifier, destNullifier, PIL_BINDING_TAG)
+            abi.encodePacked(sourceNullifier, destNullifier, Soul_BINDING_TAG)
         );
 
         bytes32 bindingId = keccak256(
@@ -587,7 +587,7 @@ contract UnifiedNullifierManager is
                     expiresAt: 0
                 });
 
-                bytes32 pilNf = derivePILNullifier(
+                bytes32 pilNf = deriveSoulNullifier(
                     nullifiers[i],
                     domain.domainTag
                 );
@@ -619,15 +619,15 @@ contract UnifiedNullifierManager is
     // =========================================================================
 
     /**
-     * @notice Derive PIL unified nullifier
+     * @notice Derive Soul unified nullifier
      */
-    function derivePILNullifier(
+    function deriveSoulNullifier(
         bytes32 sourceNullifier,
         bytes32 domainTag
     ) public pure returns (bytes32) {
         return
             keccak256(
-                abi.encodePacked(sourceNullifier, domainTag, PIL_BINDING_TAG)
+                abi.encodePacked(sourceNullifier, domainTag, Soul_BINDING_TAG)
             );
     }
 
@@ -720,7 +720,7 @@ contract UnifiedNullifierManager is
         return chainDomains[chainId];
     }
 
-    function getPILNullifier(
+    function getSoulNullifier(
         bytes32 sourceNullifier
     ) external view returns (bytes32) {
         return pilNullifiers[sourceNullifier];

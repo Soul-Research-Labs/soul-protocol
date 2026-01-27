@@ -52,7 +52,7 @@ wrap_comments = true
 
 [doc]
 out = "docs/foundry"
-title = "PIL Private Exchange"
+title = "Soul Private Exchange"
 
 # Remappings for OpenZeppelin and other dependencies
 remappings = [

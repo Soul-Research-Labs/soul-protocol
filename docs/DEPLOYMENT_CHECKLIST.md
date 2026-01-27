@@ -1,4 +1,4 @@
-# PIL Deployment Checklist
+# Soul Deployment Checklist
 
 ## Pre-Deployment Verification
 
@@ -50,10 +50,10 @@
 #### Application Layer
 | Contract | Address | Verified |
 |----------|---------|----------|
-| PILAtomicSwapV2 | [`0xdefb9a66dc14a6d247b282555b69da7745b0ab57`](https://sepolia.etherscan.io/address/0xdefb9a66dc14a6d247b282555b69da7745b0ab57) | ✅ |
-| PILComplianceV2 | [`0x5d41f63f35babed689a63f7e5c9e2943e1f72067`](https://sepolia.etherscan.io/address/0x5d41f63f35babed689a63f7e5c9e2943e1f72067) | ✅ |
+| SoulAtomicSwapV2 | [`0xdefb9a66dc14a6d247b282555b69da7745b0ab57`](https://sepolia.etherscan.io/address/0xdefb9a66dc14a6d247b282555b69da7745b0ab57) | ✅ |
+| SoulComplianceV2 | [`0x5d41f63f35babed689a63f7e5c9e2943e1f72067`](https://sepolia.etherscan.io/address/0x5d41f63f35babed689a63f7e5c9e2943e1f72067) | ✅ |
 
-#### PIL v2 Primitives
+#### Soul v2 Primitives
 | Contract | Address | Verified |
 |----------|---------|----------|
 | ProofCarryingContainer (PC³) | [`0x52f8a660ff436c450b5190a84bc2c1a86f1032cc`](https://sepolia.etherscan.io/address/0x52f8a660ff436c450b5190a84bc2c1a86f1032cc) | ✅ |
@@ -86,8 +86,8 @@
 ✅ ConfidentialStateContainerV3 - Read total states
 ✅ NullifierRegistryV3 - Check nullifier not used
 ✅ CrossChainProofHubV3 - Contract accessible
-✅ PILAtomicSwapV2 - Contract accessible
-✅ PILComplianceV2 - Contract accessible
+✅ SoulAtomicSwapV2 - Contract accessible
+✅ SoulComplianceV2 - Contract accessible
 ✅ ProofCarryingContainer - Contract accessible
 ✅ PolicyBoundProofs - Contract accessible
 ✅ ExecutionAgnosticStateCommitments - Contract accessible

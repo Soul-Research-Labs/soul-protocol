@@ -3,8 +3,8 @@ import * as fs from "fs";
 import * as path from "path";
 
 /**
- * PIL Governance Deployment Script
- * Deploys: PILToken, TimelockController, PILGovernor, Multi-sig Setup
+ * Soul Governance Deployment Script
+ * Deploys: SoulToken, TimelockController, SoulGovernor, Multi-sig Setup
  */
 
 interface GovernanceDeployment {
@@ -13,9 +13,9 @@ interface GovernanceDeployment {
   timestamp: string;
   deployer: string;
   contracts: {
-    PILToken: string;
+    SoulToken: string;
     TimelockController: string;
-    PILGovernor: string;
+    SoulGovernor: string;
     SafeMultiSig?: string;
   };
   configuration: {
@@ -37,18 +37,18 @@ const GOVERNANCE_CONFIG = {
     timelockDelay: 3600, // 1 hour
     votingDelay: 300, // 5 minutes (~25 blocks)
     votingPeriod: 3600, // 1 hour
-    proposalThreshold: ethers.parseEther("1000"), // 1,000 PIL
+    proposalThreshold: ethers.parseEther("1000"), // 1,000 Soul
     quorumPercentage: 4, // 4%
-    initialSupply: ethers.parseEther("100000000"), // 100M PIL
+    initialSupply: ethers.parseEther("100000000"), // 100M Soul
   },
   // Mainnet: Production settings
   mainnet: {
     timelockDelay: 172800, // 2 days
     votingDelay: 86400, // 1 day
     votingPeriod: 604800, // 7 days
-    proposalThreshold: ethers.parseEther("100000"), // 100,000 PIL
+    proposalThreshold: ethers.parseEther("100000"), // 100,000 Soul
     quorumPercentage: 4, // 4%
-    initialSupply: ethers.parseEther("1000000000"), // 1B PIL
+    initialSupply: ethers.parseEther("1000000000"), // 1B Soul
   },
 };
 
@@ -62,7 +62,7 @@ async function main() {
   const config = GOVERNANCE_CONFIG[configKey];
 
   console.log("\n" + "=".repeat(60));
-  console.log("PIL GOVERNANCE DEPLOYMENT");
+  console.log("Soul GOVERNANCE DEPLOYMENT");
   console.log("=".repeat(60));
   console.log(`\nNetwork: ${networkName} (Chain ID: ${chainId})`);
   console.log(`Deployer: ${deployer.address}`);
@@ -74,9 +74,9 @@ async function main() {
     timestamp: new Date().toISOString(),
     deployer: deployer.address,
     contracts: {
-      PILToken: "",
+      SoulToken: "",
       TimelockController: "",
-      PILGovernor: "",
+      SoulGovernor: "",
     },
     configuration: {
       timelockDelay: config.timelockDelay,
@@ -91,20 +91,20 @@ async function main() {
   };
 
   // ==========================================================================
-  // STEP 1: Deploy PIL Token
+  // STEP 1: Deploy Soul Token
   // ==========================================================================
-  console.log("📦 Step 1: Deploying PIL Token...\n");
+  console.log("📦 Step 1: Deploying Soul Token...\n");
   
-  const PILToken = await ethers.getContractFactory("PILToken");
-  const pilToken = await PILToken.deploy(deployer.address);
+  const SoulToken = await ethers.getContractFactory("SoulToken");
+  const pilToken = await SoulToken.deploy(deployer.address);
   await pilToken.waitForDeployment();
   
   const tokenAddress = await pilToken.getAddress();
-  deployment.contracts.PILToken = tokenAddress;
-  deployment.txHashes.PILToken = pilToken.deploymentTransaction()?.hash || "";
+  deployment.contracts.SoulToken = tokenAddress;
+  deployment.txHashes.SoulToken = pilToken.deploymentTransaction()?.hash || "";
   
-  console.log(`  ✅ PILToken deployed: ${tokenAddress}`);
-  console.log(`     Initial supply: ${ethers.formatEther(config.initialSupply)} PIL\n`);
+  console.log(`  ✅ SoulToken deployed: ${tokenAddress}`);
+  console.log(`     Initial supply: ${ethers.formatEther(config.initialSupply)} Soul\n`);
 
   // ==========================================================================
   // STEP 2: Deploy Timelock Controller
@@ -136,19 +136,19 @@ async function main() {
   console.log(`     Min delay: ${config.timelockDelay} seconds (${config.timelockDelay / 3600} hours)\n`);
 
   // ==========================================================================
-  // STEP 3: Deploy PIL Governor
+  // STEP 3: Deploy Soul Governor
   // ==========================================================================
-  console.log("📦 Step 3: Deploying PIL Governor...\n");
+  console.log("📦 Step 3: Deploying Soul Governor...\n");
 
-  const PILGovernor = await ethers.getContractFactory("PILGovernor");
-  const governor = await PILGovernor.deploy(tokenAddress, timelockAddress);
+  const SoulGovernor = await ethers.getContractFactory("SoulGovernor");
+  const governor = await SoulGovernor.deploy(tokenAddress, timelockAddress);
   await governor.waitForDeployment();
 
   const governorAddress = await governor.getAddress();
-  deployment.contracts.PILGovernor = governorAddress;
-  deployment.txHashes.PILGovernor = governor.deploymentTransaction()?.hash || "";
+  deployment.contracts.SoulGovernor = governorAddress;
+  deployment.txHashes.SoulGovernor = governor.deploymentTransaction()?.hash || "";
 
-  console.log(`  ✅ PILGovernor deployed: ${governorAddress}`);
+  console.log(`  ✅ SoulGovernor deployed: ${governorAddress}`);
   console.log(`     Voting delay: ${config.votingDelay} seconds`);
   console.log(`     Voting period: ${config.votingPeriod} seconds`);
   console.log(`     Quorum: ${config.quorumPercentage}%\n`);
@@ -214,8 +214,8 @@ async function main() {
   console.log("📦 Step 6: Initial Token Distribution...\n");
 
   // Mint initial supply to deployer
-  console.log(`  Minting ${ethers.formatEther(config.initialSupply)} PIL to deployer...`);
-  // Note: This assumes PILToken has a mint function accessible to owner
+  console.log(`  Minting ${ethers.formatEther(config.initialSupply)} Soul to deployer...`);
+  // Note: This assumes SoulToken has a mint function accessible to owner
   // If not, initial supply should be in constructor
 
   // Delegate votes to self (required for governance participation)
@@ -264,15 +264,15 @@ async function main() {
   console.log("=".repeat(60));
   console.log(`
 Deployed Contracts:
-  - PILToken:           ${deployment.contracts.PILToken}
+  - SoulToken:           ${deployment.contracts.SoulToken}
   - TimelockController: ${deployment.contracts.TimelockController}  
-  - PILGovernor:        ${deployment.contracts.PILGovernor}
+  - SoulGovernor:        ${deployment.contracts.SoulGovernor}
 
 Configuration:
   - Timelock delay:     ${config.timelockDelay / 3600} hours
   - Voting delay:       ${config.votingDelay / 60} minutes
   - Voting period:      ${config.votingPeriod / 3600} hours
-  - Proposal threshold: ${ethers.formatEther(config.proposalThreshold)} PIL
+  - Proposal threshold: ${ethers.formatEther(config.proposalThreshold)} Soul
   - Quorum:             ${config.quorumPercentage}%
 
 Deployment saved to: ${filepath}
@@ -282,7 +282,7 @@ Next Steps:
   2. Set up multi-sig for critical operations
   3. Transfer ownership to timelock where appropriate
   4. Create initial governance proposals
-  5. Distribute PIL tokens to stakeholders
+  5. Distribute Soul tokens to stakeholders
 `);
 
   return deployment;
@@ -297,7 +297,7 @@ async function createProposal(
   description: string
 ) {
   const [signer] = await ethers.getSigners();
-  const governor = await ethers.getContractAt("PILGovernor", governorAddress);
+  const governor = await ethers.getContractAt("SoulGovernor", governorAddress);
   
   console.log("Creating proposal...");
   const tx = await governor.propose(targets, values, calldatas, description);

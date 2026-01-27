@@ -7,7 +7,7 @@ import "../interfaces/IProofVerifier.sol";
 /**
  * @title VerifierRegistry
  * @author Soul Protocol
- * @notice Central registry for all PIL v2 proof verifiers
+ * @notice Central registry for all Soul v2 proof verifiers
  * @dev Manages verifiers for different proof types (validity, policy, nullifier, etc.)
  */
 contract VerifierRegistry is AccessControl, IVerifierRegistry {

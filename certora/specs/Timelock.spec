@@ -1,9 +1,9 @@
 /**
  * Certora Formal Verification Specification
- * Privacy Interoperability Layer - PILTimelock
+ * Soul Protocol - SoulTimelock
  */
 
-using PILTimelock as timelock;
+using SoulTimelock as timelock;
 
 methods {
     // View functions

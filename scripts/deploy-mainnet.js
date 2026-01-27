@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 
 /**
- * PIL Mainnet Deployment Script
+ * Soul Mainnet Deployment Script
  * 
  * Prerequisites:
  * 1. Set PRIVATE_KEY and RPC_URL in .env
@@ -30,8 +30,8 @@ const CONFIG = {
   
   // Token configuration
   token: {
-    name: "PIL Token",
-    symbol: "PIL",
+    name: "Soul Token",
+    symbol: "Soul",
     initialSupply: ethers.parseEther("5000000"), // 5M for liquidity
   },
   
@@ -42,10 +42,10 @@ const CONFIG = {
     "PolicyBoundProofs",
     "ExecutionAgnosticStateCommitments",
     "CrossDomainNullifierAlgebra",
-    "PILv2Orchestrator",
-    "PILTimelock",
-    "PILToken",
-    "PILGovernance",
+    "Soulv2Orchestrator",
+    "SoulTimelock",
+    "SoulToken",
+    "SoulGovernance",
   ],
 };
 
@@ -54,7 +54,7 @@ const deployedAddresses = {};
 
 async function main() {
   console.log("═══════════════════════════════════════════════════════════");
-  console.log("           PIL Mainnet Deployment");
+  console.log("           Soul Mainnet Deployment");
   console.log("═══════════════════════════════════════════════════════════");
   
   const [deployer] = await ethers.getSigners();
@@ -83,14 +83,14 @@ async function main() {
   // 1. Deploy Verifier
   await deployContract("Groth16VerifierBN254", []);
   
-  // 2. Deploy PIL v2 Primitives
+  // 2. Deploy Soul v2 Primitives
   await deployContract("ProofCarryingContainer", []);
   await deployContract("PolicyBoundProofs", []);
   await deployContract("ExecutionAgnosticStateCommitments", []);
   await deployContract("CrossDomainNullifierAlgebra", []);
   
   // 3. Deploy Orchestrator
-  await deployContract("PILv2Orchestrator", [
+  await deployContract("Soulv2Orchestrator", [
     deployedAddresses.ProofCarryingContainer,
     deployedAddresses.PolicyBoundProofs,
     deployedAddresses.ExecutionAgnosticStateCommitments,
@@ -98,7 +98,7 @@ async function main() {
   ]);
   
   // 4. Deploy Timelock
-  await deployContract("PILTimelock", [
+  await deployContract("SoulTimelock", [
     CONFIG.timelock.minDelay,
     [], // proposers - will be set via multi-sig
     [], // executors - will be set via multi-sig
@@ -106,18 +106,18 @@ async function main() {
   ]);
   
   // 5. Deploy Token
-  await deployContract("PILToken", [deployer.address]);
+  await deployContract("SoulToken", [deployer.address]);
   
   // 6. Deploy Governance
-  await deployContract("PILGovernance", [deployedAddresses.PILToken]);
+  await deployContract("SoulGovernance", [deployedAddresses.SoulToken]);
   
   // Post-deployment configuration
   console.log("\n⚙️  Post-Deployment Configuration...\n");
   
   // Configure orchestrator permissions
   const orchestrator = await ethers.getContractAt(
-    "PILv2Orchestrator",
-    deployedAddresses.PILv2Orchestrator
+    "Soulv2Orchestrator",
+    deployedAddresses.Soulv2Orchestrator
   );
   
   console.log("   Setting up primitive registrations...");

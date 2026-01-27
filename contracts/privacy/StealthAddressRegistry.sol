@@ -8,7 +8,7 @@ import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol
 
 /**
  * @title StealthAddressRegistry
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Registry for stealth addresses enabling unlinkable transfers
  * @dev Implements ERC-5564 compatible stealth address scheme
  *
@@ -78,7 +78,7 @@ contract StealthAddressRegistry is
 
     /// @notice Domain separator for stealth key derivation
     bytes32 public constant STEALTH_DOMAIN =
-        keccak256("PIL_STEALTH_ADDRESS_V1");
+        keccak256("Soul_STEALTH_ADDRESS_V1");
 
     /// @notice Maximum announcements to store per address
     uint256 public constant MAX_ANNOUNCEMENTS = 1000;

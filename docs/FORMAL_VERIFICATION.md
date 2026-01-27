@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the formal verification setup for the Soul Protocol Privacy Interoperability Layer using Certora Prover.
+This document describes the formal verification setup for the Soul Protocol Soul Protocol using Certora Prover.
 
 ## Verification Jobs Submitted
 
@@ -13,10 +13,10 @@ All verification jobs have been successfully submitted to the Certora cloud:
 | Contract | Config | Status |
 |----------|--------|--------|
 | ConfidentialStateContainerV3 | `verify.conf` | ✅ Submitted |
-| PILAtomicSwapV2 | `verify_atomicswap.conf` | ✅ Submitted |
+| SoulAtomicSwapV2 | `verify_atomicswap.conf` | ✅ Submitted |
 | NullifierRegistryV3 | `verify_nullifier.conf` | ✅ Submitted |
 | CrossChainProofHubV3 | `verify_proofhub.conf` | ✅ Submitted |
-| PILTimelock | `verify_timelock.conf` | ✅ Submitted |
+| SoulTimelock | `verify_timelock.conf` | ✅ Submitted |
 
 ### Novel Primitives
 
@@ -161,7 +161,7 @@ All verification jobs have been successfully submitted to the Certora cloud:
 - Removing chain makes it unsupported
 - Total proofs and batches are monotonic
 
-#### PILTimelock Properties
+#### SoulTimelock Properties
 - Execution requires minimum delay
 - Execution after grace period fails
 - Same operation cannot be proposed twice

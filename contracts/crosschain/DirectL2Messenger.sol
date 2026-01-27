@@ -9,7 +9,7 @@ import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/Messa
 
 /**
  * @title DirectL2Messenger
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Direct L2-to-L2 messaging without L1 settlement
  * @dev Enables fast cross-L2 communication via shared sequencers and direct channels
  *
@@ -179,7 +179,7 @@ contract DirectL2Messenger is ReentrancyGuard, AccessControl, Pausable {
         uint256 deadline;
         MessagePath path;
         MessageStatus status;
-        bytes32 nullifierBinding; // PIL nullifier for cross-chain privacy
+        bytes32 nullifierBinding; // Soul nullifier for cross-chain privacy
     }
 
     /// @notice Relayer information
@@ -275,7 +275,7 @@ contract DirectL2Messenger is ReentrancyGuard, AccessControl, Pausable {
     /// @notice Astria sequencer contract
     address public astriaSequencer;
 
-    /// @notice PIL Hub address for nullifier binding
+    /// @notice Soul Hub address for nullifier binding
     address public pilHub;
 
     /// @notice Challenge bonds per message
@@ -306,7 +306,7 @@ contract DirectL2Messenger is ReentrancyGuard, AccessControl, Pausable {
      * @param recipient Message recipient on destination
      * @param payload Message payload
      * @param path Preferred message path
-     * @param nullifierBinding Optional PIL nullifier for privacy
+     * @param nullifierBinding Optional Soul nullifier for privacy
      * @return messageId Unique message identifier
      */
     function sendMessage(

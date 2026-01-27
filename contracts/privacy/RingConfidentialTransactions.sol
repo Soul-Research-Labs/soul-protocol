@@ -8,7 +8,7 @@ import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol
 
 /**
  * @title RingConfidentialTransactions
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Implements Ring Confidential Transactions (RingCT) for amount hiding
  * @dev Based on Monero's RingCT with Pedersen commitments and CLSAG signatures
  *
@@ -80,7 +80,7 @@ contract RingConfidentialTransactions is
     uint256 public constant MAX_OUTPUTS = 16;
 
     /// @notice Domain separator for RingCT
-    bytes32 public constant RINGCT_DOMAIN = keccak256("PIL_RINGCT_V1");
+    bytes32 public constant RINGCT_DOMAIN = keccak256("Soul_RINGCT_V1");
 
     /// @notice Bulletproof range (64 bits)
     uint256 public constant BULLETPROOF_RANGE = 64;

@@ -8,7 +8,7 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 /// @title ConfidentialStateContainerV3
-/// @author PIL Protocol
+/// @author Soul Protocol
 /// @notice Production-ready confidential state management with enhanced security
 /// @dev Gas-optimized with storage packing, assembly, and immutable variables
 contract ConfidentialStateContainerV3 is

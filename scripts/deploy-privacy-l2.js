@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * @title Privacy L2 Deployment Script
- * @notice Deploys all PIL privacy contracts to L2 testnets
+ * @notice Deploys all Soul privacy contracts to L2 testnets
  * @dev Includes stealth addresses, RingCT, nullifiers, and privacy hub
  */
 
@@ -209,7 +209,7 @@ async function deployPrivacyToL2(networkName) {
 
 async function main() {
   console.log("\n╔══════════════════════════════════════════════════════════════════════╗");
-  console.log("║          PIL PRIVACY CONTRACTS - L2 TESTNET DEPLOYMENT               ║");
+  console.log("║          Soul PRIVACY CONTRACTS - L2 TESTNET DEPLOYMENT               ║");
   console.log("╚══════════════════════════════════════════════════════════════════════╝\n");
 
   // Get current network from hardhat

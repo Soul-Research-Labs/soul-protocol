@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "./PILTimelock.sol";
+import "./SoulTimelock.sol";
 import "@openzeppelin/contracts/access/IAccessControl.sol";
 import "../primitives/ProofCarryingContainer.sol";
 import "../primitives/PolicyBoundProofs.sol";
@@ -11,7 +11,7 @@ import "../primitives/CrossDomainNullifierAlgebra.sol";
 /**
  * @title TimelockAdmin
  * @author Soul Protocol
- * @notice Wrapper for timelocked administrative operations on PIL v2 contracts
+ * @notice Wrapper for timelocked administrative operations on Soul v2 contracts
  * @dev Provides type-safe interfaces for proposing timelocked admin operations
  *
  * Usage Pattern:
@@ -28,7 +28,7 @@ contract TimelockAdmin {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice The timelock controller
-    PILTimelock public immutable timelock;
+    SoulTimelock public immutable timelock;
 
     /// @notice ProofCarryingContainer contract
     ProofCarryingContainer public immutable pc3;
@@ -71,7 +71,7 @@ contract TimelockAdmin {
         address _easc,
         address _cdna
     ) {
-        timelock = PILTimelock(payable(_timelock));
+        timelock = SoulTimelock(payable(_timelock));
         pc3 = ProofCarryingContainer(_pc3);
         pbp = PolicyBoundProofs(_pbp);
         easc = ExecutionAgnosticStateCommitments(_easc);
@@ -509,7 +509,7 @@ contract TimelockAdmin {
         external
         view
         returns (
-            PILTimelock.OperationStatus status,
+            SoulTimelock.OperationStatus status,
             uint256 readyAt,
             uint8 confirmations,
             uint8 required
@@ -525,7 +525,7 @@ contract TimelockAdmin {
             ,
             uint256 _readyAt,
             ,
-            PILTimelock.OperationStatus _status,
+            SoulTimelock.OperationStatus _status,
             ,
             uint8 _confirmations
         ) = timelock.operations(operationId);

@@ -1,7 +1,7 @@
 [package]
 name = "cross_domain_nullifier"
 type = "bin"
-authors = ["Privacy Interoperability Layer"]
+authors = ["Soul Protocol"]
 compiler_version = ">=1.0.0"
 description = "Domain-separated nullifiers (CDNA) that compose algebraically across chains"
 

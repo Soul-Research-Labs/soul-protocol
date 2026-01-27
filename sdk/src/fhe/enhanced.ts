@@ -1,7 +1,7 @@
 /**
- * PIL FHE Enhanced TypeScript Integration
+ * Soul FHE Enhanced TypeScript Integration
  * 
- * Comprehensive client-side library for FHE operations with PIL protocol
+ * Comprehensive client-side library for FHE operations with Soul protocol
  * Includes coprocessor integration, gateway interaction, and oracle support
  * 
  * @module @pil/sdk/fhe

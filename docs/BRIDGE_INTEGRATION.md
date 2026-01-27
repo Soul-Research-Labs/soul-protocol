@@ -1,8 +1,8 @@
-# PIL Bridge Adapters Integration Guide
+# Soul Bridge Adapters Integration Guide
 
 > Cross-chain privacy-preserving transfers via unified `IBridgeAdapter` interface.
 
-PIL Bridge Adapters provide a unified interface for cross-chain operations while handling the complexity of different blockchain protocols. Each adapter implements the `IBridgeAdapter` interface:
+Soul Bridge Adapters provide a unified interface for cross-chain operations while handling the complexity of different blockchain protocols. Each adapter implements the `IBridgeAdapter` interface:
 
 ```solidity
 interface IBridgeAdapter {
@@ -49,9 +49,9 @@ interface IBridgeAdapter {
 ### Initiating a Bridge Transfer
 
 ```typescript
-import { PILBridge, ChainId } from '@pil/sdk';
+import { SoulBridge, ChainId } from '@pil/sdk';
 
-const bridge = new PILBridge(provider);
+const bridge = new SoulBridge(provider);
 
 // Initiate cross-chain transfer
 const transferId = await bridge.transfer({
@@ -302,12 +302,12 @@ await htlc.claimWithSecret(secret);
 ## Error Handling
 
 ```typescript
-import { PILBridgeError, ErrorCodes } from '@pil/sdk';
+import { SoulBridgeError, ErrorCodes } from '@pil/sdk';
 
 try {
   await bridge.transfer(params);
 } catch (error) {
-  if (error instanceof PILBridgeError) {
+  if (error instanceof SoulBridgeError) {
     // ErrorCodes: INSUFFICIENT_BALANCE, PROOF_VERIFICATION_FAILED, 
     // BRIDGE_PAUSED, TIMEOUT_EXCEEDED, INVALID_RECIPIENT
     handleError(error.code);

@@ -2,7 +2,7 @@
 
 > **A Novel Cryptographic Primitive for Cross-Chain Confidential State Transitions**
 
-[![PIL v2](https://img.shields.io/badge/PIL-v2-blue.svg)](https://github.com/soul-research-labs/PIL)
+[![Soul v2](https://img.shields.io/badge/Soul-v2-blue.svg)](https://github.com/soul-research-labs/Soul)
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.20-purple.svg)](https://docs.soliditylang.org/)
 
 ---
@@ -18,7 +18,7 @@
 - [Operations](#operations)
 - [Security Architecture](#security-architecture)
 - [Cryptographic Foundations](#cryptographic-foundations)
-- [Integration with PIL v2](#integration-with-pil-v2)
+- [Integration with Soul v2](#integration-with-pil-v2)
 - [Implementation](#implementation)
 - [Use Cases](#use-cases)
 - [Formal Security Analysis](#formal-security-analysis)
@@ -521,13 +521,13 @@ Ensures nullifiers are globally unique across:
 
 ---
 
-## Integration with PIL v2
+## Integration with Soul v2
 
-ZK-SLocks integrate with other PIL v2 primitives:
+ZK-SLocks integrate with other Soul v2 primitives:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                         PIL v2 STACK                             │
+│                         Soul v2 STACK                             │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  ┌──────────────────────────────────────────────────────────┐   │
@@ -642,10 +642,10 @@ fn main(
 ### SDK Usage
 
 ```typescript
-import { PILClient, ZKSLocks } from '@pil/sdk';
+import { SoulClient, ZKSLocks } from '@pil/sdk';
 
 // Create client
-const client = new PILClient({ rpcUrl, contracts });
+const client = new SoulClient({ rpcUrl, contracts });
 
 // Create lock
 const lockId = await client.zkSlocks.createLock({

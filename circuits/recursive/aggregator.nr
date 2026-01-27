@@ -1,9 +1,9 @@
-// PIL Proof Aggregator Circuit
+// Soul Proof Aggregator Circuit
 // Aggregates multiple proofs into a single proof using folding
 
 use dep::std::hash::poseidon;
 use dep::recursive::{
-    PILState, FoldedInstance, IVCProof, ProofBatch,
+    SoulState, FoldedInstance, IVCProof, ProofBatch,
     generate_challenge, generate_challenge_batch
 };
 
@@ -12,7 +12,7 @@ use dep::recursive::{
 // ============================================
 
 global MAX_BATCH_SIZE: u32 = 32;
-global DOMAIN_SEPARATOR_AGGREGATION: Field = 0x50494C5F4147475245474154494F4E; // "PIL_AGGREGATION"
+global DOMAIN_SEPARATOR_AGGREGATION: Field = 0x50494C5F4147475245474154494F4E; // "Soul_AGGREGATION"
 
 // ============================================
 // Aggregated Proof Structure

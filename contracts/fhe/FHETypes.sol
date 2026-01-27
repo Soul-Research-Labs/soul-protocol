@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 /**
  * @title FHETypes
- * @author Privacy Interoperability Layer
+ * @author Soul Protocol
  * @notice Type definitions and utilities for FHE encrypted values
  * @dev Provides type-safe wrappers for encrypted handles compatible with fhEVM
  *

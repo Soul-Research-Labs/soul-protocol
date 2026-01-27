@@ -7,7 +7,7 @@ pragma solidity ^0.8.20;
  * @dev Used to ensure storage slots don't collide between versions
  */
 
-// Storage slot definitions for PIL contracts
+// Storage slot definitions for Soul contracts
 // These must remain constant across upgrades
 
 library StorageSlots {

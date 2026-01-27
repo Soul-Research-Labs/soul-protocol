@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 /**
  * @title CrossChainMessageRelay
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Handles cross-chain message passing between Ethereum L1 and L2 networks
  * @dev Implements secure message relay with signature verification and replay protection
  *

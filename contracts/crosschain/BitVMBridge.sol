@@ -8,7 +8,7 @@ import "../interfaces/IBitVMBridge.sol";
 
 /**
  * @title BitVMBridge
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Trust-minimized Bitcoin bridge using BitVM fraud proofs
  * @dev Implements BitVM2 challenge-response protocol for Bitcoin smart contracts
  *

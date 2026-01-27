@@ -1,6 +1,6 @@
-# Noir Circuits for Privacy Interoperability Layer
+# Noir Circuits for Soul Protocol
 
-This directory contains all PIL ZK circuits implemented in Noir.
+This directory contains all Soul ZK circuits implemented in Noir.
 
 ## Overview
 
@@ -225,5 +225,5 @@ MIT License - see [LICENSE](../LICENSE) for details.
 
 - [Noir Documentation](https://noir-lang.org/docs)
 - [Noir GitHub](https://github.com/noir-lang/noir)
-- [PIL Documentation](../docs/)
+- [Soul Documentation](../docs/)
 - [Circuit Documentation](../circuits/README.md)

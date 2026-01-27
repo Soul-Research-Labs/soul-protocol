@@ -7,9 +7,9 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title SecurityOracle
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Decentralized security oracle for real-time threat detection
- * @dev Aggregates security signals from multiple sources to protect PIL protocol
+ * @dev Aggregates security signals from multiple sources to protect Soul protocol
  *
  * Features:
  * 1. Threat Reporting: Multiple reporters submit threat signals

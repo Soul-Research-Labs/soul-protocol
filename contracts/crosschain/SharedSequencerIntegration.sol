@@ -8,7 +8,7 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 /**
  * @title SharedSequencerIntegration
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Integration with shared sequencers (Espresso, Astria, Radius) for atomic L2 ordering
  * @dev Provides atomic inclusion guarantees across participating L2s
  *
@@ -273,7 +273,7 @@ contract SharedSequencerIntegration is
     /// @notice Radius contract address
     address public radiusEnclave;
 
-    /// @notice PIL Hub for nullifier binding
+    /// @notice Soul Hub for nullifier binding
     address public pilHub;
 
     /*//////////////////////////////////////////////////////////////

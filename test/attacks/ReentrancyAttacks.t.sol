@@ -6,7 +6,7 @@ import "forge-std/console.sol";
 
 /**
  * @title Reentrancy Attack Simulation Tests
- * @notice Tests various reentrancy attack vectors against PIL contracts
+ * @notice Tests various reentrancy attack vectors against Soul contracts
  * @dev Part of security:attack test suite
  */
 contract ReentrancyAttacks is Test {

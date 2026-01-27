@@ -1,6 +1,6 @@
-# PIL Protocol Architecture
+# Soul Protocol Architecture
 
-> **Technical Deep-Dive into PIL's Modular Privacy Infrastructure**
+> **Technical Deep-Dive into Soul's Modular Privacy Infrastructure**
 
 [![Status](https://img.shields.io/badge/Status-Production-green.svg)]()
 [![Version](https://img.shields.io/badge/Version-3.0-blue.svg)]()
@@ -27,7 +27,7 @@
 
 ## Overview
 
-The Privacy Interoperability Layer (PIL) is designed as a modular middleware protocol that enables private cross-chain state transfers and ZK proof verification. This document describes the technical architecture, component interactions, and security model.
+The Soul Protocol (Soul) is designed as a modular middleware protocol that enables private cross-chain state transfers and ZK proof verification. This document describes the technical architecture, component interactions, and security model.
 
 ## Core Design Principles
 
@@ -170,7 +170,7 @@ e(A, B) = e(α, β) · e(∑ᵢ aᵢ·ICᵢ, γ) · e(C, δ)
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                   PILAtomicSwap                          │
+│                   SoulAtomicSwap                          │
 ├─────────────────────────────────────────────────────────┤
 │                                                         │
 │  Swap Lifecycle:                                        │
@@ -195,7 +195,7 @@ e(A, B) = e(α, β) · e(∑ᵢ aᵢ·ICᵢ, γ) · e(C, δ)
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                   PILCompliance                          │
+│                   SoulCompliance                          │
 ├─────────────────────────────────────────────────────────┤
 │                                                         │
 │  KYC Tiers:                                             │

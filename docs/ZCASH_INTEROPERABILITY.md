@@ -6,7 +6,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────┐
-│                        PIL <-> ZCASH INTEROPERABILITY                           │
+│                        Soul <-> ZCASH INTEROPERABILITY                           │
 ├─────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                  │
 │  ┌─────────────────────────────────────────────────────────────────────────────┐│
@@ -48,12 +48,12 @@
 │                                        │                                         │
 │                                        ▼                                         │
 │  ┌──────────────────────────────────────────────────────────────────────────────┐│
-│  │                        PIL PROTOCOL (EVM)                                     ││
+│  │                        Soul PROTOCOL (EVM)                                     ││
 │  │                                                                               ││
 │  │  ┌────────────────────────────────────────────────────────────────────────┐  ││
 │  │  │                    ZcashBridgeAdapter.sol                               │  ││
-│  │  │  - Deposit flow: Zcash shielded → PIL wrapped tokens                   │  ││
-│  │  │  - Withdrawal flow: PIL → Zcash custodian release                      │  ││
+│  │  │  - Deposit flow: Zcash shielded → Soul wrapped tokens                   │  ││
+│  │  │  - Withdrawal flow: Soul → Zcash custodian release                      │  ││
 │  │  │  - Rate limiting & circuit breakers                                    │  ││
 │  │  └────────────────────────────────────────────────────────────────────────┘  ││
 │  │                                                                               ││
@@ -61,7 +61,7 @@
 │  │  │                   ZcashNullifierRegistry.sol                            │  ││
 │  │  │  - Cross-chain nullifier synchronization                               │  ││
 │  │  │  - Epoch-based organization                                            │  ││
-│  │  │  - PIL <-> Zcash nullifier binding                                     │  ││
+│  │  │  - Soul <-> Zcash nullifier binding                                     │  ││
 │  │  └────────────────────────────────────────────────────────────────────────┘  ││
 │  │                                                                               ││
 │  │  ┌────────────────────────────────────────────────────────────────────────┐  ││
@@ -122,7 +122,7 @@ struct OrchardNote {
 | `deriveOrchardNullifier()` | Derive Orchard nullifier from note |
 | `computeValueCommitment()` | Compute Pedersen value commitment |
 | `verifyMerkleInclusion()` | Verify note in commitment tree |
-| `computeCrossChainNullifierBinding()` | Bind Zcash nullifier to PIL space |
+| `computeCrossChainNullifierBinding()` | Bind Zcash nullifier to Soul space |
 
 ### ZcashBridgeAdapter.sol
 
@@ -132,7 +132,7 @@ Main bridge adapter for Zcash cross-chain operations.
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│                     DEPOSIT FLOW (Zcash → PIL)                    │
+│                     DEPOSIT FLOW (Zcash → Soul)                    │
 ├──────────────────────────────────────────────────────────────────┤
 │                                                                   │
 │  1. User sends shielded ZEC to custodian address                 │
@@ -159,7 +159,7 @@ Main bridge adapter for Zcash cross-chain operations.
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│                    WITHDRAWAL FLOW (PIL → Zcash)                  │
+│                    WITHDRAWAL FLOW (Soul → Zcash)                  │
 ├──────────────────────────────────────────────────────────────────┤
 │                                                                   │
 │  1. User initiates withdrawal with Zcash shielded address        │
@@ -218,7 +218,7 @@ function batchRegisterNullifiers(
 #### Cross-Chain Binding
 
 ```solidity
-// Create a binding between Zcash and PIL nullifier spaces
+// Create a binding between Zcash and Soul nullifier spaces
 function createBinding(
     bytes32 zcashNullifier,
     bytes32 pilNullifier,
@@ -452,7 +452,7 @@ const depositAddress = await zcashClient.getNewShieldedAddress();
 // 3. Wait for Zcash confirmation
 await zcashClient.waitForConfirmations(txHash, 10);
 
-// 4. Submit deposit to PIL
+// 4. Submit deposit to Soul
 const proof = await generateSPVProof(txHash);
 await bridge.initiateDeposit(
   SAPLING_POOL,

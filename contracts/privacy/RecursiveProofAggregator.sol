@@ -8,7 +8,7 @@ import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol
 
 /**
  * @title RecursiveProofAggregator
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Aggregates multiple ZK proofs into a single succinct proof
  * @dev Implements recursive SNARK composition for proof batching
  *
@@ -71,7 +71,7 @@ contract RecursiveProofAggregator is
     // =========================================================================
 
     /// @notice Domain separator
-    bytes32 public constant DOMAIN = keccak256("PIL_RECURSIVE_PROOF_V1");
+    bytes32 public constant DOMAIN = keccak256("Soul_RECURSIVE_PROOF_V1");
 
     /// @notice BN254 curve order (for Groth16)
     uint256 public constant BN254_ORDER =

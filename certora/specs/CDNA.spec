@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Privacy Interoperability Layer - ConfidentialDomainNullifierAuthority (CDNA)
+ * Soul Protocol - ConfidentialDomainNullifierAuthority (CDNA)
  */
 
 methods {

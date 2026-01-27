@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title VerifierHub
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Central registry and router for all ZK proof verifiers
  * @dev Manages multiple circuit verifiers with versioning and upgrade support
  */
@@ -22,7 +22,7 @@ contract VerifierHub is AccessControl, Pausable {
                                  TYPES
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Circuit types supported by PIL
+    /// @notice Circuit types supported by Soul
     enum CircuitType {
         StateCommitment, // 0: Prove knowledge of state preimage
         StateTransfer, // 1: Prove valid state ownership transfer

@@ -7,9 +7,9 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title EthereumL1Bridge
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Bridge adapter for Ethereum mainnet (L1) interoperability
- * @dev Handles cross-chain proof relay and state synchronization between PIL and Ethereum L1
+ * @dev Handles cross-chain proof relay and state synchronization between Soul and Ethereum L1
  *
  * ARCHITECTURE:
  * ┌─────────────────────────────────────────────────────────────────┐
@@ -99,7 +99,7 @@ contract EthereumL1Bridge is AccessControl, ReentrancyGuard, Pausable {
         uint256 targetChainId;
         address token;
         uint256 amount;
-        bytes32 commitment; // PIL commitment for privacy
+        bytes32 commitment; // Soul commitment for privacy
         uint256 timestamp;
         bool claimed;
     }
@@ -111,7 +111,7 @@ contract EthereumL1Bridge is AccessControl, ReentrancyGuard, Pausable {
         uint256 sourceChainId;
         address token;
         uint256 amount;
-        bytes32 nullifier; // PIL nullifier to prevent double-spend
+        bytes32 nullifier; // Soul nullifier to prevent double-spend
         bytes32[] proof; // Merkle proof from L2
         uint256 timestamp;
         bool finalized;
@@ -469,7 +469,7 @@ contract EthereumL1Bridge is AccessControl, ReentrancyGuard, Pausable {
      * @notice Submit a state commitment from an L2 chain
      * @param sourceChainId The source L2 chain ID
      * @param stateRoot The state root from L2
-     * @param proofRoot The PIL proof merkle root
+     * @param proofRoot The Soul proof merkle root
      * @param blockNumber The L2 block number
      */
     function submitStateCommitment(
@@ -599,7 +599,7 @@ contract EthereumL1Bridge is AccessControl, ReentrancyGuard, Pausable {
     /**
      * @notice Initiate a deposit from L1 to L2 with privacy commitment
      * @param targetChainId The target L2 chain ID
-     * @param commitment The PIL commitment for the deposit
+     * @param commitment The Soul commitment for the deposit
      */
     function depositETH(
         uint256 targetChainId,
@@ -658,7 +658,7 @@ contract EthereumL1Bridge is AccessControl, ReentrancyGuard, Pausable {
      * @notice Initiate withdrawal claim from L2
      * @param sourceChainId The source L2 chain ID
      * @param amount The withdrawal amount
-     * @param nullifier The PIL nullifier to prevent double-spend
+     * @param nullifier The Soul nullifier to prevent double-spend
      * @param proof Merkle proof from L2 state
      */
     function initiateWithdrawal(
@@ -771,7 +771,7 @@ contract EthereumL1Bridge is AccessControl, ReentrancyGuard, Pausable {
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Relay a PIL proof from L2 to L1
+     * @notice Relay a Soul proof from L2 to L1
      * @param sourceChainId The source L2 chain
      * @param proofHash The proof hash
      * @param stateRoot The state root the proof is against

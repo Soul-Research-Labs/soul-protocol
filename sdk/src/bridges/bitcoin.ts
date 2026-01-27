@@ -1,5 +1,5 @@
 /**
- * @fileoverview Bitcoin bridge utilities for PIL SDK
+ * @fileoverview Bitcoin bridge utilities for Soul SDK
  * @module bridges/bitcoin
  */
 

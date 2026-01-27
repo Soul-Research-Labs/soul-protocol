@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Certora Verification Language (CVL) Specification for FHE Contracts
-// Privacy Interoperability Layer
+// Soul Protocol
 
 /**
  * =============================================================================

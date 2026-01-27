@@ -403,7 +403,7 @@ contract SelectiveDisclosureCircuit is
     }
 
     /*//////////////////////////////////////////////////////////////
-                        CIRCUIT COMPILATION
+                        CIRCUIT COMSoulATION
     //////////////////////////////////////////////////////////////*/
 
     /**

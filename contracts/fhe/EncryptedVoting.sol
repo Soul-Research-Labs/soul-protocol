@@ -9,7 +9,7 @@ import "./FHETypes.sol";
 
 /**
  * @title EncryptedVoting
- * @author Privacy Interoperability Layer
+ * @author Soul Protocol
  * @notice Private voting system with encrypted votes and tallies using FHE
  * @dev Implements fully confidential voting where individual votes cannot be seen
  *

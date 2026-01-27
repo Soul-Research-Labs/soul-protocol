@@ -208,7 +208,7 @@ Key guarantees:
 ┌─────────────────────────────────────────────────────────────────────────────────┐
 │                           VERIFICATION LAYER (Kernel-Enforced)                  │
 │  ┌─────────────────────────────────────────────────────────────────────────┐    │
-│  │ SoulControlPlane + PILKernelProof                                       │    │
+│  │ SoulControlPlane + SoulKernelProof                                       │    │
 │  │  - 5-stage lifecycle verification                                       │    │
 │  │  - Policy enforcement (cryptographic)                                   │    │
 │  │  - Nullifier registration                                               │    │
@@ -282,7 +282,7 @@ Key guarantees:
 **Soul:**
 ```
 1. ZK proof submitted with execution
-2. PILKernelProof verifies:
+2. SoulKernelProof verifies:
    - Policy compliance (cryptographic)
    - State transition correctness
    - Nullifier validity
@@ -418,7 +418,7 @@ ConfidentialMessageTransport:
 
 **Soul Solution:**
 ```
-PILKernelProof:
+SoulKernelProof:
 - 7 mandatory invariants verified cryptographically
 - No trust assumption beyond math
 - Auditors can verify proofs independently

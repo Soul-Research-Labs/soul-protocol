@@ -1,5 +1,5 @@
 // K Framework Formal Specification for Optimism OP Stack
-// Privacy Interoperability Layer (PIL) - Optimism Bridge Formalization
+// Soul Protocol (Soul) - Optimism Bridge Formalization
 
 module OPTIMISM-TYPES
     imports INT
@@ -181,10 +181,10 @@ module OPTIMISM-KECCAK
     rule deriveOptimismNullifier(MessageId, Domain, Timestamp) =>
         keccak256(MessageId +Bytes Domain +Bytes Int2Bytes(Timestamp, BE, Unsigned) +Bytes b"OPTIMISM_NULLIFIER")
 
-    // Derive cross-domain PIL nullifier
-    syntax Bytes ::= derivePILNullifier(Bytes, Bytes) [function]
-    rule derivePILNullifier(OptimismNullifier, Domain) =>
-        keccak256(OptimismNullifier +Bytes Domain +Bytes b"OP2PIL")
+    // Derive cross-domain Soul nullifier
+    syntax Bytes ::= deriveSoulNullifier(Bytes, Bytes) [function]
+    rule deriveSoulNullifier(OptimismNullifier, Domain) =>
+        keccak256(OptimismNullifier +Bytes Domain +Bytes b"OP2Soul")
 
 endmodule
 
@@ -362,7 +362,7 @@ module OPTIMISM-BRIDGE-SECURITY
     syntax Bool ::= crossDomainNullifierDeterministic(Bytes, Bytes) [function]
     rule crossDomainNullifierDeterministic(MsgId1, MsgId2) =>
         (MsgId1 ==K MsgId2) impliesBool
-        (deriveOptimismNullifier(MsgId1, b"PIL", 0) ==K deriveOptimismNullifier(MsgId2, b"PIL", 0))
+        (deriveOptimismNullifier(MsgId1, b"Soul", 0) ==K deriveOptimismNullifier(MsgId2, b"Soul", 0))
 
     // INVARIANT 5: Different messages produce different nullifiers
     syntax Bool ::= differentMessagesUniqueNullifiers(Bytes, Bytes, Bytes) [function]
@@ -393,7 +393,7 @@ module OPTIMISM-BRIDGE-SECURITY
     syntax Bool ::= crossDomainDirectionMatters(Bytes, Bytes, Bytes) [function]
     rule crossDomainDirectionMatters(Nf, DomainA, DomainB) =>
         (DomainA =/=K DomainB) impliesBool
-        (derivePILNullifier(Nf, DomainA) =/=K derivePILNullifier(Nf, DomainB))
+        (deriveSoulNullifier(Nf, DomainA) =/=K deriveSoulNullifier(Nf, DomainB))
 
     // Helper functions
     syntax DisputeStatus ::= getGameStatus(GameState) [function]
@@ -474,7 +474,7 @@ module OPTIMISM-BRIDGE
          </optimism>
          requires isWithdrawalCompletable(W[WithdrawalId], T)
           andBool nullifierUnique(NullifierHash, Nfs)
-         where NullifierHash = deriveOptimismNullifier(WithdrawalId, b"PIL", T)
+         where NullifierHash = deriveOptimismNullifier(WithdrawalId, b"Soul", T)
 
     // Propose Output Root
     rule <optimism>

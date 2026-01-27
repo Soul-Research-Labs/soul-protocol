@@ -1,4 +1,4 @@
-# Soul - Privacy Interoperability Layer
+# Soul - Soul Protocol
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.22-blue.svg)](https://docs.soliditylang.org/)
@@ -6,7 +6,7 @@
 
 > **Move privately between chains. No metadata. No lock-in.**
 
-Soul (Privacy Interoperability Layer) makes secrets portable. It's a zero-knowledge middleware that lets you transfer confidential state across blockchains without leaking timing, amounts, or identity—solving the privacy lock-in problem that traps users on single chains. 
+Soul (Soul Protocol) makes secrets portable. It's a zero-knowledge middleware that lets you transfer confidential state across blockchains without leaking timing, amounts, or identity—solving the privacy lock-in problem that traps users on single chains. 
 
 ---
 

@@ -1,6 +1,6 @@
 # L2 Interoperability Guide
 
-> **PIL native integration with Arbitrum, Optimism, Base, and zkEVM networks**
+> **Soul native integration with Arbitrum, Optimism, Base, and zkEVM networks**
 
 [![L2s](https://img.shields.io/badge/L2s-Arbitrum%20|%20Optimism%20|%20Base%20|%20zkSync-blue.svg)]()
 
@@ -45,11 +45,11 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                    PIL <-> Arbitrum Bridge                              │
+│                    Soul <-> Arbitrum Bridge                              │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
 │  ┌───────────────────┐           ┌───────────────────┐                 │
-│  │   PIL Protocol    │           │   Arbitrum        │                 │
+│  │   Soul Protocol    │           │   Arbitrum        │                 │
 │  │  (L1 Ethereum)    │           │   (L2 Rollup)     │                 │
 │  │  ┌─────────────┐  │           │  ┌─────────────┐  │                 │
 │  │  │ Delayed     │  │           │  │ ArbOS       │  │                 │
@@ -74,11 +74,11 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                    PIL <-> Optimism Bridge                              │
+│                    Soul <-> Optimism Bridge                              │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
 │  ┌───────────────────┐           ┌───────────────────┐                 │
-│  │   PIL Protocol    │           │   Optimism        │                 │
+│  │   Soul Protocol    │           │   Optimism        │                 │
 │  │  (L1 Ethereum)    │           │   (L2 OP Stack)   │                 │
 │  │  ┌─────────────┐  │           │  ┌─────────────┐  │                 │
 │  │  │ L1 Cross    │  │           │  │ L2 Cross    │  │                 │
@@ -104,7 +104,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                    PIL <-> Base Bridge                                  │
+│                    Soul <-> Base Bridge                                  │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
 │  Features unique to Base:                                               │

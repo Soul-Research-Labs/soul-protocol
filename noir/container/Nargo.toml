@@ -1,7 +1,7 @@
 [package]
 name = "container"
 type = "bin"
-authors = ["Privacy Interoperability Layer"]
+authors = ["Soul Protocol"]
 compiler_version = ">=1.0.0"
 description = "PC³ Container Validity Circuit - proves container is valid without revealing contents"
 

@@ -1,4 +1,4 @@
-# Privacy Interoperability Layer (PIL) Threat Model
+# Soul Protocol (Soul) Threat Model
 
 ## Document Information
 
@@ -13,7 +13,7 @@
 
 ## 1. Executive Summary
 
-This document provides a comprehensive threat model for the Privacy Interoperability Layer (PIL), a cross-chain privacy infrastructure enabling confidential state management and zero-knowledge proof verification across multiple blockchain networks.
+This document provides a comprehensive threat model for the Soul Protocol (Soul), a cross-chain privacy infrastructure enabling confidential state management and zero-knowledge proof verification across multiple blockchain networks.
 
 ## 2. System Overview
 
@@ -21,7 +21,7 @@ This document provides a comprehensive threat model for the Privacy Interoperabi
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    PIL Core Infrastructure                       │
+│                    Soul Core Infrastructure                       │
 ├─────────────────────────────────────────────────────────────────┤
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  │
 │  │ Confidential    │  │  Nullifier      │  │  ZK-Bound       │  │
@@ -78,7 +78,7 @@ This document provides a comprehensive threat model for the Privacy Interoperabi
 **Threat**: Recursive calls to drain funds or manipulate state.
 
 **Affected Components**:
-- `PILAtomicSwapV2.sol`
+- `SoulAtomicSwapV2.sol`
 - `ConfidentialStateContainerV3.sol`
 
 **Mitigations**:
@@ -130,7 +130,7 @@ function safeBitRotate(uint256 value, uint256 shift) internal pure returns (uint
 **Mitigations**:
 - ✅ OpenZeppelin AccessControl
 - ✅ Role hierarchy with separation of duties
-- ✅ Time-locked admin operations via PILTimelock
+- ✅ Time-locked admin operations via SoulTimelock
 
 **Role Structure**:
 ```
@@ -182,7 +182,7 @@ bytes32 nullifier = keccak256(abi.encodePacked(
 
 **Mitigations**:
 - ✅ User-provided entropy required in ZK-SLocks
-- ✅ VDF-based randomness beacon (PILVDF)
+- ✅ VDF-based randomness beacon (SoulVDF)
 - ✅ Commit-reveal schemes for sensitive operations
 
 ### 4.3 Cross-Chain Attacks
@@ -324,7 +324,7 @@ Emergency Action → Guardian Signatures (M of N) → Timelock (24-72h) → Exec
 |---------|---------------|----------|
 | Emergency Pause | Owner-triggered | All pausable contracts |
 | Guardian Recovery | Multi-sig | Critical operations |
-| Timelock | PILTimelock | Admin functions |
+| Timelock | SoulTimelock | Admin functions |
 | Upgradability | UUPS Proxy | Upgradeable contracts |
 
 ---

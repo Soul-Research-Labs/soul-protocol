@@ -1,7 +1,7 @@
 /**
- * PIL FHE TypeScript Integration
+ * Soul FHE TypeScript Integration
  * 
- * Client-side library for FHE operations with PIL protocol
+ * Client-side library for FHE operations with Soul protocol
  */
 
 import { ethers } from 'ethers';
@@ -42,7 +42,7 @@ export interface ComputationResult {
 // FHE Client
 // ============================================
 
-export class PILFHEClient {
+export class SoulFHEClient {
   private config: FHEConfig;
   private publicKey: Uint8Array | null = null;
   private evaluationKey: Uint8Array | null = null;
@@ -333,10 +333,10 @@ export class PILFHEClient {
 // ============================================
 
 export class EncryptedBalanceManager {
-  private fheClient: PILFHEClient;
+  private fheClient: SoulFHEClient;
   private balances: Map<string, EncryptedValue> = new Map();
 
-  constructor(fheClient: PILFHEClient) {
+  constructor(fheClient: SoulFHEClient) {
     this.fheClient = fheClient;
   }
 
@@ -437,8 +437,8 @@ export class EncryptedBalanceManager {
 // Factory
 // ============================================
 
-export function createTFHEClient(): PILFHEClient {
-  return new PILFHEClient({
+export function createTFHEClient(): SoulFHEClient {
+  return new SoulFHEClient({
     scheme: 'TFHE',
     securityLevel: 128,
     polyModulusDegree: 4096,
@@ -446,8 +446,8 @@ export function createTFHEClient(): PILFHEClient {
   });
 }
 
-export function createBFVClient(): PILFHEClient {
-  return new PILFHEClient({
+export function createBFVClient(): SoulFHEClient {
+  return new SoulFHEClient({
     scheme: 'BFV',
     securityLevel: 128,
     polyModulusDegree: 8192,
@@ -456,8 +456,8 @@ export function createBFVClient(): PILFHEClient {
   });
 }
 
-export function createCKKSClient(): PILFHEClient {
-  return new PILFHEClient({
+export function createCKKSClient(): SoulFHEClient {
+  return new SoulFHEClient({
     scheme: 'CKKS',
     securityLevel: 128,
     polyModulusDegree: 8192,

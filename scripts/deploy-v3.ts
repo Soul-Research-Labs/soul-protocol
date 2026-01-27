@@ -4,16 +4,16 @@ import path from "path";
 import { formatEther, parseEther } from "viem";
 
 /**
- * PIL v3 Deployment Script for Hardhat v3 (viem)
+ * Soul v3 Deployment Script for Hardhat v3 (viem)
  * 
- * Deploys all PIL contracts with proper configuration
+ * Deploys all Soul contracts with proper configuration
  */
 
 const DEPLOYMENT_LOG_DIR = "./deployments";
 
 async function main() {
     console.log("\n" + "=".repeat(80));
-    console.log("PIL v3 DEPLOYMENT (Hardhat v3 / Viem)");
+    console.log("Soul v3 DEPLOYMENT (Hardhat v3 / Viem)");
     console.log("=".repeat(80) + "\n");
 
     const { viem } = await hre.network.connect();
@@ -109,22 +109,22 @@ async function main() {
         // ============================================
         console.log("\n📦 PHASE 3: Application Layer\n");
 
-        // 8. Deploy PILAtomicSwapV2
-        console.log("8️⃣  Deploying PILAtomicSwapV2...");
-        const atomicSwap = await viem.deployContract("PILAtomicSwapV2", [deployer.account.address]);
+        // 8. Deploy SoulAtomicSwapV2
+        console.log("8️⃣  Deploying SoulAtomicSwapV2...");
+        const atomicSwap = await viem.deployContract("SoulAtomicSwapV2", [deployer.account.address]);
         deployed.contracts.atomicSwap = atomicSwap.address;
-        console.log("   ✅ PILAtomicSwapV2:", deployed.contracts.atomicSwap);
+        console.log("   ✅ SoulAtomicSwapV2:", deployed.contracts.atomicSwap);
 
-        // 9. Deploy PILComplianceV2
-        console.log("\n9️⃣  Deploying PILComplianceV2...");
-        const compliance = await viem.deployContract("PILComplianceV2");
+        // 9. Deploy SoulComplianceV2
+        console.log("\n9️⃣  Deploying SoulComplianceV2...");
+        const compliance = await viem.deployContract("SoulComplianceV2");
         deployed.contracts.compliance = compliance.address;
-        console.log("   ✅ PILComplianceV2:", deployed.contracts.compliance);
+        console.log("   ✅ SoulComplianceV2:", deployed.contracts.compliance);
 
         // ============================================
-        // PHASE 4: PIL v2 Primitives
+        // PHASE 4: Soul v2 Primitives
         // ============================================
-        console.log("\n📦 PHASE 4: PIL v2 Primitives\n");
+        console.log("\n📦 PHASE 4: Soul v2 Primitives\n");
 
         // 10. Deploy ProofCarryingContainer (PC³)
         console.log("🔟 Deploying ProofCarryingContainer (PC³)...");

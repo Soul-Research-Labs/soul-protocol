@@ -27,7 +27,7 @@ contract EncryptedStealthAnnouncements is
 
     /// @notice Domain separator for encrypted announcements
     bytes32 public constant DOMAIN_SEPARATOR =
-        keccak256("PIL_ENCRYPTED_STEALTH_V1");
+        keccak256("Soul_ENCRYPTED_STEALTH_V1");
 
     /// @notice Minimum encryption overhead (nonce + tag)
     uint256 public constant MIN_CIPHERTEXT_OVERHEAD = 40; // 24 bytes nonce + 16 bytes tag

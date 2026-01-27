@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 /**
- * PIL Multi-Chain Testnet Deployment Script
+ * Soul Multi-Chain Testnet Deployment Script
  * Supports: Sepolia, Arbitrum Sepolia, Base Sepolia, Optimism Sepolia
  */
 
@@ -36,8 +36,8 @@ interface DeployedContracts {
     PQCProtectedLock?: string;
     
     // Governance
-    PILToken?: string;
-    PILGovernor?: string;
+    SoulToken?: string;
+    SoulGovernor?: string;
     TimelockController?: string;
     
     // Bridge Adapters
@@ -93,7 +93,7 @@ async function main() {
   }
 
   console.log("\n" + "=".repeat(60));
-  console.log(`PIL TESTNET DEPLOYMENT - ${config.name}`);
+  console.log(`Soul TESTNET DEPLOYMENT - ${config.name}`);
   console.log("=".repeat(60) + "\n");
 
   const [deployer] = await ethers.getSigners();
@@ -162,7 +162,7 @@ async function main() {
   console.log(`    ✅ PQCRegistry: ${registryAddr}`);
 
   // ==========================================================================
-  // PHASE 2: Deploy Core PIL Contracts
+  // PHASE 2: Deploy Core Soul Contracts
   // ==========================================================================
   console.log("\n📦 Phase 2: Deploying Core Contracts...\n");
 
@@ -199,16 +199,16 @@ async function main() {
   // ==========================================================================
   console.log("\n📦 Phase 3: Deploying Governance Contracts...\n");
 
-  // PILToken
+  // SoulToken
   try {
-    console.log("  Deploying PILToken...");
-    const PILToken = await ethers.getContractFactory("PILToken");
-    const pilToken = await PILToken.deploy(deployer.address);
+    console.log("  Deploying SoulToken...");
+    const SoulToken = await ethers.getContractFactory("SoulToken");
+    const pilToken = await SoulToken.deploy(deployer.address);
     await pilToken.waitForDeployment();
     const tokenAddr = await pilToken.getAddress();
-    deployment.contracts.PILToken = tokenAddr;
-    deployment.txHashes.PILToken = pilToken.deploymentTransaction()?.hash || "";
-    console.log(`    ✅ PILToken: ${tokenAddr}`);
+    deployment.contracts.SoulToken = tokenAddr;
+    deployment.txHashes.SoulToken = pilToken.deploymentTransaction()?.hash || "";
+    console.log(`    ✅ SoulToken: ${tokenAddr}`);
 
     // TimelockController
     console.log("  Deploying TimelockController...");
@@ -225,15 +225,15 @@ async function main() {
     deployment.txHashes.TimelockController = timelock.deploymentTransaction()?.hash || "";
     console.log(`    ✅ TimelockController: ${timelockAddr}`);
 
-    // PILGovernor
-    console.log("  Deploying PILGovernor...");
-    const PILGovernor = await ethers.getContractFactory("PILGovernor");
-    const governor = await PILGovernor.deploy(tokenAddr, timelockAddr);
+    // SoulGovernor
+    console.log("  Deploying SoulGovernor...");
+    const SoulGovernor = await ethers.getContractFactory("SoulGovernor");
+    const governor = await SoulGovernor.deploy(tokenAddr, timelockAddr);
     await governor.waitForDeployment();
     const govAddr = await governor.getAddress();
-    deployment.contracts.PILGovernor = govAddr;
-    deployment.txHashes.PILGovernor = governor.deploymentTransaction()?.hash || "";
-    console.log(`    ✅ PILGovernor: ${govAddr}`);
+    deployment.contracts.SoulGovernor = govAddr;
+    deployment.txHashes.SoulGovernor = governor.deploymentTransaction()?.hash || "";
+    console.log(`    ✅ SoulGovernor: ${govAddr}`);
 
     // Grant proposer role to governor
     console.log("  Configuring governance roles...");

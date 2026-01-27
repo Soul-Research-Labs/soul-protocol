@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Privacy Interoperability Layer - CrossChainProofHubV3
+ * Soul Protocol - CrossChainProofHubV3
  * 
  * This spec verifies critical invariants for the Cross-Chain Proof Hub
  */

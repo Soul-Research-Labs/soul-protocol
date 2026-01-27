@@ -2,7 +2,7 @@
 // K Framework Specification for Poseidon Hash Function
 //
 // This specification formalizes the Poseidon hash function used in
-// zero-knowledge circuits for the Privacy Interoperability Layer.
+// zero-knowledge circuits for the Soul Protocol.
 //
 // POSEIDON HASH ARCHITECTURE:
 // ┌─────────────────────────────────────────────────────────────────┐
@@ -257,7 +257,7 @@ module POSEIDON-NULLIFIER
     imports POSEIDON-HASH
 
     // ============================================
-    // PIL-SPECIFIC NULLIFIER GENERATION
+    // Soul-SPECIFIC NULLIFIER GENERATION
     // ============================================
 
     // Nullifier = Poseidon(secret, messageId)

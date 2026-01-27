@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# PIL v3 Contract Verification Script for Sepolia
+# Soul v3 Contract Verification Script for Sepolia
 # Usage: ./scripts/verify-sepolia.sh
 #
 # Requires ETHERSCAN_API_KEY environment variable
@@ -9,7 +9,7 @@ set -e
 
 echo ""
 echo "================================================================================"
-echo "PIL v3 CONTRACT VERIFICATION - Sepolia"
+echo "Soul v3 CONTRACT VERIFICATION - Sepolia"
 echo "================================================================================"
 echo ""
 
@@ -66,8 +66,8 @@ verify_contract "FRIVerifier" "0x2e9fceb9a74fba5d8edb6420b350a4edd242bb09" "cont
 verify_contract "ConfidentialStateContainerV3" "0x5d79991daabf7cd198860a55f3a1f16548687798" "contracts/core/ConfidentialStateContainerV3.sol:ConfidentialStateContainerV3"
 verify_contract "NullifierRegistryV3" "0x3e21d559f19c76a0bcec378b10dae2cc0e4c2191" "contracts/core/NullifierRegistryV3.sol:NullifierRegistryV3"
 verify_contract "CrossChainProofHubV3" "0x40eaa5de0c6497c8943c967b42799cb092c26adc" "contracts/crosschain/CrossChainProofHubV3.sol:CrossChainProofHubV3"
-verify_contract "PILAtomicSwapV2" "0xdefb9a66dc14a6d247b282555b69da7745b0ab57" "contracts/exchange/PILAtomicSwapV2.sol:PILAtomicSwapV2"
-verify_contract "PILComplianceV2" "0x5d41f63f35babed689a63f7e5c9e2943e1f72067" "contracts/compliance/PILComplianceV2.sol:PILComplianceV2"
+verify_contract "SoulAtomicSwapV2" "0xdefb9a66dc14a6d247b282555b69da7745b0ab57" "contracts/exchange/SoulAtomicSwapV2.sol:SoulAtomicSwapV2"
+verify_contract "SoulComplianceV2" "0x5d41f63f35babed689a63f7e5c9e2943e1f72067" "contracts/compliance/SoulComplianceV2.sol:SoulComplianceV2"
 verify_contract "ProofCarryingContainer" "0x52f8a660ff436c450b5190a84bc2c1a86f1032cc" "contracts/primitives/ProofCarryingContainer.sol:ProofCarryingContainer"
 verify_contract "PolicyBoundProofs" "0x75e86ee654eae62a93c247e4ab9facf63bc4f328" "contracts/primitives/PolicyBoundProofs.sol:PolicyBoundProofs"
 verify_contract "ExecutionAgnosticStateCommitments" "0x77d22cb55253fea1ccc14ffc86a22e4a5a4592c6" "contracts/primitives/ExecutionAgnosticStateCommitments.sol:ExecutionAgnosticStateCommitments"
@@ -91,8 +91,8 @@ echo "   FRIVerifier: https://sepolia.etherscan.io/address/0x2e9fceb9a74fba5d8ed
 echo "   ConfidentialStateContainerV3: https://sepolia.etherscan.io/address/0x5d79991daabf7cd198860a55f3a1f16548687798"
 echo "   NullifierRegistryV3: https://sepolia.etherscan.io/address/0x3e21d559f19c76a0bcec378b10dae2cc0e4c2191"
 echo "   CrossChainProofHubV3: https://sepolia.etherscan.io/address/0x40eaa5de0c6497c8943c967b42799cb092c26adc"
-echo "   PILAtomicSwapV2: https://sepolia.etherscan.io/address/0xdefb9a66dc14a6d247b282555b69da7745b0ab57"
-echo "   PILComplianceV2: https://sepolia.etherscan.io/address/0x5d41f63f35babed689a63f7e5c9e2943e1f72067"
+echo "   SoulAtomicSwapV2: https://sepolia.etherscan.io/address/0xdefb9a66dc14a6d247b282555b69da7745b0ab57"
+echo "   SoulComplianceV2: https://sepolia.etherscan.io/address/0x5d41f63f35babed689a63f7e5c9e2943e1f72067"
 echo "   ProofCarryingContainer: https://sepolia.etherscan.io/address/0x52f8a660ff436c450b5190a84bc2c1a86f1032cc"
 echo "   PolicyBoundProofs: https://sepolia.etherscan.io/address/0x75e86ee654eae62a93c247e4ab9facf63bc4f328"
 echo "   EASC: https://sepolia.etherscan.io/address/0x77d22cb55253fea1ccc14ffc86a22e4a5a4592c6"

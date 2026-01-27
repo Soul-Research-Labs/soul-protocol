@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-This document consolidates ALL next steps for cross-chain privacy and security in the Privacy Interoperability Layer (PIL). It covers immediate tasks through long-term strategic goals.
+This document consolidates ALL next steps for cross-chain privacy and security in the Soul Protocol (Soul). It covers immediate tasks through long-term strategic goals.
 
 ---
 
@@ -290,9 +290,9 @@ contract PrivacyInvariants is Test {
         // Different ephemeral keys → different stealth addresses
     }
     
-    // PIL binding is deterministic
+    // Soul binding is deterministic
     function invariant_pilBindingDeterminism() external {
-        // Same nullifier → same PIL binding
+        // Same nullifier → same Soul binding
     }
 }
 ```

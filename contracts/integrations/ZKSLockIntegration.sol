@@ -6,8 +6,8 @@ import "../primitives/ProofCarryingContainer.sol";
 import "../primitives/CrossDomainNullifierAlgebra.sol";
 
 /// @title ZKSLockIntegration
-/// @author Soul Protocol - PIL v2
-/// @notice Integration library connecting ZK-Bound State Locks with PC³, CDNA, and other PIL primitives
+/// @author Soul Protocol - Soul v2
+/// @notice Integration library connecting ZK-Bound State Locks with PC³, CDNA, and other Soul primitives
 /// @dev Provides unified interface for cross-primitive operations involving ZK-SLocks
 ///
 /// Key Integrations:

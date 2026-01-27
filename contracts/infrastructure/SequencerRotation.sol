@@ -8,7 +8,7 @@ import "./SharedSequencer.sol";
 
 /**
  * @title SequencerRotation
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Advanced sequencer rotation mechanism with VRF-based selection
  * @dev Implements fair, verifiable, and censorship-resistant rotation
  *

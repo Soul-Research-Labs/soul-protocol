@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /**
  * @title CrossChainPrivacyHub
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Unified aggregator for cross-chain privacy-preserving transfers
  * @dev Provides a single entry point for all 41+ bridge adapters with privacy features
  *
@@ -931,7 +931,7 @@ contract CrossChainPrivacyHub is
     // =========================================================================
 
     /**
-     * @notice Bind source nullifier to PIL nullifier
+     * @notice Bind source nullifier to Soul nullifier
      */
     function _bindNullifier(
         bytes32 sourceNullifier,
@@ -983,7 +983,7 @@ contract CrossChainPrivacyHub is
                     requestId,
                     sender,
                     block.chainid,
-                    "PIL_NULLIFIER"
+                    "Soul_NULLIFIER"
                 )
             );
     }
@@ -1000,7 +1000,7 @@ contract CrossChainPrivacyHub is
                     amount,
                     nullifier,
                     block.timestamp,
-                    "PIL_COMMITMENT"
+                    "Soul_COMMITMENT"
                 )
             );
     }

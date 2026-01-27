@@ -1,5 +1,5 @@
 // K Framework Formal Specification for Polygon zkEVM
-// Privacy Interoperability Layer (PIL) - Polygon zkEVM Bridge Formalization
+// Soul Protocol (Soul) - Polygon zkEVM Bridge Formalization
 
 module POLYGON-ZKEVM-TYPES
     imports INT
@@ -127,10 +127,10 @@ module POLYGON-ZKEVM-KECCAK
     rule derivePolygonZkEVMNullifier(DepositCount, OriginNetwork, Domain) =>
         keccak256(Int2Bytes(DepositCount, BE, Unsigned) +Bytes Int2Bytes(OriginNetwork, BE, Unsigned) +Bytes Domain +Bytes b"POLYGON_ZKEVM_NULLIFIER")
 
-    // Derive cross-domain PIL nullifier
-    syntax Bytes ::= derivePILNullifier(Bytes, Bytes) [function]
-    rule derivePILNullifier(PolygonNullifier, Domain) =>
-        keccak256(PolygonNullifier +Bytes Domain +Bytes b"POLYGONZKEVM2PIL")
+    // Derive cross-domain Soul nullifier
+    syntax Bytes ::= deriveSoulNullifier(Bytes, Bytes) [function]
+    rule deriveSoulNullifier(PolygonNullifier, Domain) =>
+        keccak256(PolygonNullifier +Bytes Domain +Bytes b"POLYGONZKEVM2Soul")
 
 endmodule
 
@@ -182,7 +182,7 @@ module POLYGON-ZKEVM-BRIDGE-SECURITY
     syntax Bool ::= crossDomainNullifierDeterministic(Int, Int, Int, Int) [function]
     rule crossDomainNullifierDeterministic(DC1, ON1, DC2, ON2) =>
         (DC1 ==Int DC2 andBool ON1 ==Int ON2) impliesBool
-        (derivePolygonZkEVMNullifier(DC1, ON1, b"PIL") ==K derivePolygonZkEVMNullifier(DC2, ON2, b"PIL"))
+        (derivePolygonZkEVMNullifier(DC1, ON1, b"Soul") ==K derivePolygonZkEVMNullifier(DC2, ON2, b"Soul"))
 
     // INVARIANT 4: Deposit count monotonicity
     syntax Bool ::= depositCountMonotonic(Int, Int) [function]
@@ -207,7 +207,7 @@ module POLYGON-ZKEVM-BRIDGE-SECURITY
     syntax Bool ::= crossDomainDirectionMatters(Bytes, Bytes, Bytes) [function]
     rule crossDomainDirectionMatters(Nf, DomainA, DomainB) =>
         (DomainA =/=K DomainB) impliesBool
-        (derivePILNullifier(Nf, DomainA) =/=K derivePILNullifier(Nf, DomainB))
+        (deriveSoulNullifier(Nf, DomainA) =/=K deriveSoulNullifier(Nf, DomainB))
 
 endmodule
 

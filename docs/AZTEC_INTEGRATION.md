@@ -2,22 +2,22 @@
 
 ## Overview
 
-The PIL Protocol provides deep integration with Aztec Network, enabling privacy-preserving cross-chain transactions between PIL and Aztec's private L2. This integration maintains privacy guarantees across both domains through coordinated nullifier registries and cross-domain proof verification.
+The Soul Protocol provides deep integration with Aztec Network, enabling privacy-preserving cross-chain transactions between Soul and Aztec's private L2. This integration maintains privacy guarantees across both domains through coordinated nullifier registries and cross-domain proof verification.
 
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                      PIL <-> Aztec Network Integration                       │
+│                      Soul <-> Aztec Network Integration                       │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  ┌─────────────────────────────┐       ┌─────────────────────────────┐     │
-│  │       PIL Protocol          │       │      Aztec Network          │     │
+│  │       Soul Protocol          │       │      Aztec Network          │     │
 │  │                             │       │                             │     │
 │  │  ┌───────────────────────┐  │       │  ┌───────────────────────┐  │     │
 │  │  │  Commitment Tree      │  │       │  │  Note Hash Tree       │  │     │
 │  │  │  ┌─────────────────┐  │  │       │  │  ┌─────────────────┐  │  │     │
-│  │  │  │ PIL Commitments │  │◄─┼───────┼──│  │ Aztec Notes     │  │  │     │
+│  │  │  │ Soul Commitments │  │◄─┼───────┼──│  │ Aztec Notes     │  │  │     │
 │  │  │  └─────────────────┘  │  │       │  │  └─────────────────┘  │  │     │
 │  │  └───────────────────────┘  │       │  └───────────────────────┘  │     │
 │  │                             │       │                             │     │
@@ -42,7 +42,7 @@ The PIL Protocol provides deep integration with Aztec Network, enabling privacy-
 │  │                    AztecBridgeAdapter.sol                              │ │
 │  │                                                                        │ │
 │  │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐    │ │
-│  │  │  PIL → Aztec     │  │  Aztec → PIL     │  │  Cross-Domain    │    │ │
+│  │  │  Soul → Aztec     │  │  Aztec → Soul     │  │  Cross-Domain    │    │ │
 │  │  │  Bridge          │  │  Bridge          │  │  Nullifiers      │    │ │
 │  │  └──────────────────┘  └──────────────────┘  └──────────────────┘    │ │
 │  │                                                                        │ │
@@ -73,7 +73,7 @@ Aztec is a privacy-focused zkRollup on Ethereum that enables:
 
 ### Privacy Model Compatibility
 
-| Feature | PIL Protocol | Aztec Network | Compatibility |
+| Feature | Soul Protocol | Aztec Network | Compatibility |
 |---------|--------------|---------------|---------------|
 | Privacy Model | Commitment/Nullifier | Note/Nullifier | ✅ Compatible |
 | ZK System | Groth16/PLONK | UltraPLONK/Honk | ✅ Translatable |
@@ -82,16 +82,16 @@ Aztec is a privacy-focused zkRollup on Ethereum that enables:
 
 ### Cross-Domain Nullifier Registry
 
-To prevent double-spending across PIL and Aztec:
+To prevent double-spending across Soul and Aztec:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                Cross-Domain Nullifier Flow                       │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  1. User spends commitment on PIL                               │
+│  1. User spends commitment on Soul                               │
 │     ┌─────────────┐                                             │
-│     │ PIL Commit  │──▶ Reveal Nullifier ──▶ Register in         │
+│     │ Soul Commit  │──▶ Reveal Nullifier ──▶ Register in         │
 │     └─────────────┘                        Cross-Domain Registry │
 │                                                                 │
 │  2. Nullifier synced to Aztec                                   │
@@ -100,7 +100,7 @@ To prevent double-spending across PIL and Aztec:
 │     │ (Prevents creating note from already-spent commitment)  │ │
 │     └─────────────────────────────────────────────────────────┘ │
 │                                                                 │
-│  3. Same applies in reverse (Aztec → PIL)                       │
+│  3. Same applies in reverse (Aztec → Soul)                       │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -109,15 +109,15 @@ To prevent double-spending across PIL and Aztec:
 
 ### Features
 
-1. **PIL → Aztec Bridge**
-   - Convert PIL commitments to Aztec notes
+1. **Soul → Aztec Bridge**
+   - Convert Soul commitments to Aztec notes
    - Maintain privacy during cross-chain transfer
    - Support multiple note types (VALUE, DEFI, ACCOUNT, CUSTOM)
 
-2. **Aztec → PIL Bridge**
-   - Convert Aztec notes to PIL commitments
+2. **Aztec → Soul Bridge**
+   - Convert Aztec notes to Soul commitments
    - Verify Aztec proofs on L1
-   - Register PIL commitments for recipient
+   - Register Soul commitments for recipient
 
 3. **State Synchronization**
    - Sync Aztec rollup state (data tree, nullifier tree)
@@ -125,21 +125,21 @@ To prevent double-spending across PIL and Aztec:
    - Enable proof verification against synced state
 
 4. **Cross-Domain Proofs**
-   - Verify PIL-to-Aztec translation proofs
-   - Verify Aztec-to-PIL translation proofs
+   - Verify Soul-to-Aztec translation proofs
+   - Verify Aztec-to-Soul translation proofs
    - Support bidirectional state proofs
 
 ### Usage Examples
 
-#### Bridge PIL to Aztec
+#### Bridge Soul to Aztec
 
 ```solidity
-// User has a PIL commitment and wants to create an Aztec note
-bytes32 pilCommitment = 0x...; // Existing PIL commitment
+// User has a Soul commitment and wants to create an Aztec note
+bytes32 pilCommitment = 0x...; // Existing Soul commitment
 bytes32 pilNullifier = 0x...;  // Nullifier to reveal
 bytes32 aztecRecipient = 0x...; // Aztec address (compressed)
 
-aztecBridge.bridgePILToAztec{value: bridgeFee}(
+aztecBridge.bridgeSoulToAztec{value: bridgeFee}(
     pilCommitment,
     pilNullifier,
     aztecRecipient,
@@ -150,11 +150,11 @@ aztecBridge.bridgePILToAztec{value: bridgeFee}(
 );
 ```
 
-#### Bridge Aztec to PIL
+#### Bridge Aztec to Soul
 
 ```solidity
-// Relayer submits Aztec note spend to create PIL commitment
-aztecBridge.bridgeAztecToPIL(
+// Relayer submits Aztec note spend to create Soul commitment
+aztecBridge.bridgeAztecToSoul(
     aztecNoteHash,
     aztecNullifier,
     pilRecipient,  // Ethereum address
@@ -192,7 +192,7 @@ aztecBridge.syncAztecState(
 
 The bridge verifies proofs at multiple stages:
 
-1. **PIL Proof Verification**: Verify user owns the PIL commitment
+1. **Soul Proof Verification**: Verify user owns the Soul commitment
 2. **Aztec Proof Verification**: Verify Aztec note creation/spend
 3. **Cross-Domain Proof**: Verify the translation is correct
 
@@ -241,7 +241,7 @@ The bridge interacts with:
 
 ### Prerequisites
 
-1. PIL Protocol contracts deployed
+1. Soul Protocol contracts deployed
 2. Aztec Network mainnet addresses available
 3. Relayer infrastructure set up
 
@@ -269,10 +269,10 @@ cast send $AZTEC_BRIDGE "grantRole(bytes32,address)" \
 ## Events to Monitor
 
 ```solidity
-event PILToAztecInitiated(bytes32 indexed requestId, bytes32 indexed pilCommitment, bytes32 aztecRecipient, uint256 amount);
-event PILToAztecCompleted(bytes32 indexed requestId, bytes32 indexed resultingNoteHash);
-event AztecToPILInitiated(bytes32 indexed requestId, bytes32 indexed aztecNoteHash, address pilRecipient, uint256 amount);
-event AztecToPILCompleted(bytes32 indexed requestId, bytes32 indexed pilCommitment);
+event SoulToAztecInitiated(bytes32 indexed requestId, bytes32 indexed pilCommitment, bytes32 aztecRecipient, uint256 amount);
+event SoulToAztecCompleted(bytes32 indexed requestId, bytes32 indexed resultingNoteHash);
+event AztecToSoulInitiated(bytes32 indexed requestId, bytes32 indexed aztecNoteHash, address pilRecipient, uint256 amount);
+event AztecToSoulCompleted(bytes32 indexed requestId, bytes32 indexed pilCommitment);
 event CrossDomainProofVerified(bytes32 indexed proofId, ProofType proofType, bytes32 sourceCommitment, bytes32 targetCommitment);
 event AztecStateSynced(uint256 indexed rollupId, bytes32 dataTreeRoot, bytes32 nullifierTreeRoot);
 event CrossDomainNullifierRegistered(bytes32 indexed nullifier, bytes32 indexed sourceCommitment);
@@ -280,9 +280,9 @@ event CrossDomainNullifierRegistered(bytes32 indexed nullifier, bytes32 indexed 
 
 ## Future Enhancements
 
-1. **Noir Circuit Integration**: Native Noir circuits for PIL-Aztec proofs
+1. **Noir Circuit Integration**: Native Noir circuits for Soul-Aztec proofs
 2. **Shared Nullifier Tree**: Direct nullifier tree synchronization
-3. **Private DeFi Bridges**: Bridge positions between PIL and Aztec DeFi
+3. **Private DeFi Bridges**: Bridge positions between Soul and Aztec DeFi
 4. **Account Abstraction**: Cross-domain account management
 5. **Batch Bridging**: Aggregate multiple bridges for gas efficiency
 

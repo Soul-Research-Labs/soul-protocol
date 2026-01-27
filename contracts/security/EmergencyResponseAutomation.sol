@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title EmergencyResponseAutomation
- * @author PIL Security Team
+ * @author Soul Security Team
  * @notice Automated incident response system with runbooks and auto-remediation
  * @dev Implements automated response actions based on detected threats
  */

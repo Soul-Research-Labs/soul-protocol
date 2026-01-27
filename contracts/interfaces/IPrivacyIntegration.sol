@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title IPrivacyIntegration
- * @notice Interface for integrating privacy primitives across PIL
+ * @notice Interface for integrating privacy primitives across Soul
  * @dev Unified interface for stealth addresses, ring signatures, and nullifiers
  */
 interface IPrivacyIntegration {

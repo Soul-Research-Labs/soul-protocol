@@ -8,9 +8,9 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
  * @title SecurityIntegrations
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Central integration hub for MEVProtection, FlashLoanGuard, and DEX oracles
- * @dev Provides unified security layer for PILAtomicSwap and withdrawal operations
+ * @dev Provides unified security layer for SoulAtomicSwap and withdrawal operations
  *
  * INTEGRATION ARCHITECTURE:
  * ┌─────────────────────────────────────────────────────────────────┐

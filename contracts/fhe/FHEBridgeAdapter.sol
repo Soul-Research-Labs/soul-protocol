@@ -9,7 +9,7 @@ import "./FHETypes.sol";
 
 /**
  * @title FHEBridgeAdapter
- * @author Privacy Interoperability Layer
+ * @author Soul Protocol
  * @notice Cross-chain bridge adapter for encrypted value transfers using FHE
  * @dev Enables confidential cross-chain transfers where amounts remain encrypted
  *

@@ -458,7 +458,7 @@ SovereignPrivacyDomain
         │
         ├──▶ IExecutionMicroservice (for execution)
         │
-        ├──▶ PILKernelProof (for verification - INHERITED)
+        ├──▶ SoulKernelProof (for verification - INHERITED)
         │
         └──▶ ConfidentialMessageTransport (for cross-domain)
 ```

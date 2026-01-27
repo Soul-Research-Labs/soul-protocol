@@ -37,7 +37,7 @@ print_error() {
 # Create results directory
 mkdir -p "$RESULTS_DIR"
 
-print_header "PIL Extended Fuzz Testing Campaign"
+print_header "Soul Extended Fuzz Testing Campaign"
 echo "Started: $(date)"
 echo "Results: $RESULTS_DIR"
 echo ""
@@ -68,19 +68,19 @@ run_foundry_fuzz() {
     
     case $campaign in
         "security-core")
-            forge test --match-path "test/fuzz/PIL*Security*.t.sol" \
+            forge test --match-path "test/fuzz/Soul*Security*.t.sol" \
                 --fuzz-runs $runs \
                 -vvv \
                 2>&1 | tee "$output_dir/results_$TIMESTAMP.log"
             ;;
         "bridge-adapters")
-            forge test --match-path "test/fuzz/PIL*L2*.t.sol" \
+            forge test --match-path "test/fuzz/Soul*L2*.t.sol" \
                 --fuzz-runs $runs \
                 -vvv \
                 2>&1 | tee "$output_dir/results_$TIMESTAMP.log"
             ;;
         "atomic-operations")
-            forge test --match-path "test/fuzz/PILAtomic*.t.sol" \
+            forge test --match-path "test/fuzz/SoulAtomic*.t.sol" \
                 --fuzz-runs $runs \
                 -vvv \
                 2>&1 | tee "$output_dir/results_$TIMESTAMP.log"
@@ -198,7 +198,7 @@ generate_report() {
     print_header "Generating Campaign Report"
     
     cat > "$report_file" << EOF
-# PIL Extended Fuzz Campaign Report
+# Soul Extended Fuzz Campaign Report
 
 **Generated:** $(date)
 **Duration:** Started at $TIMESTAMP

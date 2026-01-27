@@ -1,8 +1,8 @@
 [package]
 name = "balance_proof"
 type = "bin"
-authors = ["PIL Team"]
+authors = ["Soul Team"]
 compiler_version = ">=0.30.0"
-description = "Balance proof circuit for deposits and withdrawals in PIL Exchange"
+description = "Balance proof circuit for deposits and withdrawals in Soul Exchange"
 
 [dependencies]

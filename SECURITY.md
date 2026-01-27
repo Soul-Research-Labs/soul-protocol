@@ -1,4 +1,4 @@
-# PIL Protocol Security Policy
+# Soul Protocol Security Policy
 
 ## Supported Versions
 
@@ -9,15 +9,15 @@
 
 ## Reporting a Vulnerability
 
-We take security seriously. If you discover a security vulnerability within PIL Protocol, please report it responsibly.
+We take security seriously. If you discover a security vulnerability within Soul Protocol, please report it responsibly.
 
 ### How to Report
 
 1. **DO NOT** create a public GitHub issue for security vulnerabilities.
 
-2. **Email us directly** at: security@pil.network
+2. **Email us directly** at: security@soul.network
 
-3. **Encrypt your message** using our PGP key (available at https://pil.network/.well-known/pgp-key.txt)
+3. **Encrypt your message** using our PGP key (available at https://soul.network/.well-known/pgp-key.txt)
 
 4. Include in your report:
    - Description of the vulnerability
@@ -143,4 +143,4 @@ See [docs/SECURITY_ROADMAP.md](./docs/SECURITY_ROADMAP.md) for the comprehensive
 | [SECURITY_INVARIANTS.md](./docs/SECURITY_INVARIANTS.md) | Formal invariants |
 | [THREAT_MODEL.md](./docs/THREAT_MODEL.md) | Threat analysis |
 
-Thank you for contributing to PIL Protocol security!
+Thank you for contributing to Soul Protocol security!

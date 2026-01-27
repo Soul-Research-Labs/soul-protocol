@@ -11,7 +11,7 @@ import "./PQCKeyRegistry.sol";
 
 /**
  * @title PQCContainerExtension
- * @author Soul Protocol - PIL v2
+ * @author Soul Protocol - Soul v2
  * @notice Post-Quantum Cryptography extension for ProofCarryingContainer
  * @dev Adds PQC signature verification to containers for quantum-resistant authentication
  *

@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title NetworkHealthMonitor
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Global network health monitoring and automated circuit breakers
  * @dev Battle-tested patterns for network resilience and observability
  *

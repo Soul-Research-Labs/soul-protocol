@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Privacy Interoperability Layer - AggregateDisclosureAlgebra
+ * Soul Protocol - AggregateDisclosureAlgebra
  * 
  * This spec verifies critical invariants for the Aggregate Disclosure Algebra (ADA)
  * which enables selective and aggregate attribute disclosure

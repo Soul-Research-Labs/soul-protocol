@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title BridgeRateLimiter
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Rate limiting and circuit breaker for bridge operations
  * @dev Implements economic security controls including:
  *      - Per-user rate limits

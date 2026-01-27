@@ -14,7 +14,7 @@ export interface ChainDomain {
 
 // Nullifier types supported by different chains
 export enum NullifierType {
-    PIL_NATIVE = 0,
+    Soul_NATIVE = 0,
     MONERO_KEY_IMAGE = 1,
     ZCASH_NOTE = 2,
     SECRET_TEE = 3,
@@ -43,7 +43,7 @@ export interface CrossDomainNullifier {
 
 // Predefined chain domains
 export const CHAIN_DOMAINS: Record<string, ChainDomain> = {
-    PIL: { chainId: 1, domainTag: 'PIL_MAINNET', name: 'PIL Mainnet' },
+    Soul: { chainId: 1, domainTag: 'Soul_MAINNET', name: 'Soul Mainnet' },
     ETHEREUM: { chainId: 1, domainTag: 'ETHEREUM', name: 'Ethereum' },
     MONERO: { chainId: 0, domainTag: 'MONERO', name: 'Monero' },
     ZCASH: { chainId: 0, domainTag: 'ZCASH', name: 'Zcash' },
@@ -58,19 +58,19 @@ export const CHAIN_DOMAINS: Record<string, ChainDomain> = {
 };
 
 // Domain separator constants
-const NULLIFIER_DOMAIN = keccak256(ethers.toUtf8Bytes('PIL_UNIFIED_NULLIFIER_V1'));
+const NULLIFIER_DOMAIN = keccak256(ethers.toUtf8Bytes('Soul_UNIFIED_NULLIFIER_V1'));
 const CROSS_DOMAIN_TAG = keccak256(ethers.toUtf8Bytes('CROSS_DOMAIN'));
-const PIL_BINDING_TAG = keccak256(ethers.toUtf8Bytes('PIL_BINDING'));
+const Soul_BINDING_TAG = keccak256(ethers.toUtf8Bytes('Soul_BINDING'));
 
 // ABI for UnifiedNullifierManager
 const NULLIFIER_MANAGER_ABI = [
     'function registerDomain(uint256 chainId, bytes32 domainTag) external',
     'function registerNullifier(bytes32 nullifier, uint256 domain) external',
     'function deriveCrossDomainNullifier(bytes32 sourceNullifier, uint256 sourceDomain, uint256 targetDomain) external view returns (bytes32)',
-    'function derivePILBinding(bytes32 nullifier) external view returns (bytes32)',
+    'function deriveSoulBinding(bytes32 nullifier) external view returns (bytes32)',
     'function isNullifierConsumed(bytes32 nullifier, uint256 domain) external view returns (bool)',
     'function isDomainRegistered(uint256 domain) external view returns (bool)',
-    'function getPILBinding(bytes32 nullifier) external view returns (bytes32)',
+    'function getSoulBinding(bytes32 nullifier) external view returns (bytes32)',
     'function getNullifierRecord(bytes32 nullifier, uint256 domain) external view returns (uint256 timestamp, bytes32 pilBinding)',
     'event DomainRegistered(uint256 indexed chainId, bytes32 domainTag)',
     'event NullifierRegistered(bytes32 indexed nullifier, uint256 indexed domain, bytes32 pilBinding)',
@@ -115,7 +115,7 @@ export class NullifierClient {
         return keccak256(ethers.concat([
             getBytes(keyImage),
             getBytes(keccak256(ethers.toUtf8Bytes('MONERO_KEY_IMAGE'))),
-            getBytes(PIL_BINDING_TAG)
+            getBytes(Soul_BINDING_TAG)
         ]));
     }
 
@@ -127,7 +127,7 @@ export class NullifierClient {
             getBytes(noteNullifier),
             getBytes(anchor),
             getBytes(keccak256(ethers.toUtf8Bytes('ZCASH_NOTE'))),
-            getBytes(PIL_BINDING_TAG)
+            getBytes(Soul_BINDING_TAG)
         ]));
     }
 
@@ -150,12 +150,12 @@ export class NullifierClient {
     }
 
     /**
-     * Derive PIL binding locally
+     * Derive Soul binding locally
      */
-    static derivePILBindingLocal(nullifier: string): string {
+    static deriveSoulBindingLocal(nullifier: string): string {
         return keccak256(ethers.concat([
             getBytes(nullifier),
-            getBytes(PIL_BINDING_TAG)
+            getBytes(Soul_BINDING_TAG)
         ]));
     }
 
@@ -196,7 +196,7 @@ export class NullifierClient {
             targetDomainId
         );
 
-        const pilBinding = await this.contract.derivePILBinding(sourceNullifier);
+        const pilBinding = await this.contract.deriveSoulBinding(sourceNullifier);
 
         return {
             sourceNullifier,
@@ -222,10 +222,10 @@ export class NullifierClient {
     }
 
     /**
-     * Get PIL binding for a nullifier
+     * Get Soul binding for a nullifier
      */
-    async getPILBinding(nullifier: string): Promise<string> {
-        return await this.contract.getPILBinding(nullifier);
+    async getSoulBinding(nullifier: string): Promise<string> {
+        return await this.contract.getSoulBinding(nullifier);
     }
 
     /**
@@ -249,11 +249,11 @@ export class NullifierClient {
     }
 
     /**
-     * Check if two nullifiers are linked (same PIL binding)
+     * Check if two nullifiers are linked (same Soul binding)
      */
     async areNullifiersLinked(nullifier1: string, nullifier2: string): Promise<boolean> {
-        const binding1 = await this.getPILBinding(nullifier1);
-        const binding2 = await this.getPILBinding(nullifier2);
+        const binding1 = await this.getSoulBinding(nullifier1);
+        const binding2 = await this.getSoulBinding(nullifier2);
         return binding1 === binding2;
     }
 

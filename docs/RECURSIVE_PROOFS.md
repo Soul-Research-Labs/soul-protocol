@@ -1,8 +1,8 @@
-# PIL Recursive Proof Implementation Guide
+# Soul Recursive Proof Implementation Guide
 
 ## Overview
 
-This document provides technical details for implementing recursive proofs in PIL, enabling proof aggregation and composition across the protocol.
+This document provides technical details for implementing recursive proofs in Soul, enabling proof aggregation and composition across the protocol.
 
 ## Architecture
 
@@ -30,13 +30,13 @@ Batch of n Transfers:
 On-chain: Verify single π_agg → 300k gas (amortized: 300k/n per transfer)
 ```
 
-## Nova-Style IVC for PIL
+## Nova-Style IVC for Soul
 
 ### Augmented Circuit Design
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    PIL Augmented Circuit                         │
+│                    Soul Augmented Circuit                         │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  Public Inputs:                                                  │
@@ -61,7 +61,7 @@ On-chain: Verify single π_agg → 300k gas (amortized: 300k/n per transfer)
 ### State Accumulation Function
 
 ```typescript
-interface PILState {
+interface SoulState {
   // Merkle tree root of commitments
   commitmentRoot: Field;
   // Accumulated nullifier set hash
@@ -72,7 +72,7 @@ interface PILState {
   totalVolume: Field;
 }
 
-function F(prevState: PILState, transfer: Transfer): PILState {
+function F(prevState: SoulState, transfer: Transfer): SoulState {
   return {
     commitmentRoot: merkleInsert(prevState.commitmentRoot, transfer.newCommitment),
     nullifierSetHash: hashConcat(prevState.nullifierSetHash, transfer.nullifier),
@@ -84,7 +84,7 @@ function F(prevState: PILState, transfer: Transfer): PILState {
 
 ## Folding-Based Approach
 
-### Sangria Folding for PIL
+### Sangria Folding for Soul
 
 Sangria uses relaxed R1CS and folding to compress multiple instances:
 
@@ -97,7 +97,7 @@ Folded: (A·z) ∘ (B·z) = C·z + error
 where z = z₁ + r·z₂
 ```
 
-### PIL Folding Circuit
+### Soul Folding Circuit
 
 ```noir
 // Noir pseudocode for folding verifier
@@ -180,7 +180,7 @@ Recursion:
 ### Step 1: Circuit Modification
 
 ```noir
-// Modified PIL circuit for recursion
+// Modified Soul circuit for recursion
 
 use dep::std::verify_proof;
 
@@ -235,7 +235,7 @@ fn main(
 import { Noir, CompiledCircuit } from '@noir-lang/noir_js';
 import { BarretenbergBackend } from '@noir-lang/backend_barretenberg';
 
-class PILProofAggregator {
+class SoulProofAggregator {
   private pendingProofs: Array<{
     proof: Uint8Array;
     publicInputs: string[];
@@ -306,7 +306,7 @@ pragma solidity ^0.8.20;
 
 import "./IVerifier.sol";
 
-contract PILRecursiveVerifier {
+contract SoulRecursiveVerifier {
     // Verifier for aggregated proofs
     IVerifier public aggregatedVerifier;
     

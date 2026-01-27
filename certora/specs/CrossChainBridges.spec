@@ -1,6 +1,6 @@
 /**
  * @title Solana Bridge Adapter Formal Verification
- * @notice Certora specifications for PIL Solana cross-chain bridge
+ * @notice Certora specifications for Soul Solana cross-chain bridge
  * @dev Formal verification for Wormhole-based Solana bridge security
  */
 

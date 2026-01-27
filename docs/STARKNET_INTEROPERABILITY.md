@@ -1,6 +1,6 @@
 # Starknet Interoperability Documentation
 
-> PIL integration with Starknet L2: STARK proofs, cross-domain nullifiers, state sync, L1↔L2 messaging.
+> Soul integration with Starknet L2: STARK proofs, cross-domain nullifiers, state sync, L1↔L2 messaging.
 
 ## Architecture
 

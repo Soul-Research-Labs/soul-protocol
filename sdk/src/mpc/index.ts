@@ -1,5 +1,5 @@
 /**
- * PIL MPC (Multi-Party Computation) SDK
+ * Soul MPC (Multi-Party Computation) SDK
  * 
  * Implements:
  * - Threshold signatures for bridge security
@@ -235,7 +235,7 @@ export class ShamirSecretSharing {
 // Threshold Signature Manager
 // ============================================
 
-export class PILThresholdSignature {
+export class SoulThresholdSignature {
     private config: ThresholdConfig;
     private sessions: Map<string, SigningSession> = new Map();
     private sss: ShamirSecretSharing;
@@ -399,7 +399,7 @@ export class PILThresholdSignature {
 // Distributed Key Generation
 // ============================================
 
-export class PILDistributedKeyGeneration {
+export class SoulDistributedKeyGeneration {
     private config: ThresholdConfig;
     private sss: ShamirSecretSharing;
     private rounds: Map<number, DKGRound> = new Map();
@@ -534,7 +534,7 @@ export class PILDistributedKeyGeneration {
 // MPC Compliance Module
 // ============================================
 
-export class PILMPCCompliance {
+export class SoulMPCCompliance {
     private pendingRequests: Map<string, ComplianceRequest> = new Map();
     private oracleCount: number;
     private oracleThreshold: number;
@@ -703,7 +703,7 @@ export class PILMPCCompliance {
 // On-Chain Integration
 // ============================================
 
-export class PILMPCOnChainClient {
+export class SoulMPCOnChainClient {
     private provider: ethers.Provider;
     private thresholdContract?: ethers.Contract;
     private complianceContract?: ethers.Contract;
@@ -779,23 +779,23 @@ export class PILMPCOnChainClient {
 export function createThresholdSignature(
     config: ThresholdConfig,
     sessionTimeout?: number
-): PILThresholdSignature {
-    return new PILThresholdSignature(config, sessionTimeout);
+): SoulThresholdSignature {
+    return new SoulThresholdSignature(config, sessionTimeout);
 }
 
-export function createDKG(config: ThresholdConfig): PILDistributedKeyGeneration {
-    return new PILDistributedKeyGeneration(config);
+export function createDKG(config: ThresholdConfig): SoulDistributedKeyGeneration {
+    return new SoulDistributedKeyGeneration(config);
 }
 
 export function createMPCCompliance(
     oracleCount: number,
     oracleThreshold: number
-): PILMPCCompliance {
-    return new PILMPCCompliance(oracleCount, oracleThreshold);
+): SoulMPCCompliance {
+    return new SoulMPCCompliance(oracleCount, oracleThreshold);
 }
 
-export function createMPCOnChainClient(provider: ethers.Provider): PILMPCOnChainClient {
-    return new PILMPCOnChainClient(provider);
+export function createMPCOnChainClient(provider: ethers.Provider): SoulMPCOnChainClient {
+    return new SoulMPCOnChainClient(provider);
 }
 
 // ============================================
@@ -804,10 +804,10 @@ export function createMPCOnChainClient(provider: ethers.Provider): PILMPCOnChain
 
 export default {
     ShamirSecretSharing,
-    PILThresholdSignature,
-    PILDistributedKeyGeneration,
-    PILMPCCompliance,
-    PILMPCOnChainClient,
+    SoulThresholdSignature,
+    SoulDistributedKeyGeneration,
+    SoulMPCCompliance,
+    SoulMPCOnChainClient,
     createThresholdSignature,
     createDKG,
     createMPCCompliance,

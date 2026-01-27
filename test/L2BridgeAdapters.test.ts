@@ -86,10 +86,10 @@ describe("L2 Bridge Adapters", function () {
         });
 
         describe("Bridge Configuration", function () {
-            it("Should set PIL Hub L2 address", async function () {
+            it("Should set Soul Hub L2 address", async function () {
                 const { adapter, admin, user } = await deployScrollAdapter();
 
-                // Admin can set PIL Hub L2
+                // Admin can set Soul Hub L2
                 await adapter.write.setPilHubL2([user.account.address]);
 
                 const pilHub = await adapter.read.pilHubL2();
@@ -168,10 +168,10 @@ describe("L2 Bridge Adapters", function () {
         });
 
         describe("Bridge Configuration", function () {
-            it("Should set PIL Hub L2 address", async function () {
+            it("Should set Soul Hub L2 address", async function () {
                 const { adapter, admin, user } = await deployLineaAdapter();
 
-                // Admin can set PIL Hub L2
+                // Admin can set Soul Hub L2
                 await adapter.write.setPilHubL2([user.account.address]);
 
                 const pilHub = await adapter.read.pilHubL2();
@@ -250,10 +250,10 @@ describe("L2 Bridge Adapters", function () {
         });
 
         describe("Bridge Configuration", function () {
-            it("Should set PIL Hub L2 address", async function () {
+            it("Should set Soul Hub L2 address", async function () {
                 const { adapter, admin, user } = await deployPolygonZkEVMAdapter();
 
-                // Admin can set PIL Hub L2
+                // Admin can set Soul Hub L2
                 await adapter.write.setPilHubL2([user.account.address]);
 
                 const pilHub = await adapter.read.pilHubL2();

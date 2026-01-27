@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title L2ChainAdapter
- * @notice Adapter for connecting PIL to Layer 2 networks
+ * @notice Adapter for connecting Soul to Layer 2 networks
  * @dev Handles chain-specific messaging and proof verification
  */
 contract L2ChainAdapter is AccessControl, ReentrancyGuard {

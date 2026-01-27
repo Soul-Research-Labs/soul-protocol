@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 /**
  * @title BitVMCircuit
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Circuit representation and gate operations for BitVM
  * @dev Provides circuit compilation and gate management utilities
  *

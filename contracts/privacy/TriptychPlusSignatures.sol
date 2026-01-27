@@ -26,7 +26,7 @@ contract TriptychPlusSignatures is AccessControl, ReentrancyGuard, Pausable {
 
     /// @notice Domain separator for Triptych+
     bytes32 public constant TRIPTYCH_PLUS_DOMAIN =
-        keccak256("PIL_TRIPTYCH_PLUS_V1");
+        keccak256("Soul_TRIPTYCH_PLUS_V1");
 
     /// @notice BN254 curve order
     uint256 public constant CURVE_ORDER =

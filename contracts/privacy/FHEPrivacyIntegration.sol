@@ -16,7 +16,7 @@ contract FHEPrivacyIntegration is AccessControl, ReentrancyGuard {
     // =========================================================================
 
     /// @notice Domain separator
-    bytes32 public constant FHE_DOMAIN = keccak256("PIL_FHE_V1");
+    bytes32 public constant FHE_DOMAIN = keccak256("Soul_FHE_V1");
 
     /// @notice Maximum ciphertext size (in bytes)
     uint256 public constant MAX_CIPHERTEXT_SIZE = 32768; // 32KB

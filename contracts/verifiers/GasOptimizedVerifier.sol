@@ -19,10 +19,10 @@ library GasOptimizedVerifier {
         21888242871839275222246405745257275088548364400416034343698204186575808495617;
 
     /// @notice Precompile addresses
-    uint256 constant ECADD_PRECOMPILE = 0x06;
-    uint256 constant ECMUL_PRECOMPILE = 0x07;
-    uint256 constant ECPAIRING_PRECOMPILE = 0x08;
-    uint256 constant MODEXP_PRECOMPILE = 0x05;
+    uint256 constant ECADD_PRECOMSoulE = 0x06;
+    uint256 constant ECMUL_PRECOMSoulE = 0x07;
+    uint256 constant ECPAIRING_PRECOMSoulE = 0x08;
+    uint256 constant MODEXP_PRECOMSoulE = 0x05;
 
     /// @notice Generator points
     uint256 constant G1_X = 1;
@@ -51,7 +51,7 @@ library GasOptimizedVerifier {
 
             let success := staticcall(
                 gas(),
-                ECADD_PRECOMPILE,
+                ECADD_PRECOMSoulE,
                 ptr,
                 0x80,
                 ptr,
@@ -82,7 +82,7 @@ library GasOptimizedVerifier {
 
             let success := staticcall(
                 gas(),
-                ECMUL_PRECOMPILE,
+                ECMUL_PRECOMSoulE,
                 ptr,
                 0x60,
                 ptr,
@@ -171,7 +171,7 @@ library GasOptimizedVerifier {
         assembly {
             let success := staticcall(
                 gas(),
-                ECPAIRING_PRECOMPILE,
+                ECPAIRING_PRECOMSoulE,
                 input,
                 384, // 12 * 32 bytes
                 result,
@@ -246,7 +246,7 @@ library GasOptimizedVerifier {
         assembly {
             let success := staticcall(
                 gas(),
-                ECPAIRING_PRECOMPILE,
+                ECPAIRING_PRECOMSoulE,
                 input,
                 768, // 24 * 32 bytes
                 result,
@@ -435,7 +435,7 @@ library GasOptimizedVerifier {
 
             let success := staticcall(
                 gas(),
-                MODEXP_PRECOMPILE,
+                MODEXP_PRECOMSoulE,
                 ptr,
                 0xc0,
                 ptr,

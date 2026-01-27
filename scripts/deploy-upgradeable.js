@@ -3,18 +3,18 @@ const fs = require("fs");
 const path = require("path");
 
 /**
- * PIL v2 Upgradeable Contracts Deployment Script
+ * Soul v2 Upgradeable Contracts Deployment Script
  * 
- * Deploys UUPS upgradeable proxies for PIL v2 contracts:
+ * Deploys UUPS upgradeable proxies for Soul v2 contracts:
  * - ProofCarryingContainerUpgradeable
- * - PILv2OrchestratorUpgradeable
+ * - Soulv2OrchestratorUpgradeable
  */
 
 const DEPLOYMENT_LOG_DIR = "./deployments";
 
 async function main() {
     console.log("\n" + "=".repeat(80));
-    console.log("PIL v2 UPGRADEABLE CONTRACTS DEPLOYMENT");
+    console.log("Soul v2 UPGRADEABLE CONTRACTS DEPLOYMENT");
     console.log("=".repeat(80) + "\n");
 
     const [deployer] = await ethers.getSigners();
@@ -98,8 +98,8 @@ async function main() {
         // ============================================
         console.log("\n📦 PHASE 3: Upgradeable Orchestrator\n");
 
-        console.log("6️⃣  Deploying PILv2OrchestratorUpgradeable (UUPS Proxy)...");
-        const OrchestratorUpgradeable = await ethers.getContractFactory("PILv2OrchestratorUpgradeable");
+        console.log("6️⃣  Deploying Soulv2OrchestratorUpgradeable (UUPS Proxy)...");
+        const OrchestratorUpgradeable = await ethers.getContractFactory("Soulv2OrchestratorUpgradeable");
         const orchestratorProxy = await upgrades.deployProxy(
             OrchestratorUpgradeable,
             [
@@ -154,7 +154,7 @@ async function main() {
         console.log("=".repeat(80));
         console.log("\nProxies (interact with these):");
         console.log(`  ProofCarryingContainer: ${deployed.contracts.proofCarryingContainer}`);
-        console.log(`  PILv2Orchestrator: ${deployed.contracts.pilv2Orchestrator}`);
+        console.log(`  Soulv2Orchestrator: ${deployed.contracts.pilv2Orchestrator}`);
         console.log("\nImplementations (for verification):");
         console.log(`  PC³ Implementation: ${deployed.implementations.proofCarryingContainer}`);
         console.log(`  Orchestrator Implementation: ${deployed.implementations.pilv2Orchestrator}`);

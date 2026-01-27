@@ -4,7 +4,7 @@ const path = require("path");
 const { getChainConfig, loadDeployment } = require("./chain-config");
 
 /**
- * PIL v2 Contract Verification Script
+ * Soul v2 Contract Verification Script
  * 
  * Automatically verifies all deployed contracts on block explorers.
  * 
@@ -24,8 +24,8 @@ const CONTRACT_PATHS = {
     pbp: "contracts/primitives/PolicyBoundProofs.sol:PolicyBoundProofs",
     easc: "contracts/primitives/ExecutionAgnosticStateCommitments.sol:ExecutionAgnosticStateCommitments",
     cdna: "contracts/primitives/CrossDomainNullifierAlgebra.sol:CrossDomainNullifierAlgebra",
-    orchestrator: "contracts/PILv2Orchestrator.sol:PILv2Orchestrator",
-    timelock: "contracts/governance/PILTimelock.sol:PILTimelock",
+    orchestrator: "contracts/Soulv2Orchestrator.sol:Soulv2Orchestrator",
+    timelock: "contracts/governance/SoulTimelock.sol:SoulTimelock",
     timelockAdmin: "contracts/governance/TimelockAdmin.sol:TimelockAdmin",
 };
 
@@ -53,7 +53,7 @@ async function verifyContract(address, constructorArgs, contractPath) {
 
 async function main() {
     console.log("\n" + "=".repeat(80));
-    console.log("PIL v2 CONTRACT VERIFICATION");
+    console.log("Soul v2 CONTRACT VERIFICATION");
     console.log("=".repeat(80) + "\n");
 
     // Get chain info
@@ -190,7 +190,7 @@ async function main() {
         (result.alreadyVerified ? results.alreadyVerified : result.success ? results.verified : results.failed).push(result);
     }
 
-    // 10. PILv2Orchestrator - has constructor args
+    // 10. Soulv2Orchestrator - has constructor args
     if (deployment.contracts.orchestrator) {
         const result = await verifyContract(
             deployment.contracts.orchestrator,
@@ -205,7 +205,7 @@ async function main() {
         (result.alreadyVerified ? results.alreadyVerified : result.success ? results.verified : results.failed).push(result);
     }
 
-    // 11. PILTimelock - has constructor args
+    // 11. SoulTimelock - has constructor args
     if (deployment.contracts.timelock) {
         const result = await verifyContract(
             deployment.contracts.timelock,

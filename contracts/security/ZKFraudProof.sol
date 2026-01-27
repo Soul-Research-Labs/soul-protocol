@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title ZKFraudProof
- * @author PIL Security Team
+ * @author Soul Security Team
  * @notice Zero-Knowledge Fraud Proofs for optimistic rollup security
  * @dev Implements ZK-based fraud proving for faster finality and reduced gas costs
  */

@@ -17,11 +17,11 @@ contract CrossChainPrivacyFuzz is Test {
     uint256 constant BLS12_381_R =
         0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001;
 
-    bytes32 constant NULLIFIER_DOMAIN = keccak256("PIL_UNIFIED_NULLIFIER_V1");
-    bytes32 constant STEALTH_DOMAIN = keccak256("PIL_STEALTH_ADDRESS_V1");
-    bytes32 constant RINGCT_DOMAIN = keccak256("PIL_RINGCT_V1");
+    bytes32 constant NULLIFIER_DOMAIN = keccak256("Soul_UNIFIED_NULLIFIER_V1");
+    bytes32 constant STEALTH_DOMAIN = keccak256("Soul_STEALTH_ADDRESS_V1");
+    bytes32 constant RINGCT_DOMAIN = keccak256("Soul_RINGCT_V1");
     bytes32 constant CROSS_DOMAIN_TAG = keccak256("CROSS_DOMAIN");
-    bytes32 constant PIL_BINDING_TAG = keccak256("PIL_BINDING");
+    bytes32 constant Soul_BINDING_TAG = keccak256("Soul_BINDING");
 
     // =========================================================================
     // STEALTH ADDRESS FUZZ TESTS
@@ -345,9 +345,9 @@ contract CrossChainPrivacyFuzz is Test {
     }
 
     /**
-     * @notice Fuzz: PIL nullifier is unique per domain
+     * @notice Fuzz: Soul nullifier is unique per domain
      */
-    function testFuzz_PILNullifierUniqueness(
+    function testFuzz_SoulNullifierUniqueness(
         bytes32 sourceNullifier,
         bytes32 domain1,
         bytes32 domain2
@@ -356,22 +356,22 @@ contract CrossChainPrivacyFuzz is Test {
         vm.assume(sourceNullifier != bytes32(0));
 
         bytes32 pilNf1 = keccak256(
-            abi.encodePacked(sourceNullifier, domain1, PIL_BINDING_TAG)
+            abi.encodePacked(sourceNullifier, domain1, Soul_BINDING_TAG)
         );
         bytes32 pilNf2 = keccak256(
-            abi.encodePacked(sourceNullifier, domain2, PIL_BINDING_TAG)
+            abi.encodePacked(sourceNullifier, domain2, Soul_BINDING_TAG)
         );
 
         assertTrue(
             pilNf1 != pilNf2,
-            "Different domains must produce different PIL nullifiers"
+            "Different domains must produce different Soul nullifiers"
         );
     }
 
     /**
-     * @notice Fuzz: Same nullifier always maps to same PIL nullifier
+     * @notice Fuzz: Same nullifier always maps to same Soul nullifier
      */
-    function testFuzz_PILNullifierDeterministic(
+    function testFuzz_SoulNullifierDeterministic(
         bytes32 sourceNullifier,
         bytes32 domain
     ) public pure {
@@ -379,13 +379,13 @@ contract CrossChainPrivacyFuzz is Test {
         vm.assume(domain != bytes32(0));
 
         bytes32 pilNf1 = keccak256(
-            abi.encodePacked(sourceNullifier, domain, PIL_BINDING_TAG)
+            abi.encodePacked(sourceNullifier, domain, Soul_BINDING_TAG)
         );
         bytes32 pilNf2 = keccak256(
-            abi.encodePacked(sourceNullifier, domain, PIL_BINDING_TAG)
+            abi.encodePacked(sourceNullifier, domain, Soul_BINDING_TAG)
         );
 
-        assertEq(pilNf1, pilNf2, "PIL nullifier must be deterministic");
+        assertEq(pilNf1, pilNf2, "Soul nullifier must be deterministic");
     }
 
     // =========================================================================
@@ -484,10 +484,10 @@ contract CrossChainPrivacyFuzz is Test {
         vm.assume(timestamp1 != timestamp2);
 
         bytes32 id1 = keccak256(
-            abi.encodePacked("PIL_TRANSFER", timestamp1, sender, nonce)
+            abi.encodePacked("Soul_TRANSFER", timestamp1, sender, nonce)
         );
         bytes32 id2 = keccak256(
-            abi.encodePacked("PIL_TRANSFER", timestamp2, sender, nonce)
+            abi.encodePacked("Soul_TRANSFER", timestamp2, sender, nonce)
         );
 
         assertTrue(

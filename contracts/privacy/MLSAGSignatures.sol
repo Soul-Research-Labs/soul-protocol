@@ -8,7 +8,7 @@ import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol
 
 /**
  * @title MLSAGSignatures
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Implements MLSAG (Multilayered Linkable Spontaneous Anonymous Group) signatures
  * @dev Advanced ring signatures for multi-input transactions with key image linking
  *
@@ -77,7 +77,7 @@ contract MLSAGSignatures is
         0x6666666666666666666666666666666666666666666666666666666666666658;
 
     /// @notice Domain separator
-    bytes32 public constant DOMAIN = keccak256("PIL_MLSAG_SIGNATURES_V1");
+    bytes32 public constant DOMAIN = keccak256("Soul_MLSAG_SIGNATURES_V1");
 
     /// @notice Maximum ring size
     uint256 public constant MAX_RING_SIZE = 16;

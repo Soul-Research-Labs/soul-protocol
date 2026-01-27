@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 
 /**
  * @title BTCSPVVerifier
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Bitcoin SPV light client for transaction verification
  * @dev Stores Bitcoin block headers and verifies Merkle inclusion proofs
  *

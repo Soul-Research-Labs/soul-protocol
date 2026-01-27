@@ -2,7 +2,7 @@
  * Certora CVL Specification for Cross-Chain Privacy
  * 
  * @title Cross-Chain Privacy Verification Rules
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Formal verification of privacy contracts
  */
 
@@ -31,10 +31,10 @@ methods {
     function UnifiedNullifierManager.registerDomain(uint256, bytes) external;
     function UnifiedNullifierManager.registerNullifier(bytes32, uint256) external;
     function UnifiedNullifierManager.deriveCrossDomainNullifier(bytes32, uint256, uint256) external returns (bytes32);
-    function UnifiedNullifierManager.derivePILBinding(bytes32) external returns (bytes32);
+    function UnifiedNullifierManager.deriveSoulBinding(bytes32) external returns (bytes32);
     function UnifiedNullifierManager.isNullifierConsumed(bytes32, uint256) external returns (bool) envfree;
     function UnifiedNullifierManager.isDomainRegistered(uint256) external returns (bool) envfree;
-    function UnifiedNullifierManager.getPILBinding(bytes32) external returns (bytes32) envfree;
+    function UnifiedNullifierManager.getSoulBinding(bytes32) external returns (bytes32) envfree;
 
     // CrossChainPrivacyHub
     function CrossChainPrivacyHub.initiatePrivateTransfer(uint256, address, uint256, bytes32, bytes32, bytes) external;
@@ -241,16 +241,16 @@ rule crossDomainDirectionSensitivity(bytes32 nullifier, uint256 domainA, uint256
 }
 
 /**
- * @title PIL Binding Uniqueness
- * @notice Different nullifiers produce different PIL bindings
+ * @title Soul Binding Uniqueness
+ * @notice Different nullifiers produce different Soul bindings
  */
 rule pilBindingUniqueness(bytes32 nf1, bytes32 nf2) {
     env e;
 
     require nf1 != nf2;
 
-    bytes32 binding1 = derivePILBinding(e, nf1);
-    bytes32 binding2 = derivePILBinding(e, nf2);
+    bytes32 binding1 = deriveSoulBinding(e, nf1);
+    bytes32 binding2 = deriveSoulBinding(e, nf2);
 
     // High probability they differ (collision resistance)
     satisfy binding1 != binding2;
@@ -402,7 +402,7 @@ rule nullifierRegisteredOnTransfer(
 ) {
     env e;
 
-    // Assuming PIL chain is domain 1
+    // Assuming Soul chain is domain 1
     uint256 pilDomain = 1;
     bool consumedBefore = isNullifierConsumed(nullifier, pilDomain);
 

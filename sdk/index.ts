@@ -1,1 +1,1 @@
-export { PILSDK, CryptoModule } from "./src/index";
+export { SoulSDK, CryptoModule } from "./src/index";

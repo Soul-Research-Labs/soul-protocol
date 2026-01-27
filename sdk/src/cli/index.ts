@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * PIL CLI - Command Line Interface
+ * Soul CLI - Command Line Interface
  * 
- * Command line tool for PIL privacy and bridge operations
+ * Command line tool for Soul privacy and bridge operations
  */
 
 import { Command } from 'commander';
@@ -18,7 +18,7 @@ const program = new Command();
 // Configuration Management
 // ============================================
 
-interface PILConfig {
+interface SoulConfig {
   rpcUrls: Record<string, string>;
   privateKey?: string;
   addresses: {
@@ -38,7 +38,7 @@ interface PILConfig {
 const CONFIG_DIR = path.join(process.env.HOME || '~', '.pil');
 const CONFIG_FILE = path.join(CONFIG_DIR, 'config.json');
 
-function loadConfig(): PILConfig {
+function loadConfig(): SoulConfig {
   if (fs.existsSync(CONFIG_FILE)) {
     return JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf-8'));
   }
@@ -56,7 +56,7 @@ function loadConfig(): PILConfig {
   };
 }
 
-function saveConfig(config: PILConfig): void {
+function saveConfig(config: SoulConfig): void {
   if (!fs.existsSync(CONFIG_DIR)) {
     fs.mkdirSync(CONFIG_DIR, { recursive: true });
   }
@@ -112,7 +112,7 @@ function printTable(headers: string[], rows: string[][]): void {
 
 program
   .name('pil')
-  .description('Privacy Interoperability Layer CLI')
+  .description('Soul Protocol CLI')
   .version('1.0.0');
 
 // Config commands

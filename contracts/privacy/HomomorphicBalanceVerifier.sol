@@ -8,7 +8,7 @@ import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol
 
 /**
  * @title HomomorphicBalanceVerifier
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Verifies transaction balance without revealing amounts using Pedersen commitments
  * @dev Implements Bulletproof+ range proofs and homomorphic balance verification
  *
@@ -74,7 +74,7 @@ contract HomomorphicBalanceVerifier is
         0x31D3C6863973926E049E637CB1B5F40A36DAC28AF1766968C30C2313F3A38904;
 
     /// @notice Domain separator
-    bytes32 public constant DOMAIN = keccak256("PIL_HOMOMORPHIC_BALANCE_V1");
+    bytes32 public constant DOMAIN = keccak256("Soul_HOMOMORPHIC_BALANCE_V1");
 
     /// @notice Maximum range for Bulletproof (64 bits)
     uint256 public constant MAX_RANGE = 64;

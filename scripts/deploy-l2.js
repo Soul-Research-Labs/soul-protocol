@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * @title L2 Deployment Script
- * @notice Deploys PIL contracts to L2 testnets
+ * @notice Deploys Soul contracts to L2 testnets
  * @dev Supports Arbitrum, Optimism, Base, zkSync, Scroll, Linea, Polygon zkEVM
  */
 
@@ -299,7 +299,7 @@ async function deployToL2(networkName) {
 }
 
 async function deployAll() {
-  console.log("PIL L2 Deployment Script");
+  console.log("Soul L2 Deployment Script");
   console.log("========================\n");
 
   const results = {};

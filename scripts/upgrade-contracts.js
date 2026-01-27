@@ -1,7 +1,7 @@
 const { ethers, upgrades } = require("hardhat");
 
 /**
- * PIL v2 Upgrade Script
+ * Soul v2 Upgrade Script
  * 
  * Upgrades deployed UUPS proxies to new implementations
  * 
@@ -11,7 +11,7 @@ const { ethers, upgrades } = require("hardhat");
 
 async function main() {
     console.log("\n" + "=".repeat(60));
-    console.log("PIL v2 CONTRACT UPGRADE");
+    console.log("Soul v2 CONTRACT UPGRADE");
     console.log("=".repeat(60) + "\n");
 
     const [deployer] = await ethers.getSigners();
@@ -83,12 +83,12 @@ async function main() {
     // ============================================
     // UPGRADE ORCHESTRATOR
     // ============================================
-    console.log("\n🔄 Upgrading PILv2OrchestratorUpgradeable...\n");
+    console.log("\n🔄 Upgrading Soulv2OrchestratorUpgradeable...\n");
 
-    const OrchestratorV2 = await ethers.getContractFactory("PILv2OrchestratorUpgradeable");
+    const OrchestratorV2 = await ethers.getContractFactory("Soulv2OrchestratorUpgradeable");
 
     const orchestratorProxy = await ethers.getContractAt(
-        "PILv2OrchestratorUpgradeable",
+        "Soulv2OrchestratorUpgradeable",
         deployment.contracts.pilv2Orchestrator
     );
     const oldOrchestratorVersion = await orchestratorProxy.contractVersion();

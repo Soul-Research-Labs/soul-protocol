@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title GasOptimizedStealthRegistry
- * @author PIL Team
+ * @author Soul Team
  * @notice Gas-optimized stealth address registry with batch operations
  * @dev Targets <100k gas per stealth address generation (down from ~180k)
  *
@@ -401,7 +401,7 @@ contract GasOptimizedNullifierManager {
             mstore(ptr, sourceNullifier)
             mstore(add(ptr, 0x20), sourceDomain)
             mstore(add(ptr, 0x40), targetDomain)
-            mstore(add(ptr, 0x60), 0x5049 /* "PIL" prefix */)
+            mstore(add(ptr, 0x60), 0x5049 /* "Soul" prefix */)
             result := keccak256(ptr, 0x80)
         }
         return result;

@@ -1,15 +1,15 @@
 /**
- * PIL SDK Retry Utility
+ * Soul SDK Retry Utility
  * 
  * Exponential backoff retry logic with configurable options,
  * jitter, and error classification.
  */
 
 import {
-  PILError,
+  SoulError,
   NetworkError,
   TimeoutError,
-  isPILError,
+  isSoulError,
 } from "./errors";
 
 /**
@@ -90,7 +90,7 @@ function defaultShouldRetry(error: Error, _attempt: number): boolean {
   }
   
   // Check if error is marked as retryable
-  if (isPILError(error)) {
+  if (isSoulError(error)) {
     return error.retryable;
   }
   

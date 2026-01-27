@@ -433,7 +433,7 @@ contract AdvancedPrivacyFuzz is Test {
         return
             keccak256(
                 abi.encodePacked(
-                    "PIL_SERAPHIS_V1",
+                    "Soul_SERAPHIS_V1",
                     "ONE_TIME",
                     randomness,
                     K1,
@@ -462,7 +462,7 @@ contract AdvancedPrivacyFuzz is Test {
         return
             keccak256(
                 abi.encodePacked(
-                    "PIL_NOVA_IVC_V1",
+                    "Soul_NOVA_IVC_V1",
                     commitmentW,
                     commitmentE,
                     u,
@@ -478,7 +478,7 @@ contract AdvancedPrivacyFuzz is Test {
     ) internal pure returns (bytes32) {
         return
             keccak256(
-                abi.encodePacked("PIL_FHE_V1", ciphertext, sender, timestamp)
+                abi.encodePacked("Soul_FHE_V1", ciphertext, sender, timestamp)
             );
     }
 }

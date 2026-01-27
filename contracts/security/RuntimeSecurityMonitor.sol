@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title RuntimeSecurityMonitor
- * @author PIL Security Team
+ * @author Soul Security Team
  * @notice Real-time bytecode analysis and runtime invariant checking
  * @dev Monitors deployed contracts for suspicious behavior and invariant violations
  */

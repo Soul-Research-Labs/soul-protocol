@@ -4,7 +4,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 /**
- * PIL ZK Prover Module
+ * Soul ZK Prover Module
  * High-performance proof generation with caching and batching
  */
 

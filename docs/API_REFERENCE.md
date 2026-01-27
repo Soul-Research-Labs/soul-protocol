@@ -1,6 +1,6 @@
-# PIL Protocol API Reference
+# Soul Protocol API Reference
 
-> **Complete SDK Documentation for PIL v2**
+> **Complete SDK Documentation for Soul v2**
 
 [![npm](https://img.shields.io/badge/npm-@pil/sdk-blue.svg)](https://www.npmjs.com/package/@pil/sdk)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)]()
@@ -13,7 +13,7 @@
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Core Classes](#core-classes)
-  - [PILClient](#pilclient)
+  - [SoulClient](#pilclient)
   - [PC3Client](#pc3client)
   - [PBPClient](#pbpclient)
   - [EASCClient](#eascclient)
@@ -30,7 +30,7 @@
 
 ## Overview
 
-The Privacy Interoperability Layer (PIL) provides a comprehensive SDK for interacting with privacy-preserving cross-chain operations.
+The Soul Protocol (Soul) provides a comprehensive SDK for interacting with privacy-preserving cross-chain operations.
 
 ## Installation
 
@@ -41,28 +41,28 @@ npm install @pil/sdk
 ## Quick Start
 
 ```typescript
-import { PILClient, PILClientConfig } from '@pil/sdk';
+import { SoulClient, SoulClientConfig } from '@pil/sdk';
 
-const config: PILClientConfig = {
+const config: SoulClientConfig = {
   network: 'mainnet',
   rpcUrl: 'https://eth-mainnet.alchemyapi.io/v2/YOUR_KEY',
 };
 
-const client = new PILClient(config);
+const client = new SoulClient(config);
 ```
 
 ---
 
 ## Core Classes
 
-### PILClient
+### SoulClient
 
-The main entry point for all PIL operations.
+The main entry point for all Soul operations.
 
 #### Constructor
 
 ```typescript
-new PILClient(config: PILClientConfig)
+new SoulClient(config: SoulClientConfig)
 ```
 
 **Parameters:**
@@ -335,7 +335,7 @@ enum OperationType {
 
 ### generateProof()
 
-Generate a ZK proof using the PIL circuit.
+Generate a ZK proof using the Soul circuit.
 
 ```typescript
 async function generateProof(
@@ -433,12 +433,12 @@ interface NullifierConsumedEvent {
 ### Error Types
 
 ```typescript
-import { PILError, ErrorCode } from '@pil/sdk';
+import { SoulError, ErrorCode } from '@pil/sdk';
 
 try {
   await client.getPC3().createContainer({...});
 } catch (error) {
-  if (error instanceof PILError) {
+  if (error instanceof SoulError) {
     switch (error.code) {
       case ErrorCode.PROOF_INVALID:
         console.error('Invalid proof provided');
@@ -480,7 +480,7 @@ The SDK is written in TypeScript and includes full type definitions.
 
 ```typescript
 import type {
-  PILClientConfig,
+  SoulClientConfig,
   Container,
   ContainerStatus,
   PolicyResult,
@@ -499,7 +499,7 @@ import type {
 
 ```typescript
 // Reuse client instances
-const client = new PILClient(config);
+const client = new SoulClient(config);
 
 // Don't create new clients per operation
 async function processContainers(ids: string[]) {
@@ -552,10 +552,10 @@ const result = await client.getPC3().createContainer({
 1. Update import paths:
 ```typescript
 // v1
-import { PILClient } from 'pil-sdk';
+import { SoulClient } from 'pil-sdk';
 
 // v2
-import { PILClient } from '@pil/sdk';
+import { SoulClient } from '@pil/sdk';
 ```
 
 2. Update method signatures:

@@ -1,7 +1,7 @@
 {
   "name": "@pil/react",
   "version": "1.0.0",
-  "description": "React hooks for PIL Protocol",
+  "description": "React hooks for Soul Protocol",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
   "types": "dist/index.d.ts",
@@ -72,6 +72,6 @@
     "web3",
     "zk-proofs"
   ],
-  "author": "PIL Protocol",
+  "author": "Soul Protocol",
   "license": "MIT"
 }

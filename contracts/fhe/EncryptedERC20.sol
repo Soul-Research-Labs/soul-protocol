@@ -9,7 +9,7 @@ import "./FHETypes.sol";
 
 /**
  * @title EncryptedERC20
- * @author Privacy Interoperability Layer
+ * @author Soul Protocol
  * @notice Confidential ERC20 token with encrypted balances using FHE
  * @dev Implements ERC20-like interface with fully homomorphic encryption
  *

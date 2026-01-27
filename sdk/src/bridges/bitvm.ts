@@ -1,5 +1,5 @@
 /**
- * PIL SDK - BitVM Bridge Utilities
+ * Soul SDK - BitVM Bridge Utilities
  * 
  * Provides TypeScript interfaces and utilities for BitVM integration
  */

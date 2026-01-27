@@ -1,5 +1,5 @@
 /**
- * PIL SDK Input Validation
+ * Soul SDK Input Validation
  * 
  * Comprehensive input validation with type-safe validators,
  * sanitization, and detailed error messages.
@@ -8,7 +8,7 @@
 import { ethers } from "ethers";
 import {
   ValidationError,
-  PILErrorCode,
+  SoulErrorCode,
 } from "./errors";
 
 /**
@@ -378,7 +378,7 @@ export function validate<T>(
   if (!result.valid) {
     throw new ValidationError(
       `Validation failed for ${fieldName}: ${result.error}`,
-      PILErrorCode.INVALID_INPUT,
+      SoulErrorCode.INVALID_INPUT,
       { field: fieldName, value, error: result.error }
     );
   }
@@ -406,7 +406,7 @@ export function validateAll(
   if (errors.length > 0) {
     throw new ValidationError(
       `Validation failed:\n${errors.join("\n")}`,
-      PILErrorCode.SCHEMA_VALIDATION_FAILED,
+      SoulErrorCode.SCHEMA_VALIDATION_FAILED,
       { errors }
     );
   }

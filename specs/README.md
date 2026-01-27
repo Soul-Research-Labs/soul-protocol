@@ -30,7 +30,7 @@ pip install certora-cli
 ./scripts/run_formal_verification.sh --controlplane  # 5-Stage Lifecycle
 ./scripts/run_formal_verification.sh --sptc     # Proof Translation
 ./scripts/run_formal_verification.sh --network  # Network-Wide Invariants
-./scripts/run_formal_verification.sh --core     # Core PIL Contracts
+./scripts/run_formal_verification.sh --core     # Core Soul Contracts
 
 # Run individual spec
 certoraRun certora/conf/verify_jam.conf

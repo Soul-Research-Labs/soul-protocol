@@ -1,6 +1,6 @@
-# PIL Deployment Guide
+# Soul Deployment Guide
 
-> **Complete process for deploying PIL to Ethereum mainnet and L2 networks**
+> **Complete process for deploying Soul to Ethereum mainnet and L2 networks**
 
 [![Networks](https://img.shields.io/badge/Networks-Ethereum%20|%20Arbitrum%20|%20Base-blue.svg)]()
 
@@ -19,7 +19,7 @@
 
 ---
 
-> Complete process for deploying PIL to Ethereum mainnet and L2 networks.
+> Complete process for deploying Soul to Ethereum mainnet and L2 networks.
 
 For **live deployed addresses**, see [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md).
 
@@ -116,9 +116,9 @@ Expected costs (at ~30 gwei):
 | PolicyBoundProofs | ~2,300,000 | ~0.069 |
 | EASC | ~2,000,000 | ~0.060 |
 | CDNA | ~2,300,000 | ~0.069 |
-| PILv2Orchestrator | ~1,400,000 | ~0.042 |
-| PILTimelock | ~2,300,000 | ~0.069 |
-| PILGovernance | ~3,500,000 | ~0.105 |
+| Soulv2Orchestrator | ~1,400,000 | ~0.042 |
+| SoulTimelock | ~2,300,000 | ~0.069 |
+| SoulGovernance | ~3,500,000 | ~0.105 |
 | TEEAttestation | ~2,200,000 | ~0.066 |
 | **Total** | **~27,100,000** | **~0.81** |
 
@@ -173,7 +173,7 @@ npx hardhat run scripts/configure-crosschain.js --network mainnet  # Configure b
 
 **Roles:** `DEFAULT_ADMIN` (Timelock), `PAUSER` (Multi-sig 2/3), `UPGRADER` (Timelock), `OPERATOR` (Team)  
 **Timelock:** 48h standard, 6h emergency, 24h params  
-**Emergency:** `PILv2Orchestrator.pause()` | Circuit breaker auto-pause
+**Emergency:** `Soulv2Orchestrator.pause()` | Circuit breaker auto-pause
 
 ---
 

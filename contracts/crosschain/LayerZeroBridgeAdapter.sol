@@ -7,17 +7,17 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title LayerZeroBridgeAdapter
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Omnichain bridge adapter using LayerZero V2 protocol
  * @dev Enables cross-chain interoperability across 120+ chains via LayerZero
  *
  * LAYERZERO V2 INTEGRATION ARCHITECTURE:
  * ┌─────────────────────────────────────────────────────────────────────────┐
- * │                     PIL <-> LayerZero Omnichain                         │
+ * │                     Soul <-> LayerZero Omnichain                         │
  * ├─────────────────────────────────────────────────────────────────────────┤
  * │                                                                         │
  * │  ┌───────────────────┐           ┌───────────────────┐                 │
- * │  │   PIL Protocol    │           │   Remote Chains   │                 │
+ * │  │   Soul Protocol    │           │   Remote Chains   │                 │
  * │  │  ┌─────────────┐  │           │  ┌─────────────┐  │                 │
  * │  │  │ OApp        │  │◄─────────►│  │ OApp        │  │                 │
  * │  │  │ (Omnichain) │  │           │  │ (Peer)      │  │                 │

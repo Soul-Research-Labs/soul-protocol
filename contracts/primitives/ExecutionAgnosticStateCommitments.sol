@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /// @title ExecutionAgnosticStateCommitments (EASC)
-/// @author Soul Protocol - PIL v2
+/// @author Soul Protocol - Soul v2
 /// @notice State commitments independent of execution environment
 /// @dev MVP Implementation - Decouples what happened from how it happened
 ///

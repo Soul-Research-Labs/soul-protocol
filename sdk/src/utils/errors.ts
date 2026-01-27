@@ -1,14 +1,14 @@
 /**
- * PIL SDK Error Classes
+ * Soul SDK Error Classes
  * 
  * Comprehensive error handling with typed errors, error codes,
  * and contextual information for debugging.
  */
 
 /**
- * Base error code enum for all PIL SDK errors
+ * Base error code enum for all Soul SDK errors
  */
-export enum PILErrorCode {
+export enum SoulErrorCode {
   // General errors (1xxx)
   UNKNOWN_ERROR = 1000,
   INVALID_CONFIGURATION = 1001,
@@ -71,8 +71,8 @@ export enum PILErrorCode {
 /**
  * Error metadata interface
  */
-export interface PILErrorMetadata {
-  code: PILErrorCode;
+export interface SoulErrorMetadata {
+  code: SoulErrorCode;
   timestamp: Date;
   context?: Record<string, unknown>;
   cause?: Error;
@@ -81,10 +81,10 @@ export interface PILErrorMetadata {
 }
 
 /**
- * Base PIL SDK Error
+ * Base Soul SDK Error
  */
-export class PILError extends Error {
-  public readonly code: PILErrorCode;
+export class SoulError extends Error {
+  public readonly code: SoulErrorCode;
   public readonly timestamp: Date;
   public readonly context: Record<string, unknown>;
   public readonly cause?: Error;
@@ -93,11 +93,11 @@ export class PILError extends Error {
 
   constructor(
     message: string,
-    code: PILErrorCode = PILErrorCode.UNKNOWN_ERROR,
-    options: Partial<PILErrorMetadata> = {}
+    code: SoulErrorCode = SoulErrorCode.UNKNOWN_ERROR,
+    options: Partial<SoulErrorMetadata> = {}
   ) {
     super(message);
-    this.name = "PILError";
+    this.name = "SoulError";
     this.code = code;
     this.timestamp = options.timestamp || new Date();
     this.context = options.context || {};
@@ -117,7 +117,7 @@ export class PILError extends Error {
       name: this.name,
       message: this.message,
       code: this.code,
-      codeName: PILErrorCode[this.code],
+      codeName: SoulErrorCode[this.code],
       timestamp: this.timestamp.toISOString(),
       context: this.context,
       retryable: this.retryable,
@@ -130,7 +130,7 @@ export class PILError extends Error {
   /**
    * Check if error is of a specific type
    */
-  isType(code: PILErrorCode): boolean {
+  isType(code: SoulErrorCode): boolean {
     return this.code === code;
   }
 
@@ -155,10 +155,10 @@ export class PILError extends Error {
 /**
  * Validation Error
  */
-export class ValidationError extends PILError {
+export class ValidationError extends SoulError {
   constructor(
     message: string,
-    code: PILErrorCode = PILErrorCode.INVALID_INPUT,
+    code: SoulErrorCode = SoulErrorCode.INVALID_INPUT,
     context?: Record<string, unknown>
   ) {
     super(message, code, {
@@ -173,13 +173,13 @@ export class ValidationError extends PILError {
 /**
  * Contract Error
  */
-export class ContractError extends PILError {
+export class ContractError extends SoulError {
   public readonly transactionHash?: string;
   public readonly revertReason?: string;
 
   constructor(
     message: string,
-    code: PILErrorCode = PILErrorCode.CONTRACT_CALL_FAILED,
+    code: SoulErrorCode = SoulErrorCode.CONTRACT_CALL_FAILED,
     options: {
       transactionHash?: string;
       revertReason?: string;
@@ -195,9 +195,9 @@ export class ContractError extends PILError {
       },
       cause: options.cause,
       retryable: [
-        PILErrorCode.NONCE_TOO_LOW,
-        PILErrorCode.REPLACEMENT_UNDERPRICED,
-        PILErrorCode.NETWORK_ERROR,
+        SoulErrorCode.NONCE_TOO_LOW,
+        SoulErrorCode.REPLACEMENT_UNDERPRICED,
+        SoulErrorCode.NETWORK_ERROR,
       ].includes(code),
       suggestedAction: options.revertReason
         ? `Transaction reverted: ${options.revertReason}`
@@ -212,7 +212,7 @@ export class ContractError extends PILError {
 /**
  * Network Error
  */
-export class NetworkError extends PILError {
+export class NetworkError extends SoulError {
   public readonly endpoint?: string;
   public readonly statusCode?: number;
 
@@ -224,7 +224,7 @@ export class NetworkError extends PILError {
       cause?: Error;
     } = {}
   ) {
-    super(message, PILErrorCode.NETWORK_ERROR, {
+    super(message, SoulErrorCode.NETWORK_ERROR, {
       context: {
         endpoint: options.endpoint,
         statusCode: options.statusCode,
@@ -242,13 +242,13 @@ export class NetworkError extends PILError {
 /**
  * Proof Error
  */
-export class ProofError extends PILError {
+export class ProofError extends SoulError {
   public readonly proofType?: string;
   public readonly circuitId?: string;
 
   constructor(
     message: string,
-    code: PILErrorCode = PILErrorCode.PROOF_GENERATION_FAILED,
+    code: SoulErrorCode = SoulErrorCode.PROOF_GENERATION_FAILED,
     options: {
       proofType?: string;
       circuitId?: string;
@@ -263,9 +263,9 @@ export class ProofError extends PILError {
         circuitId: options.circuitId,
       },
       cause: options.cause,
-      retryable: code === PILErrorCode.PROOF_EXPIRED,
+      retryable: code === SoulErrorCode.PROOF_EXPIRED,
       suggestedAction:
-        code === PILErrorCode.PROOF_EXPIRED
+        code === SoulErrorCode.PROOF_EXPIRED
           ? "Generate a new proof with updated timestamp"
           : "Check proof inputs and circuit compatibility",
     });
@@ -278,13 +278,13 @@ export class ProofError extends PILError {
 /**
  * State Error
  */
-export class StateError extends PILError {
+export class StateError extends SoulError {
   public readonly entityId?: string;
   public readonly entityType?: string;
 
   constructor(
     message: string,
-    code: PILErrorCode = PILErrorCode.CONTAINER_NOT_FOUND,
+    code: SoulErrorCode = SoulErrorCode.CONTAINER_NOT_FOUND,
     options: {
       entityId?: string;
       entityType?: string;
@@ -309,13 +309,13 @@ export class StateError extends PILError {
 /**
  * Compliance Error
  */
-export class ComplianceError extends PILError {
+export class ComplianceError extends SoulError {
   public readonly policyId?: string;
   public readonly violation?: string;
 
   constructor(
     message: string,
-    code: PILErrorCode = PILErrorCode.COMPLIANCE_CHECK_FAILED,
+    code: SoulErrorCode = SoulErrorCode.COMPLIANCE_CHECK_FAILED,
     options: {
       policyId?: string;
       violation?: string;
@@ -340,14 +340,14 @@ export class ComplianceError extends PILError {
 /**
  * Timeout Error
  */
-export class TimeoutError extends PILError {
+export class TimeoutError extends SoulError {
   public readonly timeoutMs: number;
   public readonly operation: string;
 
   constructor(operation: string, timeoutMs: number) {
     super(
       `Operation "${operation}" timed out after ${timeoutMs}ms`,
-      PILErrorCode.TIMEOUT_ERROR,
+      SoulErrorCode.TIMEOUT_ERROR,
       {
         context: { operation, timeoutMs },
         retryable: true,
@@ -370,7 +370,7 @@ export function parseContractError(error: Error): ContractError {
   if (message.includes("NullifierAlreadyConsumed")) {
     return new ContractError(
       "Nullifier has already been consumed",
-      PILErrorCode.NULLIFIER_ALREADY_CONSUMED,
+      SoulErrorCode.NULLIFIER_ALREADY_CONSUMED,
       { cause: error, revertReason: "NullifierAlreadyConsumed" }
     );
   }
@@ -378,7 +378,7 @@ export function parseContractError(error: Error): ContractError {
   if (message.includes("ContainerNotFound")) {
     return new ContractError(
       "Container not found",
-      PILErrorCode.CONTAINER_NOT_FOUND,
+      SoulErrorCode.CONTAINER_NOT_FOUND,
       { cause: error, revertReason: "ContainerNotFound" }
     );
   }
@@ -386,7 +386,7 @@ export function parseContractError(error: Error): ContractError {
   if (message.includes("PolicyNotFound")) {
     return new ContractError(
       "Policy not found",
-      PILErrorCode.POLICY_NOT_FOUND,
+      SoulErrorCode.POLICY_NOT_FOUND,
       { cause: error, revertReason: "PolicyNotFound" }
     );
   }
@@ -394,7 +394,7 @@ export function parseContractError(error: Error): ContractError {
   if (message.includes("PolicyExpired")) {
     return new ContractError(
       "Policy has expired",
-      PILErrorCode.POLICY_EXPIRED,
+      SoulErrorCode.POLICY_EXPIRED,
       { cause: error, revertReason: "PolicyExpired" }
     );
   }
@@ -402,7 +402,7 @@ export function parseContractError(error: Error): ContractError {
   if (message.includes("nonce too low")) {
     return new ContractError(
       "Transaction nonce too low",
-      PILErrorCode.NONCE_TOO_LOW,
+      SoulErrorCode.NONCE_TOO_LOW,
       { cause: error }
     );
   }
@@ -410,20 +410,20 @@ export function parseContractError(error: Error): ContractError {
   if (message.includes("replacement transaction underpriced")) {
     return new ContractError(
       "Replacement transaction underpriced",
-      PILErrorCode.REPLACEMENT_UNDERPRICED,
+      SoulErrorCode.REPLACEMENT_UNDERPRICED,
       { cause: error }
     );
   }
 
   // Default contract error
-  return new ContractError(message, PILErrorCode.CONTRACT_CALL_FAILED, {
+  return new ContractError(message, SoulErrorCode.CONTRACT_CALL_FAILED, {
     cause: error,
   });
 }
 
 /**
- * Type guard for PIL errors
+ * Type guard for Soul errors
  */
-export function isPILError(error: unknown): error is PILError {
-  return error instanceof PILError;
+export function isSoulError(error: unknown): error is SoulError {
+  return error instanceof SoulError;
 }

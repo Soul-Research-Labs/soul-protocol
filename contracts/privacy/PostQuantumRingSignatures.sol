@@ -26,7 +26,7 @@ contract PostQuantumRingSignatures is AccessControl, ReentrancyGuard, Pausable {
 
     /// @notice Domain separator
     bytes32 public constant PQ_RING_DOMAIN =
-        keccak256("PIL_PQ_RING_SIGNATURES_V1");
+        keccak256("Soul_PQ_RING_SIGNATURES_V1");
 
     /// @notice Module-LWE parameters (Kyber-like)
     uint256 public constant MLWE_N = 256; // Polynomial degree

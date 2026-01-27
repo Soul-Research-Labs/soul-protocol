@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Certora CVL Specification for Scroll Bridge Adapter
-// Privacy Interoperability Layer (PIL) - Formal Verification
+// Soul Protocol (Soul) - Formal Verification
 
 /*
  * =============================================================================
@@ -182,8 +182,8 @@ rule nullifierUniqueness(bytes32 msgId1, bytes32 msgId2) {
 
 /// @title Cross-domain nullifier determinism
 rule crossDomainNullifierDeterminism(bytes32 scrollNullifier, bytes32 domain) {
-    bytes32 pilNf1 = keccak256(abi.encodePacked(scrollNullifier, domain, "SCROLL2PIL"));
-    bytes32 pilNf2 = keccak256(abi.encodePacked(scrollNullifier, domain, "SCROLL2PIL"));
+    bytes32 pilNf1 = keccak256(abi.encodePacked(scrollNullifier, domain, "SCROLL2Soul"));
+    bytes32 pilNf2 = keccak256(abi.encodePacked(scrollNullifier, domain, "SCROLL2Soul"));
     
     assert pilNf1 == pilNf2, "Cross-domain nullifier must be deterministic";
 }

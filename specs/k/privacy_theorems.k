@@ -1,5 +1,5 @@
 // ============================================================================
-// K Framework Privacy Theorems for PIL Protocol
+// K Framework Privacy Theorems for Soul Protocol
 // ============================================================================
 // This specification formalizes privacy guarantees for cross-chain private
 // transactions including stealth addresses, ring signatures, and homomorphic

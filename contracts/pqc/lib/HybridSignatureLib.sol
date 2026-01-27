@@ -3,7 +3,7 @@ pragma solidity ^0.8.22;
 
 /**
  * @title HybridSignatureLib
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice Library for hybrid classical/post-quantum signature operations
  * @dev Provides utilities for creating, encoding, and verifying hybrid signatures
  *      that combine ECDSA with post-quantum algorithms for defense-in-depth.

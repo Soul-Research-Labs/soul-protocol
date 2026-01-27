@@ -17,7 +17,7 @@ contract PrivacyPreservingRelayerSelection is AccessControl, ReentrancyGuard {
     bytes32 public constant ORACLE_ROLE = keccak256("ORACLE_ROLE");
 
     /// @notice Domain separator
-    bytes32 public constant DOMAIN = keccak256("PIL_PRIVATE_RELAYER_V1");
+    bytes32 public constant DOMAIN = keccak256("Soul_PRIVATE_RELAYER_V1");
 
     /// @notice Minimum stake required for relayers
     uint256 public constant MIN_STAKE = 1 ether;

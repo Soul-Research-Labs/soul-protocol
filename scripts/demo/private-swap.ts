@@ -22,7 +22,7 @@ interface DeploymentResult {
 }
 
 async function main() {
-  console.log("🚀 PIL Private Exchange Demo\n");
+  console.log("🚀 Soul Private Exchange Demo\n");
   console.log("=".repeat(60));
 
   const [deployer, user1, user2, relayer] = await ethers.getSigners();
@@ -46,7 +46,7 @@ async function main() {
   console.log(`  ✅ Token B deployed: ${await tokenB.getAddress()}`);
 
   // Deploy Exchange
-  const Exchange = await ethers.getContractFactory("PILPrivateExchange");
+  const Exchange = await ethers.getContractFactory("SoulPrivateExchange");
   const exchange = await Exchange.deploy(deployer.address);
   console.log(`  ✅ Exchange deployed: ${await exchange.getAddress()}`);
 
@@ -216,7 +216,7 @@ async function main() {
   await ccOrderTx.wait();
   console.log("  ✅ Cross-chain order created!");
   console.log(`     Destination: Chain ${destChainId}`);
-  console.log("     (Will be settled via PIL cross-chain messaging)");
+  console.log("     (Will be settled via Soul cross-chain messaging)");
 
   // Summary
   console.log("\n\n" + "=".repeat(60));

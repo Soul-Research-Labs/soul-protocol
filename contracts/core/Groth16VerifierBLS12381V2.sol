@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 /// @title Groth16VerifierBN254
-/// @author PIL Protocol
+/// @author Soul Protocol
 /// @notice Production-ready Groth16 verifier for BN254 curve using EVM precompiles
 /// @dev Uses bn256Add (0x06), bn256ScalarMul (0x07), and bn256Pairing (0x08) precompiles
 contract Groth16VerifierBN254 {
@@ -15,9 +15,9 @@ contract Groth16VerifierBN254 {
         21888242871839275222246405745257275088696311157297823662689037894645226208583;
 
     /// @notice Precompile addresses
-    uint256 constant PRECOMPILE_ADD = 0x06;
-    uint256 constant PRECOMPILE_MUL = 0x07;
-    uint256 constant PRECOMPILE_PAIRING = 0x08;
+    uint256 constant PRECOMSoulE_ADD = 0x06;
+    uint256 constant PRECOMSoulE_MUL = 0x07;
+    uint256 constant PRECOMSoulE_PAIRING = 0x08;
 
     /// @notice Verification key components (to be set during deployment)
     struct VerificationKey {

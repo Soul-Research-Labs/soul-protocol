@@ -3,7 +3,7 @@ pragma solidity ^0.8.22;
 
 /**
  * @title KyberKEM
- * @author PIL Protocol
+ * @author Soul Protocol
  * @notice On-chain Key Encapsulation Mechanism using NIST ML-KEM (Kyber)
  * @dev Implements Kyber key encapsulation for post-quantum key exchange.
  *      Used for privacy pool key exchanges and cross-chain secure channels.
@@ -22,7 +22,7 @@ contract KyberKEM is Ownable {
     // =============================================================================
 
     /// @notice Proposed precompile address for Kyber
-    address public constant KYBER_PRECOMPILE = address(0x0F);
+    address public constant KYBER_PRECOMSoulE = address(0x0F);
 
     /// @notice Kyber512 sizes
     uint256 public constant KYBER512_PK_SIZE = 800;
@@ -336,7 +336,7 @@ contract KyberKEM is Ownable {
             publicKey
         );
 
-        (bool success, bytes memory result) = KYBER_PRECOMPILE.call(input);
+        (bool success, bytes memory result) = KYBER_PRECOMSoulE.call(input);
 
         if (!success || result.length == 0) {
             if (useMockMode) {
