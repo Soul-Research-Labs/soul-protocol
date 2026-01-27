@@ -25,6 +25,11 @@ jobs:
   slither:
     name: Slither Static Analysis
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -47,6 +52,9 @@ jobs:
       - name: Build contracts
         run: forge build
 
+      - name: Prepare SARIF output dir
+        run: mkdir -p results
+
       - name: Run Slither
         uses: crytic/slither-action@v0.4.0
         id: slither
@@ -58,8 +66,9 @@ jobs:
         continue-on-error: true
 
       - name: Upload Slither SARIF
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        # don't even try if the file isn't there
+        if: always() && hashFiles('results/slither.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: results/slither.sarif
 
