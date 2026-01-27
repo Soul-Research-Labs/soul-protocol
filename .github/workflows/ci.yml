@@ -1,5 +1,8 @@
 name: PIL CI/CD Pipeline
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main, develop]
@@ -60,6 +63,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
       - name: Compile contracts
         run: npx hardhat compile
 
@@ -103,6 +111,11 @@ jobs:
 
       - name: Install Slither
         run: pip3 install slither-analyzer
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
 
       - name: Compile contracts
         run: npx hardhat compile
@@ -251,7 +264,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build Hardhat image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: docker/Dockerfile.hardhat
@@ -261,7 +274,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Build Frontend image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./frontend
           file: docker/Dockerfile.frontend
@@ -328,7 +341,7 @@ jobs:
           git log --pretty=format:"- %s (%h)" $(git describe --tags --abbrev=0 2>/dev/null || echo "HEAD~20")..HEAD >> CHANGELOG.md
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.VERSION }}
           name: PIL v${{ steps.version.outputs.VERSION }}
