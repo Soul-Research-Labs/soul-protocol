@@ -267,7 +267,7 @@ async function generateProof(circuitName: string, input: Record<string, any>): P
   const proofBytes = proofToBytes(proof);
 
   return {
-    proof,
+    proof: proof as ProofResult['proof'],
     publicSignals,
     proofBytes,
   };

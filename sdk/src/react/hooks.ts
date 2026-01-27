@@ -6,7 +6,7 @@
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { ethers } from 'ethers';
-import { PILClient } from '../client/PILClient';
+import { PILSDK as PILClient } from '../client/PILSDK';
 import { 
   BridgeFactory, 
   BaseBridgeAdapter, 
@@ -77,12 +77,10 @@ export function usePIL(config: UsePILConfig) {
       setError(null);
 
       const pilClient = new PILClient({
-        chainId: config.chainId,
-        signer,
-        addresses: {
-          privacyPool: config.privacyPoolAddress,
-          bridgeRouter: config.bridgeRouterAddress
-        }
+        curve: 'bn254',
+        relayerEndpoint: config.rpcUrl || 'https://relay.pil.network',
+        proverUrl: 'https://prover.pil.network',
+        privateKey: '', // Placeholder - will be set when signer is connected
       });
 
       setClient(pilClient);
@@ -91,7 +89,7 @@ export function usePIL(config: UsePILConfig) {
       const provider = signer.provider!;
       const balance = await provider.getBalance(address);
 
-      setState(prev => ({
+      setState((prev: PILState) => ({
         ...prev,
         isConnected: true,
         address,
@@ -168,7 +166,7 @@ export function usePrivacyPool(client: PILClient | null) {
         timestamp: Date.now()
       };
 
-      setDeposits(prev => [...prev, depositNote]);
+      setDeposits((prev: DepositNote[]) => [...prev, depositNote]);
       return depositNote;
     } catch (err) {
       setError(err as Error);
@@ -196,7 +194,7 @@ export function usePrivacyPool(client: PILClient | null) {
       // const receipt = await tx.wait();
 
       // Remove used deposit
-      setDeposits(prev => prev.filter(d => d.commitment !== params.depositNote.commitment));
+      setDeposits((prev: DepositNote[]) => prev.filter((d: DepositNote) => d.commitment !== params.depositNote.commitment));
 
       return '0x...'; // transaction hash
     } catch (err) {
@@ -243,7 +241,7 @@ export function useBridge(
 
     try {
       const adapter = BridgeFactory.createAdapter(chain, provider, signer, config);
-      setAdapters(prev => new Map(prev).set(chain, adapter));
+      setAdapters((prev: Map<SupportedChain, BaseBridgeAdapter>) => new Map(prev).set(chain, adapter));
     } catch (err) {
       setError(err as Error);
     }
@@ -269,7 +267,7 @@ export function useBridge(
 
       // Track transfer
       const status = await adapter.getStatus(result.transferId);
-      setTransfers(prev => new Map(prev).set(result.transferId, status));
+      setTransfers((prev: Map<string, BridgeStatus>) => new Map(prev).set(result.transferId, status));
 
       return result.transferId;
     } catch (err) {
@@ -287,7 +285,7 @@ export function useBridge(
 
     try {
       const status = await adapter.getStatus(transferId);
-      setTransfers(prev => new Map(prev).set(transferId, status));
+      setTransfers((prev: Map<string, BridgeStatus>) => new Map(prev).set(transferId, status));
       return status;
     } catch (err) {
       setError(err as Error);
@@ -464,12 +462,3 @@ export function useChainSelection() {
   };
 }
 
-// Export all hooks
-export {
-  usePIL,
-  usePrivacyPool,
-  useBridge,
-  useProofGeneration,
-  useTransferHistory,
-  useChainSelection
-};

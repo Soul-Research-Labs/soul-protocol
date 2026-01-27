@@ -100,25 +100,26 @@
     "url": "git+https://github.com/pil-project/pil-sdk.git"
   },
   "dependencies": {
+    "circomlibjs": "^0.1.7",
     "commander": "^11.0.0",
     "ethers": "^6.0.0",
-    "snarkjs": "^0.7.3",
-    "circomlibjs": "^0.1.7",
-    "ffjavascript": "^0.3.0"
+    "ffjavascript": "^0.3.0",
+    "snarkjs": "^0.7.3"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
-    "@types/snarkjs": "^0.7.0",
     "@types/chai": "^4.3.0",
     "@types/mocha": "^10.0.0",
-    "typescript": "^5.0.0",
-    "ts-node": "^10.0.0",
-    "mocha": "^10.0.0",
-    "chai": "^4.3.0",
-    "nyc": "^15.0.0",
-    "eslint": "^8.0.0",
+    "@types/node": "^20.0.0",
+    "@types/react": "^19.2.9",
+    "@types/snarkjs": "^0.7.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0"
+    "@typescript-eslint/parser": "^6.0.0",
+    "chai": "^4.3.0",
+    "eslint": "^8.0.0",
+    "mocha": "^10.0.0",
+    "nyc": "^15.0.0",
+    "ts-node": "^10.0.0",
+    "typescript": "^5.0.0"
   },
   "peerDependencies": {
     "react": ">=17.0.0"

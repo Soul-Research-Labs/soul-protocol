@@ -75,7 +75,7 @@ import {
   AvalancheBridgeAdapterSDK,
   ArbitrumBridgeAdapterSDK,
   SupportedChain,
-  BridgeConfig,
+  BridgeAdapterConfig,
   BridgeStatus,
   BridgeFees,
   BridgeTransferParams,
@@ -105,10 +105,9 @@ export * as PQC from "./pqc";
 export {
   PQCAlgorithm,
   TransitionPhase,
-  PQCClient,
+  PQCRegistryClient,
   DilithiumClient,
-  KyberClient,
-  generateRandomBytes,
+  KyberKEMClient,
   encodeHybridSignature,
   decodeHybridSignature,
   HYBRID_SIG_MAGIC,
@@ -117,7 +116,6 @@ export {
   type KeyPair,
   type EncapsulationResult,
   type PQCStats,
-  type PQCClientConfig,
 } from "./pqc";
 
 export {
@@ -158,7 +156,7 @@ export {
   AvalancheBridgeAdapterSDK,
   ArbitrumBridgeAdapterSDK,
   SupportedChain,
-  BridgeConfig,
+  BridgeAdapterConfig,
   BridgeStatus,
   BridgeFees,
   BridgeTransferParams,

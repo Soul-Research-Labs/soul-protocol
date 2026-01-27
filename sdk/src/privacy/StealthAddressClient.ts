@@ -86,9 +86,9 @@ export class StealthAddressClient {
 
         return {
             spendingPrivKey,
-            spendingPubKey: spendingWallet.publicKey,
+            spendingPubKey: spendingWallet.signingKey.publicKey,
             viewingPrivKey,
-            viewingPubKey: viewingWallet.publicKey
+            viewingPubKey: viewingWallet.signingKey.publicKey
         };
     }
 
@@ -152,7 +152,7 @@ export class StealthAddressClient {
         // Generate ephemeral keypair
         const ephemeralPrivKey = hexlify(randomBytes(32));
         const ephemeralWallet = new Wallet(ephemeralPrivKey);
-        const ephemeralPubKey = ephemeralWallet.publicKey;
+        const ephemeralPubKey = ephemeralWallet.signingKey.publicKey;
 
         // Compute stealth address on-chain
         const [stealthAddress, viewTag] = await this.contract.computeStealthAddress(
