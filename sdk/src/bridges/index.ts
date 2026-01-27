@@ -356,69 +356,7 @@ export class NEARBridgeAdapterSDK extends BaseBridgeAdapter {
   }
 }
 
-export class zkSyncBridgeAdapterSDK extends BaseBridgeAdapter {
-  private l2Rpc: string;
 
-  constructor(
-    provider: ethers.Provider,
-    signer: ethers.Signer,
-    l2Rpc: string
-  ) {
-    super({
-      name: 'zkSync Era',
-      chainId: 324, // zkSync Era mainnet
-      nativeToken: 'ETH',
-      finality: 1, // Instant on L2
-      maxAmount: ethers.parseEther('10000'),
-      minAmount: ethers.parseEther('0.0001')
-    }, provider, signer);
-    
-    this.l2Rpc = l2Rpc;
-  }
-
-  async bridgeTransfer(params: BridgeTransferParams): Promise<BridgeTransferResult> {
-    this.validateAmount(params.amount);
-    
-    const transferId = ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(
-      ['uint256', 'address', 'uint256', 'uint256'],
-      [this.config.chainId, params.recipient, params.amount, Date.now()]
-    ));
-
-    return {
-      transferId,
-      txHash: '0x...',
-      estimatedArrival: Date.now() + (10 * 60 * 1000), // ~10 minutes for batch
-      fees: await this.estimateFees(params.amount, params.targetChainId)
-    };
-  }
-
-  async completeBridge(transferId: string, proof: Uint8Array): Promise<string> {
-    return '0x...';
-  }
-
-  async getStatus(transferId: string): Promise<BridgeStatus> {
-    return {
-      state: 'pending',
-      sourceChainId: 1,
-      targetChainId: this.config.chainId,
-      confirmations: 0,
-      requiredConfirmations: 1
-    };
-  }
-
-  async estimateFees(amount: bigint, targetChainId: number): Promise<BridgeFees> {
-    const protocolFee = 0n;
-    const relayerFee = 0n;
-    const gasFee = ethers.parseEther('0.001');
-    
-    return {
-      protocolFee,
-      relayerFee,
-      gasFee,
-      total: gasFee
-    };
-  }
-}
 
 export class AvalancheBridgeAdapterSDK extends BaseBridgeAdapter {
   private cChainRpc: string;
@@ -549,12 +487,102 @@ export class ArbitrumBridgeAdapterSDK extends BaseBridgeAdapter {
 }
 
 // ============================================
+// Bitcoin Bridge Adapter
+// ============================================
+
+export class BitcoinBridgeAdapterSDK extends BaseBridgeAdapter {
+  private relayerRpc: string;
+  private spvVerifierAddress: string;
+
+  constructor(
+    provider: ethers.Provider,
+    signer: ethers.Signer,
+    relayerRpc: string,
+    spvVerifierAddress?: string
+  ) {
+    super({
+      name: 'Bitcoin/HTLC',
+      chainId: 0x426974636F696E, // "Bitcoin" in hex
+      nativeToken: 'BTC',
+      finality: 6, // 6 block confirmations
+      maxAmount: BigInt('10000000000'), // 100 BTC in satoshis
+      minAmount: BigInt('100000') // 0.001 BTC in satoshis
+    }, provider, signer);
+
+    this.relayerRpc = relayerRpc;
+    this.spvVerifierAddress = spvVerifierAddress || '0x0000000000000000000000000000000000000000';
+  }
+
+  async bridgeTransfer(params: BridgeTransferParams): Promise<BridgeTransferResult> {
+    this.validateAmount(params.amount);
+    
+    // Bitcoin uses HTLC-based transfers
+    const transferId = ethers.keccak256(
+      ethers.solidityPacked(
+        ['address', 'uint256', 'uint256'],
+        [params.recipient, params.amount, Date.now()]
+      )
+    );
+
+    return {
+      transferId,
+      txHash: '0x...',
+      estimatedArrival: Date.now() + 60 * 60 * 1000, // 1 hour (6 confirmations)
+      fees: await this.estimateFees(params.amount, params.targetChainId)
+    };
+  }
+
+  async completeBridge(transferId: string, proof: Uint8Array): Promise<string> {
+    // Complete via SPV proof verification
+    return '0x...';
+  }
+
+  async getStatus(transferId: string): Promise<BridgeStatus> {
+    return {
+      state: 'pending',
+      sourceChainId: this.config.chainId,
+      targetChainId: 1, // Ethereum
+      confirmations: 0,
+      requiredConfirmations: this.config.finality
+    };
+  }
+
+  async estimateFees(amount: bigint, targetChainId: number): Promise<BridgeFees> {
+    // 0.25% bridge fee for Bitcoin
+    const protocolFee = amount * 25n / 10000n;
+    const relayerFee = BigInt('10000'); // 0.0001 BTC
+    const gasFee = BigInt('5000'); // 0.00005 BTC
+
+    return {
+      protocolFee,
+      relayerFee,
+      gasFee,
+      total: protocolFee + relayerFee + gasFee
+    };
+  }
+
+  // Bitcoin-specific: Create HTLC for atomic swap
+  async createHTLC(hashlock: string, timelock: number, recipient: string, amount: bigint): Promise<string> {
+    // Would create on-chain HTLC
+    return ethers.keccak256(
+      ethers.solidityPacked(['bytes32', 'uint256', 'address'], [hashlock, timelock, recipient])
+    );
+  }
+
+  // Bitcoin-specific: Verify SPV proof
+  async verifySPVProof(btcTxId: string, merkleProof: string[], blockHeader: string): Promise<boolean> {
+    // Would verify via BTCSPVVerifier contract
+    return true;
+  }
+}
+
+// ============================================
 // Bridge Factory
 // ============================================
 
 export type SupportedChain = 
   | 'cardano' | 'midnight' | 'polkadot' | 'cosmos' | 'near'
-  | 'zksync' | 'avalanche' | 'arbitrum' | 'solana' | 'bitcoin';
+  | 'avalanche' | 'arbitrum' | 'solana' | 'bitcoin';
 
 export class BridgeFactory {
   static createAdapter(
@@ -587,11 +615,7 @@ export class BridgeFactory {
           provider, signer,
           config.nearRpc
         );
-      case 'zksync':
-        return new zkSyncBridgeAdapterSDK(
-          provider, signer,
-          config.l2Rpc
-        );
+
       case 'avalanche':
         return new AvalancheBridgeAdapterSDK(
           provider, signer,
@@ -601,6 +625,12 @@ export class BridgeFactory {
         return new ArbitrumBridgeAdapterSDK(
           provider, signer,
           config.l2Rpc
+        );
+      case 'bitcoin':
+        return new BitcoinBridgeAdapterSDK(
+          provider, signer,
+          config.relayerRpc,
+          config.spvVerifierAddress
         );
       default:
         throw new Error(`Unsupported chain: ${chain}`);

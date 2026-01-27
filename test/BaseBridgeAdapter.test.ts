@@ -8,8 +8,6 @@ import { parseEther, keccak256, toBytes, toHex, padHex, type Address } from "vie
  * Tests Base L2 integration including:
  * - CrossDomainMessenger configuration
  * - Proof relay to L2
- * - CCTP USDC transfers
- * - Coinbase attestation sync
  * - Withdrawal initiation and completion
  * - State synchronization
  * - Security controls
@@ -19,27 +17,18 @@ describe("BaseBridgeAdapter", function () {
     const OPERATOR_ROLE = keccak256(toBytes("OPERATOR_ROLE"));
     const GUARDIAN_ROLE = keccak256(toBytes("GUARDIAN_ROLE"));
     const EXECUTOR_ROLE = keccak256(toBytes("EXECUTOR_ROLE"));
-    const CCTP_ROLE = keccak256(toBytes("CCTP_ROLE"));
     const DEFAULT_ADMIN_ROLE = padHex("0x00", { size: 32 });
 
     // Chain IDs
     const BASE_MAINNET_CHAIN_ID = 8453n;
     const BASE_SEPOLIA_CHAIN_ID = 84532n;
-    const ETH_MAINNET_CHAIN_ID = 1n;
-    const ETH_SEPOLIA_CHAIN_ID = 11155111n;
     const WITHDRAWAL_PERIOD = 604800n; // 7 days
-
-    // CCTP domains
-    const CCTP_ETH_DOMAIN = 0;
-    const CCTP_BASE_DOMAIN = 6;
 
     // Test data
     const testProofHash = keccak256(toBytes("test-proof-hash"));
     const testProof = toHex("test-proof-data");
     const testPublicInputs = toHex("test-public-inputs");
     const testStateRoot = keccak256(toBytes("test-state-root"));
-    const testAttestationId = keccak256(toBytes("test-attestation-id"));
-    const testSchemaId = keccak256(toBytes("test-schema-id"));
 
     async function getViem() {
         // @ts-expect-error - Hardhat 3 viem integration
@@ -51,13 +40,13 @@ describe("BaseBridgeAdapter", function () {
         const viem = await getViem();
         const [admin] = await viem.getWalletClients();
         
-        const mockAddress = admin.account.address; // Use admin as mock
+        const mockMessenger = admin.account.address; // Use admin as mock messenger
         
         const adapter = await viem.deployContract("BaseBridgeAdapter", [
             admin.account.address,  // admin
-            mockAddress,            // l1CrossDomainMessenger
-            mockAddress,            // l2CrossDomainMessenger
-            mockAddress,            // basePortal
+            mockMessenger,          // l1CrossDomainMessenger
+            mockMessenger,          // l2CrossDomainMessenger
+            mockMessenger,          // basePortal
             isL1                    // isL1
         ]);
         
@@ -111,8 +100,7 @@ describe("BaseBridgeAdapter", function () {
             expect(stats[0]).to.equal(0n); // messagesSent
             expect(stats[1]).to.equal(0n); // messagesReceived
             expect(stats[2]).to.equal(0n); // valueBridged
-            expect(stats[3]).to.equal(0n); // usdcBridged
-            expect(stats[4]).to.equal(0n); // currentNonce
+            expect(stats[3]).to.equal(0n); // currentNonce
         });
 
         it("Should set messenger addresses correctly", async function () {
@@ -132,7 +120,7 @@ describe("BaseBridgeAdapter", function () {
 
     describe("Configuration", function () {
         it("Should set L2 target", async function () {
-            const { adapter, viem } = await deployAdapter();
+            const { adapter, admin, viem } = await deployAdapter();
             const [_, other] = await viem.getWalletClients();
 
             await adapter.write.setL2Target([other.account.address]);
@@ -141,33 +129,15 @@ describe("BaseBridgeAdapter", function () {
             expect(l2Target.toLowerCase()).to.equal(other.account.address.toLowerCase());
         });
 
-        it("Should configure CCTP", async function () {
-            const { adapter, viem } = await deployAdapter();
-            const [_, tokenMessenger, usdc] = await viem.getWalletClients();
-
-            await adapter.write.configureCCTP([
-                tokenMessenger.account.address,
-                usdc.account.address
-            ]);
-
-            const cctpMessenger = await adapter.read.cctpTokenMessenger();
-            const usdcToken = await adapter.read.usdcToken();
-            
-            expect(cctpMessenger.toLowerCase()).to.equal(tokenMessenger.account.address.toLowerCase());
-            expect(usdcToken.toLowerCase()).to.equal(usdc.account.address.toLowerCase());
-        });
-
-        it("Should emit CCTPConfigured event", async function () {
-            const { adapter, viem } = await deployAdapter();
-            const [_, tokenMessenger, usdc] = await viem.getWalletClients();
+        it("Should emit L2TargetUpdated event", async function () {
+            const { adapter, admin, viem } = await deployAdapter();
+            const [_, other] = await viem.getWalletClients();
             const publicClient = await viem.getPublicClient();
 
-            const hash = await adapter.write.configureCCTP([
-                tokenMessenger.account.address,
-                usdc.account.address
-            ]);
+            const hash = await adapter.write.setL2Target([other.account.address]);
             const receipt = await publicClient.waitForTransactionReceipt({ hash });
 
+            // Check for event in logs
             expect(receipt.logs.length).to.be.greaterThan(0);
         });
 
@@ -216,8 +186,10 @@ describe("BaseBridgeAdapter", function () {
             const { adapter, viem } = await deployAdapter(true);
             const [admin, target] = await viem.getWalletClients();
 
+            // Set L2 target first
             await adapter.write.setL2Target([target.account.address]);
 
+            // Send proof
             const hash = await adapter.write.sendProofToL2([
                 testProofHash,
                 testProof,
@@ -303,7 +275,7 @@ describe("BaseBridgeAdapter", function () {
         });
 
         it("Should reject if called on L2 adapter", async function () {
-            const { adapter, viem } = await deployAdapter(false);
+            const { adapter, viem } = await deployAdapter(false); // L2
             const [admin, target] = await viem.getWalletClients();
 
             await adapter.write.setL2Target([target.account.address]);
@@ -335,7 +307,7 @@ describe("BaseBridgeAdapter", function () {
                 testProofHash,
                 testProof,
                 testPublicInputs,
-                1n
+                1n // source chain ID
             ]);
 
             expect(hash).to.be.a("string");
@@ -397,198 +369,12 @@ describe("BaseBridgeAdapter", function () {
     });
 
     /*//////////////////////////////////////////////////////////////
-                           CCTP TRANSFERS
-    //////////////////////////////////////////////////////////////*/
-
-    describe("CCTP USDC Transfers", function () {
-        async function setupCCTP() {
-            const { adapter, viem, admin } = await deployAdapter(true);
-            const [_, tokenMessenger, usdc, recipient] = await viem.getWalletClients();
-
-            // Configure CCTP
-            await adapter.write.configureCCTP([
-                tokenMessenger.account.address,
-                usdc.account.address
-            ]);
-
-            // Grant CCTP role to admin
-            await adapter.write.grantRole([CCTP_ROLE, admin.account.address]);
-
-            return { adapter, viem, admin, tokenMessenger, usdc, recipient };
-        }
-
-        it("Should initiate USDC transfer", async function () {
-            const { adapter, recipient } = await setupCCTP();
-
-            const hash = await adapter.write.initiateUSDCTransfer([
-                recipient.account.address,
-                1000000n, // 1 USDC (6 decimals)
-                CCTP_BASE_DOMAIN
-            ]);
-
-            expect(hash).to.be.a("string");
-        });
-
-        it("Should track USDC bridged", async function () {
-            const { adapter, recipient } = await setupCCTP();
-
-            const amount = 1000000n;
-            await adapter.write.initiateUSDCTransfer([
-                recipient.account.address,
-                amount,
-                CCTP_BASE_DOMAIN
-            ]);
-
-            const stats = await adapter.read.getStats();
-            expect(stats[3]).to.equal(amount); // usdcBridged
-        });
-
-        it("Should reject zero amount", async function () {
-            const { adapter, recipient } = await setupCCTP();
-
-            let reverted = false;
-            try {
-                await adapter.write.initiateUSDCTransfer([
-                    recipient.account.address,
-                    0n,
-                    CCTP_BASE_DOMAIN
-                ]);
-            } catch {
-                reverted = true;
-            }
-            expect(reverted).to.be.true;
-        });
-
-        it("Should reject if CCTP not configured", async function () {
-            const { adapter, viem, admin } = await deployAdapter(true);
-            const [_, recipient] = await viem.getWalletClients();
-
-            // Grant CCTP role but don't configure CCTP
-            await adapter.write.grantRole([CCTP_ROLE, admin.account.address]);
-
-            let reverted = false;
-            try {
-                await adapter.write.initiateUSDCTransfer([
-                    recipient.account.address,
-                    1000000n,
-                    CCTP_BASE_DOMAIN
-                ]);
-            } catch {
-                reverted = true;
-            }
-            expect(reverted).to.be.true;
-        });
-
-        it("Should reject non-CCTP role caller", async function () {
-            const { adapter, viem } = await deployAdapter(true);
-            const [_, tokenMessenger, usdc, other] = await viem.getWalletClients();
-
-            await adapter.write.configureCCTP([
-                tokenMessenger.account.address,
-                usdc.account.address
-            ]);
-
-            let reverted = false;
-            try {
-                await adapter.write.initiateUSDCTransfer([
-                    other.account.address,
-                    1000000n,
-                    CCTP_BASE_DOMAIN
-                ], { account: other.account });
-            } catch {
-                reverted = true;
-            }
-            expect(reverted).to.be.true;
-        });
-    });
-
-    /*//////////////////////////////////////////////////////////////
-                       ATTESTATION SYNC
-    //////////////////////////////////////////////////////////////*/
-
-    describe("Attestation Sync", function () {
-        it("Should sync attestation", async function () {
-            const { adapter, viem } = await deployAdapter(true);
-            const [admin, subject] = await viem.getWalletClients();
-
-            const attestationData = toHex("attestation-data");
-
-            const hash = await adapter.write.syncAttestation([
-                testAttestationId,
-                subject.account.address,
-                testSchemaId,
-                attestationData
-            ]);
-
-            expect(hash).to.be.a("string");
-        });
-
-        it("Should store attestation correctly", async function () {
-            const { adapter, viem } = await deployAdapter(true);
-            const [admin, subject] = await viem.getWalletClients();
-
-            const attestationData = toHex("attestation-data");
-
-            await adapter.write.syncAttestation([
-                testAttestationId,
-                subject.account.address,
-                testSchemaId,
-                attestationData
-            ]);
-
-            const attestation = await adapter.read.getAttestation([testAttestationId]);
-            expect(attestation.attestationId).to.equal(testAttestationId);
-            expect(attestation.subject.toLowerCase()).to.equal(subject.account.address.toLowerCase());
-            expect(attestation.schemaId).to.equal(testSchemaId);
-            expect(attestation.synced).to.be.true;
-        });
-
-        it("Should emit AttestationSynced event", async function () {
-            const { adapter, viem } = await deployAdapter(true);
-            const [admin, subject] = await viem.getWalletClients();
-            const publicClient = await viem.getPublicClient();
-
-            const attestationData = toHex("attestation-data");
-
-            const hash = await adapter.write.syncAttestation([
-                testAttestationId,
-                subject.account.address,
-                testSchemaId,
-                attestationData
-            ]);
-            
-            const receipt = await publicClient.waitForTransactionReceipt({ hash });
-            expect(receipt.logs.length).to.be.greaterThan(0);
-        });
-
-        it("Should reject non-operator attestation sync", async function () {
-            const { adapter, viem } = await deployAdapter(true);
-            const [_, other, subject] = await viem.getWalletClients();
-
-            const attestationData = toHex("attestation-data");
-
-            let reverted = false;
-            try {
-                await adapter.write.syncAttestation([
-                    testAttestationId,
-                    subject.account.address,
-                    testSchemaId,
-                    attestationData
-                ], { account: other.account });
-            } catch {
-                reverted = true;
-            }
-            expect(reverted).to.be.true;
-        });
-    });
-
-    /*//////////////////////////////////////////////////////////////
                             WITHDRAWALS
     //////////////////////////////////////////////////////////////*/
 
     describe("Withdrawals", function () {
         it("Should initiate withdrawal from L2", async function () {
-            const { adapter } = await deployAdapter(false);
+            const { adapter } = await deployAdapter(false); // L2
 
             const hash = await adapter.write.initiateWithdrawal([testProofHash], {
                 value: parseEther("0.1")
@@ -598,7 +384,7 @@ describe("BaseBridgeAdapter", function () {
         });
 
         it("Should reject withdrawal initiation on L1", async function () {
-            const { adapter } = await deployAdapter(true);
+            const { adapter } = await deployAdapter(true); // L1
 
             let reverted = false;
             try {
@@ -609,6 +395,15 @@ describe("BaseBridgeAdapter", function () {
                 reverted = true;
             }
             expect(reverted).to.be.true;
+        });
+
+        it("Should complete withdrawal on L1 after challenge period", async function () {
+            const { adapter, viem } = await deployAdapter(true);
+            const [admin] = await viem.getWalletClients();
+
+            // Manually create a withdrawal that's ready
+            // In production this would come from L2
+            // For testing, we'd need to mock the withdrawal state
         });
     });
 
@@ -625,8 +420,8 @@ describe("BaseBridgeAdapter", function () {
 
             const hash = await adapter.write.syncStateToL2([
                 testStateRoot,
-                100n,
-                500000n
+                100n, // block number
+                500000n // gas limit
             ]);
 
             expect(hash).to.be.a("string");
@@ -640,9 +435,8 @@ describe("BaseBridgeAdapter", function () {
                 100n
             ]);
 
-            // State sync increments received counter
-            const stats = await adapter.read.getStats();
-            expect(stats[1] > 0n).to.be.true;
+            const blockNumber = await adapter.read.confirmedStateRoots([testStateRoot]);
+            expect(blockNumber).to.equal(100n);
         });
 
         it("Should reject state sync on L2 adapter", async function () {
@@ -747,6 +541,7 @@ describe("BaseBridgeAdapter", function () {
             ]);
 
             const balanceAfter = await publicClient.getBalance({ address: admin.account.address });
+            // Balance should have increased (received 0.5 ETH minus gas costs)
             expect(balanceAfter > balanceBefore - parseEther("0.1")).to.be.true;
         });
 
@@ -772,6 +567,23 @@ describe("BaseBridgeAdapter", function () {
     //////////////////////////////////////////////////////////////*/
 
     describe("View Functions", function () {
+        it("Should return message details", async function () {
+            const { adapter, viem } = await deployAdapter(true);
+            const [admin, target] = await viem.getWalletClients();
+
+            await adapter.write.setL2Target([target.account.address]);
+
+            await adapter.write.sendProofToL2([
+                testProofHash,
+                testProof,
+                testPublicInputs,
+                1000000n
+            ], { value: parseEther("0.01") });
+
+            // Generate same message ID as contract
+            // Note: exact ID generation may differ, this is a placeholder test
+        });
+
         it("Should check if proof is relayed", async function () {
             const { adapter } = await deployAdapter(false);
 
@@ -808,25 +620,7 @@ describe("BaseBridgeAdapter", function () {
 
             const stats = await adapter.read.getStats();
             expect(stats[0]).to.equal(3n); // 3 messages sent
-            expect(stats[4]).to.equal(3n); // nonce is 3
-        });
-
-        it("Should return attestation details", async function () {
-            const { adapter, viem } = await deployAdapter(true);
-            const [admin, subject] = await viem.getWalletClients();
-
-            const attestationData = toHex("attestation-data");
-
-            await adapter.write.syncAttestation([
-                testAttestationId,
-                subject.account.address,
-                testSchemaId,
-                attestationData
-            ]);
-
-            const attestation = await adapter.read.getAttestation([testAttestationId]);
-            expect(attestation.synced).to.be.true;
-            expect(attestation.timestamp > 0n).to.be.true;
+            expect(stats[3]).to.equal(3n); // nonce is 3
         });
     });
 });

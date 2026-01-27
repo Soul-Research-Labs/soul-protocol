@@ -436,7 +436,7 @@ export function useTransferHistory(address: string | null) {
 // ============================================
 
 export function useChainSelection() {
-  const [selectedChain, setSelectedChain] = useState<SupportedChain>('zksync');
+  const [selectedChain, setSelectedChain] = useState<SupportedChain>('arbitrum');
   
   const supportedChains: Array<{
     id: SupportedChain;
@@ -448,7 +448,6 @@ export function useChainSelection() {
     { id: 'polkadot', name: 'Polkadot', icon: '●', finality: '~30 blocks' },
     { id: 'cosmos', name: 'Cosmos', icon: '⚛', finality: '~15 blocks' },
     { id: 'near', name: 'NEAR', icon: 'Ⓝ', finality: '~4 epochs' },
-    { id: 'zksync', name: 'zkSync Era', icon: '⚡', finality: 'Instant' },
     { id: 'avalanche', name: 'Avalanche', icon: '🔺', finality: '~2 seconds' },
     { id: 'arbitrum', name: 'Arbitrum', icon: '🔵', finality: '~10 mins' },
     { id: 'solana', name: 'Solana', icon: '◎', finality: '~32 slots' },

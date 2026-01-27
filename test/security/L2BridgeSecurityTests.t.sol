@@ -2,19 +2,17 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "../../contracts/crosschain/OptimismBridgeAdapter.sol";
 import "../../contracts/crosschain/BaseBridgeAdapter.sol";
 
 /**
  * @title L2BridgeSecurityTests
  * @notice Security-focused tests for L2 bridge adapters
  * @dev Tests attack vectors, edge cases, and security invariants
+ *      Updated to use BaseBridgeAdapter after L2 adapter consolidation
  *
  * Run with: forge test --match-contract L2BridgeSecurityTests -vvv
  */
 contract L2BridgeSecurityTests is Test {
-    OptimismBridgeAdapter public optimismL1;
-    OptimismBridgeAdapter public optimismL2;
     BaseBridgeAdapter public baseL1;
     BaseBridgeAdapter public baseL2;
 
@@ -33,20 +31,6 @@ contract L2BridgeSecurityTests is Test {
     function setUp() public {
         vm.startPrank(admin);
 
-        optimismL1 = new OptimismBridgeAdapter(
-            admin,
-            mockMessenger,
-            mockMessenger,
-            mockPortal,
-            true
-        );
-        optimismL2 = new OptimismBridgeAdapter(
-            admin,
-            mockMessenger,
-            mockMessenger,
-            mockPortal,
-            false
-        );
         baseL1 = new BaseBridgeAdapter(
             admin,
             mockMessenger,
@@ -62,7 +46,6 @@ contract L2BridgeSecurityTests is Test {
             false
         );
 
-        optimismL1.setL2Target(mockTarget);
         baseL1.setL2Target(mockTarget);
         baseL1.configureCCTP(mockCCTP, mockUSDC);
         baseL1.grantRole(CCTP_ROLE, admin);
@@ -86,23 +69,23 @@ contract L2BridgeSecurityTests is Test {
     function test_ReentrancyProtection_EmergencyWithdraw() public {
         // Deploy attacker contract
         ReentrancyAttacker attackContract = new ReentrancyAttacker(
-            address(optimismL1)
+            address(baseL1)
         );
 
         vm.startPrank(admin);
 
         // Send ETH to adapter
-        (bool success, ) = address(optimismL1).call{value: 10 ether}("");
+        (bool success, ) = address(baseL1).call{value: 10 ether}("");
         require(success);
 
         // Grant admin role to attacker contract (simulates compromised governance)
-        optimismL1.grantRole(0x00, address(attackContract));
+        baseL1.grantRole(0x00, address(attackContract));
 
         vm.stopPrank();
 
         // Track balance before attack
         uint256 attackerBalanceBefore = address(attackContract).balance;
-        uint256 adapterBalanceBefore = address(optimismL1).balance;
+        uint256 adapterBalanceBefore = address(baseL1).balance;
 
         // Attack succeeds - demonstrates need for reentrancy guard
         // In production, admin should NEVER be a contract
@@ -112,7 +95,7 @@ contract L2BridgeSecurityTests is Test {
         uint256 attackerGain = address(attackContract).balance -
             attackerBalanceBefore;
         uint256 adapterLoss = adapterBalanceBefore -
-            address(optimismL1).balance;
+            address(baseL1).balance;
 
         // Reentrancy allowed attacker to withdraw more than single call
         // This is acceptable since DEFAULT_ADMIN_ROLE is trusted
@@ -130,7 +113,7 @@ contract L2BridgeSecurityTests is Test {
         vm.startPrank(attacker);
 
         vm.expectRevert();
-        optimismL1.sendProofToL2{value: 0.01 ether}(
+        baseL1.sendProofToL2{value: 0.01 ether}(
             keccak256("proof"),
             hex"1234",
             hex"5678",
@@ -145,9 +128,6 @@ contract L2BridgeSecurityTests is Test {
         vm.startPrank(attacker);
 
         vm.expectRevert();
-        optimismL1.pause();
-
-        vm.expectRevert();
         baseL1.pause();
 
         vm.stopPrank();
@@ -158,13 +138,13 @@ contract L2BridgeSecurityTests is Test {
         vm.startPrank(attacker);
 
         vm.expectRevert();
-        optimismL1.setL2Target(attacker);
+        baseL1.setL2Target(attacker);
 
         vm.expectRevert();
-        optimismL1.setMessenger(attacker, true);
+        baseL1.setMessenger(attacker, true);
 
         vm.expectRevert();
-        optimismL1.emergencyWithdraw(attacker, 1 ether);
+        baseL1.emergencyWithdraw(attacker, 1 ether);
 
         vm.stopPrank();
     }
@@ -189,17 +169,13 @@ contract L2BridgeSecurityTests is Test {
 
         vm.startPrank(admin);
 
-        // Relay on Optimism L2
-        optimismL2.receiveProofFromL1(proofHash, hex"1234", hex"5678", 1);
-        assertTrue(optimismL2.isProofRelayed(proofHash));
-
-        // Same proof on Base L2 - should still work (different chain)
+        // Relay on Base L2
         baseL2.receiveProofFromL1(proofHash, hex"1234", hex"5678", 1);
         assertTrue(baseL2.isProofRelayed(proofHash));
 
-        // But replay on same chain should fail
-        vm.expectRevert(OptimismBridgeAdapter.ProofAlreadyRelayed.selector);
-        optimismL2.receiveProofFromL1(proofHash, hex"1234", hex"5678", 1);
+        // Replay on same chain should fail
+        vm.expectRevert(BaseBridgeAdapter.ProofAlreadyRelayed.selector);
+        baseL2.receiveProofFromL1(proofHash, hex"1234", hex"5678", 1);
 
         vm.stopPrank();
     }
@@ -212,11 +188,11 @@ contract L2BridgeSecurityTests is Test {
         bytes32 proof1Hash = keccak256("proof-1");
         bytes32 proof2Hash = keccak256("proof-2");
 
-        optimismL2.receiveProofFromL1(proof1Hash, hex"1234", hex"5678", 1);
-        optimismL2.receiveProofFromL1(proof2Hash, hex"1234", hex"5678", 1);
+        baseL2.receiveProofFromL1(proof1Hash, hex"1234", hex"5678", 1);
+        baseL2.receiveProofFromL1(proof2Hash, hex"1234", hex"5678", 1);
 
-        assertTrue(optimismL2.isProofRelayed(proof1Hash));
-        assertTrue(optimismL2.isProofRelayed(proof2Hash));
+        assertTrue(baseL2.isProofRelayed(proof1Hash));
+        assertTrue(baseL2.isProofRelayed(proof2Hash));
 
         vm.stopPrank();
     }
@@ -231,7 +207,7 @@ contract L2BridgeSecurityTests is Test {
 
         // Initiate withdrawal on L2
         bytes32 proofHash = keccak256("withdrawal-proof");
-        optimismL2.initiateWithdrawal{value: 1 ether}(proofHash);
+        baseL2.initiateWithdrawal{value: 1 ether}(proofHash);
 
         vm.stopPrank();
 
@@ -245,8 +221,8 @@ contract L2BridgeSecurityTests is Test {
 
         bytes32 proofHash = keccak256("withdrawal-proof");
 
-        vm.expectRevert(OptimismBridgeAdapter.InvalidChainId.selector);
-        optimismL1.initiateWithdrawal{value: 1 ether}(proofHash);
+        vm.expectRevert(BaseBridgeAdapter.InvalidChainId.selector);
+        baseL1.initiateWithdrawal{value: 1 ether}(proofHash);
 
         vm.stopPrank();
     }
@@ -262,8 +238,8 @@ contract L2BridgeSecurityTests is Test {
         bytes32 proofHash = keccak256("proof");
 
         // Try with gas limit below minimum
-        vm.expectRevert(OptimismBridgeAdapter.InsufficientGasLimit.selector);
-        optimismL1.sendProofToL2{value: 0.01 ether}(
+        vm.expectRevert(BaseBridgeAdapter.InsufficientGasLimit.selector);
+        baseL1.sendProofToL2{value: 0.01 ether}(
             proofHash,
             hex"1234",
             hex"5678",
@@ -280,7 +256,7 @@ contract L2BridgeSecurityTests is Test {
         bytes32 proofHash = keccak256("proof");
 
         // Very high gas limit should not cause issues
-        optimismL1.sendProofToL2{value: 0.01 ether}(
+        baseL1.sendProofToL2{value: 0.01 ether}(
             proofHash,
             hex"1234",
             hex"5678",
@@ -335,13 +311,13 @@ contract L2BridgeSecurityTests is Test {
         bytes32 stateRoot = keccak256("state-root");
 
         // First state sync
-        optimismL2.receiveStateFromL1(stateRoot, 100);
-        assertEq(optimismL2.getStateRootBlock(stateRoot), 100);
+        baseL2.receiveStateFromL1(stateRoot, 100);
+        assertEq(baseL2.confirmedStateRoots(stateRoot), 100);
 
         // Overwrite with different block number
         // Note: This is allowed - state roots can be updated
-        optimismL2.receiveStateFromL1(stateRoot, 200);
-        assertEq(optimismL2.getStateRootBlock(stateRoot), 200);
+        baseL2.receiveStateFromL1(stateRoot, 200);
+        assertEq(baseL2.confirmedStateRoots(stateRoot), 200);
 
         vm.stopPrank();
     }
@@ -354,12 +330,12 @@ contract L2BridgeSecurityTests is Test {
     function test_PauseBypassAttack() public {
         vm.startPrank(admin);
 
-        optimismL1.pause();
-        assertTrue(optimismL1.paused());
+        baseL1.pause();
+        assertTrue(baseL1.paused());
 
         // All operations should fail when paused
         vm.expectRevert();
-        optimismL1.sendProofToL2{value: 0.01 ether}(
+        baseL1.sendProofToL2{value: 0.01 ether}(
             keccak256("proof"),
             hex"1234",
             hex"5678",
@@ -372,15 +348,15 @@ contract L2BridgeSecurityTests is Test {
     /// @notice Test unpause by non-guardian
     function test_UnauthorizedUnpause() public {
         vm.startPrank(admin);
-        optimismL1.pause();
+        baseL1.pause();
         vm.stopPrank();
 
         vm.startPrank(attacker);
         vm.expectRevert();
-        optimismL1.unpause();
+        baseL1.unpause();
         vm.stopPrank();
 
-        assertTrue(optimismL1.paused());
+        assertTrue(baseL1.paused());
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -396,29 +372,29 @@ contract L2BridgeSecurityTests is Test {
         bytes32 proof3 = keccak256("proof3");
 
         // Messages should have sequential nonces regardless of order
-        optimismL1.sendProofToL2{value: 0.01 ether}(
+        baseL1.sendProofToL2{value: 0.01 ether}(
             proof1,
             hex"1234",
             hex"5678",
             100000
         );
-        uint256 nonce1 = optimismL1.messageNonce();
+        uint256 nonce1 = baseL1.messageNonce();
 
-        optimismL1.sendProofToL2{value: 0.01 ether}(
+        baseL1.sendProofToL2{value: 0.01 ether}(
             proof2,
             hex"1234",
             hex"5678",
             100000
         );
-        uint256 nonce2 = optimismL1.messageNonce();
+        uint256 nonce2 = baseL1.messageNonce();
 
-        optimismL1.sendProofToL2{value: 0.01 ether}(
+        baseL1.sendProofToL2{value: 0.01 ether}(
             proof3,
             hex"1234",
             hex"5678",
             100000
         );
-        uint256 nonce3 = optimismL1.messageNonce();
+        uint256 nonce3 = baseL1.messageNonce();
 
         assertEq(nonce2, nonce1 + 1);
         assertEq(nonce3, nonce2 + 1);
@@ -435,12 +411,12 @@ contract L2BridgeSecurityTests is Test {
         vm.startPrank(admin);
 
         // Send ETH to adapter
-        (bool success, ) = address(optimismL1).call{value: 10 ether}("");
+        (bool success, ) = address(baseL1).call{value: 10 ether}("");
         require(success);
 
         // Admin can withdraw
         uint256 balanceBefore = admin.balance;
-        optimismL1.emergencyWithdraw(admin, 5 ether);
+        baseL1.emergencyWithdraw(admin, 5 ether);
         assertEq(admin.balance, balanceBefore + 5 ether);
 
         vm.stopPrank();
@@ -450,13 +426,13 @@ contract L2BridgeSecurityTests is Test {
     function test_EmergencyWithdrawByAttacker() public {
         // Send ETH to adapter
         vm.prank(admin);
-        (bool success, ) = address(optimismL1).call{value: 10 ether}("");
+        (bool success, ) = address(baseL1).call{value: 10 ether}("");
         require(success);
 
         // Attacker cannot withdraw
         vm.startPrank(attacker);
         vm.expectRevert();
-        optimismL1.emergencyWithdraw(attacker, 5 ether);
+        baseL1.emergencyWithdraw(attacker, 5 ether);
         vm.stopPrank();
     }
 
@@ -477,8 +453,8 @@ contract L2BridgeSecurityTests is Test {
         }
 
         // Should handle large data
-        optimismL2.receiveProofFromL1(proofHash, largeData, largeData, 1);
-        assertTrue(optimismL2.isProofRelayed(proofHash));
+        baseL2.receiveProofFromL1(proofHash, largeData, largeData, 1);
+        assertTrue(baseL2.isProofRelayed(proofHash));
 
         vm.stopPrank();
     }
@@ -489,12 +465,12 @@ contract L2BridgeSecurityTests is Test {
 
     /// @notice Invariant: paused state should block all operations
     function invariant_PausedStateBlocksOperations() public {
-        if (optimismL1.paused()) {
+        if (baseL1.paused()) {
             vm.startPrank(admin);
 
             bool reverted = false;
             try
-                optimismL1.sendProofToL2{value: 0.01 ether}(
+                baseL1.sendProofToL2{value: 0.01 ether}(
                     keccak256("test"),
                     hex"1234",
                     hex"5678",
@@ -513,18 +489,18 @@ contract L2BridgeSecurityTests is Test {
 
     /// @notice Invariant: message nonce should always increase
     function invariant_NonceAlwaysIncreases() public {
-        uint256 nonce = optimismL1.messageNonce();
+        uint256 nonce = baseL1.messageNonce();
 
         vm.prank(admin);
         try
-            optimismL1.sendProofToL2{value: 0.01 ether}(
+            baseL1.sendProofToL2{value: 0.01 ether}(
                 keccak256(abi.encodePacked("test", nonce)),
                 hex"1234",
                 hex"5678",
                 100000
             )
         {
-            assertGe(optimismL1.messageNonce(), nonce);
+            assertGe(baseL1.messageNonce(), nonce);
         } catch {}
     }
 }
@@ -534,11 +510,11 @@ contract L2BridgeSecurityTests is Test {
  * @notice Contract to test reentrancy protection
  */
 contract ReentrancyAttacker {
-    OptimismBridgeAdapter public target;
+    BaseBridgeAdapter public target;
     uint256 public attackCount;
 
     constructor(address _target) {
-        target = OptimismBridgeAdapter(payable(_target));
+        target = BaseBridgeAdapter(payable(_target));
     }
 
     function attack() external {

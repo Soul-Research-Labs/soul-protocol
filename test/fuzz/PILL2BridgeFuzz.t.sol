@@ -2,13 +2,14 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "../../contracts/crosschain/OptimismBridgeAdapter.sol";
 import "../../contracts/crosschain/BaseBridgeAdapter.sol";
+import "../../contracts/crosschain/ArbitrumBridgeAdapter.sol";
 
 /**
  * @title PILL2BridgeFuzz
- * @notice Fuzz tests for Optimism and Base bridge adapters
+ * @notice Fuzz tests for Base and Arbitrum bridge adapters
  * @dev Tests cross-domain messaging, proof relay, and security invariants
+ *      Updated to use BaseBridgeAdapter after L2 consolidation
  *
  * Run with: forge test --match-contract PILL2BridgeFuzz --fuzz-runs 10000
  */
@@ -24,10 +25,9 @@ contract PILL2BridgeFuzz is Test {
     // Chain IDs
     uint256 constant ETH_MAINNET = 1;
     uint256 constant ETH_SEPOLIA = 11155111;
-    uint256 constant OPTIMISM = 10;
-    uint256 constant OP_SEPOLIA = 11155420;
     uint256 constant BASE = 8453;
     uint256 constant BASE_SEPOLIA = 84532;
+    uint256 constant ARB_ONE = 42161;
 
     // CCTP domains
     uint32 constant CCTP_ETH_DOMAIN = 0;
@@ -37,10 +37,9 @@ contract PILL2BridgeFuzz is Test {
                               CONTRACTS
     //////////////////////////////////////////////////////////////*/
 
-    OptimismBridgeAdapter public optimismL1Adapter;
-    OptimismBridgeAdapter public optimismL2Adapter;
     BaseBridgeAdapter public baseL1Adapter;
     BaseBridgeAdapter public baseL2Adapter;
+    ArbitrumBridgeAdapter public arbitrumAdapter;
 
     address public admin = address(0x1);
     address public operator = address(0x2);
@@ -59,23 +58,6 @@ contract PILL2BridgeFuzz is Test {
     function setUp() public {
         vm.startPrank(admin);
 
-        // Deploy Optimism adapters
-        optimismL1Adapter = new OptimismBridgeAdapter(
-            admin,
-            mockMessenger,
-            mockMessenger,
-            mockPortal,
-            true // isL1
-        );
-
-        optimismL2Adapter = new OptimismBridgeAdapter(
-            admin,
-            mockMessenger,
-            mockMessenger,
-            mockPortal,
-            false // isL2
-        );
-
         // Deploy Base adapters
         baseL1Adapter = new BaseBridgeAdapter(
             admin,
@@ -93,8 +75,10 @@ contract PILL2BridgeFuzz is Test {
             false // isL2
         );
 
+        // Deploy Arbitrum adapter
+        arbitrumAdapter = new ArbitrumBridgeAdapter(admin);
+
         // Configure L2 targets
-        optimismL1Adapter.setL2Target(mockTarget);
         baseL1Adapter.setL2Target(mockTarget);
 
         // Configure CCTP for Base
@@ -109,136 +93,6 @@ contract PILL2BridgeFuzz is Test {
         // Fund contracts
         vm.deal(admin, 100 ether);
         vm.deal(user, 100 ether);
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                    OPTIMISM PROOF RELAY FUZZ TESTS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Fuzz test Optimism proof hash generation
-    function testFuzz_OptimismProofHashUniqueness(
-        bytes32 proofHash1,
-        bytes32 proofHash2
-    ) public {
-        vm.assume(proofHash1 != proofHash2);
-        vm.assume(proofHash1 != bytes32(0));
-        vm.assume(proofHash2 != bytes32(0));
-
-        vm.startPrank(admin);
-
-        // Relay first proof
-        optimismL2Adapter.receiveProofFromL1(
-            proofHash1,
-            hex"1234",
-            hex"5678",
-            ETH_MAINNET
-        );
-
-        // Relay second proof
-        optimismL2Adapter.receiveProofFromL1(
-            proofHash2,
-            hex"1234",
-            hex"5678",
-            ETH_MAINNET
-        );
-
-        // Both should be relayed
-        assertTrue(optimismL2Adapter.isProofRelayed(proofHash1));
-        assertTrue(optimismL2Adapter.isProofRelayed(proofHash2));
-
-        vm.stopPrank();
-    }
-
-    /// @notice Fuzz test proof replay prevention
-    function testFuzz_OptimismProofReplayPrevention(
-        bytes32 proofHash,
-        bytes memory proof,
-        bytes memory publicInputs
-    ) public {
-        vm.assume(proofHash != bytes32(0));
-        vm.assume(proof.length > 0 && proof.length < 10000);
-        vm.assume(publicInputs.length > 0 && publicInputs.length < 10000);
-
-        vm.startPrank(admin);
-
-        // First relay should succeed
-        optimismL2Adapter.receiveProofFromL1(
-            proofHash,
-            proof,
-            publicInputs,
-            ETH_MAINNET
-        );
-
-        // Second relay should fail
-        vm.expectRevert(OptimismBridgeAdapter.ProofAlreadyRelayed.selector);
-        optimismL2Adapter.receiveProofFromL1(
-            proofHash,
-            proof,
-            publicInputs,
-            ETH_MAINNET
-        );
-
-        vm.stopPrank();
-    }
-
-    /// @notice Fuzz test gas limit validation
-    function testFuzz_OptimismGasLimitValidation(
-        uint256 gasLimit,
-        bytes32 proofHash
-    ) public {
-        vm.assume(proofHash != bytes32(0));
-
-        vm.startPrank(admin);
-        vm.deal(admin, 10 ether);
-
-        if (gasLimit < MIN_GAS_LIMIT) {
-            vm.expectRevert(
-                OptimismBridgeAdapter.InsufficientGasLimit.selector
-            );
-            optimismL1Adapter.sendProofToL2{value: 0.01 ether}(
-                proofHash,
-                hex"1234",
-                hex"5678",
-                gasLimit
-            );
-        } else if (gasLimit <= MAX_GAS_LIMIT) {
-            // Should succeed
-            optimismL1Adapter.sendProofToL2{value: 0.01 ether}(
-                proofHash,
-                hex"1234",
-                hex"5678",
-                gasLimit
-            );
-        }
-
-        vm.stopPrank();
-    }
-
-    /// @notice Fuzz test message counter increments
-    function testFuzz_OptimismMessageCounterIncrements(
-        uint8 numMessages
-    ) public {
-        vm.assume(numMessages > 0 && numMessages <= 20);
-
-        vm.startPrank(admin);
-        vm.deal(admin, 100 ether);
-
-        uint256 initialNonce = optimismL1Adapter.messageNonce();
-
-        for (uint8 i = 0; i < numMessages; i++) {
-            bytes32 proofHash = keccak256(abi.encodePacked("proof", i));
-            optimismL1Adapter.sendProofToL2{value: 0.01 ether}(
-                proofHash,
-                hex"1234",
-                hex"5678",
-                MIN_GAS_LIMIT
-            );
-        }
-
-        uint256 finalNonce = optimismL1Adapter.messageNonce();
-        assertEq(finalNonce, initialNonce + numMessages);
-
-        vm.stopPrank();
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -279,17 +133,23 @@ contract PILL2BridgeFuzz is Test {
         vm.stopPrank();
     }
 
-    /// @notice Fuzz test Base proof replay prevention
-    function testFuzz_BaseProofReplayPrevention(bytes32 proofHash) public {
+    /// @notice Fuzz test proof replay prevention
+    function testFuzz_BaseProofReplayPrevention(
+        bytes32 proofHash,
+        bytes memory proof,
+        bytes memory publicInputs
+    ) public {
         vm.assume(proofHash != bytes32(0));
+        vm.assume(proof.length > 0 && proof.length < 10000);
+        vm.assume(publicInputs.length > 0 && publicInputs.length < 10000);
 
         vm.startPrank(admin);
 
         // First relay should succeed
         baseL2Adapter.receiveProofFromL1(
             proofHash,
-            hex"1234",
-            hex"5678",
+            proof,
+            publicInputs,
             ETH_MAINNET
         );
 
@@ -297,10 +157,70 @@ contract PILL2BridgeFuzz is Test {
         vm.expectRevert(BaseBridgeAdapter.ProofAlreadyRelayed.selector);
         baseL2Adapter.receiveProofFromL1(
             proofHash,
-            hex"1234",
-            hex"5678",
+            proof,
+            publicInputs,
             ETH_MAINNET
         );
+
+        vm.stopPrank();
+    }
+
+    /// @notice Fuzz test gas limit validation
+    function testFuzz_BaseGasLimitValidation(
+        uint256 gasLimit,
+        bytes32 proofHash
+    ) public {
+        vm.assume(proofHash != bytes32(0));
+
+        vm.startPrank(admin);
+        vm.deal(admin, 10 ether);
+
+        if (gasLimit < MIN_GAS_LIMIT) {
+            vm.expectRevert(
+                BaseBridgeAdapter.InsufficientGasLimit.selector
+            );
+            baseL1Adapter.sendProofToL2{value: 0.01 ether}(
+                proofHash,
+                hex"1234",
+                hex"5678",
+                gasLimit
+            );
+        } else if (gasLimit <= MAX_GAS_LIMIT) {
+            // Should succeed
+            baseL1Adapter.sendProofToL2{value: 0.01 ether}(
+                proofHash,
+                hex"1234",
+                hex"5678",
+                gasLimit
+            );
+        }
+
+        vm.stopPrank();
+    }
+
+    /// @notice Fuzz test message counter increments
+    function testFuzz_BaseMessageCounterIncrements(
+        uint8 numMessages
+    ) public {
+        vm.assume(numMessages > 0 && numMessages <= 20);
+
+        vm.startPrank(admin);
+        vm.deal(admin, 100 ether);
+
+        uint256 initialNonce = baseL1Adapter.messageNonce();
+
+        for (uint8 i = 0; i < numMessages; i++) {
+            bytes32 proofHash = keccak256(abi.encodePacked("proof", i));
+            baseL1Adapter.sendProofToL2{value: 0.01 ether}(
+                proofHash,
+                hex"1234",
+                hex"5678",
+                MIN_GAS_LIMIT
+            );
+        }
+
+        uint256 finalNonce = baseL1Adapter.messageNonce();
+        assertEq(finalNonce, initialNonce + numMessages);
 
         vm.stopPrank();
     }
@@ -413,7 +333,7 @@ contract PILL2BridgeFuzz is Test {
 
         bytes32 proofHash = keccak256(abi.encodePacked("withdrawal-proof"));
 
-        optimismL2Adapter.initiateWithdrawal{value: amount}(proofHash);
+        baseL2Adapter.initiateWithdrawal{value: amount}(proofHash);
 
         vm.stopPrank();
     }
@@ -432,9 +352,9 @@ contract PILL2BridgeFuzz is Test {
 
         vm.startPrank(admin);
 
-        optimismL2Adapter.receiveStateFromL1(stateRoot, blockNumber);
+        baseL2Adapter.receiveStateFromL1(stateRoot, blockNumber);
 
-        uint256 storedBlock = optimismL2Adapter.getStateRootBlock(stateRoot);
+        uint256 storedBlock = baseL2Adapter.confirmedStateRoots(stateRoot);
         assertEq(storedBlock, blockNumber);
 
         vm.stopPrank();
@@ -455,11 +375,11 @@ contract PILL2BridgeFuzz is Test {
 
         vm.startPrank(admin);
 
-        optimismL2Adapter.receiveStateFromL1(stateRoot1, blockNumber1);
-        optimismL2Adapter.receiveStateFromL1(stateRoot2, blockNumber2);
+        baseL2Adapter.receiveStateFromL1(stateRoot1, blockNumber1);
+        baseL2Adapter.receiveStateFromL1(stateRoot2, blockNumber2);
 
-        assertEq(optimismL2Adapter.getStateRootBlock(stateRoot1), blockNumber1);
-        assertEq(optimismL2Adapter.getStateRootBlock(stateRoot2), blockNumber2);
+        assertEq(baseL2Adapter.confirmedStateRoots(stateRoot1), blockNumber1);
+        assertEq(baseL2Adapter.confirmedStateRoots(stateRoot2), blockNumber2);
 
         vm.stopPrank();
     }
@@ -482,21 +402,21 @@ contract PILL2BridgeFuzz is Test {
         bytes32 proofHash1 = keccak256(abi.encodePacked("proof1"));
         bytes32 proofHash2 = keccak256(abi.encodePacked("proof2"));
 
-        optimismL1Adapter.sendProofToL2{value: value1}(
+        baseL1Adapter.sendProofToL2{value: value1}(
             proofHash1,
             hex"1234",
             hex"5678",
             MIN_GAS_LIMIT
         );
 
-        optimismL1Adapter.sendProofToL2{value: value2}(
+        baseL1Adapter.sendProofToL2{value: value2}(
             proofHash2,
             hex"1234",
             hex"5678",
             MIN_GAS_LIMIT
         );
 
-        (, , uint256 valueBridged, ) = optimismL1Adapter.getStats();
+        (, , uint256 valueBridged, , ) = baseL1Adapter.getStats();
         assertEq(valueBridged, uint256(value1) + uint256(value2));
 
         vm.stopPrank();
@@ -520,7 +440,7 @@ contract PILL2BridgeFuzz is Test {
 
         // Should fail - not operator
         vm.expectRevert();
-        optimismL1Adapter.sendProofToL2{value: 0.01 ether}(
+        baseL1Adapter.sendProofToL2{value: 0.01 ether}(
             proofHash,
             hex"1234",
             hex"5678",
@@ -537,11 +457,11 @@ contract PILL2BridgeFuzz is Test {
         vm.startPrank(admin);
 
         // Pause the adapter
-        optimismL1Adapter.pause();
+        baseL1Adapter.pause();
 
         // All operations should fail
         vm.expectRevert();
-        optimismL1Adapter.sendProofToL2{value: 0.01 ether}(
+        baseL1Adapter.sendProofToL2{value: 0.01 ether}(
             proofHash,
             hex"1234",
             hex"5678",
@@ -562,18 +482,18 @@ contract PILL2BridgeFuzz is Test {
         vm.startPrank(admin);
         vm.deal(admin, 100 ether);
 
-        uint256 previousNonce = optimismL1Adapter.messageNonce();
+        uint256 previousNonce = baseL1Adapter.messageNonce();
 
         for (uint8 i = 0; i < numOperations; i++) {
             bytes32 proofHash = keccak256(abi.encodePacked("proof", i));
-            optimismL1Adapter.sendProofToL2{value: 0.01 ether}(
+            baseL1Adapter.sendProofToL2{value: 0.01 ether}(
                 proofHash,
                 hex"1234",
                 hex"5678",
                 MIN_GAS_LIMIT
             );
 
-            uint256 currentNonce = optimismL1Adapter.messageNonce();
+            uint256 currentNonce = baseL1Adapter.messageNonce();
             assertGe(currentNonce, previousNonce);
             previousNonce = currentNonce;
         }
@@ -592,7 +512,7 @@ contract PILL2BridgeFuzz is Test {
         vm.startPrank(admin);
 
         // Relay proof
-        optimismL2Adapter.receiveProofFromL1(
+        baseL2Adapter.receiveProofFromL1(
             proofHash,
             hex"1234",
             hex"5678",
@@ -600,11 +520,11 @@ contract PILL2BridgeFuzz is Test {
         );
 
         // Verify relayed
-        assertTrue(optimismL2Adapter.isProofRelayed(proofHash));
+        assertTrue(baseL2Adapter.isProofRelayed(proofHash));
 
         // Attempt to replay should fail
-        vm.expectRevert(OptimismBridgeAdapter.ProofAlreadyRelayed.selector);
-        optimismL2Adapter.receiveProofFromL1(
+        vm.expectRevert(BaseBridgeAdapter.ProofAlreadyRelayed.selector);
+        baseL2Adapter.receiveProofFromL1(
             proofHash,
             hex"1234",
             hex"5678",
@@ -612,7 +532,7 @@ contract PILL2BridgeFuzz is Test {
         );
 
         // Still relayed
-        assertTrue(optimismL2Adapter.isProofRelayed(proofHash));
+        assertTrue(baseL2Adapter.isProofRelayed(proofHash));
 
         vm.stopPrank();
     }
@@ -628,14 +548,14 @@ contract PILL2BridgeFuzz is Test {
         vm.startPrank(admin);
 
         // Empty proof and inputs should still work
-        optimismL2Adapter.receiveProofFromL1(
+        baseL2Adapter.receiveProofFromL1(
             proofHash,
             hex"",
             hex"",
             ETH_MAINNET
         );
 
-        assertTrue(optimismL2Adapter.isProofRelayed(proofHash));
+        assertTrue(baseL2Adapter.isProofRelayed(proofHash));
 
         vm.stopPrank();
     }
@@ -655,14 +575,14 @@ contract PILL2BridgeFuzz is Test {
 
         vm.startPrank(admin);
 
-        optimismL2Adapter.receiveProofFromL1(
+        baseL2Adapter.receiveProofFromL1(
             proofHash,
             largeProof,
             largeProof,
             ETH_MAINNET
         );
 
-        assertTrue(optimismL2Adapter.isProofRelayed(proofHash));
+        assertTrue(baseL2Adapter.isProofRelayed(proofHash));
 
         vm.stopPrank();
     }
