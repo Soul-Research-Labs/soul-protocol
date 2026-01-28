@@ -460,10 +460,10 @@ contract PrivacyAttackSimulation is Test {
         // After reveal delay, relayer can process
         // But VRF selection prevents targeted front-running
 
-        assertTrue(
-            revealTime > commitTime + 1 hours - 1,
-            "Reveal delay enforced"
-        );
+        uint256 minRevealTime = commitTime + 1 hours;
+        
+        // Relayer can only reveal after this time
+        assertTrue(revealTime >= minRevealTime, "Reveal delay enforced");
     }
 
     /**

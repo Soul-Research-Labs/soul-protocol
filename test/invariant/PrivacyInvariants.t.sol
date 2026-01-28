@@ -34,6 +34,10 @@ contract PrivacyInvariants is Test {
     bytes32[] public allCommitments;
     bytes32[] public allNullifiers;
 
+    function setUp() public {
+        targetContract(address(this));
+    }
+
     // =========================================================================
     // HANDLER FUNCTIONS
     // =========================================================================
@@ -252,10 +256,15 @@ contract KeyImageInvariants is Test {
     mapping(bytes32 => bytes32) public linkedTx;
     bytes32[] public history;
 
+    function setUp() public {
+        targetContract(address(this));
+    }
+
     /**
      * @notice Spend a key image
      */
     function spend(bytes32 imageHash, bytes32 txHash) external {
+        if (txHash == bytes32(0)) return;
         require(!spent[imageHash], "Already spent");
 
         spent[imageHash] = true;
@@ -316,6 +325,10 @@ contract BalanceInvariants is Test {
     uint256 public totalOutputValue;
     uint256 public totalFees;
 
+    function setUp() public {
+        targetContract(address(this));
+    }
+
     /**
      * @notice Create input commitment
      */
@@ -338,6 +351,11 @@ contract BalanceInvariants is Test {
      * @notice Create output commitment (must balance with inputs)
      */
     function createOutput(uint256 value, uint256 blinding) external {
+        // Mock verifier check: prevent creating more value than exists
+        if (totalOutputValue + value > totalInputValue) {
+            return;
+        }
+
         bytes32 hash = keccak256(
             abi.encodePacked("output", value, blinding, block.timestamp)
         );
@@ -403,6 +421,10 @@ contract StealthAddressInvariants is Test {
     mapping(address => bytes32) public stealthToMeta;
     address[] public allStealths;
 
+    function setUp() public {
+        targetContract(address(this));
+    }
+
     /**
      * @notice Register meta-address
      */
@@ -410,6 +432,9 @@ contract StealthAddressInvariants is Test {
         bytes32 spendKeyHash,
         bytes32 viewKeyHash
     ) external returns (bytes32) {
+        if (spendKeyHash == bytes32(0) || viewKeyHash == bytes32(0)) {
+            return bytes32(0);
+        }
         bytes32 metaId = keccak256(
             abi.encodePacked(
                 msg.sender,

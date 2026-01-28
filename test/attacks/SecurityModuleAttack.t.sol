@@ -519,26 +519,26 @@ contract SecurityModuleAttackTest is Test {
 
     /// @notice Test: Cannot set rate limit window too short
     function test_configAttack_rateLimitWindowTooShort() public {
-        vm.expectRevert("Window too short");
+        vm.expectRevert(SecurityModule.WindowTooShort.selector);
         vault.setRateLimitConfigPublic(1 minutes, 10);
     }
 
     /// @notice Test: Cannot set rate limit window too long
     function test_configAttack_rateLimitWindowTooLong() public {
-        vm.expectRevert("Window too long");
+        vm.expectRevert(SecurityModule.WindowTooLong.selector);
         vault.setRateLimitConfigPublic(48 hours, 10);
     }
 
     /// @notice Test: Cannot set circuit breaker threshold too low
     function test_configAttack_circuitBreakerThresholdTooLow() public {
-        vm.expectRevert("Threshold too low");
+        vm.expectRevert(SecurityModule.ThresholdTooLow.selector);
         vault.setCircuitBreakerConfigPublic(100, 1 hours);
     }
 
     /// @notice Test: Cannot set withdrawal limits inconsistently
     function test_configAttack_withdrawalLimitsInconsistent() public {
         // Single > Daily should fail
-        vm.expectRevert("Single > daily");
+        vm.expectRevert(SecurityModule.InvalidWithdrawalLimits.selector);
         vault.setWithdrawalLimitsPublic(100 ether, 50 ether, 25 ether);
     }
 

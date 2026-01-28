@@ -94,7 +94,7 @@ contract FHEGateway is AccessControl, ReentrancyGuard, Pausable {
     uint256 public totalDecryptions;
 
     /// @notice FHEUtils.Handle registry
-    mapping(bytes32 => FHEUtils.Handle) public handles;
+    mapping(bytes32 => FHEUtils.Handle) internal handles;
 
     /// @notice Decryption requests
     mapping(bytes32 => FHEUtils.DecryptionRequest) public decryptionRequests;
@@ -106,22 +106,20 @@ contract FHEGateway is AccessControl, ReentrancyGuard, Pausable {
     mapping(bytes32 => FHEUtils.ComputeRequest) public computeRequests;
 
     /// @notice Access control list: handle => user => allowed
-    mapping(bytes32 => mapping(address => bool)) public acl;
+    mapping(bytes32 => mapping(address => bool)) internal acl;
 
     /// @notice Global ACL: handle => publicly accessible
-    mapping(bytes32 => bool) public globalAcl;
+    mapping(bytes32 => bool) internal globalAcl;
 
     /// @notice Contract permissions: contract => handle => allowed
-    mapping(address => mapping(bytes32 => bool)) public contractAcl;
+    mapping(address => mapping(bytes32 => bool)) internal contractAcl;
 
     /// @notice Approved contracts for FHE operations
-    mapping(address => bool) public approvedContracts;
+    mapping(address => bool) internal approvedContracts;
 
-    /// @notice FHE gas prices per operation
-    mapping(FHEUtils.Opcode => uint256) public fheGasPrices;
 
     /// @notice Security zones
-    mapping(bytes32 => bool) public securityZones;
+    mapping(bytes32 => bool) internal securityZones;
 
     // ============================================
     // EVENTS
@@ -208,8 +206,6 @@ contract FHEGateway is AccessControl, ReentrancyGuard, Pausable {
         // Initialize default security zone
         securityZones[keccak256("DEFAULT")] = true;
 
-        // Initialize FHE gas prices (in wei units)
-        _initializeFHEGasPrices();
     }
 
     // ============================================
@@ -635,7 +631,7 @@ contract FHEGateway is AccessControl, ReentrancyGuard, Pausable {
         address callbackContract,
         bytes4 callbackSelector,
         uint256 ttl
-    ) external whenNotPaused nonReentrant returns (bytes32 requestId) {
+    ) external whenNotPaused returns (bytes32 requestId) {
         _validateHandle(handle);
         _checkACL(handle);
 
@@ -673,14 +669,12 @@ contract FHEGateway is AccessControl, ReentrancyGuard, Pausable {
     /**
      * @notice Fulfill decryption request (coprocessor only)
      * @param requestId The request to fulfill
-     * @param result The decrypted value
-
      */
     function fulfillDecryption(
         bytes32 requestId,
-        bytes32 result,
+        bytes32 /* result */,
         bytes calldata /* proof */
-    ) external onlyRole(COPROCESSOR_ROLE) nonReentrant {
+    ) external onlyRole(COPROCESSOR_ROLE) {
         FHEUtils.DecryptionRequest storage req = decryptionRequests[requestId];
 
         if (req.requestId == bytes32(0)) revert InvalidHandle();
@@ -690,17 +684,6 @@ contract FHEGateway is AccessControl, ReentrancyGuard, Pausable {
         // Revert to prevent blind trust in coprocessor.
         // require(proof.length > 0, "Invalid proof");
         revert ProofVerificationNotImplemented();
-
-        req.fulfilled = true;
-        req.result = result;
-
-        // Execute callback
-        (bool success, ) = req.callbackContract.call(
-            abi.encodeWithSelector(req.callbackSelector, requestId, result)
-        );
-        if (!success) revert CallbackFailed();
-
-        emit DecryptionFulfilled(requestId, result);
     }
 
     // ============================================
@@ -753,7 +736,7 @@ contract FHEGateway is AccessControl, ReentrancyGuard, Pausable {
      */
     function fulfillReencryption(
         bytes32 requestId,
-        bytes calldata reencryptedCiphertext,
+        bytes calldata /* reencryptedCiphertext */,
         bytes calldata /* proof */
     ) external onlyRole(COPROCESSOR_ROLE) {
         FHEUtils.ReencryptionRequest storage req = reencryptionRequests[requestId];
@@ -765,11 +748,6 @@ contract FHEGateway is AccessControl, ReentrancyGuard, Pausable {
         // Revert to prevent blind trust in coprocessor.
         // require(proof.length > 0, "Invalid proof");
         revert ProofVerificationNotImplemented();
-
-        req.fulfilled = true;
-        req.reencryptedCiphertext = reencryptedCiphertext;
-
-        emit ReencryptionFulfilled(requestId);
     }
 
     // ============================================
@@ -897,15 +875,6 @@ contract FHEGateway is AccessControl, ReentrancyGuard, Pausable {
         securityZones[zone] = true;
     }
 
-    /**
-     * @notice Update FHE gas price for operation
-     */
-    function setFHEGasPrice(
-        FHEUtils.Opcode op,
-        uint256 price
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        fheGasPrices[op] = price;
-    }
 
     /**
      * @notice Pause gateway
@@ -1063,7 +1032,7 @@ contract FHEGateway is AccessControl, ReentrancyGuard, Pausable {
             inputs: inputs,
             output: output,
             requester: msg.sender,
-            gasUsed: fheGasPrices[op],
+            gasUsed: _getFHEGasPrice(op),
             timestamp: block.timestamp,
             status: FHEUtils.RequestStatus.Pending
         });
@@ -1073,45 +1042,25 @@ contract FHEGateway is AccessControl, ReentrancyGuard, Pausable {
         emit ComputeRequested(requestId, op, inputs);
     }
 
-    function _initializeFHEGasPrices() internal {
-        // Arithmetic (relative costs)
-        fheGasPrices[FHEUtils.Opcode.ADD] = 50000;
-        fheGasPrices[FHEUtils.Opcode.SUB] = 50000;
-        fheGasPrices[FHEUtils.Opcode.MUL] = 150000;
-        fheGasPrices[FHEUtils.Opcode.DIV] = 300000;
-        fheGasPrices[FHEUtils.Opcode.REM] = 300000;
-        fheGasPrices[FHEUtils.Opcode.NEG] = 30000;
+    function getFHEGasPrice(
+        FHEUtils.Opcode op
+    ) external pure returns (uint256) {
+        return _getFHEGasPrice(op);
+    }
 
-        // Comparison
-        fheGasPrices[FHEUtils.Opcode.EQ] = 50000;
-        fheGasPrices[FHEUtils.Opcode.NE] = 50000;
-        fheGasPrices[FHEUtils.Opcode.GE] = 80000;
-        fheGasPrices[FHEUtils.Opcode.GT] = 80000;
-        fheGasPrices[FHEUtils.Opcode.LE] = 80000;
-        fheGasPrices[FHEUtils.Opcode.LT] = 80000;
-
-        // Bitwise
-        fheGasPrices[FHEUtils.Opcode.AND] = 30000;
-        fheGasPrices[FHEUtils.Opcode.OR] = 30000;
-        fheGasPrices[FHEUtils.Opcode.XOR] = 30000;
-        fheGasPrices[FHEUtils.Opcode.NOT] = 20000;
-        fheGasPrices[FHEUtils.Opcode.SHL] = 50000;
-        fheGasPrices[FHEUtils.Opcode.SHR] = 50000;
-        fheGasPrices[FHEUtils.Opcode.ROTL] = 70000;
-        fheGasPrices[FHEUtils.Opcode.ROTR] = 70000;
-
-        // Min/Max
-        fheGasPrices[FHEUtils.Opcode.MIN] = 100000;
-        fheGasPrices[FHEUtils.Opcode.MAX] = 100000;
-
-        // Conditional
-        fheGasPrices[FHEUtils.Opcode.SELECT] = 120000;
-        fheGasPrices[FHEUtils.Opcode.CMUX] = 150000;
-
-        // Special
-        fheGasPrices[FHEUtils.Opcode.RAND] = 200000;
-        fheGasPrices[FHEUtils.Opcode.TRIVIAL] = 30000;
-        fheGasPrices[FHEUtils.Opcode.DECRYPT] = 500000;
-        fheGasPrices[FHEUtils.Opcode.REENCRYPT] = 400000;
+    function _getFHEGasPrice(
+        FHEUtils.Opcode op
+    ) internal pure returns (uint256) {
+        // Prices packed as 3-byte big-endian values
+        bytes memory prices = hex"00C35000C3500249F00493E00493E000753000C35000C350013880013880013880013880007530007530007530004E2000C35000C3500111700111700186A00186A001D4C00249F0030D4000753007A120061A80";
+        
+        uint256 idx = uint256(op) * 3;
+        if (idx + 3 > prices.length) return 0;
+        
+        uint256 price;
+        assembly {
+            price := shr(232, mload(add(add(prices, 32), idx)))
+        }
+        return price;
     }
 }

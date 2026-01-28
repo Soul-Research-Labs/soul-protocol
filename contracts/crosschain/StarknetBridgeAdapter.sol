@@ -105,6 +105,8 @@ contract StarknetBridgeAdapter is
     mapping(address => uint256) public liquidityProviders;
     bool public fastExitEnabled = true;
 
+    uint256 public totalWithdrawals;
+    uint256 public totalL1ToL2Messages;
     /*//////////////////////////////////////////////////////////////
                              CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
@@ -245,7 +247,7 @@ contract StarknetBridgeAdapter is
         uint256 toAddress,
         uint256 selector,
         uint256[] calldata payload
-    ) external payable returns (bytes32 messageHash) {
+    ) external payable whenNotPaused returns (bytes32 messageHash) {
         if (!config.active) revert StarknetNotConfigured();
 
         IStarknetMessaging messaging = IStarknetMessaging(config.starknetMessaging);
@@ -255,6 +257,7 @@ contract StarknetBridgeAdapter is
             payload
         );
 
+        totalL1ToL2Messages++;
         emit MessageSent(messageHash, toAddress, selector, payload);
     }
 
@@ -325,6 +328,7 @@ contract StarknetBridgeAdapter is
             claimedAt: block.timestamp
         });
 
+        totalWithdrawals++;
         emit MessageConsumed(msgHash, l2Sender);
         emit WithdrawalClaimed(withdrawalId);
     }
@@ -343,6 +347,18 @@ contract StarknetBridgeAdapter is
 
     function getTokenMapping(address l1Token) external view returns (TokenMapping memory) {
         return tokenMappings[l1Token];
+    }
+
+    function getBridgeStats() external view returns (uint256, uint256) {
+        return (totalL1ToL2Messages, totalWithdrawals);
+    }
+
+    function pause() external onlyRole(GUARDIAN_ROLE) {
+        _pause();
+    }
+
+    function unpause() external onlyRole(GUARDIAN_ROLE) {
+        _unpause();
     }
 
     function computeMessageHash(

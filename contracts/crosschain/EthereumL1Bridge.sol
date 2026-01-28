@@ -499,9 +499,16 @@ contract EthereumL1Bridge is AccessControl, ReentrancyGuard, Pausable {
         uint256 blockNumber,
         uint256 blobIndex
     ) external payable {
-        bytes32 blobVersionedHash = blobhash(blobIndex);
+        bytes32 blobVersionedHash = _getBlobHash(blobIndex);
         if (blobVersionedHash == bytes32(0)) revert InvalidBlobIndex();
         _submitStateCommitment(sourceChainId, stateRoot, proofRoot, blockNumber, blobVersionedHash);
+    }
+
+    /**
+     * @notice Get blob hash (virtual for testing)
+     */
+    function _getBlobHash(uint256 index) internal view virtual returns (bytes32) {
+        return blobhash(index);
     }
 
     /**

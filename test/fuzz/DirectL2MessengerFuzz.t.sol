@@ -463,7 +463,9 @@ contract DirectL2MessengerFuzz is Test {
         vm.assume(destChainId > 0);
 
         // Register sequencer for this specific chain
-        address seq = address(uint160(destChainId));
+        // Ensure seq address is non-zero
+        address seq = address(uint160(uint256(keccak256(abi.encode(destChainId)))));
+        if (seq == address(0)) seq = address(0x1);
         uint256[] memory chains = new uint256[](1);
         chains[0] = destChainId;
         address[] memory validators = new address[](1);

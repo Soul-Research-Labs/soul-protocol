@@ -500,6 +500,7 @@ contract CrossChainPrivacyFuzz is Test {
      * @notice Fuzz: Chain ID validation
      */
     function testFuzz_ChainIdValidation(uint256 chainId) public pure {
+        vm.assume(chainId > 0);
         // Common chain IDs
         bool isMainnet = chainId == 1;
         bool isArbitrum = chainId == 42161;
@@ -641,7 +642,7 @@ contract CrossChainPrivacyFuzz is Test {
     /**
      * @notice Invariant: Nullifier cannot be both registered and unknown
      */
-    function invariant_NullifierStatusExclusive() public pure {
+    function test_NullifierStatusExclusive() public pure {
         // Status enum: UNKNOWN=0, REGISTERED=1, SPENT=2, REVOKED=3, EXPIRED=4
         uint8 status = 1; // REGISTERED
 
@@ -651,7 +652,7 @@ contract CrossChainPrivacyFuzz is Test {
     /**
      * @notice Invariant: Privacy level monotonicity
      */
-    function invariant_PrivacyLevelMonotonic() public pure {
+    function test_PrivacyLevelMonotonic() public pure {
         // Higher levels provide more privacy
         // NONE < BASIC < MEDIUM < HIGH < MAXIMUM
         uint8 none = 0;

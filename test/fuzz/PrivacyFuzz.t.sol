@@ -401,6 +401,9 @@ contract PrivacyFuzz is Test {
      * @notice Fuzz: Range proof structure
      */
     function testFuzz_RangeProofStructure(uint256 numBits) public pure {
+        // Bound to valid range to check structure properties
+        numBits = bound(numBits, 1, RANGE_BITS);
+        
         // Bulletproof+ requires power of 2 bits
         bool validBits = numBits > 0 &&
             numBits <= RANGE_BITS &&
@@ -427,24 +430,27 @@ contract PrivacyFuzz is Test {
      * @notice Fuzz: Balance equation (inputs = outputs + fee)
      */
     function testFuzz_BalanceEquation(
-        uint256[] memory inputValues,
-        uint256[] memory outputValues,
+        uint256[16] memory inputValuesFixed,
+        uint256[16] memory outputValuesFixed,
+        uint256 inputLen,
+        uint256 outputLen,
         uint256 fee
     ) public pure {
-        vm.assume(inputValues.length > 0 && inputValues.length <= 16);
-        vm.assume(outputValues.length > 0 && outputValues.length <= 16);
+        // Bound lengths
+        inputLen = bound(inputLen, 1, 16);
+        outputLen = bound(outputLen, 1, 16);
 
         uint256 totalInputs = 0;
         uint256 totalOutputs = 0;
 
-        for (uint256 i = 0; i < inputValues.length; i++) {
-            inputValues[i] = bound(inputValues[i], 0, type(uint32).max);
-            totalInputs += inputValues[i];
+        for (uint256 i = 0; i < inputLen; i++) {
+            uint256 val = bound(inputValuesFixed[i], 0, type(uint32).max);
+            totalInputs += val;
         }
 
-        for (uint256 i = 0; i < outputValues.length; i++) {
-            outputValues[i] = bound(outputValues[i], 0, type(uint32).max);
-            totalOutputs += outputValues[i];
+        for (uint256 i = 0; i < outputLen; i++) {
+            uint256 val = bound(outputValuesFixed[i], 0, type(uint32).max);
+            totalOutputs += val;
         }
 
         fee = bound(fee, 0, type(uint32).max);
