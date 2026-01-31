@@ -294,16 +294,13 @@ See [API Reference](docs/API_REFERENCE.md) for full contract documentation.
 
 Soul provides native adapters for major L2 networks:
 
-| Network | Chain ID | Adapter | Key Features |
-|---------|----------|---------|--------------|
-| **Arbitrum** | 42161 | `ArbitrumBridgeAdapter` | Nitro, Retryable Tickets |
-| **Optimism** | 10 | `OptimismBridgeAdapter` | OP Stack, Bedrock |
-| **Base** | 8453 | `BaseBridgeAdapter` | OP Stack, CCTP |
-| **zkSync Era** | 324 | `zkSyncBridgeAdapter` | ZK Rollup, AA |
-| **Scroll** | 534352 | `ScrollBridgeAdapter` | zkEVM |
-| **Linea** | 59144 | `LineaBridgeAdapter` | zkEVM, PLONK |
-| **Polygon zkEVM** | 1101 | `PolygonZkEVMBridgeAdapter` | zkEVM |
-| **Aztec** | — | `AztecBridgeAdapter` | UltraPLONK, Note-based |
+| Network | Adapter | Key Features |
+|---------|---------|--------------|
+| **Arbitrum** | `ArbitrumBridgeAdapter` | Nitro, Retryable Tickets |
+| **Base** | `BaseBridgeAdapter` | OP Stack, CCTP |
+| **Bitcoin** | `BitcoinBridgeAdapter` | HTLC, SPV Verification |
+| **Starknet** | `StarknetBridgeAdapter` | L1 Verification, STARKs |
+| **Aztec** | `AztecBridgeAdapter` | UltraPLONK, Note-based |
 
 **Privacy chain bridges:**
 - `AztecBridgeAdapter` - Soul ↔ Aztec note conversion with cross-domain nullifiers
