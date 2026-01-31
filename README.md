@@ -350,6 +350,7 @@ Soul provides native adapters for major L2 networks:
 ```bash
 npm run certora      # Formal verification
 npm run security:all # Full security suite
+npm run security:mutation # Mutation testing
 ```
 
 ## SDK

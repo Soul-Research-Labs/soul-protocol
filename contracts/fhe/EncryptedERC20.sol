@@ -310,19 +310,33 @@ contract EncryptedERC20 is AccessControl, ReentrancyGuard, Pausable {
         euint256 fromBalance = encryptedBalances[from];
         if (euint256.unwrap(fromBalance) == bytes32(0)) revert InsufficientBalance();
 
-        // FHE subtraction from sender
-        euint256 newFromBalance = fromBalance.sub(encryptedAmount);
+        // 1. Check sufficiency (encrypted)
+        ebool isSufficient = fromBalance.ge(encryptedAmount);
+
+        // 2. Conditionally subtract from sender
+        euint256 newFromBalance = FHEOperations.select(
+            isSufficient,
+            fromBalance.sub(encryptedAmount),
+            fromBalance
+        );
         encryptedBalances[from] = newFromBalance;
 
-        // FHE addition to recipient
+        // 3. Conditionally add to recipient
         euint256 toBalance = encryptedBalances[to];
         euint256 newToBalance;
-
+        
         if (euint256.unwrap(toBalance) == bytes32(0)) {
-            // First balance for recipient
-            newToBalance = encryptedAmount;
+            newToBalance = FHEOperations.select(
+                isSufficient,
+                encryptedAmount,
+                FHEOperations.asEuint256(0)
+            );
         } else {
-            newToBalance = toBalance.add(encryptedAmount);
+            newToBalance = FHEOperations.select(
+                isSufficient,
+                toBalance.add(encryptedAmount),
+                toBalance
+            );
         }
         encryptedBalances[to] = newToBalance;
 
@@ -513,11 +527,22 @@ contract EncryptedERC20 is AccessControl, ReentrancyGuard, Pausable {
         euint256 currentBalance = encryptedBalances[from];
         if (euint256.unwrap(currentBalance) == bytes32(0)) revert InsufficientBalance();
 
-        // Update balance
-        encryptedBalances[from] = currentBalance.sub(encryptedAmount);
+        // Check sufficiency (encrypted)
+        ebool isSufficient = currentBalance.ge(encryptedAmount);
 
-        // Update total supply
-        encryptedTotalSupply = encryptedTotalSupply.sub(encryptedAmount);
+        // Update balance conditionally
+        encryptedBalances[from] = FHEOperations.select(
+            isSufficient,
+            currentBalance.sub(encryptedAmount),
+            currentBalance
+        );
+
+        // Update total supply conditionally
+        encryptedTotalSupply = FHEOperations.select(
+            isSufficient,
+            encryptedTotalSupply.sub(encryptedAmount),
+            encryptedTotalSupply
+        );
 
         emit EncryptedBurn(from, encryptedAmount);
     }

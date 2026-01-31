@@ -73,6 +73,7 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
     error InvalidProof(bytes32 lockId);
     error InvalidDisputeWindow();
     error InsufficientBond(uint256 required, uint256 provided);
+    error InsufficientChallengerStake(uint256 required, uint256 provided);
     error InvalidDomainSeparator(bytes32 domain);
     error TransitionPredicateMismatch(bytes32 expected, bytes32 provided);
     error StateCommitmentMismatch(bytes32 expected, bytes32 provided);
@@ -221,6 +222,7 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
     /// @notice Constants
     uint256 public constant DISPUTE_WINDOW = 2 hours;
     uint256 public constant MIN_BOND_AMOUNT = 0.01 ether;
+    uint256 public constant MIN_CHALLENGER_STAKE = 0.01 ether;
     uint256 public constant MAX_ACTIVE_LOCKS = 1000000;
 
     /// @notice Packed statistics (saves 3 storage slots = ~6000 gas on updates)
@@ -536,7 +538,11 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
     function challengeOptimisticUnlock(
         bytes32 lockId,
         UnlockProof calldata evidence
-    ) external nonReentrant {
+    ) external payable nonReentrant {
+        if (msg.value < MIN_CHALLENGER_STAKE) {
+            revert InsufficientChallengerStake(MIN_CHALLENGER_STAKE, msg.value);
+        }
+
         OptimisticUnlock storage optimistic = optimisticUnlocks[lockId];
 
         if (optimistic.unlocker == address(0)) {
@@ -565,26 +571,16 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
              // If the proof fails verification, the challenge SUCCEEDS (it was a fraud)
              if (!_verifyProof(lock, evidence)) {
                  challengeSuccessful = true;
-             } else {
-                 // The proof is valid, so the challenge is invalid. Slash the challenger.
-                 // We revert here to treat it as a failed tx? 
-                 // Or we slash challenger? 
-                 // For now, reverting matches the "Conflict Proof" behavior of InvalidConflictProof
-                 revert InvalidConflictProof(lockId);
              }
         } 
         // CASE 2: Conflict Proof (Provide a different valid transition)
         else {
              // Conflict must show different new state commitment
-            if (evidence.newStateCommitment == optimistic.newStateCommitment) {
-                revert InvalidConflictProof(lockId);
-            }
-            
-            // Conflict proof must be valid
-            if (_verifyProof(lock, evidence)) {
-                 challengeSuccessful = true;
-            } else {
-                 revert InvalidConflictProof(lockId);
+            if (evidence.newStateCommitment != optimistic.newStateCommitment) {
+                // Conflict proof must be valid
+                if (_verifyProof(lock, evidence)) {
+                     challengeSuccessful = true;
+                }
             }
         }
 
@@ -598,17 +594,23 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
                 _packedStats += uint256(1) << _STAT_SHIFT_DISPUTES;
             }
 
-            // Slash bond to challenger
-            uint256 bondToSlash = optimistic.bondAmount;
-            (bool success, ) = payable(msg.sender).call{value: bondToSlash}("");
+            // Reward challenger with bond + stake
+            uint256 totalReward = optimistic.bondAmount + msg.value;
+            (bool success, ) = payable(msg.sender).call{value: totalReward}("");
             if (!success) revert ETHTransferFailed();
 
             emit LockDisputed(
                 lockId,
                 msg.sender,
                 evidenceHash,
-                bondToSlash
+                optimistic.bondAmount
             );
+        } else {
+            // Challenge failed. Compensate unlocker with challenger stake.
+            (bool success, ) = payable(optimistic.unlocker).call{value: msg.value}("");
+            if (!success) revert ETHTransferFailed();
+            
+            // Note: We don't revert here to ensure the stake is transferred.
         }
     }
 

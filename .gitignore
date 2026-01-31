@@ -16,7 +16,12 @@ cache/
 typechain/
 typechain-types/
 coverage/
+coverage/
 coverage.json
+coverage_*.txt
+all_unstubbed.txt
+test/fuzz/corpus/
+
 
 # Foundry
 forge-cache/

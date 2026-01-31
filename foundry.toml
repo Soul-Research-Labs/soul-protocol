@@ -25,6 +25,11 @@ optimizer_runs = 200  # Lower for CI to speed up compilation
 optimizer_runs = 100000  # Maximum optimization for production
 via_ir = true
 
+[profile.halmos]
+optimizer = true
+via_ir = true
+optimizer_runs = 0
+
 [profile.symbolic]
 fuzz = { runs = 100000 }
 invariant = { runs = 1024, depth = 512 }
@@ -36,7 +41,7 @@ invariant = { runs = 1024, depth = 512 }
 # The settings below are optimal but still fail with instrumentation.
 via_ir = true
 optimizer = true
-optimizer_runs = 1
+optimizer_runs = 200
 
 [fmt]
 line_length = 100
@@ -59,3 +64,5 @@ remappings = [
     "@openzeppelin/=node_modules/@openzeppelin/",
     "forge-std/=lib/forge-std/src/",
 ]
+
+

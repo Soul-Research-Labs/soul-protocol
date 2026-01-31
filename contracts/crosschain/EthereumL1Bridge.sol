@@ -962,6 +962,15 @@ contract EthereumL1Bridge is AccessControl, ReentrancyGuard, Pausable {
     }
 
     /**
+     * @notice Set maximum commitments per hour
+     */
+    function setMaxCommitmentsPerHour(
+        uint256 _maxCommitments
+    ) external onlyRole(OPERATOR_ROLE) {
+        maxCommitmentsPerHour = _maxCommitments;
+    }
+
+    /**
      * @notice Pause the contract
      */
     function pause() external onlyRole(GUARDIAN_ROLE) {
