@@ -165,8 +165,8 @@ async function main() {
             deployer.address           // admin
         );
         await timelock.waitForDeployment();
-        deployed.contracts.pilTimelock = await timelock.getAddress();
-        console.log("   ✅ SoulTimelock:", deployed.contracts.pilTimelock);
+        deployed.contracts.soulTimelock = await timelock.getAddress();
+        console.log("   ✅ SoulTimelock:", deployed.contracts.soulTimelock);
         console.log("      Min Delay:", TIMELOCK_MIN_DELAY / 3600, "hours");
 
         // 9. Deploy TimelockAdmin
@@ -238,7 +238,7 @@ async function main() {
                     ]
                 },
                 {
-                    address: deployed.contracts.pilTimelock,
+                    address: deployed.contracts.soulTimelock,
                     name: "SoulTimelock",
                     args: [TIMELOCK_MIN_DELAY, [proposerAddr], [executorAddr], deployer.address]
                 },
@@ -246,7 +246,7 @@ async function main() {
                     address: deployed.contracts.timelockAdmin,
                     name: "TimelockAdmin",
                     args: [
-                        deployed.contracts.pilTimelock,
+                        deployed.contracts.soulTimelock,
                         deployed.contracts.proofCarryingContainer,
                         deployed.contracts.policyBoundProofs,
                         deployed.contracts.executionAgnosticStateCommitments,

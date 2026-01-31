@@ -304,7 +304,7 @@ cmd_deploy() {
         CHAIN_ID=$chain_id \
         RPC_URL=$rpc \
         PRIVATE_KEY=$PRIVATE_KEY \
-        npx hardhat run scripts/deploy/deploy-pil.ts --network localhost 2>&1 | tee "deployments/simulation/$chain/deploy.log" || {
+        npx hardhat run scripts/deploy-soul.js --network localhost 2>&1 | tee "deployments/simulation/$chain/deploy.log" || {
             log_warning "Deployment to $chain may have issues. Check logs."
         }
         

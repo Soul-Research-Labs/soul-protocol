@@ -263,7 +263,7 @@ test/                # Unit, fuzz, invariant, attack tests
 ## Quick Start
 
 ```bash
-git clone https://github.com/soul-research-labs/Soul.git && cd Soul
+git clone https://github.com/soul-research-labs/SOUL.git && cd SOUL
 npm install && forge build
 forge test                             # Unit tests
 forge test --match-path "test/fuzz/*"  # Fuzz tests
@@ -356,7 +356,7 @@ npm run security:mutation # Mutation testing
 npm install @soul/sdk
 ```
 
-### Basic Usage
+### Create Confidential State
 
 ```typescript
 import { SoulSDK } from '@soul/sdk';

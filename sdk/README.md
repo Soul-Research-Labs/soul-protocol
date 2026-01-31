@@ -187,7 +187,7 @@ SOUL_PQC_REGISTRY_ADDRESS=0x...
 
 ## API Reference
 
-See the [full API documentation](https://soul-project.github.io/soul-sdk/) for detailed type definitions and method signatures.
+See the [full API documentation](https://soul-research-labs.github.io/soul-sdk/) for detailed type definitions and method signatures.
 
 ## Security
 
@@ -207,6 +207,6 @@ MIT License - see [LICENSE](./LICENSE) for details.
 ## Links
 
 - [Documentation](https://docs.soul.network)
-- [GitHub](https://github.com/soul-project/soul-sdk)
-- [Discord](https://discord.gg/soul)
+- [GitHub](https://github.com/Soul-Research-Labs/SOUL)
+- [Discord](https://discord.gg/soul-protocol)
 - [Twitter](https://twitter.com/soul_protocol)

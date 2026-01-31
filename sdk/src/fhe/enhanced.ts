@@ -4,7 +4,7 @@
  * Comprehensive client-side library for FHE operations with Soul protocol
  * Includes coprocessor integration, gateway interaction, and oracle support
  * 
- * @module @pil/sdk/fhe
+ * @module @soul/sdk/fhe
  * @version 2.0.0
  */
 
