@@ -8,7 +8,22 @@
  * @version 2.0.0
  */
 
-import { ethers, Contract, Signer, Provider, ContractTransactionReceipt } from 'ethers';
+import { 
+    keccak256, 
+    toHex, 
+    toBytes, 
+    encodeAbiParameters, 
+    getContract, 
+    zeroAddress, 
+    zeroHash,
+    type PublicClient, 
+    type WalletClient, 
+    type Hex, 
+    type Abi,
+    decodeEventLog,
+    getAddress,
+    slice
+} from 'viem';
 
 // ============================================
 // Type Definitions
@@ -141,81 +156,57 @@ export type FHEOperation =
 // ABI Fragments
 // ============================================
 
-const FHE_GATEWAY_ABI = [
-  // Handle management
-  'function trivialEncrypt(uint256 plaintext, uint8 fheType) external returns (bytes32)',
-  'function getHandleType(bytes32 handle) external view returns (uint8)',
-  'function getHandleOwner(bytes32 handle) external view returns (address)',
-  'function handleExists(bytes32 handle) external view returns (bool)',
-  
-  // FHE Operations
-  'function fheAdd(bytes32 lhs, bytes32 rhs) external returns (bytes32)',
-  'function fheSub(bytes32 lhs, bytes32 rhs) external returns (bytes32)',
-  'function fheMul(bytes32 lhs, bytes32 rhs) external returns (bytes32)',
-  'function fheDiv(bytes32 lhs, bytes32 rhs) external returns (bytes32)',
-  'function fheRem(bytes32 lhs, bytes32 rhs) external returns (bytes32)',
-  'function fheNeg(bytes32 ct) external returns (bytes32)',
-  'function fheAnd(bytes32 lhs, bytes32 rhs) external returns (bytes32)',
-  'function fheOr(bytes32 lhs, bytes32 rhs) external returns (bytes32)',
-  'function fheXor(bytes32 lhs, bytes32 rhs) external returns (bytes32)',
-  'function fheNot(bytes32 ct) external returns (bytes32)',
-  'function fheShl(bytes32 ct, bytes32 shift) external returns (bytes32)',
-  'function fheShr(bytes32 ct, bytes32 shift) external returns (bytes32)',
-  'function fheEq(bytes32 lhs, bytes32 rhs) external returns (bytes32)',
-  'function fheNe(bytes32 lhs, bytes32 rhs) external returns (bytes32)',
-  'function fheGe(bytes32 lhs, bytes32 rhs) external returns (bytes32)',
-  'function fheGt(bytes32 lhs, bytes32 rhs) external returns (bytes32)',
-  'function fheLe(bytes32 lhs, bytes32 rhs) external returns (bytes32)',
-  'function fheLt(bytes32 lhs, bytes32 rhs) external returns (bytes32)',
-  'function fheMin(bytes32 lhs, bytes32 rhs) external returns (bytes32)',
-  'function fheMax(bytes32 lhs, bytes32 rhs) external returns (bytes32)',
-  'function fheSelect(bytes32 condition, bytes32 ifTrue, bytes32 ifFalse) external returns (bytes32)',
-  'function fheRand(uint8 fheType) external returns (bytes32)',
-  'function fheRandBounded(uint256 upperBound, uint8 fheType) external returns (bytes32)',
-  
-  // ACL
-  'function grantUserPermission(bytes32 handle, address user) external',
-  'function revokeUserPermission(bytes32 handle, address user) external',
-  'function hasPermission(bytes32 handle, address user) external view returns (bool)',
-  
-  // Decryption
-  'function requestDecryption(bytes32 handle, address callbackAddr, bytes4 callbackSelector, uint64 ttl) external returns (bytes32)',
-  'function requestReencryption(bytes32 handle, bytes32 targetPublicKey, address callbackAddr, bytes4 callbackSelector, uint64 ttl) external returns (bytes32)',
-  
-  // Events
-  'event HandleCreated(bytes32 indexed handle, address indexed owner, uint8 fheType)',
-  'event DecryptionRequested(bytes32 indexed requestId, bytes32 indexed handle, address requester)',
-  'event DecryptionFulfilled(bytes32 indexed requestId, bytes32 result)',
-  'event PermissionGranted(bytes32 indexed handle, address indexed user)',
-  'event PermissionRevoked(bytes32 indexed handle, address indexed user)'
-];
+// PROPER ABI for viem
+const FHE_GATEWAY_ABI_PROPER = [
+  { type: 'function', name: 'trivialEncrypt', stateMutability: 'nonpayable', inputs: [{ name: 'plaintext', type: 'uint256' }, { name: 'fheType', type: 'uint8' }], outputs: [{ type: 'bytes32' }] },
+  { type: 'function', name: 'fheAdd', stateMutability: 'nonpayable', inputs: [{ name: 'lhs', type: 'bytes32' }, { name: 'rhs', type: 'bytes32' }], outputs: [{ type: 'bytes32' }] },
+  { type: 'function', name: 'fheSub', stateMutability: 'nonpayable', inputs: [{ name: 'lhs', type: 'bytes32' }, { name: 'rhs', type: 'bytes32' }], outputs: [{ type: 'bytes32' }] },
+  { type: 'function', name: 'fheMul', stateMutability: 'nonpayable', inputs: [{ name: 'lhs', type: 'bytes32' }, { name: 'rhs', type: 'bytes32' }], outputs: [{ type: 'bytes32' }] },
+  { type: 'function', name: 'fheDiv', stateMutability: 'nonpayable', inputs: [{ name: 'lhs', type: 'bytes32' }, { name: 'rhs', type: 'bytes32' }], outputs: [{ type: 'bytes32' }] },
+  { type: 'function', name: 'fheRem', stateMutability: 'nonpayable', inputs: [{ name: 'lhs', type: 'bytes32' }, { name: 'rhs', type: 'bytes32' }], outputs: [{ type: 'bytes32' }] },
+  { type: 'function', name: 'fheNeg', stateMutability: 'nonpayable', inputs: [{ name: 'ct', type: 'bytes32' }], outputs: [{ type: 'bytes32' }] },
+  { type: 'function', name: 'fheAnd', stateMutability: 'nonpayable', inputs: [{ name: 'lhs', type: 'bytes32' }, { name: 'rhs', type: 'bytes32' }], outputs: [{ type: 'bytes32' }] },
+  { type: 'function', name: 'fheOr', stateMutability: 'nonpayable', inputs: [{ name: 'lhs', type: 'bytes32' }, { name: 'rhs', type: 'bytes32' }], outputs: [{ type: 'bytes32' }] },
+  { type: 'function', name: 'fheXor', stateMutability: 'nonpayable', inputs: [{ name: 'lhs', type: 'bytes32' }, { name: 'rhs', type: 'bytes32' }], outputs: [{ type: 'bytes32' }] },
+  { type: 'function', name: 'fheNot', stateMutability: 'nonpayable', inputs: [{ name: 'ct', type: 'bytes32' }], outputs: [{ type: 'bytes32' }] },
+  { type: 'function', name: 'fheShl', stateMutability: 'nonpayable', inputs: [{ name: 'ct', type: 'bytes32' }, { name: 'shift', type: 'bytes32' }], outputs: [{ type: 'bytes32' }] },
+  { type: 'function', name: 'fheShr', stateMutability: 'nonpayable', inputs: [{ name: 'ct', type: 'bytes32' }, { name: 'shift', type: 'bytes32' }], outputs: [{ type: 'bytes32' }] },
+  { type: 'function', name: 'fheEq', stateMutability: 'nonpayable', inputs: [{ name: 'lhs', type: 'bytes32' }, { name: 'rhs', type: 'bytes32' }], outputs: [{ type: 'bytes32' }] },
+  { type: 'function', name: 'fheNe', stateMutability: 'nonpayable', inputs: [{ name: 'lhs', type: 'bytes32' }, { name: 'rhs', type: 'bytes32' }], outputs: [{ type: 'bytes32' }] },
+  { type: 'function', name: 'fheGe', stateMutability: 'nonpayable', inputs: [{ name: 'lhs', type: 'bytes32' }, { name: 'rhs', type: 'bytes32' }], outputs: [{ type: 'bytes32' }] },
+  { type: 'function', name: 'fheGt', stateMutability: 'nonpayable', inputs: [{ name: 'lhs', type: 'bytes32' }, { name: 'rhs', type: 'bytes32' }], outputs: [{ type: 'bytes32' }] },
+  { type: 'function', name: 'fheLe', stateMutability: 'nonpayable', inputs: [{ name: 'lhs', type: 'bytes32' }, { name: 'rhs', type: 'bytes32' }], outputs: [{ type: 'bytes32' }] },
+  { type: 'function', name: 'fheLt', stateMutability: 'nonpayable', inputs: [{ name: 'lhs', type: 'bytes32' }, { name: 'rhs', type: 'bytes32' }], outputs: [{ type: 'bytes32' }] },
+  { type: 'function', name: 'fheMin', stateMutability: 'nonpayable', inputs: [{ name: 'lhs', type: 'bytes32' }, { name: 'rhs', type: 'bytes32' }], outputs: [{ type: 'bytes32' }] },
+  { type: 'function', name: 'fheMax', stateMutability: 'nonpayable', inputs: [{ name: 'lhs', type: 'bytes32' }, { name: 'rhs', type: 'bytes32' }], outputs: [{ type: 'bytes32' }] },
+  { type: 'function', name: 'fheSelect', stateMutability: 'nonpayable', inputs: [{ name: 'condition', type: 'bytes32' }, { name: 'ifTrue', type: 'bytes32' }, { name: 'ifFalse', type: 'bytes32' }], outputs: [{ type: 'bytes32' }] },
+  { type: 'function', name: 'fheRand', stateMutability: 'nonpayable', inputs: [{ name: 'fheType', type: 'uint8' }], outputs: [{ type: 'bytes32' }] },
+  { type: 'function', name: 'fheRandBounded', stateMutability: 'nonpayable', inputs: [{ name: 'upperBound', type: 'uint256' }, { name: 'fheType', type: 'uint8' }], outputs: [{ type: 'bytes32' }] },
+  { type: 'function', name: 'requestDecryption', stateMutability: 'nonpayable', inputs: [{ name: 'handle', type: 'bytes32' }, { name: 'callbackAddr', type: 'address' }, { name: 'callbackSelector', type: 'bytes4' }, { name: 'ttl', type: 'uint64' }], outputs: [{ type: 'bytes32' }] },
+  { type: 'function', name: 'requestReencryption', stateMutability: 'nonpayable', inputs: [{ name: 'handle', type: 'bytes32' }, { name: 'targetPublicKey', type: 'bytes32' }, { name: 'callbackAddr', type: 'address' }, { name: 'callbackSelector', type: 'bytes4' }, { name: 'ttl', type: 'uint64' }], outputs: [{ type: 'bytes32' }] },
+  { type: 'event', name: 'HandleCreated', inputs: [{ indexed: true, name: 'handle', type: 'bytes32' }, { indexed: true, name: 'owner', type: 'address' }, { name: 'fheType', type: 'uint8' }] },
+  { type: 'event', name: 'DecryptionRequested', inputs: [{ indexed: true, name: 'requestId', type: 'bytes32' }, { indexed: true, name: 'handle', type: 'bytes32' }, { name: 'requester', type: 'address' }] }
+] as const;
 
-const FHE_ORACLE_ABI = [
-  'function registerOracle(bytes calldata blsPublicKey) external payable',
-  'function submitComputation(bytes32 taskId, bytes32 result, bytes calldata proof) external',
-  'function getTaskStatus(bytes32 taskId) external view returns (uint8)',
-  'function isActiveOracle(address oracle) external view returns (bool)',
-  'function MIN_STAKE() external view returns (uint256)',
-  'function QUORUM_BPS() external view returns (uint256)',
-  
-  'event OracleRegistered(address indexed oracle, bytes blsPublicKey)',
-  'event ComputationSubmitted(bytes32 indexed taskId, bytes32 result)',
-  'event TaskCompleted(bytes32 indexed taskId, bytes32 result)'
-];
+const FHE_ORACLE_ABI_PROPER = [
+  { type: 'function', name: 'registerOracle', stateMutability: 'payable', inputs: [{ name: 'blsPublicKey', type: 'bytes' }], outputs: [] },
+  { type: 'function', name: 'submitComputation', stateMutability: 'nonpayable', inputs: [{ name: 'taskId', type: 'bytes32' }, { name: 'result', type: 'bytes32' }, { name: 'proof', type: 'bytes' }], outputs: [] },
+  { type: 'function', name: 'getTaskStatus', stateMutability: 'view', inputs: [{ name: 'taskId', type: 'bytes32' }], outputs: [{ type: 'uint8' }] },
+  { type: 'function', name: 'isActiveOracle', stateMutability: 'view', inputs: [{ name: 'oracle', type: 'address' }], outputs: [{ type: 'bool' }] },
+  { type: 'event', name: 'OracleRegistered', inputs: [{ indexed: true, name: 'oracle', type: 'address' }, { name: 'blsPublicKey', type: 'bytes' }] },
+  { type: 'event', name: 'ComputationSubmitted', inputs: [{ indexed: true, name: 'taskId', type: 'bytes32' }, { name: 'result', type: 'bytes32' }] },
+  { type: 'event', name: 'TaskCompleted', inputs: [{ indexed: true, name: 'taskId', type: 'bytes32' }, { name: 'result', type: 'bytes32' }] }
+] as const;
 
-const ENCRYPTED_ERC20_ABI = [
-  'function transfer(address to, bytes32 encryptedAmount) external returns (bool)',
-  'function transferFrom(address from, address to, bytes32 encryptedAmount) external returns (bool)',
-  'function approve(address spender, bytes32 encryptedAmount) external returns (bool)',
-  'function encryptedBalanceOf(address account) external view returns (bytes32)',
-  'function encryptedAllowance(address owner, address spender) external view returns (bytes32)',
-  'function mintPlain(address to, uint256 amount) external',
-  'function burnPlain(address from, uint256 amount) external',
-  'function requestBalanceDecryption(address account) external returns (bytes32)',
-  
-  'event EncryptedTransfer(address indexed from, address indexed to, bytes32 encryptedAmount)',
-  'event EncryptedApproval(address indexed owner, address indexed spender, bytes32 encryptedAmount)'
-];
+const ENCRYPTED_ERC20_ABI_PROPER = [
+  { type: 'function', name: 'transfer', stateMutability: 'nonpayable', inputs: [{ name: 'to', type: 'address' }, { name: 'encryptedAmount', type: 'bytes32' }], outputs: [{ type: 'bool' }] },
+  { type: 'function', name: 'transferFrom', stateMutability: 'nonpayable', inputs: [{ name: 'from', type: 'address' }, { name: 'to', type: 'address' }, { name: 'encryptedAmount', type: 'bytes32' }], outputs: [{ type: 'bool' }] },
+  { type: 'function', name: 'approve', stateMutability: 'nonpayable', inputs: [{ name: 'spender', type: 'address' }, { name: 'encryptedAmount', type: 'bytes32' }], outputs: [{ type: 'bool' }] },
+  { type: 'function', name: 'encryptedBalanceOf', stateMutability: 'view', inputs: [{ name: 'account', type: 'address' }], outputs: [{ type: 'bytes32' }] },
+  { type: 'function', name: 'encryptedAllowance', stateMutability: 'view', inputs: [{ name: 'owner', type: 'address' }, { name: 'spender', type: 'address' }], outputs: [{ type: 'bytes32' }] },
+  { type: 'function', name: 'requestBalanceDecryption', stateMutability: 'nonpayable', inputs: [{ name: 'account', type: 'address' }], outputs: [{ type: 'bytes32' }] },
+  { type: 'event', name: 'DecryptionRequested', inputs: [{ indexed: true, name: 'requestId', type: 'bytes32' }, { indexed: true, name: 'account', type: 'address' }] }
+] as const;
 
 // ============================================
 // FHE Gateway Client
@@ -225,34 +216,50 @@ const ENCRYPTED_ERC20_ABI = [
  * Client for interacting with FHE Gateway contract
  */
 export class FHEGatewayClient {
-  private gateway: Contract;
-  private signer: Signer;
+  private publicClient: PublicClient;
+  private walletClient: WalletClient;
+  private gateway: any;
   private config: FHEConfig;
 
-  constructor(signer: Signer, config: FHEConfig) {
-    this.signer = signer;
+  constructor(publicClient: PublicClient, walletClient: WalletClient, config: FHEConfig) {
+    this.publicClient = publicClient;
+    this.walletClient = walletClient;
     this.config = config;
-    this.gateway = new Contract(config.gatewayAddress, FHE_GATEWAY_ABI, signer);
+    this.gateway = getContract({
+      address: config.gatewayAddress as Hex,
+      abi: FHE_GATEWAY_ABI_PROPER,
+      client: { public: publicClient, wallet: walletClient }
+    });
   }
 
   /**
    * Encrypt a plaintext value (trivial encryption)
    */
   async encrypt(plaintext: bigint, fheType: FHEType): Promise<Handle> {
-    const tx = await this.gateway.trivialEncrypt(plaintext, fheType);
-    const receipt = await tx.wait();
+    const hash = await this.gateway.write.trivialEncrypt([plaintext, fheType]);
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     
     // Extract handle from event
-    const event = receipt.logs.find(
-      (log: any) => log.topics[0] === ethers.id('HandleCreated(bytes32,address,uint8)')
-    );
+    let handle: Hex = zeroHash;
+    for (const log of receipt.logs) {
+      try {
+        const decoded = decodeEventLog({
+          abi: FHE_GATEWAY_ABI_PROPER,
+          data: log.data,
+          topics: log.topics
+        });
+        if (decoded.eventName === 'HandleCreated') {
+          handle = (decoded.args as any).handle;
+          break;
+        }
+      } catch {}
+    }
     
-    if (!event) {
+    if (handle === zeroHash) {
       throw new Error('HandleCreated event not found');
     }
 
-    const handle = event.topics[1];
-    const owner = await this.signer.getAddress();
+    const [owner] = await this.walletClient.getAddresses();
 
     return {
       value: handle,
@@ -269,7 +276,7 @@ export class FHEGatewayClient {
     const handle = await this.encrypt(plaintext, fheType);
     
     // Generate blinding factor for commitment
-    const blindingFactor = ethers.hexlify(ethers.randomBytes(32));
+    const blindingFactor = toHex(crypto.getRandomValues(new Uint8Array(32)));
     
     // Create Pedersen commitment
     const commitment = this.computeCommitment(plaintext, blindingFactor);
@@ -287,8 +294,8 @@ export class FHEGatewayClient {
    * Perform homomorphic addition
    */
   async add(lhs: Handle, rhs: Handle): Promise<Handle> {
-    const tx = await this.gateway.fheAdd(lhs.value, rhs.value);
-    const receipt = await tx.wait();
+    const hash = await this.gateway.write.fheAdd([lhs.value as Hex, rhs.value as Hex]);
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     return this.extractHandleFromReceipt(receipt, lhs.fheType);
   }
 
@@ -296,8 +303,8 @@ export class FHEGatewayClient {
    * Perform homomorphic subtraction
    */
   async sub(lhs: Handle, rhs: Handle): Promise<Handle> {
-    const tx = await this.gateway.fheSub(lhs.value, rhs.value);
-    const receipt = await tx.wait();
+    const hash = await this.gateway.write.fheSub([lhs.value as Hex, rhs.value as Hex]);
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     return this.extractHandleFromReceipt(receipt, lhs.fheType);
   }
 
@@ -305,8 +312,8 @@ export class FHEGatewayClient {
    * Perform homomorphic multiplication
    */
   async mul(lhs: Handle, rhs: Handle): Promise<Handle> {
-    const tx = await this.gateway.fheMul(lhs.value, rhs.value);
-    const receipt = await tx.wait();
+    const hash = await this.gateway.write.fheMul([lhs.value as Hex, rhs.value as Hex]);
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     return this.extractHandleFromReceipt(receipt, lhs.fheType);
   }
 
@@ -314,8 +321,8 @@ export class FHEGatewayClient {
    * Perform homomorphic division
    */
   async div(lhs: Handle, rhs: Handle): Promise<Handle> {
-    const tx = await this.gateway.fheDiv(lhs.value, rhs.value);
-    const receipt = await tx.wait();
+    const hash = await this.gateway.write.fheDiv([lhs.value as Hex, rhs.value as Hex]);
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     return this.extractHandleFromReceipt(receipt, lhs.fheType);
   }
 
@@ -323,8 +330,8 @@ export class FHEGatewayClient {
    * Perform homomorphic remainder
    */
   async rem(lhs: Handle, rhs: Handle): Promise<Handle> {
-    const tx = await this.gateway.fheRem(lhs.value, rhs.value);
-    const receipt = await tx.wait();
+    const hash = await this.gateway.write.fheRem([lhs.value as Hex, rhs.value as Hex]);
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     return this.extractHandleFromReceipt(receipt, lhs.fheType);
   }
 
@@ -332,8 +339,8 @@ export class FHEGatewayClient {
    * Perform homomorphic negation
    */
   async neg(ct: Handle): Promise<Handle> {
-    const tx = await this.gateway.fheNeg(ct.value);
-    const receipt = await tx.wait();
+    const hash = await this.gateway.write.fheNeg([ct.value as Hex]);
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     return this.extractHandleFromReceipt(receipt, ct.fheType);
   }
 
@@ -341,8 +348,8 @@ export class FHEGatewayClient {
    * Perform homomorphic bitwise AND
    */
   async and(lhs: Handle, rhs: Handle): Promise<Handle> {
-    const tx = await this.gateway.fheAnd(lhs.value, rhs.value);
-    const receipt = await tx.wait();
+    const hash = await this.gateway.write.fheAnd([lhs.value as Hex, rhs.value as Hex]);
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     return this.extractHandleFromReceipt(receipt, lhs.fheType);
   }
 
@@ -350,8 +357,8 @@ export class FHEGatewayClient {
    * Perform homomorphic bitwise OR
    */
   async or(lhs: Handle, rhs: Handle): Promise<Handle> {
-    const tx = await this.gateway.fheOr(lhs.value, rhs.value);
-    const receipt = await tx.wait();
+    const hash = await this.gateway.write.fheOr([lhs.value as Hex, rhs.value as Hex]);
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     return this.extractHandleFromReceipt(receipt, lhs.fheType);
   }
 
@@ -359,8 +366,8 @@ export class FHEGatewayClient {
    * Perform homomorphic bitwise XOR
    */
   async xor(lhs: Handle, rhs: Handle): Promise<Handle> {
-    const tx = await this.gateway.fheXor(lhs.value, rhs.value);
-    const receipt = await tx.wait();
+    const hash = await this.gateway.write.fheXor([lhs.value as Hex, rhs.value as Hex]);
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     return this.extractHandleFromReceipt(receipt, lhs.fheType);
   }
 
@@ -368,8 +375,8 @@ export class FHEGatewayClient {
    * Perform homomorphic bitwise NOT
    */
   async not(ct: Handle): Promise<Handle> {
-    const tx = await this.gateway.fheNot(ct.value);
-    const receipt = await tx.wait();
+    const hash = await this.gateway.write.fheNot([ct.value as Hex]);
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     return this.extractHandleFromReceipt(receipt, ct.fheType);
   }
 
@@ -377,8 +384,8 @@ export class FHEGatewayClient {
    * Perform homomorphic shift left
    */
   async shl(ct: Handle, shift: Handle): Promise<Handle> {
-    const tx = await this.gateway.fheShl(ct.value, shift.value);
-    const receipt = await tx.wait();
+    const hash = await this.gateway.write.fheShl([ct.value as Hex, shift.value as Hex]);
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     return this.extractHandleFromReceipt(receipt, ct.fheType);
   }
 
@@ -386,8 +393,8 @@ export class FHEGatewayClient {
    * Perform homomorphic shift right
    */
   async shr(ct: Handle, shift: Handle): Promise<Handle> {
-    const tx = await this.gateway.fheShr(ct.value, shift.value);
-    const receipt = await tx.wait();
+    const hash = await this.gateway.write.fheShr([ct.value as Hex, shift.value as Hex]);
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     return this.extractHandleFromReceipt(receipt, ct.fheType);
   }
 
@@ -395,8 +402,8 @@ export class FHEGatewayClient {
    * Perform homomorphic equality comparison
    */
   async eq(lhs: Handle, rhs: Handle): Promise<Handle> {
-    const tx = await this.gateway.fheEq(lhs.value, rhs.value);
-    const receipt = await tx.wait();
+    const hash = await this.gateway.write.fheEq([lhs.value as Hex, rhs.value as Hex]);
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     return this.extractHandleFromReceipt(receipt, FHEType.EBOOL);
   }
 
@@ -404,8 +411,8 @@ export class FHEGatewayClient {
    * Perform homomorphic not-equal comparison
    */
   async ne(lhs: Handle, rhs: Handle): Promise<Handle> {
-    const tx = await this.gateway.fheNe(lhs.value, rhs.value);
-    const receipt = await tx.wait();
+    const hash = await this.gateway.write.fheNe([lhs.value as Hex, rhs.value as Hex]);
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     return this.extractHandleFromReceipt(receipt, FHEType.EBOOL);
   }
 
@@ -413,8 +420,8 @@ export class FHEGatewayClient {
    * Perform homomorphic greater-or-equal comparison
    */
   async ge(lhs: Handle, rhs: Handle): Promise<Handle> {
-    const tx = await this.gateway.fheGe(lhs.value, rhs.value);
-    const receipt = await tx.wait();
+    const hash = await this.gateway.write.fheGe([lhs.value as Hex, rhs.value as Hex]);
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     return this.extractHandleFromReceipt(receipt, FHEType.EBOOL);
   }
 
@@ -422,8 +429,8 @@ export class FHEGatewayClient {
    * Perform homomorphic greater-than comparison
    */
   async gt(lhs: Handle, rhs: Handle): Promise<Handle> {
-    const tx = await this.gateway.fheGt(lhs.value, rhs.value);
-    const receipt = await tx.wait();
+    const hash = await this.gateway.write.fheGt([lhs.value as Hex, rhs.value as Hex]);
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     return this.extractHandleFromReceipt(receipt, FHEType.EBOOL);
   }
 
@@ -431,8 +438,8 @@ export class FHEGatewayClient {
    * Perform homomorphic less-or-equal comparison
    */
   async le(lhs: Handle, rhs: Handle): Promise<Handle> {
-    const tx = await this.gateway.fheLe(lhs.value, rhs.value);
-    const receipt = await tx.wait();
+    const hash = await this.gateway.write.fheLe([lhs.value as Hex, rhs.value as Hex]);
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     return this.extractHandleFromReceipt(receipt, FHEType.EBOOL);
   }
 
@@ -440,8 +447,8 @@ export class FHEGatewayClient {
    * Perform homomorphic less-than comparison
    */
   async lt(lhs: Handle, rhs: Handle): Promise<Handle> {
-    const tx = await this.gateway.fheLt(lhs.value, rhs.value);
-    const receipt = await tx.wait();
+    const hash = await this.gateway.write.fheLt([lhs.value as Hex, rhs.value as Hex]);
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     return this.extractHandleFromReceipt(receipt, FHEType.EBOOL);
   }
 
@@ -449,8 +456,8 @@ export class FHEGatewayClient {
    * Perform homomorphic minimum
    */
   async min(lhs: Handle, rhs: Handle): Promise<Handle> {
-    const tx = await this.gateway.fheMin(lhs.value, rhs.value);
-    const receipt = await tx.wait();
+    const hash = await this.gateway.write.fheMin([lhs.value as Hex, rhs.value as Hex]);
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     return this.extractHandleFromReceipt(receipt, lhs.fheType);
   }
 
@@ -458,8 +465,8 @@ export class FHEGatewayClient {
    * Perform homomorphic maximum
    */
   async max(lhs: Handle, rhs: Handle): Promise<Handle> {
-    const tx = await this.gateway.fheMax(lhs.value, rhs.value);
-    const receipt = await tx.wait();
+    const hash = await this.gateway.write.fheMax([lhs.value as Hex, rhs.value as Hex]);
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     return this.extractHandleFromReceipt(receipt, lhs.fheType);
   }
 
@@ -467,8 +474,8 @@ export class FHEGatewayClient {
    * Perform conditional selection
    */
   async select(condition: Handle, ifTrue: Handle, ifFalse: Handle): Promise<Handle> {
-    const tx = await this.gateway.fheSelect(condition.value, ifTrue.value, ifFalse.value);
-    const receipt = await tx.wait();
+    const hash = await this.gateway.write.fheSelect([condition.value as Hex, ifTrue.value as Hex, ifFalse.value as Hex]);
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     return this.extractHandleFromReceipt(receipt, ifTrue.fheType);
   }
 
@@ -476,8 +483,8 @@ export class FHEGatewayClient {
    * Generate random encrypted value
    */
   async random(fheType: FHEType): Promise<Handle> {
-    const tx = await this.gateway.fheRand(fheType);
-    const receipt = await tx.wait();
+    const hash = await this.gateway.write.fheRand([fheType]);
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     return this.extractHandleFromReceipt(receipt, fheType);
   }
 
@@ -485,8 +492,8 @@ export class FHEGatewayClient {
    * Generate random encrypted value with upper bound
    */
   async randomBounded(upperBound: bigint, fheType: FHEType): Promise<Handle> {
-    const tx = await this.gateway.fheRandBounded(upperBound, fheType);
-    const receipt = await tx.wait();
+    const hash = await this.gateway.write.fheRandBounded([upperBound, fheType]);
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     return this.extractHandleFromReceipt(receipt, fheType);
   }
 
@@ -498,23 +505,23 @@ export class FHEGatewayClient {
    * Grant permission to access encrypted value
    */
   async grantPermission(handle: Handle, user: string): Promise<void> {
-    const tx = await this.gateway.grantUserPermission(handle.value, user);
-    await tx.wait();
+    const hash = await this.gateway.write.grantUserPermission([handle.value as Hex, user as Hex]);
+    await this.publicClient.waitForTransactionReceipt({ hash });
   }
 
   /**
    * Revoke permission to access encrypted value
    */
   async revokePermission(handle: Handle, user: string): Promise<void> {
-    const tx = await this.gateway.revokeUserPermission(handle.value, user);
-    await tx.wait();
+    const hash = await this.gateway.write.revokeUserPermission([handle.value as Hex, user as Hex]);
+    await this.publicClient.waitForTransactionReceipt({ hash });
   }
 
   /**
    * Check if user has permission to access encrypted value
    */
   async hasPermission(handle: Handle, user: string): Promise<boolean> {
-    return await this.gateway.hasPermission(handle.value, user);
+    return await this.gateway.read.hasPermission([handle.value as Hex, user as Hex]);
   }
 
   // ============================================
@@ -530,27 +537,40 @@ export class FHEGatewayClient {
     callbackSelector: string,
     ttl: number = 3600
   ): Promise<DecryptionRequest> {
-    const tx = await this.gateway.requestDecryption(
-      handle.value,
-      callbackAddress,
-      callbackSelector,
-      ttl
-    );
-    const receipt = await tx.wait();
+    const hash = await this.gateway.write.requestDecryption([
+      handle.value as Hex,
+      callbackAddress as Hex,
+      callbackSelector as Hex,
+      BigInt(ttl)
+    ]);
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
 
     // Extract request ID from event
-    const event = receipt.logs.find(
-      (log: any) => log.topics[0] === ethers.id('DecryptionRequested(bytes32,bytes32,address)')
-    );
+    let requestId: Hex = zeroHash;
+    for (const log of receipt.logs) {
+      try {
+        const decoded = decodeEventLog({
+          abi: FHE_GATEWAY_ABI_PROPER,
+          data: log.data,
+          topics: log.topics
+        });
+        if (decoded.eventName === 'DecryptionRequested') {
+          requestId = (decoded.args as any).requestId;
+          break;
+        }
+      } catch {}
+    }
 
-    if (!event) {
+    if (requestId === zeroHash) {
       throw new Error('DecryptionRequested event not found');
     }
 
+    const [requester] = await this.walletClient.getAddresses();
+
     return {
-      requestId: event.topics[1],
+      requestId,
       handle: handle.value,
-      requester: await this.signer.getAddress(),
+      requester,
       callback: callbackAddress,
       ttl,
       status: DecryptionStatus.PENDING
@@ -567,19 +587,19 @@ export class FHEGatewayClient {
     callbackSelector: string,
     ttl: number = 3600
   ): Promise<ReencryptionRequest> {
-    const tx = await this.gateway.requestReencryption(
-      handle.value,
-      targetPublicKey,
-      callbackAddress,
-      callbackSelector,
-      ttl
-    );
-    const receipt = await tx.wait();
+    const hash = await this.gateway.write.requestReencryption([
+      handle.value as Hex,
+      targetPublicKey as Hex,
+      callbackAddress as Hex,
+      callbackSelector as Hex,
+      BigInt(ttl)
+    ]);
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
 
     return {
-      requestId: ethers.hexlify(ethers.randomBytes(32)), // Placeholder
+      requestId: toHex(crypto.getRandomValues(new Uint8Array(32))), // Placeholder
       sourceHandle: handle.value,
-      targetPublicKey: ethers.getBytes(targetPublicKey),
+      targetPublicKey: toBytes(targetPublicKey as Hex),
       destinationChain: 0,
       status: DecryptionStatus.PENDING
     };
@@ -589,28 +609,42 @@ export class FHEGatewayClient {
   // Helper Methods
   // ============================================
 
-  private extractHandleFromReceipt(receipt: ContractTransactionReceipt, fheType: FHEType): Handle {
-    const event = receipt.logs.find(
-      (log: any) => log.topics[0] === ethers.id('HandleCreated(bytes32,address,uint8)')
-    );
+  private extractHandleFromReceipt(receipt: any, fheType: FHEType): Handle {
+    let handle: Hex = zeroHash;
+    let owner: Hex = zeroAddress;
+    
+    for (const log of receipt.logs) {
+      try {
+        const decoded = decodeEventLog({
+          abi: FHE_GATEWAY_ABI_PROPER,
+          data: log.data,
+          topics: log.topics
+        });
+        if (decoded.eventName === 'HandleCreated') {
+          handle = (decoded.args as any).handle;
+          owner = (decoded.args as any).owner;
+          break;
+        }
+      } catch {}
+    }
 
-    if (!event) {
+    if (handle === zeroHash) {
       throw new Error('HandleCreated event not found');
     }
 
     return {
-      value: event.topics[1],
+      value: handle,
       fheType,
-      owner: ethers.getAddress(ethers.dataSlice(event.topics[2], 12)),
+      owner,
       created: Date.now()
     };
   }
 
   private computeCommitment(value: bigint, blindingFactor: string): string {
-    return ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(
-        ['uint256', 'bytes32'],
-        [value, blindingFactor]
+    return keccak256(
+      encodeAbiParameters(
+        [{ type: 'uint256' }, { type: 'bytes32' }],
+        [value, blindingFactor as Hex]
       )
     );
   }
@@ -619,13 +653,13 @@ export class FHEGatewayClient {
    * Get handle information
    */
   async getHandleInfo(handle: string): Promise<{ exists: boolean; type: FHEType; owner: string }> {
-    const exists = await this.gateway.handleExists(handle);
+    const exists = await this.gateway.read.handleExists([handle]);
     if (!exists) {
-      return { exists: false, type: FHEType.EBOOL, owner: ethers.ZeroAddress };
+      return { exists: false, type: FHEType.EBOOL, owner: zeroAddress };
     }
 
-    const fheType = await this.gateway.getHandleType(handle);
-    const owner = await this.gateway.getHandleOwner(handle);
+    const fheType = await this.gateway.read.getHandleType([handle]);
+    const owner = await this.gateway.read.getHandleOwner([handle]);
 
     return { exists: true, type: fheType, owner };
   }
@@ -639,25 +673,32 @@ export class FHEGatewayClient {
  * Client for interacting with EncryptedERC20 contracts
  */
 export class EncryptedERC20Client {
-  private token: Contract;
+  private publicClient: PublicClient;
+  private walletClient: WalletClient;
+  private token: any;
   private gateway: FHEGatewayClient;
-  private signer: Signer;
 
   constructor(
-    tokenAddress: string,
-    signer: Signer,
+    tokenAddress: Hex,
+    publicClient: PublicClient,
+    walletClient: WalletClient,
     gateway: FHEGatewayClient
   ) {
-    this.signer = signer;
+    this.publicClient = publicClient;
+    this.walletClient = walletClient;
     this.gateway = gateway;
-    this.token = new Contract(tokenAddress, ENCRYPTED_ERC20_ABI, signer);
+    this.token = getContract({
+      address: tokenAddress,
+      abi: ENCRYPTED_ERC20_ABI_PROPER,
+      client: { public: publicClient, wallet: walletClient }
+    });
   }
 
   /**
    * Get encrypted balance
    */
   async balanceOf(account: string): Promise<Handle> {
-    const handleValue = await this.token.encryptedBalanceOf(account);
+    const handleValue = await this.token.read.encryptedBalanceOf([account as Hex]);
     return {
       value: handleValue,
       fheType: FHEType.EUINT256,
@@ -670,7 +711,7 @@ export class EncryptedERC20Client {
    * Get encrypted allowance
    */
   async allowance(owner: string, spender: string): Promise<Handle> {
-    const handleValue = await this.token.encryptedAllowance(owner, spender);
+    const handleValue = await this.token.read.encryptedAllowance([owner as Hex, spender as Hex]);
     return {
       value: handleValue,
       fheType: FHEType.EUINT256,
@@ -683,8 +724,8 @@ export class EncryptedERC20Client {
    * Transfer encrypted amount
    */
   async transfer(to: string, encryptedAmount: Handle): Promise<boolean> {
-    const tx = await this.token.transfer(to, encryptedAmount.value);
-    await tx.wait();
+    const hash = await this.token.write.transfer([to as Hex, encryptedAmount.value as Hex]);
+    await this.publicClient.waitForTransactionReceipt({ hash });
     return true;
   }
 
@@ -696,8 +737,12 @@ export class EncryptedERC20Client {
     to: string,
     encryptedAmount: Handle
   ): Promise<boolean> {
-    const tx = await this.token.transferFrom(from, to, encryptedAmount.value);
-    await tx.wait();
+    const hash = await this.token.write.transferFrom([
+      from as Hex,
+      to as Hex,
+      encryptedAmount.value as Hex
+    ]);
+    await this.publicClient.waitForTransactionReceipt({ hash });
     return true;
   }
 
@@ -705,8 +750,8 @@ export class EncryptedERC20Client {
    * Approve encrypted amount for spender
    */
   async approve(spender: string, encryptedAmount: Handle): Promise<boolean> {
-    const tx = await this.token.approve(spender, encryptedAmount.value);
-    await tx.wait();
+    const hash = await this.token.write.approve([spender as Hex, encryptedAmount.value as Hex]);
+    await this.publicClient.waitForTransactionReceipt({ hash });
     return true;
   }
 
@@ -730,14 +775,25 @@ export class EncryptedERC20Client {
    * Request balance decryption
    */
   async requestBalanceDecryption(account: string): Promise<string> {
-    const tx = await this.token.requestBalanceDecryption(account);
-    const receipt = await tx.wait();
+    const hash = await this.token.write.requestBalanceDecryption([account as Hex]);
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     
-    const event = receipt.logs.find(
-      (log: any) => log.topics[0] === ethers.id('DecryptionRequested(bytes32,bytes32,address)')
-    );
+    let requestId: Hex = zeroHash;
+    for (const log of receipt.logs) {
+      try {
+        const decoded = decodeEventLog({
+          abi: ENCRYPTED_ERC20_ABI_PROPER,
+          data: log.data,
+          topics: log.topics
+        });
+        if (decoded.eventName === 'DecryptionRequested') {
+          requestId = (decoded.args as any).requestId;
+          break;
+        }
+      } catch {}
+    }
 
-    return event ? event.topics[1] : '';
+    return requestId;
   }
 }
 
@@ -892,7 +948,8 @@ export const FHEUtils = {
       throw new Error(`Value ${value} exceeds max for type ${FHEType[fheType]}`);
     }
 
-    const bytes = ethers.toBeArray(value);
+    const hex = value.toString(16);
+    const bytes = toBytes(`0x${hex.length % 2 === 0 ? hex : '0' + hex}`);
     const width = Math.ceil(this.bitWidth(fheType) / 8);
     const padded = new Uint8Array(width);
     padded.set(bytes, width - bytes.length);

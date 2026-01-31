@@ -8,7 +8,19 @@
  * - Cross-system recursion (Groth16 ↔ PLONK ↔ Noir)
  */
 
-import { ethers } from "ethers";
+import { 
+    keccak256, 
+    encodeAbiParameters, 
+    concat, 
+    toBytes, 
+    toHex,
+    zeroHash,
+    getContract,
+    type PublicClient,
+    type WalletClient,
+    type Hex,
+    type Abi
+} from "viem";
 
 // ============================================
 // Types
@@ -76,7 +88,7 @@ export class SoulIVCManager {
      */
     static createGenesis(): SoulState {
         return {
-            merkleRoot: ethers.ZeroHash,
+            merkleRoot: zeroHash,
             totalSupply: 0n,
             nonce: 0n,
             lastUpdateBlock: 0n
@@ -94,9 +106,9 @@ export class SoulIVCManager {
      * Hash Soul state for commitments
      */
     hashState(state: SoulState): string {
-        return ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(
-            ["bytes32", "uint256", "uint256", "uint256"],
-            [state.merkleRoot, state.totalSupply, state.nonce, state.lastUpdateBlock]
+        return keccak256(encodeAbiParameters(
+            [{ type: "bytes32" }, { type: "uint256" }, { type: "uint256" }, { type: "uint256" }],
+            [state.merkleRoot as Hex, state.totalSupply, state.nonce, state.lastUpdateBlock]
         ));
     }
 
@@ -157,23 +169,23 @@ export class SoulIVCManager {
         currentHash: string
     ): Promise<FoldedInstance> {
         // Compute challenge for folding
-        const challenge = ethers.keccak256(ethers.concat([
-            ethers.toBeArray(previousHash),
-            ethers.toBeArray(currentHash)
+        const challenge = keccak256(concat([
+            toBytes(previousHash as Hex),
+            toBytes(currentHash as Hex)
         ]));
 
         // Compute random scalar for folding
         const scalar = BigInt(challenge) % (2n ** 254n);
 
         // Compute commitments (simplified - real impl uses polynomial commitments)
-        const commitmentU = ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(
-            ["bytes32", "uint256"],
-            [previousHash, scalar]
+        const commitmentU = keccak256(encodeAbiParameters(
+            [{ type: "bytes32" }, { type: "uint256" }],
+            [previousHash as Hex, scalar]
         ));
 
-        const commitmentE = ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(
-            ["bytes32", "uint256"],
-            [currentHash, scalar]
+        const commitmentE = keccak256(encodeAbiParameters(
+            [{ type: "bytes32" }, { type: "uint256" }],
+            [currentHash as Hex, scalar]
         ));
 
         return {
@@ -310,15 +322,15 @@ export class SoulProofAggregator {
 
         // Compute proof hashes
         const proofHashes = batch.map(p => 
-            ethers.keccak256(p.proof)
+            keccak256(p.proof)
         );
 
         // Build Merkle tree of proofs
         const merkleRoot = this.computeMerkleRoot(proofHashes);
 
         // Compute public inputs commitment
-        const publicInputsCommitment = ethers.keccak256(
-            ethers.concat(batch.map(p => p.publicInputs))
+        const publicInputsCommitment = keccak256(
+            concat(batch.map(p => p.publicInputs))
         );
 
         // Generate aggregated proof
@@ -341,14 +353,14 @@ export class SoulProofAggregator {
      * Compute Merkle root of proof hashes
      */
     private computeMerkleRoot(hashes: string[]): string {
-        if (hashes.length === 0) return ethers.ZeroHash;
+        if (hashes.length === 0) return zeroHash;
         if (hashes.length === 1) return hashes[0];
 
         // Pad to power of 2
         const paddedLength = Math.pow(2, Math.ceil(Math.log2(hashes.length)));
         const padded = [...hashes];
         while (padded.length < paddedLength) {
-            padded.push(ethers.ZeroHash);
+            padded.push(zeroHash);
         }
 
         // Build tree
@@ -356,9 +368,9 @@ export class SoulProofAggregator {
         while (level.length > 1) {
             const nextLevel: string[] = [];
             for (let i = 0; i < level.length; i += 2) {
-                nextLevel.push(ethers.keccak256(ethers.concat([
-                    ethers.toBeArray(level[i]),
-                    ethers.toBeArray(level[i + 1])
+                nextLevel.push(keccak256(concat([
+                    toBytes(level[i] as Hex),
+                    toBytes(level[i + 1] as Hex)
                 ])));
             }
             level = nextLevel;
@@ -392,7 +404,7 @@ export class SoulProofAggregator {
         const paddedLength = Math.pow(2, Math.ceil(Math.log2(hashes.length)));
         const padded = [...hashes];
         while (padded.length < paddedLength) {
-            padded.push(ethers.ZeroHash);
+            padded.push(zeroHash);
         }
 
         const path: string[] = [];
@@ -405,9 +417,9 @@ export class SoulProofAggregator {
 
             const nextLevel: string[] = [];
             for (let i = 0; i < level.length; i += 2) {
-                nextLevel.push(ethers.keccak256(ethers.concat([
-                    ethers.toBeArray(level[i]),
-                    ethers.toBeArray(level[i + 1])
+                nextLevel.push(keccak256(concat([
+                    toBytes(level[i] as Hex),
+                    toBytes(level[i + 1] as Hex)
                 ])));
             }
             level = nextLevel;
@@ -431,14 +443,14 @@ export class SoulProofAggregator {
 
         for (const sibling of path) {
             if (currentIndex % 2 === 0) {
-                computed = ethers.keccak256(ethers.concat([
-                    ethers.toBeArray(computed),
-                    ethers.toBeArray(sibling)
+                computed = keccak256(concat([
+                    toBytes(computed as Hex),
+                    toBytes(sibling as Hex)
                 ]));
             } else {
-                computed = ethers.keccak256(ethers.concat([
-                    ethers.toBeArray(sibling),
-                    ethers.toBeArray(computed)
+                computed = keccak256(concat([
+                    toBytes(sibling as Hex),
+                    toBytes(computed as Hex)
                 ]));
             }
             currentIndex = Math.floor(currentIndex / 2);
@@ -511,7 +523,7 @@ export class SoulCrossSystemRecursor {
         const key = `${sourceSystem}->${targetSystem}`;
 
         // Compute intermediate hash
-        const intermediateHash = ethers.keccak256(ethers.concat([
+        const intermediateHash = keccak256(concat([
             proof,
             publicInputs
         ]));
@@ -587,36 +599,41 @@ export class SoulCrossSystemRecursor {
 // ============================================
 
 export class SoulRecursiveVerifierClient {
-    private provider: ethers.Provider;
-    private verifierContract: ethers.Contract;
+    private publicClient: PublicClient;
+    private walletClient?: WalletClient;
+    private verifierContract: any;
 
-    constructor(provider: ethers.Provider, verifierAddress: string, abi: ethers.InterfaceAbi) {
-        this.provider = provider;
-        this.verifierContract = new ethers.Contract(verifierAddress, abi, provider);
+    constructor(publicClient: PublicClient, verifierAddress: string, abi: Abi, walletClient?: WalletClient) {
+        this.publicClient = publicClient;
+        this.walletClient = walletClient;
+        this.verifierContract = getContract({
+            address: verifierAddress as Hex,
+            abi,
+            client: { public: publicClient, wallet: walletClient }
+        });
     }
 
     /**
      * Submit aggregated proof for verification
      */
     async verifyAggregated(
-        aggregated: AggregatedProof,
-        signer: ethers.Signer
+        aggregated: AggregatedProof
     ): Promise<{ success: boolean; txHash: string; gasUsed: bigint }> {
-        const contract = this.verifierContract.connect(signer) as ethers.Contract;
+        if (!this.walletClient) throw new Error("Wallet client required for write operations");
 
         const proofData = {
             merkleRoot: aggregated.merkleRoot,
             publicInputsCommitment: aggregated.publicInputsCommitment,
-            proofCount: aggregated.totalVerified,
-            aggregatedProof: aggregated.combinedProof
+            proofCount: BigInt(aggregated.totalVerified),
+            aggregatedProof: toHex(aggregated.combinedProof)
         };
 
-        const tx = await contract.verifyAggregatedProof(proofData);
-        const receipt = await tx.wait();
+        const hash = await this.verifierContract.write.verifyAggregatedProof([proofData]);
+        const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
 
         return {
             success: true,
-            txHash: receipt.hash,
+            txHash: receipt.transactionHash,
             gasUsed: receipt.gasUsed
         };
     }
@@ -626,17 +643,19 @@ export class SoulRecursiveVerifierClient {
      */
     async verifySingle(
         proof: Uint8Array,
-        publicInputs: Uint8Array,
-        signer: ethers.Signer
+        publicInputs: Uint8Array
     ): Promise<{ success: boolean; txHash: string; gasUsed: bigint }> {
-        const contract = this.verifierContract.connect(signer) as ethers.Contract;
+        if (!this.walletClient) throw new Error("Wallet client required for write operations");
 
-        const tx = await contract.verifySingleProof(proof, publicInputs);
-        const receipt = await tx.wait();
+        const hash = await this.verifierContract.write.verifySingleProof([
+            toHex(proof),
+            toHex(publicInputs)
+        ]);
+        const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
 
         return {
             success: true,
-            txHash: receipt.hash,
+            txHash: receipt.transactionHash,
             gasUsed: receipt.gasUsed
         };
     }
@@ -648,18 +667,18 @@ export class SoulRecursiveVerifierClient {
         const proofData = {
             merkleRoot: aggregated.merkleRoot,
             publicInputsCommitment: aggregated.publicInputsCommitment,
-            proofCount: aggregated.totalVerified,
-            aggregatedProof: aggregated.combinedProof
+            proofCount: BigInt(aggregated.totalVerified),
+            aggregatedProof: toHex(aggregated.combinedProof)
         };
 
-        return await this.verifierContract.verifyAggregatedProof.estimateGas(proofData);
+        return await this.verifierContract.estimateGas.verifyAggregatedProof([proofData]);
     }
 
     /**
      * Check if proof was already verified
      */
     async isVerified(proofHash: string): Promise<boolean> {
-        return await this.verifierContract.verifiedProofs(proofHash);
+        return await this.verifierContract.read.verifiedProofs([proofHash as Hex]);
     }
 }
 
@@ -686,11 +705,12 @@ export function createCrossSystemRecursor(): SoulCrossSystemRecursor {
 }
 
 export function createVerifierClient(
-    provider: ethers.Provider,
+    publicClient: PublicClient,
     verifierAddress: string,
-    abi: ethers.InterfaceAbi
+    abi: Abi,
+    walletClient?: WalletClient
 ): SoulRecursiveVerifierClient {
-    return new SoulRecursiveVerifierClient(provider, verifierAddress, abi);
+    return new SoulRecursiveVerifierClient(publicClient, verifierAddress, abi, walletClient);
 }
 
 // ============================================

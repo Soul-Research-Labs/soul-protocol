@@ -8,7 +8,15 @@
  * - Binius (Binary Fields)
  */
 
-import { ethers } from "ethers";
+import { 
+    keccak256, 
+    zeroHash, 
+    toHex, 
+    type PublicClient, 
+    getContract, 
+    type Address, 
+    type Abi 
+} from "viem";
 
 // ============================================
 // Types
@@ -87,7 +95,7 @@ export abstract class SoulZKClient {
      * Hash public inputs for on-chain verification
      */
     protected hashPublicInputs(inputs: Uint8Array): string {
-        return ethers.keccak256(inputs);
+        return keccak256(inputs);
     }
 
     /**
@@ -219,7 +227,7 @@ export class SoulSP1Client extends SoulZKClient {
         crypto.getRandomValues(proof);
         
         const publicValues = this.serializeInputs(stdin as Record<string, unknown>);
-        const vkeyHash = ethers.keccak256(publicValues).slice(0, 66);
+        const vkeyHash = keccak256(publicValues).slice(0, 66);
 
         return { proof, publicValues, vkeyHash };
     }
@@ -327,7 +335,7 @@ export class SoulPlonky3Client extends SoulZKClient {
         return {
             proof: aggregatedProof,
             publicInputs: new Uint8Array(0),
-            publicInputsHash: ethers.ZeroHash,
+            publicInputsHash: zeroHash,
             systemSpecificData: {
                 innerProofCount: innerProofs.length,
                 recursive: true
@@ -349,8 +357,8 @@ export class SoulPlonky3Client extends SoulZKClient {
         crypto.getRandomValues(proof);
         return {
             proof,
-            commitments: [ethers.hexlify(ethers.randomBytes(32))],
-            evaluations: [ethers.hexlify(ethers.randomBytes(32))]
+            commitments: [toHex(crypto.getRandomValues(new Uint8Array(32)))],
+            evaluations: [toHex(crypto.getRandomValues(new Uint8Array(32)))]
         };
     }
 
@@ -638,8 +646,8 @@ export class SoulBiniusClient extends SoulZKClient {
         return {
             proof,
             polyCommitments: [
-                ethers.hexlify(ethers.randomBytes(32)),
-                ethers.hexlify(ethers.randomBytes(32))
+                toHex(crypto.getRandomValues(new Uint8Array(32))),
+                toHex(crypto.getRandomValues(new Uint8Array(32)))
             ],
             tensorCheckpoint: new Uint8Array(64)
         };
@@ -692,11 +700,11 @@ export class SoulBiniusClient extends SoulZKClient {
 
 export class SoulUniversalZKClient {
     private clients: Map<ProofSystem, SoulZKClient> = new Map();
-    private provider?: ethers.Provider;
-    private universalVerifier?: ethers.Contract;
+    private publicClient?: PublicClient;
+    private universalVerifier?: any;
 
-    constructor(provider?: ethers.Provider) {
-        this.provider = provider;
+    constructor(publicClient?: PublicClient) {
+        this.publicClient = publicClient;
     }
 
     /**
@@ -736,11 +744,15 @@ export class SoulUniversalZKClient {
     /**
      * Set universal verifier contract
      */
-    setUniversalVerifier(address: string, abi: ethers.InterfaceAbi): void {
-        if (!this.provider) {
-            throw new Error("Provider not set");
+    setUniversalVerifier(address: Address, abi: Abi): void {
+        if (!this.publicClient) {
+            throw new Error("Public client not set");
         }
-        this.universalVerifier = new ethers.Contract(address, abi, this.provider);
+        this.universalVerifier = getContract({
+            address,
+            abi,
+            client: this.publicClient
+        });
     }
 
     /**
@@ -756,7 +768,7 @@ export class SoulUniversalZKClient {
             throw new Error("Universal verifier not set");
         }
 
-        const publicInputsHash = ethers.keccak256(publicInputs);
+        const publicInputsHash = keccak256(publicInputs);
 
         const universalProof = {
             system: system,
@@ -849,8 +861,8 @@ export function createBiniusClient(config?: ZKSystemConfig): SoulBiniusClient {
     return new SoulBiniusClient(config);
 }
 
-export function createUniversalClient(provider?: ethers.Provider): SoulUniversalZKClient {
-    return new SoulUniversalZKClient(provider);
+export function createUniversalClient(publicClient?: PublicClient): SoulUniversalZKClient {
+    return new SoulUniversalZKClient(publicClient);
 }
 
 // ============================================

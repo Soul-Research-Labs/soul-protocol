@@ -6,7 +6,19 @@
  * and Kyber key encapsulation.
  */
 
-import { ethers, Contract, Signer, BytesLike } from 'ethers';
+import { 
+  keccak256, 
+  toBytes, 
+  toHex, 
+  zeroHash,
+  getContract,
+  decodeEventLog,
+  type PublicClient,
+  type WalletClient,
+  type Hex,
+  type Abi,
+  type TransactionReceipt
+} from 'viem';
 
 // =============================================================================
 // TYPES
@@ -47,9 +59,9 @@ export interface HybridSignature {
   magic: string;
   version: number;
   algorithm: number;
-  ecdsaSig: BytesLike;
-  pqSig: BytesLike;
-  pqPubKey: BytesLike;
+  ecdsaSig: Hex;
+  pqSig: Hex;
+  pqPubKey: Hex;
 }
 
 export interface KeyPair {
@@ -77,42 +89,43 @@ export interface PQCStats {
 // =============================================================================
 
 const PQC_REGISTRY_ABI = [
-  'function configureAccount(uint8 signatureAlgorithm, uint8 kemAlgorithm, bytes32 signatureKeyHash, bytes32 kemKeyHash, bool enableHybrid) external',
-  'function updateAccount(uint8 signatureAlgorithm, uint8 kemAlgorithm, bytes32 signatureKeyHash, bytes32 kemKeyHash, bool enableHybrid) external',
-  'function deactivateAccount() external',
-  'function verifySignature(address signer, bytes32 message, bytes signature, bytes publicKey) external returns (bool)',
-  'function verifyHybridSignature(address signer, bytes32 message, bytes classicalSig, bytes pqSignature, bytes pqPublicKey) external returns (bool)',
-  'function initiateKeyExchange(address recipient) external returns (bytes32 exchangeId, bytes ciphertext)',
-  'function getAccountConfig(address account) external view returns (tuple(uint8 signatureAlgorithm, uint8 kemAlgorithm, bytes32 signatureKeyHash, bytes32 kemKeyHash, uint64 registeredAt, bool hybridEnabled, bool isActive))',
-  'function isPQCEnabled(address account) external view returns (bool)',
-  'function getStats() external view returns (tuple(uint256 totalAccounts, uint256 dilithiumAccounts, uint256 sphincsAccounts, uint256 kyberAccounts, uint256 totalSignatureVerifications, uint256 totalKeyEncapsulations, uint256 hybridVerifications))',
-  'function getRecommendedConfig() external view returns (uint8 signature, uint8 kem, bool hybridEnabled)',
-  'function currentPhase() external view returns (uint8)',
-  'function allowsClassicalOnly() external view returns (bool)',
-  'event AccountConfigured(address indexed account, uint8 signatureAlg, uint8 kemAlg)',
-  'event AccountDeactivated(address indexed account)',
-];
+  { type: 'function', name: 'configureAccount', stateMutability: 'nonpayable', inputs: [{ name: 'signatureAlgorithm', type: 'uint8' }, { name: 'kemAlgorithm', type: 'uint8' }, { name: 'signatureKeyHash', type: 'bytes32' }, { name: 'kemKeyHash', type: 'bytes32' }, { name: 'enableHybrid', type: 'bool' }], outputs: [] },
+  { type: 'function', name: 'updateAccount', stateMutability: 'nonpayable', inputs: [{ name: 'signatureAlgorithm', type: 'uint8' }, { name: 'kemAlgorithm', type: 'uint8' }, { name: 'signatureKeyHash', type: 'bytes32' }, { name: 'kemKeyHash', type: 'bytes32' }, { name: 'enableHybrid', type: 'bool' }], outputs: [] },
+  { type: 'function', name: 'deactivateAccount', stateMutability: 'nonpayable', inputs: [], outputs: [] },
+  { type: 'function', name: 'verifySignature', stateMutability: 'nonpayable', inputs: [{ name: 'signer', type: 'address' }, { name: 'message', type: 'bytes32' }, { name: 'signature', type: 'bytes' }, { name: 'publicKey', type: 'bytes' }], outputs: [{ type: 'bool' }] },
+  { type: 'function', name: 'verifyHybridSignature', stateMutability: 'nonpayable', inputs: [{ name: 'signer', type: 'address' }, { name: 'message', type: 'bytes32' }, { name: 'classicalSig', type: 'bytes' }, { name: 'pqSignature', type: 'bytes' }, { name: 'pqPublicKey', type: 'bytes' }], outputs: [{ type: 'bool' }] },
+  { type: 'function', name: 'initiateKeyExchange', stateMutability: 'nonpayable', inputs: [{ name: 'recipient', type: 'address' }], outputs: [{ name: 'exchangeId', type: 'bytes32' }, { name: 'ciphertext', type: 'bytes' }] },
+  { type: 'function', name: 'getAccountConfig', stateMutability: 'view', inputs: [{ name: 'account', type: 'address' }], outputs: [{ type: 'tuple', components: [{ name: 'signatureAlgorithm', type: 'uint8' }, { name: 'kemAlgorithm', type: 'uint8' }, { name: 'signatureKeyHash', type: 'bytes32' }, { name: 'kemKeyHash', type: 'bytes32' }, { name: 'registeredAt', type: 'uint64' }, { name: 'hybridEnabled', type: 'bool' }, { name: 'isActive', type: 'bool' }] }] },
+  { type: 'function', name: 'isPQCEnabled', stateMutability: 'view', inputs: [{ name: 'account', type: 'address' }], outputs: [{ type: 'bool' }] },
+  { type: 'function', name: 'getStats', stateMutability: 'view', inputs: [], outputs: [{ type: 'tuple', components: [{ name: 'totalAccounts', type: 'uint256' }, { name: 'dilithiumAccounts', type: 'uint256' }, { name: 'sphincsAccounts', type: 'uint256' }, { name: 'kyberAccounts', type: 'uint256' }, { name: 'totalSignatureVerifications', type: 'uint256' }, { name: 'totalKeyEncapsulations', type: 'uint256' }, { name: 'hybridVerifications', type: 'uint256' }] }] },
+  { type: 'function', name: 'getRecommendedConfig', stateMutability: 'view', inputs: [], outputs: [{ name: 'signature', type: 'uint8' }, { name: 'kem', type: 'uint8' }, { name: 'hybridEnabled', type: 'bool' }] },
+  { type: 'function', name: 'currentPhase', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint8' }] },
+  { type: 'function', name: 'allowsClassicalOnly', stateMutability: 'view', inputs: [], outputs: [{ type: 'bool' }] },
+  { type: 'event', name: 'AccountConfigured', inputs: [{ indexed: true, name: 'account', type: 'address' }, { name: 'signatureAlg', type: 'uint8' }, { name: 'kemAlg', type: 'uint8' }] },
+  { type: 'event', name: 'AccountDeactivated', inputs: [{ indexed: true, name: 'account', type: 'address' }] },
+  { type: 'event', name: 'KeyExchangeInitiated', inputs: [{ indexed: true, name: 'exchangeId', type: 'bytes32' }, { indexed: true, name: 'recipient', type: 'address' }, { name: 'ciphertext', type: 'bytes' }] }
+] as const;
 
 const DILITHIUM_VERIFIER_ABI = [
-  'function verifyDilithium3(bytes32 message, bytes signature, bytes publicKey) external returns (bool)',
-  'function verifyDilithium5(bytes32 message, bytes signature, bytes publicKey) external returns (bool)',
-  'function verify(bytes32 message, bytes signature, bytes publicKey, uint8 level) external returns (bool)',
-  'function batchVerify(bytes32[] messages, bytes[] signatures, bytes[] publicKeys, uint8[] levels) external returns (bool)',
-  'function estimateGas(uint8 level) external pure returns (uint256)',
-  'function getExpectedSizes(uint8 level) external pure returns (uint256 pkSize, uint256 sigSize)',
-  'function isKeyTrusted(bytes publicKey) external view returns (bool)',
-];
+  { type: 'function', name: 'verifyDilithium3', stateMutability: 'nonpayable', inputs: [{ name: 'message', type: 'bytes32' }, { name: 'signature', type: 'bytes' }, { name: 'publicKey', type: 'bytes' }], outputs: [{ type: 'bool' }] },
+  { type: 'function', name: 'verifyDilithium5', stateMutability: 'nonpayable', inputs: [{ name: 'message', type: 'bytes32' }, { name: 'signature', type: 'bytes' }, { name: 'publicKey', type: 'bytes' }], outputs: [{ type: 'bool' }] },
+  { type: 'function', name: 'verify', stateMutability: 'nonpayable', inputs: [{ name: 'message', type: 'bytes32' }, { name: 'signature', type: 'bytes' }, { name: 'publicKey', type: 'bytes' }, { name: 'level', type: 'uint8' }], outputs: [{ type: 'bool' }] },
+  { type: 'function', name: 'batchVerify', stateMutability: 'nonpayable', inputs: [{ name: 'messages', type: 'bytes32[]' }, { name: 'signatures', type: 'bytes[]' }, { name: 'publicKeys', type: 'bytes[]' }, { name: 'levels', type: 'uint8[]' }], outputs: [{ type: 'bool' }] },
+  { type: 'function', name: 'estimateGas', stateMutability: 'pure', inputs: [{ name: 'level', type: 'uint8' }], outputs: [{ type: 'uint256' }] },
+  { type: 'function', name: 'getExpectedSizes', stateMutability: 'pure', inputs: [{ name: 'level', type: 'uint8' }], outputs: [{ name: 'pkSize', type: 'uint256' }, { name: 'sigSize', type: 'uint256' }] },
+  { type: 'function', name: 'isKeyTrusted', stateMutability: 'view', inputs: [{ name: 'publicKey', type: 'bytes' }], outputs: [{ type: 'bool' }] }
+] as const;
 
 const KYBER_KEM_ABI = [
-  'function registerPublicKey(bytes publicKey, uint8 variant) external',
-  'function revokeKey() external',
-  'function encapsulate(address recipient, bytes32 randomness) external returns (bytes32 exchangeId, bytes ciphertext, bytes32 sharedSecretHash)',
-  'function confirmDecapsulation(bytes32 exchangeId, bytes32 sharedSecretHash) external',
-  'function getKeyInfo(address owner) external view returns (tuple(bytes32 publicKeyHash, uint8 variant, uint64 registeredAt, bool isActive))',
-  'function getPublicKey(address owner) external view returns (bytes)',
-  'function isExchangeCompleted(bytes32 exchangeId) external view returns (bool)',
-  'function getSizes(uint8 variant) external pure returns (uint256 pkSize, uint256 skSize, uint256 ctSize)',
-];
+  { type: 'function', name: 'registerPublicKey', stateMutability: 'nonpayable', inputs: [{ name: 'publicKey', type: 'bytes' }, { name: 'variant', type: 'uint8' }], outputs: [] },
+  { type: 'function', name: 'revokeKey', stateMutability: 'nonpayable', inputs: [], outputs: [] },
+  { type: 'function', name: 'encapsulate', stateMutability: 'nonpayable', inputs: [{ name: 'recipient', type: 'address' }, { name: 'randomness', type: 'bytes32' }], outputs: [{ name: 'exchangeId', type: 'bytes32' }, { name: 'ciphertext', type: 'bytes' }, { name: 'sharedSecretHash', type: 'bytes32' }] },
+  { type: 'function', name: 'confirmDecapsulation', stateMutability: 'nonpayable', inputs: [{ name: 'exchangeId', type: 'bytes32' }, { name: 'sharedSecretHash', type: 'bytes32' }], outputs: [] },
+  { type: 'function', name: 'getKeyInfo', stateMutability: 'view', inputs: [{ name: 'owner', type: 'address' }], outputs: [{ type: 'tuple', components: [{ name: 'publicKeyHash', type: 'bytes32' }, { name: 'variant', type: 'uint8' }, { name: 'registeredAt', type: 'uint64' }, { name: 'isActive', type: 'bool' }] }] },
+  { type: 'function', name: 'getPublicKey', stateMutability: 'view', inputs: [{ name: 'owner', type: 'address' }], outputs: [{ type: 'bytes' }] },
+  { type: 'function', name: 'isExchangeCompleted', stateMutability: 'view', inputs: [{ name: 'exchangeId', type: 'bytes32' }], outputs: [{ type: 'bool' }] },
+  { type: 'function', name: 'getSizes', stateMutability: 'pure', inputs: [{ name: 'variant', type: 'uint8' }], outputs: [{ name: 'pkSize', type: 'uint256' }, { name: 'skSize', type: 'uint256' }, { name: 'ctSize', type: 'uint256' }] }
+] as const;
 
 // =============================================================================
 // HYBRID SIGNATURE LIBRARY
@@ -122,11 +135,9 @@ export const HYBRID_SIG_MAGIC = '0x50514331'; // "PQC1"
 export const HYBRID_SIG_VERSION = 1;
 
 export function encodeHybridSignature(sig: HybridSignature): Uint8Array {
-  const encoder = new ethers.AbiCoder();
-  
-  const ecdsaSigBytes = ethers.getBytes(sig.ecdsaSig);
-  const pqSigBytes = ethers.getBytes(sig.pqSig);
-  const pqPubKeyBytes = ethers.getBytes(sig.pqPubKey);
+  const ecdsaSigBytes = toBytes(sig.ecdsaSig as Hex);
+  const pqSigBytes = toBytes(sig.pqSig as Hex);
+  const pqPubKeyBytes = toBytes(sig.pqPubKey as Hex);
   
   // Pack: magic(4) + version(1) + algorithm(1) + ecdsaLen(2) + ecdsa + pqSigLen(2) + pqSig + pqKeyLen(2) + pqKey
   const totalLen = 4 + 1 + 1 + 2 + ecdsaSigBytes.length + 2 + pqSigBytes.length + 2 + pqPubKeyBytes.length;
@@ -135,7 +146,7 @@ export function encodeHybridSignature(sig: HybridSignature): Uint8Array {
   let offset = 0;
   
   // Magic bytes
-  const magic = ethers.getBytes(sig.magic);
+  const magic = toBytes(sig.magic as Hex);
   result.set(magic, offset);
   offset += 4;
   
@@ -170,7 +181,7 @@ export function decodeHybridSignature(encoded: Uint8Array): HybridSignature {
     throw new Error('Invalid hybrid signature: too short');
   }
   
-  const magic = ethers.hexlify(encoded.slice(0, 4));
+  const magic = toHex(encoded.slice(0, 4));
   if (magic !== HYBRID_SIG_MAGIC) {
     throw new Error('Invalid hybrid signature: wrong magic bytes');
   }
@@ -183,19 +194,19 @@ export function decodeHybridSignature(encoded: Uint8Array): HybridSignature {
   // ECDSA signature
   const ecdsaLen = (encoded[offset] << 8) | encoded[offset + 1];
   offset += 2;
-  const ecdsaSig = encoded.slice(offset, offset + ecdsaLen);
+  const ecdsaSig = toHex(encoded.slice(offset, offset + ecdsaLen));
   offset += ecdsaLen;
   
   // PQ signature
   const pqSigLen = (encoded[offset] << 8) | encoded[offset + 1];
   offset += 2;
-  const pqSig = encoded.slice(offset, offset + pqSigLen);
+  const pqSig = toHex(encoded.slice(offset, offset + pqSigLen));
   offset += pqSigLen;
   
   // PQ public key
   const pqKeyLen = (encoded[offset] << 8) | encoded[offset + 1];
   offset += 2;
-  const pqPubKey = encoded.slice(offset, offset + pqKeyLen);
+  const pqPubKey = toHex(encoded.slice(offset, offset + pqKeyLen));
   
   return {
     magic,
@@ -209,7 +220,7 @@ export function decodeHybridSignature(encoded: Uint8Array): HybridSignature {
 
 export function isHybridSignature(data: Uint8Array): boolean {
   if (data.length < 4) return false;
-  const magic = ethers.hexlify(data.slice(0, 4));
+  const magic = toHex(data.slice(0, 4));
   return magic === HYBRID_SIG_MAGIC;
 }
 
@@ -218,12 +229,18 @@ export function isHybridSignature(data: Uint8Array): boolean {
 // =============================================================================
 
 export class PQCRegistryClient {
-  private contract: Contract;
-  private signer: Signer;
+  private publicClient: PublicClient;
+  private walletClient: WalletClient;
+  private contract: any;
   
-  constructor(address: string, signer: Signer) {
-    this.contract = new Contract(address, PQC_REGISTRY_ABI, signer);
-    this.signer = signer;
+  constructor(address: string, publicClient: PublicClient, walletClient: WalletClient) {
+    this.publicClient = publicClient;
+    this.walletClient = walletClient;
+    this.contract = getContract({
+      address: address as Hex,
+      abi: PQC_REGISTRY_ABI,
+      client: { public: publicClient, wallet: walletClient }
+    });
   }
   
   /**
@@ -235,17 +252,18 @@ export class PQCRegistryClient {
     signaturePublicKey: Uint8Array,
     kemPublicKey: Uint8Array | null,
     enableHybrid: boolean = true
-  ): Promise<ethers.ContractTransactionResponse> {
-    const sigKeyHash = ethers.keccak256(signaturePublicKey);
-    const kemKeyHash = kemPublicKey ? ethers.keccak256(kemPublicKey) : ethers.ZeroHash;
+  ): Promise<TransactionReceipt> {
+    const sigKeyHash = keccak256(signaturePublicKey);
+    const kemKeyHash = kemPublicKey ? keccak256(kemPublicKey) : zeroHash;
     
-    return this.contract.configureAccount(
+    const hash = await this.contract.write.configureAccount([
       signatureAlgorithm,
       kemAlgorithm,
       sigKeyHash,
       kemKeyHash,
       enableHybrid
-    );
+    ]);
+    return this.publicClient.waitForTransactionReceipt({ hash });
   }
   
   /**
@@ -257,24 +275,26 @@ export class PQCRegistryClient {
     signaturePublicKey: Uint8Array,
     kemPublicKey: Uint8Array | null,
     enableHybrid: boolean
-  ): Promise<ethers.ContractTransactionResponse> {
-    const sigKeyHash = ethers.keccak256(signaturePublicKey);
-    const kemKeyHash = kemPublicKey ? ethers.keccak256(kemPublicKey) : ethers.ZeroHash;
+  ): Promise<TransactionReceipt> {
+    const sigKeyHash = keccak256(signaturePublicKey);
+    const kemKeyHash = kemPublicKey ? keccak256(kemPublicKey) : zeroHash;
     
-    return this.contract.updateAccount(
+    const hash = await this.contract.write.updateAccount([
       signatureAlgorithm,
       kemAlgorithm,
       sigKeyHash,
       kemKeyHash,
       enableHybrid
-    );
+    ]);
+    return this.publicClient.waitForTransactionReceipt({ hash });
   }
   
   /**
    * Deactivate PQC for current account
    */
-  async deactivateAccount(): Promise<ethers.ContractTransactionResponse> {
-    return this.contract.deactivateAccount();
+  async deactivateAccount(): Promise<TransactionReceipt> {
+    const hash = await this.contract.write.deactivateAccount();
+    return this.publicClient.waitForTransactionReceipt({ hash });
   }
   
   /**
@@ -282,11 +302,11 @@ export class PQCRegistryClient {
    */
   async verifySignature(
     signer: string,
-    message: BytesLike,
-    signature: BytesLike,
-    publicKey: BytesLike
+    message: Hex,
+    signature: Hex,
+    publicKey: Hex
   ): Promise<boolean> {
-    return this.contract.verifySignature(signer, message, signature, publicKey);
+    return this.contract.read.verifySignature([signer as Hex, message, signature, publicKey]);
   }
   
   /**
@@ -294,49 +314,63 @@ export class PQCRegistryClient {
    */
   async verifyHybridSignature(
     signer: string,
-    message: BytesLike,
-    classicalSig: BytesLike,
-    pqSignature: BytesLike,
-    pqPublicKey: BytesLike
+    message: Hex,
+    classicalSig: Hex,
+    pqSignature: Hex,
+    pqPublicKey: Hex
   ): Promise<boolean> {
-    return this.contract.verifyHybridSignature(
-      signer,
+    return this.contract.read.verifyHybridSignature([
+      signer as Hex,
       message,
       classicalSig,
       pqSignature,
       pqPublicKey
-    );
+    ]);
   }
   
   /**
    * Initiate a key exchange with a recipient
    */
   async initiateKeyExchange(recipient: string): Promise<{
-    exchangeId: string;
-    ciphertext: string;
+    exchangeId: Hex;
+    ciphertext: Hex;
   }> {
-    const tx = await this.contract.initiateKeyExchange(recipient);
-    const receipt = await tx.wait();
+    const hash = await this.contract.write.initiateKeyExchange([recipient as Hex]);
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     
-    // Parse result from transaction
-    // In practice, you'd decode the return values from the receipt
-    return {
-      exchangeId: receipt.logs[0]?.topics[1] || '',
-      ciphertext: receipt.logs[0]?.data || '',
-    };
+    // Parse result from transaction events
+    let exchangeId: Hex = zeroHash;
+    let ciphertext: Hex = '0x';
+
+    for (const log of receipt.logs) {
+      try {
+        const decoded = decodeEventLog({
+          abi: PQC_REGISTRY_ABI,
+          data: log.data,
+          topics: log.topics
+        });
+        if (decoded.eventName === 'KeyExchangeInitiated') {
+          exchangeId = (decoded.args as any).exchangeId;
+          ciphertext = (decoded.args as any).ciphertext;
+          break;
+        }
+      } catch {}
+    }
+
+    return { exchangeId, ciphertext };
   }
   
   /**
    * Get account configuration
    */
   async getAccountConfig(account: string): Promise<PQCAccountConfig> {
-    const config = await this.contract.getAccountConfig(account);
+    const config: any = await this.contract.read.getAccountConfig([account as Hex]);
     return {
       signatureAlgorithm: config.signatureAlgorithm,
       kemAlgorithm: config.kemAlgorithm,
       signatureKeyHash: config.signatureKeyHash,
       kemKeyHash: config.kemKeyHash,
-      registeredAt: config.registeredAt,
+      registeredAt: BigInt(config.registeredAt),
       hybridEnabled: config.hybridEnabled,
       isActive: config.isActive,
     };
@@ -346,22 +380,22 @@ export class PQCRegistryClient {
    * Check if account has PQC enabled
    */
   async isPQCEnabled(account: string): Promise<boolean> {
-    return this.contract.isPQCEnabled(account);
+    return this.contract.read.isPQCEnabled([account as Hex]);
   }
   
   /**
    * Get protocol statistics
    */
   async getStats(): Promise<PQCStats> {
-    const stats = await this.contract.getStats();
+    const stats: any = await this.contract.read.getStats();
     return {
-      totalAccounts: stats.totalAccounts,
-      dilithiumAccounts: stats.dilithiumAccounts,
-      sphincsAccounts: stats.sphincsAccounts,
-      kyberAccounts: stats.kyberAccounts,
-      totalSignatureVerifications: stats.totalSignatureVerifications,
-      totalKeyEncapsulations: stats.totalKeyEncapsulations,
-      hybridVerifications: stats.hybridVerifications,
+      totalAccounts: BigInt(stats.totalAccounts),
+      dilithiumAccounts: BigInt(stats.dilithiumAccounts),
+      sphincsAccounts: BigInt(stats.sphincsAccounts),
+      kyberAccounts: BigInt(stats.kyberAccounts),
+      totalSignatureVerifications: BigInt(stats.totalSignatureVerifications),
+      totalKeyEncapsulations: BigInt(stats.totalKeyEncapsulations),
+      hybridVerifications: BigInt(stats.hybridVerifications),
     };
   }
   
@@ -373,7 +407,7 @@ export class PQCRegistryClient {
     kem: PQCAlgorithm;
     hybridEnabled: boolean;
   }> {
-    const [signature, kem, hybridEnabled] = await this.contract.getRecommendedConfig();
+    const [signature, kem, hybridEnabled]: any = await this.contract.read.getRecommendedConfig();
     return { signature, kem, hybridEnabled };
   }
   
@@ -381,14 +415,14 @@ export class PQCRegistryClient {
    * Get current transition phase
    */
   async getCurrentPhase(): Promise<TransitionPhase> {
-    return this.contract.currentPhase();
+    return this.contract.read.currentPhase();
   }
   
   /**
    * Check if classical-only is allowed
    */
   async allowsClassicalOnly(): Promise<boolean> {
-    return this.contract.allowsClassicalOnly();
+    return this.contract.read.allowsClassicalOnly();
   }
 }
 
@@ -397,51 +431,55 @@ export class PQCRegistryClient {
 // =============================================================================
 
 export class DilithiumClient {
-  private contract: Contract;
+  private contract: any;
   
-  constructor(address: string, signerOrProvider: Signer | ethers.Provider) {
-    this.contract = new Contract(address, DILITHIUM_VERIFIER_ABI, signerOrProvider);
+  constructor(address: string, publicClient: PublicClient) {
+    this.contract = getContract({
+      address: address as Hex,
+      abi: DILITHIUM_VERIFIER_ABI,
+      client: { public: publicClient }
+    });
   }
   
   /**
    * Verify a Dilithium3 signature
    */
   async verifyDilithium3(
-    message: BytesLike,
-    signature: BytesLike,
-    publicKey: BytesLike
+    message: Hex,
+    signature: Hex,
+    publicKey: Hex
   ): Promise<boolean> {
-    return this.contract.verifyDilithium3(message, signature, publicKey);
+    return this.contract.read.verifyDilithium3([message, signature, publicKey]);
   }
   
   /**
    * Verify a Dilithium5 signature
    */
   async verifyDilithium5(
-    message: BytesLike,
-    signature: BytesLike,
-    publicKey: BytesLike
+    message: Hex,
+    signature: Hex,
+    publicKey: Hex
   ): Promise<boolean> {
-    return this.contract.verifyDilithium5(message, signature, publicKey);
+    return this.contract.read.verifyDilithium5([message, signature, publicKey]);
   }
   
   /**
    * Batch verify multiple signatures
    */
   async batchVerify(
-    messages: BytesLike[],
-    signatures: BytesLike[],
-    publicKeys: BytesLike[],
+    messages: Hex[],
+    signatures: Hex[],
+    publicKeys: Hex[],
     levels: number[]
   ): Promise<boolean> {
-    return this.contract.batchVerify(messages, signatures, publicKeys, levels);
+    return this.contract.read.batchVerify([messages, signatures, publicKeys, levels]);
   }
   
   /**
    * Estimate gas for verification
    */
   async estimateGas(level: 0 | 1): Promise<bigint> {
-    return this.contract.estimateGas(level);
+    return this.contract.read.estimateGas([level]);
   }
   
   /**
@@ -451,7 +489,7 @@ export class DilithiumClient {
     pkSize: bigint;
     sigSize: bigint;
   }> {
-    const [pkSize, sigSize] = await this.contract.getExpectedSizes(level);
+    const [pkSize, sigSize]: any = await this.contract.read.getExpectedSizes([level]);
     return { pkSize, sigSize };
   }
 }
@@ -461,42 +499,52 @@ export class DilithiumClient {
 // =============================================================================
 
 export class KyberKEMClient {
-  private contract: Contract;
+  private publicClient: PublicClient;
+  private walletClient: WalletClient;
+  private contract: any;
   
-  constructor(address: string, signer: Signer) {
-    this.contract = new Contract(address, KYBER_KEM_ABI, signer);
+  constructor(address: string, publicClient: PublicClient, walletClient: WalletClient) {
+    this.publicClient = publicClient;
+    this.walletClient = walletClient;
+    this.contract = getContract({
+      address: address as Hex,
+      abi: KYBER_KEM_ABI,
+      client: { public: publicClient, wallet: walletClient }
+    });
   }
   
   /**
    * Register a Kyber public key
    */
   async registerPublicKey(
-    publicKey: BytesLike,
+    publicKey: Hex,
     variant: 0 | 1 | 2 = 1 // Default to Kyber768
-  ): Promise<ethers.ContractTransactionResponse> {
-    return this.contract.registerPublicKey(publicKey, variant);
+  ): Promise<TransactionReceipt> {
+    const hash = await this.contract.write.registerPublicKey([publicKey, variant]);
+    return this.publicClient.waitForTransactionReceipt({ hash });
   }
   
   /**
    * Revoke registered key
    */
-  async revokeKey(): Promise<ethers.ContractTransactionResponse> {
-    return this.contract.revokeKey();
+  async revokeKey(): Promise<TransactionReceipt> {
+    const hash = await this.contract.write.revokeKey();
+    return this.publicClient.waitForTransactionReceipt({ hash });
   }
   
   /**
    * Encapsulate a shared secret for a recipient
    */
   async encapsulate(recipient: string): Promise<{
-    exchangeId: string;
-    ciphertext: string;
-    sharedSecretHash: string;
+    exchangeId: Hex;
+    ciphertext: Hex;
+    sharedSecretHash: Hex;
   }> {
-    const randomness = ethers.randomBytes(32);
-    const [exchangeId, ciphertext, sharedSecretHash] = await this.contract.encapsulate(
-      recipient,
+    const randomness = toHex(crypto.getRandomValues(new Uint8Array(32)));
+    const [exchangeId, ciphertext, sharedSecretHash]: any = await this.contract.write.encapsulate([
+      recipient as Hex,
       randomness
-    );
+    ]);
     return { exchangeId, ciphertext, sharedSecretHash };
   }
   
@@ -504,26 +552,27 @@ export class KyberKEMClient {
    * Confirm decapsulation
    */
   async confirmDecapsulation(
-    exchangeId: string,
-    sharedSecretHash: string
-  ): Promise<ethers.ContractTransactionResponse> {
-    return this.contract.confirmDecapsulation(exchangeId, sharedSecretHash);
+    exchangeId: Hex,
+    sharedSecretHash: Hex
+  ): Promise<TransactionReceipt> {
+    const hash = await this.contract.write.confirmDecapsulation([exchangeId, sharedSecretHash]);
+    return this.publicClient.waitForTransactionReceipt({ hash });
   }
   
   /**
    * Get key info for an address
    */
   async getKeyInfo(owner: string): Promise<{
-    publicKeyHash: string;
+    publicKeyHash: Hex;
     variant: number;
     registeredAt: bigint;
     isActive: boolean;
   }> {
-    const info = await this.contract.getKeyInfo(owner);
+    const info: any = await this.contract.read.getKeyInfo([owner as Hex]);
     return {
       publicKeyHash: info.publicKeyHash,
       variant: info.variant,
-      registeredAt: info.registeredAt,
+      registeredAt: BigInt(info.registeredAt),
       isActive: info.isActive,
     };
   }
@@ -531,15 +580,15 @@ export class KyberKEMClient {
   /**
    * Get stored public key
    */
-  async getPublicKey(owner: string): Promise<string> {
-    return this.contract.getPublicKey(owner);
+  async getPublicKey(owner: string): Promise<Hex> {
+    return this.contract.read.getPublicKey([owner as Hex]);
   }
   
   /**
    * Check if exchange is completed
    */
-  async isExchangeCompleted(exchangeId: string): Promise<boolean> {
-    return this.contract.isExchangeCompleted(exchangeId);
+  async isExchangeCompleted(exchangeId: Hex): Promise<boolean> {
+    return this.contract.read.isExchangeCompleted([exchangeId]);
   }
   
   /**
@@ -550,7 +599,7 @@ export class KyberKEMClient {
     skSize: bigint;
     ctSize: bigint;
   }> {
-    const [pkSize, skSize, ctSize] = await this.contract.getSizes(variant);
+    const [pkSize, skSize, ctSize]: any = await this.contract.read.getSizes([variant]);
     return { pkSize, skSize, ctSize };
   }
 }
@@ -564,9 +613,9 @@ export class KyberKEMClient {
  */
 export function createHybridSignature(
   algorithm: PQCAlgorithm,
-  ecdsaSignature: BytesLike,
-  pqSignature: BytesLike,
-  pqPublicKey: BytesLike
+  ecdsaSignature: Hex,
+  pqSignature: Hex,
+  pqPublicKey: Hex
 ): HybridSignature {
   return {
     magic: HYBRID_SIG_MAGIC,

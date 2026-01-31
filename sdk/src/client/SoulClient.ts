@@ -1,8 +1,13 @@
-import { ethers } from "ethers";
+import { 
+    PublicClient, 
+    WalletClient, 
+    Hex 
+} from "viem";
 
 export interface SoulClientOptions {
   chainId: number;
-  signer: ethers.Signer;
+  publicClient: PublicClient;
+  walletClient?: WalletClient;
   addresses: Record<string, string>;
 }
 

@@ -8,7 +8,18 @@
  * - Secret sharing (Shamir's)
  */
 
-import { ethers } from "ethers";
+import { 
+    keccak256, 
+    concat, 
+    toBytes, 
+    toHex,
+    getContract,
+    type PublicClient,
+    type WalletClient,
+    type Hex,
+    type Abi,
+    type TransactionReceipt
+} from "viem";
 
 // ============================================
 // Types
@@ -251,9 +262,9 @@ export class SoulThresholdSignature {
      * Start a new signing session
      */
     startSession(messageHash: string, participants?: number[]): SigningSession {
-        const sessionId = ethers.keccak256(ethers.concat([
-            ethers.toBeArray(messageHash),
-            ethers.toBeArray(BigInt(Date.now()))
+        const sessionId = keccak256(concat([
+            toBytes(messageHash as Hex),
+            toBytes(BigInt(Date.now()))
         ]));
 
         const selectedParticipants = participants || 
@@ -323,7 +334,7 @@ export class SoulThresholdSignature {
         const commitment = session.commitments.get(partyId);
         if (!commitment) throw new Error("No commitment from party");
 
-        const expectedCommitment = ethers.keccak256(partialSig);
+        const expectedCommitment = keccak256(partialSig);
         if (expectedCommitment !== commitment) {
             throw new Error("Partial signature doesn't match commitment");
         }
@@ -497,7 +508,7 @@ export class SoulDistributedKeyGeneration {
             publicKeyBigint += share;
         }
 
-        const publicKey = ethers.keccak256(ethers.toBeArray(publicKeyBigint));
+        const publicKey = keccak256(toBytes(publicKeyBigint));
 
         round.status = "complete";
 
@@ -553,9 +564,9 @@ export class SoulMPCCompliance {
         checkTypes: ComplianceCheckType[],
         deadline: number
     ): Promise<ComplianceRequest> {
-        const requestId = ethers.keccak256(ethers.concat([
-            ethers.toBeArray(userCommitment),
-            ethers.toBeArray(BigInt(Date.now()))
+        const requestId = keccak256(concat([
+            toBytes(userCommitment as Hex),
+            toBytes(BigInt(Date.now()))
         ]));
 
         const request: ComplianceRequest = {
@@ -704,26 +715,36 @@ export class SoulMPCCompliance {
 // ============================================
 
 export class SoulMPCOnChainClient {
-    private provider: ethers.Provider;
-    private thresholdContract?: ethers.Contract;
-    private complianceContract?: ethers.Contract;
+    private publicClient: PublicClient;
+    private walletClient?: WalletClient;
+    private thresholdContract?: any;
+    private complianceContract?: any;
 
-    constructor(provider: ethers.Provider) {
-        this.provider = provider;
+    constructor(publicClient: PublicClient, walletClient?: WalletClient) {
+        this.publicClient = publicClient;
+        this.walletClient = walletClient;
     }
 
     /**
      * Set threshold signature contract
      */
-    setThresholdContract(address: string, abi: ethers.InterfaceAbi): void {
-        this.thresholdContract = new ethers.Contract(address, abi, this.provider);
+    setThresholdContract(address: string, abi: Abi): void {
+        this.thresholdContract = getContract({
+            address: address as Hex,
+            abi,
+            client: { public: this.publicClient, wallet: this.walletClient }
+        });
     }
 
     /**
      * Set compliance contract
      */
-    setComplianceContract(address: string, abi: ethers.InterfaceAbi): void {
-        this.complianceContract = new ethers.Contract(address, abi, this.provider);
+    setComplianceContract(address: string, abi: Abi): void {
+        this.complianceContract = getContract({
+            address: address as Hex,
+            abi,
+            client: { public: this.publicClient, wallet: this.walletClient }
+        });
     }
 
     /**
@@ -731,36 +752,38 @@ export class SoulMPCOnChainClient {
      */
     async executeWithThresholdSig(
         target: string,
-        calldata: string,
-        signature: Uint8Array,
-        signer: ethers.Signer
-    ): Promise<ethers.TransactionReceipt> {
+        calldata: Hex,
+        signature: Uint8Array
+    ): Promise<TransactionReceipt> {
         if (!this.thresholdContract) throw new Error("Threshold contract not set");
+        if (!this.walletClient) throw new Error("Wallet client required for write operations");
 
-        const contract = this.thresholdContract.connect(signer) as ethers.Contract;
-        const tx = await contract.executeWithSignature(target, calldata, signature);
-        return await tx.wait();
+        const hash = await this.thresholdContract.write.executeWithSignature([
+            target as Hex,
+            calldata,
+            toHex(signature)
+        ]);
+        return await this.publicClient.waitForTransactionReceipt({ hash });
     }
 
     /**
      * Submit compliance certificate on-chain
      */
     async submitCertificate(
-        certificate: ComplianceCertificate,
-        signer: ethers.Signer
-    ): Promise<ethers.TransactionReceipt> {
+        certificate: ComplianceCertificate
+    ): Promise<TransactionReceipt> {
         if (!this.complianceContract) throw new Error("Compliance contract not set");
+        if (!this.walletClient) throw new Error("Wallet client required for write operations");
 
-        const contract = this.complianceContract.connect(signer) as ethers.Contract;
-        const tx = await contract.submitCertificate(
-            certificate.commitment,
+        const hash = await this.complianceContract.write.submitCertificate([
+            certificate.commitment as Hex,
             certificate.checkTypes,
             certificate.approvalMask,
-            certificate.validUntil,
+            BigInt(certificate.validUntil),
             certificate.oracleSignatures,
-            certificate.zkProof
-        );
-        return await tx.wait();
+            toHex(certificate.zkProof)
+        ]);
+        return await this.publicClient.waitForTransactionReceipt({ hash });
     }
 
     /**
@@ -768,7 +791,7 @@ export class SoulMPCOnChainClient {
      */
     async verifyCertificateOnChain(commitment: string): Promise<boolean> {
         if (!this.complianceContract) throw new Error("Compliance contract not set");
-        return await this.complianceContract.isCompliant(commitment);
+        return await this.complianceContract.read.isCompliant([commitment as Hex]);
     }
 }
 
@@ -794,8 +817,8 @@ export function createMPCCompliance(
     return new SoulMPCCompliance(oracleCount, oracleThreshold);
 }
 
-export function createMPCOnChainClient(provider: ethers.Provider): SoulMPCOnChainClient {
-    return new SoulMPCOnChainClient(provider);
+export function createMPCOnChainClient(publicClient: PublicClient, walletClient?: WalletClient): SoulMPCOnChainClient {
+    return new SoulMPCOnChainClient(publicClient, walletClient);
 }
 
 // ============================================

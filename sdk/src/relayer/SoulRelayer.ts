@@ -1,4 +1,4 @@
-import { ethers } from "ethers";
+// No external dependencies needed for stub
 
 export class SoulRelayer {
   constructor(public options: { stake: number; endpoints: string[] }) {}

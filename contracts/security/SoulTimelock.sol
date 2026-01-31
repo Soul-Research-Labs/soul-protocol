@@ -62,6 +62,7 @@ contract SoulTimelock is AccessControl, ReentrancyGuard {
         OperationStatus status;
         address proposer;
         uint8 confirmations;
+        bool isEmergency;
     }
 
     /// @notice Batch operation for atomic multi-call
@@ -274,7 +275,8 @@ contract SoulTimelock is AccessControl, ReentrancyGuard {
             executedAt: 0,
             status: OperationStatus.Pending,
             proposer: msg.sender,
-            confirmations: 1
+            confirmations: 1,
+            isEmergency: false
         });
 
         hasConfirmed[operationId][msg.sender] = true;
@@ -324,7 +326,8 @@ contract SoulTimelock is AccessControl, ReentrancyGuard {
             executedAt: 0,
             status: OperationStatus.Pending,
             proposer: msg.sender,
-            confirmations: 1
+            confirmations: 1,
+            isEmergency: true
         });
 
         hasConfirmed[operationId][msg.sender] = true;
@@ -389,7 +392,8 @@ contract SoulTimelock is AccessControl, ReentrancyGuard {
             executedAt: 0,
             status: OperationStatus.Pending,
             proposer: msg.sender,
-            confirmations: 1
+            confirmations: 1,
+            isEmergency: false
         });
 
         hasConfirmed[operationId][msg.sender] = true;
@@ -651,11 +655,14 @@ contract SoulTimelock is AccessControl, ReentrancyGuard {
      */
     function isOperationReady(bytes32 operationId) public view returns (bool) {
         TimelockOperation storage op = operations[operationId];
+        uint8 required = op.isEmergency
+            ? emergencyConfirmations
+            : requiredConfirmations;
         return
             op.status == OperationStatus.Pending &&
             block.timestamp >= op.readyAt &&
             block.timestamp <= op.readyAt + GRACE_PERIOD &&
-            op.confirmations >= requiredConfirmations;
+            op.confirmations >= required;
     }
 
     /**
@@ -699,11 +706,11 @@ contract SoulTimelock is AccessControl, ReentrancyGuard {
         if (block.timestamp > op.readyAt + GRACE_PERIOD) {
             revert OperationExpired(operationId);
         }
-        if (op.confirmations < requiredConfirmations) {
-            revert InsufficientConfirmations(
-                op.confirmations,
-                requiredConfirmations
-            );
+        uint8 required = op.isEmergency
+            ? emergencyConfirmations
+            : requiredConfirmations;
+        if (op.confirmations < required) {
+            revert InsufficientConfirmations(op.confirmations, required);
         }
 
         // Check predecessor

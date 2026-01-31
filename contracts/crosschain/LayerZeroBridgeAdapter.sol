@@ -745,34 +745,8 @@ contract LayerZeroBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     /**
      * @notice Receive OFT tokens from a remote chain
      */
-    function receiveOFT(
-        bytes32 transferId,
-        uint32 srcEid,
-        bytes32 remoteToken,
-        bytes32 sender,
-        address recipient,
-        uint256 amount
-    ) external onlyRole(EXECUTOR_ROLE) nonReentrant {
-        PeerConfig storage peer = peers[srcEid];
-        if (peer.eid == 0) revert PeerNotSet();
-
-        oftTransfers[transferId] = OFTTransfer({
-            transferId: transferId,
-            srcEid: srcEid,
-            dstEid: localEid,
-            localToken: address(0), // To be resolved
-            remoteToken: remoteToken,
-            amountSent: amount,
-            amountReceived: amount,
-            sender: sender,
-            recipient: bytes32(uint256(uint160(recipient))),
-            fee: 0,
-            status: MessageStatus.DELIVERED,
-            timestamp: block.timestamp
-        });
-
-        emit OFTReceived(transferId, srcEid, remoteToken, amount);
-    }
+    // [REMOVED] receiveOFT due to H-01: Side door vulnerability bypassing DVN verification.
+    // Future implementation must handle OFT logic inside lzReceive.
 
     /*//////////////////////////////////////////////////////////////
                           FEE ESTIMATION

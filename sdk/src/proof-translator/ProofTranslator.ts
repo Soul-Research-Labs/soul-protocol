@@ -4,7 +4,14 @@
  * Supports: snarkjs, gnark, arkworks, circom
  */
 
-import { ethers } from "ethers";
+import { 
+  keccak256, 
+  encodeFunctionData, 
+  toHex, 
+  concat, 
+  zeroHash,
+  type Hex 
+} from "viem";
 
 /*//////////////////////////////////////////////////////////////
                           TYPES
@@ -377,30 +384,56 @@ export function createVerifyCalldata(
   if (curve === "bn254") {
     const formatted = toSolidityBN254(proof);
     // Encode for verifyProof(uint[2] pA, uint[2][2] pB, uint[2] pC, uint[] pubSignals)
-    const iface = new ethers.Interface([
-      "function verifyProof(uint256[2] pA, uint256[2][2] pB, uint256[2] pC, uint256[] pubSignals) view returns (bool)",
-    ]);
+    // Encode for verifyProof(uint[2] pA, uint[2][2] pB, uint[2] pC, uint[] pubSignals)
+    const abi = [{
+      name: "verifyProof",
+      type: "function",
+      inputs: [
+        { type: "uint256[2]", name: "pA" },
+        { type: "uint256[2][2]", name: "pB" },
+        { type: "uint256[2]", name: "pC" },
+        { type: "uint256[]", name: "pubSignals" }
+      ],
+      outputs: [{ type: "bool" }]
+    }] as const;
 
-    return iface.encodeFunctionData("verifyProof", [
-      formatted.pA,
-      formatted.pB,
-      formatted.pC,
-      publicSignals.map((s) => s.toString()),
-    ]);
+    return encodeFunctionData({
+      abi,
+      functionName: "verifyProof",
+      args: [
+        formatted.pA.map(BigInt),
+        [
+          [BigInt(formatted.pB[0][0]), BigInt(formatted.pB[0][1])],
+          [BigInt(formatted.pB[1][0]), BigInt(formatted.pB[1][1])]
+        ],
+        formatted.pC.map(BigInt),
+        publicSignals
+      ]
+    });
   }
 
   // BLS12-381: encode as raw bytes
   const proofBytes = toBytesBLS12381(proof);
   const signalsBytes = encodePublicSignals(publicSignals);
 
-  const iface = new ethers.Interface([
-    "function verifyProof(bytes proof, bytes publicInputs) view returns (bool)",
-  ]);
+  const abi = [{
+    name: "verifyProof",
+    type: "function",
+    inputs: [
+      { type: "bytes", name: "proof" },
+      { type: "bytes", name: "publicInputs" }
+    ],
+    outputs: [{ type: "bool" }]
+  }] as const;
 
-  return iface.encodeFunctionData("verifyProof", [
-    ethers.hexlify(proofBytes),
-    ethers.hexlify(signalsBytes),
-  ]);
+  return encodeFunctionData({
+    abi,
+    functionName: "verifyProof",
+    args: [
+      toHex(proofBytes),
+      toHex(signalsBytes)
+    ]
+  });
 }
 
 /*//////////////////////////////////////////////////////////////
@@ -434,7 +467,7 @@ export function createBatchProofData(
       curve === "bn254" ? toBytesBN254(proofs[i]) : toBytesBLS12381(proofs[i]);
 
     batchProofBytes.set(proofBytes, i * proofSize);
-    proofHashes.push(ethers.keccak256(proofBytes));
+    proofHashes.push(keccak256(toHex(proofBytes)));
   }
 
   // Concatenate all public signals
@@ -510,14 +543,14 @@ function encodePublicSignals(signals: bigint[]): Uint8Array {
 }
 
 function computeMerkleRoot(leaves: string[]): string {
-  if (leaves.length === 0) return ethers.ZeroHash;
+  if (leaves.length === 0) return zeroHash;
   if (leaves.length === 1) return leaves[0];
 
   const nextLevel: string[] = [];
   for (let i = 0; i < leaves.length; i += 2) {
     const left = leaves[i];
     const right = leaves[i + 1] || left; // Duplicate last if odd
-    nextLevel.push(ethers.keccak256(ethers.concat([left, right])));
+    nextLevel.push(keccak256(concat([left as Hex, right as Hex])));
   }
 
   return computeMerkleRoot(nextLevel);

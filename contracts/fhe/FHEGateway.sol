@@ -115,7 +115,7 @@ contract FHEGateway is AccessControl, ReentrancyGuard, Pausable {
     mapping(address => mapping(bytes32 => bool)) internal contractAcl;
 
     /// @notice Approved contracts for FHE operations
-    mapping(address => bool) internal approvedContracts;
+
 
     /// @notice ZK Verifier for decryption/reencryption proofs
     address public proofVerifier;
@@ -163,8 +163,7 @@ contract FHEGateway is AccessControl, ReentrancyGuard, Pausable {
         address indexed user,
         address revoker
     );
-    event ContractApproved(address indexed contractAddr, address approver);
-    event ContractRevoked(address indexed contractAddr, address revoker);
+
     event NetworkKeyUpdated(bytes32 newKeyHash, address updater);
     event SchemeUpdated(FHEUtils.FHEScheme newScheme, address updater);
 
@@ -956,22 +955,7 @@ contract FHEGateway is AccessControl, ReentrancyGuard, Pausable {
     /**
      * @notice Approve a contract for FHE operations
      */
-    function approveContract(
-        address contractAddr
-    ) external onlyRole(OPERATOR_ROLE) {
-        approvedContracts[contractAddr] = true;
-        emit ContractApproved(contractAddr, msg.sender);
-    }
 
-    /**
-     * @notice Revoke contract approval
-     */
-    function revokeContract(
-        address contractAddr
-    ) external onlyRole(OPERATOR_ROLE) {
-        approvedContracts[contractAddr] = false;
-        emit ContractRevoked(contractAddr, msg.sender);
-    }
 
     /**
      * @notice Add security zone

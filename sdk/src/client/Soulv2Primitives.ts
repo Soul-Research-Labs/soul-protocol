@@ -1,22 +1,119 @@
-/**
- * Soul v2 Primitives SDK Clients
- * TypeScript clients for interacting with Soul Protocol's novel cryptographic primitives
- */
-
-import { ethers, Contract, Signer, Provider, TransactionReceipt, Log } from "ethers";
+import { 
+    PublicClient, 
+    WalletClient, 
+    getContract, 
+    decodeEventLog, 
+    Hex, 
+    zeroHash,
+    TransactionReceipt,
+    Log
+} from "viem";
 
 /** Parsed event log with fragment name */
 export interface ParsedEventLog extends Log {
-  fragment?: { name: string };
-  args?: Record<string, unknown>;
+  eventName?: string;
+  args?: any;
 }
 
-/**
- * Helper to check if a value is a Signer (duck typing for ethers v6)
- */
-function isSigner(value: unknown): value is Signer {
-  return value !== null && typeof value === 'object' && 'getAddress' in value && 'signMessage' in value;
-}
+const PC3_ABI = [
+    { name: 'containers', type: 'function', stateMutability: 'view', inputs: [{ name: '', type: 'bytes32' }], outputs: [{ type: 'tuple', components: [{ name: 'encryptedPayload', type: 'bytes' }, { name: 'stateCommitment', type: 'bytes32' }, { name: 'nullifier', type: 'bytes32' }, { name: 'proofs', type: 'tuple', components: [{ name: 'validityProof', type: 'bytes' }, { name: 'policyProof', type: 'bytes' }, { name: 'nullifierProof', type: 'bytes' }, { name: 'proofHash', type: 'bytes32' }, { name: 'proofTimestamp', type: 'uint256' }, { name: 'proofExpiry', type: 'uint256' }] }, { name: 'policyHash', type: 'bytes32' }, { name: 'chainId', type: 'uint64' }, { name: 'createdAt', type: 'uint64' }, { name: 'version', type: 'uint32' }, { name: 'isVerified', type: 'bool' }, { name: 'isConsumed', type: 'bool' }] }] },
+    { name: 'consumedNullifiers', type: 'function', stateMutability: 'view', inputs: [{ name: '', type: 'bytes32' }], outputs: [{ type: 'bool' }] },
+    { name: 'supportedPolicies', type: 'function', stateMutability: 'view', inputs: [{ name: '', type: 'bytes32' }], outputs: [{ type: 'bool' }] },
+    { name: 'totalContainers', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+    { name: 'totalVerified', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+    { name: 'getContainerIds', type: 'function', stateMutability: 'view', inputs: [{ name: 'offset', type: 'uint256' }, { name: 'limit', type: 'uint256' }], outputs: [{ type: 'bytes32[]' }] },
+    { name: 'createContainer', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'encryptedPayload', type: 'bytes' }, { name: 'stateCommitment', type: 'bytes32' }, { name: 'nullifier', type: 'bytes32' }, { name: 'validityProof', type: 'bytes' }, { name: 'policyProof', type: 'bytes' }, { name: 'nullifierProof', type: 'bytes' }, { name: 'proofExpiry', type: 'uint256' }, { name: 'policyHash', type: 'bytes32' }], outputs: [{ name: 'containerId', type: 'bytes32' }] },
+    { name: 'verifyContainer', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'containerId', type: 'bytes32' }], outputs: [{ type: 'bool' }] },
+    { name: 'batchVerifyContainers', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'containerIds', type: 'bytes32[]' }], outputs: [{ type: 'bool[]' }] },
+    { name: 'consumeContainer', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'containerId', type: 'bytes32' }], outputs: [] },
+    { name: 'exportContainer', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'containerId', type: 'bytes32' }, { name: 'targetChainId', type: 'uint64' }], outputs: [{ type: 'bytes' }] },
+    { name: 'importContainer', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'exportedData', type: 'bytes' }, { name: 'crossChainProof', type: 'bytes' }], outputs: [{ name: 'containerId', type: 'bytes32' }] },
+    { name: 'addSupportedPolicy', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'policyHash', type: 'bytes32' }], outputs: [] },
+    { name: 'ContainerCreated', type: 'event', inputs: [{ name: 'containerId', type: 'bytes32', indexed: true }, { name: 'stateCommitment', type: 'bytes32', indexed: true }, { name: 'nullifier', type: 'bytes32', indexed: true }, { name: 'policyHash', type: 'bytes32' }] },
+    { name: 'ContainerVerified', type: 'event', inputs: [{ name: 'containerId', type: 'bytes32', indexed: true }, { name: 'success', type: 'bool' }] },
+    { name: 'ContainerConsumed', type: 'event', inputs: [{ name: 'containerId', type: 'bytes32', indexed: true }, { name: 'nullifier', type: 'bytes32', indexed: true }] },
+    { name: 'ContainerExported', type: 'event', inputs: [{ name: 'containerId', type: 'bytes32', indexed: true }, { name: 'targetChainId', type: 'uint64', indexed: true }] },
+    { name: 'ContainerImported', type: 'event', inputs: [{ name: 'containerId', type: 'bytes32', indexed: true }, { name: 'sourceChainId', type: 'uint64', indexed: true }] }
+] as const;
+
+const PBP_ABI = [
+    { name: 'policies', type: 'function', stateMutability: 'view', inputs: [{ name: '', type: 'bytes32' }], outputs: [{ type: 'tuple', components: [{ name: 'policyId', type: 'bytes32' }, { name: 'policyHash', type: 'bytes32' }, { name: 'name', type: 'string' }, { name: 'description', type: 'string' }, { name: 'requiresIdentity', type: 'bool' }, { name: 'requiresJurisdiction', type: 'bool' }, { name: 'requiresAmount', type: 'bool' }, { name: 'requiresCounterparty', type: 'bool' }, { name: 'minAmount', type: 'uint256' }, { name: 'maxAmount', type: 'uint256' }, { name: 'allowedAssets', type: 'bytes32[]' }, { name: 'blockedCountries', type: 'bytes32[]' }, { name: 'createdAt', type: 'uint64' }, { name: 'expiresAt', type: 'uint64' }, { name: 'isActive', type: 'bool' }] }] },
+    { name: 'verificationKeys', type: 'function', stateMutability: 'view', inputs: [{ name: '', type: 'bytes32' }], outputs: [{ type: 'tuple', components: [{ name: 'vkHash', type: 'bytes32' }, { name: 'policyHash', type: 'bytes32' }, { name: 'domainSeparator', type: 'bytes32' }, { name: 'isActive', type: 'bool' }, { name: 'registeredAt', type: 'uint64' }] }] },
+    { name: 'totalPolicies', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+    { name: 'totalVerifications', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+    { name: 'getPolicyIds', type: 'function', stateMutability: 'view', inputs: [{ name: 'offset', type: 'uint256' }, { name: 'limit', type: 'uint256' }], outputs: [{ type: 'bytes32[]' }] },
+    { name: 'getVkHashes', type: 'function', stateMutability: 'view', inputs: [{ name: 'offset', type: 'uint256' }, { name: 'limit', type: 'uint256' }], outputs: [{ type: 'bytes32[]' }] },
+    { name: 'registerPolicy', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'name', type: 'string' }, { name: 'description', type: 'string' }, { name: 'requiresIdentity', type: 'bool' }, { name: 'requiresJurisdiction', type: 'bool' }, { name: 'requiresAmount', type: 'bool' }, { name: 'requiresCounterparty', type: 'bool' }, { name: 'minAmount', type: 'uint256' }, { name: 'maxAmount', type: 'uint256' }, { name: 'allowedAssets', type: 'bytes32[]' }, { name: 'blockedCountries', type: 'bytes32[]' }, { name: 'expiresAt', type: 'uint64' }], outputs: [{ name: 'policyId', type: 'bytes32' }] },
+    { name: 'bindVerificationKey', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'vkHash', type: 'bytes32' }, { name: 'policyHash', type: 'bytes32' }], outputs: [{ name: 'domainSeparator', type: 'bytes32' }] },
+    { name: 'verifyBoundProof', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'proof', type: 'bytes' }, { name: 'policyHash', type: 'bytes32' }, { name: 'domainSeparator', type: 'bytes32' }, { name: 'publicInputs', type: 'bytes32[]' }, { name: 'expiresAt', type: 'uint64' }], outputs: [{ type: 'bool' }] },
+    { name: 'batchCheckPolicies', type: 'function', stateMutability: 'view', inputs: [{ name: 'policyHashes', type: 'bytes32[]' }], outputs: [{ type: 'bool[]' }] },
+    { name: 'PolicyRegistered', type: 'event', inputs: [{ name: 'policyId', type: 'bytes32', indexed: true }, { name: 'policyHash', type: 'bytes32', indexed: true }, { name: 'name', type: 'string' }] },
+    { name: 'VerificationKeyBound', type: 'event', inputs: [{ name: 'vkHash', type: 'bytes32', indexed: true }, { name: 'policyHash', type: 'bytes32', indexed: true }, { name: 'domainSeparator', type: 'bytes32' }] },
+    { name: 'BoundProofVerified', type: 'event', inputs: [{ name: 'policyHash', type: 'bytes32', indexed: true }, { name: 'domainSeparator', type: 'bytes32', indexed: true }, { name: 'success', type: 'bool' }] }
+] as const;
+
+const EASC_ABI = [
+    { name: 'backends', type: 'function', stateMutability: 'view', inputs: [{ name: '', type: 'bytes32' }], outputs: [{ type: 'tuple', components: [{ name: 'backendId', type: 'bytes32' }, { name: 'backendType', type: 'uint8' }, { name: 'name', type: 'string' }, { name: 'attestationKey', type: 'bytes32' }, { name: 'configHash', type: 'bytes32' }, { name: 'registeredAt', type: 'uint64' }, { name: 'lastAttestation', type: 'uint64' }, { name: 'isActive', type: 'bool' }, { name: 'trustScore', type: 'uint256' }] }] },
+    { name: 'getCommitment', type: 'function', stateMutability: 'view', inputs: [{ name: '', type: 'bytes32' }], outputs: [{ type: 'tuple', components: [{ name: 'commitmentId', type: 'bytes32' }, { name: 'stateHash', type: 'bytes32' }, { name: 'transitionHash', type: 'bytes32' }, { name: 'nullifier', type: 'bytes32' }, { name: 'attestedBackends', type: 'bytes32[]' }, { name: 'creator', type: 'address' }, { name: 'createdAt', type: 'uint64' }, { name: 'attestationCount', type: 'uint32' }, { name: 'isFinalized', type: 'bool' }] }] },
+    { name: 'consumedNullifiers', type: 'function', stateMutability: 'view', inputs: [{ name: '', type: 'bytes32' }], outputs: [{ type: 'bool' }] },
+    { name: 'totalCommitments', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+    { name: 'totalAttestations', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+    { name: 'getActiveBackends', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'bytes32[]' }] },
+    { name: 'getStats', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }, { type: 'uint256' }, { type: 'uint256' }] },
+    { name: 'registerBackend', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'backendType', type: 'uint8' }, { name: 'name', type: 'string' }, { name: 'attestationKey', type: 'bytes32' }, { name: 'configHash', type: 'bytes32' }, { name: 'initialTrustScore', type: 'uint256' }], outputs: [{ name: 'backendId', type: 'bytes32' }] },
+    { name: 'createCommitment', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'stateHash', type: 'bytes32' }, { name: 'transitionHash', type: 'bytes32' }, { name: 'nullifier', type: 'bytes32' }, { name: 'requiredAttestations', type: 'uint32' }], outputs: [{ name: 'commitmentId', type: 'bytes32' }] },
+    { name: 'attestCommitment', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'commitmentId', type: 'bytes32' }, { name: 'backendId', type: 'bytes32' }, { name: 'attestationProof', type: 'bytes' }, { name: 'executionHash', type: 'bytes32' }], outputs: [] },
+    { name: 'batchCheckCommitments', type: 'function', stateMutability: 'view', inputs: [{ name: 'commitmentIds', type: 'bytes32[]' }], outputs: [{ type: 'bool[]' }] },
+    { name: 'updateTrustScore', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'backendId', type: 'bytes32' }, { name: 'newScore', type: 'uint256' }], outputs: [] },
+    { name: 'deactivateBackend', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'backendId', type: 'bytes32' }], outputs: [] },
+    { name: 'BackendRegistered', type: 'event', inputs: [{ name: 'backendId', type: 'bytes32', indexed: true }, { name: 'backendType', type: 'uint8' }, { name: 'name', type: 'string' }] },
+    { name: 'CommitmentCreated', type: 'event', inputs: [{ name: 'commitmentId', type: 'bytes32', indexed: true }, { name: 'stateHash', type: 'bytes32', indexed: true }, { name: 'nullifier', type: 'bytes32' }] },
+    { name: 'CommitmentAttested', type: 'event', inputs: [{ name: 'commitmentId', type: 'bytes32', indexed: true }, { name: 'backendId', type: 'bytes32', indexed: true }] },
+    { name: 'CommitmentFinalized', type: 'event', inputs: [{ name: 'commitmentId', type: 'bytes32', indexed: true }] }
+] as const;
+
+const CDNA_ABI = [
+    { name: 'domains', type: 'function', stateMutability: 'view', inputs: [{ name: '', type: 'bytes32' }], outputs: [{ type: 'tuple', components: [{ name: 'domainId', type: 'bytes32' }, { name: 'chainId', type: 'uint64' }, { name: 'appId', type: 'bytes32' }, { name: 'epochStart', type: 'uint64' }, { name: 'epochEnd', type: 'uint64' }, { name: 'domainSeparator', type: 'bytes32' }, { name: 'isActive', type: 'bool' }, { name: 'registeredAt', type: 'uint64' }] }] },
+    { name: 'nullifiers', type: 'function', stateMutability: 'view', inputs: [{ name: '', type: 'bytes32' }], outputs: [{ type: 'tuple', components: [{ name: 'nullifier', type: 'bytes32' }, { name: 'domainId', type: 'bytes32' }, { name: 'commitmentHash', type: 'bytes32' }, { name: 'transitionId', type: 'bytes32' }, { name: 'parentNullifier', type: 'bytes32' }, { name: 'childNullifiers', type: 'bytes32[]' }, { name: 'registrar', type: 'address' }, { name: 'registeredAt', type: 'uint64' }, { name: 'epochId', type: 'uint64' }, { name: 'isConsumed', type: 'bool' }] }] },
+    { name: 'nullifierExists', type: 'function', stateMutability: 'view', inputs: [{ name: '', type: 'bytes32' }], outputs: [{ type: 'bool' }] },
+    { name: 'totalDomains', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+    { name: 'totalNullifiers', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+    { name: 'currentEpoch', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint64' }] },
+    { name: 'getActiveDomains', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'bytes32[]' }] },
+    { name: 'getStats', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }, { type: 'uint256' }, { type: 'uint256' }, { type: 'uint64' }] },
+    { name: 'registerDomain', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'chainId', type: 'uint64' }, { name: 'appId', type: 'bytes32' }, { name: 'epochStart', type: 'uint64' }, { name: 'epochEnd', type: 'uint64' }], outputs: [{ name: 'domainId', type: 'bytes32' }] },
+    { name: 'registerNullifier', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'domainId', type: 'bytes32' }, { name: 'nullifier', type: 'bytes32' }, { name: 'commitmentHash', type: 'bytes32' }, { name: 'transitionId', type: 'bytes32' }, { name: 'registrationProof', type: 'bytes' }], outputs: [{ name: 'nullifierHash', type: 'bytes32' }] },
+    { name: 'registerDerivedNullifier', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'parentNullifier', type: 'bytes32' }, { name: 'childNullifier', type: 'bytes32' }, { name: 'targetDomainId', type: 'bytes32' }, { name: 'derivationProof', type: 'bytes' }], outputs: [] },
+    { name: 'consumeNullifier', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'nullifier', type: 'bytes32' }], outputs: [] },
+    { name: 'batchCheckNullifiers', type: 'function', stateMutability: 'view', inputs: [{ name: 'nullifierList', type: 'bytes32[]' }], outputs: [{ type: 'bool[]' }] },
+    { name: 'batchConsumeNullifiers', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'nullifierList', type: 'bytes32[]' }], outputs: [] },
+    { name: 'verifyCrossDomainProof', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'sourceNullifier', type: 'bytes32' }, { name: 'targetNullifier', type: 'bytes32' }, { name: 'sourceDomainId', type: 'bytes32' }, { name: 'targetDomainId', type: 'bytes32' }, { name: 'proof', type: 'bytes' }], outputs: [{ type: 'bool' }] },
+    { name: 'finalizeEpoch', type: 'function', stateMutability: 'nonpayable', inputs: [], outputs: [] },
+    { name: 'DomainRegistered', type: 'event', inputs: [{ name: 'domainId', type: 'bytes32', indexed: true }, { name: 'chainId', type: 'uint64', indexed: true }, { name: 'appId', type: 'bytes32' }] },
+    { name: 'NullifierRegistered', type: 'event', inputs: [{ name: 'nullifier', type: 'bytes32', indexed: true }, { name: 'domainId', type: 'bytes32', indexed: true }, { name: 'commitmentHash', type: 'bytes32' }] },
+    { name: 'DerivedNullifierRegistered', type: 'event', inputs: [{ name: 'parentNullifier', type: 'bytes32', indexed: true }, { name: 'childNullifier', type: 'bytes32', indexed: true }, { name: 'targetDomainId', type: 'bytes32', indexed: true }] },
+    { name: 'NullifierConsumed', type: 'event', inputs: [{ name: 'nullifier', type: 'bytes32', indexed: true }, { name: 'domainId', type: 'bytes32', indexed: true }] },
+    { name: 'EpochFinalized', type: 'event', inputs: [{ name: 'epochId', type: 'uint64', indexed: true }, { name: 'merkleRoot', type: 'bytes32' }] }
+] as const;
+
+const ORCHESTRATOR_ABI = [
+    { name: 'pc3', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
+    { name: 'pbp', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
+    { name: 'easc', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
+    { name: 'cdna', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
+    { name: 'isPrimitiveActive', type: 'function', stateMutability: 'view', inputs: [{ name: '', type: 'bytes32' }], outputs: [{ type: 'bool' }] },
+    { name: 'getSystemStatus', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'tuple', components: [{ name: 'pc3Active', type: 'bool' }, { name: 'pbpActive', type: 'bool' }, { name: 'eascActive', type: 'bool' }, { name: 'cdnaActive', type: 'bool' }, { name: 'paused', type: 'bool' }, { name: 'lastUpdate', type: 'uint256' }] }] },
+    { name: 'totalOperations', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+    { name: 'successfulOperations', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+    { name: 'executePrivateTransfer', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'containerId', type: 'bytes32' }, { name: 'policyId', type: 'bytes32' }, { name: 'stateCommitment', type: 'bytes32' }, { name: 'nullifier', type: 'bytes32' }, { name: 'proof', type: 'bytes' }], outputs: [{ type: 'bool' }, { name: 'operationId', type: 'bytes32' }, { name: 'message', type: 'string' }] },
+    { name: 'updatePrimitive', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'primitiveId', type: 'bytes32' }, { name: 'newAddress', type: 'address' }], outputs: [] },
+    { name: 'setPrimitiveActive', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'primitiveId', type: 'bytes32' }, { name: 'active', type: 'bool' }], outputs: [] },
+    { name: 'pause', type: 'function', stateMutability: 'nonpayable', inputs: [], outputs: [] },
+    { name: 'unpause', type: 'function', stateMutability: 'nonpayable', inputs: [], outputs: [] },
+    { name: 'OperationExecuted', type: 'event', inputs: [{ name: 'operationId', type: 'bytes32', indexed: true }, { name: 'user', type: 'address', indexed: true }, { name: 'success', type: 'bool' }, { name: 'message', type: 'string' }] },
+    { name: 'PrimitiveUpdated', type: 'event', inputs: [{ name: 'primitiveId', type: 'bytes32', indexed: true }, { name: 'oldAddress', type: 'address' }, { name: 'newAddress', type: 'address' }] },
+    { name: 'PrimitiveStatusChanged', type: 'event', inputs: [{ name: 'primitiveId', type: 'bytes32', indexed: true }, { name: 'active', type: 'bool' }] }
+] as const;
 
 /*//////////////////////////////////////////////////////////////
                         SHARED TYPES
@@ -42,11 +139,11 @@ export interface ProofBundle {
 //////////////////////////////////////////////////////////////*/
 
 export interface Container {
-  encryptedPayload: string;
-  stateCommitment: string;
-  nullifier: string;
+  encryptedPayload: Hex;
+  stateCommitment: Hex;
+  nullifier: Hex;
   proofs: ProofBundle;
-  policyHash: string;
+  policyHash: Hex;
   chainId: bigint;
   createdAt: bigint;
   version: number;
@@ -55,14 +152,14 @@ export interface Container {
 }
 
 export interface ContainerCreationParams {
-  encryptedPayload: string;
-  stateCommitment: string;
-  nullifier: string;
-  validityProof: string;
-  policyProof: string;
-  nullifierProof: string;
+  encryptedPayload: Hex;
+  stateCommitment: Hex;
+  nullifier: Hex;
+  validityProof: Hex;
+  policyProof: Hex;
+  nullifierProof: Hex;
   proofExpiry: number;
-  policyHash: string;
+  policyHash: Hex;
 }
 
 export interface VerificationResult {
@@ -79,46 +176,23 @@ export interface VerificationResult {
  * Self-authenticating confidential containers with embedded proofs
  */
 export class ProofCarryingContainerClient {
-  private contract: Contract;
-  private signer: Signer | null;
+  public contract: any;
+  private publicClient: PublicClient;
+  private walletClient?: WalletClient;
 
   constructor(
-    contractAddress: string,
-    providerOrSigner: Provider | Signer,
+    contractAddress: Hex,
+    publicClient: PublicClient,
+    walletClient?: WalletClient,
     abi?: any[]
   ) {
-    const defaultABI = [
-      // Read functions
-      "function containers(bytes32) view returns (tuple(bytes encryptedPayload, bytes32 stateCommitment, bytes32 nullifier, tuple(bytes validityProof, bytes policyProof, bytes nullifierProof, bytes32 proofHash, uint256 proofTimestamp, uint256 proofExpiry) proofs, bytes32 policyHash, uint64 chainId, uint64 createdAt, uint32 version, bool isVerified, bool isConsumed))",
-      "function consumedNullifiers(bytes32) view returns (bool)",
-      "function supportedPolicies(bytes32) view returns (bool)",
-      "function totalContainers() view returns (uint256)",
-      "function totalVerified() view returns (uint256)",
-      "function getContainerIds(uint256 offset, uint256 limit) view returns (bytes32[])",
-      
-      // Write functions
-      "function createContainer(bytes encryptedPayload, bytes32 stateCommitment, bytes32 nullifier, bytes validityProof, bytes policyProof, bytes nullifierProof, uint256 proofExpiry, bytes32 policyHash) returns (bytes32)",
-      "function verifyContainer(bytes32 containerId) returns (bool)",
-      "function batchVerifyContainers(bytes32[] containerIds) returns (bool[])",
-      "function consumeContainer(bytes32 containerId)",
-      "function exportContainer(bytes32 containerId, uint64 targetChainId) returns (bytes)",
-      "function importContainer(bytes exportedData, bytes crossChainProof) returns (bytes32)",
-      "function addSupportedPolicy(bytes32 policyHash)",
-      
-      // Events
-      "event ContainerCreated(bytes32 indexed containerId, bytes32 indexed stateCommitment, bytes32 indexed nullifier, bytes32 policyHash)",
-      "event ContainerVerified(bytes32 indexed containerId, bool success)",
-      "event ContainerConsumed(bytes32 indexed containerId, bytes32 indexed nullifier)",
-      "event ContainerExported(bytes32 indexed containerId, uint64 indexed targetChainId)",
-      "event ContainerImported(bytes32 indexed containerId, uint64 indexed sourceChainId)",
-    ];
-
-    this.contract = new ethers.Contract(
-      contractAddress,
-      abi || defaultABI,
-      providerOrSigner
-    );
-    this.signer = isSigner(providerOrSigner) ? providerOrSigner : null;
+    this.publicClient = publicClient;
+    this.walletClient = walletClient;
+    this.contract = getContract({
+      address: contractAddress,
+      abi: abi || PC3_ABI,
+      client: { public: publicClient, wallet: walletClient }
+    });
   }
 
   /**
@@ -127,41 +201,51 @@ export class ProofCarryingContainerClient {
   async createContainer(
     params: ContainerCreationParams,
     options?: TransactionOptions
-  ): Promise<{ tx: TransactionReceipt; containerId: string }> {
-    if (!this.signer) throw new Error("Signer required for write operations");
+  ): Promise<{ txHash: Hex; containerId: Hex }> {
+    if (!this.walletClient) throw new Error("Wallet client required for write operations");
 
-    const tx = await this.contract.createContainer(
+    const hash = await this.contract.write.createContainer([
       params.encryptedPayload,
       params.stateCommitment,
       params.nullifier,
       params.validityProof,
       params.policyProof,
       params.nullifierProof,
-      params.proofExpiry,
-      params.policyHash,
-      options || {}
-    );
-    const receipt = await tx.wait();
+      BigInt(params.proofExpiry),
+      params.policyHash
+    ], options || {});
+    
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     
     // Extract containerId from event
-    const event = receipt.logs.find(
-      (log: Log) => (log as ParsedEventLog).fragment?.name === "ContainerCreated"
-    ) as ParsedEventLog | undefined;
-    const containerId = (event?.args?.containerId as string) || "";
+    let containerId: Hex = zeroHash;
+    for (const log of receipt.logs) {
+        try {
+            const decoded = decodeEventLog({
+                abi: PC3_ABI,
+                data: log.data,
+                topics: log.topics
+            });
+            if (decoded.eventName === 'ContainerCreated') {
+                containerId = (decoded.args as any).containerId;
+                break;
+            }
+        } catch {}
+    }
 
-    return { tx: receipt, containerId };
+    return { txHash: receipt.transactionHash, containerId };
   }
 
   /**
    * Verify a container's embedded proofs
    */
   async verifyContainer(
-    containerId: string,
+    containerId: Hex,
     options?: TransactionOptions
   ): Promise<boolean> {
-    if (!this.signer) throw new Error("Signer required for write operations");
-    const tx = await this.contract.verifyContainer(containerId, options || {});
-    await tx.wait();
+    if (!this.walletClient) throw new Error("Wallet client required for write operations");
+    const hash = await this.contract.write.verifyContainer([containerId], options || {});
+    await this.publicClient.waitForTransactionReceipt({ hash });
     return true;
   }
 
@@ -169,71 +253,87 @@ export class ProofCarryingContainerClient {
    * Batch verify multiple containers
    */
   async batchVerifyContainers(
-    containerIds: string[],
+    containerIds: Hex[],
     options?: TransactionOptions
   ): Promise<boolean[]> {
-    if (!this.signer) throw new Error("Signer required for write operations");
-    const tx = await this.contract.batchVerifyContainers(containerIds, options || {});
-    const receipt = await tx.wait();
-    return receipt;
+    if (!this.walletClient) throw new Error("Wallet client required for write operations");
+    
+    // Simulate to get return value
+    const { result } = await this.publicClient.simulateContract({
+        address: this.contract.address,
+        abi: this.contract.abi,
+        functionName: 'batchVerifyContainers',
+        args: [containerIds],
+        ...options
+    } as any);
+
+    const hash = await this.contract.write.batchVerifyContainers([containerIds], options || {});
+    await this.publicClient.waitForTransactionReceipt({ hash });
+    
+    return result as boolean[];
   }
 
   /**
    * Consume a container (marks nullifier as used)
    */
   async consumeContainer(
-    containerId: string,
+    containerId: Hex,
     options?: TransactionOptions
   ): Promise<void> {
-    if (!this.signer) throw new Error("Signer required for write operations");
-    const tx = await this.contract.consumeContainer(containerId, options || {});
-    await tx.wait();
+    if (!this.walletClient) throw new Error("Wallet client required for write operations");
+    const hash = await this.contract.write.consumeContainer([containerId], options || {});
+    await this.publicClient.waitForTransactionReceipt({ hash });
   }
 
   /**
    * Export container for cross-chain transfer
    */
   async exportContainer(
-    containerId: string,
+    containerId: Hex,
     targetChainId: bigint,
     options?: TransactionOptions
-  ): Promise<string> {
-    if (!this.signer) throw new Error("Signer required for write operations");
-    const tx = await this.contract.exportContainer(containerId, targetChainId, options || {});
-    const receipt = await tx.wait();
-    return receipt;
+  ): Promise<Hex> {
+    if (!this.walletClient) throw new Error("Wallet client required for write operations");
+    const hash = await this.contract.write.exportContainer([containerId, targetChainId], options || {});
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
+    return receipt.transactionHash;
   }
 
   /**
    * Get container by ID
    */
-  async getContainer(containerId: string): Promise<Container | null> {
-    const container = await this.contract.containers(containerId);
-    if (!container || container.stateCommitment === ethers.ZeroHash) {
-      return null;
+  async getContainer(containerId: Hex): Promise<Container | null> {
+    try {
+        const container = await this.contract.read.containers([containerId]);
+        if (!container || container.stateCommitment === zeroHash) {
+          return null;
+        }
+        return container as Container;
+    } catch {
+        return null;
     }
-    return container;
   }
 
   /**
    * Get paginated list of container IDs
    */
-  async getContainerIds(offset: number, limit: number): Promise<string[]> {
-    return await this.contract.getContainerIds(offset, limit);
+  async getContainerIds(offset: number, limit: number): Promise<Hex[]> {
+    const ids = await this.contract.read.getContainerIds([BigInt(offset), BigInt(limit)]);
+    return ids as Hex[];
   }
 
   /**
    * Check if a nullifier has been consumed
    */
-  async isNullifierConsumed(nullifier: string): Promise<boolean> {
-    return await this.contract.consumedNullifiers(nullifier);
+  async isNullifierConsumed(nullifier: Hex): Promise<boolean> {
+    return await this.contract.read.consumedNullifiers([nullifier]);
   }
 
   /**
    * Get total containers created
    */
   async getTotalContainers(): Promise<bigint> {
-    return await this.contract.totalContainers();
+    return await this.contract.read.totalContainers();
   }
 }
 
@@ -242,8 +342,8 @@ export class ProofCarryingContainerClient {
 //////////////////////////////////////////////////////////////*/
 
 export interface DisclosurePolicy {
-  policyId: string;
-  policyHash: string;
+  policyId: Hex;
+  policyHash: Hex;
   name: string;
   description: string;
   requiresIdentity: boolean;
@@ -252,8 +352,8 @@ export interface DisclosurePolicy {
   requiresCounterparty: boolean;
   minAmount: bigint;
   maxAmount: bigint;
-  allowedAssets: string[];
-  blockedCountries: string[];
+  allowedAssets: Hex[];
+  blockedCountries: Hex[];
   createdAt: bigint;
   expiresAt: bigint;
   isActive: boolean;
@@ -268,16 +368,16 @@ export interface PolicyCreationParams {
   requiresCounterparty: boolean;
   minAmount: bigint;
   maxAmount: bigint;
-  allowedAssets: string[];
-  blockedCountries: string[];
+  allowedAssets: Hex[];
+  blockedCountries: Hex[];
   expiresAt: number;
 }
 
 export interface BoundProofParams {
-  proof: string;
-  policyHash: string;
-  domainSeparator: string;
-  publicInputs: string[];
+  proof: Hex;
+  policyHash: Hex;
+  domainSeparator: Hex;
+  publicInputs: Hex[];
   expiresAt: number;
 }
 
@@ -286,41 +386,23 @@ export interface BoundProofParams {
  * Proofs cryptographically scoped by disclosure policy
  */
 export class PolicyBoundProofsClient {
-  private contract: Contract;
-  private signer: Signer | null;
+  public contract: any;
+  private publicClient: PublicClient;
+  private walletClient?: WalletClient;
 
   constructor(
-    contractAddress: string,
-    providerOrSigner: Provider | Signer,
+    contractAddress: Hex,
+    publicClient: PublicClient,
+    walletClient?: WalletClient,
     abi?: any[]
   ) {
-    const defaultABI = [
-      // Read functions
-      "function policies(bytes32) view returns (tuple(bytes32 policyId, bytes32 policyHash, string name, string description, bool requiresIdentity, bool requiresJurisdiction, bool requiresAmount, bool requiresCounterparty, uint256 minAmount, uint256 maxAmount, bytes32[] allowedAssets, bytes32[] blockedCountries, uint64 createdAt, uint64 expiresAt, bool isActive))",
-      "function verificationKeys(bytes32) view returns (tuple(bytes32 vkHash, bytes32 policyHash, bytes32 domainSeparator, bool isActive, uint64 registeredAt))",
-      "function totalPolicies() view returns (uint256)",
-      "function totalVerifications() view returns (uint256)",
-      "function getPolicyIds(uint256 offset, uint256 limit) view returns (bytes32[])",
-      "function getVkHashes(uint256 offset, uint256 limit) view returns (bytes32[])",
-      
-      // Write functions
-      "function registerPolicy(string name, string description, bool requiresIdentity, bool requiresJurisdiction, bool requiresAmount, bool requiresCounterparty, uint256 minAmount, uint256 maxAmount, bytes32[] allowedAssets, bytes32[] blockedCountries, uint64 expiresAt) returns (bytes32)",
-      "function bindVerificationKey(bytes32 vkHash, bytes32 policyHash) returns (bytes32)",
-      "function verifyBoundProof(bytes proof, bytes32 policyHash, bytes32 domainSeparator, bytes32[] publicInputs, uint64 expiresAt) returns (bool)",
-      "function batchCheckPolicies(bytes32[] policyHashes) view returns (bool[])",
-      
-      // Events
-      "event PolicyRegistered(bytes32 indexed policyId, bytes32 indexed policyHash, string name)",
-      "event VerificationKeyBound(bytes32 indexed vkHash, bytes32 indexed policyHash, bytes32 domainSeparator)",
-      "event BoundProofVerified(bytes32 indexed policyHash, bytes32 indexed domainSeparator, bool success)",
-    ];
-
-    this.contract = new ethers.Contract(
-      contractAddress,
-      abi || defaultABI,
-      providerOrSigner
-    );
-    this.signer = isSigner(providerOrSigner) ? providerOrSigner : null;
+    this.publicClient = publicClient;
+    this.walletClient = walletClient;
+    this.contract = getContract({
+      address: contractAddress,
+      abi: abi || PBP_ABI,
+      client: { public: publicClient, wallet: walletClient }
+    });
   }
 
   /**
@@ -329,10 +411,10 @@ export class PolicyBoundProofsClient {
   async registerPolicy(
     params: PolicyCreationParams,
     options?: TransactionOptions
-  ): Promise<{ tx: any; policyId: string; policyHash: string }> {
-    if (!this.signer) throw new Error("Signer required for write operations");
+  ): Promise<{ txHash: Hex; policyId: Hex; policyHash: Hex }> {
+    if (!this.walletClient) throw new Error("Wallet client required for write operations");
 
-    const tx = await this.contract.registerPolicy(
+    const hash = await this.contract.write.registerPolicy([
       params.name,
       params.description,
       params.requiresIdentity,
@@ -343,19 +425,31 @@ export class PolicyBoundProofsClient {
       params.maxAmount,
       params.allowedAssets,
       params.blockedCountries,
-      params.expiresAt,
-      options || {}
-    );
-    const receipt = await tx.wait();
+      BigInt(params.expiresAt)
+    ], options || {});
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     
-    const event = receipt.logs.find(
-      (log: any) => log.fragment?.name === "PolicyRegistered"
-    );
+    let policyId: Hex = zeroHash;
+    let policyHash: Hex = zeroHash;
+    for (const log of receipt.logs) {
+        try {
+            const decoded = decodeEventLog({
+                abi: PBP_ABI,
+                data: log.data,
+                topics: log.topics
+            });
+            if (decoded.eventName === 'PolicyRegistered') {
+                policyId = (decoded.args as any).policyId;
+                policyHash = (decoded.args as any).policyHash;
+                break;
+            }
+        } catch {}
+    }
 
     return {
-      tx: receipt,
-      policyId: event?.args?.policyId || "",
-      policyHash: event?.args?.policyHash || "",
+      txHash: receipt.transactionHash,
+      policyId,
+      policyHash,
     };
   }
 
@@ -363,18 +457,29 @@ export class PolicyBoundProofsClient {
    * Bind a verification key to a policy
    */
   async bindVerificationKey(
-    vkHash: string,
-    policyHash: string,
+    vkHash: Hex,
+    policyHash: Hex,
     options?: TransactionOptions
-  ): Promise<string> {
-    if (!this.signer) throw new Error("Signer required for write operations");
-    const tx = await this.contract.bindVerificationKey(vkHash, policyHash, options || {});
-    const receipt = await tx.wait();
+  ): Promise<Hex> {
+    if (!this.walletClient) throw new Error("Wallet client required for write operations");
+    const hash = await this.contract.write.bindVerificationKey([vkHash, policyHash], options || {});
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     
-    const event = receipt.logs.find(
-      (log: any) => log.fragment?.name === "VerificationKeyBound"
-    );
-    return event?.args?.domainSeparator || "";
+    let domainSeparator: Hex = zeroHash;
+    for (const log of receipt.logs) {
+        try {
+            const decoded = decodeEventLog({
+                abi: PBP_ABI,
+                data: log.data,
+                topics: log.topics
+            });
+            if (decoded.eventName === 'VerificationKeyBound') {
+                domainSeparator = (decoded.args as any).domainSeparator;
+                break;
+            }
+        } catch {}
+    }
+    return domainSeparator;
   }
 
   /**
@@ -384,49 +489,52 @@ export class PolicyBoundProofsClient {
     params: BoundProofParams,
     options?: TransactionOptions
   ): Promise<boolean> {
-    if (!this.signer) throw new Error("Signer required for write operations");
-    const tx = await this.contract.verifyBoundProof(
+    if (!this.walletClient) throw new Error("Wallet client required for write operations");
+    const hash = await this.contract.write.verifyBoundProof([
       params.proof,
       params.policyHash,
       params.domainSeparator,
       params.publicInputs,
-      params.expiresAt,
-      options || {}
-    );
-    await tx.wait();
+      BigInt(params.expiresAt)
+    ], options || {});
+    await this.publicClient.waitForTransactionReceipt({ hash });
     return true;
   }
 
   /**
    * Check if multiple policies exist and are active
    */
-  async batchCheckPolicies(policyHashes: string[]): Promise<boolean[]> {
-    return await this.contract.batchCheckPolicies(policyHashes);
+  async batchCheckPolicies(policyHashes: Hex[]): Promise<boolean[]> {
+    return await this.contract.read.batchCheckPolicies([policyHashes]);
   }
 
   /**
    * Get policy by ID
    */
-  async getPolicy(policyId: string): Promise<DisclosurePolicy | null> {
-    const policy = await this.contract.policies(policyId);
-    if (!policy || policy.policyHash === ethers.ZeroHash) {
-      return null;
+  async getPolicy(policyId: Hex): Promise<DisclosurePolicy | null> {
+    try {
+        const policy = await this.contract.read.policies([policyId]);
+        if (!policy || policy.policyHash === zeroHash) {
+          return null;
+        }
+        return policy as DisclosurePolicy;
+    } catch {
+        return null;
     }
-    return policy;
   }
 
   /**
    * Get paginated policy IDs
    */
-  async getPolicyIds(offset: number, limit: number): Promise<string[]> {
-    return await this.contract.getPolicyIds(offset, limit);
+  async getPolicyIds(offset: number, limit: number): Promise<Hex[]> {
+    return await this.contract.read.getPolicyIds([BigInt(offset), BigInt(limit)]);
   }
 
   /**
    * Get paginated verification key hashes
    */
-  async getVkHashes(offset: number, limit: number): Promise<string[]> {
-    return await this.contract.getVkHashes(offset, limit);
+  async getVkHashes(offset: number, limit: number): Promise<Hex[]> {
+    return await this.contract.read.getVkHashes([BigInt(offset), BigInt(limit)]);
   }
 }
 
@@ -443,11 +551,11 @@ export enum BackendType {
 }
 
 export interface ExecutionBackend {
-  backendId: string;
+  backendId: Hex;
   backendType: BackendType;
   name: string;
-  attestationKey: string;
-  configHash: string;
+  attestationKey: Hex;
+  configHash: Hex;
   registeredAt: bigint;
   lastAttestation: bigint;
   isActive: boolean;
@@ -457,23 +565,23 @@ export interface ExecutionBackend {
 export interface BackendRegistrationParams {
   backendType: BackendType;
   name: string;
-  attestationKey: string;
-  configHash: string;
+  attestationKey: Hex;
+  configHash: Hex;
   initialTrustScore: number;
 }
 
 export interface CommitmentParams {
-  stateHash: string;
-  transitionHash: string;
-  nullifier: string;
+  stateHash: Hex;
+  transitionHash: Hex;
+  nullifier: Hex;
   requiredAttestations: number;
 }
 
 export interface AttestationParams {
-  commitmentId: string;
-  backendId: string;
-  attestationProof: string;
-  executionHash: string;
+  commitmentId: Hex;
+  backendId: Hex;
+  attestationProof: Hex;
+  executionHash: Hex;
 }
 
 export interface CommitmentStats {
@@ -487,45 +595,23 @@ export interface CommitmentStats {
  * Backend-independent state commitments with multi-attestation
  */
 export class ExecutionAgnosticStateCommitmentsClient {
-  private contract: Contract;
-  private signer: Signer | null;
+  public contract: any;
+  private publicClient: PublicClient;
+  private walletClient?: WalletClient;
 
   constructor(
-    contractAddress: string,
-    providerOrSigner: Provider | Signer,
+    contractAddress: Hex,
+    publicClient: PublicClient,
+    walletClient?: WalletClient,
     abi?: any[]
   ) {
-    const defaultABI = [
-      // Read functions
-      "function backends(bytes32) view returns (tuple(bytes32 backendId, uint8 backendType, string name, bytes32 attestationKey, bytes32 configHash, uint64 registeredAt, uint64 lastAttestation, bool isActive, uint256 trustScore))",
-      "function getCommitment(bytes32) view returns (tuple(bytes32 commitmentId, bytes32 stateHash, bytes32 transitionHash, bytes32 nullifier, bytes32[] attestedBackends, address creator, uint64 createdAt, uint32 attestationCount, bool isFinalized))",
-      "function consumedNullifiers(bytes32) view returns (bool)",
-      "function totalCommitments() view returns (uint256)",
-      "function totalAttestations() view returns (uint256)",
-      "function getActiveBackends() view returns (bytes32[])",
-      "function getStats() view returns (uint256, uint256, uint256)",
-      
-      // Write functions
-      "function registerBackend(uint8 backendType, string name, bytes32 attestationKey, bytes32 configHash, uint256 initialTrustScore) returns (bytes32)",
-      "function createCommitment(bytes32 stateHash, bytes32 transitionHash, bytes32 nullifier, uint32 requiredAttestations) returns (bytes32)",
-      "function attestCommitment(bytes32 commitmentId, bytes32 backendId, bytes attestationProof, bytes32 executionHash)",
-      "function batchCheckCommitments(bytes32[] commitmentIds) view returns (bool[])",
-      "function updateTrustScore(bytes32 backendId, uint256 newScore)",
-      "function deactivateBackend(bytes32 backendId)",
-      
-      // Events
-      "event BackendRegistered(bytes32 indexed backendId, uint8 backendType, string name)",
-      "event CommitmentCreated(bytes32 indexed commitmentId, bytes32 indexed stateHash, bytes32 nullifier)",
-      "event CommitmentAttested(bytes32 indexed commitmentId, bytes32 indexed backendId)",
-      "event CommitmentFinalized(bytes32 indexed commitmentId)",
-    ];
-
-    this.contract = new ethers.Contract(
-      contractAddress,
-      abi || defaultABI,
-      providerOrSigner
-    );
-    this.signer = isSigner(providerOrSigner) ? providerOrSigner : null;
+    this.publicClient = publicClient;
+    this.walletClient = walletClient;
+    this.contract = getContract({
+      address: contractAddress,
+      abi: abi || EASC_ABI,
+      client: { public: publicClient, wallet: walletClient }
+    });
   }
 
   /**
@@ -534,23 +620,33 @@ export class ExecutionAgnosticStateCommitmentsClient {
   async registerBackend(
     params: BackendRegistrationParams,
     options?: TransactionOptions
-  ): Promise<{ tx: any; backendId: string }> {
-    if (!this.signer) throw new Error("Signer required for write operations");
+  ): Promise<{ txHash: Hex; backendId: Hex }> {
+    if (!this.walletClient) throw new Error("Wallet client required for write operations");
 
-    const tx = await this.contract.registerBackend(
+    const hash = await this.contract.write.registerBackend([
       params.backendType,
       params.name,
       params.attestationKey,
       params.configHash,
-      params.initialTrustScore,
-      options || {}
-    );
-    const receipt = await tx.wait();
+      BigInt(params.initialTrustScore)
+    ], options || {});
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     
-    const event = receipt.logs.find(
-      (log: any) => log.fragment?.name === "BackendRegistered"
-    );
-    return { tx: receipt, backendId: event?.args?.backendId || "" };
+    let backendId: Hex = zeroHash;
+    for (const log of receipt.logs) {
+        try {
+            const decoded = decodeEventLog({
+                abi: EASC_ABI,
+                data: log.data,
+                topics: log.topics
+            });
+            if (decoded.eventName === 'BackendRegistered') {
+                backendId = (decoded.args as any).backendId;
+                break;
+            }
+        } catch {}
+    }
+    return { txHash: receipt.transactionHash, backendId };
   }
 
   /**
@@ -559,22 +655,32 @@ export class ExecutionAgnosticStateCommitmentsClient {
   async createCommitment(
     params: CommitmentParams,
     options?: TransactionOptions
-  ): Promise<{ tx: any; commitmentId: string }> {
-    if (!this.signer) throw new Error("Signer required for write operations");
+  ): Promise<{ txHash: Hex; commitmentId: Hex }> {
+    if (!this.walletClient) throw new Error("Wallet client required for write operations");
 
-    const tx = await this.contract.createCommitment(
+    const hash = await this.contract.write.createCommitment([
       params.stateHash,
       params.transitionHash,
       params.nullifier,
-      params.requiredAttestations,
-      options || {}
-    );
-    const receipt = await tx.wait();
+      params.requiredAttestations
+    ], options || {});
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     
-    const event = receipt.logs.find(
-      (log: any) => log.fragment?.name === "CommitmentCreated"
-    );
-    return { tx: receipt, commitmentId: event?.args?.commitmentId || "" };
+    let commitmentId: Hex = zeroHash;
+    for (const log of receipt.logs) {
+        try {
+            const decoded = decodeEventLog({
+                abi: EASC_ABI,
+                data: log.data,
+                topics: log.topics
+            });
+            if (decoded.eventName === 'CommitmentCreated') {
+                commitmentId = (decoded.args as any).commitmentId;
+                break;
+            }
+        } catch {}
+    }
+    return { txHash: receipt.transactionHash, commitmentId };
   }
 
   /**
@@ -584,47 +690,50 @@ export class ExecutionAgnosticStateCommitmentsClient {
     params: AttestationParams,
     options?: TransactionOptions
   ): Promise<void> {
-    if (!this.signer) throw new Error("Signer required for write operations");
-    const tx = await this.contract.attestCommitment(
+    if (!this.walletClient) throw new Error("Wallet client required for write operations");
+    const hash = await this.contract.write.attestCommitment([
       params.commitmentId,
       params.backendId,
       params.attestationProof,
-      params.executionHash,
-      options || {}
-    );
-    await tx.wait();
+      params.executionHash
+    ], options || {});
+    await this.publicClient.waitForTransactionReceipt({ hash });
   }
 
   /**
    * Batch check if commitments are finalized
    */
-  async batchCheckCommitments(commitmentIds: string[]): Promise<boolean[]> {
-    return await this.contract.batchCheckCommitments(commitmentIds);
+  async batchCheckCommitments(commitmentIds: Hex[]): Promise<boolean[]> {
+    return await this.contract.read.batchCheckCommitments([commitmentIds]);
   }
 
   /**
    * Get backend by ID
    */
-  async getBackend(backendId: string): Promise<ExecutionBackend | null> {
-    const backend = await this.contract.backends(backendId);
-    if (!backend || backend.backendId === ethers.ZeroHash) {
-      return null;
+  async getBackend(backendId: Hex): Promise<ExecutionBackend | null> {
+    try {
+        const backend = await this.contract.read.backends([backendId]);
+        if (!backend || backend.backendId === zeroHash) {
+          return null;
+        }
+        return backend as ExecutionBackend;
+    } catch {
+        return null;
     }
-    return backend;
   }
 
   /**
    * Get active backend IDs
    */
-  async getActiveBackends(): Promise<string[]> {
-    return await this.contract.getActiveBackends();
+  async getActiveBackends(): Promise<Hex[]> {
+    return await this.contract.read.getActiveBackends();
   }
 
   /**
    * Get contract stats
    */
   async getStats(): Promise<CommitmentStats> {
-    const [total, attestations, backends] = await this.contract.getStats();
+    const [total, attestations, backends] = await this.contract.read.getStats();
     return {
       totalCommitments: total,
       totalAttestations: attestations,
@@ -638,24 +747,24 @@ export class ExecutionAgnosticStateCommitmentsClient {
 //////////////////////////////////////////////////////////////*/
 
 export interface Domain {
-  domainId: string;
+  domainId: Hex;
   chainId: bigint;
-  appId: string;
+  appId: Hex;
   epochStart: bigint;
   epochEnd: bigint;
-  domainSeparator: string;
+  domainSeparator: Hex;
   isActive: boolean;
   registeredAt: bigint;
 }
 
 export interface DomainNullifier {
-  nullifier: string;
-  domainId: string;
-  commitmentHash: string;
-  transitionId: string;
-  parentNullifier: string;
-  childNullifiers: string[];
-  registrar: string;
+  nullifier: Hex;
+  domainId: Hex;
+  commitmentHash: Hex;
+  transitionId: Hex;
+  parentNullifier: Hex;
+  childNullifiers: Hex[];
+  registrar: Hex;
   registeredAt: bigint;
   epochId: bigint;
   isConsumed: boolean;
@@ -663,24 +772,24 @@ export interface DomainNullifier {
 
 export interface DomainRegistrationParams {
   chainId: bigint;
-  appId: string;
+  appId: Hex;
   epochStart: number;
   epochEnd: number;
 }
 
 export interface NullifierRegistrationParams {
-  domainId: string;
-  nullifier: string;
-  commitmentHash: string;
-  transitionId: string;
-  registrationProof: string;
+  domainId: Hex;
+  nullifier: Hex;
+  commitmentHash: Hex;
+  transitionId: Hex;
+  registrationProof: Hex;
 }
 
 export interface DerivedNullifierParams {
-  parentNullifier: string;
-  childNullifier: string;
-  targetDomainId: string;
-  derivationProof: string;
+  parentNullifier: Hex;
+  childNullifier: Hex;
+  targetDomainId: Hex;
+  derivationProof: Hex;
 }
 
 export interface NullifierStats {
@@ -695,49 +804,23 @@ export interface NullifierStats {
  * Domain-separated nullifiers with cross-chain double-spend prevention
  */
 export class CrossDomainNullifierAlgebraClient {
-  private contract: Contract;
-  private signer: Signer | null;
+  public contract: any;
+  private publicClient: PublicClient;
+  private walletClient?: WalletClient;
 
   constructor(
-    contractAddress: string,
-    providerOrSigner: Provider | Signer,
+    contractAddress: Hex,
+    publicClient: PublicClient,
+    walletClient?: WalletClient,
     abi?: any[]
   ) {
-    const defaultABI = [
-      // Read functions
-      "function domains(bytes32) view returns (tuple(bytes32 domainId, uint64 chainId, bytes32 appId, uint64 epochStart, uint64 epochEnd, bytes32 domainSeparator, bool isActive, uint64 registeredAt))",
-      "function nullifiers(bytes32) view returns (tuple(bytes32 nullifier, bytes32 domainId, bytes32 commitmentHash, bytes32 transitionId, bytes32 parentNullifier, bytes32[] childNullifiers, address registrar, uint64 registeredAt, uint64 epochId, bool isConsumed))",
-      "function nullifierExists(bytes32) view returns (bool)",
-      "function totalDomains() view returns (uint256)",
-      "function totalNullifiers() view returns (uint256)",
-      "function currentEpoch() view returns (uint64)",
-      "function getActiveDomains() view returns (bytes32[])",
-      "function getStats() view returns (uint256, uint256, uint256, uint64)",
-      
-      // Write functions
-      "function registerDomain(uint64 chainId, bytes32 appId, uint64 epochStart, uint64 epochEnd) returns (bytes32)",
-      "function registerNullifier(bytes32 domainId, bytes32 nullifier, bytes32 commitmentHash, bytes32 transitionId, bytes registrationProof) returns (bytes32)",
-      "function registerDerivedNullifier(bytes32 parentNullifier, bytes32 childNullifier, bytes32 targetDomainId, bytes derivationProof)",
-      "function consumeNullifier(bytes32 nullifier)",
-      "function batchCheckNullifiers(bytes32[] nullifierList) view returns (bool[])",
-      "function batchConsumeNullifiers(bytes32[] nullifierList)",
-      "function verifyCrossDomainProof(bytes32 sourceNullifier, bytes32 targetNullifier, bytes32 sourceDomainId, bytes32 targetDomainId, bytes proof) returns (bool)",
-      "function finalizeEpoch()",
-      
-      // Events
-      "event DomainRegistered(bytes32 indexed domainId, uint64 indexed chainId, bytes32 appId)",
-      "event NullifierRegistered(bytes32 indexed nullifier, bytes32 indexed domainId, bytes32 commitmentHash)",
-      "event DerivedNullifierRegistered(bytes32 indexed parentNullifier, bytes32 indexed childNullifier, bytes32 indexed targetDomainId)",
-      "event NullifierConsumed(bytes32 indexed nullifier, bytes32 indexed domainId)",
-      "event EpochFinalized(uint64 indexed epochId, bytes32 merkleRoot)",
-    ];
-
-    this.contract = new ethers.Contract(
-      contractAddress,
-      abi || defaultABI,
-      providerOrSigner
-    );
-    this.signer = isSigner(providerOrSigner) ? providerOrSigner : null;
+    this.publicClient = publicClient;
+    this.walletClient = walletClient;
+    this.contract = getContract({
+      address: contractAddress,
+      abi: abi || CDNA_ABI,
+      client: { public: publicClient, wallet: walletClient }
+    });
   }
 
   /**
@@ -746,22 +829,32 @@ export class CrossDomainNullifierAlgebraClient {
   async registerDomain(
     params: DomainRegistrationParams,
     options?: TransactionOptions
-  ): Promise<{ tx: any; domainId: string }> {
-    if (!this.signer) throw new Error("Signer required for write operations");
+  ): Promise<{ txHash: Hex; domainId: Hex }> {
+    if (!this.walletClient) throw new Error("Wallet client required for write operations");
 
-    const tx = await this.contract.registerDomain(
+    const hash = await this.contract.write.registerDomain([
       params.chainId,
       params.appId,
-      params.epochStart,
-      params.epochEnd,
-      options || {}
-    );
-    const receipt = await tx.wait();
+      BigInt(params.epochStart),
+      BigInt(params.epochEnd)
+    ], options || {});
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     
-    const event = receipt.logs.find(
-      (log: any) => log.fragment?.name === "DomainRegistered"
-    );
-    return { tx: receipt, domainId: event?.args?.domainId || "" };
+    let domainId: Hex = zeroHash;
+    for (const log of receipt.logs) {
+        try {
+            const decoded = decodeEventLog({
+                abi: CDNA_ABI,
+                data: log.data,
+                topics: log.topics
+            });
+            if (decoded.eventName === 'DomainRegistered') {
+                domainId = (decoded.args as any).domainId;
+                break;
+            }
+        } catch {}
+    }
+    return { txHash: receipt.transactionHash, domainId };
   }
 
   /**
@@ -770,20 +863,19 @@ export class CrossDomainNullifierAlgebraClient {
   async registerNullifier(
     params: NullifierRegistrationParams,
     options?: TransactionOptions
-  ): Promise<{ tx: any; nullifier: string }> {
-    if (!this.signer) throw new Error("Signer required for write operations");
+  ): Promise<{ txHash: Hex; nullifier: Hex }> {
+    if (!this.walletClient) throw new Error("Wallet client required for write operations");
 
-    const tx = await this.contract.registerNullifier(
+    const hash = await this.contract.write.registerNullifier([
       params.domainId,
       params.nullifier,
       params.commitmentHash,
       params.transitionId,
-      params.registrationProof,
-      options || {}
-    );
-    const receipt = await tx.wait();
+      params.registrationProof
+    ], options || {});
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     
-    return { tx: receipt, nullifier: params.nullifier };
+    return { txHash: receipt.transactionHash, nullifier: params.nullifier };
   }
 
   /**
@@ -793,114 +885,120 @@ export class CrossDomainNullifierAlgebraClient {
     params: DerivedNullifierParams,
     options?: TransactionOptions
   ): Promise<void> {
-    if (!this.signer) throw new Error("Signer required for write operations");
+    if (!this.walletClient) throw new Error("Wallet client required for write operations");
 
-    const tx = await this.contract.registerDerivedNullifier(
+    const hash = await this.contract.write.registerDerivedNullifier([
       params.parentNullifier,
       params.childNullifier,
       params.targetDomainId,
-      params.derivationProof,
-      options || {}
-    );
-    await tx.wait();
+      params.derivationProof
+    ], options || {});
+    await this.publicClient.waitForTransactionReceipt({ hash });
   }
 
   /**
    * Consume a nullifier (mark as spent)
    */
   async consumeNullifier(
-    nullifier: string,
+    nullifier: Hex,
     options?: TransactionOptions
   ): Promise<void> {
-    if (!this.signer) throw new Error("Signer required for write operations");
-    const tx = await this.contract.consumeNullifier(nullifier, options || {});
-    await tx.wait();
+    if (!this.walletClient) throw new Error("Wallet client required for write operations");
+    const hash = await this.contract.write.consumeNullifier([nullifier], options || {});
+    await this.publicClient.waitForTransactionReceipt({ hash });
   }
 
   /**
    * Batch check if nullifiers exist
    */
-  async batchCheckNullifiers(nullifiers: string[]): Promise<boolean[]> {
-    return await this.contract.batchCheckNullifiers(nullifiers);
+  async batchCheckNullifiers(nullifiers: Hex[]): Promise<boolean[]> {
+    return await this.contract.read.batchCheckNullifiers([nullifiers]);
   }
 
   /**
    * Batch consume multiple nullifiers
    */
   async batchConsumeNullifiers(
-    nullifiers: string[],
+    nullifiers: Hex[],
     options?: TransactionOptions
   ): Promise<void> {
-    if (!this.signer) throw new Error("Signer required for write operations");
-    const tx = await this.contract.batchConsumeNullifiers(nullifiers, options || {});
-    await tx.wait();
+    if (!this.walletClient) throw new Error("Wallet client required for write operations");
+    const hash = await this.contract.write.batchConsumeNullifiers([nullifiers], options || {});
+    await this.publicClient.waitForTransactionReceipt({ hash });
   }
 
   /**
    * Verify cross-domain nullifier proof
    */
   async verifyCrossDomainProof(
-    sourceNullifier: string,
-    targetNullifier: string,
-    sourceDomainId: string,
-    targetDomainId: string,
-    proof: string,
+    sourceNullifier: Hex,
+    targetNullifier: Hex,
+    sourceDomainId: Hex,
+    targetDomainId: Hex,
+    proof: Hex,
     options?: TransactionOptions
   ): Promise<boolean> {
-    if (!this.signer) throw new Error("Signer required for write operations");
-    const tx = await this.contract.verifyCrossDomainProof(
+    if (!this.walletClient) throw new Error("Wallet client required for write operations");
+    const hash = await this.contract.write.verifyCrossDomainProof([
       sourceNullifier,
       targetNullifier,
       sourceDomainId,
       targetDomainId,
-      proof,
-      options || {}
-    );
-    await tx.wait();
+      proof
+    ], options || {});
+    await this.publicClient.waitForTransactionReceipt({ hash });
     return true;
   }
 
   /**
    * Get domain by ID
    */
-  async getDomain(domainId: string): Promise<Domain | null> {
-    const domain = await this.contract.domains(domainId);
-    if (!domain || domain.domainId === ethers.ZeroHash) {
-      return null;
+  async getDomain(domainId: Hex): Promise<Domain | null> {
+    try {
+        const domain = await this.contract.read.domains([domainId]);
+        if (!domain || domain.domainId === zeroHash) {
+          return null;
+        }
+        return domain as Domain;
+    } catch {
+        return null;
     }
-    return domain;
   }
 
   /**
    * Get nullifier data
    */
-  async getNullifier(nullifier: string): Promise<DomainNullifier | null> {
-    const data = await this.contract.nullifiers(nullifier);
-    if (!data || data.nullifier === ethers.ZeroHash) {
-      return null;
+  async getNullifier(nullifier: Hex): Promise<DomainNullifier | null> {
+    try {
+        const data = await this.contract.read.nullifiers([nullifier]);
+        if (!data || data.nullifier === zeroHash) {
+          return null;
+        }
+        return data as DomainNullifier;
+    } catch {
+        return null;
     }
-    return data;
   }
 
   /**
    * Check if nullifier exists
    */
-  async nullifierExists(nullifier: string): Promise<boolean> {
-    return await this.contract.nullifierExists(nullifier);
+  async nullifierExists(nullifier: Hex): Promise<boolean> {
+    return await this.contract.read.nullifierExists([nullifier]);
   }
 
   /**
    * Get active domain IDs
    */
-  async getActiveDomains(): Promise<string[]> {
-    return await this.contract.getActiveDomains();
+  async getActiveDomains(): Promise<Hex[]> {
+    return await this.contract.read.getActiveDomains();
   }
 
   /**
    * Get contract stats
    */
   async getStats(): Promise<NullifierStats> {
-    const [domains, nullifiers, consumed, epoch] = await this.contract.getStats();
+    const [domains, nullifiers, consumed, epoch] = await this.contract.read.getStats();
     return {
       totalDomains: domains,
       totalNullifiers: nullifiers,
@@ -913,9 +1011,9 @@ export class CrossDomainNullifierAlgebraClient {
    * Finalize current epoch
    */
   async finalizeEpoch(options?: TransactionOptions): Promise<void> {
-    if (!this.signer) throw new Error("Signer required for write operations");
-    const tx = await this.contract.finalizeEpoch(options || {});
-    await tx.wait();
+    if (!this.walletClient) throw new Error("Wallet client required for write operations");
+    const hash = await this.contract.write.finalizeEpoch([], options || {});
+    await this.publicClient.waitForTransactionReceipt({ hash });
   }
 }
 
@@ -924,16 +1022,16 @@ export class CrossDomainNullifierAlgebraClient {
 //////////////////////////////////////////////////////////////*/
 
 export interface OperationParams {
-  containerId: string;
-  policyId: string;
-  stateCommitment: string;
-  nullifier: string;
-  proof: string;
+  containerId: Hex;
+  policyId: Hex;
+  stateCommitment: Hex;
+  nullifier: Hex;
+  proof: Hex;
 }
 
 export interface OperationResult {
   success: boolean;
-  operationId: string;
+  operationId: Hex;
   message: string;
 }
 
@@ -951,44 +1049,23 @@ export interface SystemStatus {
  * Coordinates operations across all Soul v2 primitives
  */
 export class Soulv2OrchestratorClient {
-  private contract: Contract;
-  private signer: Signer | null;
+  public contract: any;
+  private publicClient: PublicClient;
+  private walletClient?: WalletClient;
 
   constructor(
-    contractAddress: string,
-    providerOrSigner: Provider | Signer,
+    contractAddress: Hex,
+    publicClient: PublicClient,
+    walletClient?: WalletClient,
     abi?: any[]
   ) {
-    const defaultABI = [
-      // Read functions
-      "function pc3() view returns (address)",
-      "function pbp() view returns (address)",
-      "function easc() view returns (address)",
-      "function cdna() view returns (address)",
-      "function isPrimitiveActive(bytes32) view returns (bool)",
-      "function getSystemStatus() view returns (tuple(bool pc3Active, bool pbpActive, bool eascActive, bool cdnaActive, bool paused, uint256 lastUpdate))",
-      "function totalOperations() view returns (uint256)",
-      "function successfulOperations() view returns (uint256)",
-      
-      // Write functions
-      "function executePrivateTransfer(bytes32 containerId, bytes32 policyId, bytes32 stateCommitment, bytes32 nullifier, bytes proof) returns (bool, bytes32, string)",
-      "function updatePrimitive(bytes32 primitiveId, address newAddress)",
-      "function setPrimitiveActive(bytes32 primitiveId, bool active)",
-      "function pause()",
-      "function unpause()",
-      
-      // Events
-      "event OperationExecuted(bytes32 indexed operationId, address indexed user, bool success, string message)",
-      "event PrimitiveUpdated(bytes32 indexed primitiveId, address oldAddress, address newAddress)",
-      "event PrimitiveStatusChanged(bytes32 indexed primitiveId, bool active)",
-    ];
-
-    this.contract = new ethers.Contract(
-      contractAddress,
-      abi || defaultABI,
-      providerOrSigner
-    );
-    this.signer = "getAddress" in providerOrSigner ? providerOrSigner as Signer : null;
+    this.publicClient = publicClient;
+    this.walletClient = walletClient;
+    this.contract = getContract({
+      address: contractAddress,
+      abi: abi || ORCHESTRATOR_ABI,
+      client: { public: publicClient, wallet: walletClient }
+    });
   }
 
   /**
@@ -998,27 +1075,42 @@ export class Soulv2OrchestratorClient {
     params: OperationParams,
     options?: TransactionOptions
   ): Promise<OperationResult> {
-    if (!this.signer) throw new Error("Signer required for write operations");
+    if (!this.walletClient) throw new Error("Wallet client required for write operations");
 
-    const tx = await this.contract.executePrivateTransfer(
+    const hash = await this.contract.write.executePrivateTransfer([
       params.containerId,
       params.policyId,
       params.stateCommitment,
       params.nullifier,
-      params.proof,
-      options || {}
-    );
-    const receipt = await tx.wait();
+      params.proof
+    ], options || {});
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     
     // Extract result from event
-    const event = receipt.logs.find(
-      (log: any) => log.fragment?.name === "OperationExecuted"
-    );
+    let success = false;
+    let operationId: Hex = zeroHash;
+    let message = "";
+
+    for (const log of receipt.logs) {
+        try {
+            const decoded = decodeEventLog({
+                abi: ORCHESTRATOR_ABI,
+                data: log.data,
+                topics: log.topics
+            });
+            if (decoded.eventName === 'OperationExecuted') {
+                success = (decoded.args as any).success;
+                operationId = (decoded.args as any).operationId;
+                message = (decoded.args as any).message;
+                break;
+            }
+        } catch {}
+    }
     
     return {
-      success: event?.args?.success || false,
-      operationId: event?.args?.operationId || "",
-      message: event?.args?.message || ""
+      success,
+      operationId,
+      message
     };
   }
 
@@ -1026,7 +1118,7 @@ export class Soulv2OrchestratorClient {
    * Get system status
    */
   async getSystemStatus(): Promise<SystemStatus> {
-    const status = await this.contract.getSystemStatus();
+    const status = await this.contract.read.getSystemStatus();
     return {
       pc3Active: status.pc3Active,
       pbpActive: status.pbpActive,
@@ -1041,18 +1133,18 @@ export class Soulv2OrchestratorClient {
    * Get primitive addresses
    */
   async getPrimitiveAddresses(): Promise<{
-    pc3: string;
-    pbp: string;
-    easc: string;
-    cdna: string;
+    pc3: Hex;
+    pbp: Hex;
+    easc: Hex;
+    cdna: Hex;
   }> {
     const [pc3, pbp, easc, cdna] = await Promise.all([
-      this.contract.pc3(),
-      this.contract.pbp(),
-      this.contract.easc(),
-      this.contract.cdna()
+      this.contract.read.pc3(),
+      this.contract.read.pbp(),
+      this.contract.read.easc(),
+      this.contract.read.cdna()
     ]);
-    return { pc3, pbp, easc, cdna };
+    return { pc3: pc3 as Hex, pbp: pbp as Hex, easc: easc as Hex, cdna: cdna as Hex };
   }
 
   /**
@@ -1060,8 +1152,8 @@ export class Soulv2OrchestratorClient {
    */
   async getStats(): Promise<{ total: bigint; successful: bigint }> {
     const [total, successful] = await Promise.all([
-      this.contract.totalOperations(),
-      this.contract.successfulOperations()
+      this.contract.read.totalOperations(),
+      this.contract.read.successfulOperations()
     ]);
     return { total, successful };
   }
@@ -1069,68 +1161,71 @@ export class Soulv2OrchestratorClient {
   /**
    * Check if a primitive is active
    */
-  async isPrimitiveActive(primitiveId: string): Promise<boolean> {
-    return await this.contract.isPrimitiveActive(primitiveId);
+  async isPrimitiveActive(primitiveId: Hex): Promise<boolean> {
+    return await this.contract.read.isPrimitiveActive([primitiveId]);
   }
 
   /**
    * Update primitive address (admin only)
    */
   async updatePrimitive(
-    primitiveId: string,
-    newAddress: string,
+    primitiveId: Hex,
+    newAddress: Hex,
     options?: TransactionOptions
   ): Promise<void> {
-    if (!this.signer) throw new Error("Signer required for write operations");
-    const tx = await this.contract.updatePrimitive(primitiveId, newAddress, options || {});
-    await tx.wait();
+    if (!this.walletClient) throw new Error("Wallet client required for write operations");
+    const hash = await this.contract.write.updatePrimitive([primitiveId, newAddress], options || {});
+    await this.publicClient.waitForTransactionReceipt({ hash });
   }
 
   /**
    * Set primitive active status (admin only)
    */
   async setPrimitiveActive(
-    primitiveId: string,
+    primitiveId: Hex,
     active: boolean,
     options?: TransactionOptions
   ): Promise<void> {
-    if (!this.signer) throw new Error("Signer required for write operations");
-    const tx = await this.contract.setPrimitiveActive(primitiveId, active, options || {});
-    await tx.wait();
+    if (!this.walletClient) throw new Error("Wallet client required for write operations");
+    const hash = await this.contract.write.setPrimitiveActive([primitiveId, active], options || {});
+    await this.publicClient.waitForTransactionReceipt({ hash });
   }
 
   /**
    * Pause the orchestrator (admin only)
    */
   async pause(options?: TransactionOptions): Promise<void> {
-    if (!this.signer) throw new Error("Signer required for write operations");
-    const tx = await this.contract.pause(options || {});
-    await tx.wait();
+    if (!this.walletClient) throw new Error("Wallet client required for write operations");
+    const hash = await this.contract.write.pause([], options || {});
+    await this.publicClient.waitForTransactionReceipt({ hash });
   }
 
   /**
    * Unpause the orchestrator (admin only)
    */
   async unpause(options?: TransactionOptions): Promise<void> {
-    if (!this.signer) throw new Error("Signer required for write operations");
-    const tx = await this.contract.unpause(options || {});
-    await tx.wait();
+    if (!this.walletClient) throw new Error("Wallet client required for write operations");
+    const hash = await this.contract.write.unpause([], options || {});
+    await this.publicClient.waitForTransactionReceipt({ hash });
   }
 
   /**
    * Subscribe to operation events
    */
   onOperationExecuted(
-    callback: (operationId: string, user: string, success: boolean, message: string) => void
-  ): void {
-    this.contract.on("OperationExecuted", callback);
-  }
-
-  /**
-   * Remove all event listeners
-   */
-  removeAllListeners(): void {
-    this.contract.removeAllListeners();
+    callback: (operationId: Hex, user: Hex, success: boolean, message: string) => void
+  ): any {
+    return this.publicClient.watchContractEvent({
+        address: this.contract.address,
+        abi: ORCHESTRATOR_ABI,
+        eventName: 'OperationExecuted',
+        onLogs: (logs) => {
+            for (const log of logs) {
+                const { args } = log as any;
+                callback(args.operationId as Hex, args.user as Hex, args.success, args.message);
+            }
+        }
+    });
   }
 }
 
@@ -1139,11 +1234,11 @@ export class Soulv2OrchestratorClient {
 //////////////////////////////////////////////////////////////*/
 
 export interface Soulv2Config {
-  proofCarryingContainer?: string;
-  policyBoundProofs?: string;
-  executionAgnosticStateCommitments?: string;
-  crossDomainNullifierAlgebra?: string;
-  orchestrator?: string;
+  proofCarryingContainer?: Hex;
+  policyBoundProofs?: Hex;
+  executionAgnosticStateCommitments?: Hex;
+  crossDomainNullifierAlgebra?: Hex;
+  orchestrator?: Hex;
 }
 
 /**
@@ -1152,7 +1247,8 @@ export interface Soulv2Config {
 export class Soulv2ClientFactory {
   constructor(
     private config: Soulv2Config,
-    private providerOrSigner: Provider | Signer
+    private publicClient: PublicClient,
+    private walletClient?: WalletClient
   ) {}
 
   /**
@@ -1163,8 +1259,9 @@ export class Soulv2ClientFactory {
       throw new Error("ProofCarryingContainer address not configured");
     }
     return new ProofCarryingContainerClient(
-      this.config.proofCarryingContainer,
-      this.providerOrSigner
+      this.config.proofCarryingContainer as Hex,
+      this.publicClient,
+      this.walletClient
     );
   }
 
@@ -1176,8 +1273,9 @@ export class Soulv2ClientFactory {
       throw new Error("PolicyBoundProofs address not configured");
     }
     return new PolicyBoundProofsClient(
-      this.config.policyBoundProofs,
-      this.providerOrSigner
+      this.config.policyBoundProofs as Hex,
+      this.publicClient,
+      this.walletClient
     );
   }
 
@@ -1189,8 +1287,9 @@ export class Soulv2ClientFactory {
       throw new Error("ExecutionAgnosticStateCommitments address not configured");
     }
     return new ExecutionAgnosticStateCommitmentsClient(
-      this.config.executionAgnosticStateCommitments,
-      this.providerOrSigner
+      this.config.executionAgnosticStateCommitments as Hex,
+      this.publicClient,
+      this.walletClient
     );
   }
 
@@ -1202,8 +1301,9 @@ export class Soulv2ClientFactory {
       throw new Error("CrossDomainNullifierAlgebra address not configured");
     }
     return new CrossDomainNullifierAlgebraClient(
-      this.config.crossDomainNullifierAlgebra,
-      this.providerOrSigner
+      this.config.crossDomainNullifierAlgebra as Hex,
+      this.publicClient,
+      this.walletClient
     );
   }
 
@@ -1215,8 +1315,9 @@ export class Soulv2ClientFactory {
       throw new Error("Orchestrator address not configured");
     }
     return new Soulv2OrchestratorClient(
-      this.config.orchestrator,
-      this.providerOrSigner
+      this.config.orchestrator as Hex,
+      this.publicClient,
+      this.walletClient
     );
   }
 

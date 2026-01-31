@@ -188,7 +188,7 @@ contract SoulSP1Verifier is Ownable {
         if (computedHash != proof.publicValuesHash) return false;
 
         // Would need gateway call for full verification
-        return true;
+        revert("Unsafe: Not Implemented");
     }
 
     /**
@@ -307,7 +307,7 @@ contract SoulPlonky3Verifier is Ownable {
 
         emit ProofVerified(proofHash, proof.circuitHash);
 
-        return true;
+        revert("Not Implemented");
     }
 }
 
@@ -419,7 +419,7 @@ contract SoulJoltVerifier is Ownable {
 
         emit ProofVerified(proofHash, proof.programHash);
 
-        return true;
+        revert("Not Implemented");
     }
 }
 
@@ -502,6 +502,6 @@ contract SoulBiniusVerifier is Ownable {
         verifiedProofs[proofHash] = true;
         totalVerified++;
 
-        return true;
+        revert("Not Implemented");
     }
 }

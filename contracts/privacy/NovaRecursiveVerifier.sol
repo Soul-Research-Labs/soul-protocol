@@ -206,7 +206,7 @@ contract NovaRecursiveVerifier is AccessControl, ReentrancyGuard {
 
         emit IVCProofVerified(proofId, keyId, vk.numSteps, gasUsed);
 
-        return true;
+        revert("Not Implemented");
     }
 
     /// @notice Verify the folding step

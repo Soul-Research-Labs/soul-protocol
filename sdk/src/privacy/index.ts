@@ -65,17 +65,17 @@ export {
 // Convenience re-export
 import { PrivacyHubClient, PrivacyHubConfig } from './PrivacyHubClient';
 import { CrossChainPrivacyOrchestrator, OrchestratorConfig } from './CrossChainPrivacyOrchestrator';
-import { Provider, Wallet } from 'ethers';
+import { PublicClient, WalletClient, Hex } from 'viem';
 
 /**
  * Create a privacy client with all modules
  */
 export function createPrivacyClient(
     config: PrivacyHubConfig,
-    provider: Provider,
-    signer?: Wallet
+    publicClient: PublicClient,
+    walletClient?: WalletClient
 ): PrivacyHubClient {
-    return new PrivacyHubClient(config, provider, signer);
+    return new PrivacyHubClient(config, publicClient, walletClient);
 }
 
 /**

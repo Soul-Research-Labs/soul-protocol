@@ -5,7 +5,7 @@
  * sanitization, and detailed error messages.
  */
 
-import { ethers } from "ethers";
+import { isAddress, getAddress } from "viem";
 import {
   ValidationError,
   SoulErrorCode,
@@ -38,12 +38,12 @@ export function validateAddress(value: unknown): ValidationResult<string> {
   }
 
   // Check for valid Ethereum address format
-  if (!ethers.isAddress(value)) {
+  if (!isAddress(value)) {
     return { valid: false, error: `Invalid Ethereum address: ${value}` };
   }
 
   // Return checksummed address
-  return { valid: true, value: ethers.getAddress(value) };
+  return { valid: true, value: getAddress(value) };
 }
 
 /**

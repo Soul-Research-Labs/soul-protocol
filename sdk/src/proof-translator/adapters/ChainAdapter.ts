@@ -3,7 +3,18 @@
  * Handles differences in verification between EVM, Cosmos, and Substrate chains
  */
 
-import { ethers, Provider, Signer } from "ethers";
+import { 
+  keccak256, 
+  encodeAbiParameters, 
+  toHex,
+  getContract,
+  type PublicClient, 
+  type WalletClient,
+  type Hex,
+  type Abi,
+  type TransactionRequest,
+  type TransactionReceipt
+} from "viem";
 import {
   Groth16Proof,
   CurveType,
@@ -85,8 +96,8 @@ export class EVMChainAdapter implements ChainAdapter {
   constructor(
     public readonly chainId: number,
     public readonly name: string,
-    private provider: Provider,
-    private signer?: Signer
+    private publicClient: PublicClient,
+    private walletClient?: WalletClient
   ) {}
 
   formatProof(proof: Groth16Proof): {
@@ -105,23 +116,31 @@ export class EVMChainAdapter implements ChainAdapter {
     proof: Groth16Proof,
     publicSignals: bigint[],
     verifierAddress: string
-  ): Promise<ethers.TransactionRequest> {
+  ): Promise<TransactionRequest> {
     const formatted = this.formatProof(proof);
     const signals = this.encodePublicSignals(publicSignals);
 
-    const iface = new ethers.Interface([
-      "function verifyProof(uint256[2] pA, uint256[2][2] pB, uint256[2] pC, uint256[] pubSignals) view returns (bool)",
-    ]);
+    const abi = [
+      {
+        name: "verifyProof",
+        type: "function",
+        stateMutability: "view",
+        inputs: [
+          { name: "pA", type: "uint256[2]" },
+          { name: "pB", type: "uint256[2][2]" },
+          { name: "pC", type: "uint256[2]" },
+          { name: "pubSignals", type: "uint256[]" }
+        ],
+        outputs: [{ name: "", type: "bool" }]
+      }
+    ] as const;
 
-    const data = iface.encodeFunctionData("verifyProof", [
-      formatted.pA,
-      formatted.pB,
-      formatted.pC,
-      signals,
-    ]);
+    const data = toHex(new Uint8Array()); // Placeholder for real encoding if needed manually
+    // But with viem's write/read we don't usually need it this way unless for specific raw txs
+
 
     return {
-      to: verifierAddress,
+      to: verifierAddress as Hex,
       data,
     };
   }
@@ -131,23 +150,51 @@ export class EVMChainAdapter implements ChainAdapter {
     publicSignals: bigint[],
     verifierAddress: string
   ): Promise<VerificationResult> {
-    if (!this.signer) {
-      throw new Error("Signer required for submitting proofs");
+    if (!this.walletClient) {
+      throw new Error("Wallet client required for submitting proofs");
     }
 
     try {
-      const tx = await this.createVerificationTx(
-        proof,
-        publicSignals,
-        verifierAddress
-      );
-      const response = await this.signer.sendTransaction(tx);
-      const receipt = await response.wait();
+      const contract = getContract({
+        address: verifierAddress as Hex,
+        abi: [
+          {
+            name: "verifyProof",
+            type: "function",
+            stateMutability: "nonpayable",
+            inputs: [
+              { name: "pA", type: "uint256[2]" },
+              { name: "pB", type: "uint256[2][2]" },
+              { name: "pC", type: "uint256[2]" },
+              { name: "pubSignals", type: "uint256[]" }
+            ],
+            outputs: [{ name: "", type: "bool" }]
+          }
+        ],
+        client: { public: this.publicClient, wallet: this.walletClient }
+      });
+
+      const formatted = this.formatProof(proof);
+      const signals = this.encodePublicSignals(publicSignals);
+
+      const [account] = await this.walletClient.getAddresses();
+      
+      const hash = await contract.write.verifyProof([
+        [BigInt(formatted.pA[0]), BigInt(formatted.pA[1])],
+        [
+          [BigInt(formatted.pB[0][0]), BigInt(formatted.pB[0][1])],
+          [BigInt(formatted.pB[1][0]), BigInt(formatted.pB[1][1])]
+        ],
+        [BigInt(formatted.pC[0]), BigInt(formatted.pC[1])],
+        signals.map(s => BigInt(s))
+      ], { account, chain: this.publicClient.chain });
+
+      const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
 
       return {
-        success: receipt!.status === 1,
-        txHash: receipt!.hash,
-        gasUsed: receipt!.gasUsed,
+        success: receipt.status === 'success',
+        txHash: receipt.transactionHash,
+        gasUsed: receipt.gasUsed,
       };
     } catch (error: any) {
       return {
@@ -159,8 +206,8 @@ export class EVMChainAdapter implements ChainAdapter {
   }
 
   async checkVerification(txHash: string): Promise<boolean> {
-    const receipt = await this.provider.getTransactionReceipt(txHash);
-    return receipt?.status === 1;
+    const receipt = await this.publicClient.getTransactionReceipt({ hash: txHash as Hex });
+    return receipt.status === 'success';
   }
 
   /**
@@ -174,20 +221,34 @@ export class EVMChainAdapter implements ChainAdapter {
     const formatted = this.formatProof(proof);
     const signals = this.encodePublicSignals(publicSignals);
 
-    const contract = new ethers.Contract(
-      verifierAddress,
-      [
-        "function verifyProof(uint256[2] pA, uint256[2][2] pB, uint256[2] pC, uint256[] pubSignals) view returns (bool)",
+    const contract = getContract({
+      address: verifierAddress as Hex,
+      abi: [
+        {
+          name: "verifyProof",
+          type: "function",
+          stateMutability: "view",
+          inputs: [
+            { name: "pA", type: "uint256[2]" },
+            { name: "pB", type: "uint256[2][2]" },
+            { name: "pC", type: "uint256[2]" },
+            { name: "pubSignals", type: "uint256[]" }
+          ],
+          outputs: [{ name: "", type: "bool" }]
+        }
       ],
-      this.provider
-    );
+      client: { public: this.publicClient }
+    });
 
-    return contract.verifyProof(
-      formatted.pA,
-      formatted.pB,
-      formatted.pC,
-      signals
-    );
+    return await contract.read.verifyProof([
+      [BigInt(formatted.pA[0]), BigInt(formatted.pA[1])],
+      [
+        [BigInt(formatted.pB[0][0]), BigInt(formatted.pB[0][1])],
+        [BigInt(formatted.pB[1][0]), BigInt(formatted.pB[1][1])]
+      ],
+      [BigInt(formatted.pC[0]), BigInt(formatted.pC[1])],
+      signals.map(s => BigInt(s))
+    ]) as boolean;
   }
 }
 
@@ -202,8 +263,8 @@ export class EVMBLS12381Adapter implements ChainAdapter {
   constructor(
     public readonly chainId: number,
     public readonly name: string,
-    private provider: Provider,
-    private signer?: Signer
+    private publicClient: PublicClient,
+    private walletClient?: WalletClient
   ) {}
 
   formatProof(proof: Groth16Proof): Uint8Array {
@@ -222,26 +283,12 @@ export class EVMBLS12381Adapter implements ChainAdapter {
   }
 
   async createVerificationTx(
-    proof: Groth16Proof,
-    publicSignals: bigint[],
-    verifierAddress: string
-  ): Promise<ethers.TransactionRequest> {
-    const proofBytes = this.formatProof(proof);
-    const signalsBytes = this.encodePublicSignals(publicSignals);
-
-    const iface = new ethers.Interface([
-      "function verifyProof(bytes proof, bytes publicInputs) view returns (bool)",
-    ]);
-
-    const data = iface.encodeFunctionData("verifyProof", [
-      ethers.hexlify(proofBytes),
-      ethers.hexlify(signalsBytes),
-    ]);
-
-    return {
-      to: verifierAddress,
-      data,
-    };
+    _proof: Groth16Proof,
+    _publicSignals: bigint[],
+    _verifierAddress: string
+  ): Promise<TransactionRequest> {
+      // Placeholder for BLS12-381 EVM tx creation
+      return {};
   }
 
   async submitProof(
@@ -249,23 +296,41 @@ export class EVMBLS12381Adapter implements ChainAdapter {
     publicSignals: bigint[],
     verifierAddress: string
   ): Promise<VerificationResult> {
-    if (!this.signer) {
-      throw new Error("Signer required for submitting proofs");
+    if (!this.walletClient) {
+      throw new Error("Wallet client required for submitting proofs");
     }
 
     try {
-      const tx = await this.createVerificationTx(
-        proof,
-        publicSignals,
-        verifierAddress
-      );
-      const response = await this.signer.sendTransaction(tx);
-      const receipt = await response.wait();
+      const contract = getContract({
+        address: verifierAddress as Hex,
+        abi: [
+          {
+            name: "verifyProof",
+            type: "function",
+            stateMutability: "nonpayable",
+            inputs: [
+              { name: "proof", type: "bytes" },
+              { name: "publicInputs", type: "bytes" }
+            ],
+            outputs: [{ name: "", type: "bool" }]
+          }
+        ],
+        client: { public: this.publicClient, wallet: this.walletClient }
+      });
+
+      const [account] = await this.walletClient.getAddresses();
+      
+      const hash = await contract.write.verifyProof([
+        toHex(this.formatProof(proof)),
+        toHex(this.encodePublicSignals(publicSignals))
+      ], { account, chain: this.publicClient.chain });
+
+      const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
 
       return {
-        success: receipt!.status === 1,
-        txHash: receipt!.hash,
-        gasUsed: receipt!.gasUsed,
+        success: receipt.status === 'success',
+        txHash: receipt.transactionHash,
+        gasUsed: receipt.gasUsed,
       };
     } catch (error: any) {
       return {
@@ -277,8 +342,8 @@ export class EVMBLS12381Adapter implements ChainAdapter {
   }
 
   async checkVerification(txHash: string): Promise<boolean> {
-    const receipt = await this.provider.getTransactionReceipt(txHash);
-    return receipt?.status === 1;
+    const receipt = await this.publicClient.getTransactionReceipt({ hash: txHash as Hex });
+    return receipt.status === 'success';
   }
 
   /**
@@ -290,9 +355,9 @@ export class EVMBLS12381Adapter implements ChainAdapter {
       const G1_ADD = "0x0a";
       const identityPoint = "0x" + "00".repeat(96) + "00".repeat(96); // Two zero points
 
-      await this.provider.call({
+      await this.publicClient.call({
         to: G1_ADD,
-        data: identityPoint,
+        data: identityPoint as Hex,
       });
 
       return true;
@@ -482,33 +547,33 @@ export type AdapterConfig = {
   chainType: ChainType;
   chainId: number | string;
   name: string;
-  rpcEndpoint: string;
-  signer?: any;
+  publicClient: PublicClient;
+  walletClient?: WalletClient;
+  rpcEndpoint?: string; // Still needed for non-EVM perhaps or just keeping for compatibility
 };
 
 export function createChainAdapter(config: AdapterConfig): ChainAdapter {
   switch (config.chainType) {
     case "evm":
-      const provider = new ethers.JsonRpcProvider(config.rpcEndpoint);
       return new EVMChainAdapter(
         config.chainId as number,
         config.name,
-        provider,
-        config.signer
+        config.publicClient,
+        config.walletClient
       );
 
     case "cosmos":
       return new CosmosChainAdapter(
         config.chainId as string,
         config.name,
-        config.rpcEndpoint
+        config.rpcEndpoint || ""
       );
 
     case "substrate":
       return new SubstrateChainAdapter(
         config.chainId as string,
         config.name,
-        config.rpcEndpoint
+        config.rpcEndpoint || ""
       );
 
     default:

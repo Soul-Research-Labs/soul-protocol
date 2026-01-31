@@ -4,7 +4,15 @@
  * Provides TypeScript interfaces and implementations for all supported bridge adapters
  */
 
-import { ethers } from "ethers";
+import { 
+    keccak256, 
+    encodeAbiParameters, 
+    parseEther, 
+    encodePacked,
+    type PublicClient, 
+    type WalletClient,
+    type Hex
+} from "viem";
 
 // ============================================
 // Types & Interfaces
@@ -58,16 +66,16 @@ export interface BridgeAdapterConfig {
 // ============================================
 
 export abstract class BaseBridgeAdapter {
-  protected provider: ethers.Provider;
-  protected signer?: ethers.Signer;
+  protected publicClient: PublicClient;
+  protected walletClient?: WalletClient;
   
   constructor(
     public readonly config: BridgeAdapterConfig,
-    provider: ethers.Provider,
-    signer?: ethers.Signer
+    publicClient: PublicClient,
+    walletClient?: WalletClient
   ) {
-    this.provider = provider;
-    this.signer = signer;
+    this.publicClient = publicClient;
+    this.walletClient = walletClient;
   }
 
   abstract bridgeTransfer(params: BridgeTransferParams): Promise<BridgeTransferResult>;
@@ -94,8 +102,8 @@ export class CardanoBridgeAdapterSDK extends BaseBridgeAdapter {
   private cardanoNode: string;
 
   constructor(
-    provider: ethers.Provider,
-    signer: ethers.Signer,
+    publicClient: PublicClient,
+    walletClient: WalletClient,
     blockfrostApiKey: string,
     cardanoNode: string
   ) {
@@ -104,9 +112,9 @@ export class CardanoBridgeAdapterSDK extends BaseBridgeAdapter {
       chainId: 99999, // Custom Cardano chain ID
       nativeToken: 'ADA',
       finality: 20,
-      maxAmount: ethers.parseEther('1000000'),
-      minAmount: ethers.parseEther('0.001')
-    }, provider, signer);
+      maxAmount: parseEther('1000000'),
+      minAmount: parseEther('0.001')
+    }, publicClient, walletClient);
     
     this.blockfrostApiKey = blockfrostApiKey;
     this.cardanoNode = cardanoNode;
@@ -116,9 +124,9 @@ export class CardanoBridgeAdapterSDK extends BaseBridgeAdapter {
     this.validateAmount(params.amount);
     
     // Implementation would call Cardano bridge contract
-    const transferId = ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(
-      ['uint256', 'address', 'uint256', 'uint256'],
-      [this.config.chainId, params.recipient, params.amount, Date.now()]
+    const transferId = keccak256(encodeAbiParameters(
+      [{ type: 'uint256' }, { type: 'address' }, { type: 'uint256' }, { type: 'uint256' }],
+      [BigInt(this.config.chainId), params.recipient as Hex, params.amount, BigInt(Date.now())]
     ));
 
     return {
@@ -146,8 +154,8 @@ export class CardanoBridgeAdapterSDK extends BaseBridgeAdapter {
 
   async estimateFees(amount: bigint, targetChainId: number): Promise<BridgeFees> {
     const protocolFee = amount * 10n / 10000n; // 0.1%
-    const relayerFee = ethers.parseEther('0.01');
-    const gasFee = ethers.parseEther('0.005');
+    const relayerFee = parseEther('0.01');
+    const gasFee = parseEther('0.005');
     
     return {
       protocolFee,
@@ -163,8 +171,8 @@ export class CosmosBridgeAdapterSDK extends BaseBridgeAdapter {
   private cosmosRpc: string;
 
   constructor(
-    provider: ethers.Provider,
-    signer: ethers.Signer,
+    publicClient: PublicClient,
+    walletClient: WalletClient,
     cosmosRpc: string,
     ibcChannel: string
   ) {
@@ -173,9 +181,9 @@ export class CosmosBridgeAdapterSDK extends BaseBridgeAdapter {
       chainId: 118, // Cosmos Hub
       nativeToken: 'ATOM',
       finality: 15,
-      maxAmount: ethers.parseEther('1000000'),
-      minAmount: ethers.parseEther('0.001')
-    }, provider, signer);
+      maxAmount: parseEther('1000000'),
+      minAmount: parseEther('0.001')
+    }, publicClient, walletClient);
     
     this.cosmosRpc = cosmosRpc;
     this.ibcChannel = ibcChannel;
@@ -184,9 +192,9 @@ export class CosmosBridgeAdapterSDK extends BaseBridgeAdapter {
   async bridgeTransfer(params: BridgeTransferParams): Promise<BridgeTransferResult> {
     this.validateAmount(params.amount);
     
-    const transferId = ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(
-      ['string', 'uint256', 'address', 'uint256'],
-      [this.ibcChannel, this.config.chainId, params.recipient, params.amount]
+    const transferId = keccak256(encodeAbiParameters(
+      [{ type: 'string' }, { type: 'uint256' }, { type: 'address' }, { type: 'uint256' }],
+      [this.ibcChannel, BigInt(this.config.chainId), params.recipient as Hex, params.amount]
     ));
 
     return {
@@ -213,8 +221,8 @@ export class CosmosBridgeAdapterSDK extends BaseBridgeAdapter {
 
   async estimateFees(amount: bigint, targetChainId: number): Promise<BridgeFees> {
     const protocolFee = amount * 5n / 10000n; // 0.05%
-    const relayerFee = ethers.parseEther('0.005');
-    const gasFee = ethers.parseEther('0.002');
+    const relayerFee = parseEther('0.005');
+    const gasFee = parseEther('0.002');
     
     return {
       protocolFee,
@@ -230,8 +238,8 @@ export class PolkadotBridgeAdapterSDK extends BaseBridgeAdapter {
   private paraId: number;
 
   constructor(
-    provider: ethers.Provider,
-    signer: ethers.Signer,
+    publicClient: PublicClient,
+    walletClient: WalletClient,
     relayChainRpc: string,
     paraId: number
   ) {
@@ -240,9 +248,9 @@ export class PolkadotBridgeAdapterSDK extends BaseBridgeAdapter {
       chainId: 0, // Relay chain
       nativeToken: 'DOT',
       finality: 30,
-      maxAmount: ethers.parseEther('1000000'),
-      minAmount: ethers.parseEther('0.001')
-    }, provider, signer);
+      maxAmount: parseEther('1000000'),
+      minAmount: parseEther('0.001')
+    }, publicClient, walletClient);
     
     this.relayChainRpc = relayChainRpc;
     this.paraId = paraId;
@@ -251,9 +259,9 @@ export class PolkadotBridgeAdapterSDK extends BaseBridgeAdapter {
   async bridgeTransfer(params: BridgeTransferParams): Promise<BridgeTransferResult> {
     this.validateAmount(params.amount);
     
-    const transferId = ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(
-      ['uint256', 'address', 'uint256', 'uint256'],
-      [this.paraId, params.recipient, params.amount, Date.now()]
+    const transferId = keccak256(encodeAbiParameters(
+      [{ type: 'uint256' }, { type: 'address' }, { type: 'uint256' }, { type: 'uint256' }],
+      [BigInt(this.paraId), params.recipient as Hex, params.amount, BigInt(Date.now())]
     ));
 
     return {
@@ -280,8 +288,8 @@ export class PolkadotBridgeAdapterSDK extends BaseBridgeAdapter {
 
   async estimateFees(amount: bigint, targetChainId: number): Promise<BridgeFees> {
     const protocolFee = amount * 8n / 10000n;
-    const relayerFee = ethers.parseEther('0.008');
-    const gasFee = ethers.parseEther('0.003');
+    const relayerFee = parseEther('0.008');
+    const gasFee = parseEther('0.003');
     
     return {
       protocolFee,
@@ -296,8 +304,8 @@ export class NEARBridgeAdapterSDK extends BaseBridgeAdapter {
   private nearRpc: string;
 
   constructor(
-    provider: ethers.Provider,
-    signer: ethers.Signer,
+    publicClient: PublicClient,
+    walletClient: WalletClient,
     nearRpc: string
   ) {
     super({
@@ -305,9 +313,9 @@ export class NEARBridgeAdapterSDK extends BaseBridgeAdapter {
       chainId: 1313161554, // NEAR chain ID
       nativeToken: 'NEAR',
       finality: 4, // epochs
-      maxAmount: ethers.parseEther('1000000'),
-      minAmount: ethers.parseEther('0.001')
-    }, provider, signer);
+      maxAmount: parseEther('1000000'),
+      minAmount: parseEther('0.001')
+    }, publicClient, walletClient);
     
     this.nearRpc = nearRpc;
   }
@@ -315,9 +323,9 @@ export class NEARBridgeAdapterSDK extends BaseBridgeAdapter {
   async bridgeTransfer(params: BridgeTransferParams): Promise<BridgeTransferResult> {
     this.validateAmount(params.amount);
     
-    const transferId = ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(
-      ['uint256', 'address', 'uint256', 'uint256'],
-      [this.config.chainId, params.recipient, params.amount, Date.now()]
+    const transferId = keccak256(encodeAbiParameters(
+      [{ type: 'uint256' }, { type: 'address' }, { type: 'uint256' }, { type: 'uint256' }],
+      [BigInt(this.config.chainId), params.recipient as Hex, params.amount, BigInt(Date.now())]
     ));
 
     return {
@@ -344,8 +352,8 @@ export class NEARBridgeAdapterSDK extends BaseBridgeAdapter {
 
   async estimateFees(amount: bigint, targetChainId: number): Promise<BridgeFees> {
     const protocolFee = amount * 5n / 10000n;
-    const relayerFee = ethers.parseEther('0.01');
-    const gasFee = ethers.parseEther('0.004');
+    const relayerFee = parseEther('0.01');
+    const gasFee = parseEther('0.004');
     
     return {
       protocolFee,
@@ -362,8 +370,8 @@ export class AvalancheBridgeAdapterSDK extends BaseBridgeAdapter {
   private cChainRpc: string;
 
   constructor(
-    provider: ethers.Provider,
-    signer: ethers.Signer,
+    publicClient: PublicClient,
+    walletClient: WalletClient,
     cChainRpc: string
   ) {
     super({
@@ -371,9 +379,9 @@ export class AvalancheBridgeAdapterSDK extends BaseBridgeAdapter {
       chainId: 43114, // Avalanche C-Chain
       nativeToken: 'AVAX',
       finality: 2, // ~2 seconds
-      maxAmount: ethers.parseEther('1000000'),
-      minAmount: ethers.parseEther('0.001')
-    }, provider, signer);
+      maxAmount: parseEther('1000000'),
+      minAmount: parseEther('0.001')
+    }, publicClient, walletClient);
     
     this.cChainRpc = cChainRpc;
   }
@@ -381,9 +389,9 @@ export class AvalancheBridgeAdapterSDK extends BaseBridgeAdapter {
   async bridgeTransfer(params: BridgeTransferParams): Promise<BridgeTransferResult> {
     this.validateAmount(params.amount);
     
-    const transferId = ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(
-      ['uint256', 'address', 'uint256', 'uint256'],
-      [this.config.chainId, params.recipient, params.amount, Date.now()]
+    const transferId = keccak256(encodeAbiParameters(
+      [{ type: 'uint256' }, { type: 'address' }, { type: 'uint256' }, { type: 'uint256' }],
+      [BigInt(this.config.chainId), params.recipient as Hex, params.amount, BigInt(Date.now())]
     ));
 
     return {
@@ -410,8 +418,8 @@ export class AvalancheBridgeAdapterSDK extends BaseBridgeAdapter {
 
   async estimateFees(amount: bigint, targetChainId: number): Promise<BridgeFees> {
     const protocolFee = amount * 3n / 10000n;
-    const relayerFee = ethers.parseEther('0.005');
-    const gasFee = ethers.parseEther('0.002');
+    const relayerFee = parseEther('0.005');
+    const gasFee = parseEther('0.002');
     
     return {
       protocolFee,
@@ -426,8 +434,8 @@ export class ArbitrumBridgeAdapterSDK extends BaseBridgeAdapter {
   private l2Rpc: string;
 
   constructor(
-    provider: ethers.Provider,
-    signer: ethers.Signer,
+    publicClient: PublicClient,
+    walletClient: WalletClient,
     l2Rpc: string
   ) {
     super({
@@ -435,9 +443,9 @@ export class ArbitrumBridgeAdapterSDK extends BaseBridgeAdapter {
       chainId: 42161, // Arbitrum One
       nativeToken: 'ETH',
       finality: 7 * 24 * 60 * 60, // 7 days for withdrawals
-      maxAmount: ethers.parseEther('10000'),
-      minAmount: ethers.parseEther('0.0001')
-    }, provider, signer);
+      maxAmount: parseEther('10000'),
+      minAmount: parseEther('0.0001')
+    }, publicClient, walletClient);
     
     this.l2Rpc = l2Rpc;
   }
@@ -445,9 +453,9 @@ export class ArbitrumBridgeAdapterSDK extends BaseBridgeAdapter {
   async bridgeTransfer(params: BridgeTransferParams): Promise<BridgeTransferResult> {
     this.validateAmount(params.amount);
     
-    const transferId = ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(
-      ['uint256', 'address', 'uint256', 'uint256'],
-      [this.config.chainId, params.recipient, params.amount, Date.now()]
+    const transferId = keccak256(encodeAbiParameters(
+      [{ type: 'uint256' }, { type: 'address' }, { type: 'uint256' }, { type: 'uint256' }],
+      [BigInt(this.config.chainId), params.recipient as Hex, params.amount, BigInt(Date.now())]
     ));
 
     return {
@@ -475,7 +483,7 @@ export class ArbitrumBridgeAdapterSDK extends BaseBridgeAdapter {
   async estimateFees(amount: bigint, targetChainId: number): Promise<BridgeFees> {
     const protocolFee = 0n;
     const relayerFee = 0n;
-    const gasFee = ethers.parseEther('0.002');
+    const gasFee = parseEther('0.002');
     
     return {
       protocolFee,
@@ -495,8 +503,8 @@ export class BitcoinBridgeAdapterSDK extends BaseBridgeAdapter {
   private spvVerifierAddress: string;
 
   constructor(
-    provider: ethers.Provider,
-    signer: ethers.Signer,
+    publicClient: PublicClient,
+    walletClient: WalletClient,
     relayerRpc: string,
     spvVerifierAddress?: string
   ) {
@@ -507,7 +515,7 @@ export class BitcoinBridgeAdapterSDK extends BaseBridgeAdapter {
       finality: 6, // 6 block confirmations
       maxAmount: BigInt('10000000000'), // 100 BTC in satoshis
       minAmount: BigInt('100000') // 0.001 BTC in satoshis
-    }, provider, signer);
+    }, publicClient, walletClient);
 
     this.relayerRpc = relayerRpc;
     this.spvVerifierAddress = spvVerifierAddress || '0x0000000000000000000000000000000000000000';
@@ -517,10 +525,10 @@ export class BitcoinBridgeAdapterSDK extends BaseBridgeAdapter {
     this.validateAmount(params.amount);
     
     // Bitcoin uses HTLC-based transfers
-    const transferId = ethers.keccak256(
-      ethers.solidityPacked(
+    const transferId = keccak256(
+      encodePacked(
         ['address', 'uint256', 'uint256'],
-        [params.recipient, params.amount, Date.now()]
+        [params.recipient as Hex, params.amount, BigInt(Date.now())]
       )
     );
 
@@ -564,8 +572,8 @@ export class BitcoinBridgeAdapterSDK extends BaseBridgeAdapter {
   // Bitcoin-specific: Create HTLC for atomic swap
   async createHTLC(hashlock: string, timelock: number, recipient: string, amount: bigint): Promise<string> {
     // Would create on-chain HTLC
-    return ethers.keccak256(
-      ethers.solidityPacked(['bytes32', 'uint256', 'address'], [hashlock, timelock, recipient])
+    return keccak256(
+      encodePacked(['bytes32', 'uint256', 'address'], [hashlock as Hex, BigInt(timelock), recipient as Hex])
     );
   }
 
@@ -584,8 +592,8 @@ export class StarknetBridgeAdapterSDK extends BaseBridgeAdapter {
   private bridgeAddress: string;
 
   constructor(
-    provider: ethers.Provider,
-    signer: ethers.Signer,
+    publicClient: PublicClient,
+    walletClient: WalletClient,
     bridgeAddress: string
   ) {
     super({
@@ -593,9 +601,9 @@ export class StarknetBridgeAdapterSDK extends BaseBridgeAdapter {
       chainId: 0x534e5f4d41494e, // "SN_MAIN"
       nativeToken: 'ETH',
       finality: 1, // L1 verification
-      maxAmount: ethers.parseEther('1000'),
-      minAmount: ethers.parseEther('0.001')
-    }, provider, signer);
+      maxAmount: parseEther('1000'),
+      minAmount: parseEther('0.001')
+    }, publicClient, walletClient);
     
     this.bridgeAddress = bridgeAddress;
   }
@@ -604,9 +612,9 @@ export class StarknetBridgeAdapterSDK extends BaseBridgeAdapter {
     this.validateAmount(params.amount);
     
     // Starknet specific logic
-    const transferId = ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(
-      ['address', 'uint256', 'uint256', 'uint256'],
-      [this.bridgeAddress, params.recipient, params.amount, Date.now()]
+    const transferId = keccak256(encodeAbiParameters(
+      [{ type: 'address' }, { type: 'address' }, { type: 'uint256' }, { type: 'uint256' }],
+      [this.bridgeAddress as Hex, params.recipient as Hex, params.amount, BigInt(Date.now())]
     ));
 
     return {
@@ -633,8 +641,8 @@ export class StarknetBridgeAdapterSDK extends BaseBridgeAdapter {
 
   async estimateFees(amount: bigint, targetChainId: number): Promise<BridgeFees> {
     const protocolFee = amount * 5n / 10000n;
-    const relayerFee = ethers.parseEther('0.001');
-    const gasFee = ethers.parseEther('0.001');
+    const relayerFee = parseEther('0.001');
+    const gasFee = parseEther('0.001');
     
     return {
       protocolFee,
@@ -656,54 +664,54 @@ export type SupportedChain =
 export class BridgeFactory {
   static createAdapter(
     chain: SupportedChain,
-    provider: ethers.Provider,
-    signer: ethers.Signer,
+    publicClient: PublicClient,
+    walletClient: WalletClient,
     config: Record<string, string>
   ): BaseBridgeAdapter {
     switch (chain) {
       case 'cardano':
         return new CardanoBridgeAdapterSDK(
-          provider, signer,
+          publicClient, walletClient,
           config.blockfrostApiKey,
           config.cardanoNode
         );
       case 'cosmos':
         return new CosmosBridgeAdapterSDK(
-          provider, signer,
+          publicClient, walletClient,
           config.cosmosRpc,
           config.ibcChannel
         );
       case 'polkadot':
         return new PolkadotBridgeAdapterSDK(
-          provider, signer,
+          publicClient, walletClient,
           config.relayChainRpc,
           parseInt(config.paraId)
         );
       case 'near':
         return new NEARBridgeAdapterSDK(
-          provider, signer,
+          publicClient, walletClient,
           config.nearRpc
         );
 
       case 'avalanche':
         return new AvalancheBridgeAdapterSDK(
-          provider, signer,
+          publicClient, walletClient,
           config.cChainRpc
         );
       case 'arbitrum':
         return new ArbitrumBridgeAdapterSDK(
-          provider, signer,
+          publicClient, walletClient,
           config.l2Rpc
         );
       case 'bitcoin':
         return new BitcoinBridgeAdapterSDK(
-          provider, signer,
+          publicClient, walletClient,
           config.relayerRpc,
           config.spvVerifierAddress
         );
       case 'starknet':
         return new StarknetBridgeAdapterSDK(
-          provider, signer,
+          publicClient, walletClient,
           config.bridgeAddress
         );
       default:

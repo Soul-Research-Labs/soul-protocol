@@ -4,7 +4,13 @@
  * Client-side library for FHE operations with Soul protocol
  */
 
-import { ethers } from 'ethers';
+import { 
+    keccak256, 
+    toHex, 
+    toBytes, 
+    encodeAbiParameters, 
+    zeroHash 
+} from 'viem';
 
 // ============================================
 // Types
@@ -68,25 +74,25 @@ export class SoulFHEClient {
     }
 
     // Generate blinding factor for commitment
-    const blindingFactor = ethers.hexlify(ethers.randomBytes(32));
+    const blindingFactor = toHex(crypto.getRandomValues(new Uint8Array(32)));
     
     // Create ciphertext handle (in production, actual encryption)
-    const handle = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(
-        ['uint256', 'bytes32', 'uint256'],
-        [value, blindingFactor, Date.now()]
+    const handle = keccak256(
+      encodeAbiParameters(
+        [{ type: 'uint256' }, { type: 'bytes32' }, { type: 'uint256' }],
+        [value, blindingFactor as `0x${string}`, BigInt(Date.now())]
       )
     );
 
     // Create commitment for ZK integration
-    const commitment = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(
-        ['uint256', 'bytes32'],
-        [value, blindingFactor]
+    const commitment = keccak256(
+      encodeAbiParameters(
+        [{ type: 'uint256' }, { type: 'bytes32' }],
+        [value, blindingFactor as `0x${string}`]
       )
     );
 
-    const typeHash = ethers.keccak256(ethers.toUtf8Bytes(type));
+    const typeHash = keccak256(toBytes(type));
     const securityParams = this.getSecurityParamsHash();
 
     return {
@@ -116,10 +122,10 @@ export class SoulFHEClient {
     this.validateCiphertexts(ct1, ct2);
     
     // Compute new handle (in production, actual homomorphic op)
-    const handle = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(
-        ['bytes32', 'bytes32', 'string'],
-        [ct1.handle, ct2.handle, 'ADD']
+    const handle = keccak256(
+      encodeAbiParameters(
+        [{ type: 'bytes32' }, { type: 'bytes32' }, { type: 'string' }],
+        [ct1.handle as `0x${string}`, ct2.handle as `0x${string}`, 'ADD']
       )
     );
 
@@ -136,10 +142,10 @@ export class SoulFHEClient {
   async sub(ct1: Ciphertext, ct2: Ciphertext): Promise<Ciphertext> {
     this.validateCiphertexts(ct1, ct2);
     
-    const handle = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(
-        ['bytes32', 'bytes32', 'string'],
-        [ct1.handle, ct2.handle, 'SUB']
+    const handle = keccak256(
+      encodeAbiParameters(
+        [{ type: 'bytes32' }, { type: 'bytes32' }, { type: 'string' }],
+        [ct1.handle as `0x${string}`, ct2.handle as `0x${string}`, 'SUB']
       )
     );
 
@@ -156,10 +162,10 @@ export class SoulFHEClient {
   async mul(ct1: Ciphertext, ct2: Ciphertext): Promise<Ciphertext> {
     this.validateCiphertexts(ct1, ct2);
     
-    const handle = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(
-        ['bytes32', 'bytes32', 'string'],
-        [ct1.handle, ct2.handle, 'MUL']
+    const handle = keccak256(
+      encodeAbiParameters(
+        [{ type: 'bytes32' }, { type: 'bytes32' }, { type: 'string' }],
+        [ct1.handle as `0x${string}`, ct2.handle as `0x${string}`, 'MUL']
       )
     );
 
@@ -176,16 +182,16 @@ export class SoulFHEClient {
   async compare(ct1: Ciphertext, ct2: Ciphertext): Promise<Ciphertext> {
     this.validateCiphertexts(ct1, ct2);
     
-    const handle = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(
-        ['bytes32', 'bytes32', 'string'],
-        [ct1.handle, ct2.handle, 'CMP']
+    const handle = keccak256(
+      encodeAbiParameters(
+        [{ type: 'bytes32' }, { type: 'bytes32' }, { type: 'string' }],
+        [ct1.handle as `0x${string}`, ct2.handle as `0x${string}`, 'CMP']
       )
     );
 
     return {
       handle,
-      typeHash: ethers.keccak256(ethers.toUtf8Bytes('bool')),
+      typeHash: keccak256(toBytes('bool')),
       securityParams: ct1.securityParams
     };
   }
@@ -196,16 +202,16 @@ export class SoulFHEClient {
   async equal(ct1: Ciphertext, ct2: Ciphertext): Promise<Ciphertext> {
     this.validateCiphertexts(ct1, ct2);
     
-    const handle = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(
-        ['bytes32', 'bytes32', 'string'],
-        [ct1.handle, ct2.handle, 'EQ']
+    const handle = keccak256(
+      encodeAbiParameters(
+        [{ type: 'bytes32' }, { type: 'bytes32' }, { type: 'string' }],
+        [ct1.handle as `0x${string}`, ct2.handle as `0x${string}`, 'EQ']
       )
     );
 
     return {
       handle,
-      typeHash: ethers.keccak256(ethers.toUtf8Bytes('bool')),
+      typeHash: keccak256(toBytes('bool')),
       securityParams: ct1.securityParams
     };
   }
@@ -247,10 +253,10 @@ export class SoulFHEClient {
     const zkCommitment = this.pedersenCommit(value, encrypted.blindingFactor);
     
     // Opening hint for ZK proof generation
-    const openingHint = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(
-        ['bytes32', 'bytes32'],
-        [encrypted.commitment, zkCommitment]
+    const openingHint = keccak256(
+      encodeAbiParameters(
+        [{ type: 'bytes32' }, { type: 'bytes32' }],
+        [encrypted.commitment as `0x${string}`, zkCommitment as `0x${string}`]
       )
     );
 
@@ -273,15 +279,15 @@ export class SoulFHEClient {
     // Verify the ZK proof that computation was done correctly
     // This proves the FHE operation was honest without revealing values
     
-    const computationHash = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(
-        ['bytes32[]', 'bytes32', 'string'],
-        [inputs.map(i => i.handle), output.handle, operation]
+    const computationHash = keccak256(
+      encodeAbiParameters(
+        [{ type: 'bytes32[]' }, { type: 'bytes32' }, { type: 'string' }],
+        [inputs.map(i => i.handle as `0x${string}`), output.handle as `0x${string}`, operation]
       )
     );
 
     // In production, verify actual ZK proof
-    return proof.length > 0 && computationHash !== ethers.ZeroHash;
+    return proof.length > 0 && computationHash !== zeroHash;
   }
 
   // ============================================
@@ -289,10 +295,10 @@ export class SoulFHEClient {
   // ============================================
 
   private getSecurityParamsHash(): string {
-    return ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(
-        ['string', 'uint256', 'uint256'],
-        [this.config.scheme, this.config.securityLevel, this.config.polyModulusDegree]
+    return keccak256(
+      encodeAbiParameters(
+        [{ type: 'string' }, { type: 'uint192' }, { type: 'uint64' }],
+        [this.config.scheme, BigInt(this.config.securityLevel), BigInt(this.config.polyModulusDegree)]
       )
     );
   }
@@ -309,10 +315,10 @@ export class SoulFHEClient {
   private pedersenCommit(value: bigint, blindingFactor: string): string {
     // Simplified Pedersen commitment: C = g^v * h^r
     // In production, use proper elliptic curve operations
-    return ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(
-        ['uint256', 'bytes32', 'string'],
-        [value, blindingFactor, 'PEDERSEN']
+    return keccak256(
+      encodeAbiParameters(
+        [{ type: 'uint256' }, { type: 'bytes32' }, { type: 'string' }],
+        [value, blindingFactor as `0x${string}`, 'PEDERSEN']
       )
     );
   }
@@ -320,11 +326,11 @@ export class SoulFHEClient {
   private generateRangeProofZK(ct: Ciphertext, maxCt: Ciphertext): Uint8Array {
     // Generate ZK range proof
     // In production, use Bulletproofs or similar
-    const proofData = ethers.AbiCoder.defaultAbiCoder().encode(
-      ['bytes32', 'bytes32', 'uint256'],
-      [ct.handle, maxCt.handle, Date.now()]
+    const proofData = encodeAbiParameters(
+      [{ type: 'bytes32' }, { type: 'bytes32' }, { type: 'uint256' }],
+      [ct.handle as `0x${string}`, maxCt.handle as `0x${string}`, BigInt(Date.now())]
     );
-    return ethers.getBytes(ethers.keccak256(proofData));
+    return toBytes(keccak256(proofData));
   }
 }
 
@@ -364,11 +370,11 @@ export class EncryptedBalanceManager {
       amountEncrypted.ciphertext
     );
 
-    const newBlinding = ethers.hexlify(ethers.randomBytes(32));
-    const newCommitment = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(
-        ['bytes32', 'bytes32'],
-        [newBalanceCt.handle, newBlinding]
+    const newBlinding = toHex(crypto.getRandomValues(new Uint8Array(32)));
+    const newCommitment = keccak256(
+      encodeAbiParameters(
+        [{ type: 'bytes32' }, { type: 'bytes32' }],
+        [newBalanceCt.handle as `0x${string}`, newBlinding as `0x${string}`]
       )
     );
 
@@ -408,11 +414,11 @@ export class EncryptedBalanceManager {
       amountEncrypted.ciphertext
     );
 
-    const newBlinding = ethers.hexlify(ethers.randomBytes(32));
-    const newCommitment = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(
-        ['bytes32', 'bytes32'],
-        [newBalanceCt.handle, newBlinding]
+    const newBlinding = toHex(crypto.getRandomValues(new Uint8Array(32)));
+    const newCommitment = keccak256(
+      encodeAbiParameters(
+        [{ type: 'bytes32' }, { type: 'bytes32' }],
+        [newBalanceCt.handle as `0x${string}`, newBlinding as `0x${string}`]
       )
     );
 

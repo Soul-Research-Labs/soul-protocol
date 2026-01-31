@@ -1,9 +1,20 @@
-/**
- * @title Cross-Chain Privacy Hub Client
- * @description TypeScript SDK for unified cross-chain privacy operations
- */
-
-import { ethers, Contract, Wallet, Provider, keccak256, toBeHex, getBytes, hexlify } from 'ethers';
+import { 
+    PublicClient, 
+    WalletClient, 
+    getContract, 
+    keccak256, 
+    toHex, 
+    toBytes, 
+    concat, 
+    getAddress, 
+    Hex, 
+    decodeEventLog,
+    encodeAbiParameters,
+    parseAbiParameters,
+    zeroHash,
+    zeroAddress,
+    stringToBytes
+} from 'viem';
 import { StealthAddressClient, StealthMetaAddress, StealthAddressResult, StealthScheme } from './StealthAddressClient';
 import { RingCTClient, PedersenCommitment, RingMember, CLSAGSignature } from './RingCTClient';
 import { NullifierClient, ChainDomain, CHAIN_DOMAINS, CrossDomainNullifier } from './NullifierClient';
@@ -20,12 +31,12 @@ export enum TransferStatus {
 
 // Private transfer structure
 export interface PrivateTransfer {
-    transferId: string;
+    transferId: Hex;
     sourceDomain: ChainDomain;
     targetDomain: ChainDomain;
     commitment: PedersenCommitment;
-    nullifier: string;
-    stealthAddress: string;
+    nullifier: Hex;
+    stealthAddress: Hex;
     status: TransferStatus;
     timestamp: number;
 }
@@ -41,16 +52,16 @@ export interface BridgeAdapter {
 
 // Privacy hub configuration
 export interface PrivacyHubConfig {
-    hubAddress: string;
-    stealthRegistryAddress: string;
-    ringCTAddress: string;
-    nullifierManagerAddress: string;
+    hubAddress: Hex;
+    stealthRegistryAddress: Hex;
+    ringCTAddress: Hex;
+    nullifierManagerAddress: Hex;
 }
 
 // Transfer initiation parameters
 export interface TransferParams {
     targetChainId: number;
-    recipientStealthId: string;
+    recipientStealthId: Hex;
     amount: bigint;
     fee: bigint;
     useRingCT: boolean;
@@ -58,64 +69,65 @@ export interface TransferParams {
 }
 
 // ABI for CrossChainPrivacyHub
+// ABI for CrossChainPrivacyHub
 const PRIVACY_HUB_ABI = [
-    'function registerBridge(uint256 chainId, address adapter, string name) external',
-    'function initiatePrivateTransfer(uint256 targetChainId, address recipient, uint256 amount, bytes32 commitment, bytes32 nullifier, bytes proof) external payable returns (bytes32)',
-    'function relayPrivateTransfer(bytes32 transferId, bytes relayProof) external',
-    'function completePrivateTransfer(bytes32 transferId, bytes completionProof) external',
-    'function refundTransfer(bytes32 transferId) external',
-    'function getTransferStatus(bytes32 transferId) external view returns (uint8)',
-    'function getTransferDetails(bytes32 transferId) external view returns (tuple(address sender, uint256 sourceChain, uint256 targetChain, bytes32 commitment, bytes32 nullifier, uint8 status, uint256 timestamp))',
-    'function isBridgeRegistered(uint256 chainId) external view returns (bool)',
-    'function getBridgeAdapter(uint256 chainId) external view returns (address)',
-    'function supportedChains() external view returns (uint256[])',
-    'event PrivateTransferInitiated(bytes32 indexed transferId, uint256 sourceChain, uint256 targetChain, bytes32 commitment)',
-    'event PrivateTransferRelayed(bytes32 indexed transferId, address relayer)',
-    'event PrivateTransferCompleted(bytes32 indexed transferId)',
-    'event PrivateTransferFailed(bytes32 indexed transferId, string reason)',
-    'event PrivateTransferRefunded(bytes32 indexed transferId)'
-];
+    { name: 'registerBridge', type: 'function', stateMutability: 'external', inputs: [{ name: 'chainId', type: 'uint256' }, { name: 'adapter', type: 'address' }, { name: 'name', type: 'string' }] },
+    { name: 'initiatePrivateTransfer', type: 'function', stateMutability: 'payable', inputs: [{ name: 'targetChainId', type: 'uint256' }, { name: 'recipient', type: 'address' }, { name: 'amount', type: 'uint256' }, { name: 'commitment', type: 'bytes32' }, { name: 'nullifier', type: 'bytes32' }, { name: 'proof', type: 'bytes' }], outputs: [{ name: 'transferId', type: 'bytes32' }] },
+    { name: 'relayPrivateTransfer', type: 'function', stateMutability: 'external', inputs: [{ name: 'transferId', type: 'bytes32' }, { name: 'relayProof', type: 'bytes' }] },
+    { name: 'completePrivateTransfer', type: 'function', stateMutability: 'external', inputs: [{ name: 'transferId', type: 'bytes32' }, { name: 'completionProof', type: 'bytes' }] },
+    { name: 'refundTransfer', type: 'function', stateMutability: 'external', inputs: [{ name: 'transferId', type: 'bytes32' }] },
+    { name: 'getTransferStatus', type: 'function', stateMutability: 'view', inputs: [{ name: 'transferId', type: 'bytes32' }], outputs: [{ type: 'uint8' }] },
+    { name: 'getTransferDetails', type: 'function', stateMutability: 'view', inputs: [{ name: 'transferId', type: 'bytes32' }], outputs: [{ type: 'tuple', components: [{ name: 'sender', type: 'address' }, { name: 'sourceChain', type: 'uint256' }, { name: 'targetChain', type: 'uint256' }, { name: 'commitment', type: 'bytes32' }, { name: 'nullifier', type: 'bytes32' }, { name: 'status', type: 'uint8' }, { name: 'timestamp', type: 'uint256' }] }] },
+    { name: 'isBridgeRegistered', type: 'function', stateMutability: 'view', inputs: [{ name: 'chainId', type: 'uint256' }], outputs: [{ type: 'bool' }] },
+    { name: 'getBridgeAdapter', type: 'function', stateMutability: 'view', inputs: [{ name: 'chainId', type: 'uint256' }], outputs: [{ type: 'address' }] },
+    { name: 'supportedChains', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256[]' }] },
+    { name: 'PrivateTransferInitiated', type: 'event', inputs: [{ name: 'transferId', type: 'bytes32', indexed: true }, { name: 'sourceChain', type: 'uint256' }, { name: 'targetChain', type: 'uint256' }, { name: 'commitment', type: 'bytes32' }] },
+    { name: 'PrivateTransferRelayed', type: 'event', inputs: [{ name: 'transferId', type: 'bytes32', indexed: true }, { name: 'relayer', type: 'address' }] },
+    { name: 'PrivateTransferCompleted', type: 'event', inputs: [{ name: 'transferId', type: 'bytes32', indexed: true }] },
+    { name: 'PrivateTransferFailed', type: 'event', inputs: [{ name: 'transferId', type: 'bytes32', indexed: true }, { name: 'reason', type: 'string' }] },
+    { name: 'PrivateTransferRefunded', type: 'event', inputs: [{ name: 'transferId', type: 'bytes32', indexed: true }] }
+] as const;
 
 export class PrivacyHubClient {
-    private hubContract: Contract;
+    private hubContract: any;
     private stealthClient: StealthAddressClient;
     private ringCTClient: RingCTClient;
     private nullifierClient: NullifierClient;
-    private provider: Provider;
-    private signer?: Wallet;
+    private publicClient: PublicClient;
+    private walletClient?: WalletClient;
     private config: PrivacyHubConfig;
 
     constructor(
         config: PrivacyHubConfig,
-        provider: Provider,
-        signer?: Wallet
+        publicClient: PublicClient,
+        walletClient?: WalletClient
     ) {
         this.config = config;
-        this.provider = provider;
-        this.signer = signer;
+        this.publicClient = publicClient;
+        this.walletClient = walletClient;
 
-        this.hubContract = new Contract(
-            config.hubAddress,
-            PRIVACY_HUB_ABI,
-            signer || provider
-        );
+        this.hubContract = getContract({
+            address: config.hubAddress as Hex,
+            abi: PRIVACY_HUB_ABI,
+            client: { public: publicClient, wallet: walletClient }
+        });
 
         this.stealthClient = new StealthAddressClient(
-            config.stealthRegistryAddress,
-            provider,
-            signer
+            config.stealthRegistryAddress as Hex,
+            publicClient,
+            walletClient
         );
 
         this.ringCTClient = new RingCTClient(
-            config.ringCTAddress,
-            provider,
-            signer
+            config.ringCTAddress as Hex,
+            publicClient,
+            walletClient
         );
 
         this.nullifierClient = new NullifierClient(
-            config.nullifierManagerAddress,
-            provider,
-            signer
+            config.nullifierManagerAddress as Hex,
+            publicClient,
+            walletClient
         );
     }
 
@@ -123,83 +135,81 @@ export class PrivacyHubClient {
     // UNIFIED PRIVACY OPERATIONS
     // =========================================================================
 
-    /**
-     * Perform a complete private cross-chain transfer
-     */
     async privateTransfer(params: TransferParams): Promise<{
-        transferId: string;
+        transferId: Hex;
         stealthAddress: StealthAddressResult;
         commitment: PedersenCommitment;
-        nullifier: string;
-        txHash: string;
+        nullifier: Hex;
+        txHash: Hex;
     }> {
-        if (!this.signer) throw new Error('Signer required');
+        if (!this.walletClient) throw new Error('Wallet client required');
 
         // 1. Compute stealth address for recipient
         const stealthResult = await this.stealthClient.computeStealthAddress(params.recipientStealthId);
 
         // 2. Create commitment for amount
-        const commitment = await this.ringCTClient.createCommitment(params.amount);
+        const commitment = await this.ringCTClient.createCommitment(BigInt(params.amount));
 
         // 3. Derive nullifier
-        const secret = hexlify(ethers.randomBytes(32));
+        const secret = toHex(crypto.getRandomValues(new Uint8Array(32)));
+        const chainId = await this.publicClient.getChainId();
         const nullifier = NullifierClient.deriveNullifier(
             secret,
             commitment.commitment,
-            await this.provider.getNetwork().then(n => Number(n.chainId))
+            chainId
         );
 
         // 4. Generate ZK proof (simplified - in production use actual ZK circuit)
-        const proof = keccak256(ethers.concat([
-            getBytes(commitment.commitment),
-            getBytes(nullifier),
-            getBytes(stealthResult.stealthAddress),
-            toBeHex(params.amount, 32)
+        const proof = keccak256(concat([
+            commitment.commitment,
+            nullifier,
+            stealthResult.stealthAddress,
+            toHex(params.amount, { size: 32 })
         ]));
 
         // 5. Initiate transfer
-        const tx = await this.hubContract.initiatePrivateTransfer(
-            params.targetChainId,
-            stealthResult.stealthAddress,
+        const hash = await this.hubContract.write.initiatePrivateTransfer([
+            BigInt(params.targetChainId),
+            getAddress(stealthResult.stealthAddress),
             params.amount,
             commitment.commitment,
             nullifier,
-            proof,
-            { value: params.fee }
-        );
+            proof
+        ], { value: params.fee });
 
-        const receipt = await tx.wait();
+        const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
 
         // Extract transfer ID from event
-        const event = receipt.logs.find(
-            (log: ethers.Log) => {
-                try {
-                    const parsed = this.hubContract.interface.parseLog({
-                        topics: log.topics as string[],
-                        data: log.data
-                    });
-                    return parsed?.name === 'PrivateTransferInitiated';
-                } catch {
-                    return false;
+        let transferId: Hex = zeroHash;
+        for (const log of receipt.logs) {
+            try {
+                const { eventName, args } = decodeEventLog({
+                    abi: PRIVACY_HUB_ABI,
+                    data: log.data,
+                    topics: log.topics
+                }) as any;
+                if (eventName === 'PrivateTransferInitiated' && (args as any).commitment === (commitment.commitment as Hex)) {
+                    transferId = (args as any).transferId;
+                    break;
                 }
+            } catch {
+                continue;
             }
-        );
+        }
 
-        const transferId = event 
-            ? this.hubContract.interface.parseLog({
-                topics: event.topics as string[],
-                data: event.data
-            })?.args?.transferId
-            : keccak256(ethers.concat([tx.hash, toBeHex(0, 32)]));
+        if (transferId === zeroHash) {
+             transferId = keccak256(concat([receipt.transactionHash, toHex(0, { size: 32 })]));
+        }
 
         // 6. Announce stealth payment
+        const extraData = encodeAbiParameters(
+            parseAbiParameters('bytes32, uint256'),
+            [transferId, BigInt(params.targetChainId)]
+        );
         await this.stealthClient.announcePayment(
             stealthResult.stealthAddress,
             stealthResult.ephemeralPubKey,
-            ethers.AbiCoder.defaultAbiCoder().encode(
-                ['bytes32', 'uint256'],
-                [transferId, params.targetChainId]
-            )
+            extraData
         );
 
         return {
@@ -207,7 +217,7 @@ export class PrivacyHubClient {
             stealthAddress: stealthResult,
             commitment,
             nullifier,
-            txHash: receipt.hash
+            txHash: receipt.transactionHash
         };
     }
 
@@ -216,18 +226,18 @@ export class PrivacyHubClient {
      */
     async ringCTTransfer(
         inputCommitments: PedersenCommitment[],
-        recipientStealthId: string,
+        recipientStealthId: Hex,
         amount: bigint,
         fee: bigint,
         ring: RingMember[],
         signerIndex: number,
-        privateKey: string
+        privateKey: Hex
     ): Promise<{
-        txHash: string;
+        txHash: Hex;
         outputCommitments: PedersenCommitment[];
         stealthAddress: StealthAddressResult;
     }> {
-        if (!this.signer) throw new Error('Signer required');
+        if (!this.walletClient) throw new Error('Wallet client required');
 
         // Calculate change
         const totalInput = inputCommitments.reduce((sum, c) => sum + c.amount, 0n);
@@ -276,7 +286,7 @@ export class PrivacyHubClient {
      * Transfer nullifier to another domain
      */
     async transferNullifierCrossDomain(
-        nullifier: string,
+        nullifier: Hex,
         sourceDomain: ChainDomain,
         targetDomain: ChainDomain
     ): Promise<CrossDomainNullifier> {
@@ -297,7 +307,7 @@ export class PrivacyHubClient {
     /**
      * Verify nullifier hasn't been used in any domain
      */
-    async verifyNullifierGloballyUnused(nullifier: string): Promise<{
+    async verifyNullifierGloballyUnused(nullifier: Hex): Promise<{
         unused: boolean;
         usedInDomains: number[];
     }> {
@@ -330,23 +340,23 @@ export class PrivacyHubClient {
      * Setup stealth receiving for a user
      */
     async setupStealthReceiving(scheme: StealthScheme = StealthScheme.SECP256K1): Promise<{
-        stealthId: string;
-        spendingPrivKey: string;
-        viewingPrivKey: string;
-        txHash: string;
+        stealthId: Hex;
+        spendingPrivKey: Hex;
+        viewingPrivKey: Hex;
+        txHash: Hex;
     }> {
         const keys = StealthAddressClient.generateMetaAddress(scheme);
 
         const result = await this.stealthClient.registerMetaAddress(
-            keys.spendingPubKey,
-            keys.viewingPubKey,
+            keys.spendingPubKey as Hex,
+            keys.viewingPubKey as Hex,
             scheme
         );
 
         return {
             stealthId: result.stealthId,
-            spendingPrivKey: keys.spendingPrivKey,
-            viewingPrivKey: keys.viewingPrivKey,
+            spendingPrivKey: keys.spendingPrivKey as Hex,
+            viewingPrivKey: keys.viewingPrivKey as Hex,
             txHash: result.txHash
         };
     }
@@ -355,16 +365,16 @@ export class PrivacyHubClient {
      * Scan for incoming stealth payments
      */
     async scanForPayments(
-        viewingPrivKey: string,
-        spendingPubKey: string,
+        viewingPrivKey: Hex,
+        spendingPubKey: Hex,
         fromBlock: number,
         toBlock?: number
     ) {
         return await this.stealthClient.scanAnnouncements(
             viewingPrivKey,
             spendingPubKey,
-            fromBlock,
-            toBlock
+            BigInt(fromBlock),
+            toBlock ? BigInt(toBlock) : undefined
         );
     }
 
@@ -375,17 +385,16 @@ export class PrivacyHubClient {
     /**
      * Get transfer status
      */
-    async getTransferStatus(transferId: string): Promise<TransferStatus> {
-        const status = await this.hubContract.getTransferStatus(transferId);
-        return status as TransferStatus;
+    async getTransferStatus(transferId: Hex): Promise<TransferStatus> {
+        return await this.hubContract.read.getTransferStatus([transferId]) as TransferStatus;
     }
 
     /**
      * Get full transfer details
      */
-    async getTransferDetails(transferId: string): Promise<PrivateTransfer | null> {
+    async getTransferDetails(transferId: Hex): Promise<PrivateTransfer | null> {
         try {
-            const details = await this.hubContract.getTransferDetails(transferId);
+            const details = await this.hubContract.read.getTransferDetails([transferId]) as any;
             
             return {
                 transferId,
@@ -394,10 +403,10 @@ export class PrivacyHubClient {
                 commitment: {
                     commitment: details.commitment,
                     amount: 0n, // Hidden
-                    blindingFactor: ''
+                    blindingFactor: zeroHash
                 },
                 nullifier: details.nullifier,
-                stealthAddress: '',
+                stealthAddress: zeroAddress,
                 status: details.status as TransferStatus,
                 timestamp: Number(details.timestamp)
             };
@@ -409,34 +418,31 @@ export class PrivacyHubClient {
     /**
      * Relay a pending transfer
      */
-    async relayTransfer(transferId: string, relayProof: string): Promise<string> {
-        if (!this.signer) throw new Error('Signer required');
+    async relayTransfer(transferId: Hex, relayProof: Hex): Promise<Hex> {
+        if (!this.walletClient) throw new Error('Wallet client required');
 
-        const tx = await this.hubContract.relayPrivateTransfer(transferId, relayProof);
-        const receipt = await tx.wait();
-        return receipt.hash;
+        const hash = await this.hubContract.write.relayPrivateTransfer([transferId, relayProof]);
+        return hash;
     }
 
     /**
      * Complete a relayed transfer
      */
-    async completeTransfer(transferId: string, completionProof: string): Promise<string> {
-        if (!this.signer) throw new Error('Signer required');
+    async completeTransfer(transferId: Hex, completionProof: Hex): Promise<Hex> {
+        if (!this.walletClient) throw new Error('Wallet client required');
 
-        const tx = await this.hubContract.completePrivateTransfer(transferId, completionProof);
-        const receipt = await tx.wait();
-        return receipt.hash;
+        const hash = await this.hubContract.write.completePrivateTransfer([transferId, completionProof]);
+        return hash;
     }
 
     /**
      * Refund a failed transfer
      */
-    async refundTransfer(transferId: string): Promise<string> {
-        if (!this.signer) throw new Error('Signer required');
+    async refundTransfer(transferId: Hex): Promise<Hex> {
+        if (!this.walletClient) throw new Error('Wallet client required');
 
-        const tx = await this.hubContract.refundTransfer(transferId);
-        const receipt = await tx.wait();
-        return receipt.hash;
+        const hash = await this.hubContract.write.refundTransfer([transferId]);
+        return hash;
     }
 
     // =========================================================================
@@ -447,22 +453,22 @@ export class PrivacyHubClient {
      * Check if a chain is supported
      */
     async isChainSupported(chainId: number): Promise<boolean> {
-        return await this.hubContract.isBridgeRegistered(chainId);
+        return await this.hubContract.read.isBridgeRegistered([BigInt(chainId)]);
     }
 
     /**
      * Get supported chains
      */
     async getSupportedChains(): Promise<number[]> {
-        const chains = await this.hubContract.supportedChains();
-        return chains.map((c: bigint) => Number(c));
+        const chains = await this.hubContract.read.supportedChains();
+        return (chains as bigint[]).map((c: bigint) => Number(c));
     }
 
     /**
      * Get bridge adapter for a chain
      */
-    async getBridgeAdapter(chainId: number): Promise<string> {
-        return await this.hubContract.getBridgeAdapter(chainId);
+    async getBridgeAdapter(chainId: number): Promise<Hex> {
+        return await this.hubContract.read.getBridgeAdapter([BigInt(chainId)]);
     }
 
     // =========================================================================
@@ -473,32 +479,54 @@ export class PrivacyHubClient {
      * Listen for transfer events
      */
     onTransferInitiated(
-        callback: (transferId: string, sourceChain: number, targetChain: number, commitment: string) => void
+        callback: (transferId: Hex, sourceChain: number, targetChain: number, commitment: Hex) => void
     ): () => void {
-        const filter = this.hubContract.filters.PrivateTransferInitiated();
-
-        const handler = (transferId: string, sourceChain: bigint, targetChain: bigint, commitment: string) => {
-            callback(transferId, Number(sourceChain), Number(targetChain), commitment);
-        };
-
-        this.hubContract.on(filter, handler);
-        return () => this.hubContract.off(filter, handler);
+        const unwatch = this.publicClient.watchContractEvent({
+            address: this.hubContract.address,
+            abi: PRIVACY_HUB_ABI,
+            eventName: 'PrivateTransferInitiated',
+            onLogs: logs => {
+                for (const log of logs) {
+                    const { args } = log as any;
+                    callback(args.transferId, Number(args.sourceChain), Number(args.targetChain), args.commitment);
+                }
+            }
+        });
+        return unwatch;
     }
 
     onTransferCompleted(
-        callback: (transferId: string) => void
+        callback: (transferId: Hex) => void
     ): () => void {
-        const filter = this.hubContract.filters.PrivateTransferCompleted();
-        this.hubContract.on(filter, callback);
-        return () => this.hubContract.off(filter, callback);
+        const unwatch = this.publicClient.watchContractEvent({
+            address: this.hubContract.address,
+            abi: PRIVACY_HUB_ABI,
+            eventName: 'PrivateTransferCompleted',
+            onLogs: logs => {
+                for (const log of logs) {
+                    const { args } = log as any;
+                    callback(args.transferId);
+                }
+            }
+        });
+        return unwatch;
     }
 
     onTransferFailed(
-        callback: (transferId: string, reason: string) => void
+        callback: (transferId: Hex, reason: string) => void
     ): () => void {
-        const filter = this.hubContract.filters.PrivateTransferFailed();
-        this.hubContract.on(filter, callback);
-        return () => this.hubContract.off(filter, callback);
+        const unwatch = this.publicClient.watchContractEvent({
+            address: this.hubContract.address,
+            abi: PRIVACY_HUB_ABI,
+            eventName: 'PrivateTransferFailed',
+            onLogs: logs => {
+                for (const log of logs) {
+                    const { args } = log as any;
+                    callback(args.transferId, args.reason);
+                }
+            }
+        });
+        return unwatch;
     }
 
     // =========================================================================

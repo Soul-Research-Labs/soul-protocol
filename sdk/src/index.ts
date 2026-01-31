@@ -102,6 +102,9 @@ export * as FHE from "./fhe";
 // Post-Quantum Cryptography
 export * as PQC from "./pqc";
 
+// Privacy (Stealth, RingCT, Nullifiers)
+export * from "./privacy";
+
 // Re-export PQC types for convenience
 export {
   PQCAlgorithm,
@@ -157,12 +160,6 @@ export {
   ArbitrumBridgeAdapterSDK,
   BitcoinBridgeAdapterSDK,
   StarknetBridgeAdapterSDK,
-  SupportedChain,
-  BridgeAdapterConfig,
-  BridgeStatus,
-  BridgeFees,
-  BridgeTransferParams,
-  BridgeTransferResult,
 
   // Soul v2 Primitives
   ProofCarryingContainerClient,
@@ -170,7 +167,9 @@ export {
   ExecutionAgnosticStateCommitmentsClient,
   CrossDomainNullifierAlgebraClient,
   Soulv2ClientFactory,
+};
 
+export type {
   // Soul v2 Types
   Container,
   ContainerCreationParams,
@@ -194,3 +193,12 @@ export {
   TransactionOptions,
   ProofBundle,
 };
+
+export type {
+  SupportedChain,
+  BridgeAdapterConfig,
+  BridgeStatus,
+  BridgeFees,
+  BridgeTransferParams,
+  BridgeTransferResult,
+} from "./bridges";

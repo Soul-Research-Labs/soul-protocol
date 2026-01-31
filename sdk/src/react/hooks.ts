@@ -5,7 +5,16 @@
  */
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { ethers } from 'ethers';
+import { 
+  keccak256, 
+  toHex, 
+  toBytes, 
+  encodeAbiParameters, 
+  type PublicClient, 
+  type WalletClient,
+  type Hex,
+  parseEther
+} from 'viem';
 import { SoulSDK as SoulClient } from '../client/SoulSDK';
 import { 
   BridgeFactory, 
@@ -71,7 +80,7 @@ export function useSoul(config: UseSoulConfig) {
   const [error, setError] = useState<Error | null>(null);
 
   // Initialize client
-  const connect = useCallback(async (signer: ethers.Signer) => {
+  const connect = useCallback(async (publicClient: PublicClient, walletClient: WalletClient) => {
     try {
       setIsLoading(true);
       setError(null);
@@ -80,14 +89,13 @@ export function useSoul(config: UseSoulConfig) {
         curve: 'bn254',
         relayerEndpoint: config.rpcUrl || 'https://relay.pil.network',
         proverUrl: 'https://prover.pil.network',
-        privateKey: '', // Placeholder - will be set when signer is connected
+        privateKey: '', // Placeholder
       });
 
       setClient(pilClient);
 
-      const address = await signer.getAddress();
-      const provider = signer.provider!;
-      const balance = await provider.getBalance(address);
+      const [address] = await walletClient.getAddresses();
+      const balance = await publicClient.getBalance({ address });
 
       setState((prev: SoulState) => ({
         ...prev,
@@ -144,13 +152,13 @@ export function usePrivacyPool(client: SoulClient | null) {
       setError(null);
 
       // Generate random secret
-      const secret = ethers.randomBytes(32);
+      const secret = crypto.getRandomValues(new Uint8Array(32));
       
-      // Compute commitment (this would call the actual implementation)
-      const commitment = ethers.keccak256(
-        ethers.AbiCoder.defaultAbiCoder().encode(
-          ['bytes32', 'uint256'],
-          [secret, amount]
+      // Compute commitment
+      const commitment = keccak256(
+        encodeAbiParameters(
+          [{ type: 'bytes32' }, { type: 'uint256' }],
+          [toHex(secret), amount]
         )
       );
 
@@ -221,8 +229,8 @@ export function usePrivacyPool(client: SoulClient | null) {
 
 export function useBridge(
   client: SoulClient | null,
-  provider: ethers.Provider | null,
-  signer: ethers.Signer | null
+  publicClient: PublicClient | null,
+  walletClient: WalletClient | null
 ) {
   const [adapters, setAdapters] = useState<Map<SupportedChain, BaseBridgeAdapter>>(new Map());
   const [transfers, setTransfers] = useState<Map<string, BridgeStatus>>(new Map());
@@ -234,18 +242,18 @@ export function useBridge(
     chain: SupportedChain,
     config: Record<string, string>
   ) => {
-    if (!provider || !signer) {
-      setError(new Error('Provider/signer not available'));
+    if (!publicClient || !walletClient) {
+      setError(new Error('Clients not available'));
       return;
     }
 
     try {
-      const adapter = BridgeFactory.createAdapter(chain, provider, signer, config);
+      const adapter = BridgeFactory.createAdapter(chain, publicClient, walletClient, config);
       setAdapters((prev: Map<SupportedChain, BaseBridgeAdapter>) => new Map(prev).set(chain, adapter));
     } catch (err) {
       setError(err as Error);
     }
-  }, [provider, signer]);
+  }, [publicClient, walletClient]);
 
   // Bridge transfer
   const bridge = useCallback(async (params: BridgeParams): Promise<string | null> => {

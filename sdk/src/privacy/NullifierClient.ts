@@ -1,9 +1,16 @@
-/**
- * @title Unified Nullifier Client
- * @description TypeScript SDK for cross-domain nullifier operations
- */
-
-import { ethers, Contract, Wallet, Provider, keccak256, toBeHex, getBytes, hexlify } from 'ethers';
+import { 
+    PublicClient, 
+    WalletClient, 
+    getContract, 
+    keccak256, 
+    toHex, 
+    toBytes, 
+    concat, 
+    getAddress, 
+    Hex, 
+    stringToBytes,
+    decodeEventLog
+} from 'viem';
 
 // Chain domain configuration
 export interface ChainDomain {
@@ -26,19 +33,19 @@ export enum NullifierType {
 
 // Registered nullifier record
 export interface NullifierRecord {
-    nullifier: string;
+    nullifier: Hex;
     domain: number;
     timestamp: number;
-    pilBinding: string;
+    pilBinding: Hex;
 }
 
 // Cross-domain nullifier derivation result
 export interface CrossDomainNullifier {
-    sourceNullifier: string;
+    sourceNullifier: Hex;
     sourceDomain: number;
     targetDomain: number;
-    crossDomainNullifier: string;
-    pilBinding: string;
+    crossDomainNullifier: Hex;
+    pilBinding: Hex;
 }
 
 // Predefined chain domains
@@ -58,76 +65,76 @@ export const CHAIN_DOMAINS: Record<string, ChainDomain> = {
 };
 
 // Domain separator constants
-const NULLIFIER_DOMAIN = keccak256(ethers.toUtf8Bytes('Soul_UNIFIED_NULLIFIER_V1'));
-const CROSS_DOMAIN_TAG = keccak256(ethers.toUtf8Bytes('CROSS_DOMAIN'));
-const Soul_BINDING_TAG = keccak256(ethers.toUtf8Bytes('Soul_BINDING'));
+const NULLIFIER_DOMAIN = keccak256(stringToBytes('Soul_UNIFIED_NULLIFIER_V1'));
+const CROSS_DOMAIN_TAG = keccak256(stringToBytes('CROSS_DOMAIN'));
+const Soul_BINDING_TAG = keccak256(stringToBytes('Soul_BINDING'));
 
 // ABI for UnifiedNullifierManager
 const NULLIFIER_MANAGER_ABI = [
-    'function registerDomain(uint256 chainId, bytes32 domainTag) external',
-    'function registerNullifier(bytes32 nullifier, uint256 domain) external',
-    'function deriveCrossDomainNullifier(bytes32 sourceNullifier, uint256 sourceDomain, uint256 targetDomain) external view returns (bytes32)',
-    'function deriveSoulBinding(bytes32 nullifier) external view returns (bytes32)',
-    'function isNullifierConsumed(bytes32 nullifier, uint256 domain) external view returns (bool)',
-    'function isDomainRegistered(uint256 domain) external view returns (bool)',
-    'function getSoulBinding(bytes32 nullifier) external view returns (bytes32)',
-    'function getNullifierRecord(bytes32 nullifier, uint256 domain) external view returns (uint256 timestamp, bytes32 pilBinding)',
-    'event DomainRegistered(uint256 indexed chainId, bytes32 domainTag)',
-    'event NullifierRegistered(bytes32 indexed nullifier, uint256 indexed domain, bytes32 pilBinding)',
-    'event CrossDomainNullifierDerived(bytes32 indexed sourceNullifier, bytes32 indexed crossNullifier, uint256 sourceDomain, uint256 targetDomain)'
-];
+    { name: 'registerDomain', type: 'function', stateMutability: 'external', inputs: [{ name: 'chainId', type: 'uint256' }, { name: 'domainTag', type: 'bytes32' }] },
+    { name: 'registerNullifier', type: 'function', stateMutability: 'external', inputs: [{ name: 'nullifier', type: 'bytes32' }, { name: 'domain', type: 'uint256' }] },
+    { name: 'deriveCrossDomainNullifier', type: 'function', stateMutability: 'view', inputs: [{ name: 'sourceNullifier', type: 'bytes32' }, { name: 'sourceDomain', type: 'uint256' }, { name: 'targetDomain', type: 'uint256' }], outputs: [{ type: 'bytes32' }] },
+    { name: 'deriveSoulBinding', type: 'function', stateMutability: 'view', inputs: [{ name: 'nullifier', type: 'bytes32' }], outputs: [{ type: 'bytes32' }] },
+    { name: 'isNullifierConsumed', type: 'function', stateMutability: 'view', inputs: [{ name: 'nullifier', type: 'bytes32' }, { name: 'domain', type: 'uint256' }], outputs: [{ type: 'bool' }] },
+    { name: 'isDomainRegistered', type: 'function', stateMutability: 'view', inputs: [{ name: 'domain', type: 'uint256' }], outputs: [{ type: 'bool' }] },
+    { name: 'getSoulBinding', type: 'function', stateMutability: 'view', inputs: [{ name: 'nullifier', type: 'bytes32' }], outputs: [{ type: 'bytes32' }] },
+    { name: 'getNullifierRecord', type: 'function', stateMutability: 'view', inputs: [{ name: 'nullifier', type: 'bytes32' }, { name: 'domain', type: 'uint256' }], outputs: [{ name: 'timestamp', type: 'uint256' }, { name: 'pilBinding', type: 'bytes32' }] },
+    { name: 'DomainRegistered', type: 'event', inputs: [{ name: 'chainId', type: 'uint256', indexed: true }, { name: 'domainTag', type: 'bytes32' }] },
+    { name: 'NullifierRegistered', type: 'event', inputs: [{ name: 'nullifier', type: 'bytes32', indexed: true }, { name: 'domain', type: 'uint256', indexed: true }, { name: 'pilBinding', type: 'bytes32' }] },
+    { name: 'CrossDomainNullifierDerived', type: 'event', inputs: [{ name: 'sourceNullifier', type: 'bytes32', indexed: true }, { name: 'crossNullifier', type: 'bytes32', indexed: true }, { name: 'sourceDomain', type: 'uint256' }, { name: 'targetDomain', type: 'uint256' }] }
+] as const;
 
 export class NullifierClient {
-    private contract: Contract;
-    private provider: Provider;
-    private signer?: Wallet;
+    private contract: any;
+    private publicClient: PublicClient;
+    private walletClient?: WalletClient;
 
     constructor(
-        contractAddress: string,
-        provider: Provider,
-        signer?: Wallet
+        contractAddress: Hex,
+        publicClient: PublicClient,
+        walletClient?: WalletClient
     ) {
-        this.provider = provider;
-        this.signer = signer;
-        this.contract = new Contract(
-            contractAddress,
-            NULLIFIER_MANAGER_ABI,
-            signer || provider
-        );
+        this.publicClient = publicClient;
+        this.walletClient = walletClient;
+        this.contract = getContract({
+            address: contractAddress,
+            abi: NULLIFIER_MANAGER_ABI,
+            client: { public: publicClient, wallet: walletClient }
+        });
     }
 
     /**
      * Derive nullifier from secret and commitment
      */
-    static deriveNullifier(secret: string, commitmentHash: string, chainId: number): string {
-        return keccak256(ethers.concat([
-            getBytes(secret),
-            getBytes(commitmentHash),
-            toBeHex(chainId, 8),
-            getBytes(NULLIFIER_DOMAIN)
+    static deriveNullifier(secret: Hex, commitmentHash: Hex, chainId: number): Hex {
+        return keccak256(concat([
+            secret,
+            commitmentHash,
+            toHex(chainId, { size: 8 }),
+            NULLIFIER_DOMAIN
         ]));
     }
 
     /**
      * Derive nullifier from Monero key image
      */
-    static deriveFromMoneroKeyImage(keyImage: string): string {
-        return keccak256(ethers.concat([
-            getBytes(keyImage),
-            getBytes(keccak256(ethers.toUtf8Bytes('MONERO_KEY_IMAGE'))),
-            getBytes(Soul_BINDING_TAG)
+    static deriveFromMoneroKeyImage(keyImage: Hex): Hex {
+        return keccak256(concat([
+            keyImage,
+            keccak256(stringToBytes('MONERO_KEY_IMAGE')),
+            Soul_BINDING_TAG
         ]));
     }
 
     /**
      * Derive nullifier from Zcash note nullifier
      */
-    static deriveFromZcashNullifier(noteNullifier: string, anchor: string): string {
-        return keccak256(ethers.concat([
-            getBytes(noteNullifier),
-            getBytes(anchor),
-            getBytes(keccak256(ethers.toUtf8Bytes('ZCASH_NOTE'))),
-            getBytes(Soul_BINDING_TAG)
+    static deriveFromZcashNullifier(noteNullifier: Hex, anchor: Hex): Hex {
+        return keccak256(concat([
+            noteNullifier,
+            anchor,
+            keccak256(stringToBytes('ZCASH_NOTE')),
+            Soul_BINDING_TAG
         ]));
     }
 
@@ -135,68 +142,66 @@ export class NullifierClient {
      * Derive cross-domain nullifier locally
      */
     static deriveCrossDomainNullifierLocal(
-        sourceNullifier: string,
+        sourceNullifier: Hex,
         sourceDomain: ChainDomain,
         targetDomain: ChainDomain
-    ): string {
-        return keccak256(ethers.concat([
-            getBytes(sourceNullifier),
-            toBeHex(sourceDomain.chainId, 8),
-            getBytes(keccak256(ethers.toUtf8Bytes(sourceDomain.domainTag))),
-            toBeHex(targetDomain.chainId, 8),
-            getBytes(keccak256(ethers.toUtf8Bytes(targetDomain.domainTag))),
-            getBytes(CROSS_DOMAIN_TAG)
+    ): Hex {
+        return keccak256(concat([
+            sourceNullifier,
+            toHex(sourceDomain.chainId, { size: 8 }),
+            keccak256(stringToBytes(sourceDomain.domainTag)),
+            toHex(targetDomain.chainId, { size: 8 }),
+            keccak256(stringToBytes(targetDomain.domainTag)),
+            CROSS_DOMAIN_TAG
         ]));
     }
 
     /**
      * Derive Soul binding locally
      */
-    static deriveSoulBindingLocal(nullifier: string): string {
-        return keccak256(ethers.concat([
-            getBytes(nullifier),
-            getBytes(Soul_BINDING_TAG)
+    static deriveSoulBindingLocal(nullifier: Hex): Hex {
+        return keccak256(concat([
+            nullifier,
+            Soul_BINDING_TAG
         ]));
     }
 
     /**
      * Register a new domain
      */
-    async registerDomain(domain: ChainDomain): Promise<string> {
-        if (!this.signer) throw new Error('Signer required');
+    async registerDomain(domain: ChainDomain): Promise<Hex> {
+        if (!this.walletClient) throw new Error('Wallet client required');
 
-        const domainTagHash = keccak256(ethers.toUtf8Bytes(domain.domainTag));
-        const tx = await this.contract.registerDomain(domain.chainId, domainTagHash);
-        const receipt = await tx.wait();
-        return receipt.hash;
+        const domainTagHash = keccak256(stringToBytes(domain.domainTag));
+        const hash = await this.contract.write.registerDomain([BigInt(domain.chainId), domainTagHash]);
+        return hash;
     }
 
     /**
      * Register a nullifier in a domain
      */
-    async registerNullifier(nullifier: string, domainChainId: number): Promise<string> {
-        if (!this.signer) throw new Error('Signer required');
+    async registerNullifier(nullifier: Hex, domainChainId: number): Promise<Hex> {
+        if (!this.walletClient) throw new Error('Wallet client required');
 
-        const tx = await this.contract.registerNullifier(nullifier, domainChainId);
-        const receipt = await tx.wait();
-        return receipt.hash;
+        const hash = await this.contract.write.registerNullifier([nullifier, BigInt(domainChainId)]);
+        return hash;
     }
 
     /**
      * Derive cross-domain nullifier on-chain
      */
     async deriveCrossDomainNullifier(
-        sourceNullifier: string,
+        sourceNullifier: Hex,
         sourceDomainId: number,
         targetDomainId: number
     ): Promise<CrossDomainNullifier> {
-        const crossDomainNullifier = await this.contract.deriveCrossDomainNullifier(
+        const crossDomainNullifier = await this.contract.read.deriveCrossDomainNullifier([
             sourceNullifier,
-            sourceDomainId,
-            targetDomainId
-        );
+            BigInt(sourceDomainId),
+            BigInt(targetDomainId)
+        ]);
 
-        const pilBinding = await this.contract.deriveSoulBinding(sourceNullifier);
+        const pilBinding = await this.contract.read.deriveSoulBinding([sourceNullifier]);
 
         return {
             sourceNullifier,
@@ -210,30 +215,30 @@ export class NullifierClient {
     /**
      * Check if nullifier is consumed in a domain
      */
-    async isNullifierConsumed(nullifier: string, domainChainId: number): Promise<boolean> {
-        return await this.contract.isNullifierConsumed(nullifier, domainChainId);
+    async isNullifierConsumed(nullifier: Hex, domainChainId: number): Promise<boolean> {
+        return await this.contract.read.isNullifierConsumed([nullifier, BigInt(domainChainId)]);
     }
 
     /**
      * Check if domain is registered
      */
     async isDomainRegistered(domainChainId: number): Promise<boolean> {
-        return await this.contract.isDomainRegistered(domainChainId);
+        return await this.contract.read.isDomainRegistered([BigInt(domainChainId)]);
     }
 
     /**
      * Get Soul binding for a nullifier
      */
-    async getSoulBinding(nullifier: string): Promise<string> {
-        return await this.contract.getSoulBinding(nullifier);
+    async getSoulBinding(nullifier: Hex): Promise<Hex> {
+        return await this.contract.read.getSoulBinding([nullifier]);
     }
 
     /**
      * Get nullifier record
      */
-    async getNullifierRecord(nullifier: string, domainChainId: number): Promise<NullifierRecord | null> {
+    async getNullifierRecord(nullifier: Hex, domainChainId: number): Promise<NullifierRecord | null> {
         try {
-            const [timestamp, pilBinding] = await this.contract.getNullifierRecord(nullifier, domainChainId);
+            const [timestamp, pilBinding] = await this.contract.read.getNullifierRecord([nullifier, BigInt(domainChainId)]) as [bigint, Hex];
             
             if (timestamp === 0n) return null;
 
@@ -251,7 +256,7 @@ export class NullifierClient {
     /**
      * Check if two nullifiers are linked (same Soul binding)
      */
-    async areNullifiersLinked(nullifier1: string, nullifier2: string): Promise<boolean> {
+    async areNullifiersLinked(nullifier1: Hex, nullifier2: Hex): Promise<boolean> {
         const binding1 = await this.getSoulBinding(nullifier1);
         const binding2 = await this.getSoulBinding(nullifier2);
         return binding1 === binding2;
@@ -261,7 +266,7 @@ export class NullifierClient {
      * Batch check multiple nullifiers
      */
     async batchCheckNullifiers(
-        nullifiers: string[],
+        nullifiers: Hex[],
         domainChainId: number
     ): Promise<Map<string, boolean>> {
         const results = new Map<string, boolean>();
@@ -280,38 +285,40 @@ export class NullifierClient {
      * Listen for nullifier registration events
      */
     onNullifierRegistered(
-        callback: (nullifier: string, domain: number, pilBinding: string) => void
+        callback: (nullifier: Hex, domain: number, pilBinding: Hex) => void
     ): () => void {
-        const filter = this.contract.filters.NullifierRegistered();
-
-        const handler = (nullifier: string, domain: bigint, pilBinding: string) => {
-            callback(nullifier, Number(domain), pilBinding);
-        };
-
-        this.contract.on(filter, handler);
-
-        return () => {
-            this.contract.off(filter, handler);
-        };
+        const unwatch = this.publicClient.watchContractEvent({
+            address: this.contract.address,
+            abi: NULLIFIER_MANAGER_ABI,
+            eventName: 'NullifierRegistered',
+            onLogs: logs => {
+                for (const log of logs) {
+                    const { args } = log as any;
+                    callback(args.nullifier, Number(args.domain), args.pilBinding);
+                }
+            }
+        });
+        return unwatch;
     }
 
     /**
      * Listen for cross-domain derivation events
      */
     onCrossDomainDerived(
-        callback: (sourceNf: string, crossNf: string, sourceDomain: number, targetDomain: number) => void
+        callback: (sourceNf: Hex, crossNf: Hex, sourceDomain: number, targetDomain: number) => void
     ): () => void {
-        const filter = this.contract.filters.CrossDomainNullifierDerived();
-
-        const handler = (sourceNf: string, crossNf: string, sourceDomain: bigint, targetDomain: bigint) => {
-            callback(sourceNf, crossNf, Number(sourceDomain), Number(targetDomain));
-        };
-
-        this.contract.on(filter, handler);
-
-        return () => {
-            this.contract.off(filter, handler);
-        };
+        const unwatch = this.publicClient.watchContractEvent({
+            address: this.contract.address,
+            abi: NULLIFIER_MANAGER_ABI,
+            eventName: 'CrossDomainNullifierDerived',
+            onLogs: logs => {
+                for (const log of logs) {
+                    const { args } = log as any;
+                    callback(args.sourceNullifier, args.crossNullifier, Number(args.sourceDomain), Number(args.targetDomain));
+                }
+            }
+        });
+        return unwatch;
     }
 }
 

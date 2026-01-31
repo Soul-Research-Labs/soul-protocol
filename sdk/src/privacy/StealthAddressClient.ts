@@ -1,9 +1,22 @@
-/**
- * @title Stealth Address Client
- * @description TypeScript SDK for ERC-5564 stealth address operations
- */
-
-import { ethers, Contract, Wallet, Provider, keccak256, toBeHex, getBytes, hexlify, randomBytes } from 'ethers';
+import { 
+    PublicClient, 
+    WalletClient, 
+    Transport, 
+    Chain, 
+    HttpTransport, 
+    getContract, 
+    keccak256, 
+    toHex, 
+    toBytes, 
+    concat, 
+    getAddress, 
+    slice, 
+    Hex, 
+    ByteArray,
+    Log,
+    decodeEventLog
+} from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
 
 // Stealth Address Schemes
 export enum StealthScheme {
@@ -15,122 +28,124 @@ export enum StealthScheme {
 
 // Meta-address structure
 export interface StealthMetaAddress {
-    stealthId: string;
-    spendingPubKey: string;
-    viewingPubKey: string;
+    stealthId: Hex;
+    spendingPubKey: Hex;
+    viewingPubKey: Hex;
     scheme: StealthScheme;
 }
 
 // Computed stealth address result
 export interface StealthAddressResult {
-    stealthAddress: string;
-    ephemeralPubKey: string;
-    viewTag: string;
+    stealthAddress: Hex;
+    ephemeralPubKey: Hex;
+    viewTag: Hex;
 }
 
 // Payment announcement
 export interface PaymentAnnouncement {
-    stealthAddress: string;
-    ephemeralPubKey: string;
-    metadata: string;
+    stealthAddress: Hex;
+    ephemeralPubKey: Hex;
+    metadata: Hex;
     blockNumber: number;
-    transactionHash: string;
+    transactionHash: Hex;
 }
 
 // ABI for StealthAddressRegistry
 const STEALTH_REGISTRY_ABI = [
-    'function registerMetaAddress(bytes32 stealthId, bytes spendingPubKey, bytes viewingPubKey, uint8 scheme) external',
-    'function computeStealthAddress(bytes32 stealthId, bytes ephemeralPubKey) external view returns (address, bytes)',
-    'function announcePayment(address stealthAddress, bytes ephemeralPubKey, bytes metadata) external',
-    'function getMetaAddress(bytes32 stealthId) external view returns (bytes spendingPubKey, bytes viewingPubKey, uint8 scheme)',
-    'function getAnnouncementCount() external view returns (uint256)',
-    'event MetaAddressRegistered(bytes32 indexed stealthId, address indexed owner, uint8 scheme)',
-    'event PaymentAnnounced(address indexed stealthAddress, bytes ephemeralPubKey, bytes metadata, uint256 indexed blockNumber)'
-];
+    { name: 'registerMetaAddress', type: 'function', stateMutability: 'external', inputs: [{ name: 'stealthId', type: 'bytes32' }, { name: 'spendingPubKey', type: 'bytes' }, { name: 'viewingPubKey', type: 'bytes' }, { name: 'scheme', type: 'uint8' }] },
+    { name: 'computeStealthAddress', type: 'function', stateMutability: 'view', inputs: [{ name: 'stealthId', type: 'bytes32' }, { name: 'ephemeralPubKey', type: 'bytes' }], outputs: [{ type: 'address' }, { type: 'bytes' }] },
+    { name: 'announcePayment', type: 'function', stateMutability: 'external', inputs: [{ name: 'stealthAddress', type: 'address' }, { name: 'ephemeralPubKey', type: 'bytes' }, { name: 'metadata', type: 'bytes' }] },
+    { name: 'getMetaAddress', type: 'function', stateMutability: 'view', inputs: [{ name: 'stealthId', type: 'bytes32' }], outputs: [{ name: 'spendingPubKey', type: 'bytes' }, { name: 'viewingPubKey', type: 'bytes' }, { name: 'scheme', type: 'uint8' }] },
+    { name: 'getAnnouncementCount', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+    { name: 'MetaAddressRegistered', type: 'event', inputs: [{ name: 'stealthId', type: 'bytes32', indexed: true }, { name: 'owner', type: 'address', indexed: true }, { name: 'scheme', type: 'uint8' }] },
+    { name: 'PaymentAnnounced', type: 'event', inputs: [{ name: 'stealthAddress', type: 'address', indexed: true }, { name: 'ephemeralPubKey', type: 'bytes' }, { name: 'metadata', type: 'bytes' }, { name: 'blockNumber', type: 'uint256', indexed: true }] }
+] as const;
 
 export class StealthAddressClient {
-    private contract: Contract;
-    private provider: Provider;
-    private signer?: Wallet;
+    private contract: any;
+    private publicClient: PublicClient;
+    private walletClient?: WalletClient;
 
     constructor(
-        contractAddress: string,
-        provider: Provider,
-        signer?: Wallet
+        contractAddress: Hex,
+        publicClient: PublicClient,
+        walletClient?: WalletClient
     ) {
-        this.provider = provider;
-        this.signer = signer;
-        this.contract = new Contract(
-            contractAddress,
-            STEALTH_REGISTRY_ABI,
-            signer || provider
-        );
+        this.publicClient = publicClient;
+        this.walletClient = walletClient;
+        this.contract = getContract({
+            address: contractAddress,
+            abi: STEALTH_REGISTRY_ABI,
+            client: {
+                public: publicClient,
+                wallet: walletClient
+            }
+        });
     }
 
     /**
      * Generate a new stealth meta-address keypair
      */
     static generateMetaAddress(scheme: StealthScheme = StealthScheme.SECP256K1): {
-        spendingPrivKey: string;
-        spendingPubKey: string;
-        viewingPrivKey: string;
-        viewingPubKey: string;
+        spendingPrivKey: Hex;
+        spendingPubKey: Hex;
+        viewingPrivKey: Hex;
+        viewingPubKey: Hex;
     } {
         // Generate random private keys
-        const spendingPrivKey = hexlify(randomBytes(32));
-        const viewingPrivKey = hexlify(randomBytes(32));
+        const spendingPrivKey = toHex(crypto.getRandomValues(new Uint8Array(32)));
+        const viewingPrivKey = toHex(crypto.getRandomValues(new Uint8Array(32)));
 
         // Derive public keys (secp256k1)
-        const spendingWallet = new Wallet(spendingPrivKey);
-        const viewingWallet = new Wallet(viewingPrivKey);
+        const spendingAccount = privateKeyToAccount(spendingPrivKey);
+        const viewingAccount = privateKeyToAccount(viewingPrivKey);
 
         return {
             spendingPrivKey,
-            spendingPubKey: spendingWallet.signingKey.publicKey,
+            spendingPubKey: spendingAccount.publicKey,
             viewingPrivKey,
-            viewingPubKey: viewingWallet.signingKey.publicKey
+            viewingPubKey: viewingAccount.publicKey
         };
     }
 
     /**
      * Compute stealth ID from meta-address components
      */
-    static computeStealthId(spendingPubKey: string, viewingPubKey: string): string {
-        return keccak256(ethers.concat([getBytes(spendingPubKey), getBytes(viewingPubKey)]));
+    static computeStealthId(spendingPubKey: Hex, viewingPubKey: Hex): Hex {
+        return keccak256(concat([spendingPubKey, viewingPubKey]));
     }
 
     /**
      * Register a new stealth meta-address
      */
     async registerMetaAddress(
-        spendingPubKey: string,
-        viewingPubKey: string,
+        spendingPubKey: Hex,
+        viewingPubKey: Hex,
         scheme: StealthScheme = StealthScheme.SECP256K1
-    ): Promise<{ stealthId: string; txHash: string }> {
-        if (!this.signer) throw new Error('Signer required for registration');
+    ): Promise<{ stealthId: Hex; txHash: Hex }> {
+        if (!this.walletClient) throw new Error('Wallet client required for registration');
 
         const stealthId = StealthAddressClient.computeStealthId(spendingPubKey, viewingPubKey);
 
-        const tx = await this.contract.registerMetaAddress(
+        const hash = await this.contract.write.registerMetaAddress([
             stealthId,
             spendingPubKey,
             viewingPubKey,
             scheme
-        );
-        const receipt = await tx.wait();
+        ]);
 
         return {
             stealthId,
-            txHash: receipt.hash
+            txHash: hash
         };
     }
 
     /**
      * Get registered meta-address by stealth ID
      */
-    async getMetaAddress(stealthId: string): Promise<StealthMetaAddress | null> {
+    async getMetaAddress(stealthId: Hex): Promise<StealthMetaAddress | null> {
         try {
-            const [spendingPubKey, viewingPubKey, scheme] = await this.contract.getMetaAddress(stealthId);
+            const [spendingPubKey, viewingPubKey, scheme] = await this.contract.read.getMetaAddress([stealthId]);
             
             if (spendingPubKey === '0x') return null;
 
@@ -148,17 +163,17 @@ export class StealthAddressClient {
     /**
      * Generate ephemeral keypair and compute stealth address
      */
-    async computeStealthAddress(stealthId: string): Promise<StealthAddressResult & { ephemeralPrivKey: string }> {
+    async computeStealthAddress(stealthId: Hex): Promise<StealthAddressResult & { ephemeralPrivKey: Hex }> {
         // Generate ephemeral keypair
-        const ephemeralPrivKey = hexlify(randomBytes(32));
-        const ephemeralWallet = new Wallet(ephemeralPrivKey);
-        const ephemeralPubKey = ephemeralWallet.signingKey.publicKey;
+        const ephemeralPrivKey = toHex(crypto.getRandomValues(new Uint8Array(32)));
+        const ephemeralAccount = privateKeyToAccount(ephemeralPrivKey);
+        const ephemeralPubKey = ephemeralAccount.publicKey;
 
         // Compute stealth address on-chain
-        const [stealthAddress, viewTag] = await this.contract.computeStealthAddress(
+        const [stealthAddress, viewTag] = await this.contract.read.computeStealthAddress([
             stealthId,
             ephemeralPubKey
-        );
+        ]);
 
         return {
             stealthAddress,
@@ -173,18 +188,17 @@ export class StealthAddressClient {
      */
     async announcePayment(
         stealthAddress: string,
-        ephemeralPubKey: string,
-        metadata: string = '0x'
-    ): Promise<string> {
-        if (!this.signer) throw new Error('Signer required for announcement');
+        ephemeralPubKey: Hex,
+        metadata: Hex = '0x'
+    ): Promise<Hex> {
+        if (!this.walletClient) throw new Error('Wallet client required for announcement');
 
-        const tx = await this.contract.announcePayment(
+        const hash = await this.contract.write.announcePayment([
             stealthAddress,
             ephemeralPubKey,
             metadata
-        );
-        const receipt = await tx.wait();
-        return receipt.hash;
+        ]);
+        return hash;
     }
 
     /**
@@ -194,19 +208,27 @@ export class StealthAddressClient {
      * @param toBlock - Ending block number (default: latest)
      */
     async scanAnnouncements(
-        viewingPrivKey: string,
-        spendingPubKey: string,
-        fromBlock: number,
-        toBlock?: number
-    ): Promise<{ address: string; ephemeralPubKey: string; metadata: string; block: number }[]> {
-        const filter = this.contract.filters.PaymentAnnounced();
-        const events = await this.contract.queryFilter(filter, fromBlock, toBlock || 'latest');
+        viewingPrivKey: Hex,
+        spendingPubKey: Hex,
+        fromBlock: bigint,
+        toBlock?: bigint
+    ): Promise<{ address: Hex; ephemeralPubKey: Hex; metadata: Hex; block: number }[]> {
+        const logs = await this.publicClient.getLogs({
+            address: this.contract.address,
+            event: STEALTH_REGISTRY_ABI.find(item => item.name === 'PaymentAnnounced') as any,
+            fromBlock,
+            toBlock: toBlock || 'latest'
+        });
 
-        const matches: { address: string; ephemeralPubKey: string; metadata: string; block: number }[] = [];
+        const matches: { address: Hex; ephemeralPubKey: Hex; metadata: Hex; block: number }[] = [];
 
-        for (const event of events) {
-            const args = (event as ethers.EventLog).args;
-            const [stealthAddress, ephemeralPubKey, metadata, blockNumber] = args;
+        for (const log of logs) {
+            const { args } = decodeEventLog({
+                abi: STEALTH_REGISTRY_ABI,
+                data: log.data,
+                topics: (log as any).topics
+            }) as any;
+            const { stealthAddress, ephemeralPubKey, metadata, blockNumber } = args;
 
             // Try to derive the stealth address with our keys
             const derivedAddress = this.deriveStealthAddressLocally(
@@ -232,40 +254,40 @@ export class StealthAddressClient {
      * Derive stealth address locally (for scanning)
      */
     private deriveStealthAddressLocally(
-        viewingPrivKey: string,
-        spendingPubKey: string,
-        ephemeralPubKey: string
+        viewingPrivKey: Hex,
+        spendingPubKey: Hex,
+        ephemeralPubKey: Hex
     ): string {
         // Compute shared secret: viewingPrivKey * ephemeralPubKey
         // In a real implementation, this would use elliptic curve multiplication
-        const sharedSecret = keccak256(ethers.concat([
-            getBytes(viewingPrivKey),
-            getBytes(ephemeralPubKey)
+        const sharedSecret = keccak256(concat([
+            viewingPrivKey,
+            ephemeralPubKey
         ]));
 
         // Derive stealth public key: spendingPubKey + hash(sharedSecret) * G
         // Simplified: just hash for now
-        const stealthPubKey = keccak256(ethers.concat([
-            getBytes(spendingPubKey),
-            getBytes(sharedSecret)
+        const stealthPubKey = keccak256(concat([
+            spendingPubKey,
+            sharedSecret
         ]));
 
         // Convert to address
-        return ethers.getAddress('0x' + stealthPubKey.slice(-40));
+        return getAddress(slice(stealthPubKey, -20));
     }
 
     /**
      * Derive stealth private key for spending
      */
     static deriveStealthPrivateKey(
-        spendingPrivKey: string,
-        viewingPrivKey: string,
-        ephemeralPubKey: string
-    ): string {
+        spendingPrivKey: Hex,
+        viewingPrivKey: Hex,
+        ephemeralPubKey: Hex
+    ): Hex {
         // Compute shared secret
-        const sharedSecret = keccak256(ethers.concat([
-            getBytes(viewingPrivKey),
-            getBytes(ephemeralPubKey)
+        const sharedSecret = keccak256(concat([
+            viewingPrivKey,
+            ephemeralPubKey
         ]));
 
         // Derive stealth private key: spendingPrivKey + hash(sharedSecret)
@@ -274,14 +296,14 @@ export class StealthAddressClient {
         const curveOrder = BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141');
 
         const stealthPrivKey = (spendingBN + sharedSecretBN) % curveOrder;
-        return toBeHex(stealthPrivKey, 32);
+        return toHex(stealthPrivKey, { size: 32 });
     }
 
     /**
      * Get total announcement count
      */
     async getAnnouncementCount(): Promise<number> {
-        const count = await this.contract.getAnnouncementCount();
+        const count = await this.contract.read.getAnnouncementCount();
         return Number(count);
     }
 }

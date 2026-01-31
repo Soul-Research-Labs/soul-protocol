@@ -3,23 +3,51 @@
  * @description SDK for orchestrating private cross-chain transfers
  */
 
-import { ethers, Contract, Wallet, Provider, keccak256, toBeHex, getBytes, hexlify, randomBytes } from 'ethers';
+import { 
+    PublicClient, 
+    WalletClient, 
+    getContract, 
+    keccak256, 
+    toHex, 
+    toBytes, 
+    concat, 
+    getAddress, 
+    slice, 
+    Hex, 
+    ByteArray,
+    Log,
+    decodeEventLog,
+    createPublicClient,
+    createWalletClient,
+    http,
+    zeroHash
+} from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
+import { mainnet, sepolia, optimism, base, arbitrum } from 'viem/chains';
 import { StealthAddressClient, StealthScheme } from './StealthAddressClient';
 import { NullifierClient } from './NullifierClient';
 import { RingCTClient } from './RingCTClient';
 import { PrivacyHubClient } from './PrivacyHubClient';
+
+const CHAINS_MAP: Record<number, any> = {
+    1: mainnet,
+    11155111: sepolia,
+    10: optimism,
+    8453: base,
+    42161: arbitrum
+};
 
 // Chain configuration
 export interface ChainConfig {
     chainId: number;
     name: string;
     rpcUrl: string;
-    privacyHub: string;
-    nullifierRegistry: string;
-    stealthRegistry?: string;
-    ringCTContract?: string;
-    relayerAddress?: string;
-    bridgeAdapter?: string;
+    privacyHub: Hex;
+    nullifierRegistry: Hex;
+    stealthRegistry?: Hex;
+    ringCTContract?: Hex;
+    relayerAddress?: Hex;
+    bridgeAdapter?: Hex;
 }
 
 // Transfer status stages
@@ -46,33 +74,33 @@ export interface PrivateTransferStatus {
 // Transfer result
 export interface PrivateTransferResult {
     success: boolean;
-    sourceTxHash: string;
-    targetTxHash: string;
-    commitment: string;
-    nullifier: string;
+    sourceTxHash: Hex;
+    targetTxHash: Hex;
+    commitment: Hex;
+    nullifier: Hex;
     timeElapsedMs: number;
 }
 
 // Shield result
 export interface ShieldResult {
-    txHash: string;
-    commitment: string;
+    txHash: Hex;
+    commitment: Hex;
     leafIndex: number;
     amount: bigint;
 }
 
 // Proof result
 export interface ZKProofResult {
-    proof: string;
-    publicInputs: string[];
+    proof: Hex;
+    publicInputs: Hex[];
     verified: boolean;
 }
 
 // Merkle proof
 export interface MerkleProof {
-    root: string;
-    leaf: string;
-    path: string[];
+    root: Hex;
+    leaf: Hex;
+    path: Hex[];
     indices: number[];
 }
 
@@ -87,14 +115,14 @@ export interface HopConfig {
 
 // Batch recipient
 export interface BatchRecipient {
-    address: string;
+    address: Hex;
     amount: bigint;
 }
 
 // Orchestrator configuration
 export interface OrchestratorConfig {
     chains: Record<number, ChainConfig>;
-    privateKey: string;
+    privateKey: Hex;
     relayerType: RelayerType;
     defaultGasLimit?: bigint;
     proofTimeout?: number;
@@ -103,29 +131,29 @@ export interface OrchestratorConfig {
 
 // ABIs
 const PRIVACY_HUB_ABI = [
-    'function shield(bytes32 commitment) external payable returns (uint256 leafIndex)',
-    'function initiatePrivateTransfer(uint256 targetChainId, bytes32 commitment, bytes32 nullifier, bytes proof, bytes32 recipient) external payable returns (bytes32 messageId)',
-    'function claimPrivateTransfer(bytes32 commitment, bytes32 nullifier, bytes proof, bytes relayProof) external',
-    'function getMerkleRoot() external view returns (bytes32)',
-    'function getMerkleProof(uint256 leafIndex) external view returns (bytes32[] memory, uint256[] memory)',
-    'function verifyProof(bytes proof, bytes32[] publicInputs) external view returns (bool)',
-    'event Shielded(bytes32 indexed commitment, uint256 indexed leafIndex, uint256 amount)',
-    'event TransferInitiated(bytes32 indexed messageId, uint256 indexed targetChainId, bytes32 commitment)',
-    'event TransferClaimed(bytes32 indexed commitment, address indexed recipient)'
-];
+    { name: 'shield', type: 'function', stateMutability: 'payable', inputs: [{ name: 'commitment', type: 'bytes32' }], outputs: [{ name: 'leafIndex', type: 'uint256' }] },
+    { name: 'initiatePrivateTransfer', type: 'function', stateMutability: 'payable', inputs: [{ name: 'targetChainId', type: 'uint256' }, { name: 'commitment', type: 'bytes32' }, { name: 'nullifier', type: 'bytes32' }, { name: 'proof', type: 'bytes' }, { name: 'recipient', type: 'bytes32' }], outputs: [{ name: 'messageId', type: 'bytes32' }] },
+    { name: 'claimPrivateTransfer', type: 'function', stateMutability: 'external', inputs: [{ name: 'commitment', type: 'bytes32' }, { name: 'nullifier', type: 'bytes32' }, { name: 'proof', type: 'bytes' }, { name: 'relayProof', type: 'bytes' }] },
+    { name: 'getMerkleRoot', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'bytes32' }] },
+    { name: 'getMerkleProof', type: 'function', stateMutability: 'view', inputs: [{ name: 'leafIndex', type: 'uint256' }], outputs: [{ type: 'bytes32[]' }, { type: 'uint256[]' }] },
+    { name: 'verifyProof', type: 'function', stateMutability: 'view', inputs: [{ name: 'proof', type: 'bytes' }, { name: 'publicInputs', type: 'bytes32[]' }], outputs: [{ type: 'bool' }] },
+    { name: 'Shielded', type: 'event', inputs: [{ name: 'commitment', type: 'bytes32', indexed: true }, { name: 'leafIndex', type: 'uint256', indexed: true }, { name: 'amount', type: 'uint256' }] },
+    { name: 'TransferInitiated', type: 'event', inputs: [{ name: 'messageId', type: 'bytes32', indexed: true }, { name: 'targetChainId', type: 'uint256', indexed: true }, { name: 'commitment', type: 'bytes32' }] },
+    { name: 'TransferClaimed', type: 'event', inputs: [{ name: 'commitment', type: 'bytes32', indexed: true }, { name: 'recipient', type: 'address', indexed: true }] }
+] as const;
 
 const NULLIFIER_REGISTRY_ABI = [
-    'function consumeNullifier(bytes32 nullifier, bytes32 domainId, bytes32 commitment) external',
-    'function isNullifierConsumed(bytes32 nullifier) external view returns (bool)',
-    'function deriveCrossDomainNullifier(bytes32 sourceNullifier, bytes32 sourceDomain, bytes32 targetDomain) external pure returns (bytes32)',
-    'function registerDomain(uint256 chainId, bytes32 appId, uint256 epochEnd) external returns (bytes32 domainId)'
-];
+    { name: 'consumeNullifier', type: 'function', stateMutability: 'external', inputs: [{ name: 'nullifier', type: 'bytes32' }, { name: 'domainId', type: 'bytes32' }, { name: 'commitment', type: 'bytes32' }] },
+    { name: 'isNullifierConsumed', type: 'function', stateMutability: 'view', inputs: [{ name: 'nullifier', type: 'bytes32' }], outputs: [{ type: 'bool' }] },
+    { name: 'deriveCrossDomainNullifier', type: 'function', stateMutability: 'pure', inputs: [{ name: 'sourceNullifier', type: 'bytes32' }, { name: 'sourceDomain', type: 'bytes32' }, { name: 'targetDomain', type: 'bytes32' }], outputs: [{ type: 'bytes32' }] },
+    { name: 'registerDomain', type: 'function', stateMutability: 'external', inputs: [{ name: 'chainId', type: 'uint256' }, { name: 'appId', type: 'bytes32' }, { name: 'epochEnd', type: 'uint256' }], outputs: [{ name: 'domainId', type: 'bytes32' }] }
+] as const;
 
 const RELAY_ABI = [
-    'function getMessageStatus(bytes32 messageId) external view returns (uint8 status, bytes32 targetTxHash)',
-    'function getRelayProof(bytes32 messageId) external view returns (bytes)',
-    'event MessageRelayed(bytes32 indexed messageId, uint256 indexed sourceChainId, uint256 indexed targetChainId)'
-];
+    { name: 'getMessageStatus', type: 'function', stateMutability: 'view', inputs: [{ name: 'messageId', type: 'bytes32' }], outputs: [{ name: 'status', type: 'uint8' }, { name: 'targetTxHash', type: 'bytes32' }] },
+    { name: 'getRelayProof', type: 'function', stateMutability: 'view', inputs: [{ name: 'messageId', type: 'bytes32' }], outputs: [{ type: 'bytes' }] },
+    { name: 'MessageRelayed', type: 'event', inputs: [{ name: 'messageId', type: 'bytes32', indexed: true }, { name: 'sourceChainId', type: 'uint256', indexed: true }, { name: 'targetChainId', type: 'uint256', indexed: true }] }
+] as const;
 
 /**
  * Custom errors
@@ -161,10 +189,10 @@ export class RelayTimeoutError extends PrivacyTransferError {
 export class CrossChainPrivacyOrchestrator {
     private chains: Map<number, {
         config: ChainConfig;
-        provider: Provider;
-        signer: Wallet;
-        privacyHub: Contract;
-        nullifierRegistry: Contract;
+        publicClient: any;
+        walletClient: any;
+        privacyHub: any;
+        nullifierRegistry: any;
     }>;
     private relayerType: RelayerType;
     private defaultGasLimit: bigint;
@@ -178,19 +206,40 @@ export class CrossChainPrivacyOrchestrator {
         this.proofTimeout = config.proofTimeout || 60000;
         this.relayTimeout = config.relayTimeout || 600000;
 
+        const account = privateKeyToAccount(config.privateKey);
+
         // Initialize chain connections
         for (const [chainIdStr, chainConfig] of Object.entries(config.chains)) {
             const chainId = Number(chainIdStr);
-            const provider = new ethers.JsonRpcProvider(chainConfig.rpcUrl);
-            const signer = new Wallet(config.privateKey, provider);
+            const chain = CHAINS_MAP[chainId];
 
-            const privacyHub = new Contract(chainConfig.privacyHub, PRIVACY_HUB_ABI, signer);
-            const nullifierRegistry = new Contract(chainConfig.nullifierRegistry, NULLIFIER_REGISTRY_ABI, signer);
+            const publicClient = createPublicClient({
+                chain,
+                transport: http(chainConfig.rpcUrl)
+            });
+
+            const walletClient = createWalletClient({
+                account,
+                chain,
+                transport: http(chainConfig.rpcUrl)
+            });
+
+            const privacyHub = getContract({
+                address: chainConfig.privacyHub,
+                abi: PRIVACY_HUB_ABI,
+                client: { public: publicClient, wallet: walletClient }
+            });
+
+            const nullifierRegistry = getContract({
+                address: chainConfig.nullifierRegistry,
+                abi: NULLIFIER_REGISTRY_ABI,
+                client: { public: publicClient, wallet: walletClient }
+            });
 
             this.chains.set(chainId, {
                 config: chainConfig,
-                provider,
-                signer,
+                publicClient,
+                walletClient,
                 privacyHub,
                 nullifierRegistry
             });
@@ -200,18 +249,18 @@ export class CrossChainPrivacyOrchestrator {
     /**
      * Generate a random secret for commitment
      */
-    generateSecret(): string {
-        return hexlify(randomBytes(32));
+    generateSecret(): Hex {
+        return toHex(crypto.getRandomValues(new Uint8Array(32)));
     }
 
     /**
      * Compute commitment from amount and secret
      */
-    computeCommitment(amount: bigint, secret: string, recipient?: string): string {
-        const data = ethers.concat([
-            toBeHex(amount, 32),
-            getBytes(secret),
-            recipient ? getBytes(recipient) : new Uint8Array(32)
+    computeCommitment(amount: bigint, secret: Hex, recipient?: Hex): Hex {
+        const data = concat([
+            toHex(amount, { size: 32 }),
+            secret,
+            recipient ? recipient : toHex(0, { size: 32 })
         ]);
         return keccak256(data);
     }
@@ -222,44 +271,39 @@ export class CrossChainPrivacyOrchestrator {
     async shield(params: {
         chainId: number;
         amount: bigint;
-        secret: string;
-        recipient?: string;
+        secret: Hex;
+        recipient?: Hex;
     }): Promise<ShieldResult> {
         const chain = this.chains.get(params.chainId);
         if (!chain) throw new Error(`Chain ${params.chainId} not configured`);
 
         const commitment = this.computeCommitment(params.amount, params.secret, params.recipient);
 
-        const tx = await chain.privacyHub.shield(commitment, {
-            value: params.amount,
-            gasLimit: this.defaultGasLimit
+        const hash = await chain.privacyHub.write.shield([commitment], {
+            value: params.amount
         });
-        const receipt = await tx.wait();
+        const receipt = await chain.publicClient.waitForTransactionReceipt({ hash });
 
         // Parse events to get leaf index
-        const shieldedEvent = receipt.logs.find((log: ethers.Log) => {
-            try {
-                const parsed = chain.privacyHub.interface.parseLog({
-                    topics: [...log.topics],
-                    data: log.data
-                });
-                return parsed?.name === 'Shielded';
-            } catch {
-                return false;
-            }
-        });
-
         let leafIndex = 0;
-        if (shieldedEvent) {
-            const parsed = chain.privacyHub.interface.parseLog({
-                topics: [...shieldedEvent.topics],
-                data: shieldedEvent.data
-            });
-            leafIndex = Number(parsed?.args?.leafIndex || 0);
+        for (const log of receipt.logs) {
+            try {
+                const { eventName, args } = decodeEventLog({
+                    abi: PRIVACY_HUB_ABI,
+                    data: log.data,
+                    topics: log.topics
+                }) as any;
+                if (eventName === 'Shielded' && (args as any).commitment === commitment) {
+                    leafIndex = Number((args as any).leafIndex);
+                    break;
+                }
+            } catch {
+                continue;
+            }
         }
 
         return {
-            txHash: receipt.hash,
+            txHash: receipt.transactionHash,
             commitment,
             leafIndex,
             amount: params.amount
@@ -276,14 +320,14 @@ export class CrossChainPrivacyOrchestrator {
         const chain = this.chains.get(params.chainId);
         if (!chain) throw new Error(`Chain ${params.chainId} not configured`);
 
-        const root = await chain.privacyHub.getMerkleRoot();
-        const [path, indices] = await chain.privacyHub.getMerkleProof(params.leafIndex);
+        const root = await chain.privacyHub.read.getMerkleRoot();
+        const [path, indices] = await chain.privacyHub.read.getMerkleProof([BigInt(params.leafIndex)]);
 
         return {
-            root,
-            leaf: '', // Will be filled by the caller
-            path: path.map((p: string) => p),
-            indices: indices.map((i: bigint) => Number(i))
+            root: root as Hex,
+            leaf: zeroHash, // Will be filled by the caller
+            path: (path as Hex[]).map((p: Hex) => p),
+            indices: (indices as bigint[]).map((i: bigint) => Number(i))
         };
     }
 
@@ -291,12 +335,12 @@ export class CrossChainPrivacyOrchestrator {
      * Derive nullifier from secret and commitment
      */
     async deriveNullifier(params: {
-        secret: string;
-        commitment: string;
-    }): Promise<string> {
-        return keccak256(ethers.concat([
-            getBytes(params.secret),
-            getBytes(params.commitment)
+        secret: Hex;
+        commitment: Hex;
+    }): Promise<Hex> {
+        return keccak256(concat([
+            params.secret,
+            params.commitment
         ]));
     }
 
@@ -304,33 +348,33 @@ export class CrossChainPrivacyOrchestrator {
      * Derive cross-domain nullifier
      */
     async deriveCrossDomainNullifier(params: {
-        sourceNullifier: string;
+        sourceNullifier: Hex;
         sourceChainId: number;
         targetChainId: number;
-    }): Promise<string> {
+    }): Promise<Hex> {
         const chain = this.chains.get(params.sourceChainId);
         if (!chain) throw new Error(`Chain ${params.sourceChainId} not configured`);
 
-        const sourceDomain = keccak256(toBeHex(params.sourceChainId, 32));
-        const targetDomain = keccak256(toBeHex(params.targetChainId, 32));
+        const sourceDomain = keccak256(toHex(params.sourceChainId, { size: 32 }));
+        const targetDomain = keccak256(toHex(params.targetChainId, { size: 32 }));
 
-        return chain.nullifierRegistry.deriveCrossDomainNullifier(
+        return chain.nullifierRegistry.read.deriveCrossDomainNullifier([
             params.sourceNullifier,
             sourceDomain,
             targetDomain
-        );
+        ]);
     }
 
     /**
      * Generate ZK proof for cross-chain transfer
      */
     async generateCrossChainProof(params: {
-        commitment: string;
+        commitment: Hex;
         amount: bigint;
-        secret: string;
+        secret: Hex;
         merkleProof: MerkleProof;
-        sourceNullifier: string;
-        targetNullifier: string;
+        sourceNullifier: Hex;
+        targetNullifier: Hex;
         sourceChainId: number;
         targetChainId: number;
     }): Promise<ZKProofResult> {
@@ -340,19 +384,19 @@ export class CrossChainPrivacyOrchestrator {
             params.merkleProof.root,
             params.sourceNullifier,
             params.targetNullifier,
-            toBeHex(params.sourceChainId, 32),
-            toBeHex(params.targetChainId, 32)
+            toHex(params.sourceChainId, { size: 32 }),
+            toHex(params.targetChainId, { size: 32 })
         ];
 
-        const proof = keccak256(ethers.concat([
-            getBytes(params.commitment),
-            getBytes(params.secret),
-            ...params.merkleProof.path.map(p => getBytes(p))
+        const proof = keccak256(concat([
+            params.commitment,
+            params.secret,
+            ...params.merkleProof.path.map(p => p as Hex)
         ]));
 
         return {
             proof,
-            publicInputs,
+            publicInputs: publicInputs as Hex[],
             verified: true
         };
     }
@@ -363,17 +407,17 @@ export class CrossChainPrivacyOrchestrator {
     async initiatePrivateTransfer(params: {
         sourceChainId: number;
         targetChainId: number;
-        commitment: string;
-        nullifier: string;
+        commitment: Hex;
+        nullifier: Hex;
         proof: ZKProofResult;
         amount: bigint;
-        recipient: string;
-    }): Promise<{ txHash: string; messageId: string }> {
+        recipient: Hex;
+    }): Promise<{ txHash: Hex; messageId: Hex }> {
         const chain = this.chains.get(params.sourceChainId);
         if (!chain) throw new Error(`Chain ${params.sourceChainId} not configured`);
 
         // Check nullifier not spent
-        const isSpent = await chain.nullifierRegistry.isNullifierConsumed(params.nullifier);
+        const isSpent = await chain.nullifierRegistry.read.isNullifierConsumed([params.nullifier]);
         if (isSpent) {
             throw new NullifierAlreadySpentError(params.nullifier);
         }
@@ -381,43 +425,37 @@ export class CrossChainPrivacyOrchestrator {
         // Estimate relay fee
         const relayFee = await this.estimateRelayFee(params.sourceChainId, params.targetChainId);
 
-        const tx = await chain.privacyHub.initiatePrivateTransfer(
-            params.targetChainId,
+        const hash = await chain.privacyHub.write.initiatePrivateTransfer([
+            BigInt(params.targetChainId),
             params.commitment,
             params.nullifier,
-            params.proof.proof,
-            params.recipient,
-            {
-                value: relayFee,
-                gasLimit: this.defaultGasLimit
-            }
-        );
-        const receipt = await tx.wait();
+            params.proof.proof as Hex,
+            params.recipient
+        ], {
+            value: relayFee
+        });
+        const receipt = await chain.publicClient.waitForTransactionReceipt({ hash });
 
         // Parse message ID from events
-        const initiatedEvent = receipt.logs.find((log: ethers.Log) => {
+        let messageId = zeroHash;
+        for (const log of receipt.logs) {
             try {
-                const parsed = chain.privacyHub.interface.parseLog({
-                    topics: [...log.topics],
-                    data: log.data
-                });
-                return parsed?.name === 'TransferInitiated';
+                const { eventName, args } = decodeEventLog({
+                    abi: PRIVACY_HUB_ABI,
+                    data: log.data,
+                    topics: log.topics
+                }) as any;
+                if (eventName === 'TransferInitiated') {
+                    messageId = (args as any).messageId || zeroHash;
+                    break;
+                }
             } catch {
-                return false;
+                continue;
             }
-        });
-
-        let messageId = ethers.ZeroHash;
-        if (initiatedEvent) {
-            const parsed = chain.privacyHub.interface.parseLog({
-                topics: [...initiatedEvent.topics],
-                data: initiatedEvent.data
-            });
-            messageId = parsed?.args?.messageId || ethers.ZeroHash;
         }
 
         return {
-            txHash: receipt.hash,
+            txHash: receipt.transactionHash,
             messageId
         };
     }
@@ -426,11 +464,11 @@ export class CrossChainPrivacyOrchestrator {
      * Wait for relay completion
      */
     async waitForRelay(params: {
-        messageId: string;
+        messageId: Hex;
         sourceChainId: number;
         targetChainId: number;
         timeoutMs?: number;
-    }): Promise<{ status: string; targetTxHash: string; relayProof: string }> {
+    }): Promise<{ status: string; targetTxHash: Hex; relayProof: Hex }> {
         const timeout = params.timeoutMs || this.relayTimeout;
         const startTime = Date.now();
         const pollInterval = 5000;
@@ -445,16 +483,16 @@ export class CrossChainPrivacyOrchestrator {
                 await new Promise(resolve => setTimeout(resolve, pollInterval));
                 
                 // Check if message has been delivered
-                const relayContract = new Contract(
-                    targetChain.config.bridgeAdapter || targetChain.config.privacyHub,
-                    RELAY_ABI,
-                    targetChain.provider
-                );
+                const relayContract = getContract({
+                    address: targetChain.config.bridgeAdapter || targetChain.config.privacyHub,
+                    abi: RELAY_ABI,
+                    client: { public: targetChain.publicClient }
+                }) as any;
 
-                const [status, targetTxHash] = await relayContract.getMessageStatus(params.messageId);
+                const [status, targetTxHash] = await relayContract.read.getMessageStatus([params.messageId]);
                 
                 if (status === 2) { // Delivered
-                    const relayProof = await relayContract.getRelayProof(params.messageId);
+                    const relayProof = await relayContract.read.getRelayProof([params.messageId]);
                     return {
                         status: 'delivered',
                         targetTxHash,
@@ -474,29 +512,26 @@ export class CrossChainPrivacyOrchestrator {
      */
     async claimPrivateTransfer(params: {
         targetChainId: number;
-        commitment: string;
-        nullifier: string;
+        commitment: Hex;
+        nullifier: Hex;
         proof: ZKProofResult;
         amount: bigint;
-        recipient: string;
-        relayProof: string;
-    }): Promise<{ txHash: string }> {
+        recipient: Hex;
+        relayProof: Hex;
+    }): Promise<{ txHash: Hex }> {
         const chain = this.chains.get(params.targetChainId);
         if (!chain) throw new Error(`Chain ${params.targetChainId} not configured`);
 
-        const tx = await chain.privacyHub.claimPrivateTransfer(
+        const hash = await chain.privacyHub.write.claimPrivateTransfer([
             params.commitment,
             params.nullifier,
-            params.proof.proof,
-            params.relayProof,
-            {
-                gasLimit: this.defaultGasLimit
-            }
-        );
-        const receipt = await tx.wait();
+            params.proof.proof as Hex,
+            params.relayProof
+        ]);
+        const receipt = await chain.publicClient.waitForTransactionReceipt({ hash });
 
         return {
-            txHash: receipt.hash
+            txHash: receipt.transactionHash
         };
     }
 
@@ -507,7 +542,7 @@ export class CrossChainPrivacyOrchestrator {
         sourceChainId: number;
         targetChainId: number;
         amount: bigint;
-        recipient: string;
+        recipient: Hex;
         onStatusChange?: (status: PrivateTransferStatus) => void;
     }): Promise<PrivateTransferResult> {
         const startTime = Date.now();
@@ -528,7 +563,7 @@ export class CrossChainPrivacyOrchestrator {
                 chainId: params.sourceChainId,
                 amount: params.amount,
                 secret,
-                recipient: params.recipient
+                recipient: params.recipient as Hex
             });
             updateStatus(TransferStage.SHIELDING, 'Funds shielded', 25, shieldResult.txHash);
 
@@ -570,7 +605,7 @@ export class CrossChainPrivacyOrchestrator {
                 nullifier: sourceNullifier,
                 proof: zkProof,
                 amount: params.amount,
-                recipient: params.recipient
+                recipient: params.recipient as Hex
             });
             updateStatus(TransferStage.INITIATING_TRANSFER, 'Transfer initiated', 70, initiateResult.txHash);
 
@@ -591,7 +626,7 @@ export class CrossChainPrivacyOrchestrator {
                 nullifier: targetNullifier,
                 proof: zkProof,
                 amount: params.amount,
-                recipient: params.recipient,
+                recipient: params.recipient as Hex,
                 relayProof: relayResult.relayProof
             });
             updateStatus(TransferStage.COMPLETED, 'Transfer complete!', 100, claimResult.txHash);
@@ -619,11 +654,11 @@ export class CrossChainPrivacyOrchestrator {
      */
     async executeMultiHopTransfer(params: {
         hops: HopConfig[];
-        recipient: string;
-        onHopComplete?: (hopIndex: number, txHash: string) => void;
-    }): Promise<{ txHashes: string[]; totalTimeMs: number }> {
+        recipient: Hex;
+        onHopComplete?: (hopIndex: number, txHash: Hex) => void;
+    }): Promise<{ txHashes: Hex[]; totalTimeMs: number }> {
         const startTime = Date.now();
-        const txHashes: string[] = [];
+        const txHashes: Hex[] = [];
 
         let currentSecret = this.generateSecret();
         
@@ -636,7 +671,7 @@ export class CrossChainPrivacyOrchestrator {
                 sourceChainId: sourceChain,
                 targetChainId: targetChain,
                 amount,
-                recipient: i === params.hops.length - 2 ? params.recipient : this.chains.get(targetChain)!.signer.address
+                recipient: i === params.hops.length - 2 ? params.recipient : (this.chains.get(targetChain)!.walletClient as any).account!.address
             });
 
             txHashes.push(result.sourceTxHash, result.targetTxHash);
@@ -663,9 +698,9 @@ export class CrossChainPrivacyOrchestrator {
         targetChainId: number;
         recipients: BatchRecipient[];
         aggregateProofs?: boolean;
-    }): Promise<{ txHashes: string[]; totalTimeMs: number }> {
+    }): Promise<{ txHashes: Hex[]; totalTimeMs: number }> {
         const startTime = Date.now();
-        const txHashes: string[] = [];
+        const txHashes: Hex[] = [];
 
         // Generate all proofs in parallel if aggregating
         if (params.aggregateProofs) {
@@ -720,7 +755,7 @@ export class CrossChainPrivacyOrchestrator {
                     nullifier: transfer.sourceNullifier,
                     proof: transfer.zkProof,
                     amount: transfer.recipient.amount,
-                    recipient: transfer.recipient.address
+                    recipient: transfer.recipient.address as Hex
                 });
                 txHashes.push(initiateResult.txHash);
             }

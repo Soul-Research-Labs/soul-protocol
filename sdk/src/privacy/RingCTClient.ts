@@ -1,34 +1,43 @@
-/**
- * @title Ring Confidential Transactions Client
- * @description TypeScript SDK for RingCT operations
- */
-
-import { ethers, Contract, Wallet, Provider, keccak256, toBeHex, getBytes, hexlify, randomBytes, ZeroHash } from 'ethers';
+import { 
+    PublicClient, 
+    WalletClient, 
+    getContract, 
+    keccak256, 
+    toHex, 
+    toBytes, 
+    concat, 
+    getAddress, 
+    Hex, 
+    encodeAbiParameters,
+    parseAbiParameters,
+    stringToBytes,
+    zeroHash
+} from 'viem';
 
 // Pedersen commitment structure
 export interface PedersenCommitment {
-    commitment: string;
+    commitment: Hex;
     amount: bigint;
-    blindingFactor: string;
+    blindingFactor: Hex;
 }
 
 // Ring member for RingCT
 export interface RingMember {
-    commitment: string;
-    publicKey: string;
+    commitment: Hex;
+    publicKey: Hex;
 }
 
 // CLSAG signature
 export interface CLSAGSignature {
-    c: string;      // Initial challenge
-    r: string[];    // Response scalars
-    keyImage: string;
+    c: Hex;      // Initial challenge
+    r: Hex[];    // Response scalars
+    keyImage: Hex;
 }
 
 // Range proof
 export interface RangeProof {
-    commitment: string;
-    proof: string;
+    commitment: Hex;
+    proof: Hex;
 }
 
 // RingCT transaction
@@ -41,62 +50,63 @@ export interface RingCTTransaction {
 }
 
 // Generator points (simplified - in production use actual curve points)
-const GENERATOR_G = keccak256(ethers.toUtf8Bytes('SECP256K1_G'));
-const GENERATOR_H = keccak256(ethers.toUtf8Bytes('SECP256K1_H'));
+const GENERATOR_G = keccak256(stringToBytes('SECP256K1_G'));
+const GENERATOR_H = keccak256(stringToBytes('SECP256K1_H'));
 
 // Curve order for secp256k1
 const CURVE_ORDER = BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141');
 
 // ABI for RingConfidentialTransactions
+// ABI for RingConfidentialTransactions
 const RINGCT_ABI = [
-    'function createCommitment(uint256 amount, bytes32 blindingFactor) external pure returns (bytes32)',
-    'function submitRingTransaction(bytes32[] inputs, bytes32[] outputs, uint256 fee, bytes signature, bytes[] rangeProofs) external',
-    'function verifyRangeProof(bytes32 commitment, bytes proof) external view returns (bool)',
-    'function isKeyImageUsed(bytes32 keyImage) external view returns (bool)',
-    'function getCommitment(bytes32 commitmentHash) external view returns (bool exists, uint256 timestamp)',
-    'event CommitmentCreated(bytes32 indexed commitment, address indexed creator, uint256 timestamp)',
-    'event RingTransactionSubmitted(bytes32 indexed txHash, bytes32 keyImage, uint256 fee)',
-    'event KeyImageUsed(bytes32 indexed keyImage)'
-];
+    { name: 'createCommitment', type: 'function', stateMutability: 'pure', inputs: [{ name: 'amount', type: 'uint256' }, { name: 'blindingFactor', type: 'bytes32' }], outputs: [{ type: 'bytes32' }] },
+    { name: 'submitRingTransaction', type: 'function', stateMutability: 'external', inputs: [{ name: 'inputs', type: 'bytes32[]' }, { name: 'outputs', type: 'bytes32[]' }, { name: 'fee', type: 'uint256' }, { name: 'signature', type: 'bytes' }, { name: 'rangeProofs', type: 'bytes[]' }] },
+    { name: 'verifyRangeProof', type: 'function', stateMutability: 'view', inputs: [{ name: 'commitment', type: 'bytes32' }, { name: 'proof', type: 'bytes' }], outputs: [{ type: 'bool' }] },
+    { name: 'isKeyImageUsed', type: 'function', stateMutability: 'view', inputs: [{ name: 'keyImage', type: 'bytes32' }], outputs: [{ type: 'bool' }] },
+    { name: 'getCommitment', type: 'function', stateMutability: 'view', inputs: [{ name: 'commitmentHash', type: 'bytes32' }], outputs: [{ name: 'exists', type: 'bool' }, { name: 'timestamp', type: 'uint256' }] },
+    { name: 'CommitmentCreated', type: 'event', inputs: [{ name: 'commitment', type: 'bytes32', indexed: true }, { name: 'creator', type: 'address', indexed: true }, { name: 'timestamp', type: 'uint256' }] },
+    { name: 'RingTransactionSubmitted', type: 'event', inputs: [{ name: 'txHash', type: 'bytes32', indexed: true }, { name: 'keyImage', type: 'bytes32' }, { name: 'fee', type: 'uint256' }] },
+    { name: 'KeyImageUsed', type: 'event', inputs: [{ name: 'keyImage', type: 'bytes32', indexed: true }] }
+] as const;
 
 export class RingCTClient {
-    private contract: Contract;
-    private provider: Provider;
-    private signer?: Wallet;
+    private contract: any;
+    private publicClient: PublicClient;
+    private walletClient?: WalletClient;
 
     constructor(
-        contractAddress: string,
-        provider: Provider,
-        signer?: Wallet
+        contractAddress: Hex,
+        publicClient: PublicClient,
+        walletClient?: WalletClient
     ) {
-        this.provider = provider;
-        this.signer = signer;
-        this.contract = new Contract(
-            contractAddress,
-            RINGCT_ABI,
-            signer || provider
-        );
+        this.publicClient = publicClient;
+        this.walletClient = walletClient;
+        this.contract = getContract({
+            address: contractAddress,
+            abi: RINGCT_ABI,
+            client: { public: publicClient, wallet: walletClient }
+        });
     }
 
     /**
      * Generate a random blinding factor
      */
-    static generateBlindingFactor(): string {
-        const bytes = randomBytes(32);
-        const bn = BigInt(hexlify(bytes)) % CURVE_ORDER;
-        return toBeHex(bn, 32);
+    static generateBlindingFactor(): Hex {
+        const bytes = crypto.getRandomValues(new Uint8Array(32));
+        const bn = BigInt(toHex(bytes)) % CURVE_ORDER;
+        return toHex(bn, { size: 32 });
     }
 
     /**
      * Create a Pedersen commitment: C = amount*G + blinding*H
      */
-    static createCommitmentLocal(amount: bigint, blindingFactor: string): PedersenCommitment {
+    static createCommitmentLocal(amount: bigint, blindingFactor: Hex): PedersenCommitment {
         // Simplified commitment (in production, use actual curve operations)
-        const commitment = keccak256(ethers.concat([
-            toBeHex(amount, 32),
-            getBytes(blindingFactor),
-            getBytes(GENERATOR_G),
-            getBytes(GENERATOR_H)
+        const commitment = keccak256(concat([
+            toHex(amount, { size: 32 }),
+            blindingFactor,
+            GENERATOR_G,
+            GENERATOR_H
         ]));
 
         return {
@@ -109,13 +119,13 @@ export class RingCTClient {
     /**
      * Create commitment on-chain
      */
-    async createCommitment(amount: bigint, blindingFactor?: string): Promise<PedersenCommitment> {
+    async createCommitment(amount: bigint, blindingFactor?: Hex): Promise<PedersenCommitment> {
         const blinding = blindingFactor || RingCTClient.generateBlindingFactor();
         
-        const commitment = await this.contract.createCommitment(amount, blinding);
+        const commitment = await this.contract.read.createCommitment([amount, blinding]);
         
         return {
-            commitment,
+            commitment: commitment as Hex,
             amount,
             blindingFactor: blinding
         };
@@ -184,7 +194,7 @@ export class RingCTClient {
         const lastBlinding = (inputBlindingSum - totalBlinding + CURVE_ORDER) % CURVE_ORDER;
         outputs.push(RingCTClient.createCommitmentLocal(
             outputAmounts[outputAmounts.length - 1],
-            toBeHex(lastBlinding, 32)
+            toHex(lastBlinding, { size: 32 })
         ));
 
         return outputs;
@@ -194,17 +204,17 @@ export class RingCTClient {
      * Derive key image (nullifier) from private key
      * I = x * Hp(P) where x is private key, P is public key
      */
-    static deriveKeyImage(privateKey: string, publicKey: string): string {
+    static deriveKeyImage(privateKey: Hex, publicKey: Hex): Hex {
         // Hash to point (simplified)
-        const hashPoint = keccak256(ethers.concat([
-            getBytes(publicKey),
-            ethers.toUtf8Bytes('HASH_TO_POINT')
+        const hashPoint = keccak256(concat([
+            publicKey,
+            stringToBytes('HASH_TO_POINT')
         ]));
 
         // Key image = privateKey * hashPoint (simplified)
-        const keyImage = keccak256(ethers.concat([
-            getBytes(privateKey),
-            getBytes(hashPoint)
+        const keyImage = keccak256(concat([
+            privateKey,
+            hashPoint
         ]));
 
         return keyImage;
@@ -217,27 +227,27 @@ export class RingCTClient {
     static generateCLSAGSignature(
         ring: RingMember[],
         signerIndex: number,
-        privateKey: string,
-        message: string
+        privateKey: Hex,
+        message: Hex
     ): CLSAGSignature {
         if (signerIndex >= ring.length) {
             throw new Error('Signer index out of bounds');
         }
 
-        const keyImage = RingCTClient.deriveKeyImage(privateKey, ring[signerIndex].publicKey);
+        const keyImage = RingCTClient.deriveKeyImage(privateKey, ring[signerIndex].publicKey as Hex);
 
         // Generate random scalars for responses
-        const r: string[] = [];
+        const r: Hex[] = [];
         for (let i = 0; i < ring.length; i++) {
-            r.push(hexlify(randomBytes(32)));
+            r.push(toHex(crypto.getRandomValues(new Uint8Array(32))));
         }
 
         // Compute challenge (simplified)
-        const c = keccak256(ethers.concat([
-            getBytes(message),
-            getBytes(keyImage),
-            ...ring.map(m => getBytes(m.commitment)),
-            ...r.map(ri => getBytes(ri))
+        const c = keccak256(concat([
+            message,
+            keyImage,
+            ...ring.map(m => m.commitment as Hex),
+            ...r
         ]));
 
         return { c, r, keyImage };
@@ -249,11 +259,11 @@ export class RingCTClient {
      */
     static generateRangeProof(commitment: PedersenCommitment): RangeProof {
         // Simplified range proof (in production, use Bulletproof+)
-        const proof = keccak256(ethers.concat([
-            getBytes(commitment.commitment),
-            toBeHex(commitment.amount, 32),
-            getBytes(commitment.blindingFactor),
-            ethers.toUtf8Bytes('RANGE_PROOF')
+        const proof = keccak256(concat([
+            commitment.commitment as Hex,
+            toHex(commitment.amount, { size: 32 }),
+            commitment.blindingFactor as Hex,
+            stringToBytes('RANGE_PROOF')
         ]));
 
         return {
@@ -271,9 +281,9 @@ export class RingCTClient {
         fee: bigint,
         ring: RingMember[],
         signerIndex: number,
-        privateKey: string
-    ): Promise<string> {
-        if (!this.signer) throw new Error('Signer required');
+        privateKey: Hex
+    ): Promise<Hex> {
+        if (!this.walletClient) throw new Error('Wallet client required');
 
         // Verify balance
         const { balanced } = RingCTClient.verifyCommitmentBalance(inputs, outputs, fee);
@@ -282,10 +292,10 @@ export class RingCTClient {
         }
 
         // Generate signature
-        const message = keccak256(ethers.concat([
-            ...inputs.map(i => getBytes(i.commitment)),
-            ...outputs.map(o => getBytes(o.commitment)),
-            toBeHex(fee, 32)
+        const message = keccak256(concat([
+            ...inputs.map(i => i.commitment as Hex),
+            ...outputs.map(o => o.commitment as Hex),
+            toHex(fee, { size: 32 })
         ]));
 
         const signature = RingCTClient.generateCLSAGSignature(ring, signerIndex, privateKey, message);
@@ -294,36 +304,35 @@ export class RingCTClient {
         const rangeProofs = outputs.map(o => RingCTClient.generateRangeProof(o));
 
         // Encode signature
-        const encodedSig = ethers.AbiCoder.defaultAbiCoder().encode(
-            ['bytes32', 'bytes32[]', 'bytes32'],
-            [signature.c, signature.r, signature.keyImage]
+        const encodedSig = encodeAbiParameters(
+            parseAbiParameters('bytes32, bytes32[], bytes32'),
+            [signature.c as Hex, signature.r as Hex[], signature.keyImage as Hex]
         );
 
         // Submit transaction
-        const tx = await this.contract.submitRingTransaction(
-            inputs.map(i => i.commitment),
-            outputs.map(o => o.commitment),
+        const hash = await this.contract.write.submitRingTransaction([
+            inputs.map(i => i.commitment as Hex),
+            outputs.map(o => o.commitment as Hex),
             fee,
             encodedSig,
-            rangeProofs.map(rp => rp.proof)
-        );
+            rangeProofs.map(rp => rp.proof as Hex)
+        ]);
 
-        const receipt = await tx.wait();
-        return receipt.hash;
+        return hash;
     }
 
     /**
      * Check if a key image has been used
      */
-    async isKeyImageUsed(keyImage: string): Promise<boolean> {
-        return await this.contract.isKeyImageUsed(keyImage);
+    async isKeyImageUsed(keyImage: Hex): Promise<boolean> {
+        return await this.contract.read.isKeyImageUsed([keyImage]);
     }
 
     /**
      * Verify a range proof
      */
-    async verifyRangeProof(commitment: string, proof: string): Promise<boolean> {
-        return await this.contract.verifyRangeProof(commitment, proof);
+    async verifyRangeProof(commitment: Hex, proof: Hex): Promise<boolean> {
+        return await this.contract.read.verifyRangeProof([commitment, proof]);
     }
 
     /**
@@ -336,7 +345,7 @@ export class RingCTClient {
         fee: bigint,
         ring: RingMember[],
         signerIndex: number,
-        privateKey: string
+        privateKey: Hex
     ): Promise<RingCTTransaction> {
         // Generate output commitments with balanced blindings
         const outputCommitments = RingCTClient.generateBalancedOutputs(
@@ -346,10 +355,10 @@ export class RingCTClient {
         );
 
         // Generate signature
-        const message = keccak256(ethers.concat([
-            ...inputCommitments.map(i => getBytes(i.commitment)),
-            ...outputCommitments.map(o => getBytes(o.commitment)),
-            toBeHex(fee, 32)
+        const message = keccak256(concat([
+            ...inputCommitments.map(i => i.commitment as Hex),
+            ...outputCommitments.map(o => o.commitment as Hex),
+            toHex(fee, { size: 32 })
         ]));
 
         const signature = RingCTClient.generateCLSAGSignature(ring, signerIndex, privateKey, message);
