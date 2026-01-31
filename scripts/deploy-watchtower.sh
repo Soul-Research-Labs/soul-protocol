@@ -89,7 +89,7 @@ step "Directories created"
 # Build watchtower image
 echo ""
 echo -e "${BLUE}Building watchtower image...${NC}"
-docker build -t pil-watchtower:latest -f "$PROJECT_ROOT/docker/Dockerfile.watchtower" "$PROJECT_ROOT"
+docker build -t soul-watchtower:latest -f "$PROJECT_ROOT/docker/Dockerfile.watchtower" "$PROJECT_ROOT"
 step "Watchtower image built"
 
 # Stop existing containers
@@ -133,7 +133,7 @@ RETRY_COUNT=0
 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
     HEALTHY=true
     
-    if ! docker ps | grep -q pil-watchtower-1; then
+    if ! docker ps | grep -q soul-watchtower-1; then
         HEALTHY=false
     fi
     
@@ -172,6 +172,6 @@ echo -e "${YELLOW}Next steps:${NC}"
 echo -e "  1. Import the Grafana dashboard from:"
 echo -e "     $MONITORING_DIR/config/grafana/dashboards/watchtower.json"
 echo -e "  2. Check watchtower logs:"
-echo -e "     docker logs -f pil-watchtower-1"
+echo -e "     docker logs -f soul-watchtower-1"
 echo -e "  3. Verify chain connections in Prometheus targets"
 echo ""

@@ -203,11 +203,11 @@ async function main() {
   try {
     console.log("  Deploying SoulToken...");
     const SoulToken = await ethers.getContractFactory("SoulToken");
-    const pilToken = await SoulToken.deploy(deployer.address);
-    await pilToken.waitForDeployment();
-    const tokenAddr = await pilToken.getAddress();
+    const soulToken = await SoulToken.deploy(deployer.address);
+    await soulToken.waitForDeployment();
+    const tokenAddr = await soulToken.getAddress();
     deployment.contracts.SoulToken = tokenAddr;
-    deployment.txHashes.SoulToken = pilToken.deploymentTransaction()?.hash || "";
+    deployment.txHashes.SoulToken = soulToken.deploymentTransaction()?.hash || "";
     console.log(`    ✅ SoulToken: ${tokenAddr}`);
 
     // TimelockController

@@ -108,6 +108,9 @@ contract CrossChainProofHubV3 is
     /// @notice Verifier contracts per proof type
     mapping(bytes32 => IProofVerifier) public verifiers;
 
+    /// @notice Global Verifier Registry (optional fallback)
+    address public verifierRegistry;
+
     /// @notice Supported chains
     mapping(uint256 => bool) public supportedChains;
 
@@ -465,6 +468,17 @@ contract CrossChainProofHubV3 is
     ) external payable nonReentrant whenNotPaused returns (bytes32 proofId) {
         // Verify the proof immediately
         IProofVerifier verifier = verifiers[proofType];
+        
+        // Fallback to registry if not locally set
+        if (address(verifier) == address(0) && verifierRegistry != address(0)) {
+            (bool regSuccess, bytes memory regData) = verifierRegistry.staticcall(
+                abi.encodeWithSignature("getVerifier(bytes32)", proofType)
+            );
+            if (regSuccess && regData.length == 32) {
+                verifier = IProofVerifier(abi.decode(regData, (address)));
+            }
+        }
+
         if (address(verifier) == address(0)) {
             verifier = verifiers[DEFAULT_PROOF_TYPE];
             if (address(verifier) == address(0))
@@ -647,6 +661,17 @@ contract CrossChainProofHubV3 is
         ) {
             // Try to verify the proof
             IProofVerifier verifier = verifiers[proofType];
+            
+            // Fallback to registry if not locally set
+            if (address(verifier) == address(0) && verifierRegistry != address(0)) {
+                (bool regSuccess, bytes memory regData) = verifierRegistry.staticcall(
+                    abi.encodeWithSignature("getVerifier(bytes32)", proofType)
+                );
+                if (regSuccess && regData.length == 32) {
+                    verifier = IProofVerifier(abi.decode(regData, (address)));
+                }
+            }
+
             if (address(verifier) == address(0)) {
                 verifier = verifiers[DEFAULT_PROOF_TYPE];
             }
@@ -930,6 +955,25 @@ contract CrossChainProofHubV3 is
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         supportedChains[chainId] = false;
         emit ChainRemoved(chainId);
+    }
+
+    function setTrustedRemote(
+        uint256 chainId,
+        address remote
+    ) external onlyRole(OPERATOR_ROLE) {
+        if (chainId == 0) revert InvalidChainId(chainId);
+        trustedRemotes[chainId] = remote;
+        emit TrustedRemoteSet(chainId, remote);
+    }
+
+    /**
+     * @notice Set global verifier registry
+     * @param _registry The VerifierRegistry address
+     */
+    function setVerifierRegistry(
+        address _registry
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        verifierRegistry = _registry;
     }
 
     /// @notice Updates challenge period

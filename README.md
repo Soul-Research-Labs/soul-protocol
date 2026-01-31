@@ -350,97 +350,91 @@ npm run security:all # Full security suite
 npm run security:mutation # Mutation testing
 ```
 
-### ZK Circuits (Noir)
-
-The protocol uses Noir for zero-knowledge circuits. We provide an automated pipeline to sync circuits with smart contract verifiers.
-
-1.  **Install Toolchain**: `npm run noir:install` (Installs `nargo` and `bb`).
-2.  **Generate Verifiers**: `npm run noir:codegen` (Compiles all circuits in `noir/` and generates Solidity verifiers in `contracts/verifiers/generated/`).
-3.  **Build All**: `npm run build:all` (Generates verifiers and compiles all smart contracts).
-
-Generated verifiers are wrapped using the **Adapter Pattern** found in `contracts/verifiers/adapters/` to maintain a stable interface for the `SoulUniversalVerifier`.
-
-### Testing
-
 ## SDK
 
 ```bash
 npm install @soul/sdk
 ```
 
-### Create Confidential State
+### Basic Usage
 
 ```typescript
-import { SoulClient, ConfidentialState } from '@soul/sdk';
+import { SoulSDK } from '@soul/sdk';
+import { createPublicClient, http } from 'viem';
+import { mainnet } from 'viem/chains';
 
-const client = new SoulClient({ rpcUrl, contracts });
-
-// Create encrypted state container
-const state = await client.createConfidentialState({
-  data: { balance: 1000, owner: '0x...' },
-  encryption: 'AES-256-GCM',
+// Initialize the Public Client
+const publicClient = createPublicClient({
+  chain: mainnet,
+  transport: http()
 });
 
-// Generate ZK proof of validity
-const proof = await state.generateProof();
-console.log(state.commitment); // 0xabc... (public)
-console.log(state.encrypted);  // Encrypted blob
-```
-
-### Cross-Chain Transfer with ZK-SLocks
-
-```typescript
-import { ZKSLockClient } from '@soul/sdk';
-
-const zkslocks = new ZKSLockClient(client);
-
-// Lock state on Arbitrum
-const lock = await zkslocks.createLock({
-  sourceChain: 'arbitrum',
-  destChain: 'base',
-  state: confidentialState,
-  unlockCondition: 'zk-proof',
+// Create a Soul SDK instance
+const soul = new SoulSDK({
+  curve: 'bn254',
+  relayerEndpoint: 'https://relay.soul.network',
+  proverUrl: 'https://prover.soul.network',
+  privateKey: 'YOUR_PRIVATE_KEY',
 });
 
-// Generate unlock proof (can be done offline, any time later)
-const unlockProof = await zkslocks.generateUnlockProof(lock);
-
-// Unlock on Base (no timing correlation with lock)
-await zkslocks.unlock({
-  lockId: lock.id,
-  proof: unlockProof,
-  destChain: 'base',
+// Send private state
+const receipt = await soul.sendPrivateState({
+  sourceChain: 'ethereum',
+  destChain: 'arbitrum',
+  payload: { balance: 1000 },
+  circuitId: 'transfer'
 });
 ```
 
-### Bridge to Aztec Network
+### Cross-Chain Bridges
 
 ```typescript
-import { AztecBridgeClient } from '@soul/sdk';
+import { BridgeFactory, SupportedChain } from '@soul/sdk';
+import { parseEther } from 'viem';
 
-const aztec = new AztecBridgeClient(client);
+// Create a bridge adapter
+const cardanoBridge = BridgeFactory.createAdapter(
+  SupportedChain.Cardano,
+  publicClient,
+  walletClient,
+  {
+    chainId: 1,
+    bridgeAddress: '0x...'
+  }
+);
 
-// Bridge Soul commitment to Aztec note
-const result = await aztec.bridgeToAztec({
-  commitment: soulCommitment,
-  recipient: aztecAddress,
+// Lock tokens
+const result = await cardanoBridge.bridgeTransfer({
+  targetChainId: 1,
+  recipient: 'addr1...',
   amount: parseEther('1.0'),
-  noteType: 'VALUE_NOTE',
 });
 
-console.log(result.aztecNoteHash); // Created on Aztec
+// Get bridge status
+const status = await cardanoBridge.getStatus(result.transferId);
 ```
 
 ### React Hooks
 
 ```tsx
-import { useSoul, useConfidentialBalance } from '@soul/sdk/react';
+import { SoulProvider, useSoul, useContainer } from '@soul/react';
 
-function PrivateBalance() {
-  const { client } = useSoul();
-  const { balance, loading } = useConfidentialBalance(client, commitment);
-  
-  return <span>{loading ? '...' : `${balance} ETH (private)`}</span>;
+function MyComponent() {
+  const { client, connect, isConnected } = useSoul();
+  const { container, isLoading } = useContainer('0xContainerId');
+
+  if (!isConnected) return <button onClick={connect}>Connect Soul</button>;
+  if (isLoading) return <div>Loading...</div>;
+
+  return <div>State Commitment: {container?.stateCommitment}</div>;
+}
+
+function App() {
+  return (
+    <SoulProvider config={{ orchestrator: '0x...' }}>
+      <MyComponent />
+    </SoulProvider>
+  );
 }
 ```
 

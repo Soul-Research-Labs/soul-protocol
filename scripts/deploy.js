@@ -95,15 +95,15 @@ async function main() {
   // 11. Deploy Soulv2Orchestrator (Integrator)
   console.log("\n11. Deploying Soulv2Orchestrator...");
   const Soulv2Orchestrator = await ethers.getContractFactory("Soulv2Orchestrator");
-  const pilv2Orchestrator = await Soulv2Orchestrator.deploy(
+  const soulv2Orchestrator = await Soulv2Orchestrator.deploy(
     deployed.proofCarryingContainer,
     deployed.policyBoundProofs,
     deployed.executionAgnosticStateCommitments,
     deployed.crossDomainNullifierAlgebra
   );
-  await pilv2Orchestrator.waitForDeployment();
-  deployed.pilv2Orchestrator = await pilv2Orchestrator.getAddress();
-  console.log("   Soulv2Orchestrator deployed to:", deployed.pilv2Orchestrator);
+  await soulv2Orchestrator.waitForDeployment();
+  deployed.soulv2Orchestrator = await soulv2Orchestrator.getAddress();
+  console.log("   Soulv2Orchestrator deployed to:", deployed.soulv2Orchestrator);
 
   // Summary
   console.log("\n" + "=".repeat(60));

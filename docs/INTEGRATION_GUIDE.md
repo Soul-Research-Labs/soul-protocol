@@ -2,7 +2,7 @@
 
 > **Step-by-step guide to integrate Soul into your application**
 
-[![SDK](https://img.shields.io/badge/SDK-@pil/sdk-blue.svg)]()
+[![SDK](https://img.shields.io/badge/SDK-@soul/sdk-blue.svg)]()
 
 ---
 
@@ -24,7 +24,7 @@ Integrate the Soul Protocol into your application.
 ## Installation
 
 ```bash
-npm install @pil/sdk ethers
+npm install @soul/sdk viem
 ```
 
 ---
@@ -34,8 +34,8 @@ npm install @pil/sdk ethers
 ### Step 1: Initialize the Client
 
 ```typescript
-import { SoulClient, SoulClientConfig } from '@pil/sdk';
-import { ethers } from 'ethers';
+import { SoulClient, SoulClientConfig } from '@soul/sdk';
+import { createPublicClient, http } from 'viem';
 
 // Configuration
 const config: SoulClientConfig = {
@@ -55,7 +55,7 @@ console.log(`Connected: ${isConnected}`);
 ### Step 2: Create a Privacy Container
 
 ```typescript
-import { generateProof } from '@pil/sdk';
+import { generateProof } from '@soul/sdk';
 
 // 1. Generate the proof off-chain
 const proof = await generateProof('container', {
@@ -175,7 +175,7 @@ await client.getCDNA().registerNullifier({
 ### Complete Bridge Flow
 
 ```typescript
-import { SoulClient, OperationType } from '@pil/sdk';
+import { SoulClient, OperationType } from '@soul/sdk';
 
 async function bridgeWithPrivacy(
   sourceChain: number,
@@ -276,7 +276,7 @@ async function multiChainDeploy(chains: number[], proof: Uint8Array) {
 ### Using the Built-in Circuit
 
 ```typescript
-import { generateProof, CircuitType } from '@pil/sdk';
+import { generateProof, CircuitType } from '@soul/sdk';
 
 // Generate a container proof
 const containerProof = await generateProof(CircuitType.CONTAINER, {
@@ -290,7 +290,7 @@ const containerProof = await generateProof(CircuitType.CONTAINER, {
 ### Using Custom Circuits
 
 ```typescript
-import { loadCircuit, generateProofWithCircuit } from '@pil/sdk';
+import { loadCircuit, generateProofWithCircuit } from '@soul/sdk';
 
 // Load custom circuit
 const circuit = await loadCircuit('./circuits/custom.wasm', './circuits/custom.zkey');
@@ -305,7 +305,7 @@ const proof = await generateProofWithCircuit(circuit, {
 ### Proof Verification
 
 ```typescript
-import { verifyProof, loadVerificationKey } from '@pil/sdk';
+import { verifyProof, loadVerificationKey } from '@soul/sdk';
 
 // Load verification key
 const vk = await loadVerificationKey('./circuits/custom.vkey.json');
@@ -323,7 +323,7 @@ if (!isValid) {
 ## Error Handling
 
 ```typescript
-import { SoulError, ErrorCode, isRecoverableError } from '@pil/sdk';
+import { SoulError, ErrorCode, isRecoverableError } from '@soul/sdk';
 
 try {
   await client.getPC3().createContainer(params);
@@ -343,7 +343,7 @@ try {
 ## Testing
 
 ```typescript
-import { SoulClient, MockProvider, LocalTestnet } from '@pil/sdk/testing';
+import { SoulClient, MockProvider, LocalTestnet } from '@soul/sdk/testing';
 
 // Unit test with mocks
 const mockProvider = new MockProvider();
@@ -374,4 +374,4 @@ const prodConfig = {
 
 ---
 
-**Next:** [API Reference](API_REFERENCE.md) • [Security](SECURITY.md) • [Discord](https://discord.gg/pil-protocol)
+**Next:** [API Reference](API_REFERENCE.md) • [Security](SECURITY.md) • [Discord](https://discord.gg/soul-protocol)

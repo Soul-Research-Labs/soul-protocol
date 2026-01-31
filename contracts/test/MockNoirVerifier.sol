@@ -2,7 +2,15 @@
 pragma solidity ^0.8.20;
 
 contract MockNoirVerifier {
-    function verify(bytes calldata, bytes32[] calldata) external pure returns (bool) {
-        return true;
+    bool public shouldFail;
+    bytes32[] public lastSignals;
+
+    function setShouldFail(bool _shouldFail) external {
+        shouldFail = _shouldFail;
+    }
+
+    function verify(bytes calldata, bytes32[] calldata signals) external returns (bool) {
+        lastSignals = signals;
+        return !shouldFail;
     }
 }

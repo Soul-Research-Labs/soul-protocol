@@ -20,6 +20,17 @@ interface IProofVerifier {
     ) external view returns (bool success);
 
     /**
+     * @notice Alternative verification signature for raw bytes public inputs
+     * @param proof The proof bytes
+     * @param publicInputs The public inputs as raw bytes (ABI-encoded uint256[] or flat bytes)
+     * @return success True if the proof is valid
+     */
+    function verifyProof(
+        bytes calldata proof,
+        bytes calldata publicInputs
+    ) external view returns (bool success);
+
+    /**
      * @notice Verify a proof with a single public input (common case)
      * @param proof The proof bytes
      * @param publicInput Single public input

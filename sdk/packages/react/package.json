@@ -1,5 +1,5 @@
 {
-  "name": "@pil/react",
+  "name": "@soul/react",
   "version": "1.0.0",
   "description": "React hooks for Soul Protocol",
   "main": "dist/index.js",
@@ -28,12 +28,12 @@
     }
   },
   "peerDependencies": {
-    "@pil/sdk": ">=1.0.0",
+    "@soul/sdk": ">=1.0.0",
     "react": ">=17.0.0",
     "react-dom": ">=17.0.0"
   },
   "dependencies": {
-    "ethers": "^6.9.0"
+    "viem": "^2.30.0"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^25.0.7",
@@ -59,11 +59,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/pil-protocol/sdk.git",
+    "url": "https://github.com/soul-protocol/sdk.git",
     "directory": "packages/react"
   },
   "keywords": [
-    "pil",
+    "soul",
     "privacy",
     "interoperability",
     "react",

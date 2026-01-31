@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PIL Coverage Runner v2
+Soul Coverage Runner v2
 
 IMPORTANT: Forge coverage currently fails on this project due to "stack too deep"
 errors in complex ZK verifier contracts. This is a known Foundry limitation.
@@ -305,7 +305,7 @@ def main():
             extra_args.append(arg)
     
     print_colored("=" * 60, CYAN)
-    print_colored("   PIL Coverage Runner v2", CYAN)
+    print_colored("   Soul Coverage Runner v2", CYAN)
     print_colored("=" * 60, CYAN)
     
     # Just restore if requested

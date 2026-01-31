@@ -396,7 +396,7 @@ cmd_logs() {
     if [ -z "$service" ]; then
         log_info "Available services:"
         echo "  ethereum-l1, arbitrum-l2, optimism-l2, base-l2"
-        echo "  pil-relayer, pil-prover, graph-node, prometheus, grafana"
+        echo "  soul-relayer, soul-prover, graph-node, prometheus, grafana"
         echo ""
         log_info "Usage: ./scripts/run-simulation.sh logs <service>"
         return

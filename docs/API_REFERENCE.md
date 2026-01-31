@@ -2,7 +2,7 @@
 
 > **Complete SDK Documentation for Soul v2**
 
-[![npm](https://img.shields.io/badge/npm-@pil/sdk-blue.svg)](https://www.npmjs.com/package/@pil/sdk)
+[![npm](https://img.shields.io/badge/npm-@soul/sdk-blue.svg)](https://www.npmjs.com/package/@soul/sdk)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)]()
 
 ---
@@ -13,7 +13,7 @@
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Core Classes](#core-classes)
-  - [SoulClient](#pilclient)
+  - [SoulClient](#soulclient)
   - [PC3Client](#pc3client)
   - [PBPClient](#pbpclient)
   - [EASCClient](#eascclient)
@@ -35,13 +35,13 @@ The Soul Protocol (Soul) provides a comprehensive SDK for interacting with priva
 ## Installation
 
 ```bash
-npm install @pil/sdk
+npm install @soul/sdk
 ```
 
 ## Quick Start
 
 ```typescript
-import { SoulClient, SoulClientConfig } from '@pil/sdk';
+import { SoulClient, SoulClientConfig } from '@soul/sdk';
 
 const config: SoulClientConfig = {
   network: 'mainnet',
@@ -433,7 +433,7 @@ interface NullifierConsumedEvent {
 ### Error Types
 
 ```typescript
-import { SoulError, ErrorCode } from '@pil/sdk';
+import { SoulError, ErrorCode } from '@soul/sdk';
 
 try {
   await client.getPC3().createContainer({...});
@@ -552,10 +552,10 @@ const result = await client.getPC3().createContainer({
 1. Update import paths:
 ```typescript
 // v1
-import { SoulClient } from 'pil-sdk';
+import { SoulClient } from 'soul-sdk';
 
 // v2
-import { SoulClient } from '@pil/sdk';
+import { SoulClient } from '@soul/sdk';
 ```
 
 2. Update method signatures:
@@ -580,7 +580,7 @@ client.getPC3().on('ContainerCreated', handler);
 
 ## Support
 
-- Documentation: https://docs.pil.network
-- GitHub: https://github.com/pil-protocol/sdk
-- Discord: https://discord.gg/pil-protocol
-- Twitter: https://twitter.com/pil_protocol
+- Documentation: https://docs.soul.network
+- GitHub: https://github.com/soul-protocol/sdk
+- Discord: https://discord.gg/soul-protocol
+- Twitter: https://twitter.com/soul_protocol

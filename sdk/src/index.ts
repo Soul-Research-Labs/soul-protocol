@@ -3,9 +3,9 @@
  * 
  * Optimized exports with tree-shaking support.
  * Use subpath imports for smaller bundles:
- * - @pil/sdk/pqc - Post-quantum cryptography
- * - @pil/sdk/bridges - Cross-chain bridges
- * - @pil/sdk/react - React hooks
+ * - @soul/sdk/pqc - Post-quantum cryptography
+ * - @soul/sdk/bridges - Cross-chain bridges
+ * - @soul/sdk/react - React hooks
  */
 
 import { SoulSDK } from "./client/SoulSDK";

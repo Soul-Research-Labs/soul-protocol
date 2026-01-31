@@ -141,8 +141,8 @@ async function main() {
             deployed.contracts.crossDomainNullifierAlgebra
         );
         await orchestrator.waitForDeployment();
-        deployed.contracts.pilv2Orchestrator = await orchestrator.getAddress();
-        console.log("   ✅ Soulv2Orchestrator:", deployed.contracts.pilv2Orchestrator);
+        deployed.contracts.soulv2Orchestrator = await orchestrator.getAddress();
+        console.log("   ✅ Soulv2Orchestrator:", deployed.contracts.soulv2Orchestrator);
 
         // ============================================
         // PHASE 4: Security (Timelock)
@@ -208,7 +208,7 @@ async function main() {
 
         // Grant VERIFIER_ROLE to orchestrator
         const VERIFIER_ROLE = await pc3.VERIFIER_ROLE();
-        await pc3.grantRole(VERIFIER_ROLE, deployed.contracts.pilv2Orchestrator);
+        await pc3.grantRole(VERIFIER_ROLE, deployed.contracts.soulv2Orchestrator);
         console.log("   ✅ Orchestrator granted VERIFIER_ROLE");
 
         // ============================================
@@ -228,7 +228,7 @@ async function main() {
                 { address: deployed.contracts.executionAgnosticStateCommitments, name: "ExecutionAgnosticStateCommitments", args: [] },
                 { address: deployed.contracts.crossDomainNullifierAlgebra, name: "CrossDomainNullifierAlgebra", args: [deployed.contracts.groth16VerifierBN254] },
                 {
-                    address: deployed.contracts.pilv2Orchestrator,
+                    address: deployed.contracts.soulv2Orchestrator,
                     name: "Soulv2Orchestrator",
                     args: [
                         deployed.contracts.proofCarryingContainer,
@@ -251,7 +251,7 @@ async function main() {
                         deployed.contracts.policyBoundProofs,
                         deployed.contracts.executionAgnosticStateCommitments,
                         deployed.contracts.crossDomainNullifierAlgebra,
-                        deployed.contracts.pilv2Orchestrator
+                        deployed.contracts.soulv2Orchestrator
                     ]
                 }
             ];

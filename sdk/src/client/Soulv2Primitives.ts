@@ -1322,6 +1322,70 @@ export class Soulv2ClientFactory {
   }
 
   /**
+   * Alias for proofCarryingContainer
+   */
+  getPC3(): ProofCarryingContainerClient {
+    return this.proofCarryingContainer();
+  }
+
+  /**
+   * Alias for policyBoundProofs
+   */
+  getPBP(): PolicyBoundProofsClient {
+    return this.policyBoundProofs();
+  }
+
+  /**
+   * Alias for executionAgnosticStateCommitments
+   */
+  getEASC(): ExecutionAgnosticStateCommitmentsClient {
+    return this.executionAgnosticStateCommitments();
+  }
+
+  /**
+   * Alias for crossDomainNullifierAlgebra
+   */
+  getCDNA(): CrossDomainNullifierAlgebraClient {
+    return this.crossDomainNullifierAlgebra();
+  }
+
+  /**
+   * Alias for orchestrator
+   */
+  getOrchestrator(): Soulv2OrchestratorClient {
+    return this.orchestrator();
+  }
+
+  /**
+   * Get the public client
+   */
+  getPublicClient(): PublicClient {
+    return this.publicClient;
+  }
+
+  /**
+   * Get the wallet client
+   */
+  getWalletClient(): WalletClient | undefined {
+    return this.walletClient;
+  }
+
+  /**
+   * Get the provider (PublicClient for viem)
+   */
+  getProvider(): PublicClient {
+    return this.publicClient;
+  }
+
+  /**
+   * Estimate gas for a method (simplified)
+   */
+  async estimateGas(method: string, params: any[]): Promise<bigint> {
+    // This is a placeholder since actual gas estimation depends on the contract
+    return 200000n; 
+  }
+
+  /**
    * Create all clients at once
    */
   all(): {

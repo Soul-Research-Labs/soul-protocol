@@ -50,7 +50,7 @@ interface SoulConfig {
   defaultChain: string;
 }
 
-const CONFIG_DIR = path.join(process.env.HOME || '~', '.pil');
+const CONFIG_DIR = path.join(process.env.HOME || '~', '.soul');
 const CONFIG_FILE = path.join(CONFIG_DIR, 'config.json');
 
 function loadConfig(): SoulConfig {
@@ -113,7 +113,7 @@ function getWalletClient(network: string): WalletClient {
     });
   }
   
-  throw new Error('No private key configured. Run `pil config set-key <key>`');
+  throw new Error('No private key configured. Run `soul config set-key <key>`');
 }
 
 function printTable(headers: string[], rows: string[][]): void {
@@ -135,7 +135,7 @@ function printTable(headers: string[], rows: string[][]): void {
 // ============================================
 
 program
-  .name('pil')
+  .name('soul')
   .description('Soul Protocol CLI')
   .version('1.0.0');
 

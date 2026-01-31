@@ -45,6 +45,9 @@ contract SoulUniversalVerifier is Ownable {
     /// @notice Verifier contracts by proof system
     mapping(ProofSystem => VerifierConfig) public verifiers;
 
+    /// @notice Registry for circuit-specific verifiers (used by Noir/Generic)
+    address public verifierRegistry;
+
     /// @notice All verified proofs
     mapping(bytes32 => bool) public verifiedProofs;
 
@@ -133,6 +136,14 @@ contract SoulUniversalVerifier is Ownable {
     ) external onlyOwner {
         if (newGasLimit == 0) revert InvalidGasLimit();
         verifiers[system].gasLimit = newGasLimit;
+    }
+
+    /**
+     * @notice Set the verifier registry for specialized verifier lookups
+     * @param _registry The VerifierRegistry address
+     */
+    function setVerifierRegistry(address _registry) external onlyOwner {
+        verifierRegistry = _registry;
     }
 
     // ============================================
@@ -300,8 +311,33 @@ contract SoulUniversalVerifier is Ownable {
                 proof.proof,
                 publicInputs
             );
+        } else if (system == ProofSystem.Noir) {
+            // For Noir, if a registry is set, resolve the specific adapter based on circuitHash
+            address targetVerifier = verifier;
+            if (verifierRegistry != address(0)) {
+                // Try to resolve circuit-specific adapter from registry
+                (bool regSuccess, bytes memory regData) = verifierRegistry.staticcall(
+                    abi.encodeWithSignature("getVerifier(bytes32)", proof.vkeyOrCircuitHash)
+                );
+                if (regSuccess && regData.length == 32) {
+                    address resolved = abi.decode(regData, (address));
+                    if (resolved != address(0)) {
+                        targetVerifier = resolved;
+                    }
+                }
+            }
+
+            callData = abi.encodeWithSignature(
+                "verify(bytes32,bytes,bytes)",
+                proof.vkeyOrCircuitHash,
+                proof.proof,
+                publicInputs
+            );
+            
+            // Override the verifier address if we found a better one in the registry
+            verifier = targetVerifier;
         } else {
-            // Generic verification call
+            // Generic verification call for other systems
             callData = abi.encodeWithSignature(
                 "verify(bytes32,bytes,bytes)",
                 proof.vkeyOrCircuitHash,

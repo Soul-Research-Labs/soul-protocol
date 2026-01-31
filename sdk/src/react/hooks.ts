@@ -85,14 +85,14 @@ export function useSoul(config: UseSoulConfig) {
       setIsLoading(true);
       setError(null);
 
-      const pilClient = new SoulClient({
+      const soulClient = new SoulClient({
         curve: 'bn254',
-        relayerEndpoint: config.rpcUrl || 'https://relay.pil.network',
-        proverUrl: 'https://prover.pil.network',
+        relayerEndpoint: config.rpcUrl || 'https://relay.soul.network',
+        proverUrl: 'https://prover.soul.network',
         privateKey: '', // Placeholder
       });
 
-      setClient(pilClient);
+      setClient(soulClient);
 
       const [address] = await walletClient.getAddresses();
       const balance = await publicClient.getBalance({ address });

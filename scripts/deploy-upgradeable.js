@@ -115,12 +115,12 @@ async function main() {
             }
         );
         await orchestratorProxy.waitForDeployment();
-        deployed.contracts.pilv2Orchestrator = await orchestratorProxy.getAddress();
-        deployed.implementations.pilv2Orchestrator = await upgrades.erc1967.getImplementationAddress(
+        deployed.contracts.soulv2Orchestrator = await orchestratorProxy.getAddress();
+        deployed.implementations.soulv2Orchestrator = await upgrades.erc1967.getImplementationAddress(
             await orchestratorProxy.getAddress()
         );
-        console.log("   ✅ Orchestrator Proxy:", deployed.contracts.pilv2Orchestrator);
-        console.log("   📋 Implementation:", deployed.implementations.pilv2Orchestrator);
+        console.log("   ✅ Orchestrator Proxy:", deployed.contracts.soulv2Orchestrator);
+        console.log("   📋 Implementation:", deployed.implementations.soulv2Orchestrator);
 
         // ============================================
         // PHASE 4: Configuration
@@ -132,7 +132,7 @@ async function main() {
         await pc3Proxy.setVerifierRegistry(deployed.contracts.verifierRegistry);
         await pc3Proxy.addPolicy(ethers.ZeroHash);
         const VERIFIER_ROLE = await pc3Proxy.VERIFIER_ROLE();
-        await pc3Proxy.grantRole(VERIFIER_ROLE, deployed.contracts.pilv2Orchestrator);
+        await pc3Proxy.grantRole(VERIFIER_ROLE, deployed.contracts.soulv2Orchestrator);
         console.log("   ✅ PC³ configured");
 
         // ============================================
@@ -154,10 +154,10 @@ async function main() {
         console.log("=".repeat(80));
         console.log("\nProxies (interact with these):");
         console.log(`  ProofCarryingContainer: ${deployed.contracts.proofCarryingContainer}`);
-        console.log(`  Soulv2Orchestrator: ${deployed.contracts.pilv2Orchestrator}`);
+        console.log(`  Soulv2Orchestrator: ${deployed.contracts.soulv2Orchestrator}`);
         console.log("\nImplementations (for verification):");
         console.log(`  PC³ Implementation: ${deployed.implementations.proofCarryingContainer}`);
-        console.log(`  Orchestrator Implementation: ${deployed.implementations.pilv2Orchestrator}`);
+        console.log(`  Orchestrator Implementation: ${deployed.implementations.soulv2Orchestrator}`);
         console.log("\n🎉 Upgradeable deployment completed successfully!");
 
     } catch (error) {

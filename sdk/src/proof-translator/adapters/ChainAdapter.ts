@@ -407,7 +407,7 @@ export class CosmosChainAdapter implements ChainAdapter {
     verifierAddress: string
   ): Promise<CosmosProofMessage> {
     return {
-      typeUrl: "/pil.zkverifier.v1.MsgVerifyProof",
+      typeUrl: "/soul.zkverifier.v1.MsgVerifyProof",
       value: {
         proof: this.formatProof(proof),
         publicInputs: this.encodePublicSignals(publicSignals),

@@ -122,3 +122,4 @@ storybook-static/
 *.orig
 .vercel
 .certora_internal
+temp_cache/

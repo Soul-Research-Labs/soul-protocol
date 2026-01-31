@@ -4,35 +4,28 @@ pragma solidity ^0.8.20;
 import "./NoirVerifierAdapter.sol";
 
 /**
- * @title PolicyVerifierAdapter
- * @notice Adapter for the Policy Compliance Noir circuit
+ * @title NullifierAdapter
+ * @notice Adapter for the Cross-Domain Nullifier Noir circuit
+ * @dev Mapped to 4 public signals: [isValid, nullifier_hash, domain_id, commitment_root]
  */
-contract PolicyVerifierAdapter is NoirVerifierAdapter {
+contract NullifierAdapter is NoirVerifierAdapter {
     constructor(address _noirVerifier) NoirVerifierAdapter(_noirVerifier) {}
 
-    /**
-     * @notice Custom verification for Policy compliance
-     * @dev Decodes policy-specific public inputs: policy_hash, user_commitment, merkle_root
-     */
     function verify(
         bytes32 /* circuitHash */,
         bytes calldata proof,
         bytes calldata publicInputs
     ) external view override returns (bool) {
-        // Policy Noir circuit has 4 public inputs:
-        // 1. isValid (return)
-        // 2. policy_hash
-        // 3. user_commitment
-        // 4. merkle_root
-        
         bytes32[] memory inputs = _prepareSignals(publicInputs);
-        require(inputs.length == getPublicInputCount(), "SIG_COUNT_MISMATCH: POLICY");
-
+        
+        // Exact count validation: return_bool + 3 pub inputs
+        require(inputs.length == getPublicInputCount(), "SIG_COUNT_MISMATCH: NULLIFIER");
+        
         // Signal[0] is the return boolean from Noir main
         bool circuitPassed = uint256(inputs[0]) == 1;
-
-        if (!circuitPassed) return false;
         
+        if (!circuitPassed) return false;
+
         return INoirVerifier(noirVerifier).verify(proof, inputs);
     }
 

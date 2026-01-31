@@ -1,6 +1,6 @@
-# @pil/sdk - Soul Protocol SDK
+# @soul/sdk - Soul Protocol SDK
 
-[![npm version](https://badge.fury.io/js/%40pil%2Fsdk.svg)](https://www.npmjs.com/package/@pil/sdk)
+[![npm version](https://badge.fury.io/js/%40soul%2Fsdk.svg)](https://www.npmjs.com/package/@soul/sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 
@@ -19,11 +19,11 @@ The official TypeScript SDK for the Soul Protocol (Soul) - a cross-chain privacy
 ## Installation
 
 ```bash
-npm install @pil/sdk
+npm install @soul/sdk
 # or
-yarn add @pil/sdk
+yarn add @soul/sdk
 # or
-pnpm add @pil/sdk
+pnpm add @soul/sdk
 ```
 
 ## Quick Start
@@ -31,102 +31,93 @@ pnpm add @pil/sdk
 ### Basic Usage
 
 ```typescript
-import { SoulSDK, PQCClient, BridgeFactory } from '@pil/sdk';
-import { ethers } from 'ethers';
+import { SoulSDK, Soulv2ClientFactory } from '@soul/sdk';
+import { createPublicClient, http } from 'viem';
+import { mainnet } from 'viem/chains';
 
-// Initialize the SDK
-const provider = new ethers.JsonRpcProvider('https://sepolia.infura.io/v3/YOUR_KEY');
-const signer = new ethers.Wallet('YOUR_PRIVATE_KEY', provider);
+// Initialize the Public Client
+const publicClient = createPublicClient({
+  chain: mainnet,
+  transport: http()
+});
 
 // Create a Soul SDK instance
-const pil = new SoulSDK({
-  provider,
-  signer,
-  network: 'sepolia',
+const soul = new SoulSDK({
+  curve: 'bn254',
+  relayerEndpoint: 'https://relay.soul.network',
+  proverUrl: 'https://prover.soul.network',
+  privateKey: 'YOUR_PRIVATE_KEY',
 });
 ```
 
 ### Post-Quantum Cryptography
 
 ```typescript
-import { PQCClient, PQCAlgorithm, TransitionPhase } from '@pil/sdk';
+import { PQCRegistryClient, PQCAlgorithm, TransitionPhase } from '@soul/sdk';
 
-const pqcClient = new PQCClient({
-  provider,
-  signer,
-  registryAddress: '0x...',
-  dilithiumAddress: '0x...',
-  kyberAddress: '0x...',
-});
+const pqcClient = new PQCRegistryClient(
+  '0xRegistryAddress',
+  publicClient,
+  walletClient
+);
 
 // Configure account with PQC
-await pqcClient.configureAccount({
-  signatureAlgorithm: PQCAlgorithm.Dilithium3,
-  kemAlgorithm: PQCAlgorithm.Kyber768,
-  enableHybrid: true,
-});
-
-// Check if an address has PQC enabled
-const isPQC = await pqcClient.isPQCEnabled('0x...');
-
-// Verify a signature
-const isValid = await pqcClient.verifySignature(
-  '0xSigner',
-  messageHash,
-  signature,
-  publicKey
+await pqcClient.registerHybridKey(
+  classicalPublicKey,
+  pqcPublicKey,
+  pqcAlgorithm
 );
 ```
 
 ### Cross-Chain Bridges
 
 ```typescript
-import { BridgeFactory, SupportedChain } from '@pil/sdk';
+import { BridgeFactory, SupportedChain } from '@soul/sdk';
+import { parseEther } from 'viem';
 
 // Create a bridge adapter
-const cardanoBridge = BridgeFactory.create(SupportedChain.Cardano, {
-  rpcUrl: 'https://cardano-mainnet.blockfrost.io/api/v0',
-  apiKey: 'YOUR_BLOCKFROST_KEY',
-});
+const cardanoBridge = BridgeFactory.createAdapter(
+  SupportedChain.Cardano,
+  publicClient,
+  walletClient,
+  {
+    chainId: 1,
+    bridgeAddress: '0x...'
+  }
+);
 
-// Lock tokens
-const result = await cardanoBridge.lock({
-  amount: ethers.parseEther('1.0'),
+// Start bridge transfer
+const result = await cardanoBridge.bridgeTransfer({
+  targetChainId: 1,
   recipient: 'addr1...',
-  token: '0x...',
+  amount: parseEther('1.0'),
 });
 
 // Get bridge status
 const status = await cardanoBridge.getStatus(result.transferId);
 ```
 
-### Proof Translation
-
-```typescript
-import {
-  ProofTranslator,
-  parseSnarkjsProof,
-  createVerifyCalldata,
-} from '@pil/sdk';
-
-// Parse a snarkjs proof
-const proof = parseSnarkjsProof(snarkjsOutput);
-
-// Translate for target chain
-const solidity = createVerifyCalldata(proof, publicSignals);
-```
-
 ### React Hooks
 
-```typescript
-import { useSoul, usePQC, useBridge } from '@pil/sdk/react';
+```tsx
+import { SoulProvider, useSoul, useContainer } from '@soul/react';
 
 function MyComponent() {
-  const { sdk, loading, error } = useSoul();
-  const { pqcEnabled, configureAccount } = usePQC();
-  const { lock, unlock, status } = useBridge('cardano');
+  const { client, connect, isConnected } = useSoul();
+  const { container, isLoading } = useContainer('0xContainerId');
 
-  // Use hooks in your component
+  if (!isConnected) return <button onClick={connect}>Connect Soul</button>;
+  if (isLoading) return <div>Loading container...</div>;
+
+  return <div>State Commitment: {container?.stateCommitment}</div>;
+}
+
+function App() {
+  return (
+    <SoulProvider config={{ orchestrator: '0x...' }}>
+      <MyComponent />
+    </SoulProvider>
+  );
 }
 ```
 
@@ -134,6 +125,7 @@ function MyComponent() {
 
 ### Core
 - `SoulSDK` - Main SDK entry point
+- `Soulv2ClientFactory` - Unified factory for Soul v2 primitives
 - `CryptoModule` - Cryptographic utilities
 
 ### Bridges
@@ -141,21 +133,20 @@ function MyComponent() {
 - `CosmosBridgeAdapterSDK` - Cosmos IBC bridge
 - `PolkadotBridgeAdapterSDK` - Polkadot/Substrate bridge
 - `NEARBridgeAdapterSDK` - NEAR bridge
-- `zkSyncBridgeAdapterSDK` - zkSync Era bridge
 - `AvalancheBridgeAdapterSDK` - Avalanche bridge
 - `ArbitrumBridgeAdapterSDK` - Arbitrum bridge
 
 ### Post-Quantum Cryptography
-- `PQCClient` - Main PQC interface
+- `PQCRegistryClient` - Main PQC interface
 - `DilithiumClient` - Dilithium signatures
-- `KyberClient` - Kyber KEM
+- `KyberKEMClient` - Kyber KEM
 - `encodeHybridSignature` / `decodeHybridSignature` - Hybrid signature encoding
 
 ### ZK Systems
-- `SP1Client` - Succinct SP1 integration
-- `Plonky3Client` - Plonky3 integration
-- `JoltClient` - Jolt zkVM integration
-- `BiniusClient` - Binius integration
+- `ZKSystems.SP1` - Succinct SP1 integration
+- `ZKSystems.Plonky3` - Plonky3 integration
+- `ZKSystems.Jolt` - Jolt zkVM integration
+- `ZKSystems.Binius` - Binius integration
 
 ### Advanced
 - `MPC` - Threshold signatures, DKG
@@ -168,16 +159,16 @@ The SDK includes a CLI for common operations:
 
 ```bash
 # Install globally
-npm install -g @pil/sdk
+npm install -g @soul/sdk
 
 # Generate a proof
-pil proof generate --circuit transfer --input input.json
+soul proof generate --circuit transfer --input input.json
 
 # Verify a proof
-pil proof verify --proof proof.json --vk vk.json
+soul proof verify --proof proof.json --vk vk.json
 
 # Bridge status
-pil bridge status --id abc123 --chain cardano
+soul bridge status --id abc123 --chain cardano
 ```
 
 ## Configuration
@@ -186,22 +177,17 @@ pil bridge status --id abc123 --chain cardano
 
 ```bash
 # Network configuration
-Soul_NETWORK=sepolia
-Soul_RPC_URL=https://sepolia.infura.io/v3/YOUR_KEY
+SOUL_NETWORK=sepolia
+SOUL_RPC_URL=https://sepolia.infura.io/v3/YOUR_KEY
 
 # Contract addresses
-Soul_REGISTRY_ADDRESS=0x...
-Soul_PQC_REGISTRY_ADDRESS=0x...
-
-# Bridge configuration
-CARDANO_RPC_URL=https://...
-COSMOS_RPC_URL=https://...
-POLKADOT_RPC_URL=wss://...
+SOUL_REGISTRY_ADDRESS=0x...
+SOUL_PQC_REGISTRY_ADDRESS=0x...
 ```
 
 ## API Reference
 
-See the [full API documentation](https://pil-project.github.io/pil-sdk/) for detailed type definitions and method signatures.
+See the [full API documentation](https://soul-project.github.io/soul-sdk/) for detailed type definitions and method signatures.
 
 ## Security
 
@@ -220,7 +206,7 @@ MIT License - see [LICENSE](./LICENSE) for details.
 
 ## Links
 
-- [Documentation](https://docs.pil.network)
-- [GitHub](https://github.com/pil-project/pil-sdk)
-- [Discord](https://discord.gg/pil)
-- [Twitter](https://twitter.com/pil_protocol)
+- [Documentation](https://docs.soul.network)
+- [GitHub](https://github.com/soul-project/soul-sdk)
+- [Discord](https://discord.gg/soul)
+- [Twitter](https://twitter.com/soul_protocol)

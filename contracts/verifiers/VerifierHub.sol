@@ -48,6 +48,9 @@ contract VerifierHub is AccessControl, Pausable {
     /// @notice Circuit type => Verifier info
     mapping(CircuitType => VerifierInfo) public verifiers;
 
+    /// @notice Global Verifier Registry (optional fallback)
+    address public verifierRegistry;
+
     /// @notice Historical verifiers (circuit => version => address)
     mapping(CircuitType => mapping(uint256 => address))
         public historicalVerifiers;
@@ -134,6 +137,16 @@ contract VerifierHub is AccessControl, Pausable {
     }
 
     /**
+     * @notice Set the global verifier registry
+     * @param _registry The VerifierRegistry address
+     */
+    function setVerifierRegistry(
+        address _registry
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        verifierRegistry = _registry;
+    }
+
+    /**
      * @notice Deactivate a verifier
      * @param circuitType The circuit type to deactivate
      */
@@ -191,9 +204,29 @@ contract VerifierHub is AccessControl, Pausable {
     ) external whenNotPaused returns (bool success) {
         VerifierInfo storage info = verifiers[circuitType];
 
-        if (info.verifier == address(0))
-            revert VerifierNotRegistered(circuitType);
-        if (!info.active) revert VerifierInactive(circuitType);
+        address verifier = info.verifier;
+        if (verifier == address(0) || !info.active) {
+            if (verifierRegistry != address(0)) {
+                // Map CircuitType to bytes32 proofType for Registry lookup
+                // This matches the PROOF_TYPES mapping used in migrate_to_noir.ts
+                bytes32 proofType;
+                if (circuitType == CircuitType.StateTransfer) proofType = keccak256("STATE_TRANSITION_PROOF");
+                else if (circuitType == CircuitType.StateCommitment) proofType = keccak256("COMMITMENT_PROOF");
+                else if (circuitType == CircuitType.CrossChainProof) proofType = keccak256("CROSS_CHAIN_PROOF");
+                else if (circuitType == CircuitType.ComplianceProof) proofType = keccak256("COMPLIANCE_PROOF");
+                
+                if (proofType != bytes32(0)) {
+                    (bool regSuccess, bytes memory regData) = verifierRegistry.staticcall(
+                        abi.encodeWithSignature("getVerifier(bytes32)", proofType)
+                    );
+                    if (regSuccess && regData.length == 32) {
+                        verifier = abi.decode(regData, (address));
+                    }
+                }
+            }
+        }
+
+        if (verifier == address(0)) revert VerifierNotRegistered(circuitType);
 
         // Compute proof hash for replay protection
         bytes32 proofHash = keccak256(abi.encode(proof, publicInputs));
@@ -202,8 +235,8 @@ contract VerifierHub is AccessControl, Pausable {
             revert ProofAlreadyUsed(proofHash);
         }
 
-        // Call the verifier
-        (bool callSuccess, bytes memory result) = info.verifier.staticcall(
+        // Call the verifier (all adapters now support verifyProof)
+        (bool callSuccess, bytes memory result) = verifier.staticcall(
             abi.encodeWithSignature(
                 "verifyProof(bytes,bytes)",
                 proof,

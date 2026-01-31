@@ -96,12 +96,12 @@ async function main() {
   console.log("📦 Step 1: Deploying Soul Token...\n");
   
   const SoulToken = await ethers.getContractFactory("SoulToken");
-  const pilToken = await SoulToken.deploy(deployer.address);
-  await pilToken.waitForDeployment();
+  const soulToken = await SoulToken.deploy(deployer.address);
+  await soulToken.waitForDeployment();
   
-  const tokenAddress = await pilToken.getAddress();
+  const tokenAddress = await soulToken.getAddress();
   deployment.contracts.SoulToken = tokenAddress;
-  deployment.txHashes.SoulToken = pilToken.deploymentTransaction()?.hash || "";
+  deployment.txHashes.SoulToken = soulToken.deploymentTransaction()?.hash || "";
   
   console.log(`  ✅ SoulToken deployed: ${tokenAddress}`);
   console.log(`     Initial supply: ${ethers.formatEther(config.initialSupply)} Soul\n`);
@@ -220,7 +220,7 @@ async function main() {
 
   // Delegate votes to self (required for governance participation)
   console.log("  Delegating votes to deployer...");
-  await (await pilToken.delegate(deployer.address)).wait();
+  await (await soulToken.delegate(deployer.address)).wait();
   console.log("  ✅ Votes delegated\n");
 
   // ==========================================================================
@@ -228,8 +228,8 @@ async function main() {
   // ==========================================================================
   console.log("🔍 Step 7: Verifying Setup...\n");
 
-  const tokenName = await pilToken.name();
-  const tokenSymbol = await pilToken.symbol();
+  const tokenName = await soulToken.name();
+  const tokenSymbol = await soulToken.symbol();
   const govName = await governor.name();
   const votingDelay = await governor.votingDelay();
   const votingPeriod = await governor.votingPeriod();

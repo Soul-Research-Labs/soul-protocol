@@ -89,14 +89,14 @@ async function main() {
 
     const orchestratorProxy = await ethers.getContractAt(
         "Soulv2OrchestratorUpgradeable",
-        deployment.contracts.pilv2Orchestrator
+        deployment.contracts.soulv2Orchestrator
     );
     const oldOrchestratorVersion = await orchestratorProxy.contractVersion();
     console.log("   Current version:", oldOrchestratorVersion.toString());
 
     console.log("   Validating upgrade...");
     await upgrades.validateUpgrade(
-        deployment.contracts.pilv2Orchestrator,
+        deployment.contracts.soulv2Orchestrator,
         OrchestratorV2,
         { kind: 'uups' }
     );
@@ -104,14 +104,14 @@ async function main() {
 
     console.log("   Performing upgrade...");
     const upgradedOrchestrator = await upgrades.upgradeProxy(
-        deployment.contracts.pilv2Orchestrator,
+        deployment.contracts.soulv2Orchestrator,
         OrchestratorV2,
         { kind: 'uups' }
     );
     await upgradedOrchestrator.waitForDeployment();
 
     const newOrchestratorImpl = await upgrades.erc1967.getImplementationAddress(
-        deployment.contracts.pilv2Orchestrator
+        deployment.contracts.soulv2Orchestrator
     );
     const newOrchestratorVersion = await upgradedOrchestrator.contractVersion();
 
@@ -123,7 +123,7 @@ async function main() {
     // UPDATE DEPLOYMENT FILE
     // ============================================
     deployment.implementations.proofCarryingContainer = newImplementation;
-    deployment.implementations.pilv2Orchestrator = newOrchestratorImpl;
+    deployment.implementations.soulv2Orchestrator = newOrchestratorImpl;
     deployment.lastUpgrade = new Date().toISOString();
     
     fs.writeFileSync(deploymentFile, JSON.stringify(deployment, null, 2));
@@ -135,7 +135,7 @@ async function main() {
     console.log("\n✅ All upgrades successful!");
     console.log("\nProxy addresses remain the same:");
     console.log(`  PC³: ${deployment.contracts.proofCarryingContainer}`);
-    console.log(`  Orchestrator: ${deployment.contracts.pilv2Orchestrator}`);
+    console.log(`  Orchestrator: ${deployment.contracts.soulv2Orchestrator}`);
 }
 
 main()
