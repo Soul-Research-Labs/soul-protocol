@@ -1,6 +1,6 @@
 import { expect } from "chai";
-import { viem } from "hardhat";
-import { getAddress, parseHash, zeroHash } from "viem";
+import hre from "hardhat";
+import { getAddress, hashMessage, zeroHash } from "viem";
 
 describe("Noir Verifier Adapters", () => {
   let adapter: any;
@@ -8,10 +8,10 @@ describe("Noir Verifier Adapters", () => {
 
   beforeEach(async () => {
     // 1. Deploy a mock Noir verifier (stub)
-    mockVerifier = await viem.deployContract("MockNoirVerifier" as any);
+    mockVerifier = await (hre as any).viem.deployContract("MockNoirVerifier" as any);
     
     // 2. Deploy the adapter pointing to the mock
-    adapter = await viem.deployContract("PolicyVerifierAdapter", [mockVerifier.address]);
+    adapter = await (hre as any).viem.deployContract("PolicyVerifierAdapter", [mockVerifier.address]);
   });
 
   it("should format and delegate verification to Noir verifier", async () => {

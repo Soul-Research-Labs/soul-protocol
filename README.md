@@ -350,6 +350,18 @@ npm run security:all # Full security suite
 npm run security:mutation # Mutation testing
 ```
 
+### ZK Circuits (Noir)
+
+The protocol uses Noir for zero-knowledge circuits. We provide an automated pipeline to sync circuits with smart contract verifiers.
+
+1.  **Install Toolchain**: `npm run noir:install` (Installs `nargo` and `bb`).
+2.  **Generate Verifiers**: `npm run noir:codegen` (Compiles all circuits in `noir/` and generates Solidity verifiers in `contracts/verifiers/generated/`).
+3.  **Build All**: `npm run build:all` (Generates verifiers and compiles all smart contracts).
+
+Generated verifiers are wrapped using the **Adapter Pattern** found in `contracts/verifiers/adapters/` to maintain a stable interface for the `SoulUniversalVerifier`.
+
+### Testing
+
 ## SDK
 
 ```bash
