@@ -527,7 +527,7 @@ contract TimelockAdmin {
             ,
             SoulTimelock.OperationStatus _status,
             ,
-            uint8 _confirmations
+            uint8 _confirmations,
         ) = timelock.operations(operationId);
 
         return (
