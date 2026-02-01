@@ -357,12 +357,12 @@ contract ProofCarryingContainer is AccessControl, ReentrancyGuard, Pausable {
         } else {
             // Fallback verification for testing/development environments
             // CRITICAL: Production deployments MUST use verifierRegistry
-            
+
             // Block mainnet deployment without real verification
             if (block.chainid == 1) {
                 revert MainnetPlaceholderNotAllowed();
             }
-            
+
             // Perform structural validation of proofs
             // This is not cryptographic verification but validates proof format
             result.validityValid = _validateProofStructure(
@@ -371,7 +371,10 @@ contract ProofCarryingContainer is AccessControl, ReentrancyGuard, Pausable {
             );
             result.policyValid =
                 container.policyHash == bytes32(0) ||
-                _validateProofStructure(proofs.policyProof, container.policyHash);
+                _validateProofStructure(
+                    proofs.policyProof,
+                    container.policyHash
+                );
             result.nullifierValid = _validateProofStructure(
                 proofs.nullifierProof,
                 container.nullifier
@@ -583,7 +586,7 @@ contract ProofCarryingContainer is AccessControl, ReentrancyGuard, Pausable {
     ) internal pure returns (bool valid) {
         // Minimum proof size check
         if (proof.length < MIN_PROOF_SIZE) return false;
-        
+
         // Check proof isn't all zeros
         bool hasNonZero = false;
         for (uint256 i = 0; i < 32 && i < proof.length; i++) {
@@ -593,11 +596,11 @@ contract ProofCarryingContainer is AccessControl, ReentrancyGuard, Pausable {
             }
         }
         if (!hasNonZero) return false;
-        
+
         // Validate public input binding
         // Proof should contain a hash commitment to public input
         bytes32 expectedBinding = keccak256(abi.encodePacked(publicInput));
-        
+
         // Check if binding exists in first 64 bytes of proof
         if (proof.length >= 64) {
             bytes32 proofBinding;
@@ -607,7 +610,7 @@ contract ProofCarryingContainer is AccessControl, ReentrancyGuard, Pausable {
             // Allow if binding matches or proof has valid structure
             if (proofBinding == expectedBinding) return true;
         }
-        
+
         // Fallback: accept if proof length is substantial
         return proof.length >= MIN_PROOF_SIZE * 2;
     }

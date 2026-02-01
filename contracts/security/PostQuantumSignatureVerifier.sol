@@ -184,7 +184,6 @@ contract PostQuantumSignatureVerifier is
     error InvalidAttestation();
     error BondReturnFailed();
 
-
     /*//////////////////////////////////////////////////////////////
                              CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
@@ -833,15 +832,19 @@ contract PostQuantumSignatureVerifier is
         uint8 level
     ) internal view returns (bool) {
         // Validate signature size matches security level
-        uint256 expectedSigSize = level == 2 ? DILITHIUM2_SIG_SIZE :
-                                  level == 3 ? DILITHIUM3_SIG_SIZE :
-                                  level == 5 ? DILITHIUM5_SIG_SIZE : 0;
+        uint256 expectedSigSize = level == 2 ? DILITHIUM2_SIG_SIZE : level == 3
+            ? DILITHIUM3_SIG_SIZE
+            : level == 5
+            ? DILITHIUM5_SIG_SIZE
+            : 0;
         if (signature.length != expectedSigSize) return false;
 
         // Validate public key size
-        uint256 expectedPkSize = level == 2 ? DILITHIUM2_PK_SIZE :
-                                 level == 3 ? DILITHIUM3_PK_SIZE :
-                                 level == 5 ? DILITHIUM5_PK_SIZE : 0;
+        uint256 expectedPkSize = level == 2 ? DILITHIUM2_PK_SIZE : level == 3
+            ? DILITHIUM3_PK_SIZE
+            : level == 5
+            ? DILITHIUM5_PK_SIZE
+            : 0;
         if (publicKey.length != expectedPkSize) return false;
 
         // Check attestation from trusted verifier
@@ -880,7 +883,9 @@ contract PostQuantumSignatureVerifier is
         if (signature.length != expectedSigSize) return false;
 
         // Validate public key size
-        uint256 expectedPkSize = variant <= 1 ? SPHINCS_128_PK_SIZE : SPHINCS_256_PK_SIZE;
+        uint256 expectedPkSize = variant <= 1
+            ? SPHINCS_128_PK_SIZE
+            : SPHINCS_256_PK_SIZE;
         if (publicKey.length != expectedPkSize) return false;
 
         // Check attestation from trusted verifier
@@ -909,13 +914,19 @@ contract PostQuantumSignatureVerifier is
         uint16 level
     ) internal view returns (bool) {
         // Validate signature size based on level
-        uint256 expectedSigSize = level == 512 ? FALCON512_SIG_SIZE :
-                                  level == 1024 ? FALCON1024_SIG_SIZE : 0;
+        uint256 expectedSigSize = level == 512
+            ? FALCON512_SIG_SIZE
+            : level == 1024
+            ? FALCON1024_SIG_SIZE
+            : 0;
         if (signature.length > expectedSigSize) return false; // Compressed can be smaller
 
         // Validate public key size
-        uint256 expectedPkSize = level == 512 ? FALCON512_PK_SIZE :
-                                 level == 1024 ? FALCON1024_PK_SIZE : 0;
+        uint256 expectedPkSize = level == 512
+            ? FALCON512_PK_SIZE
+            : level == 1024
+            ? FALCON1024_PK_SIZE
+            : 0;
         if (publicKey.length != expectedPkSize) return false;
 
         // Check attestation from trusted verifier
@@ -953,7 +964,9 @@ contract PostQuantumSignatureVerifier is
         if (proofType == 0 || proofType > 3) return false;
 
         // Verify message hash binding
-        bytes32 computedBinding = keccak256(abi.encodePacked(messageHash, signatureHash));
+        bytes32 computedBinding = keccak256(
+            abi.encodePacked(messageHash, signatureHash)
+        );
         if (computedBinding == bytes32(0)) return false;
 
         // Additional algorithm-specific checks would go here

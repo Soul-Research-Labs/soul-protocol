@@ -53,7 +53,6 @@ contract SoulSP1Verifier is Ownable {
     error PublicValuesMismatch();
     error ProofVerificationFailed();
 
-
     // ============================================
     // Events
     // ============================================
@@ -85,7 +84,6 @@ contract SoulSP1Verifier is Ownable {
     ) external onlyOwner {
         if (vkeyHash == bytes32(0)) revert InvalidVKey();
         if (verificationKeys[vkeyHash].active) revert AlreadyRegistered();
-
 
         verificationKeys[vkeyHash] = VerificationKey({
             vkeyHash: vkeyHash,
@@ -130,14 +128,13 @@ contract SoulSP1Verifier is Ownable {
         bytes calldata publicValues
     ) external returns (bool valid) {
         // Check vkey is registered
-        if (!verificationKeys[proof.vkeyHash].active) revert VKeyNotRegistered();
-
+        if (!verificationKeys[proof.vkeyHash].active)
+            revert VKeyNotRegistered();
 
         // Verify public values hash
         bytes32 computedHash = keccak256(publicValues);
         if (computedHash != proof.publicValuesHash)
             revert PublicValuesMismatch();
-
 
         // Compute proof hash
         bytes32 proofHash = keccak256(
@@ -146,7 +143,6 @@ contract SoulSP1Verifier is Ownable {
 
         // Check not already verified (prevent replay)
         if (verifiedProofs[proofHash]) revert AlreadyVerified();
-
 
         // Call SP1 gateway for actual verification
         if (sp1Gateway != address(0)) {
@@ -161,7 +157,6 @@ contract SoulSP1Verifier is Ownable {
             if (!success || !abi.decode(result, (bool)))
                 revert ProofVerificationFailed();
         }
-
 
         // Mark as verified
         verifiedProofs[proofHash] = true;
@@ -261,7 +256,6 @@ contract SoulPlonky3Verifier is Ownable {
     error InvalidProof();
     error InvalidFRICommitments();
 
-
     // ============================================
     // Events
     // ============================================
@@ -304,7 +298,6 @@ contract SoulPlonky3Verifier is Ownable {
         if (proof.publicInputs.length != config.numPublicInputs)
             revert InputCountMismatch();
 
-
         bytes32 proofHash = keccak256(
             abi.encode(
                 proof.circuitHash,
@@ -314,7 +307,6 @@ contract SoulPlonky3Verifier is Ownable {
         );
 
         if (verifiedProofs[proofHash]) revert AlreadyVerified();
-
 
         // Plonky3 verification logic would go here
         // For now, verify proof structure
@@ -376,7 +368,6 @@ contract SoulJoltVerifier is Ownable {
     error EmptyMemory();
     error InvalidProof();
 
-
     // ============================================
     // Events
     // ============================================
@@ -415,13 +406,11 @@ contract SoulJoltVerifier is Ownable {
         JoltProgram storage program = programs[proof.programHash];
         if (!program.active) revert ProgramNotRegistered();
 
-
         bytes32 proofHash = keccak256(
             abi.encode(proof.programHash, proof.inputHash, proof.outputHash)
         );
 
         if (verifiedProofs[proofHash]) revert AlreadyVerified();
-
 
         // Jolt verification consists of:
         // 1. Sumcheck verification
@@ -519,7 +508,6 @@ contract SoulBiniusVerifier is Ownable {
         if (!registeredCircuits[proof.circuitHash])
             revert CircuitNotRegistered();
 
-
         bytes32 proofHash = keccak256(
             abi.encode(
                 proof.circuitHash,
@@ -529,7 +517,6 @@ contract SoulBiniusVerifier is Ownable {
         );
 
         if (verifiedProofs[proofHash]) revert AlreadyVerified();
-
 
         // Binius uses binary fields (GF(2))
         // Verification is optimized for hash operations

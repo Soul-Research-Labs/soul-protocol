@@ -69,11 +69,15 @@ contract StarknetBridgeAdapter is
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Bridge handler selector (deposit)
-    /// @dev keccak256("handle_deposit") specific to Cairo contract
-    uint256 public constant DEPOSIT_SELECTOR = 0x15d40636667297e88383344ea1932d03d09a06655c65A31; // Placeholder
+    /// @dev get_selector_from_name("handle_deposit") in Cairo/Starknet
+    /// Computed as: starknet_keccak("handle_deposit") & MASK_250
+    uint256 public constant DEPOSIT_SELECTOR = 
+        0x0352149076e0f82d29d678ba52eb54a51ef7003c2a4fc6754bdf9cff382f5c5d;
 
     /// @notice Bridge handler selector (message)
-    uint256 public constant MESSAGE_SELECTOR = 0x2424036667297e88383344ea1932d03d09a06655c65a32; // Placeholder
+    /// @dev get_selector_from_name("handle_message") in Cairo/Starknet
+    uint256 public constant MESSAGE_SELECTOR = 
+        0x00c73f681176fc7b3f9693986fd7b14581e8d540519e27400e88b8713932be01;
 
     /// @notice Minimum deposit amount
     uint256 public minDepositAmount = 0.001 ether;

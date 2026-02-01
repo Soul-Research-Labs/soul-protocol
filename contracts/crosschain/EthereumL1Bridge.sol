@@ -481,7 +481,13 @@ contract EthereumL1Bridge is AccessControl, ReentrancyGuard, Pausable {
         bytes32 proofRoot,
         uint256 blockNumber
     ) external payable {
-        _submitStateCommitment(sourceChainId, stateRoot, proofRoot, blockNumber, bytes32(0));
+        _submitStateCommitment(
+            sourceChainId,
+            stateRoot,
+            proofRoot,
+            blockNumber,
+            bytes32(0)
+        );
     }
 
     /**
@@ -501,7 +507,13 @@ contract EthereumL1Bridge is AccessControl, ReentrancyGuard, Pausable {
     ) external payable {
         bytes32 blobVersionedHash = _getBlobHash(blobIndex);
         if (blobVersionedHash == bytes32(0)) revert InvalidBlobIndex();
-        _submitStateCommitment(sourceChainId, stateRoot, proofRoot, blockNumber, blobVersionedHash);
+        _submitStateCommitment(
+            sourceChainId,
+            stateRoot,
+            proofRoot,
+            blockNumber,
+            blobVersionedHash
+        );
     }
 
     /**
@@ -510,7 +522,9 @@ contract EthereumL1Bridge is AccessControl, ReentrancyGuard, Pausable {
      * @param index The blob index in the transaction
      * @return hash The versioned blob hash
      */
-    function _getBlobHash(uint256 index) internal view virtual returns (bytes32 hash) {
+    function _getBlobHash(
+        uint256 index
+    ) internal view virtual returns (bytes32 hash) {
         // Use assembly to call BLOBHASH opcode (0x49)
         // This is EIP-4844 compliant and will return 0 if no blob at index
         assembly {

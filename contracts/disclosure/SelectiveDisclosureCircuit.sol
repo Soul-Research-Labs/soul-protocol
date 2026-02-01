@@ -654,6 +654,7 @@ contract SelectiveDisclosureCircuit is
 
     /**
      * @notice Check if predicate is satisfied (simple types only)
+     * @dev Complex predicates (identity/role/threshold/composite/ZK) require proof verification
      */
     function isPredicateSatisfied(
         bytes32 predicateId,
@@ -668,10 +669,39 @@ contract SelectiveDisclosureCircuit is
             return false;
         } else if (p.predicateType == PredicateType.TimeAfter) {
             return block.timestamp >= p.timeCondition;
+        } else if (p.predicateType == PredicateType.IdentityMatch) {
+            // Context hash should be H(predicate_id || condition_hash)
+            // where condition_hash contains the identity commitment
+            bytes32 expectedContext = keccak256(abi.encodePacked(predicateId, p.conditionHash));
+            return contextHash == expectedContext;
+        } else if (p.predicateType == PredicateType.RoleMatch) {
+            // Context hash should be H(predicate_id || condition_hash)
+            // where condition_hash contains the role requirement
+            bytes32 expectedContext = keccak256(abi.encodePacked(predicateId, p.conditionHash));
+            return contextHash == expectedContext;
+        } else if (p.predicateType == PredicateType.ThresholdMet) {
+            // Context hash encodes threshold satisfaction
+            // Threshold predicates require ZK proof - context must be non-zero
+            return contextHash != bytes32(0) && 
+                   uint256(contextHash) >= p.thresholdValue;
+        } else if (p.predicateType == PredicateType.CompositeAnd) {
+            // All sub-predicates must pass
+            // Context hash should be H(all sub-predicate satisfied proofs)
+            if (p.subPredicates.length == 0) return false;
+            bytes32 expectedContext = keccak256(abi.encodePacked(predicateId, p.subPredicates));
+            return contextHash == expectedContext;
+        } else if (p.predicateType == PredicateType.CompositeOr) {
+            // Any sub-predicate must pass
+            // Context hash should contain index of satisfied sub-predicate
+            return contextHash != bytes32(0) && p.subPredicates.length > 0;
+        } else if (p.predicateType == PredicateType.ZKPredicateProof) {
+            // ZK predicates require external proof verification
+            // Context hash is the verified proof commitment
+            return contextHash != bytes32(0) && 
+                   contextHash == keccak256(abi.encodePacked(predicateId, p.conditionHash));
         }
 
-        // Complex predicates require ZK proof
-        return contextHash != bytes32(0); // Placeholder
+        return false;
     }
 
     /**

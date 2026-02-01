@@ -922,16 +922,26 @@ contract ConfidentialDataAvailability is
             return false;
         }
 
-        // TODO: PRODUCTION REQUIREMENT
-        // Verify ZK proof that key opens commitment:
-        // return IKeyVerifier(keyVerifier).verifyKeyOpensCommitment(
-        //     keyCommitment,
-        //     keyHash,
-        //     keyProof
-        // );
-
-        // DEVELOPMENT ONLY: Remove in production
-        return true;
+        // Verify that key hash + proof correctly opens the commitment
+        // The commitment scheme: C = H(key || salt) where proof contains the salt
+        // Verification: H(keyHash || keyProof) should equal keyCommitment
+        bytes32 computedCommitment = keccak256(abi.encodePacked(keyHash, keyProof));
+        
+        if (computedCommitment == keyCommitment) {
+            return true;
+        }
+        
+        // Alternative: Pedersen-style commitment check
+        // C = g^key * h^blinding where proof = blinding
+        // This requires EC operations - use hash-based for now
+        bytes32 alternativeCommitment = keccak256(
+            abi.encodePacked(
+                keccak256(abi.encodePacked(keyHash)),
+                keccak256(abi.encodePacked(keyProof))
+            )
+        );
+        
+        return alternativeCommitment == keyCommitment;
     }
 
     /*//////////////////////////////////////////////////////////////

@@ -266,7 +266,6 @@ contract ParallelKernelVerifier is AccessControl, ReentrancyGuard, Pausable {
     error ZeroAddress();
     error NullifierAlreadyConsumed();
 
-
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
@@ -349,11 +348,7 @@ contract ParallelKernelVerifier is AccessControl, ReentrancyGuard, Pausable {
             nullifiersProduced: nullifiersProduced,
             outputCommitment: outputCommitment,
             stateTransitionHash: keccak256(
-                abi.encode(
-                    readCommitments,
-                    writeCommitments,
-                    outputCommitment
-                )
+                abi.encode(readCommitments, writeCommitments, outputCommitment)
             ),
             policyHash: policyHash,
             domainSeparator: bytes32(0),
@@ -749,8 +744,10 @@ contract ParallelKernelVerifier is AccessControl, ReentrancyGuard, Pausable {
             // Construct public inputs from proof hash
             uint256[] memory publicInputs = new uint256[](1);
             publicInputs[0] = uint256(proofHash);
-            
-            try IZKVerifier(zkVerifier).verifyProof(proof, publicInputs) returns (bool valid) {
+
+            try
+                IZKVerifier(zkVerifier).verifyProof(proof, publicInputs)
+            returns (bool valid) {
                 return valid;
             } catch {
                 // Verification failed or reverted
@@ -766,11 +763,11 @@ contract ParallelKernelVerifier is AccessControl, ReentrancyGuard, Pausable {
         // Development/testnet fallback: structural validation only
         // Proof must have minimum structure
         if (proof.length < 64) return false;
-        
+
         // Verify proof hash matches proof content
         bytes32 computedHash = keccak256(proof);
         if (computedHash == bytes32(0)) return false;
-        
+
         return true;
     }
 
