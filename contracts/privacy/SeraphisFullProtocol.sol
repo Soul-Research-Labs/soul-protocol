@@ -13,7 +13,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
  *      - Grootle membership proofs
  *      - Forward secrecy via ephemeral keys
  *      - Cross-chain compatibility layer
- * @custom:security-contact security@pilprotocol.io
+ * @custom:security-contact security@soulprotocol.io
  * @custom:research-status Experimental - Tracking Monero mainnet adoption
  */
 contract SeraphisFullProtocol is AccessControl, ReentrancyGuard, Pausable {

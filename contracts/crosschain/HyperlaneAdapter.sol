@@ -182,7 +182,7 @@ contract HyperlaneAdapter is ReentrancyGuard, AccessControl, Pausable {
     mapping(uint32 => uint256) public inboundNonce;
 
     /// @notice Soul hub addresses per domain
-    mapping(uint32 => address) public pilHubs;
+    mapping(uint32 => address) public soulHubs;
 
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
@@ -622,7 +622,7 @@ contract HyperlaneAdapter is ReentrancyGuard, AccessControl, Pausable {
         uint32 domain,
         address hub
     ) external onlyRole(OPERATOR_ROLE) {
-        pilHubs[domain] = hub;
+        soulHubs[domain] = hub;
     }
 
     /**

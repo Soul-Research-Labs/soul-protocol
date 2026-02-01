@@ -27,6 +27,10 @@ test/fuzz/corpus/
 forge-cache/
 broadcast/
 
+# Noir (ZK circuits)
+noir/target/
+noir/**/compile_out.txt
+
 # Gambit (Mutation Testing)
 gambit_out/
 gambit_results/
@@ -123,3 +127,4 @@ storybook-static/
 .vercel
 .certora_internal
 temp_cache/
+tools/

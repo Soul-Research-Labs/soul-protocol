@@ -440,7 +440,7 @@ module CROSS-CHAIN-PRIVACY-SECURITY
      * 
      * Same nullifier always produces same Soul binding
      */
-    rule [pil-binding-determinism]:
+    rule [soul-binding-determinism]:
         <k> checkSoulBindingDeterminism(NF) => true </k>
         ensures deriveSoulBinding(NF) ==Bytes deriveSoulBinding(NF)
 

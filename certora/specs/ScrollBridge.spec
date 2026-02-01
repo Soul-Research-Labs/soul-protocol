@@ -182,10 +182,10 @@ rule nullifierUniqueness(bytes32 msgId1, bytes32 msgId2) {
 
 /// @title Cross-domain nullifier determinism
 rule crossDomainNullifierDeterminism(bytes32 scrollNullifier, bytes32 domain) {
-    bytes32 pilNf1 = keccak256(abi.encodePacked(scrollNullifier, domain, "SCROLL2Soul"));
-    bytes32 pilNf2 = keccak256(abi.encodePacked(scrollNullifier, domain, "SCROLL2Soul"));
+    bytes32 soulNf1 = keccak256(abi.encodePacked(scrollNullifier, domain, "SCROLL2Soul"));
+    bytes32 soulNf2 = keccak256(abi.encodePacked(scrollNullifier, domain, "SCROLL2Soul"));
     
-    assert pilNf1 == pilNf2, "Cross-domain nullifier must be deterministic";
+    assert soulNf1 == soulNf2, "Cross-domain nullifier must be deterministic";
 }
 
 /// @title Cross-domain direction matters

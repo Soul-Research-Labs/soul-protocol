@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 ///      - Full membership proofs with logarithmic verification
 ///      - Forward secrecy through ephemeral keys
 ///      - Address separation for receiving/viewing/spending
-/// @custom:security-contact security@pilprotocol.io
+/// @custom:security-contact security@soulprotocol.io
 /// @custom:research-status Research implementation - pending Monero mainnet adoption
 contract SeraphisAddressing is AccessControl, ReentrancyGuard {
     // =========================================================================

@@ -19,7 +19,7 @@ methods {
     function getRemainingDailyLimit() external returns (uint256) envfree;
     
     // Admin functions
-    function setPilHubL2(address) external;
+    function setSoulHubL2(address) external;
     function setProofRegistry(address) external;
     function updateFees(uint256, uint256) external;
     function updateLimits(uint256, uint256, uint256) external;
@@ -30,7 +30,7 @@ methods {
     function lineaMessageService() external returns (address) envfree;
     function lineaTokenBridge() external returns (address) envfree;
     function lineaRollup() external returns (address) envfree;
-    function pilHubL2() external returns (address) envfree;
+    function soulHubL2() external returns (address) envfree;
     function proofRegistry() external returns (address) envfree;
     function minBridgeAmount() external returns (uint256) envfree;
     function maxBridgeAmount() external returns (uint256) envfree;

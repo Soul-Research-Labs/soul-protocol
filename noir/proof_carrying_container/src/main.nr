@@ -1,7 +1,7 @@
 use std::hash::poseidon;
 
 /// @title ProofCarryingContainerCircuit
-/// @notice Circuit for self-authenticating confidential containers (PC³)
+/// @notice Circuit for self-authenticating confidential containers (PC3)
 /// @dev Proves:
 ///   1. Knowledge of encrypted state preimage
 ///   2. Validity of state transition
@@ -133,7 +133,7 @@ fn verify_nullifier_proof(
     computed == expected_nullifier
 }
 
-/// Full PC³ verification
+/// Full PC3 verification
 fn verify_pc3<let STATE_FIELDS: u32>(
     container_inputs: ContainerValidityInputs<STATE_FIELDS>,
     container_public: ContainerValidityPublicInputs,

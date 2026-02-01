@@ -43,6 +43,14 @@
 
     "no-complex-fallback": "error",
     "no-global-import": "warn",
-    "payable-fallback": "warn"
+    "payable-fallback": "warn",
+
+    "// NatSpec Documentation Rules": "// Added for documentation quality",
+    "natspec-author": "warn",
+    "natspec-title": "error",
+    "natspec-notice": "warn",
+    "natspec-dev": "off",
+    "natspec-param": "warn",
+    "natspec-return": "warn"
   }
 }

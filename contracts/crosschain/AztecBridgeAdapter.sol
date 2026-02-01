@@ -98,10 +98,10 @@ contract AztecBridgeAdapter is
     address public aztecOutbox;
 
     /// @notice Soul Nullifier Registry address
-    address public pilNullifierRegistry;
+    address public soulNullifierRegistry;
 
     /// @notice Soul Confidential State Container address
-    address public pilStateContainer;
+    address public soulStateContainer;
 
     /// @notice Bridge fee recipient
     address public treasury;
@@ -116,7 +116,7 @@ contract AztecBridgeAdapter is
     bool public isConfigured;
 
     /// @notice Soul proof verifier (Groth16)
-    IProofVerifier public pilVerifier;
+    IProofVerifier public soulVerifier;
 
     /// @notice PLONK verifier for Aztec proofs
     IProofVerifier public plonkVerifier;
@@ -129,7 +129,7 @@ contract AztecBridgeAdapter is
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Soul → Aztec requests
-    mapping(bytes32 => SoulToAztecRequest) public pilToAztecRequests;
+    mapping(bytes32 => SoulToAztecRequest) public soulToAztecRequests;
 
     /// @notice Aztec → Soul requests
     mapping(bytes32 => AztecToSoulRequest) public aztecToSoulRequests;
@@ -250,8 +250,8 @@ contract AztecBridgeAdapter is
             revert ZeroAddress();
         }
 
-        pilNullifierRegistry = _nullifierRegistry;
-        pilStateContainer = _stateContainer;
+        soulNullifierRegistry = _nullifierRegistry;
+        soulStateContainer = _stateContainer;
     }
 
     /**
@@ -267,20 +267,20 @@ contract AztecBridgeAdapter is
 
     /**
      * @notice Configure proof verifiers
-     * @param _pilVerifier Soul Groth16 verifier
+     * @param _soulVerifier Soul Groth16 verifier
      * @param _plonkVerifier PLONK verifier for Aztec proofs
      * @param _crossChainVerifier Cross-chain proof verifier
      */
     function configureVerifiers(
-        address _pilVerifier,
+        address _soulVerifier,
         address _plonkVerifier,
         address _crossChainVerifier
     ) external onlyRole(OPERATOR_ROLE) {
-        if (_pilVerifier == address(0) || _plonkVerifier == address(0) || _crossChainVerifier == address(0)) {
+        if (_soulVerifier == address(0) || _plonkVerifier == address(0) || _crossChainVerifier == address(0)) {
             revert ZeroAddress();
         }
 
-        pilVerifier = IProofVerifier(_pilVerifier);
+        soulVerifier = IProofVerifier(_soulVerifier);
         plonkVerifier = IProofVerifier(_plonkVerifier);
         crossChainVerifier = _crossChainVerifier;
     }
@@ -291,8 +291,8 @@ contract AztecBridgeAdapter is
 
     /**
      * @notice Bridge Soul commitment to Aztec note
-     * @param pilCommitment Existing Soul commitment to bridge
-     * @param pilNullifier Nullifier to reveal (spends the commitment)
+     * @param soulCommitment Existing Soul commitment to bridge
+     * @param soulNullifier Nullifier to reveal (spends the commitment)
      * @param aztecRecipient Aztec recipient address (compressed)
      * @param amount Amount to bridge
      * @param noteType Type of Aztec note to create
@@ -300,8 +300,8 @@ contract AztecBridgeAdapter is
      * @param proof ZK proof of commitment ownership
      */
     function bridgeSoulToAztec(
-        bytes32 pilCommitment,
-        bytes32 pilNullifier,
+        bytes32 soulCommitment,
+        bytes32 soulNullifier,
         bytes32 aztecRecipient,
         uint256 amount,
         NoteType noteType,
@@ -318,22 +318,22 @@ contract AztecBridgeAdapter is
         if (msg.value < fee) revert InsufficientFee(msg.value, fee);
 
         // Check nullifier not already used
-        if (usedNullifiers[pilNullifier]) {
-            revert NullifierAlreadyUsed(pilNullifier);
+        if (usedNullifiers[soulNullifier]) {
+            revert NullifierAlreadyUsed(soulNullifier);
         }
 
         // Verify proof of commitment ownership (simplified - would call verifier)
-        if (!_verifySoulOwnershipProof(pilCommitment, pilNullifier, proof)) {
-            revert InvalidProof(pilCommitment);
+        if (!_verifySoulOwnershipProof(soulCommitment, soulNullifier, proof)) {
+            revert InvalidProof(soulCommitment);
         }
 
         // Mark nullifier as used
-        usedNullifiers[pilNullifier] = true;
+        usedNullifiers[soulNullifier] = true;
 
         // Generate request ID
         bytes32 requestId = keccak256(
             abi.encodePacked(
-                pilCommitment,
+                soulCommitment,
                 aztecRecipient,
                 amount,
                 requestNonce++,
@@ -342,10 +342,10 @@ contract AztecBridgeAdapter is
         );
 
         // Store request
-        pilToAztecRequests[requestId] = SoulToAztecRequest({
+        soulToAztecRequests[requestId] = SoulToAztecRequest({
             requestId: requestId,
-            pilCommitment: pilCommitment,
-            pilNullifier: pilNullifier,
+            soulCommitment: soulCommitment,
+            soulNullifier: soulNullifier,
             aztecRecipient: aztecRecipient,
             amount: amount,
             noteType: noteType,
@@ -359,7 +359,7 @@ contract AztecBridgeAdapter is
         pendingOutboundRequests++;
         accumulatedFees += fee;
 
-        emit SoulToAztecInitiated(requestId, pilCommitment, aztecRecipient, amount);
+        emit SoulToAztecInitiated(requestId, soulCommitment, aztecRecipient, amount);
     }
 
     /**
@@ -373,7 +373,7 @@ contract AztecBridgeAdapter is
         bytes32 resultingNoteHash,
         bytes calldata proof
     ) external onlyRole(RELAYER_ROLE) nonReentrant {
-        SoulToAztecRequest storage request = pilToAztecRequests[requestId];
+        SoulToAztecRequest storage request = soulToAztecRequests[requestId];
         if (request.timestamp == 0) revert RequestNotFound(requestId);
         if (request.processed) revert RequestAlreadyProcessed(requestId);
 
@@ -386,7 +386,7 @@ contract AztecBridgeAdapter is
         request.resultingNoteHash = resultingNoteHash;
 
         // Track mirrored note
-        mirroredNotes[resultingNoteHash] = request.pilCommitment;
+        mirroredNotes[resultingNoteHash] = request.soulCommitment;
 
         pendingOutboundRequests--;
         totalBridgedToAztec += request.amount;
@@ -402,14 +402,14 @@ contract AztecBridgeAdapter is
      * @notice Bridge Aztec note to Soul commitment
      * @param aztecNoteHash Aztec note hash to spend
      * @param aztecNullifier Aztec nullifier (spends the note)
-     * @param pilRecipient Soul recipient address
+     * @param soulRecipient Soul recipient address
      * @param amount Amount to bridge
      * @param proof ZK proof of note ownership
      */
     function bridgeAztecToSoul(
         bytes32 aztecNoteHash,
         bytes32 aztecNullifier,
-        address pilRecipient,
+        address soulRecipient,
         uint256 amount,
         bytes calldata proof
     ) external nonReentrant whenNotPaused {
@@ -435,7 +435,7 @@ contract AztecBridgeAdapter is
         bytes32 requestId = keccak256(
             abi.encodePacked(
                 aztecNoteHash,
-                pilRecipient,
+                soulRecipient,
                 amount,
                 requestNonce++,
                 block.timestamp
@@ -443,27 +443,27 @@ contract AztecBridgeAdapter is
         );
 
         // Generate Soul commitment (would be computed from note data)
-        bytes32 pilCommitment = _deriveCommitmentFromNote(aztecNoteHash, pilRecipient, amount);
+        bytes32 soulCommitment = _deriveCommitmentFromNote(aztecNoteHash, soulRecipient, amount);
 
         // Store request
         aztecToSoulRequests[requestId] = AztecToSoulRequest({
             requestId: requestId,
             aztecNoteHash: aztecNoteHash,
             aztecNullifier: aztecNullifier,
-            pilRecipient: pilRecipient,
+            soulRecipient: soulRecipient,
             amount: amount,
-            pilCommitment: pilCommitment,
+            soulCommitment: soulCommitment,
             timestamp: block.timestamp,
             processed: false
         });
 
-        userAztecToSoulRequests[pilRecipient].push(requestId);
-        registeredSoulCommitments[pilCommitment] = true;
+        userAztecToSoulRequests[soulRecipient].push(requestId);
+        registeredSoulCommitments[soulCommitment] = true;
         pendingInboundRequests++;
         totalBridgedFromAztec += amount;
 
-        emit AztecToSoulInitiated(requestId, aztecNoteHash, pilRecipient, amount);
-        emit AztecToSoulCompleted(requestId, pilCommitment);
+        emit AztecToSoulInitiated(requestId, aztecNoteHash, soulRecipient, amount);
+        emit AztecToSoulCompleted(requestId, soulCommitment);
 
         // Auto-complete for now (would be two-step in production)
         aztecToSoulRequests[requestId].processed = true;
@@ -591,7 +591,7 @@ contract AztecBridgeAdapter is
     function getSoulToAztecRequest(
         bytes32 requestId
     ) external view returns (SoulToAztecRequest memory) {
-        return pilToAztecRequests[requestId];
+        return soulToAztecRequests[requestId];
     }
 
     function getAztecToSoulRequest(
@@ -688,7 +688,7 @@ contract AztecBridgeAdapter is
         bytes calldata proof
     ) internal view returns (bool valid) {
         // Check if verifier is configured
-        if (address(pilVerifier) == address(0)) {
+        if (address(soulVerifier) == address(0)) {
             // H-1 Fix: Block placeholder on mainnet
             _checkMainnetSafety();
             // Fallback: basic validation if no verifier configured
@@ -703,7 +703,7 @@ contract AztecBridgeAdapter is
         publicInputs[2] = uint256(keccak256("Soul_OWNERSHIP"));
 
         // Call the Groth16 verifier
-        try pilVerifier.verify(proof, publicInputs) returns (bool result) {
+        try soulVerifier.verify(proof, publicInputs) returns (bool result) {
             return result;
         } catch {
             return false;
@@ -811,7 +811,7 @@ contract AztecBridgeAdapter is
         // Select verifier based on proof type
         if (proofType == ProofType.Soul_TO_AZTEC) {
             // Use Groth16 verifier for Soul proofs
-            if (address(pilVerifier) == address(0)) {
+            if (address(soulVerifier) == address(0)) {
                 return proof.length >= 288;  // Fallback: Groth16 proof size check
             }
 
@@ -821,7 +821,7 @@ contract AztecBridgeAdapter is
             publicInputs[2] = uint256(publicInputsHash);
             publicInputs[3] = uint256(keccak256("Soul_TO_AZTEC"));
 
-            try pilVerifier.verify(proof, publicInputs) returns (bool result) {
+            try soulVerifier.verify(proof, publicInputs) returns (bool result) {
                 return result;
             } catch {
                 return false;

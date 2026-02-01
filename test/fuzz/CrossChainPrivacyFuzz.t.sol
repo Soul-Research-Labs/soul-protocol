@@ -355,15 +355,15 @@ contract CrossChainPrivacyFuzz is Test {
         vm.assume(domain1 != domain2);
         vm.assume(sourceNullifier != bytes32(0));
 
-        bytes32 pilNf1 = keccak256(
+        bytes32 soulNf1 = keccak256(
             abi.encodePacked(sourceNullifier, domain1, Soul_BINDING_TAG)
         );
-        bytes32 pilNf2 = keccak256(
+        bytes32 soulNf2 = keccak256(
             abi.encodePacked(sourceNullifier, domain2, Soul_BINDING_TAG)
         );
 
         assertTrue(
-            pilNf1 != pilNf2,
+            soulNf1 != soulNf2,
             "Different domains must produce different Soul nullifiers"
         );
     }
@@ -378,14 +378,14 @@ contract CrossChainPrivacyFuzz is Test {
         vm.assume(sourceNullifier != bytes32(0));
         vm.assume(domain != bytes32(0));
 
-        bytes32 pilNf1 = keccak256(
+        bytes32 soulNf1 = keccak256(
             abi.encodePacked(sourceNullifier, domain, Soul_BINDING_TAG)
         );
-        bytes32 pilNf2 = keccak256(
+        bytes32 soulNf2 = keccak256(
             abi.encodePacked(sourceNullifier, domain, Soul_BINDING_TAG)
         );
 
-        assertEq(pilNf1, pilNf2, "Soul nullifier must be deterministic");
+        assertEq(soulNf1, soulNf2, "Soul nullifier must be deterministic");
     }
 
     // =========================================================================

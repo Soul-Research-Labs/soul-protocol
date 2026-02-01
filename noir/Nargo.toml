@@ -11,5 +11,8 @@ members = [
     "container",
     "state_transfer",
     "proof_carrying_container",
-    "policy_bound_proof"
+    "policy_bound_proof",
+    "aggregator",
+    "pqc_verifier",
+    "invariant_checker"
 ]

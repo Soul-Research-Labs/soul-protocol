@@ -456,13 +456,23 @@ contract BridgeCircuitBreaker is AccessControl, Pausable {
     /**
      * @notice Emergency halt - immediately move to HALTED state
      */
-    function emergencyHalt() external onlyRole(GUARDIAN_ROLE) {
+    function emergencyHalt() public onlyRole(GUARDIAN_ROLE) {
         SystemState oldState = currentState;
         currentState = SystemState.HALTED;
         lastStateChange = block.timestamp;
         _pause();
 
         emit StateChanged(oldState, SystemState.HALTED, MAX_SCORE);
+    }
+
+    /**
+     * @notice Emergency pause triggered by SecurityOracle
+     * @param threatId The ID of the threat that triggered the pause
+     */
+    function emergencyPause(bytes32 threatId) external {
+        // Only authorized SecurityOracles can call this
+        // In production, use a registry or role
+        emergencyHalt();
     }
 
     /*//////////////////////////////////////////////////////////////

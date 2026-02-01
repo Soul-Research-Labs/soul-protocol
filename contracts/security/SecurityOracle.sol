@@ -77,6 +77,7 @@ contract SecurityOracle is ReentrancyGuard, AccessControl, Pausable {
         MEV_EXTRACTION,
         SMART_CONTRACT_BUG,
         ORACLE_MANIPULATION,
+        ZK_INVARIANT_BREACH,
         OTHER
     }
 

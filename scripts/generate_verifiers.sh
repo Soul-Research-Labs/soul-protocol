@@ -1,41 +1,44 @@
 #!/bin/bash
 
 # Ensure toolchain is in PATH
-export PATH="$HOME/.nargo/bin:$HOME/.bb/bin:$PATH"
+export PATH="$(pwd)/tools/nargo:$(pwd)/tools/bb:$HOME/.nargo/bin:$HOME/.bb/bin:$PATH"
+# Avoid permission issues in home
+export HOME="/tmp/soul_home"
 
 GENERATED_DIR="contracts/verifiers/generated"
 mkdir -p "$GENERATED_DIR"
 
-# Loop through all noir circuits
-for circuit_dir in noir/*; do
-    if [ -d "$circuit_dir" ] && [ -f "$circuit_dir/Nargo.toml" ]; then
-        circuit_name=$(basename "$circuit_dir")
+echo "Compiling Noir workspace..."
+cd noir
+nargo compile
+cd ..
+
+# Loop through all compiled circuits in target
+# Note: nargo v0.35 workspace puts them in noir/target/<member>.json
+for circuit_json in noir/target/*.json; do
+    if [ -f "$circuit_json" ]; then
+        circuit_name=$(basename "$circuit_json" .json)
         echo "Processing circuit: $circuit_name"
         
-        cd "$circuit_dir"
+        vk_file="noir/target/${circuit_name}_vk"
+        sol_file="noir/target/${circuit_name}_verifier.sol"
         
-        # Compile
-        nargo compile
+        # Generate VK
+        bb write_vk -b "$circuit_json" -o "$vk_file"
         
-        # Generate Verifier
-        # Note: 'codegen-verifier' is the nargo command, but 'bb' is often used for UltraPlonk
-        # We will try nargo's built-in first
-        nargo codegen-verifier
+        # Generate Solidity Verifier
+        bb contract -k "$vk_file" -o "$sol_file"
         
         # Move and rename
-        if [ -f "contract/plonk_vk.sol" ]; then
-            # Handle standard nargo output
-            target_name="${circuit_name^}Verifier.sol"
-            # Basic string replacement for contract name
-            sed "s/UltraVerifier/${circuit_name^}Verifier/g" contract/plonk_vk.sol > "../../$GENERATED_DIR/$target_name"
-            echo "Generated $target_name"
-        elif [ -f "target/verifier.sol" ]; then
-             target_name="${circuit_name^}Verifier.sol"
-             sed "s/UltraVerifier/${circuit_name^}Verifier/g" target/verifier.sol > "../../$GENERATED_DIR/$target_name"
-             echo "Generated $target_name"
+        if [ -f "$sol_file" ]; then
+            # CamelCase name for contract (e.g., state_transfer -> StateTransfer)
+            target_contract_name=$(echo "$circuit_name" | awk -F_ '{for(i=1;i<=NF;i++) printf "%s", toupper(substr($i,1,1)) substr($i,2)}')"Verifier"
+            target_file_name="${target_contract_name}.sol"
+            
+            # Replace UltraVerifier and BaseUltraVerifier with dynamic names
+            sed "s/UltraVerifier/$target_contract_name/g" "$sol_file" > "$GENERATED_DIR/$target_file_name"
+            echo "Generated $target_file_name"
         fi
-        
-        cd ../..
     fi
 done
 

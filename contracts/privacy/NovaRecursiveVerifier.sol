@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 /// @notice Implements Nova-style Incrementally Verifiable Computation (IVC)
 /// @dev Based on "Nova: Recursive Zero-Knowledge Arguments from Folding Schemes"
 ///      by Abhiram Kothapalli, Srinath Setty, and Ioanna Tzialla (2022)
-/// @custom:security-contact security@pilprotocol.io
+/// @custom:security-contact security@soulprotocol.io
 /// @custom:research-status Research implementation
 contract NovaRecursiveVerifier is AccessControl, ReentrancyGuard {
     // =========================================================================

@@ -2,7 +2,7 @@
 name = "state_transfer"
 type = "bin"
 authors = ["Soul Protocol"]
-compiler_version = ">=1.0.0"
+compiler_version = ">=0.33.0"
 description = "Optimized circuit for proving valid state ownership transfer"
 
 [dependencies]

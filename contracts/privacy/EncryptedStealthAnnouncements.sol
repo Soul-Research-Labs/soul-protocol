@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 /// @title EncryptedStealthAnnouncements
 /// @notice Enables encrypted stealth address announcements to prevent front-running
 /// @dev Announcements are encrypted with recipient's view key, preventing MEV extraction
-/// @custom:security-contact security@pilprotocol.io
+/// @custom:security-contact security@soulprotocol.io
 contract EncryptedStealthAnnouncements is
     AccessControl,
     ReentrancyGuard,

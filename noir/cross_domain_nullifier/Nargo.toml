@@ -2,7 +2,7 @@
 name = "cross_domain_nullifier"
 type = "bin"
 authors = ["Soul Protocol"]
-compiler_version = ">=1.0.0"
+compiler_version = ">=0.33.0"
 description = "Domain-separated nullifiers (CDNA) that compose algebraically across chains"
 
 [dependencies]

@@ -8,17 +8,17 @@ use std::hash::poseidon;
 /// Enables cross-chain double-spend prevention without global state.
 ///
 /// FEATURES:
-/// 1. Cross-chain nullifier derivation (A→B ≠ B→A)
-/// 2. Merkle tree membership proofs (16-depth tree)
-/// 3. Private transfers with balance verification
-/// 4. Range proofs for value validation
+///   1. Scalar multiplication for stealth addresses
+///   2. Merkle tree membership proofs (20-depth tree)
+///   3. Domain-specific nullifiers (CDNA)
+///   4. Range proofs for value validation
 /// 5. Epoch-based nullifier evolution
 
 /// CDNA version prefix (ASCII for "CDNA_v1" padded)
 global CDNA_PREFIX: Field = 0x434e4441_76310000;
 
 /// Merkle tree depth for UTXO set
-global MERKLE_DEPTH: u32 = 16;
+global MERKLE_DEPTH: u32 = 20;
 
 /// Domain separators
 global COMMITMENT_DOMAIN: Field = 0x434f4d4d4954; // "COMMIT"
@@ -41,8 +41,8 @@ struct Commitment {
 struct TransferInput {
     secret: Field,
     commitment: Commitment,
-    merkle_path: [Field; 16],
-    merkle_indices: [u1; 16],
+    merkle_path: [Field; 20],
+    merkle_indices: [u1; 20],
 }
 
 /// Output UTXO for cross-domain transfer
@@ -83,12 +83,12 @@ fn compute_nullifier_from_commitment(secret: Field, commitment_hash: Field, doma
 fn verify_merkle_proof(
     leaf: Field,
     root: Field,
-    path: [Field; 16],
-    indices: [u1; 16]
+    path: [Field; 20],
+    indices: [u1; 20]
 ) -> bool {
     let mut current_hash = leaf;
     
-    for i in 0..16 {
+    for i in 0..20 {
         let path_element = path[i];
         let index = indices[i];
         
@@ -312,12 +312,12 @@ fn test_merkle_proof_verification() {
     let leaf = poseidon::bn254::hash_1([42]);
     
     // Build a simple Merkle path to a root
-    let mut path: [Field; 16] = [0; 16];
-    let mut indices: [u1; 16] = [0; 16];
+    let mut path: [Field; 20] = [0; 20];
+    let mut indices: [u1; 20] = [0; 20];
     
     // Compute expected root by hashing up the tree
     let mut current = leaf;
-    for i in 0..16 {
+    for i in 0..20 {
         path[i] = 0; // Zero sibling
         current = poseidon::bn254::hash_2([current, 0]);
     }

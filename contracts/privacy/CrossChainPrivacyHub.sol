@@ -208,7 +208,7 @@ contract CrossChainPrivacyHub is
      */
     struct NullifierBinding {
         bytes32 sourceNullifier;
-        bytes32 pilNullifier;
+        bytes32 soulNullifier;
         uint256 sourceChainId;
         uint256 destChainId;
         uint64 timestamp;
@@ -315,7 +315,7 @@ contract CrossChainPrivacyHub is
 
     event NullifierConsumed(
         bytes32 indexed sourceNullifier,
-        bytes32 indexed pilNullifier,
+        bytes32 indexed soulNullifier,
         uint256 sourceChainId,
         uint256 destChainId
     );
@@ -938,7 +938,7 @@ contract CrossChainPrivacyHub is
      */
     function _bindNullifier(
         bytes32 sourceNullifier,
-        bytes32 pilNullifier,
+        bytes32 soulNullifier,
         uint256 sourceChainId,
         uint256 destChainId
     ) internal {
@@ -948,7 +948,7 @@ contract CrossChainPrivacyHub is
 
         nullifierBindings[sourceNullifier] = NullifierBinding({
             sourceNullifier: sourceNullifier,
-            pilNullifier: pilNullifier,
+            soulNullifier: soulNullifier,
             sourceChainId: sourceChainId,
             destChainId: destChainId,
             timestamp: uint64(block.timestamp),

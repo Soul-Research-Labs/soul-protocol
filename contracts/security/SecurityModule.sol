@@ -14,7 +14,7 @@ pragma solidity ^0.8.20;
  * - Flash Loan Guard: Prevents same-block deposit/withdrawal attacks
  * - Withdrawal Limits: Caps single and daily withdrawal amounts
  *
- * @custom:security-contact security@pil.network
+ * @custom:security-contact security@soul.network
  */
 abstract contract SecurityModule {
     /*//////////////////////////////////////////////////////////////

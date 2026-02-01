@@ -28,6 +28,7 @@ library FHEOperations {
     using FHETypeCast for euint64;
     using FHETypeCast for euint128;
     using FHETypeCast for euint256;
+    using FHETypeCast for epacked64x4;
 
     // ============================================
     // ERRORS
@@ -330,6 +331,28 @@ library FHEOperations {
 
     function mul(euint256 lhs, euint256 rhs) internal returns (euint256) {
         return euint256.wrap(_performBinary(FHEUtils.Opcode.MUL, euint256.unwrap(lhs), euint256.unwrap(rhs)));
+    }
+
+    // --- epacked64x4 (SIMD) ---
+
+    /**
+     * @notice SIMD addition of two packed ciphertexts
+     */
+    function simdAdd(epacked64x4 lhs, epacked64x4 rhs) internal returns (epacked64x4) {
+        return epacked64x4.wrap(_performBinary(FHEUtils.Opcode.ADD, epacked64x4.unwrap(lhs), epacked64x4.unwrap(rhs)));
+    }
+
+    /**
+     * @notice Multiply each element in packed ciphertext by a plaintext scalar
+     */
+    function simdScalarMul(epacked64x4 lhs, uint64 scalar) internal returns (epacked64x4) {
+        return epacked64x4.wrap(getGateway().performOp(FHEUtils.Opcode.MUL, _asArray(epacked64x4.unwrap(lhs)), abi.encode(scalar)));
+    }
+
+    function _asArray(bytes32 val) private pure returns (bytes32[] memory) {
+        bytes32[] memory arr = new bytes32[](1);
+        arr[0] = val;
+        return arr;
     }
 
     // ============================================

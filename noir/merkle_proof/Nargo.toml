@@ -2,7 +2,7 @@
 name = "merkle_proof"
 type = "bin"
 authors = ["Soul Protocol"]
-compiler_version = ">=1.0.0"
+compiler_version = ">=0.33.0"
 description = "Optimized Merkle tree inclusion proof for nullifier registry using Poseidon hashing"
 
 [dependencies]

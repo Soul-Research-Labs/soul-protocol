@@ -2,7 +2,7 @@
 name = "policy"
 type = "bin"
 authors = ["Soul Protocol"]
-compiler_version = ">=1.0.0"
+compiler_version = ">=0.33.0"
 description = "Policy Compliance Circuit - proves user complies with policy without revealing actual data"
 
 [dependencies]

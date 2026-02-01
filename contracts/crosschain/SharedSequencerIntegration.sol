@@ -274,15 +274,15 @@ contract SharedSequencerIntegration is
     address public radiusEnclave;
 
     /// @notice Soul Hub for nullifier binding
-    address public pilHub;
+    address public soulHub;
 
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    constructor(address _admin, address _pilHub) {
+    constructor(address _admin, address _soulHub) {
         currentChainId = block.chainid;
-        pilHub = _pilHub;
+        soulHub = _soulHub;
 
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(OPERATOR_ROLE, _admin);

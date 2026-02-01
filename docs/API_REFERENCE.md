@@ -488,7 +488,7 @@ import type {
   Nullifier,
   OperationType,
   TransactionResult,
-} from '@pil/sdk';
+} from '@soulprotocol/sdk';
 ```
 
 ---

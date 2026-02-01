@@ -38,6 +38,7 @@ library FHETypes {
     uint8 internal constant TYPE_EBYTES64 = 9;
     uint8 internal constant TYPE_EBYTES128 = 10;
     uint8 internal constant TYPE_EBYTES256 = 11;
+    uint8 internal constant TYPE_EPACKED64X4 = 12; // 4x 64-bit values for SIMD
 
     // ============================================
     // TYPE BOUNDS
@@ -72,7 +73,7 @@ library FHETypes {
      * @return valid Whether the type code is valid
      */
     function isValidType(uint8 typeCode) internal pure returns (bool valid) {
-        return typeCode <= TYPE_EBYTES256;
+        return typeCode <= TYPE_EPACKED64X4;
     }
 
     /**
@@ -93,6 +94,7 @@ library FHETypes {
         if (typeCode == TYPE_EBYTES64) return 512;
         if (typeCode == TYPE_EBYTES128) return 1024;
         if (typeCode == TYPE_EBYTES256) return 2048;
+        if (typeCode == TYPE_EPACKED64X4) return 256;
         revert InvalidTypeCode(typeCode);
     }
 
@@ -150,6 +152,7 @@ library FHETypes {
         if (typeCode == TYPE_EBYTES64) return "ebytes64";
         if (typeCode == TYPE_EBYTES128) return "ebytes128";
         if (typeCode == TYPE_EBYTES256) return "ebytes256";
+        if (typeCode == TYPE_EPACKED64X4) return "epacked64x4";
         revert InvalidTypeCode(typeCode);
     }
 
@@ -366,6 +369,7 @@ type eaddress is bytes32;
 type ebytes64 is bytes32;
 type ebytes128 is bytes32;
 type ebytes256 is bytes32;
+type epacked64x4 is bytes32;
 
 /**
  * @title FHETypeCast

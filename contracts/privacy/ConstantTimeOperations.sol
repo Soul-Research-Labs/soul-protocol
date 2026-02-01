@@ -7,7 +7,7 @@ error InvalidLength();
 /// @title ConstantTimeOperations
 /// @notice Library providing constant-time operations to prevent timing side-channel attacks
 /// @dev Critical for privacy-preserving operations where timing leaks could reveal secrets
-/// @custom:security-contact security@pilprotocol.io
+/// @custom:security-contact security@soulprotocol.io
 
 library ConstantTimeOperations {
     // =========================================================================

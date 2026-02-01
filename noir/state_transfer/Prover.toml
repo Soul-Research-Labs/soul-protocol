@@ -1,0 +1,14 @@
+old_commitment = "0x12b5965f973797374"
+new_commitment = "0x22b5965f973797374"
+old_nullifier = "0x32b5965f973797374"
+sender_pubkey = "0x42b5965f973797374"
+recipient_pubkey = "0x52b5965f973797374"
+transfer_value = "100"
+
+old_state_fields = ["100", "2", "3", "4", "5", "6", "7", "8"]
+old_salt = "0x1111"
+sender_secret = "0xaaaa"
+new_state_fields = ["100", "2", "3", "4", "5", "6", "7", "8"]
+new_salt = "0x2222"
+recipient_secret = "0xbbbb"
+transfer_nonce = "42"

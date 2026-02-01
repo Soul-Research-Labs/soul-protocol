@@ -219,9 +219,9 @@ timelockAdmin.executeUpgrade();
 
 ## Contact & Support
 
-- **Security Issues**: security@pil.network
-- **Technical Support**: support@pil.network
-- **Bug Bounty**: immunefi.com/bounty/pil
+- **Security Issues**: security@soul.network
+- **Technical Support**: support@soul.network
+- **Bug Bounty**: immunefi.com/bounty/soul
 
 ---
 

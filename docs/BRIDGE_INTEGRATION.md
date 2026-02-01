@@ -49,7 +49,7 @@ interface IBridgeAdapter {
 ### Initiating a Bridge Transfer
 
 ```typescript
-import { SoulBridge, ChainId } from '@pil/sdk';
+import { SoulBridge, ChainId } from '@soulprotocol/sdk';
 
 const bridge = new SoulBridge(provider);
 
@@ -81,7 +81,7 @@ const completed = await bridge.completeBridge(transferId, proof);
 ### Cardano / Midnight
 
 ```typescript
-import { CardanoBridge } from '@pil/sdk/bridges';
+import { CardanoBridge } from '@soulprotocol/sdk/bridges';
 
 const cardanoBridge = new CardanoBridge({
   sourceRpc: 'https://eth-mainnet...',
@@ -103,7 +103,7 @@ await transfer.waitForConfirmation(20); // 20 block confirmations
 ### Cosmos / IBC
 
 ```typescript
-import { CosmosBridge } from '@pil/sdk/bridges';
+import { CosmosBridge } from '@soulprotocol/sdk/bridges';
 
 const cosmosBridge = new CosmosBridge({
   sourceRpc: 'https://eth-mainnet...',
@@ -126,7 +126,7 @@ const packetStatus = await cosmosBridge.getPacketStatus(transfer.packetId);
 ### Polkadot / Substrate
 
 ```typescript
-import { PolkadotBridge } from '@pil/sdk/bridges';
+import { PolkadotBridge } from '@soulprotocol/sdk/bridges';
 
 const polkadotBridge = new PolkadotBridge({
   sourceRpc: 'https://eth-mainnet...',
@@ -148,7 +148,7 @@ const transfer = await polkadotBridge.bridgeViaXCMP({
 ### NEAR / Rainbow Bridge
 
 ```typescript
-import { NEARBridge } from '@pil/sdk/bridges';
+import { NEARBridge } from '@soulprotocol/sdk/bridges';
 
 const nearBridge = new NEARBridge({
   sourceRpc: 'https://eth-mainnet...',
@@ -170,7 +170,7 @@ await transfer.waitForRelayerConfirmation();
 ### zkSync Era
 
 ```typescript
-import { zkSyncBridge } from '@pil/sdk/bridges';
+import { zkSyncBridge } from '@soulprotocol/sdk/bridges';
 
 const bridge = new zkSyncBridge({
   l1Rpc: 'https://eth-mainnet...',
@@ -198,7 +198,7 @@ await withdrawal.waitForVerification();
 ### Avalanche
 
 ```typescript
-import { AvalancheBridge } from '@pil/sdk/bridges';
+import { AvalancheBridge } from '@soulprotocol/sdk/bridges';
 
 const avaxBridge = new AvalancheBridge({
   sourceRpc: 'https://eth-mainnet...',
@@ -219,7 +219,7 @@ const finalized = await transfer.waitForWarpSignatures(67); // 67% threshold
 ### Arbitrum
 
 ```typescript
-import { ArbitrumBridge } from '@pil/sdk/bridges';
+import { ArbitrumBridge } from '@soulprotocol/sdk/bridges';
 
 const arbitrumBridge = new ArbitrumBridge({
   l1Rpc: 'https://eth-mainnet...',
@@ -254,7 +254,7 @@ await withdrawal.executeWithdrawal();
 ### Solana
 
 ```typescript
-import { SolanaBridge } from '@pil/sdk/bridges';
+import { SolanaBridge } from '@soulprotocol/sdk/bridges';
 
 const solanaBridge = new SolanaBridge({
   sourceRpc: 'https://eth-mainnet...',
@@ -275,7 +275,7 @@ await transfer.claimOnSolana(solanaKeypair);
 ### Bitcoin
 
 ```typescript
-import { BitcoinBridge } from '@pil/sdk/bridges';
+import { BitcoinBridge } from '@soulprotocol/sdk/bridges';
 
 const btcBridge = new BitcoinBridge({
   sourceRpc: 'https://eth-mainnet...',
@@ -302,7 +302,7 @@ await htlc.claimWithSecret(secret);
 ## Error Handling
 
 ```typescript
-import { SoulBridgeError, ErrorCodes } from '@pil/sdk';
+import { SoulBridgeError, ErrorCodes } from '@soulprotocol/sdk';
 
 try {
   await bridge.transfer(params);

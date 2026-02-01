@@ -61,9 +61,9 @@ fn verify_state_transfer<let STATE_FIELDS: u32>(
     inputs: StateTransferInputs<STATE_FIELDS>,
     public_inputs: StateTransferPublicInputs
 ) -> bool {
-    // ═══════════════════════════════════════════════════════════════════
+    // 
     // STEP 1: Verify sender owns the old state (ownership proof)
-    // ═══════════════════════════════════════════════════════════════════
+    // 
     
     let old_state_hash = hash_state_fields(inputs.old_state_fields);
     let computed_old_commitment = compute_commitment(
@@ -73,16 +73,16 @@ fn verify_state_transfer<let STATE_FIELDS: u32>(
     );
     let old_commitment_valid = computed_old_commitment == public_inputs.old_commitment;
     
-    // ═══════════════════════════════════════════════════════════════════
+    // 
     // STEP 2: Verify sender pubkey derivation
-    // ═══════════════════════════════════════════════════════════════════
+    // 
     
     let computed_sender_pubkey = derive_pubkey(inputs.sender_secret);
     let sender_valid = computed_sender_pubkey == public_inputs.sender_pubkey;
     
-    // ═══════════════════════════════════════════════════════════════════
+    // 
     // STEP 3: Verify nullifier is correctly computed (prevents double-spend)
-    // ═══════════════════════════════════════════════════════════════════
+    // 
     
     let computed_nullifier = compute_nullifier(
         public_inputs.old_commitment,
@@ -91,9 +91,9 @@ fn verify_state_transfer<let STATE_FIELDS: u32>(
     );
     let nullifier_valid = computed_nullifier == public_inputs.old_nullifier;
     
-    // ═══════════════════════════════════════════════════════════════════
+    // 
     // STEP 4: Verify new state commitment is valid
-    // ═══════════════════════════════════════════════════════════════════
+    // 
     
     let new_state_hash = hash_state_fields(inputs.new_state_fields);
     let computed_new_commitment = compute_commitment(
@@ -107,18 +107,18 @@ fn verify_state_transfer<let STATE_FIELDS: u32>(
     let computed_recipient_pubkey = derive_pubkey(inputs.recipient_secret);
     let recipient_valid = computed_recipient_pubkey == public_inputs.recipient_pubkey;
     
-    // ═══════════════════════════════════════════════════════════════════
+    // 
     // STEP 5: Verify value conservation
-    // ═══════════════════════════════════════════════════════════════════
+    // 
     
     // Assuming state_fields[0] contains the value
     let old_value = inputs.old_state_fields[0];
     let new_value = inputs.new_state_fields[0];
     let value_conserved = old_value == new_value;
     
-    // ═══════════════════════════════════════════════════════════════════
+    // 
     // FINAL: Combine all validity checks
-    // ═══════════════════════════════════════════════════════════════════
+    // 
     
     old_commitment_valid & sender_valid & nullifier_valid & 
     new_commitment_valid & recipient_valid & value_conserved

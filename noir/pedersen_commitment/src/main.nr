@@ -60,11 +60,10 @@ fn verify_range<let BITS: u32>(value: Field) -> bool {
     true
 }
 
-/// Homomorphic addition of Pedersen commitments
-/// C1 + C2 = (v1 + v2)G + (r1 + r2)H
-fn add_commitments(c1: Field, c2: Field) -> Field {
-    // Note: True homomorphic addition requires EC point operations
-    // This is a simplified version using field addition
+/// Simplified commitment "addition" (Field Addition)
+/// WARNING: This is NOT a true EC-point homomorphic addition.
+/// For true Pedersen homomorphism, EC point addition gadgets must be used.
+fn add_commitments_simplified(c1: Field, c2: Field) -> Field {
     c1 + c2
 }
 

@@ -36,7 +36,7 @@ export interface NullifierRecord {
     nullifier: Hex;
     domain: number;
     timestamp: number;
-    pilBinding: Hex;
+    soulBinding: Hex;
 }
 
 // Cross-domain nullifier derivation result
@@ -45,7 +45,7 @@ export interface CrossDomainNullifier {
     sourceDomain: number;
     targetDomain: number;
     crossDomainNullifier: Hex;
-    pilBinding: Hex;
+    soulBinding: Hex;
 }
 
 // Predefined chain domains
@@ -78,9 +78,9 @@ const NULLIFIER_MANAGER_ABI = [
     { name: 'isNullifierConsumed', type: 'function', stateMutability: 'view', inputs: [{ name: 'nullifier', type: 'bytes32' }, { name: 'domain', type: 'uint256' }], outputs: [{ type: 'bool' }] },
     { name: 'isDomainRegistered', type: 'function', stateMutability: 'view', inputs: [{ name: 'domain', type: 'uint256' }], outputs: [{ type: 'bool' }] },
     { name: 'getSoulBinding', type: 'function', stateMutability: 'view', inputs: [{ name: 'nullifier', type: 'bytes32' }], outputs: [{ type: 'bytes32' }] },
-    { name: 'getNullifierRecord', type: 'function', stateMutability: 'view', inputs: [{ name: 'nullifier', type: 'bytes32' }, { name: 'domain', type: 'uint256' }], outputs: [{ name: 'timestamp', type: 'uint256' }, { name: 'pilBinding', type: 'bytes32' }] },
+    { name: 'getNullifierRecord', type: 'function', stateMutability: 'view', inputs: [{ name: 'nullifier', type: 'bytes32' }, { name: 'domain', type: 'uint256' }], outputs: [{ name: 'timestamp', type: 'uint256' }, { name: 'soulBinding', type: 'bytes32' }] },
     { name: 'DomainRegistered', type: 'event', inputs: [{ name: 'chainId', type: 'uint256', indexed: true }, { name: 'domainTag', type: 'bytes32' }] },
-    { name: 'NullifierRegistered', type: 'event', inputs: [{ name: 'nullifier', type: 'bytes32', indexed: true }, { name: 'domain', type: 'uint256', indexed: true }, { name: 'pilBinding', type: 'bytes32' }] },
+    { name: 'NullifierRegistered', type: 'event', inputs: [{ name: 'nullifier', type: 'bytes32', indexed: true }, { name: 'domain', type: 'uint256', indexed: true }, { name: 'soulBinding', type: 'bytes32' }] },
     { name: 'CrossDomainNullifierDerived', type: 'event', inputs: [{ name: 'sourceNullifier', type: 'bytes32', indexed: true }, { name: 'crossNullifier', type: 'bytes32', indexed: true }, { name: 'sourceDomain', type: 'uint256' }, { name: 'targetDomain', type: 'uint256' }] }
 ] as const;
 
@@ -201,14 +201,14 @@ export class NullifierClient {
             BigInt(targetDomainId)
         ]);
 
-        const pilBinding = await this.contract.read.deriveSoulBinding([sourceNullifier]);
+        const soulBinding = await this.contract.read.deriveSoulBinding([sourceNullifier]);
 
         return {
             sourceNullifier,
             sourceDomain: sourceDomainId,
             targetDomain: targetDomainId,
             crossDomainNullifier,
-            pilBinding
+            soulBinding
         };
     }
 
@@ -238,7 +238,7 @@ export class NullifierClient {
      */
     async getNullifierRecord(nullifier: Hex, domainChainId: number): Promise<NullifierRecord | null> {
         try {
-            const [timestamp, pilBinding] = await this.contract.read.getNullifierRecord([nullifier, BigInt(domainChainId)]) as [bigint, Hex];
+            const [timestamp, soulBinding] = await this.contract.read.getNullifierRecord([nullifier, BigInt(domainChainId)]) as [bigint, Hex];
             
             if (timestamp === 0n) return null;
 
@@ -246,7 +246,7 @@ export class NullifierClient {
                 nullifier,
                 domain: domainChainId,
                 timestamp: Number(timestamp),
-                pilBinding
+                soulBinding
             };
         } catch {
             return null;
@@ -285,7 +285,7 @@ export class NullifierClient {
      * Listen for nullifier registration events
      */
     onNullifierRegistered(
-        callback: (nullifier: Hex, domain: number, pilBinding: Hex) => void
+        callback: (nullifier: Hex, domain: number, soulBinding: Hex) => void
     ): () => void {
         const unwatch = this.publicClient.watchContractEvent({
             address: this.contract.address,
@@ -294,7 +294,7 @@ export class NullifierClient {
             onLogs: logs => {
                 for (const log of logs) {
                     const { args } = log as any;
-                    callback(args.nullifier, Number(args.domain), args.pilBinding);
+                    callback(args.nullifier, Number(args.domain), args.soulBinding);
                 }
             }
         });

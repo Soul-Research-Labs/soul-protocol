@@ -377,9 +377,9 @@ The following conditions should trigger immediate incident response:
 
 ### 9.2 Contact Information
 
-- **Security Team**: security@pil.network
-- **Bug Bounty**: bounty@pil.network
-- **Emergency**: emergency@pil.network
+- **Security Team**: security@soul.network
+- **Bug Bounty**: bounty@soul.network
+- **Emergency**: emergency@soul.network
 
 ---
 

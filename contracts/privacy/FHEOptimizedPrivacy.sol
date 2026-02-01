@@ -14,7 +14,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
  *      - Ciphertext compression
  *      - Precomputation tables
  *      - SIMD-style parallel operations
- * @custom:security-contact security@pilprotocol.io
+ * @custom:security-contact security@soulprotocol.io
  * @custom:research-status Experimental - FHE optimization research
  */
 contract FHEOptimizedPrivacy is AccessControl, ReentrancyGuard, Pausable {

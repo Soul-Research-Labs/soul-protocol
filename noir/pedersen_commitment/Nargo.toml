@@ -2,7 +2,7 @@
 name = "pedersen_commitment"
 type = "bin"
 authors = ["Soul Protocol"]
-compiler_version = ">=1.0.0"
+compiler_version = ">=0.33.0"
 description = "State commitment using Pedersen hash for hiding property"
 
 [dependencies]

@@ -1,7 +1,7 @@
 use std::hash::poseidon;
 
 /// @title ContainerValidity
-/// @notice PC³ Container Validity Circuit
+/// @notice PC3 Container Validity Circuit
 /// 
 /// Proves that a container is valid without revealing its contents.
 /// This circuit validates:

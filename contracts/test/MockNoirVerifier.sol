@@ -9,8 +9,7 @@ contract MockNoirVerifier {
         shouldFail = _shouldFail;
     }
 
-    function verify(bytes calldata, bytes32[] calldata signals) external returns (bool) {
-        lastSignals = signals;
+    function verify(bytes calldata, bytes32[] calldata) external view returns (bool) {
         return !shouldFail;
     }
 }

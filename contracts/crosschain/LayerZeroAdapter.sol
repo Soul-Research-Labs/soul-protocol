@@ -159,7 +159,7 @@ contract LayerZeroAdapter is ReentrancyGuard, AccessControl, Pausable {
     mapping(bytes32 => mapping(address => bool)) public dvnConfirmations;
 
     /// @notice Soul proof hub on each chain
-    mapping(uint32 => address) public pilHubs;
+    mapping(uint32 => address) public soulHubs;
 
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
@@ -422,7 +422,7 @@ contract LayerZeroAdapter is ReentrancyGuard, AccessControl, Pausable {
         uint32 eid,
         address hub
     ) external onlyRole(OPERATOR_ROLE) {
-        pilHubs[eid] = hub;
+        soulHubs[eid] = hub;
     }
 
     /**

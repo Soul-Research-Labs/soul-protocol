@@ -128,7 +128,7 @@ fn verify_slippage(amount_out: Field, min_amount_out: Field) -> bool {
 fn verify_fee(amount_in: Field, fee_amount: Field, fee_rate: Field) -> bool {
     let expected_fee = (amount_in * fee_rate) / 10000;
     
-    // Allow small rounding error (±1)
+    // Allow small rounding error (1)
     let diff = if fee_amount as u64 >= expected_fee as u64 {
         fee_amount - expected_fee
     } else {

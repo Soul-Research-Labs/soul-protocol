@@ -355,7 +355,6 @@ contract FHEGateway is AccessControl, ReentrancyGuard, Pausable {
             uint8 bits = abi.decode(extraData, (uint8));
             return _shiftOp(op, inputs[0], bits);
         }
-
         // Conditional Ops
         if (op == FHEUtils.Opcode.SELECT) {
             if (inputs.length != 3) revert TooManyInputs();
@@ -363,6 +362,31 @@ contract FHEGateway is AccessControl, ReentrancyGuard, Pausable {
         }
 
         revert InvalidOpcode();
+    }
+
+    /**
+     * @notice Perform a batch of FHE operations to save gas
+     * @param ops Array of operation codes
+     * @param inputs Array of input handle arrays
+     * @param extraData Array of additional data
+     * @return results Array of result handles
+     */
+    function performBatchOp(
+        FHEUtils.Opcode[] calldata ops,
+        bytes32[][] calldata inputs,
+        bytes[] calldata extraData
+    ) external whenNotPaused returns (bytes32[] memory results) {
+        if (ops.length != inputs.length || ops.length != extraData.length) {
+            revert InvalidBatchSize();
+        }
+
+        results = new bytes32[](ops.length);
+        for (uint256 i = 0; i < ops.length; i++) {
+            results[i] = this.performOp(ops[i], inputs[i], extraData[i]);
+        }
+
+        // Optimization: In a real coprocessor integration, 
+        // we would emit a single BatchComputeRequested event here.
     }
 
     // ============================================

@@ -97,7 +97,7 @@ npx hardhat run scripts/helpers/check-balance.js --network mainnet
 Always test on Sepolia first:
 
 ```bash
-npx hardhat run scripts/deploy-pilv2-testnet.js --network sepolia
+npx hardhat run scripts/deploy-soul-testnet.js --network sepolia
 ```
 
 ### Step 2: Estimate Mainnet Costs
@@ -185,7 +185,7 @@ npx hardhat run scripts/configure-crosschain.js --network mainnet  # Configure b
 | Verification failed | Match compiler settings exactly |
 | Tx reverted | Check constructor args, deploy dependencies first |
 
-**Support:** [Discord](https://discord.gg/pilprotocol) | [GitHub Issues](https://github.com/soul-org/pil/issues)
+**Support:** [Discord](https://discord.gg/soulprotocol) | [GitHub Issues](https://github.com/soul-protocol/issues)
 
 ---
 

@@ -255,7 +255,7 @@ contract L2ProofRouter is ReentrancyGuard, AccessControl, Pausable {
     uint256 public proofNonce;
 
     /// @notice Soul Hub address
-    address public pilHub;
+    address public soulHub;
 
     /// @notice Direct L2 Messenger address
     address public directMessenger;
@@ -264,9 +264,9 @@ contract L2ProofRouter is ReentrancyGuard, AccessControl, Pausable {
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    constructor(address _admin, address _pilHub) {
+    constructor(address _admin, address _soulHub) {
         currentChainId = block.chainid;
-        pilHub = _pilHub;
+        soulHub = _soulHub;
 
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(OPERATOR_ROLE, _admin);

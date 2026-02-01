@@ -377,9 +377,9 @@ contract PrivacyInvariants is Test {
 
 ## 📞 Contacts
 
-- **Security Lead:** security@pilprotocol.io
-- **Privacy Research:** privacy@pilprotocol.io
-- **Integration Support:** integrations@pilprotocol.io
+- **Security Lead:** security@soulprotocol.io
+- **Privacy Research:** privacy@soulprotocol.io
+- **Integration Support:** integrations@soulprotocol.io
 
 ---
 

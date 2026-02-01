@@ -2,7 +2,7 @@
 name = "policy_bound_proof"
 type = "bin"
 authors = ["Soul Protocol"]
-compiler_version = ">=1.0.0"
+compiler_version = ">=0.33.0"
 description = "Policy-bound proofs cryptographically scoped by disclosure policy (PBP)"
 
 [dependencies]

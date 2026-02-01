@@ -1,0 +1,115 @@
+name: Documentation
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'contracts/**/*.sol'
+      - 'docs/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'contracts/**/*.sol'
+
+jobs:
+  natspec-check:
+    name: NatSpec Coverage Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Check NatSpec Coverage
+        id: natspec
+        run: |
+          python scripts/check_natspec_coverage.py --threshold 80 --verbose
+        continue-on-error: true
+      
+      - name: Report Coverage
+        run: |
+          echo "## 📝 NatSpec Documentation Coverage" >> $GITHUB_STEP_SUMMARY
+          python scripts/check_natspec_coverage.py --threshold 0 >> $GITHUB_STEP_SUMMARY 2>&1 || true
+      
+      - name: Fail if Below Threshold
+        if: steps.natspec.outcome == 'failure'
+        run: |
+          echo "::error::NatSpec coverage is below 80% threshold"
+          exit 1
+
+  solhint-check:
+    name: Solhint NatSpec Rules
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run Solhint
+        run: |
+          npx solhint 'contracts/**/*.sol' --config .solhint.json || true
+      
+      - name: Report Lint Issues
+        run: |
+          echo "## 🔍 Solhint Results" >> $GITHUB_STEP_SUMMARY
+          npx solhint 'contracts/**/*.sol' --config .solhint.json -f table >> $GITHUB_STEP_SUMMARY 2>&1 || true
+
+  generate-docs:
+    name: Generate API Documentation
+    runs-on: ubuntu-latest
+    needs: [natspec-check, solhint-check]
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+      
+      - name: Generate Documentation
+        run: |
+          forge doc --out docs/api
+      
+      - name: Upload Documentation Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-documentation
+          path: docs/api/
+          retention-days: 30
+      
+      - name: Deploy to GitHub Pages
+        if: github.event_name == 'push'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/api
+          destination_dir: api
+        continue-on-error: true

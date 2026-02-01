@@ -124,7 +124,7 @@ contract FormalBugBounty is AccessControl, ReentrancyGuard, Pausable {
     uint256 public totalPaidOut;
 
     // Soul public key for encrypted submissions
-    bytes public pilPublicKey;
+    bytes public soulPublicKey;
 
     // Statistics
     uint256 public totalSubmissions;
@@ -195,14 +195,14 @@ contract FormalBugBounty is AccessControl, ReentrancyGuard, Pausable {
 
 
     // ============ Constructor ============
-    constructor(address _rewardToken, bytes memory _pilPublicKey) {
+    constructor(address _rewardToken, bytes memory _soulPublicKey) {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(JUDGE_ROLE, msg.sender);
         _grantRole(TREASURY_ROLE, msg.sender);
         _grantRole(EMERGENCY_ROLE, msg.sender);
 
         rewardToken = IERC20(_rewardToken);
-        pilPublicKey = _pilPublicKey;
+        soulPublicKey = _soulPublicKey;
 
         // Initialize default bounty tiers
         _initializeTiers();
@@ -616,7 +616,7 @@ contract FormalBugBounty is AccessControl, ReentrancyGuard, Pausable {
     function updatePublicKey(
         bytes calldata newKey
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        pilPublicKey = newKey;
+        soulPublicKey = newKey;
         emit PublicKeyUpdated(newKey);
     }
 

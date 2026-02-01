@@ -211,8 +211,8 @@ contract VerifierHub is AccessControl, Pausable {
                 // This matches the PROOF_TYPES mapping used in migrate_to_noir.ts
                 bytes32 proofType;
                 if (circuitType == CircuitType.StateTransfer) proofType = keccak256("STATE_TRANSITION_PROOF");
-                else if (circuitType == CircuitType.StateCommitment) proofType = keccak256("COMMITMENT_PROOF");
-                else if (circuitType == CircuitType.CrossChainProof) proofType = keccak256("CROSS_CHAIN_PROOF");
+                else if (circuitType == CircuitType.StateCommitment) proofType = keccak256("STATE_COMMITMENT_PROOF");
+                else if (circuitType == CircuitType.CrossChainProof) proofType = keccak256("CROSS_DOMAIN_PROOF");
                 else if (circuitType == CircuitType.ComplianceProof) proofType = keccak256("COMPLIANCE_PROOF");
                 
                 if (proofType != bytes32(0)) {

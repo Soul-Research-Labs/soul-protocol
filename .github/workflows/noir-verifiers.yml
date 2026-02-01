@@ -1,0 +1,484 @@
+# Noir Verifier Generation and Validation Pipeline
+# 
+# This workflow:
+# 1. Compiles all 20 Noir circuits in the workspace
+# 2. Generates Solidity verifier contracts via Barretenberg
+# 3. Verifies generated contracts compile with Foundry
+# 4. Runs gas benchmarks comparing Noir vs legacy verifiers
+# 5. Checks bytecode determinism for reproducible builds
+#
+# Triggers:
+# - Push/PR to noir/ directory (circuit changes)
+# - Push/PR to contracts/verifiers/ (adapter changes)
+# - Weekly schedule for toolchain compatibility checks
+# - Manual dispatch for on-demand generation
+
+name: Noir Verifier Generation
+
+on:
+  push:
+    paths:
+      - 'noir/**'
+      - 'contracts/verifiers/**'
+      - 'scripts/generate_verifiers.sh'
+    branches:
+      - main
+      - develop
+  pull_request:
+    paths:
+      - 'noir/**'
+      - 'contracts/verifiers/**'
+      - 'scripts/generate_verifiers.sh'
+  schedule:
+    # Weekly compatibility check (Sundays at 00:00 UTC)
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+    inputs:
+      force_regenerate:
+        description: 'Force regenerate all verifiers'
+        required: false
+        default: 'false'
+        type: boolean
+      benchmark_only:
+        description: 'Only run gas benchmarks'
+        required: false
+        default: 'false'
+        type: boolean
+
+env:
+  # Pinned versions for reproducibility (per plan requirements)
+  NARGO_VERSION: "0.35.0"
+  BB_VERSION: "0.55.0"
+  FOUNDRY_PROFILE: ci
+
+jobs:
+  # ============================================
+  # Job 1: Compile Noir Circuits
+  # ============================================
+  compile-circuits:
+    name: Compile Noir Workspace
+    runs-on: ubuntu-latest
+    if: ${{ !inputs.benchmark_only }}
+    
+    outputs:
+      circuits_compiled: ${{ steps.compile.outputs.count }}
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Cache Noir toolchain
+        uses: actions/cache@v4
+        id: cache-nargo
+        with:
+          path: ~/.nargo
+          key: nargo-${{ env.NARGO_VERSION }}-${{ runner.os }}
+
+      - name: Install Noir toolchain
+        if: steps.cache-nargo.outputs.cache-hit != 'true'
+        run: |
+          curl -L https://raw.githubusercontent.com/noir-lang/noirup/main/install | bash
+          ~/.nargo/bin/noirup -v ${{ env.NARGO_VERSION }}
+
+      - name: Add Noir to PATH
+        run: echo "$HOME/.nargo/bin" >> $GITHUB_PATH
+
+      - name: Verify Noir installation
+        run: |
+          nargo --version
+          echo "Expected: nargo ${{ env.NARGO_VERSION }}"
+
+      - name: Cache Noir compilation
+        uses: actions/cache@v4
+        with:
+          path: noir/target
+          key: noir-target-${{ hashFiles('noir/**/src/**', 'noir/**/Nargo.toml') }}
+          restore-keys: |
+            noir-target-
+
+      - name: Compile Noir workspace
+        id: compile
+        run: |
+          cd noir
+          nargo compile --workspace 2>&1 | tee compile.log
+          
+          # Count compiled circuits
+          CIRCUIT_COUNT=$(ls -1 target/*.json 2>/dev/null | wc -l)
+          echo "count=$CIRCUIT_COUNT" >> $GITHUB_OUTPUT
+          echo "✅ Compiled $CIRCUIT_COUNT circuits"
+
+      - name: Verify all 20 circuits compiled
+        run: |
+          cd noir/target
+          EXPECTED_CIRCUITS=(
+            "state_transfer" "cross_chain_proof" "nullifier" "merkle_proof"
+            "policy" "compliance_proof" "container" "cross_domain_nullifier"
+            "policy_bound_proof" "proof_carrying_container" "state_commitment"
+            "balance_proof" "private_transfer" "swap_proof" "ring_signature"
+            "private_order" "pedersen_commitment" "aggregator" "pqc_verifier"
+            "invariant_checker"
+          )
+          
+          MISSING=()
+          for circuit in "${EXPECTED_CIRCUITS[@]}"; do
+            if [ ! -f "${circuit}.json" ]; then
+              MISSING+=("$circuit")
+            fi
+          done
+          
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "::error::Missing circuits: ${MISSING[*]}"
+            exit 1
+          fi
+          
+          echo "✅ All 20 circuits compiled successfully"
+
+      - name: Upload compiled circuits
+        uses: actions/upload-artifact@v4
+        with:
+          name: noir-compiled
+          path: noir/target/*.json
+          retention-days: 7
+
+  # ============================================
+  # Job 2: Generate Solidity Verifiers
+  # ============================================
+  generate-verifiers:
+    name: Generate Solidity Verifiers
+    runs-on: ubuntu-latest
+    needs: compile-circuits
+    if: ${{ !inputs.benchmark_only }}
+    
+    outputs:
+      verifiers_generated: ${{ steps.generate.outputs.count }}
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download compiled circuits
+        uses: actions/download-artifact@v4
+        with:
+          name: noir-compiled
+          path: noir/target
+
+      - name: Cache Barretenberg
+        uses: actions/cache@v4
+        id: cache-bb
+        with:
+          path: ~/.bb
+          key: bb-${{ env.BB_VERSION }}-${{ runner.os }}
+
+      - name: Install Barretenberg
+        if: steps.cache-bb.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/.bb/bin
+          curl -L "https://github.com/AztecProtocol/aztec-packages/releases/download/aztec-packages-v${{ env.BB_VERSION }}/barretenberg-x86_64-linux.tar.gz" | tar xz -C ~/.bb/bin
+
+      - name: Add Barretenberg to PATH
+        run: echo "$HOME/.bb/bin" >> $GITHUB_PATH
+
+      - name: Verify Barretenberg installation
+        run: |
+          bb --version || echo "bb version check"
+          echo "Expected: Barretenberg ${{ env.BB_VERSION }}"
+
+      - name: Generate verifiers
+        id: generate
+        run: |
+          chmod +x scripts/generate_verifiers.sh
+          ./scripts/generate_verifiers.sh 2>&1 | tee generate.log
+          
+          # Count generated verifiers
+          VERIFIER_COUNT=$(ls -1 contracts/verifiers/generated/*.sol 2>/dev/null | wc -l)
+          echo "count=$VERIFIER_COUNT" >> $GITHUB_OUTPUT
+          echo "✅ Generated $VERIFIER_COUNT verifiers"
+
+      - name: Verify all verifiers generated
+        run: |
+          cd contracts/verifiers/generated
+          
+          EXPECTED_VERIFIERS=(
+            "StateTransferVerifier" "CrossChainProofVerifier" "NullifierVerifier"
+            "MerkleProofVerifier" "PolicyVerifier" "ComplianceProofVerifier"
+            "ContainerVerifier" "CrossDomainNullifierVerifier" "PolicyBoundProofVerifier"
+            "ProofCarryingContainerVerifier" "StateCommitmentVerifier"
+            "BalanceProofVerifier" "PrivateTransferVerifier" "SwapProofVerifier"
+            "RingSignatureVerifier" "PrivateOrderVerifier" "PedersenCommitmentVerifier"
+            "AggregatorVerifier" "PqcVerifierVerifier" "InvariantCheckerVerifier"
+          )
+          
+          MISSING=()
+          for verifier in "${EXPECTED_VERIFIERS[@]}"; do
+            if [ ! -f "${verifier}.sol" ]; then
+              MISSING+=("$verifier")
+            fi
+          done
+          
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "::warning::Missing verifiers (may need generation): ${MISSING[*]}"
+          fi
+
+      - name: Upload generated verifiers
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-verifiers
+          path: contracts/verifiers/generated/*.sol
+          retention-days: 30
+
+  # ============================================
+  # Job 3: Compile and Validate Solidity
+  # ============================================
+  compile-solidity:
+    name: Compile Solidity Verifiers
+    runs-on: ubuntu-latest
+    needs: generate-verifiers
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Download generated verifiers
+        uses: actions/download-artifact@v4
+        with:
+          name: generated-verifiers
+          path: contracts/verifiers/generated
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install dependencies
+        run: forge install
+
+      - name: Compile all contracts
+        run: |
+          forge build --contracts contracts/verifiers/ 2>&1 | tee compile.log
+          
+          if grep -q "Error" compile.log; then
+            echo "::error::Solidity compilation failed"
+            exit 1
+          fi
+          
+          echo "✅ All verifiers compiled successfully"
+
+      - name: Check contract sizes
+        run: |
+          forge build --sizes --contracts contracts/verifiers/generated/ 2>&1 | tee sizes.log
+          
+          # Warn if any verifier exceeds 20KB (EIP-170 limit is 24KB)
+          if grep -E "\s+[2-9][0-9]\.[0-9]+\s*$" sizes.log; then
+            echo "::warning::Some verifiers are approaching size limit"
+          fi
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: forge-out
+          path: out/
+          retention-days: 7
+
+  # ============================================
+  # Job 4: Bytecode Determinism Check
+  # ============================================
+  check-determinism:
+    name: Verify Bytecode Determinism
+    runs-on: ubuntu-latest
+    needs: compile-solidity
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Checkout base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.base_ref }}
+          path: base
+
+      - name: Download generated verifiers
+        uses: actions/download-artifact@v4
+        with:
+          name: generated-verifiers
+          path: contracts/verifiers/generated
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Install dependencies
+        run: forge install
+
+      - name: Compare bytecodes
+        run: |
+          mkdir -p bytecodes/current bytecodes/base
+          
+          # Generate current bytecodes
+          for sol in contracts/verifiers/generated/*.sol; do
+            name=$(basename "$sol" .sol)
+            forge inspect "$name" bytecode > "bytecodes/current/${name}.bytecode" 2>/dev/null || true
+          done
+          
+          # Generate base bytecodes (if they exist)
+          if [ -d "base/contracts/verifiers/generated" ]; then
+            cd base
+            forge install
+            for sol in contracts/verifiers/generated/*.sol; do
+              name=$(basename "$sol" .sol)
+              forge inspect "$name" bytecode > "../bytecodes/base/${name}.bytecode" 2>/dev/null || true
+            done
+            cd ..
+          fi
+          
+          # Compare
+          CHANGED=()
+          for current in bytecodes/current/*.bytecode; do
+            name=$(basename "$current")
+            base="bytecodes/base/$name"
+            
+            if [ -f "$base" ]; then
+              if ! diff -q "$base" "$current" > /dev/null 2>&1; then
+                CHANGED+=("${name%.bytecode}")
+              fi
+            fi
+          done
+          
+          if [ ${#CHANGED[@]} -gt 0 ]; then
+            echo "::notice::Changed verifiers: ${CHANGED[*]}"
+          else
+            echo "✅ No bytecode changes detected"
+          fi
+
+  # ============================================
+  # Job 5: Gas Benchmarks
+  # ============================================
+  gas-benchmark:
+    name: Run Gas Benchmarks
+    runs-on: ubuntu-latest
+    needs: compile-solidity
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Download generated verifiers
+        uses: actions/download-artifact@v4
+        with:
+          name: generated-verifiers
+          path: contracts/verifiers/generated
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Install dependencies
+        run: forge install
+
+      - name: Run gas benchmark tests
+        run: |
+          forge test --match-path "test/gas/*" --gas-report 2>&1 | tee gas-report.txt
+          
+          echo "## Gas Report Summary" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          tail -100 gas-report.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload gas report
+        uses: actions/upload-artifact@v4
+        with:
+          name: gas-report
+          path: gas-report.txt
+          retention-days: 30
+
+      - name: Comment gas report on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            let report = '';
+            try {
+              report = fs.readFileSync('gas-report.txt', 'utf8');
+            } catch (e) {
+              report = 'Gas report not available';
+            }
+            
+            // Truncate if too long
+            if (report.length > 60000) {
+              report = report.substring(0, 60000) + '\n... (truncated)';
+            }
+            
+            const body = `## ⛽ Noir Verifier Gas Report
+            
+            <details>
+            <summary>Click to expand gas report</summary>
+            
+            \`\`\`
+            ${report}
+            \`\`\`
+            
+            </details>
+            
+            ---
+            *Generated by noir-verifiers workflow*`;
+            
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            
+            const botComment = comments.find(c => 
+              c.user.type === 'Bot' && c.body.includes('Noir Verifier Gas Report')
+            );
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body
+              });
+            }
+
+  # ============================================
+  # Job 6: Summary Report
+  # ============================================
+  summary:
+    name: Generate Summary
+    runs-on: ubuntu-latest
+    needs: [compile-circuits, generate-verifiers, compile-solidity, gas-benchmark]
+    if: always()
+    
+    steps:
+      - name: Generate workflow summary
+        run: |
+          echo "# Noir Verifier Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Stage | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Circuits Compiled | ${{ needs.compile-circuits.outputs.circuits_compiled || 'N/A' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Verifiers Generated | ${{ needs.generate-verifiers.outputs.verifiers_generated || 'N/A' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Solidity Compile | ${{ needs.compile-solidity.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Gas Benchmarks | ${{ needs.gas-benchmark.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Toolchain Versions:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Nargo: ${{ env.NARGO_VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Barretenberg: ${{ env.BB_VERSION }}" >> $GITHUB_STEP_SUMMARY

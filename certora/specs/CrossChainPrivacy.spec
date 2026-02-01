@@ -244,7 +244,7 @@ rule crossDomainDirectionSensitivity(bytes32 nullifier, uint256 domainA, uint256
  * @title Soul Binding Uniqueness
  * @notice Different nullifiers produce different Soul bindings
  */
-rule pilBindingUniqueness(bytes32 nf1, bytes32 nf2) {
+rule soulBindingUniqueness(bytes32 nf1, bytes32 nf2) {
     env e;
 
     require nf1 != nf2;
@@ -403,12 +403,12 @@ rule nullifierRegisteredOnTransfer(
     env e;
 
     // Assuming Soul chain is domain 1
-    uint256 pilDomain = 1;
-    bool consumedBefore = isNullifierConsumed(nullifier, pilDomain);
+    uint256 soulDomain = 1;
+    bool consumedBefore = isNullifierConsumed(nullifier, soulDomain);
 
     initiatePrivateTransfer(e, targetChainId, recipient, amount, commitment, nullifier, proof);
 
-    bool consumedAfter = isNullifierConsumed(nullifier, pilDomain);
+    bool consumedAfter = isNullifierConsumed(nullifier, soulDomain);
 
     assert !consumedBefore => consumedAfter, "Nullifier must be consumed after transfer";
 }

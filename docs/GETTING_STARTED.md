@@ -2,7 +2,7 @@
 
 > **Soul Protocol** - Cross-chain privacy infrastructure for Ethereum L2s
 
-[![npm](https://img.shields.io/badge/npm-@pil/sdk-blue.svg)](https://www.npmjs.com/package/@pil/sdk)
+[![npm](https://img.shields.io/badge/npm-@soulprotocol/sdk-blue.svg)](https://www.npmjs.com/package/@soulprotocol/sdk)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ---
@@ -42,7 +42,7 @@
 ### From npm
 
 ```bash
-npm install @pil/sdk
+npm install @soulprotocol/sdk
 ```
 
 ### From Source
@@ -57,8 +57,8 @@ npm run build
 ### Verify Installation
 
 ```bash
-npx pil-sdk --version
-# Output: @pil/sdk v2.0.0
+npx soul-sdk --version
+# Output: @soulprotocol/sdk v2.0.0
 ```
 
 ---
@@ -68,17 +68,17 @@ npx pil-sdk --version
 ### 1. Initialize the SDK
 
 ```typescript
-import { SoulSDK } from '@pil/sdk';
+import { SoulSDK } from '@soulprotocol/sdk';
 
 // Create SDK instance
-const pil = new SoulSDK({
+const soul = new SoulSDK({
   rpcUrl: 'https://eth-sepolia.g.alchemy.com/v2/YOUR_KEY',
   privateKey: process.env.PRIVATE_KEY,  // Optional: for signing transactions
   network: 'sepolia'
 });
 
 // Connect to deployed contracts
-await pil.connect();
+await soul.connect();
 console.log('✅ Connected to Soul Protocol');
 ```
 
@@ -86,16 +86,16 @@ console.log('✅ Connected to Soul Protocol');
 
 ```typescript
 // Generate cryptographic primitives
-const secret = pil.crypto.randomBytes(32);
-const nullifier = pil.crypto.poseidon([secret, 0n]);
-const commitment = pil.crypto.poseidon([secret, 1n]);
+const secret = soul.crypto.randomBytes(32);
+const nullifier = soul.crypto.poseidon([secret, 0n]);
+const commitment = soul.crypto.poseidon([secret, 1n]);
 
 // Create a state lock
-const lock = await pil.zkSlocks.createLock({
+const lock = await soul.zkSlocks.createLock({
   oldStateCommitment: commitment,
   transitionPredicateHash: '0x...', // Your circuit hash
   policyHash: '0x0', // No policy for this example
-  domainSeparator: await pil.zkSlocks.generateDomainSeparator('sepolia', 1),
+  domainSeparator: await soul.zkSlocks.generateDomainSeparator('sepolia', 1),
   unlockDeadline: Math.floor(Date.now() / 1000) + 3600 // 1 hour
 });
 
@@ -105,7 +105,7 @@ console.log('🔒 Lock created:', lock.lockId);
 ### 3. Unlock with a ZK Proof
 
 ```typescript
-import { generateProof } from '@pil/sdk';
+import { generateProof } from '@soulprotocol/sdk';
 
 // Generate the ZK proof (off-chain)
 const proof = await generateProof({
@@ -114,7 +114,7 @@ const proof = await generateProof({
 });
 
 // Unlock the state
-await pil.zkSlocks.unlock({
+await soul.zkSlocks.unlock({
   lockId: lock.lockId,
   zkProof: proof.proof,
   newStateCommitment: newCommitment,
@@ -162,28 +162,28 @@ console.log('🔓 State unlocked successfully!');
 ## Complete Example: Private Cross-Chain Transfer
 
 ```typescript
-import { SoulSDK, generateProof, BridgeFactory } from '@pil/sdk';
+import { SoulSDK, generateProof, BridgeFactory } from '@soulprotocol/sdk';
 
 async function privateTransfer() {
   // 1. Initialize SDK
-  const pil = new SoulSDK({
+  const soul = new SoulSDK({
     rpcUrl: process.env.SEPOLIA_RPC_URL,
     privateKey: process.env.PRIVATE_KEY,
     network: 'sepolia'
   });
-  await pil.connect();
+  await soul.connect();
 
   // 2. Generate cryptographic values
-  const secret = pil.crypto.randomBytes(32);
-  const nullifier = pil.crypto.poseidon([secret, 0n]);
-  const commitment = pil.crypto.poseidon([secret, 100n]); // 100 tokens
+  const secret = soul.crypto.randomBytes(32);
+  const nullifier = soul.crypto.poseidon([secret, 0n]);
+  const commitment = soul.crypto.poseidon([secret, 100n]); // 100 tokens
 
   // 3. Create lock on source chain
-  const lock = await pil.zkSlocks.createLock({
+  const lock = await soul.zkSlocks.createLock({
     oldStateCommitment: commitment,
-    transitionPredicateHash: await pil.getCircuitHash('transfer'),
+    transitionPredicateHash: await soul.getCircuitHash('transfer'),
     policyHash: '0x0',
-    domainSeparator: await pil.zkSlocks.generateDomainSeparator('sepolia', 1),
+    domainSeparator: await soul.zkSlocks.generateDomainSeparator('sepolia', 1),
     unlockDeadline: Math.floor(Date.now() / 1000) + 86400 // 24 hours
   });
   console.log('✅ Lock created:', lock.lockId);
@@ -195,14 +195,14 @@ async function privateTransfer() {
       secret,
       nullifier,
       oldCommitment: commitment,
-      newCommitment: pil.crypto.poseidon([secret, 0n]), // Spend all
+      newCommitment: soul.crypto.poseidon([secret, 0n]), // Spend all
       amount: 100n
     }
   });
   console.log('✅ Proof generated');
 
   // 5. Unlock on destination chain (simulated here)
-  const result = await pil.zkSlocks.unlock({
+  const result = await soul.zkSlocks.unlock({
     lockId: lock.lockId,
     zkProof: proof.proof,
     newStateCommitment: proof.newCommitment,
@@ -235,7 +235,7 @@ privateTransfer().catch(console.error);
 ### Debug Mode
 
 ```typescript
-const pil = new SoulSDK({
+const soul = new SoulSDK({
   rpcUrl: process.env.RPC_URL,
   privateKey: process.env.PRIVATE_KEY,
   network: 'sepolia',
@@ -276,7 +276,7 @@ BASE_RPC_URL=https://base-sepolia.g.alchemy.com/v2/YOUR_KEY
 
 ### Join the Community
 
-- 💬 [Discord](https://discord.gg/pil-network) - Get help, share ideas
+- 💬 [Discord](https://discord.gg/soul-network) - Get help, share ideas
 - 🐙 [GitHub Issues](https://github.com/soul-research-labs/Soul/issues) - Report bugs
 - 🐦 [Twitter](https://twitter.com/pil_protocol) - Latest updates
 

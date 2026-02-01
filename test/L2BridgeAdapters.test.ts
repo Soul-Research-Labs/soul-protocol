@@ -92,8 +92,8 @@ describe("L2 Bridge Adapters", function () {
                 // Admin can set Soul Hub L2
                 await adapter.write.setPilHubL2([user.account.address]);
 
-                const pilHub = await adapter.read.pilHubL2();
-                expect(pilHub.toLowerCase()).to.equal(user.account.address.toLowerCase());
+                const soulHub = await adapter.read.soulHubL2();
+                expect(soulHub.toLowerCase()).to.equal(user.account.address.toLowerCase());
             });
 
             it("Should set proof registry", async function () {
@@ -174,8 +174,8 @@ describe("L2 Bridge Adapters", function () {
                 // Admin can set Soul Hub L2
                 await adapter.write.setPilHubL2([user.account.address]);
 
-                const pilHub = await adapter.read.pilHubL2();
-                expect(pilHub.toLowerCase()).to.equal(user.account.address.toLowerCase());
+                const soulHub = await adapter.read.soulHubL2();
+                expect(soulHub.toLowerCase()).to.equal(user.account.address.toLowerCase());
             });
         });
 
@@ -256,8 +256,8 @@ describe("L2 Bridge Adapters", function () {
                 // Admin can set Soul Hub L2
                 await adapter.write.setPilHubL2([user.account.address]);
 
-                const pilHub = await adapter.read.pilHubL2();
-                expect(pilHub.toLowerCase()).to.equal(user.account.address.toLowerCase());
+                const soulHub = await adapter.read.soulHubL2();
+                expect(soulHub.toLowerCase()).to.equal(user.account.address.toLowerCase());
             });
         });
 

@@ -24,8 +24,8 @@ interface IAztecBridgeAdapter {
     /// @notice Soul to Aztec bridge request
     struct SoulToAztecRequest {
         bytes32 requestId;
-        bytes32 pilCommitment;
-        bytes32 pilNullifier;
+        bytes32 soulCommitment;
+        bytes32 soulNullifier;
         bytes32 aztecRecipient;
         uint256 amount;
         NoteType noteType;
@@ -40,9 +40,9 @@ interface IAztecBridgeAdapter {
         bytes32 requestId;
         bytes32 aztecNoteHash;
         bytes32 aztecNullifier;
-        address pilRecipient;
+        address soulRecipient;
         uint256 amount;
-        bytes32 pilCommitment;
+        bytes32 soulCommitment;
         uint256 timestamp;
         bool processed;
     }
@@ -75,7 +75,7 @@ interface IAztecBridgeAdapter {
     // Events
     event SoulToAztecInitiated(
         bytes32 indexed requestId,
-        bytes32 indexed pilCommitment,
+        bytes32 indexed soulCommitment,
         bytes32 aztecRecipient,
         uint256 amount
     );
@@ -88,13 +88,13 @@ interface IAztecBridgeAdapter {
     event AztecToSoulInitiated(
         bytes32 indexed requestId,
         bytes32 indexed aztecNoteHash,
-        address pilRecipient,
+        address soulRecipient,
         uint256 amount
     );
 
     event AztecToSoulCompleted(
         bytes32 indexed requestId,
-        bytes32 indexed pilCommitment
+        bytes32 indexed soulCommitment
     );
 
     event CrossDomainProofVerified(
@@ -118,8 +118,8 @@ interface IAztecBridgeAdapter {
     ) external;
 
     function bridgeSoulToAztec(
-        bytes32 pilCommitment,
-        bytes32 pilNullifier,
+        bytes32 soulCommitment,
+        bytes32 soulNullifier,
         bytes32 aztecRecipient,
         uint256 amount,
         NoteType noteType,
@@ -136,7 +136,7 @@ interface IAztecBridgeAdapter {
     function bridgeAztecToSoul(
         bytes32 aztecNoteHash,
         bytes32 aztecNullifier,
-        address pilRecipient,
+        address soulRecipient,
         uint256 amount,
         bytes calldata proof
     ) external;

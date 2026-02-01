@@ -13,7 +13,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
  *      - Commitment schemes from SIS
  *      - Key images from structured lattices
  *      - Hybrid classical/PQ verification
- * @custom:security-contact security@pilprotocol.io
+ * @custom:security-contact security@soulprotocol.io
  * @custom:research-status Experimental - Post-quantum research
  */
 contract PostQuantumRingSignatures is AccessControl, ReentrancyGuard, Pausable {

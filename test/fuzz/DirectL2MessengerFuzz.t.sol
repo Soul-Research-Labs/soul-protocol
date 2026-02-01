@@ -16,7 +16,7 @@ contract DirectL2MessengerFuzz is Test {
     SharedSequencerIntegration public sequencerIntegration;
 
     address public admin = address(0x1);
-    address public pilHub = address(0x2);
+    address public soulHub = address(0x2);
     address public relayer1 = address(0x3);
     address public relayer2 = address(0x4);
     address public relayer3 = address(0x5);
@@ -30,9 +30,9 @@ contract DirectL2MessengerFuzz is Test {
         vm.startPrank(admin);
 
         // Deploy contracts
-        messenger = new DirectL2Messenger(admin, pilHub);
-        proofRouter = new L2ProofRouter(admin, pilHub);
-        sequencerIntegration = new SharedSequencerIntegration(admin, pilHub);
+        messenger = new DirectL2Messenger(admin, soulHub);
+        proofRouter = new L2ProofRouter(admin, soulHub);
+        sequencerIntegration = new SharedSequencerIntegration(admin, soulHub);
 
         // Configure routes
         messenger.configureRoute(

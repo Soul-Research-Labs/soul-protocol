@@ -303,8 +303,8 @@ describe("CrossChainPrivacy Integration", function () {
         });
 
         it("Should derive Soul binding", async function () {
-            const pilBinding = await nullifierManager.deriveSoulBinding(testNullifier);
-            expect(pilBinding).to.not.equal(ethers.ZeroHash);
+            const soulBinding = await nullifierManager.deriveSoulBinding(testNullifier);
+            expect(soulBinding).to.not.equal(ethers.ZeroHash);
         });
 
         it("Should verify cross-domain proof", async function () {

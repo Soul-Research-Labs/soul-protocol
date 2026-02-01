@@ -9,7 +9,7 @@ import "../libraries/CryptoLib.sol";
 /// @notice Implements Triptych ring signatures with O(log n) verification
 /// @dev Based on "Triptych: Logarithmic-sized Linkable Ring Signatures with Applications"
 ///      by Sarang Noether and Brandon Goodell (2020)
-/// @custom:security-contact security@pilprotocol.io
+/// @custom:security-contact security@soulprotocol.io
 /// @custom:research-status Production-ready implementation
 contract TriptychSignatures is AccessControl, ReentrancyGuard {
     // =========================================================================

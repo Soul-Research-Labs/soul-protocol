@@ -13,7 +13,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
  *      - Precomputed lookup tables for faster verification
  *      - Recursive proof composition for rings > 256
  *      - Cross-chain key image synchronization
- * @custom:security-contact security@pilprotocol.io
+ * @custom:security-contact security@soulprotocol.io
  * @custom:research-status Experimental - Extended ring sizes
  */
 contract TriptychPlusSignatures is AccessControl, ReentrancyGuard, Pausable {

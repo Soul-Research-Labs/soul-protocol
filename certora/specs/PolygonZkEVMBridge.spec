@@ -84,10 +84,10 @@ rule nullifierUniqueness(uint32 depositCount1, uint32 depositCount2, uint32 orig
 
 /// @title Cross-domain nullifier determinism
 rule crossDomainNullifierDeterminism(bytes32 polygonNullifier, bytes32 domain) {
-    bytes32 pilNf1 = keccak256(abi.encodePacked(polygonNullifier, domain, "POLYGONZKEVM2Soul"));
-    bytes32 pilNf2 = keccak256(abi.encodePacked(polygonNullifier, domain, "POLYGONZKEVM2Soul"));
+    bytes32 soulNf1 = keccak256(abi.encodePacked(polygonNullifier, domain, "POLYGONZKEVM2Soul"));
+    bytes32 soulNf2 = keccak256(abi.encodePacked(polygonNullifier, domain, "POLYGONZKEVM2Soul"));
     
-    assert pilNf1 == pilNf2, "Cross-domain nullifier must be deterministic";
+    assert soulNf1 == soulNf2, "Cross-domain nullifier must be deterministic";
 }
 
 /// @title Chain ID constant is correct

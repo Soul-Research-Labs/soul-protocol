@@ -2,7 +2,7 @@
 name = "compliance_proof"
 type = "bin"
 authors = ["Soul Protocol"]
-compiler_version = ">=1.0.0"
+compiler_version = ">=0.33.0"
 description = "Privacy-preserving KYC/AML compliance verification"
 
 [dependencies]

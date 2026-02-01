@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 /// @notice Implements Fully Homomorphic Encryption integration for private computation
 /// @dev Based on TFHE (Torus FHE) and Zama's fhEVM architecture
 ///      Enables computation on encrypted data without decryption
-/// @custom:security-contact security@pilprotocol.io
+/// @custom:security-contact security@soulprotocol.io
 /// @custom:research-status Research implementation
 contract FHEPrivacyIntegration is AccessControl, ReentrancyGuard {
     // =========================================================================

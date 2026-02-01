@@ -24,7 +24,7 @@ import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol
  * │  nf_cross = H(nf_source || sourceChain || destChain || "CROSS_DOMAIN")  │
  * │                                                                          │
  * │  Soul Binding:                                                           │
- * │  nf_pil = H(nf_source || domain || "Soul_BINDING")                       │
+ * │  nf_soul = H(nf_source || domain || "Soul_BINDING")                       │
  * │                                                                          │
  * │  Properties:                                                            │
  * │  1. Uniqueness: Same note → same nullifier (per domain)                 │
@@ -137,7 +137,7 @@ contract UnifiedNullifierManager is
     struct CrossDomainBinding {
         bytes32 sourceNullifier;
         bytes32 destNullifier;
-        bytes32 pilNullifier; // Unified Soul nullifier
+        bytes32 soulBinding; // Unified Soul binding (formerly soulBinding)
         uint256 sourceChainId;
         uint256 destChainId;
         bytes32 sourceDomain;
@@ -185,11 +185,14 @@ contract UnifiedNullifierManager is
     /// @notice Chain domains: chainId => domain
     mapping(uint256 => ChainDomain) public chainDomains;
 
-    /// @notice Soul unified nullifiers: source nullifier => Soul nullifier
-    mapping(bytes32 => bytes32) public pilNullifiers;
+    /// @notice Cross-chain verifier adapter
+    address public crossChainVerifier;
 
-    /// @notice Reverse lookup: Soul nullifier => source nullifiers
-    mapping(bytes32 => bytes32[]) public reversePilLookup;
+    /// @notice Soul unified bindings: source nullifier => Soul binding
+    mapping(bytes32 => bytes32) public soulBindings;
+
+    /// @notice Reverse lookup: Soul binding => source nullifiers
+    mapping(bytes32 => bytes32[]) public reverseSoulLookup;
 
     /// @notice Nullifier batches: batchId => batch
     mapping(bytes32 => NullifierBatch) public nullifierBatches;
@@ -229,7 +232,7 @@ contract UnifiedNullifierManager is
     event CrossDomainBindingCreated(
         bytes32 indexed sourceNullifier,
         bytes32 indexed destNullifier,
-        bytes32 indexed pilNullifier,
+        bytes32 indexed soulBinding,
         uint256 sourceChainId,
         uint256 destChainId
     );
@@ -248,7 +251,7 @@ contract UnifiedNullifierManager is
 
     event SoulNullifierDerived(
         bytes32 indexed sourceNullifier,
-        bytes32 indexed pilNullifier,
+        bytes32 indexed soulBinding,
         bytes32 domain
     );
 
@@ -319,7 +322,14 @@ contract UnifiedNullifierManager is
 
         registeredChains.push(chainId);
 
-        emit ChainDomainRegistered(chainId, chainType, domainTag);
+    emit ChainDomainRegistered(chainId, chainType, domainTag);
+    }
+
+    /**
+     * @notice Set the cross-chain verifier adapter
+     */
+    function setCrossChainVerifier(address _verifier) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        crossChainVerifier = _verifier;
     }
 
     /**
@@ -378,7 +388,7 @@ contract UnifiedNullifierManager is
         uint256 chainId,
         NullifierType nullifierType,
         uint256 expiresAt
-    ) external onlyRole(BRIDGE_ROLE) returns (bytes32 pilNullifier) {
+    ) external onlyRole(BRIDGE_ROLE) returns (bytes32 soulBinding) {
         if (nullifierRecords[nullifier].status != NullifierStatus.UNKNOWN) {
             revert NullifierAlreadyExists();
         }
@@ -399,16 +409,16 @@ contract UnifiedNullifierManager is
         });
 
         // Derive Soul unified nullifier
-        pilNullifier = deriveSoulNullifier(nullifier, domain.domainTag);
-        pilNullifiers[nullifier] = pilNullifier;
-        reversePilLookup[pilNullifier].push(nullifier);
+        soulBinding = deriveSoulBinding(nullifier, domain.domainTag);
+        soulBindings[nullifier] = soulBinding;
+        reverseSoulLookup[soulBinding].push(nullifier);
 
         totalNullifiers++;
 
         emit NullifierRegistered(nullifier, commitment, chainId, nullifierType);
-        emit SoulNullifierDerived(nullifier, pilNullifier, domain.domainTag);
+        emit SoulNullifierDerived(nullifier, soulBinding, domain.domainTag);
 
-        return pilNullifier;
+        return soulBinding;
     }
 
     /**
@@ -452,7 +462,7 @@ contract UnifiedNullifierManager is
     )
         external
         onlyRole(BRIDGE_ROLE)
-        returns (bytes32 destNullifier, bytes32 pilNullifier)
+        returns (bytes32 destNullifier, bytes32 soulBinding)
     {
         NullifierRecord storage sourceRecord = nullifierRecords[
             sourceNullifier
@@ -488,9 +498,7 @@ contract UnifiedNullifierManager is
         );
 
         // Derive unified Soul nullifier
-        pilNullifier = keccak256(
-            abi.encodePacked(sourceNullifier, destNullifier, Soul_BINDING_TAG)
-        );
+        soulBinding = deriveSoulBinding(sourceNullifier, sourceDomain.domainTag);
 
         bytes32 bindingId = keccak256(
             abi.encodePacked(sourceNullifier, destNullifier)
@@ -499,7 +507,7 @@ contract UnifiedNullifierManager is
         crossDomainBindings[bindingId] = CrossDomainBinding({
             sourceNullifier: sourceNullifier,
             destNullifier: destNullifier,
-            pilNullifier: pilNullifier,
+            soulBinding: soulBinding,
             sourceChainId: sourceChainId,
             destChainId: destChainId,
             sourceDomain: sourceDomain.domainTag,
@@ -510,22 +518,22 @@ contract UnifiedNullifierManager is
         });
 
         // Update lookups
-        pilNullifiers[sourceNullifier] = pilNullifier;
-        pilNullifiers[destNullifier] = pilNullifier;
-        reversePilLookup[pilNullifier].push(sourceNullifier);
-        reversePilLookup[pilNullifier].push(destNullifier);
+        soulBindings[sourceNullifier] = soulBinding;
+        soulBindings[destNullifier] = soulBinding;
+        reverseSoulLookup[soulBinding].push(sourceNullifier);
+        reverseSoulLookup[soulBinding].push(destNullifier);
 
         totalBindings++;
 
         emit CrossDomainBindingCreated(
             sourceNullifier,
             destNullifier,
-            pilNullifier,
+            soulBinding,
             sourceChainId,
             destChainId
         );
 
-        return (destNullifier, pilNullifier);
+        return (destNullifier, soulBinding);
     }
 
     /**
@@ -534,14 +542,14 @@ contract UnifiedNullifierManager is
     function verifyCrossDomainBinding(
         bytes32 sourceNullifier,
         bytes32 destNullifier
-    ) external view returns (bool valid, bytes32 pilNullifier) {
+    ) external view returns (bool valid, bytes32 soulBinding) {
         bytes32 bindingId = keccak256(
             abi.encodePacked(sourceNullifier, destNullifier)
         );
 
         CrossDomainBinding storage binding = crossDomainBindings[bindingId];
 
-        return (binding.verified, binding.pilNullifier);
+        return (binding.verified, binding.soulBinding);
     }
 
     // =========================================================================
@@ -587,11 +595,11 @@ contract UnifiedNullifierManager is
                     expiresAt: 0
                 });
 
-                bytes32 pilNf = deriveSoulNullifier(
+                bytes32 soulBinding = deriveSoulBinding(
                     nullifiers[i],
                     domain.domainTag
                 );
-                pilNullifiers[nullifiers[i]] = pilNf;
+                soulBindings[nullifiers[i]] = soulBinding;
 
                 totalNullifiers++;
             }
@@ -621,7 +629,7 @@ contract UnifiedNullifierManager is
     /**
      * @notice Derive Soul unified nullifier
      */
-    function deriveSoulNullifier(
+    function deriveSoulBinding(
         bytes32 sourceNullifier,
         bytes32 domainTag
     ) public pure returns (bytes32) {
@@ -682,16 +690,13 @@ contract UnifiedNullifierManager is
         uint256 destChainId,
         bytes calldata proof
     ) internal view returns (bool) {
-        // H-4 Fix: ZK derivation proof placeholder - NOT for production
-        // Revert on mainnet to ensure real ZK proof verification is implemented
-        if (block.chainid == 1) {
-            revert InvalidProof();
-        }
-
-        return
-            proof.length >= 32 &&
-            sourceNullifier != bytes32(0) &&
-            destChainId > 0;
+        if (crossChainVerifier == address(0)) revert UnauthorizedBridge();
+        
+        // Match the CrossChainAdapter's expected signals:
+        // [isValid, dest_hash, dest_cid, relayer_pub, commitment, timestamp, fee]
+        // Here we just need to verify the core nullifier link
+        
+        return IProofVerifier(crossChainVerifier).verifyProof(proof, abi.encode(sourceNullifier, destChainId));
     }
 
     // =========================================================================
@@ -720,16 +725,16 @@ contract UnifiedNullifierManager is
         return chainDomains[chainId];
     }
 
-    function getSoulNullifier(
+    function getSoulBinding(
         bytes32 sourceNullifier
     ) external view returns (bytes32) {
-        return pilNullifiers[sourceNullifier];
+        return soulBindings[sourceNullifier];
     }
 
     function getSourceNullifiers(
-        bytes32 pilNullifier
+        bytes32 soulBinding
     ) external view returns (bytes32[] memory) {
-        return reversePilLookup[pilNullifier];
+        return reverseSoulLookup[soulBinding];
     }
 
     function getBatch(
