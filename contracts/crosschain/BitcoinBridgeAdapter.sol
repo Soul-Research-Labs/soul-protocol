@@ -725,13 +725,77 @@ contract BitcoinBridgeAdapter is
     function _parseBTCTransaction(
         bytes calldata btcTxRaw
     ) internal pure returns (uint256 satoshis, bytes memory scriptPubKey) {
-        // Simplified parser - in production use full BTC tx parsing
-        // Extract first output value (8 bytes little-endian at offset)
+        // Bitcoin transaction structure:
+        // [4 bytes version][varint input count][inputs...][varint output count][outputs...]
+        // Output structure: [8 bytes value LE][varint script length][script...]
+        
         if (btcTxRaw.length < 100) revert InvalidBitcoinTransaction();
 
-        // Mock parsing - would implement full Bitcoin transaction parsing
-        satoshis = 1000000; // 0.01 BTC placeholder
-        scriptPubKey = new bytes(25);
+        // Skip version (4 bytes)
+        uint256 offset = 4;
+        
+        // Parse input count (varint)
+        (uint256 inputCount, uint256 varIntLen) = _parseVarInt(btcTxRaw, offset);
+        offset += varIntLen;
+        
+        // Skip inputs (each: 32 txid + 4 vout + varint script + script + 4 sequence)
+        for (uint256 i = 0; i < inputCount; i++) {
+            offset += 36; // txid + vout
+            (uint256 inScriptLen, uint256 vLen) = _parseVarInt(btcTxRaw, offset);
+            offset += vLen + inScriptLen + 4; // script + sequence
+            if (offset >= btcTxRaw.length) revert InvalidBitcoinTransaction();
+        }
+        
+        // Parse output count
+        (uint256 outputCount, uint256 outVarLen) = _parseVarInt(btcTxRaw, offset);
+        offset += outVarLen;
+        
+        if (outputCount == 0) revert InvalidBitcoinTransaction();
+        
+        // Parse first output value (8 bytes little-endian)
+        satoshis = uint256(uint8(btcTxRaw[offset])) |
+                   (uint256(uint8(btcTxRaw[offset + 1])) << 8) |
+                   (uint256(uint8(btcTxRaw[offset + 2])) << 16) |
+                   (uint256(uint8(btcTxRaw[offset + 3])) << 24) |
+                   (uint256(uint8(btcTxRaw[offset + 4])) << 32) |
+                   (uint256(uint8(btcTxRaw[offset + 5])) << 40) |
+                   (uint256(uint8(btcTxRaw[offset + 6])) << 48) |
+                   (uint256(uint8(btcTxRaw[offset + 7])) << 56);
+        offset += 8;
+        
+        // Parse script length and script
+        (uint256 scriptLen, uint256 sVarLen) = _parseVarInt(btcTxRaw, offset);
+        offset += sVarLen;
+        
+        scriptPubKey = new bytes(scriptLen);
+        for (uint256 i = 0; i < scriptLen && (offset + i) < btcTxRaw.length; i++) {
+            scriptPubKey[i] = btcTxRaw[offset + i];
+        }
+    }
+    
+    /**
+     * @dev Parse Bitcoin varint
+     */
+    function _parseVarInt(
+        bytes calldata data,
+        uint256 offset
+    ) internal pure returns (uint256 value, uint256 length) {
+        uint8 first = uint8(data[offset]);
+        if (first < 0xFD) {
+            return (first, 1);
+        } else if (first == 0xFD) {
+            value = uint256(uint8(data[offset + 1])) | (uint256(uint8(data[offset + 2])) << 8);
+            return (value, 3);
+        } else if (first == 0xFE) {
+            value = uint256(uint8(data[offset + 1])) |
+                    (uint256(uint8(data[offset + 2])) << 8) |
+                    (uint256(uint8(data[offset + 3])) << 16) |
+                    (uint256(uint8(data[offset + 4])) << 24);
+            return (value, 5);
+        } else {
+            // 0xFF - 8 byte value (unlikely for tx counts)
+            return (0, 9);
+        }
     }
 
     /**

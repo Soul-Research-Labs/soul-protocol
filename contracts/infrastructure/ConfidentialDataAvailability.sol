@@ -379,7 +379,11 @@ contract ConfidentialDataAvailability is
         if (dataSize == 0) revert ZeroDataSize();
 
         (uint8 totalShards, uint8 requiredShards) = _getSchemeParams(scheme);
-        if (shardCommitments.length != totalShards) revert ShardCountMismatch(totalShards, uint8(shardCommitments.length));
+        if (shardCommitments.length != totalShards)
+            revert ShardCountMismatch(
+                totalShards,
+                uint8(shardCommitments.length)
+            );
 
         blobId = keccak256(
             abi.encodePacked(
@@ -444,7 +448,11 @@ contract ConfidentialDataAvailability is
         if (shardIndices.length != locations.length) revert Unauthorized(); // Or length mismatch error. I'll add LengthMismatch.
 
         for (uint256 i = 0; i < shardIndices.length; i++) {
-            if (shardIndices[i] >= blobs[blobId].totalShards) revert InvalidShardIndex(shardIndices[i], blobs[blobId].totalShards);
+            if (shardIndices[i] >= blobs[blobId].totalShards)
+                revert InvalidShardIndex(
+                    shardIndices[i],
+                    blobs[blobId].totalShards
+                );
             shardLocations[blobId][shardIndices[i]] = locations[i];
         }
     }
@@ -480,20 +488,23 @@ contract ConfidentialDataAvailability is
         // Verify minimum sampling
         uint8 minSamples = (blob.totalShards * minSamplingRatio) / 100;
         if (minSamples == 0) minSamples = 1; // Ensure at least one sample
-        
-        if (sampledShardIndices.length < minSamples) revert InvalidRatio(minSamplingRatio);
+
+        if (sampledShardIndices.length < minSamples)
+            revert InvalidRatio(minSamplingRatio);
 
         proofId = keccak256(
             abi.encodePacked(blobId, block.timestamp, msg.sender, zkProofHash)
         );
 
         // Verify ZK proof (simplified - would call verifier contract)
-        if (!_verifyAvailabilityProof(
+        if (
+            !_verifyAvailabilityProof(
                 blobId,
                 sampledShardIndices,
                 shardProofs,
                 zkProofHash
-            )) revert InvalidProof();
+            )
+        ) revert InvalidProof();
 
         proofs[proofId] = AvailabilityProof({
             blobId: blobId,
@@ -577,7 +588,8 @@ contract ConfidentialDataAvailability is
         ConfidentialBlob storage blob = blobs[blobId];
         if (blob.publishedAt == 0) revert BlobNotFound(blobId);
         if (blob.status != AvailabilityStatus.Available) revert Unauthorized();
-        if (msg.value < blob.challengeStake) revert InsufficientStake(blob.challengeStake, msg.value);
+        if (msg.value < blob.challengeStake)
+            revert InsufficientStake(blob.challengeStake, msg.value);
 
         challengeId = keccak256(
             abi.encodePacked(
@@ -621,7 +633,8 @@ contract ConfidentialDataAvailability is
     ) external onlyRole(VALIDATOR_ROLE) {
         AvailabilityChallenge storage challenge = challenges[challengeId];
         if (challenge.resolved) revert ChallengeAlreadyResolved(challengeId);
-        if (block.timestamp >= challenge.deadline) revert ChallengeDeadlinePassed(challengeId);
+        if (block.timestamp >= challenge.deadline)
+            revert ChallengeDeadlinePassed(challengeId);
 
         // Verify response (simplified)
         bool validResponse = _verifyChallenge(
@@ -665,7 +678,8 @@ contract ConfidentialDataAvailability is
     function resolveExpiredChallenge(bytes32 challengeId) external {
         AvailabilityChallenge storage challenge = challenges[challengeId];
         if (challenge.resolved) revert ChallengeAlreadyResolved(challengeId);
-        if (block.timestamp < challenge.deadline) revert ChallengeDeadlineNotPassed(challengeId);
+        if (block.timestamp < challenge.deadline)
+            revert ChallengeDeadlineNotPassed(challengeId);
 
         challenge.resolved = true;
         challenge.challengerWon = true;
@@ -733,7 +747,10 @@ contract ConfidentialDataAvailability is
     ) external whenNotPaused nonReentrant returns (bytes32 requestId) {
         ConfidentialBlob storage blob = blobs[blobId];
         if (blob.publishedAt == 0) revert BlobNotFound(blobId);
-        if (blob.status != AvailabilityStatus.Available && blob.status != AvailabilityStatus.Unknown) revert Unauthorized();
+        if (
+            blob.status != AvailabilityStatus.Available &&
+            blob.status != AvailabilityStatus.Unknown
+        ) revert Unauthorized();
 
         // Verify access authorization
         AccessLevel level = _verifyAccessAuthorization(
@@ -782,7 +799,8 @@ contract ConfidentialDataAvailability is
         if (block.timestamp >= request.expiresAt) revert RecoveryExpired();
 
         ConfidentialBlob storage blob = blobs[request.blobId];
-        if (shardIndex >= blob.totalShards) revert InvalidShardIndex(shardIndex, blob.totalShards);
+        if (shardIndex >= blob.totalShards)
+            revert InvalidShardIndex(shardIndex, blob.totalShards);
 
         // Verify shard proof
         if (!_verifyShardProof(request.blobId, shardIndex, shardProof))
@@ -823,8 +841,8 @@ contract ConfidentialDataAvailability is
         if (accessProof != bytes32(0)) {
             // Check if verifier is registered
             if (zkVerifier != address(0)) {
-                 // Mocking successful ZK verify for now if proof exists
-                 return AccessLevel.Commitment;
+                // Mocking successful ZK verify for now if proof exists
+                return AccessLevel.Commitment;
             }
             return AccessLevel.Commitment;
         }
@@ -894,7 +912,8 @@ contract ConfidentialDataAvailability is
         bytes32 keyProof
     ) external {
         DelayedDisclosure storage disclosure = delayedDisclosures[blobId];
-        if (disclosure.disclosureTime == 0) revert NoDisclosureScheduled(blobId);
+        if (disclosure.disclosureTime == 0)
+            revert NoDisclosureScheduled(blobId);
         if (block.timestamp < disclosure.disclosureTime)
             revert DisclosureTooEarly(blobId);
         if (disclosure.disclosed) revert AlreadyDisclosed(blobId);
@@ -925,12 +944,14 @@ contract ConfidentialDataAvailability is
         // Verify that key hash + proof correctly opens the commitment
         // The commitment scheme: C = H(key || salt) where proof contains the salt
         // Verification: H(keyHash || keyProof) should equal keyCommitment
-        bytes32 computedCommitment = keccak256(abi.encodePacked(keyHash, keyProof));
-        
+        bytes32 computedCommitment = keccak256(
+            abi.encodePacked(keyHash, keyProof)
+        );
+
         if (computedCommitment == keyCommitment) {
             return true;
         }
-        
+
         // Alternative: Pedersen-style commitment check
         // C = g^key * h^blinding where proof = blinding
         // This requires EC operations - use hash-based for now
@@ -940,7 +961,7 @@ contract ConfidentialDataAvailability is
                 keccak256(abi.encodePacked(keyProof))
             )
         );
-        
+
         return alternativeCommitment == keyCommitment;
     }
 

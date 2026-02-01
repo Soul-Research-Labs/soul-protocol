@@ -133,16 +133,14 @@ contract FHEBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         bytes32 destinationToken;
         uint256 destinationChainId;
         bool active;
-        uint256 lockedAmount; // Total locked (encrypted tracking) -- wait, this is just tracking? Or should be encrypted? 
-        // Original comment said "(encrypted tracking)". But type was uint256. 
+        uint256 lockedAmount; // Total locked (encrypted tracking) -- wait, this is just tracking? Or should be encrypted?
+        // Original comment said "(encrypted tracking)". But type was uint256.
         // This is likely plaintext count or tracking.
         // Wait, line 135 `uint256 lockedAmount`.
         // Line 400 `totalEncryptedLocked` mapping is `bytes32`.
         // This struct field `lockedAmount` might be plaintext volume if known, or unused if fully encrypted.
         // I will keep it as uint256 for now, as I don't see usage of it being encrypted in struct yet.
     }
-
-
 
     // ============================================
     // Constants
@@ -379,7 +377,7 @@ contract FHEBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
 
         // Encrypt amount and recipient
         euint256 encAmount = amount.asEuint256();
-        
+
         bytes32 encRecipient = fheGateway.trivialEncrypt(
             uint256(uint160(recipient)),
             FHETypes.TYPE_EADDRESS
@@ -405,12 +403,12 @@ contract FHEBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     ) internal {
         // Add to total locked (encrypted addition)
         euint256 currentLocked = totalEncryptedLocked[token];
-        
+
         // Check if initialized? defaulting to 0 is fine for FHEOperations if handled
         // If currentLocked is 0 (uninitialized handle), we should treat it as encrypted 0.
         // FHEOperations doesn't automatically handle 0 handle as encrypted 0 unless we ensure it.
         // However, we can initialize it.
-        
+
         if (euint256.unwrap(currentLocked) == bytes32(0)) {
             totalEncryptedLocked[token] = encryptedAmount;
         } else {
@@ -611,52 +609,55 @@ contract FHEBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
 
         // Validate ZK proof structure
         if (proof.zkProof.length < 64) return false;
-        
+
         // Verify range proof commitment is non-zero
         if (proof.amountRangeProof == bytes32(0)) return false;
-        
+
         // Verify conservation proof is non-zero
         if (proof.conservationProof == bytes32(0)) return false;
 
         // Verify validator signatures
-        bytes32 proofHash = keccak256(abi.encode(
-            proof.transferId,
-            proof.sourceChainId,
-            proof.destinationChainId,
-            proof.amountRangeProof,
-            proof.conservationProof,
-            proof.timestamp
-        ));
-        
+        bytes32 proofHash = keccak256(
+            abi.encode(
+                proof.transferId,
+                proof.sourceChainId,
+                proof.destinationChainId,
+                proof.amountRangeProof,
+                proof.conservationProof,
+                proof.timestamp
+            )
+        );
+
         uint256 validSigs = 0;
         for (uint256 i = 0; i < proof.validatorSigs.length; i++) {
             // Each validator sig is the keccak of their address + proofHash
             // In production, this would be ECDSA verification
-            bytes32 expectedSig = keccak256(abi.encodePacked(
-                validators[i % validators.length],
-                proofHash
-            ));
+            bytes32 expectedSig = keccak256(
+                abi.encodePacked(validators[i % validators.length], proofHash)
+            );
             if (proof.validatorSigs[i] == expectedSig) {
                 validSigs++;
             }
         }
-        
+
         // Require quorum of valid signatures
         if (validSigs < required) return false;
-        
+
         // Verify ZK proof binding: zkProof should commit to proofHash
         bytes32 zkBinding;
         if (proof.zkProof.length >= 32) {
             zkBinding = bytes32(proof.zkProof[0:32]);
         }
-        
+
         // ZK proof must bind to the transfer data
         if (zkBinding != proofHash && zkBinding != proof.amountRangeProof) {
             // Allow either direct binding or range proof binding
-            bytes32 alternativeBinding = keccak256(abi.encodePacked(
-                proof.amountRangeProof,
-                proof.conservationProof
-            ));
+            bytes32 alternativeBinding = keccak256(
+                abi.encodePacked(
+                    proof.amountRangeProof,
+                    proof.conservationProof
+                )
+            );
             if (zkBinding != alternativeBinding) return false;
         }
 

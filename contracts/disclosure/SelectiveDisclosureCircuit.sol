@@ -181,7 +181,6 @@ contract SelectiveDisclosureCircuit is
     error FieldRecipientMismatch();
     error ProofNotFound();
 
-
     /*//////////////////////////////////////////////////////////////
                                 STORAGE
     //////////////////////////////////////////////////////////////*/
@@ -329,9 +328,9 @@ contract SelectiveDisclosureCircuit is
 
         // Validate all sub-predicates exist
         for (uint256 i = 0; i < subPredicates.length; i++) {
-            if (!predicates[subPredicates[i]].active) revert SubPredicateInactive();
+            if (!predicates[subPredicates[i]].active)
+                revert SubPredicateInactive();
         }
-
 
         predicateId = keccak256(
             abi.encodePacked(
@@ -386,7 +385,6 @@ contract SelectiveDisclosureCircuit is
         if (target == DisclosureTarget.RoleHolders) {
             if (roleRequirement == bytes32(0)) revert RoleRequired();
         }
-
 
         ruleId = keccak256(
             abi.encodePacked(
@@ -449,7 +447,6 @@ contract SelectiveDisclosureCircuit is
             if (!rules[ruleIds[i]].active) revert RuleInactive();
         }
 
-
         circuitId = keccak256(
             abi.encodePacked(
                 name,
@@ -496,7 +493,6 @@ contract SelectiveDisclosureCircuit is
         if (!circuit.active) revert CircuitInactive();
         if (circuit.verified) revert AlreadyVerified();
 
-
         circuit.verified = true;
 
         emit CircuitVerified(circuitId, msg.sender);
@@ -533,7 +529,6 @@ contract SelectiveDisclosureCircuit is
             revert InputCountMismatch();
         if (disclosedFieldIds.length != recipientCommitments.length)
             revert FieldRecipientMismatch();
-
 
         proofId = keccak256(
             abi.encodePacked(
@@ -577,7 +572,6 @@ contract SelectiveDisclosureCircuit is
         DisclosureProof storage proof = proofs[proofId];
         if (proof.proofId == bytes32(0)) revert ProofNotFound();
         if (proof.verified) revert AlreadyVerified();
-
 
         proof.verified = true;
         proof.verifier = msg.sender;
@@ -672,23 +666,30 @@ contract SelectiveDisclosureCircuit is
         } else if (p.predicateType == PredicateType.IdentityMatch) {
             // Context hash should be H(predicate_id || condition_hash)
             // where condition_hash contains the identity commitment
-            bytes32 expectedContext = keccak256(abi.encodePacked(predicateId, p.conditionHash));
+            bytes32 expectedContext = keccak256(
+                abi.encodePacked(predicateId, p.conditionHash)
+            );
             return contextHash == expectedContext;
         } else if (p.predicateType == PredicateType.RoleMatch) {
             // Context hash should be H(predicate_id || condition_hash)
             // where condition_hash contains the role requirement
-            bytes32 expectedContext = keccak256(abi.encodePacked(predicateId, p.conditionHash));
+            bytes32 expectedContext = keccak256(
+                abi.encodePacked(predicateId, p.conditionHash)
+            );
             return contextHash == expectedContext;
         } else if (p.predicateType == PredicateType.ThresholdMet) {
             // Context hash encodes threshold satisfaction
             // Threshold predicates require ZK proof - context must be non-zero
-            return contextHash != bytes32(0) && 
-                   uint256(contextHash) >= p.thresholdValue;
+            return
+                contextHash != bytes32(0) &&
+                uint256(contextHash) >= p.thresholdValue;
         } else if (p.predicateType == PredicateType.CompositeAnd) {
             // All sub-predicates must pass
             // Context hash should be H(all sub-predicate satisfied proofs)
             if (p.subPredicates.length == 0) return false;
-            bytes32 expectedContext = keccak256(abi.encodePacked(predicateId, p.subPredicates));
+            bytes32 expectedContext = keccak256(
+                abi.encodePacked(predicateId, p.subPredicates)
+            );
             return contextHash == expectedContext;
         } else if (p.predicateType == PredicateType.CompositeOr) {
             // Any sub-predicate must pass
@@ -697,8 +698,10 @@ contract SelectiveDisclosureCircuit is
         } else if (p.predicateType == PredicateType.ZKPredicateProof) {
             // ZK predicates require external proof verification
             // Context hash is the verified proof commitment
-            return contextHash != bytes32(0) && 
-                   contextHash == keccak256(abi.encodePacked(predicateId, p.conditionHash));
+            return
+                contextHash != bytes32(0) &&
+                contextHash ==
+                keccak256(abi.encodePacked(predicateId, p.conditionHash));
         }
 
         return false;

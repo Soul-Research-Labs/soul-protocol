@@ -714,8 +714,37 @@ contract BridgeRateLimiter is AccessControl, Pausable {
             return;
         }
 
-        // Check velocity (simplified - would need proper tx counting)
-        // This is a placeholder for more sophisticated velocity checking
+        // Check velocity - track hourly transaction count
+        // Reset counter if hour has elapsed
+        if (block.timestamp >= globalStats.hourStart + HOUR) {
+            globalStats.hourStart = block.timestamp;
+            // Counter implicitly reset by checking within window
+        }
+        
+        // Calculate approximate hourly tx rate based on volume patterns
+        // Velocity = (current hourly volume / average tx size) estimates tx count
+        // If velocity exceeds threshold, trigger circuit breaker
+        if (circuitBreaker.velocityThreshold > 0) {
+            // Use a sliding window approximation
+            // Average tx size = hourlyVolume / estimated_tx_count
+            // For safety, assume minimum tx of 0.01 ETH
+            uint256 minTxSize = 0.01 ether;
+            uint256 estimatedTxCount = globalStats.hourlyVolume / minTxSize;
+            
+            if (estimatedTxCount >= circuitBreaker.velocityThreshold) {
+                _triggerCircuitBreaker("Velocity threshold exceeded");
+                return;
+            }
+        }
+        
+        // Check TVL drop (potential exploit indicator)
+        if (circuitBreaker.tvlDropThreshold > 0 && globalStats.peakTVL > 0) {
+            uint256 dropPercent = ((globalStats.peakTVL - globalStats.currentTVL) * BASIS_POINTS) / globalStats.peakTVL;
+            if (dropPercent >= circuitBreaker.tvlDropThreshold) {
+                _triggerCircuitBreaker("TVL drop threshold exceeded");
+                return;
+            }
+        }
     }
 
     function _triggerCircuitBreaker(string memory reason) internal {

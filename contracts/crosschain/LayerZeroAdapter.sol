@@ -366,23 +366,25 @@ contract LayerZeroAdapter is ReentrancyGuard, AccessControl, Pausable {
     ) internal {
         // Validate destination is configured
         if (trustedRemotes[dstEid] == bytes32(0)) revert InvalidSourceChain();
-        
+
         // Build the message packet
-        bytes32 guid = keccak256(abi.encodePacked(
-            localEid,
-            dstEid,
-            msg.sender,
-            block.timestamp,
-            payload
-        ));
-        
+        bytes32 guid = keccak256(
+            abi.encodePacked(
+                localEid,
+                dstEid,
+                msg.sender,
+                block.timestamp,
+                payload
+            )
+        );
+
         // Call LayerZero endpoint to send message
         // LayerZero V2 uses the following interface:
         // ILayerZeroEndpointV2(lzEndpoint).send{value: fee}(
         //     MessagingParams(dstEid, peer, payload, options, payInLzToken),
         //     msg.sender
         // );
-        
+
         (bool success, ) = lzEndpoint.call{value: fee}(
             abi.encodeWithSignature(
                 "send((uint32,bytes32,bytes,bytes,bool),address)",
@@ -394,14 +396,14 @@ contract LayerZeroAdapter is ReentrancyGuard, AccessControl, Pausable {
                 msg.sender
             )
         );
-        
+
         // If endpoint call fails, revert with the guid for debugging
         if (!success) {
             // Fallback: store pending message for retry
             // This allows the message to be resent later
             revert("LayerZero send failed");
         }
-        
+
         emit MessageSent(dstEid, guid, payload, fee);
     }
 

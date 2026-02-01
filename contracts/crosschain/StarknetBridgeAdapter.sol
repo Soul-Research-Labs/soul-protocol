@@ -50,11 +50,11 @@ interface IStarknetMessaging {
  * │  └───────────────────┘           └───────────────────┘                 │
  * └─────────────────────────────────────────────────────────────────────────┘
  */
-contract StarknetBridgeAdapter is 
-    AccessControl, 
-    ReentrancyGuard, 
-    Pausable, 
-    IStarknetBridgeAdapter 
+contract StarknetBridgeAdapter is
+    AccessControl,
+    ReentrancyGuard,
+    Pausable,
+    IStarknetBridgeAdapter
 {
     /*//////////////////////////////////////////////////////////////
                                  ROLES
@@ -71,12 +71,12 @@ contract StarknetBridgeAdapter is
     /// @notice Bridge handler selector (deposit)
     /// @dev get_selector_from_name("handle_deposit") in Cairo/Starknet
     /// Computed as: starknet_keccak("handle_deposit") & MASK_250
-    uint256 public constant DEPOSIT_SELECTOR = 
+    uint256 public constant DEPOSIT_SELECTOR =
         0x0352149076e0f82d29d678ba52eb54a51ef7003c2a4fc6754bdf9cff382f5c5d;
 
     /// @notice Bridge handler selector (message)
     /// @dev get_selector_from_name("handle_message") in Cairo/Starknet
-    uint256 public constant MESSAGE_SELECTOR = 
+    uint256 public constant MESSAGE_SELECTOR =
         0x00c73f681176fc7b3f9693986fd7b14581e8d540519e27400e88b8713932be01;
 
     /// @notice Minimum deposit amount
@@ -111,6 +111,7 @@ contract StarknetBridgeAdapter is
 
     uint256 public totalWithdrawals;
     uint256 public totalL1ToL2Messages;
+
     /*//////////////////////////////////////////////////////////////
                              CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
@@ -133,7 +134,8 @@ contract StarknetBridgeAdapter is
         address starknetMessaging,
         uint256 l2BridgeAddress
     ) external onlyRole(OPERATOR_ROLE) {
-        if (starknetCore == address(0) || starknetMessaging == address(0)) revert ZeroAddress();
+        if (starknetCore == address(0) || starknetMessaging == address(0))
+            revert ZeroAddress();
         if (l2BridgeAddress == 0) revert InvalidL2Address();
 
         config = StarknetConfig({
@@ -148,7 +150,6 @@ contract StarknetBridgeAdapter is
 
     error ETHDepositsNotSupported();
     error TransferFailed();
-
 
     /**
      * @notice Map token L1 <-> L2
@@ -183,27 +184,35 @@ contract StarknetBridgeAdapter is
         uint256 amount
     ) external payable nonReentrant whenNotPaused returns (bytes32 depositId) {
         if (!config.active) revert StarknetNotConfigured();
-        if (amount < minDepositAmount || amount > maxDepositAmount) revert InvalidAmount();
-        
+        if (amount < minDepositAmount || amount > maxDepositAmount)
+            revert InvalidAmount();
+
         TokenMapping storage mapping_ = tokenMappings[l1Token];
         if (!mapping_.active) revert TokenNotMapped();
 
         // Transfer tokens to bridge
         // Implementation note: use SafeERC20 in production
         (bool success, ) = l1Token.call(
-            abi.encodeWithSelector(0x23b872dd, msg.sender, address(this), amount)
+            abi.encodeWithSelector(
+                0x23b872dd,
+                msg.sender,
+                address(this),
+                amount
+            )
         );
         if (!success) revert TransferFailed();
 
         // Construct payload for Cairo contract: [l1_token, amount_low, amount_high, l2_recipient]
         uint256[] memory payload = new uint256[](4);
         payload[0] = uint256(uint160(l1Token));
-        payload[1] = amount % 2**128; // Low 128 bits
-        payload[2] = amount / 2**128; // High 128 bits
+        payload[1] = amount % 2 ** 128; // Low 128 bits
+        payload[2] = amount / 2 ** 128; // High 128 bits
         payload[3] = l2Recipient;
 
         // Send message to L2
-        IStarknetMessaging messaging = IStarknetMessaging(config.starknetMessaging);
+        IStarknetMessaging messaging = IStarknetMessaging(
+            config.starknetMessaging
+        );
         (bytes32 msgHash, ) = messaging.sendMessageToL2{value: msg.value}(
             config.l2BridgeAddress,
             DEPOSIT_SELECTOR,
@@ -211,9 +220,16 @@ contract StarknetBridgeAdapter is
         );
 
         // Store deposit record
-        depositId = keccak256(abi.encodePacked(
-            msg.sender, l2Recipient, l1Token, amount, depositNonce++, block.timestamp
-        ));
+        depositId = keccak256(
+            abi.encodePacked(
+                msg.sender,
+                l2Recipient,
+                l1Token,
+                amount,
+                depositNonce++,
+                block.timestamp
+            )
+        );
 
         deposits[depositId] = L1ToL2Deposit({
             depositId: depositId,
@@ -231,8 +247,19 @@ contract StarknetBridgeAdapter is
 
         mapping_.totalDeposited += amount;
 
-        emit DepositInitiated(depositId, msg.sender, l2Recipient, amount, msgHash);
-        emit MessageSent(msgHash, config.l2BridgeAddress, DEPOSIT_SELECTOR, payload);
+        emit DepositInitiated(
+            depositId,
+            msg.sender,
+            l2Recipient,
+            amount,
+            msgHash
+        );
+        emit MessageSent(
+            msgHash,
+            config.l2BridgeAddress,
+            DEPOSIT_SELECTOR,
+            payload
+        );
     }
 
     /**
@@ -254,7 +281,9 @@ contract StarknetBridgeAdapter is
     ) external payable whenNotPaused returns (bytes32 messageHash) {
         if (!config.active) revert StarknetNotConfigured();
 
-        IStarknetMessaging messaging = IStarknetMessaging(config.starknetMessaging);
+        IStarknetMessaging messaging = IStarknetMessaging(
+            config.starknetMessaging
+        );
         (messageHash, ) = messaging.sendMessageToL2{value: msg.value}(
             toAddress,
             selector,
@@ -287,25 +316,27 @@ contract StarknetBridgeAdapter is
         // Construct expected payload (order matters and must match Cairo implementation)
         // [BLOCK_HEADER_BYTE_SIZE + 0] = SEND_MESSAGE_TO_L1_SYSCALL
         // Here we just pass the payload to consumeMessageFromL2 which checks the hash
-        
-        IStarknetMessaging messaging = IStarknetMessaging(config.starknetMessaging);
-        
+
+        IStarknetMessaging messaging = IStarknetMessaging(
+            config.starknetMessaging
+        );
+
         // This will revert if message not present/verified
         bytes32 msgHash = messaging.consumeMessageFromL2(l2Sender, payload);
 
-        // Check if map token exists for L1 recipient token? 
+        // Check if map token exists for L1 recipient token?
         // We need to resolve L2 token to L1 token.
         // Reverse lookup or passed in params?
-        // Using passed params but verifying logic would be better. 
+        // Using passed params but verifying logic would be better.
         // For efficiency, we scan mappings (expensive) or rely on trusted L2 bridge data.
         // Assuming L2 bridge sends correct data.
-        
+
         // Find L1 token from L2 token
         address l1Token = address(0);
         // This linear scan is expensive, better to have mapping(uint256 => address)
         // But for this adapter we iterate or require l1Token param
         // Simplification: assume we just release tokens if message consumed
-        
+
         // Preventing double consumption (handled by Starknet Messaging)
         if (consumedMessages[msgHash] != 0) revert MessageAlreadyConsumed();
         consumedMessages[msgHash] = block.timestamp;
@@ -314,10 +345,16 @@ contract StarknetBridgeAdapter is
         // Note: Real implementation needs L2->L1 token mapping lookup
         // Here we skip the transfer logic for simplicity as we don't have the full token map
         // But we mark it as finalized.
-        
-        withdrawalId = keccak256(abi.encodePacked(
-            l2Sender, l1Recipient, l2Token, amount, block.timestamp
-        ));
+
+        withdrawalId = keccak256(
+            abi.encodePacked(
+                l2Sender,
+                l1Recipient,
+                l2Token,
+                amount,
+                block.timestamp
+            )
+        );
 
         withdrawals[withdrawalId] = L2ToL1Withdrawal({
             withdrawalId: withdrawalId,
@@ -341,15 +378,21 @@ contract StarknetBridgeAdapter is
                            VIEW FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    function getDeposit(bytes32 depositId) external view returns (L1ToL2Deposit memory) {
+    function getDeposit(
+        bytes32 depositId
+    ) external view returns (L1ToL2Deposit memory) {
         return deposits[depositId];
     }
 
-    function getWithdrawal(bytes32 withdrawalId) external view returns (L2ToL1Withdrawal memory) {
+    function getWithdrawal(
+        bytes32 withdrawalId
+    ) external view returns (L2ToL1Withdrawal memory) {
         return withdrawals[withdrawalId];
     }
 
-    function getTokenMapping(address l1Token) external view returns (TokenMapping memory) {
+    function getTokenMapping(
+        address l1Token
+    ) external view returns (TokenMapping memory) {
         return tokenMappings[l1Token];
     }
 
