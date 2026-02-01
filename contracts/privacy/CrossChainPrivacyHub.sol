@@ -804,9 +804,7 @@ contract CrossChainPrivacyHub is
         );
 
         // Derive stealth public key: P' = P + hash(S) * G
-        stealthPubKey = keccak256(
-            abi.encode(spendingPubKey, sharedSecret)
-        );
+        stealthPubKey = keccak256(abi.encode(spendingPubKey, sharedSecret));
 
         // Register stealth address
         stealthAddressOwners[stealthPubKey] = msg.sender;
@@ -876,9 +874,7 @@ contract CrossChainPrivacyHub is
 
         // Generate key image: I = x * Hp(P)
         // This prevents double-spending
-        keyImage = keccak256(
-            abi.encode(msg.sender, commitment, "KEY_IMAGE")
-        );
+        keyImage = keccak256(abi.encode(msg.sender, commitment, "KEY_IMAGE"));
 
         // Range proof generated off-chain using Bulletproofs
         // On-chain we store commitment + proof hash for verification
@@ -891,9 +887,7 @@ contract CrossChainPrivacyHub is
         confidentialAmount = ConfidentialAmount({
             commitment: commitment,
             rangeProof: rangeProof,
-            blindingFactor: keccak256(
-                abi.encode(blindingFactor, msg.sender)
-            )
+            blindingFactor: keccak256(abi.encode(blindingFactor, msg.sender))
         });
 
         return (confidentialAmount, keyImage);
