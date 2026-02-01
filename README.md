@@ -263,7 +263,7 @@ test/                # Unit, fuzz, invariant, attack tests
 ## Quick Start
 
 ```bash
-git clone https://github.com/soul-research-labs/SOUL.git && cd SOUL
+git clone https://github.com/soul-research-labs/Soul.git && cd Soul
 npm install && forge build
 forge test                             # Unit tests
 forge test --match-path "test/fuzz/*"  # Fuzz tests
