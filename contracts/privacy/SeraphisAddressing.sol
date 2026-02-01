@@ -20,7 +20,7 @@ contract SeraphisAddressing is AccessControl, ReentrancyGuard {
     /// @notice Domain separator
     bytes32 public constant SERAPHIS_DOMAIN = keccak256("Soul_SERAPHIS_V1");
 
-    /// @notice Ed25519-like curve order (placeholder)
+    /// @notice Ed25519 curve order (l = 2^252 + 27742317777372353535851937790883648493)
     uint256 public constant CURVE_ORDER =
         0x1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed;
 

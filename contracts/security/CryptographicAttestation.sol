@@ -181,7 +181,6 @@ contract CryptographicAttestation is AccessControl, ReentrancyGuard {
     error ZeroAddress();
     error LevelTooHigh();
 
-
     // ============ Constructor ============
     constructor() {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);

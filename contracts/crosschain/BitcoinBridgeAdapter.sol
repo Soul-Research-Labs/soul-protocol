@@ -262,7 +262,9 @@ contract BitcoinBridgeAdapter is
         if (ethRecipient == address(0)) revert ZeroAddress();
 
         // Parse BTC transaction to extract output amount
-        (uint256 satoshis, bytes memory scriptPubKey) = _parseBTCTransaction(btcTxRaw);
+        (uint256 satoshis, bytes memory scriptPubKey) = _parseBTCTransaction(
+            btcTxRaw
+        );
 
         if (satoshis < MIN_DEPOSIT_SATOSHIS) revert DepositTooSmall(satoshis);
         if (satoshis > MAX_DEPOSIT_SATOSHIS) revert DepositTooLarge(satoshis);
@@ -281,7 +283,12 @@ contract BitcoinBridgeAdapter is
 
         // Generate deposit ID
         depositId = keccak256(
-            abi.encodePacked(btcTxId, ethRecipient, depositNonce++, block.timestamp)
+            abi.encodePacked(
+                btcTxId,
+                ethRecipient,
+                depositNonce++,
+                block.timestamp
+            )
         );
 
         // Store deposit
@@ -327,7 +334,11 @@ contract BitcoinBridgeAdapter is
         // In production: Mint wBTC to recipient
         // IWrappedBTC(wrappedBTC).mint(deposit.ethRecipient, deposit.netAmount);
 
-        emit BTCDepositCompleted(depositId, deposit.ethRecipient, deposit.netAmount);
+        emit BTCDepositCompleted(
+            depositId,
+            deposit.ethRecipient,
+            deposit.netAmount
+        );
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -421,7 +432,8 @@ contract BitcoinBridgeAdapter is
     ) external nonReentrant whenNotPaused onlyRole(RELAYER_ROLE) {
         BTCWithdrawal storage withdrawal = withdrawals[withdrawalId];
 
-        if (withdrawal.initiatedAt == 0) revert WithdrawalNotFound(withdrawalId);
+        if (withdrawal.initiatedAt == 0)
+            revert WithdrawalNotFound(withdrawalId);
         if (withdrawal.status != WithdrawalStatus.PENDING) {
             revert InvalidWithdrawalStatus(withdrawalId, withdrawal.status);
         }
@@ -450,7 +462,8 @@ contract BitcoinBridgeAdapter is
     ) external nonReentrant whenNotPaused {
         BTCWithdrawal storage withdrawal = withdrawals[withdrawalId];
 
-        if (withdrawal.initiatedAt == 0) revert WithdrawalNotFound(withdrawalId);
+        if (withdrawal.initiatedAt == 0)
+            revert WithdrawalNotFound(withdrawalId);
         if (withdrawal.status != WithdrawalStatus.PENDING) {
             revert InvalidWithdrawalStatus(withdrawalId, withdrawal.status);
         }
@@ -482,13 +495,7 @@ contract BitcoinBridgeAdapter is
         bytes32 hashlock,
         uint256 timelock,
         address recipient
-    )
-        external
-        payable
-        nonReentrant
-        whenNotPaused
-        returns (bytes32 htlcId)
-    {
+    ) external payable nonReentrant whenNotPaused returns (bytes32 htlcId) {
         if (msg.value == 0) revert InvalidAmount();
         if (hashlock == bytes32(0)) revert InvalidHashlock();
         if (recipient == address(0)) revert ZeroAddress();
@@ -496,7 +503,13 @@ contract BitcoinBridgeAdapter is
         if (timelock > MAX_HTLC_TIMELOCK) revert TimelockTooLong(timelock);
 
         htlcId = keccak256(
-            abi.encodePacked(msg.sender, recipient, msg.value, hashlock, htlcNonce++)
+            abi.encodePacked(
+                msg.sender,
+                recipient,
+                msg.value,
+                hashlock,
+                htlcNonce++
+            )
         );
 
         htlcs[htlcId] = HTLC({
@@ -515,7 +528,14 @@ contract BitcoinBridgeAdapter is
         userHTLCs[msg.sender].push(htlcId);
         totalHTLCs++;
 
-        emit HTLCCreated(htlcId, msg.sender, recipient, msg.value, hashlock, block.timestamp + timelock);
+        emit HTLCCreated(
+            htlcId,
+            msg.sender,
+            recipient,
+            msg.value,
+            hashlock,
+            block.timestamp + timelock
+        );
     }
 
     /**
@@ -628,7 +648,7 @@ contract BitcoinBridgeAdapter is
         verifiedBlocks[blockHash] = BTCBlockHeader({
             blockHash: blockHash,
             prevBlockHash: bytes32(0), // Would be extracted from header
-            merkleRoot: bytes32(0),    // Would be extracted from header
+            merkleRoot: bytes32(0), // Would be extracted from header
             timestamp: block.timestamp,
             height: height,
             verified: true
@@ -646,7 +666,9 @@ contract BitcoinBridgeAdapter is
                           VIEW FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    function getDeposit(bytes32 depositId) external view returns (BTCDeposit memory) {
+    function getDeposit(
+        bytes32 depositId
+    ) external view returns (BTCDeposit memory) {
         return deposits[depositId];
     }
 
@@ -654,19 +676,27 @@ contract BitcoinBridgeAdapter is
         return htlcs[htlcId];
     }
 
-    function getWithdrawal(bytes32 withdrawalId) external view returns (BTCWithdrawal memory) {
+    function getWithdrawal(
+        bytes32 withdrawalId
+    ) external view returns (BTCWithdrawal memory) {
         return withdrawals[withdrawalId];
     }
 
-    function getUserDeposits(address user) external view returns (bytes32[] memory) {
+    function getUserDeposits(
+        address user
+    ) external view returns (bytes32[] memory) {
         return userDeposits[user];
     }
 
-    function getUserHTLCs(address user) external view returns (bytes32[] memory) {
+    function getUserHTLCs(
+        address user
+    ) external view returns (bytes32[] memory) {
         return userHTLCs[user];
     }
 
-    function getUserWithdrawals(address user) external view returns (bytes32[] memory) {
+    function getUserWithdrawals(
+        address user
+    ) external view returns (bytes32[] memory) {
         return userWithdrawals[user];
     }
 
@@ -728,51 +758,65 @@ contract BitcoinBridgeAdapter is
         // Bitcoin transaction structure:
         // [4 bytes version][varint input count][inputs...][varint output count][outputs...]
         // Output structure: [8 bytes value LE][varint script length][script...]
-        
+
         if (btcTxRaw.length < 100) revert InvalidBitcoinTransaction();
 
         // Skip version (4 bytes)
         uint256 offset = 4;
-        
+
         // Parse input count (varint)
-        (uint256 inputCount, uint256 varIntLen) = _parseVarInt(btcTxRaw, offset);
+        (uint256 inputCount, uint256 varIntLen) = _parseVarInt(
+            btcTxRaw,
+            offset
+        );
         offset += varIntLen;
-        
+
         // Skip inputs (each: 32 txid + 4 vout + varint script + script + 4 sequence)
         for (uint256 i = 0; i < inputCount; i++) {
             offset += 36; // txid + vout
-            (uint256 inScriptLen, uint256 vLen) = _parseVarInt(btcTxRaw, offset);
+            (uint256 inScriptLen, uint256 vLen) = _parseVarInt(
+                btcTxRaw,
+                offset
+            );
             offset += vLen + inScriptLen + 4; // script + sequence
             if (offset >= btcTxRaw.length) revert InvalidBitcoinTransaction();
         }
-        
+
         // Parse output count
-        (uint256 outputCount, uint256 outVarLen) = _parseVarInt(btcTxRaw, offset);
+        (uint256 outputCount, uint256 outVarLen) = _parseVarInt(
+            btcTxRaw,
+            offset
+        );
         offset += outVarLen;
-        
+
         if (outputCount == 0) revert InvalidBitcoinTransaction();
-        
+
         // Parse first output value (8 bytes little-endian)
-        satoshis = uint256(uint8(btcTxRaw[offset])) |
-                   (uint256(uint8(btcTxRaw[offset + 1])) << 8) |
-                   (uint256(uint8(btcTxRaw[offset + 2])) << 16) |
-                   (uint256(uint8(btcTxRaw[offset + 3])) << 24) |
-                   (uint256(uint8(btcTxRaw[offset + 4])) << 32) |
-                   (uint256(uint8(btcTxRaw[offset + 5])) << 40) |
-                   (uint256(uint8(btcTxRaw[offset + 6])) << 48) |
-                   (uint256(uint8(btcTxRaw[offset + 7])) << 56);
+        satoshis =
+            uint256(uint8(btcTxRaw[offset])) |
+            (uint256(uint8(btcTxRaw[offset + 1])) << 8) |
+            (uint256(uint8(btcTxRaw[offset + 2])) << 16) |
+            (uint256(uint8(btcTxRaw[offset + 3])) << 24) |
+            (uint256(uint8(btcTxRaw[offset + 4])) << 32) |
+            (uint256(uint8(btcTxRaw[offset + 5])) << 40) |
+            (uint256(uint8(btcTxRaw[offset + 6])) << 48) |
+            (uint256(uint8(btcTxRaw[offset + 7])) << 56);
         offset += 8;
-        
+
         // Parse script length and script
         (uint256 scriptLen, uint256 sVarLen) = _parseVarInt(btcTxRaw, offset);
         offset += sVarLen;
-        
+
         scriptPubKey = new bytes(scriptLen);
-        for (uint256 i = 0; i < scriptLen && (offset + i) < btcTxRaw.length; i++) {
+        for (
+            uint256 i = 0;
+            i < scriptLen && (offset + i) < btcTxRaw.length;
+            i++
+        ) {
             scriptPubKey[i] = btcTxRaw[offset + i];
         }
     }
-    
+
     /**
      * @dev Parse Bitcoin varint
      */
@@ -784,13 +828,16 @@ contract BitcoinBridgeAdapter is
         if (first < 0xFD) {
             return (first, 1);
         } else if (first == 0xFD) {
-            value = uint256(uint8(data[offset + 1])) | (uint256(uint8(data[offset + 2])) << 8);
+            value =
+                uint256(uint8(data[offset + 1])) |
+                (uint256(uint8(data[offset + 2])) << 8);
             return (value, 3);
         } else if (first == 0xFE) {
-            value = uint256(uint8(data[offset + 1])) |
-                    (uint256(uint8(data[offset + 2])) << 8) |
-                    (uint256(uint8(data[offset + 3])) << 16) |
-                    (uint256(uint8(data[offset + 4])) << 24);
+            value =
+                uint256(uint8(data[offset + 1])) |
+                (uint256(uint8(data[offset + 2])) << 8) |
+                (uint256(uint8(data[offset + 3])) << 16) |
+                (uint256(uint8(data[offset + 4])) << 24);
             return (value, 5);
         } else {
             // 0xFF - 8 byte value (unlikely for tx counts)
@@ -813,7 +860,10 @@ contract BitcoinBridgeAdapter is
         // In production: Call SPV verifier contract
         if (spvVerifier == address(0)) {
             // Development mode - basic validation
-            return btcTxId != bytes32(0) && merkleProof.length > 0 && blockHeader.length == 80;
+            return
+                btcTxId != bytes32(0) &&
+                merkleProof.length > 0 &&
+                blockHeader.length == 80;
         }
 
         // Would call: IBTCSPVVerifier(spvVerifier).verify(btcTxId, merkleProof, blockHeader)
