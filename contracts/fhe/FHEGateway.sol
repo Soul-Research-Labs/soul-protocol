@@ -187,6 +187,7 @@ contract FHEGateway is AccessControl, ReentrancyGuard, Pausable {
     error ZeroAddress();
     error CallbackFailed();
     error ProofVerificationNotImplemented();
+    error InvalidBatchSize();
 
     // ============================================
     // CONSTRUCTOR

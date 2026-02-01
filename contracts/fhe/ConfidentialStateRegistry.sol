@@ -30,8 +30,15 @@ contract ConfidentialStateRegistry is AccessControl {
      */
     function updateState(bytes32 slot, bytes32 blobId) external {
         // In production: verify that blobId exists in CDA and is available
-        (,,,,,,,,,,,, AvailabilityStatus status,,,,,) = cda.blobs(blobId);
-        require(status == AvailabilityStatus.Available, "Blob not available");
+        // Access the blob and check its status
+        // Struct fields (19 total, skipping dynamic array shardCommitments):
+        // 0:blobId, 1:domainId, 2:version, 3:dataCommitment, 4:encryptedDataRoot,
+        // 5:dataSize, 6:erasureScheme, 7:totalShards, 8:requiredShards,
+        // 9:encryptionKeyCommitment, 10:keyDerivationSalt, 11:accessPolicyHash,
+        // 12:disclosurePolicyHash, 13:status, 14:publishedAt, 15:expiresAt,
+        // 16:lastProvenAt, 17:availabilityProofHash, 18:challengeStake
+        (,,,,,,,,,,,,, ConfidentialDataAvailability.AvailabilityStatus status,,,,,) = cda.blobs(blobId);
+        require(status == ConfidentialDataAvailability.AvailabilityStatus.Available, "Blob not available");
 
         bytes32 commitment = computeStateCommitment(slot, blobId);
         stateCommitments[slot] = commitment;

@@ -3,7 +3,6 @@ pragma solidity ^0.8.20;
 
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
-import {GasOptimizations} from "../libraries/GasOptimizations.sol";
 
 /// @title NullifierRegistryV3
 /// @author Soul Protocol

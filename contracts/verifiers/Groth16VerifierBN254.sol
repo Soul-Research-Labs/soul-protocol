@@ -234,6 +234,18 @@ contract Groth16VerifierBN254 is IProofVerifier {
     /**
      * @inheritdoc IProofVerifier
      */
+    function verifyProof(
+        bytes calldata proof,
+        bytes calldata publicInputs
+    ) external view override returns (bool) {
+        // Decode public inputs from bytes to uint256[]
+        uint256[] memory inputs = abi.decode(publicInputs, (uint256[]));
+        return this.verify(proof, inputs);
+    }
+
+    /**
+     * @inheritdoc IProofVerifier
+     */
     function isReady() external view override returns (bool) {
         return initialized;
     }

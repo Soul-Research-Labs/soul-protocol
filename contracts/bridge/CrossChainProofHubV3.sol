@@ -34,26 +34,6 @@ contract CrossChainProofHubV3 is
         Finalized // Executed on destination
     }
 
-    /*//////////////////////////////////////////////////////////////
-                                 ROLES
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Role for authorized relayers
-    bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
-
-    /// @notice Role for verifier administrators
-    bytes32 public constant VERIFIER_ADMIN_ROLE =
-        keccak256("VERIFIER_ADMIN_ROLE");
-
-    /// @notice Role for authorized challengers
-    bytes32 public constant CHALLENGER_ROLE = keccak256("CHALLENGER_ROLE");
-
-    /// @notice Role for operators (trusted remotes, config)
-    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
-
-    /// @notice Role for emergency operations
-    bytes32 public constant EMERGENCY_ROLE = keccak256("EMERGENCY_ROLE");
-
     /// @notice Proof submission structure
     struct ProofSubmission {
         bytes32 proofHash; // keccak256(proof)
@@ -93,8 +73,47 @@ contract CrossChainProofHubV3 is
     }
 
     /*//////////////////////////////////////////////////////////////
+                                 ROLES
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Role for authorized relayers
+    bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
+
+    /// @notice Role for verifier administrators
+    bytes32 public constant VERIFIER_ADMIN_ROLE =
+        keccak256("VERIFIER_ADMIN_ROLE");
+
+    /// @notice Role for authorized challengers
+    bytes32 public constant CHALLENGER_ROLE = keccak256("CHALLENGER_ROLE");
+
+    /// @notice Role for operators (trusted remotes, config)
+    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
+
+    /// @notice Role for emergency operations
+    bytes32 public constant EMERGENCY_ROLE = keccak256("EMERGENCY_ROLE");
+
+    /// @notice Maximum number of proofs in a batch
+    uint256 public constant MAX_BATCH_SIZE = 100;
+
+    /// @notice Default proof type for verification
+    bytes32 public constant DEFAULT_PROOF_TYPE = keccak256("GROTH16_BLS12381");
+
+    /// @notice Minimum required roles for security-critical operations
+    uint256 public constant MIN_ADMIN_THRESHOLD = 2;
+
+    /*//////////////////////////////////////////////////////////////
+                              IMMUTABLES
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice This chain's ID
+    uint256 public immutable CHAIN_ID;
+
+    /*//////////////////////////////////////////////////////////////
                                 STORAGE
     //////////////////////////////////////////////////////////////*/
+
+    /// @notice Role separation warning flag - must be resolved before mainnet
+    bool public rolesSeparated = false;
 
     /// @notice Mapping of proof ID to submission
     mapping(bytes32 => ProofSubmission) public proofs;
@@ -168,9 +187,6 @@ contract CrossChainProofHubV3 is
     /// @notice Trusted remote contract addresses per chain
     mapping(uint256 => address) public trustedRemotes;
 
-    /// @notice This chain's ID
-    uint256 public immutable CHAIN_ID;
-
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
     //////////////////////////////////////////////////////////////*/
@@ -206,9 +222,9 @@ contract CrossChainProofHubV3 is
     /// @param relayer The address of the relayer who submitted the batch
     event BatchSubmitted(
         bytes32 indexed batchId,
-        bytes32 merkleRoot,
-        uint256 proofCount,
-        address indexed relayer
+        bytes32 indexed merkleRoot,
+        uint256 indexed proofCount,
+        address relayer
     );
 
     /// @notice Emitted when a proof is successfully verified
@@ -243,24 +259,24 @@ contract CrossChainProofHubV3 is
     event ChallengeResolved(
         bytes32 indexed proofId,
         bool challengerWon,
-        address winner,
+        address indexed winner,
         uint256 reward
     );
 
     /// @notice Emitted when a relayer deposits stake
     /// @param relayer The address of the relayer
     /// @param amount The amount deposited
-    event RelayerStakeDeposited(address indexed relayer, uint256 amount);
+    event RelayerStakeDeposited(address indexed relayer, uint256 indexed amount);
 
     /// @notice Emitted when a relayer withdraws stake
     /// @param relayer The address of the relayer
     /// @param amount The amount withdrawn
-    event RelayerStakeWithdrawn(address indexed relayer, uint256 amount);
+    event RelayerStakeWithdrawn(address indexed relayer, uint256 indexed amount);
 
     /// @notice Emitted when a relayer is slashed
     /// @param relayer The address of the relayer
     /// @param amount The amount slashed
-    event RelayerSlashed(address indexed relayer, uint256 amount);
+    event RelayerSlashed(address indexed relayer, uint256 indexed amount);
 
     /// @notice Emitted when a new supported chain is added
     /// @param chainId The ID of the added chain
@@ -273,7 +289,7 @@ contract CrossChainProofHubV3 is
     /// @notice Emitted when a trusted remote is set
     /// @param chainId The chain ID
     /// @param remote The trusted remote address
-    event TrustedRemoteSet(uint256 indexed chainId, address remote);
+    event TrustedRemoteSet(uint256 indexed chainId, address indexed remote);
 
     /// @notice Emitted when a verifier address is set for a proof type
     /// @param proofType The identifier of the proof type
@@ -354,22 +370,12 @@ contract CrossChainProofHubV3 is
     /// @notice Error thrown when a transfer fails
     error TransferFailed();
 
-    /*//////////////////////////////////////////////////////////////
-                              CONSTANTS
-    //////////////////////////////////////////////////////////////*/
-
-    uint256 public constant MAX_BATCH_SIZE = 100;
-    bytes32 public constant DEFAULT_PROOF_TYPE = keccak256("GROTH16_BLS12381");
+    /// @notice Error thrown when proof rate limit is exceeded
+    error ProofRateLimitExceeded();
 
     /*//////////////////////////////////////////////////////////////
                              CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
-
-    /// @notice Minimum required roles for security-critical operations
-    uint256 public constant MIN_ADMIN_THRESHOLD = 2;
-
-    /// @notice Role separation warning flag - must be resolved before mainnet
-    bool public rolesSeparated = false;
 
     constructor() {
         CHAIN_ID = block.chainid;
@@ -799,8 +805,6 @@ contract CrossChainProofHubV3 is
     /*//////////////////////////////////////////////////////////////
                         INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
-
-    error ProofRateLimitExceeded();
 
     function _checkRateLimit(uint256 count) internal {
         if (block.timestamp >= lastRateLimitReset + 1 hours) {

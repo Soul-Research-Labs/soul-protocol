@@ -669,6 +669,21 @@ contract FRIVerifier is IProofVerifier {
     }
 
     /**
+     * @notice Verify a proof with raw bytes public inputs
+     * @param proof The proof bytes
+     * @param publicInputs The public inputs as raw bytes
+     * @return success True if the proof is valid
+     */
+    function verifyProof(
+        bytes calldata proof,
+        bytes calldata publicInputs
+    ) external view returns (bool success) {
+        // Decode public inputs from bytes to uint256[]
+        uint256[] memory inputs = abi.decode(publicInputs, (uint256[]));
+        return this.verify(proof, inputs);
+    }
+
+    /**
      * @notice Check if the verifier is properly initialized
      * @return ready True if verifier is ready to verify proofs
      */
