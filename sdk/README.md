@@ -4,17 +4,16 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 
-The official TypeScript SDK for the Soul Protocol (Soul) - a cross-chain privacy middleware with post-quantum cryptography support.
+The official TypeScript SDK for the Soul Protocol - cross-chain ZK privacy middleware with post-quantum cryptography support.
 
 ## Features
 
-- 🔒 **Zero-Knowledge Proofs** - Generate and verify proofs across multiple ZK systems
-- 🌉 **Cross-Chain Bridges** - Unified interface for Cardano, Polkadot, Cosmos, and more
+- 🔒 **ZK-Bound State Locks** - Privacy-preserving cross-chain state locks with ZK proofs
+- 🌉 **Cross-Chain Proofs** - Submit and verify proofs across L2 networks
 - 🔐 **Post-Quantum Cryptography** - Future-proof security with Dilithium, SPHINCS+, and Kyber
-- 🔗 **Hybrid Signatures** - Combine classical ECDSA with PQC for defense-in-depth
+- ⚡ **Noir Prover** - Client-side ZK proof generation
 - ⚛️ **React Hooks** - Easy integration with React applications
-- 🛡️ **MPC Support** - Threshold signatures and distributed key generation
-- 🧮 **FHE Operations** - Fully homomorphic encryption support
+- 🔗 **Multi-Chain** - Sepolia, Arbitrum, Base, Optimism support
 
 ## Installation
 
@@ -22,33 +21,148 @@ The official TypeScript SDK for the Soul Protocol (Soul) - a cross-chain privacy
 npm install @soul/sdk
 # or
 yarn add @soul/sdk
-# or
-pnpm add @soul/sdk
 ```
 
 ## Quick Start
 
-### Basic Usage
+```typescript
+import { createSoulClient, createReadOnlySoulClient } from "@soul/sdk";
+
+// Read-only client (no private key needed)
+const readClient = createReadOnlySoulClient("https://rpc.sepolia.org");
+
+// Full client with write access
+const client = createSoulClient({
+  rpcUrl: "https://rpc.sepolia.org",
+  chainId: 11155111, // Sepolia
+  privateKey: "0x...", // Your private key
+});
+
+// Get protocol stats
+const stats = await client.getStats();
+console.log("Total locks:", stats.totalLocks);
+console.log("Active locks:", stats.activeLocks);
+```
+
+## ZK-Bound State Locks
+
+Create privacy-preserving locks that can be unlocked with ZK proofs:
 
 ```typescript
-import { SoulSDK, Soulv2ClientFactory } from '@soul/sdk';
-import { createPublicClient, http } from 'viem';
-import { mainnet } from 'viem/chains';
+import { createSoulClient, NoirProver } from "@soul/sdk";
+import { parseEther } from "viem";
 
-// Initialize the Public Client
-const publicClient = createPublicClient({
-  chain: mainnet,
-  transport: http()
+const client = createSoulClient({
+  rpcUrl: "https://rpc.sepolia.org",
+  privateKey: "0x...",
 });
 
-// Create a Soul SDK instance
-const soul = new SoulSDK({
-  curve: 'bn254',
-  relayerEndpoint: 'https://relay.soul.network',
-  proverUrl: 'https://prover.soul.network',
-  privateKey: 'YOUR_PRIVATE_KEY',
+// Generate secrets
+const { secret, nullifier } = client.generateSecrets();
+const { commitment, nullifierHash } = client.generateCommitment(secret, nullifier);
+
+// Create a lock
+const { lockId, txHash } = await client.createLock({
+  commitment,
+  nullifierHash,
+  amount: parseEther("0.1"),
+  destinationChainId: 421614, // Arbitrum Sepolia
+});
+
+console.log("Lock created:", lockId);
+
+// Generate proof (when ready to unlock)
+const prover = new NoirProver();
+await prover.initialize();
+
+const proof = await prover.proveStateCommitment({
+  secret,
+  nullifier,
+  amount: parseEther("0.1"),
+});
+
+// Unlock with proof
+await client.unlockWithProof({
+  lockId,
+  nullifier,
+  recipient: "0x...",
+  proof: proof.proofHex,
 });
 ```
+
+## API Reference
+
+### SoulProtocolClient
+
+Main entry point for Soul Protocol interactions.
+
+| Method | Description |
+|--------|-------------|
+| `createLock(params)` | Create a new ZK-bound state lock |
+| `unlockWithProof(params)` | Unlock with ZK proof |
+| `initiateOptimisticUnlock(lockId, nullifier, recipient)` | Start optimistic unlock |
+| `refundExpiredLock(lockId)` | Refund an expired lock |
+| `getLock(lockId)` | Get lock information |
+| `isNullifierUsed(nullifier)` | Check if nullifier is used |
+| `getMerkleRoot()` | Get current Merkle root |
+| `getStats()` | Get protocol statistics |
+| `generateSecrets()` | Generate secret/nullifier pair |
+| `generateCommitment(secret, nullifier)` | Compute commitment |
+
+### NoirProver
+
+Client-side ZK proof generation using Noir circuits.
+
+```typescript
+import { NoirProver, Circuit } from "@soul/sdk";
+
+const prover = new NoirProver();
+await prover.initialize();
+
+// Available circuits
+const circuits = [
+  Circuit.StateCommitment,  // Commitment proof
+  Circuit.StateTransfer,    // Cross-chain transfer
+  Circuit.MerkleProof,      // Merkle inclusion
+  Circuit.Nullifier,        // Nullifier derivation
+  Circuit.BalanceProof,     // Balance range proof
+];
+
+// Generate proof
+const result = await prover.proveStateCommitment({
+  secret: "0x...",
+  nullifier: "0x...",
+  amount: 1000n,
+});
+```
+
+### Contract Addresses
+
+```typescript
+import { SEPOLIA_ADDRESSES, getAddresses } from "@soul/sdk";
+
+// Deployed Sepolia addresses
+console.log(SEPOLIA_ADDRESSES.zkBoundStateLocks);
+console.log(SEPOLIA_ADDRESSES.nullifierRegistry);
+console.log(SEPOLIA_ADDRESSES.proofHub);
+console.log(SEPOLIA_ADDRESSES.atomicSwap);
+
+// Get addresses by chain ID
+const addresses = getAddresses(11155111);
+```
+
+## Supported Networks
+
+| Network | Chain ID | Status |
+|---------|----------|--------|
+| Sepolia | 11155111 | ✅ Deployed |
+| Arbitrum Sepolia | 421614 | 🚧 Coming Soon |
+| Base Sepolia | 84532 | 🚧 Coming Soon |
+| Optimism Sepolia | 11155420 | 🚧 Coming Soon |
+
+---
+
+## Advanced Features
 
 ### Post-Quantum Cryptography
 

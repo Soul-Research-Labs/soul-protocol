@@ -379,90 +379,83 @@ npm run security:mutation # Mutation testing
 ## SDK
 
 ```bash
-npm install @soul/sdk
+cd sdk && npm install && npm run build
 ```
 
-### Create Confidential State
+### Quick Start - ZK-Bound State Locks
 
 ```typescript
-import { SoulSDK } from '@soul/sdk';
-import { createPublicClient, http } from 'viem';
-import { mainnet } from 'viem/chains';
+import { createWalletClient, createPublicClient, http } from 'viem';
+import { sepolia } from 'viem/chains';
+import { privateKeyToAccount } from 'viem/accounts';
+import { SoulProtocolClient, NoirProver, SEPOLIA_ADDRESSES } from '@soul/sdk';
 
-// Initialize the Public Client
-const publicClient = createPublicClient({
-  chain: mainnet,
-  transport: http()
-});
+// Setup clients
+const account = privateKeyToAccount('0x...');
+const walletClient = createWalletClient({ account, chain: sepolia, transport: http() });
+const publicClient = createPublicClient({ chain: sepolia, transport: http() });
 
-// Create a Soul SDK instance
-const soul = new SoulSDK({
-  curve: 'bn254',
-  relayerEndpoint: 'https://relay.soul.network',
-  proverUrl: 'https://prover.soul.network',
-  privateKey: 'YOUR_PRIVATE_KEY',
-});
-
-// Send private state
-const receipt = await soul.sendPrivateState({
-  sourceChain: 'ethereum',
-  destChain: 'arbitrum',
-  payload: { balance: 1000 },
-  circuitId: 'transfer'
-});
-```
-
-### Cross-Chain Bridges
-
-```typescript
-import { BridgeFactory, SupportedChain } from '@soul/sdk';
-import { parseEther } from 'viem';
-
-// Create a bridge adapter
-const cardanoBridge = BridgeFactory.createAdapter(
-  SupportedChain.Cardano,
-  publicClient,
+// Initialize Soul Protocol
+const soul = new SoulProtocolClient({
   walletClient,
-  {
-    chainId: 1,
-    bridgeAddress: '0x...'
-  }
+  publicClient,
+  addresses: SEPOLIA_ADDRESSES,
+});
+
+// Create a ZK-bound state lock
+const stateHash = '0x' + '1234'.repeat(16);
+const zkRequirements = '0x' + 'abcd'.repeat(16);
+const destChainId = 42161n; // Arbitrum
+
+const { lockId, txHash } = await soul.zkLocks.createStateLock(
+  stateHash,
+  zkRequirements,
+  destChainId
 );
 
-// Lock tokens
-const result = await cardanoBridge.bridgeTransfer({
-  targetChainId: 1,
-  recipient: 'addr1...',
-  amount: parseEther('1.0'),
+console.log(`Lock created: ${lockId}`);
+```
+
+### Generate ZK Proofs
+
+```typescript
+import { NoirProver } from '@soul/sdk';
+
+const prover = new NoirProver();
+
+// Generate a balance proof
+const proof = await prover.generateProof('balance_proof', {
+  balance: 1000n,
+  minRequired: 500n,
+  salt: 12345n,
 });
 
-// Get bridge status
-const status = await cardanoBridge.getStatus(result.transferId);
+// Verify the proof
+const isValid = await prover.verifyProof('balance_proof', proof);
 ```
 
-### React Hooks
+### Core API
 
-```tsx
-import { SoulProvider, useSoul, useContainer } from '@soul/react';
+| Method | Description |
+|--------|-------------|
+| `soul.zkLocks.createStateLock()` | Create ZK-bound state lock |
+| `soul.zkLocks.unlockWithProof()` | Unlock state with ZK proof |
+| `soul.zkLocks.getLockDetails()` | Get lock state and metadata |
+| `soul.nullifier.registerNullifier()` | Register cross-domain nullifier |
+| `soul.nullifier.isNullifierUsed()` | Check nullifier status |
+| `soul.proofHub.submitProof()` | Submit proof for aggregation |
+| `soul.atomicSwap.initiateSwap()` | Start atomic swap |
+| `soul.getProtocolStats()` | Get protocol statistics |
 
-function MyComponent() {
-  const { client, connect, isConnected } = useSoul();
-  const { container, isLoading } = useContainer('0xContainerId');
+### Supported Networks
 
-  if (!isConnected) return <button onClick={connect}>Connect Soul</button>;
-  if (isLoading) return <div>Loading...</div>;
+| Network | Chain ID | Status |
+|---------|----------|--------|
+| Sepolia | 11155111 | ✅ Live |
+| Arbitrum Sepolia | 421614 | 🔄 Planned |
+| Base Sepolia | 84532 | 🔄 Planned |
 
-  return <div>State Commitment: {container?.stateCommitment}</div>;
-}
-
-function App() {
-  return (
-    <SoulProvider config={{ orchestrator: '0x...' }}>
-      <MyComponent />
-    </SoulProvider>
-  );
-}
-```
+See [sdk/README.md](sdk/README.md) for full documentation.
 
 ---
 
