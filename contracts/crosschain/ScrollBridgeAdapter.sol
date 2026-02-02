@@ -147,7 +147,9 @@ contract ScrollBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
      * @notice Set Soul Hub L2 address
      * @param _soulHubL2 Soul Hub L2 address
      */
-    function setPilHubL2(address _soulHubL2) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setPilHubL2(
+        address _soulHubL2
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         soulHubL2 = _soulHubL2;
         emit SoulHubL2Set(_soulHubL2);
     }
@@ -156,7 +158,9 @@ contract ScrollBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
      * @notice Set Proof Registry address
      * @param _proofRegistry Proof Registry address
      */
-    function setProofRegistry(address _proofRegistry) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setProofRegistry(
+        address _proofRegistry
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         proofRegistry = _proofRegistry;
         emit ProofRegistrySet(_proofRegistry);
     }

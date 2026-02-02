@@ -141,3 +141,4 @@ storybook-static/
 .certora_internal
 temp_cache/
 tools/
+reports/
