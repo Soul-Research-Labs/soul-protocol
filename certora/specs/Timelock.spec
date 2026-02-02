@@ -1,16 +1,15 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - SoulTimelock
+ * Soul Protocol - SoulUpgradeTimelock
  */
 
-using SoulTimelock as timelock;
+using SoulUpgradeTimelock as timelock;
 
 methods {
     // View functions
-    function minDelay() external returns (uint256) envfree;
-    function emergencyDelay() external returns (uint256) envfree;
-    function MIN_DELAY_FLOOR() external returns (uint256) envfree;
+    function getProposalCount() external returns (uint256) envfree;
     function hasRole(bytes32, address) external returns (bool) envfree;
+    function isUpgradeReady(bytes32) external returns (bool) envfree;
 }
 
 // No invariants - verification passes with methods declaration only
