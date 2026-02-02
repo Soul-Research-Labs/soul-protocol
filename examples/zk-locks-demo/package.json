@@ -1,0 +1,14 @@
+{
+  "name": "zk-locks-demo",
+  "version": "1.0.0",
+  "description": "Demo DApp for Soul Protocol ZK-Bound State Locks",
+  "type": "module",
+  "scripts": {
+    "dev": "npx serve . -p 3000",
+    "build": "echo 'Static HTML - no build required'"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "serve": "^14.2.0"
+  }
+}
