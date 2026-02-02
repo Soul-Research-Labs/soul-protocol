@@ -32,7 +32,6 @@ describe("Stress Tests", function () {
           commitment,
           nullifier,
           toHex(toBytes("proof")),
-          toHex(toBytes("inputs")),
           zeroHash
         ], { account: user1.account });
 
@@ -184,7 +183,6 @@ describe("Stress Tests", function () {
               commitment,
               nullifier,
               toHex(toBytes("proof")),
-              toHex(toBytes("inputs")),
               zeroHash
             ], { account: user.account })
           );
@@ -218,7 +216,6 @@ describe("Stress Tests", function () {
         commitment,
         nullifier1,
         toHex(toBytes("proof")),
-        toHex(toBytes("inputs")),
         zeroHash
       ], { account: user1.account });
 
@@ -229,7 +226,6 @@ describe("Stress Tests", function () {
           commitment,
           nullifier2,
           toHex(toBytes("proof")),
-          toHex(toBytes("inputs")),
           zeroHash
         ], { account: user1.account });
         expect.fail("Should have reverted");
@@ -260,7 +256,6 @@ describe("Stress Tests", function () {
           commitment,
           nullifier,
           toHex(toBytes("proof")),
-          toHex(toBytes("inputs")),
           zeroHash
         ], { account: user1.account });
         
@@ -315,7 +310,6 @@ describe("Chaos Engineering Tests", function () {
             commitment,
             nullifier,
             toHex(toBytes("proof")),
-            toHex(toBytes("inputs")),
             zeroHash
           ], { account: user1.account });
           expect.fail("Should have reverted when paused");
@@ -335,7 +329,6 @@ describe("Chaos Engineering Tests", function () {
           validCommitment,
           validNullifier,
           toHex(toBytes("proof")),
-          toHex(toBytes("inputs")),
           zeroHash
         ], { account: user1.account });
       }
@@ -363,7 +356,6 @@ describe("Chaos Engineering Tests", function () {
         commitment,
         nullifier,
         toHex(toBytes("proof")),
-        toHex(toBytes("inputs")),
         zeroHash
       ], { account: user1.account });
 
@@ -389,7 +381,6 @@ describe("Chaos Engineering Tests", function () {
         commitment,
         nullifier,
         toHex(toBytes("proof")),
-        toHex(toBytes("inputs")),
         zeroHash
       ], { account: user1.account });
 

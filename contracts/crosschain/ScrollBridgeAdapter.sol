@@ -70,6 +70,12 @@ contract ScrollBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     /// @notice Scroll Rollup contract address
     address public rollupContract;
 
+    /// @notice Soul Hub L2 address
+    address public soulHubL2;
+
+    /// @notice Proof Registry address
+    address public proofRegistry;
+
     /// @notice Message nonce counter
     uint256 public messageNonce;
 
@@ -91,6 +97,8 @@ contract ScrollBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         address gatewayRouter,
         address rollupContract
     );
+    event SoulHubL2Set(address indexed soulHubL2);
+    event ProofRegistrySet(address indexed proofRegistry);
 
     /*//////////////////////////////////////////////////////////////
                             CONSTRUCTOR
@@ -133,6 +141,24 @@ contract ScrollBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
             _gatewayRouter,
             _rollupContract
         );
+    }
+
+    /**
+     * @notice Set Soul Hub L2 address
+     * @param _soulHubL2 Soul Hub L2 address
+     */
+    function setPilHubL2(address _soulHubL2) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        soulHubL2 = _soulHubL2;
+        emit SoulHubL2Set(_soulHubL2);
+    }
+
+    /**
+     * @notice Set Proof Registry address
+     * @param _proofRegistry Proof Registry address
+     */
+    function setProofRegistry(address _proofRegistry) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        proofRegistry = _proofRegistry;
+        emit ProofRegistrySet(_proofRegistry);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -222,11 +248,11 @@ contract ScrollBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
                         ADMIN FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    function pause() external onlyRole(GUARDIAN_ROLE) {
+    function pause() external onlyRole(PAUSER_ROLE) {
         _pause();
     }
 
-    function unpause() external onlyRole(OPERATOR_ROLE) {
+    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
 }

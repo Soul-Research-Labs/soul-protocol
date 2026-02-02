@@ -23,7 +23,6 @@ describe("Gas Benchmarks (viem)", function () {
         keccak256(toBytes("gas_commit")),
         keccak256(toBytes("gas_null")),
         toHex(toBytes("proof")),
-        toHex(toBytes("inputs")),
         zeroHash
       ], { account: user1.account });
 
@@ -53,7 +52,6 @@ describe("Gas Benchmarks (viem)", function () {
           keccak256(toBytes(`size_commit_${i}`)),
           keccak256(toBytes(`size_null_${i}`)),
           toHex(toBytes("proof")),
-          toHex(toBytes("inputs")),
           zeroHash
         ], { account: user1.account });
 
@@ -167,7 +165,6 @@ describe("Gas Benchmarks (viem)", function () {
         commitment,
         keccak256(toBytes("view_test_null")),
         toHex(toBytes("proof")),
-        toHex(toBytes("inputs")),
         zeroHash
       ], { account: user1.account });
 

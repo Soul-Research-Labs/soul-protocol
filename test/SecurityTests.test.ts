@@ -24,7 +24,6 @@ describe("Security Tests (viem)", function () {
         keccak256(toBytes("commit1")),
         nullifier,
         toHex(toBytes("proof")),
-        toHex(toBytes("inputs")),
         zeroHash
       ], { account: user1.account });
 
@@ -34,7 +33,6 @@ describe("Security Tests (viem)", function () {
           keccak256(toBytes("commit2")),
           nullifier,
           toHex(toBytes("proof")),
-          toHex(toBytes("inputs")),
           zeroHash
         ], { account: user1.account });
         expect.fail("Should have reverted");
@@ -118,7 +116,6 @@ describe("Security Tests (viem)", function () {
         maxCommitment,
         keccak256(toBytes("max_null")),
         toHex(toBytes("proof")),
-        toHex(toBytes("inputs")),
         zeroHash
       ], { account: user1.account });
 
@@ -141,7 +138,6 @@ describe("Security Tests (viem)", function () {
         commitment,
         keccak256(toBytes("first_null")),
         toHex(toBytes("proof")),
-        toHex(toBytes("inputs")),
         zeroHash
       ], { account: user1.account });
 
@@ -152,7 +148,6 @@ describe("Security Tests (viem)", function () {
           commitment, // Same commitment
           keccak256(toBytes("second_null")),
           toHex(toBytes("proof")),
-          toHex(toBytes("inputs")),
           zeroHash
         ], { account: user1.account });
         expect.fail("Should have reverted");
@@ -204,7 +199,6 @@ describe("Security Tests (viem)", function () {
         commitment,
         keccak256(toBytes("frontrun_null1")),
         toHex(toBytes("proof")),
-        toHex(toBytes("inputs")),
         zeroHash
       ], { account: user1.account });
 
@@ -215,7 +209,6 @@ describe("Security Tests (viem)", function () {
           commitment,
           keccak256(toBytes("frontrun_null2")),
           toHex(toBytes("proof")),
-          toHex(toBytes("inputs")),
           zeroHash
         ], { account: attacker.account });
         expect.fail("Should have reverted");
@@ -244,7 +237,6 @@ describe("Security Tests (viem)", function () {
           keccak256(toBytes(`dos_commit_${i}`)),
           keccak256(toBytes(`dos_null_${i}`)),
           toHex(toBytes("proof")),
-          toHex(toBytes("inputs")),
           zeroHash
         ], { account: user1.account });
 
@@ -350,7 +342,6 @@ describe("Security Tests (viem)", function () {
           keccak256(toBytes("invalid_commit")),
           keccak256(toBytes("invalid_null")),
           toHex(toBytes("bad_proof")),
-          toHex(toBytes("bad_inputs")),
           zeroHash
         ], { account: user1.account });
         expect.fail("Should have reverted");

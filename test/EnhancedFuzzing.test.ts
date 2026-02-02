@@ -39,7 +39,7 @@ describe("Enhanced Fuzzing (viem)", function () {
           commitment,
           nullifier,
           toHex(toBytes("proof")),
-          toHex(toBytes("inputs")),
+
           zeroHash
         ], { account: user1.account });
 
@@ -108,7 +108,6 @@ describe("Enhanced Fuzzing (viem)", function () {
         commitment,
         randomBytes32(),
         toHex(toBytes("proof")),
-        toHex(toBytes("inputs")),
         zeroHash
       ], { account: user1.account });
 
@@ -132,7 +131,6 @@ describe("Enhanced Fuzzing (viem)", function () {
         commitment,
         randomBytes32(),
         toHex(toBytes("proof")),
-        toHex(toBytes("inputs")),
         zeroHash
       ], { account: user1.account });
 
@@ -155,7 +153,6 @@ describe("Enhanced Fuzzing (viem)", function () {
         maxCommitment,
         randomBytes32(),
         toHex(toBytes("proof")),
-        toHex(toBytes("inputs")),
         zeroHash
       ], { account: user1.account });
 
@@ -185,7 +182,7 @@ describe("Enhanced Fuzzing (viem)", function () {
               randomBytes32(),
               nullifier,
               toHex(toBytes("proof")),
-              toHex(toBytes("inputs")),
+    
               zeroHash
             ], { account: user1.account });
             expect.fail("Should have reverted for duplicate");
@@ -199,7 +196,7 @@ describe("Enhanced Fuzzing (viem)", function () {
             randomBytes32(),
             nullifier,
             toHex(toBytes("proof")),
-            toHex(toBytes("inputs")),
+  
             zeroHash
           ], { account: user1.account });
           usedNullifiers.add(nullifier.toLowerCase());
@@ -223,7 +220,7 @@ describe("Enhanced Fuzzing (viem)", function () {
           randomBytes32(),
           randomBytes32(),
           toHex(toBytes("proof")),
-          toHex(toBytes("inputs")),
+
           zeroHash
         ], { account: user1.account });
 
@@ -273,7 +270,7 @@ describe("Enhanced Fuzzing (viem)", function () {
           randomBytes32(),
           randomBytes32(),
           toHex(toBytes("proof")),
-          toHex(toBytes("inputs")),
+
           zeroHash
         ], { account: user1.account });
       }
@@ -302,7 +299,7 @@ describe("Enhanced Fuzzing (viem)", function () {
           randomBytes32(),
           randomBytes32(),
           toHex(toBytes("proof")),
-          toHex(toBytes("inputs")),
+
           zeroHash
         ], { account: user1.account });
         expect.fail("Should have reverted");
@@ -325,7 +322,7 @@ describe("Enhanced Fuzzing (viem)", function () {
           randomBytes32(),
           randomBytes32(),
           toHex(toBytes("proof")),
-          toHex(toBytes("inputs")),
+
           zeroHash
         ], { account: user1.account });
         expect.fail("Should have reverted");
@@ -350,7 +347,6 @@ describe("Enhanced Fuzzing (viem)", function () {
         randomBytes32(),
         randomBytes32(),
         toHex(toBytes("proof")),
-        toHex(toBytes("inputs")),
         zeroHash
       ], { account: user1.account });
 
@@ -359,7 +355,6 @@ describe("Enhanced Fuzzing (viem)", function () {
         randomBytes32(),
         randomBytes32(),
         toHex(toBytes("proof")),
-        toHex(toBytes("inputs")),
         zeroHash
       ], { account: user2.account });
 
@@ -368,7 +363,6 @@ describe("Enhanced Fuzzing (viem)", function () {
         randomBytes32(),
         randomBytes32(),
         toHex(toBytes("proof")),
-        toHex(toBytes("inputs")),
         zeroHash
       ], { account: user3.account });
 
@@ -391,7 +385,6 @@ describe("Enhanced Fuzzing (viem)", function () {
         randomBytes32(),
         sharedNullifier,
         toHex(toBytes("proof")),
-        toHex(toBytes("inputs")),
         zeroHash
       ], { account: user1.account });
 
@@ -402,7 +395,7 @@ describe("Enhanced Fuzzing (viem)", function () {
           randomBytes32(),
           sharedNullifier,
           toHex(toBytes("proof")),
-          toHex(toBytes("inputs")),
+
           zeroHash
         ], { account: user2.account });
         expect.fail("Should have reverted");

@@ -32,7 +32,6 @@ describe("V3 Contracts (viem)", function () {
         commitment,
         nullifier,
         toHex(toBytes("proof")),
-        toHex(toBytes("inputs")),
         zeroHash
       ], { account: user1.account });
 
@@ -60,7 +59,6 @@ describe("V3 Contracts (viem)", function () {
         commitment,
         keccak256(toBytes("null1")),
         toHex(toBytes("proof")),
-        toHex(toBytes("inputs")),
         zeroHash
       ], { account: user1.account });
 
@@ -70,7 +68,6 @@ describe("V3 Contracts (viem)", function () {
           commitment, // Same commitment
           keccak256(toBytes("null2")),
           toHex(toBytes("proof")),
-          toHex(toBytes("inputs")),
           zeroHash
         ], { account: user1.account });
         expect.fail("Should have reverted");
@@ -95,7 +92,6 @@ describe("V3 Contracts (viem)", function () {
         keccak256(toBytes("commit1")),
         nullifier,
         toHex(toBytes("proof")),
-        toHex(toBytes("inputs")),
         zeroHash
       ], { account: user1.account });
 
@@ -105,7 +101,6 @@ describe("V3 Contracts (viem)", function () {
           keccak256(toBytes("commit2")),
           nullifier, // Same nullifier
           toHex(toBytes("proof")),
-          toHex(toBytes("inputs")),
           zeroHash
         ], { account: user1.account });
         expect.fail("Should have reverted");
@@ -131,7 +126,6 @@ describe("V3 Contracts (viem)", function () {
           keccak256(toBytes(`commit_${i}`)),
           keccak256(toBytes(`null_${i}`)),
           toHex(toBytes("proof")),
-          toHex(toBytes("inputs")),
           zeroHash
         ], { account: user1.account });
       }
@@ -344,7 +338,6 @@ describe("V3 Contracts (viem)", function () {
           keccak256(toBytes("paused_commit")),
           keccak256(toBytes("paused_null")),
           toHex(toBytes("proof")),
-          toHex(toBytes("inputs")),
           zeroHash
         ], { account: user1.account });
         expect.fail("Should have reverted");
@@ -373,7 +366,6 @@ describe("V3 Contracts (viem)", function () {
         commitment,
         nullifier,
         toHex(toBytes("proof")),
-        toHex(toBytes("inputs")),
         zeroHash
       ], { account: user1.account });
 
