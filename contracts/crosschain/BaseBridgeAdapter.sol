@@ -748,13 +748,11 @@ contract BaseBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
      * @notice Check if subject has a specific attestation
      */
     function hasAttestation(
-        address subject,
-        bytes32 schemaId
-    ) external view returns (bool) {
+        address /* subject */,
+        bytes32 /* schemaId */
+    ) external pure returns (bool) {
         // Would iterate through attestations in production
         // Simplified for now
-        subject;
-        schemaId;
         return false;
     }
 

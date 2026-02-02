@@ -256,7 +256,7 @@ contract LayerZeroAdapter is ReentrancyGuard, AccessControl, Pausable {
         uint32 /* dstEid */,
         bytes calldata payload,
         ExecutorOptions calldata options
-    ) public view returns (uint256 fee) {
+    ) public pure returns (uint256 fee) {
         // Simplified fee calculation
         // In production, call lzEndpoint.quote()
         uint256 baseFee = 0.001 ether;

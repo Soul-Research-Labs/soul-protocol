@@ -12,22 +12,6 @@ Soul Protocol is zero-knowledge middleware for cross-chain confidential state tr
 
 ---
 
-## Project Status
-
-| Component | Status |
-|-----------|--------|
-| Core ZK Bridge (Groth16 BN254) | ✅ Ready for audit |
-| Confidential State Containers | ✅ Ready for audit |
-| Stealth Addresses | ✅ Ready for audit |
-| L2 Adapters (6 adapters) | ✅ Ready for audit |
-| Security Modules (timelock, rate limiter, circuit breaker) | ✅ Ready for audit |
-
-**44 production contracts.** Everything else archived to `_archive/` for reference.
-
-**Audit Status:** Unaudited. See [SECURITY.md](SECURITY.md) for responsible disclosure.
-
----
-
 ## The Problem: Privacy Lock-In
 
 **Privacy will be the most important moat in crypto.**
@@ -360,21 +344,6 @@ npm run certora      # Formal verification
 npm run security:all # Full security suite
 npm run security:mutation # Mutation testing
 ```
-
-### Privacy Status
-
-| Attack Vector | Status | Notes |
-|--------------|--------|-------|
-| Payload content | ✅ Hidden | AES-256-GCM encryption |
-| Transaction amounts | ✅ Hidden | Pedersen commitments |
-| Sender/recipient identity | ✅ Hidden | Stealth addresses, CDNA |
-| MEV/frontrunning | ✅ Protected | Commit-reveal (3-block delay) |
-| Bridge message observation | ⚠️ Partial | Encrypted, but events visible |
-| Timing correlation | ⚠️ Partial | Commit-reveal helps |
-| Gas usage patterns | ❌ Visible | Future work |
-| Relayer set correlation | ❌ Visible | Future work |
-
----
 
 ## SDK
 

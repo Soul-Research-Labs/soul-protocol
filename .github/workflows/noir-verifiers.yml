@@ -37,12 +37,12 @@ on:
       force_regenerate:
         description: 'Force regenerate all verifiers'
         required: false
-        default: 'false'
+        default: false
         type: boolean
       benchmark_only:
         description: 'Only run gas benchmarks'
         required: false
-        default: 'false'
+        default: false
         type: boolean
 
 env:

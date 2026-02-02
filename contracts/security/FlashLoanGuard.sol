@@ -320,7 +320,7 @@ contract FlashLoanGuard is ReentrancyGuard, AccessControl, Pausable {
     function _validateTokenPrice(
         address /*token*/,
         TokenConfig storage config
-    ) internal returns (bool valid) {
+    ) internal view returns (bool valid) {
         // Get oracle price (simplified - would integrate Chainlink in production)
         (bool success, bytes memory data) = config.priceOracle.staticcall(
             abi.encodeWithSignature("latestAnswer()")
