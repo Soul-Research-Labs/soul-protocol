@@ -4,7 +4,8 @@
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.24-blue.svg)](https://docs.soliditylang.org/)
 [![Foundry](https://img.shields.io/badge/Built%20with-Foundry-FFDB1C.svg)](https://getfoundry.sh/)
 [![OpenZeppelin](https://img.shields.io/badge/OpenZeppelin-5.4.0-4E5EE4.svg)](https://openzeppelin.com/contracts/)
-[![Security Audit](https://img.shields.io/badge/Security-Audited-success.svg)](SECURITY.md)
+[![Security](https://img.shields.io/badge/Security-Unaudited-orange.svg)](SECURITY.md)
+[![Tests](https://img.shields.io/badge/Tests-846%20passing-brightgreen.svg)](test/)
 
 > **Move privately between chains. No metadata. No lock-in.**
 

@@ -309,7 +309,6 @@ contract PrivateRelayerNetwork is
     error ExitNotReady();
     error TransferFailed();
 
-
     // =========================================================================
     // MODIFIERS
     // =========================================================================
@@ -446,7 +445,6 @@ contract PrivateRelayerNetwork is
         (bool success, ) = msg.sender.call{value: stake}("");
         if (!success) revert TransferFailed();
     }
-
 
     // =========================================================================
     // COMMIT-REVEAL MECHANISM
@@ -669,7 +667,6 @@ contract PrivateRelayerNetwork is
 
         (bool success, ) = stealthAddress.call{value: msg.value}("");
         if (!success) revert TransferFailed();
-
 
         emit StealthFeePaid(paymentId, stealthAddress, msg.value);
     }
