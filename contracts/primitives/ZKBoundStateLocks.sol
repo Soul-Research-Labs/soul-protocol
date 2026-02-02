@@ -56,7 +56,7 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
         0x7b8bb8356a3f32f5c111ff23f050d97f08988e0883529ea7bff3b918887a6e0e;
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
     bytes32 public constant RECOVERY_ROLE = keccak256("RECOVERY_ROLE");
-    
+
     // =============================================================================
     // STRUCTS
     // =============================================================================
@@ -567,19 +567,19 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
 
         // CASE 1: Fraud Proof (Challenge the validity of the optimistic proof)
         if (evidenceHash == optimistic.proofHash) {
-             // If the proof verifies successfully, the challenge FAILS (it's a valid proof)
-             // If the proof fails verification, the challenge SUCCEEDS (it was a fraud)
-             if (!_verifyProof(lock, evidence)) {
-                 challengeSuccessful = true;
-             }
-        } 
+            // If the proof verifies successfully, the challenge FAILS (it's a valid proof)
+            // If the proof fails verification, the challenge SUCCEEDS (it was a fraud)
+            if (!_verifyProof(lock, evidence)) {
+                challengeSuccessful = true;
+            }
+        }
         // CASE 2: Conflict Proof (Provide a different valid transition)
         else {
-             // Conflict must show different new state commitment
+            // Conflict must show different new state commitment
             if (evidence.newStateCommitment != optimistic.newStateCommitment) {
                 // Conflict proof must be valid
                 if (_verifyProof(lock, evidence)) {
-                     challengeSuccessful = true;
+                    challengeSuccessful = true;
                 }
             }
         }
@@ -588,7 +588,7 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
         if (challengeSuccessful) {
             // Mark as disputed
             optimistic.disputed = true;
-            
+
             // Update statistics
             unchecked {
                 _packedStats += uint256(1) << _STAT_SHIFT_DISPUTES;
@@ -607,9 +607,11 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
             );
         } else {
             // Challenge failed. Compensate unlocker with challenger stake.
-            (bool success, ) = payable(optimistic.unlocker).call{value: msg.value}("");
+            (bool success, ) = payable(optimistic.unlocker).call{
+                value: msg.value
+            }("");
             if (!success) revert ETHTransferFailed();
-            
+
             // Note: We don't revert here to ensure the stake is transferred.
         }
     }
@@ -673,10 +675,13 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
      * @notice Force unlock a lock (Emergency Recovery)
      * @dev Only callable by RECOVERY_ROLE (e.g., PQCProtectedLock)
      */
-    function recoverLock(bytes32 lockId, address /* recipient */) external onlyRole(RECOVERY_ROLE) {
+    function recoverLock(
+        bytes32 lockId,
+        address /* recipient */
+    ) external onlyRole(RECOVERY_ROLE) {
         ZKSLock storage lock = locks[lockId];
         if (lock.lockId == bytes32(0)) revert InvalidLock(lockId);
-        
+
         // Force unlock logic - remove lock
         // Mark as unlocked
         lock.isUnlocked = true;
@@ -684,8 +689,14 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
         _removeActiveLock(lockId);
         // Clear optimistic unlock if any
         delete optimisticUnlocks[lockId];
-        
-        emit LockUnlocked(lockId, bytes32(0), bytes32(0), lock.domainSeparator, msg.sender);
+
+        emit LockUnlocked(
+            lockId,
+            bytes32(0),
+            bytes32(0),
+            lock.domainSeparator,
+            msg.sender
+        );
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -968,6 +979,22 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
     }
 
     /**
+     * @notice Returns all active lock IDs (up to 100)
+     * @dev Convenience method for tests - in production use the paginated version
+     */
+    function getActiveLockIds() external view returns (bytes32[] memory) {
+        uint256 count = _activeLockIds.length;
+        if (count > 100) {
+            count = 100;
+        }
+        bytes32[] memory result = new bytes32[](count);
+        for (uint256 i = 0; i < count; i++) {
+            result[i] = _activeLockIds[i];
+        }
+        return result;
+    }
+
+    /**
      * @notice Returns lock details
      */
     function getLock(bytes32 lockId) external view returns (ZKSLock memory) {
@@ -1051,6 +1078,4 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
     function unpause() external onlyRole(LOCK_ADMIN_ROLE) {
         _unpause();
     }
-
-
 }
