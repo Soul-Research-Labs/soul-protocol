@@ -1,0 +1,8 @@
+[package]
+name = "bridge_transfer"
+type = "bin"
+authors = ["Soul Protocol Team"]
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]

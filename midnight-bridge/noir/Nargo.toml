@@ -1,0 +1,9 @@
+[package]
+name = "midnight_bridge_circuits"
+type = "lib"
+authors = ["Soul Protocol Team"]
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+std = { path = "../../../lib/noir-lang/noir_stdlib" }

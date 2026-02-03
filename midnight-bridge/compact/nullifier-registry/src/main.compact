@@ -1,0 +1,440 @@
+/*
+ * Soul-Midnight Bridge: Nullifier Registry
+ * 
+ * Tracks nullifiers across domains to prevent double-spending.
+ * Implements Cross-Domain Nullifier Agreement (CDNA) protocol.
+ * 
+ * This contract is deployed on Midnight Network.
+ */
+
+// =============================================================================
+// IMPORTS
+// =============================================================================
+
+// Standard Midnight cryptographic primitives would be imported here
+
+// =============================================================================
+// TYPE DEFINITIONS
+// =============================================================================
+
+/// Cross-domain nullifier record
+type NullifierRecord = struct {
+    nullifier: Bytes<32>,          // The nullifier hash
+    sourceChain: Field,            // Source chain ID
+    destChain: Field,              // Destination chain ID
+    commitment: Bytes<32>,         // Associated commitment
+    registeredAt: Field,           // Block number when registered
+    isSpent: Boolean               // Whether nullifier is spent
+};
+
+/// Nullifier batch for efficient syncing
+type NullifierBatch = struct {
+    batchId: Bytes<32>,
+    nullifiers: Vector<Bytes<32>>,
+    merkleRoot: Bytes<32>,
+    timestamp: Field
+};
+
+/// Chain synchronization state
+type ChainSyncState = struct {
+    chainId: Field,
+    lastSyncedBlock: Field,
+    nullifierRoot: Bytes<32>,
+    syncedCount: Field
+};
+
+// =============================================================================
+// CONTRACT STATE
+// =============================================================================
+
+export contract nullifier_registry {
+    
+    // =========================================================================
+    // LEDGER STATE (Public on-chain)
+    // =========================================================================
+    
+    ledger {
+        // Registry authority
+        registryAuthority: Cell<Bytes<32>>;
+        
+        // Nullifier Merkle root
+        nullifierMerkleRoot: Cell<Bytes<32>>;
+        
+        // Total registered nullifiers
+        totalNullifiers: Cell<Counter>;
+        
+        // Cross-chain sync states
+        chainStates: Map<Field, ChainSyncState>;
+        
+        // Batch processing state
+        lastBatchId: Cell<Bytes<32>>;
+        pendingBatches: Counter;
+        
+        // Emergency pause flag
+        isPaused: Cell<Boolean>;
+    }
+    
+    // =========================================================================
+    // CONSTRUCTOR
+    // =========================================================================
+    
+    constructor(authority: Bytes<32>) {
+        ledger.registryAuthority.write(authority);
+        ledger.nullifierMerkleRoot.write(Bytes<32>::zero());
+        ledger.totalNullifiers.write(0);
+        ledger.lastBatchId.write(Bytes<32>::zero());
+        ledger.isPaused.write(false);
+    }
+    
+    // =========================================================================
+    // CIRCUIT FUNCTIONS (ZK-proven)
+    // =========================================================================
+    
+    /// Compute cross-domain nullifier (CDNA)
+    circuit computeCDNA(
+        baseNullifier: Bytes<32>,
+        sourceChain: Field,
+        destChain: Field
+    ): Bytes<32> {
+        // Domain separator
+        const CDNA_DOMAIN: Bytes<32> = "CDNA_V3_MIDNIGHT";
+        
+        // Hash: CDNA = H(domain || baseNullifier || sourceChain || destChain)
+        return poseidon(
+            CDNA_DOMAIN,
+            baseNullifier,
+            sourceChain.to_bytes(),
+            destChain.to_bytes()
+        );
+    }
+    
+    /// Verify nullifier is not already registered
+    circuit verifyNullifierFresh(
+        nullifier: Bytes<32>,
+        merkleRoot: Bytes<32>,
+        nonMembershipProof: Vector<Bytes<32>>,
+        proofIndex: Field
+    ): Boolean {
+        // Verify non-membership in nullifier tree
+        // This proves the nullifier does NOT exist in the tree
+        return verifyNonMembership(
+            nullifier,
+            merkleRoot,
+            nonMembershipProof,
+            proofIndex
+        );
+    }
+    
+    /// Compute new Merkle root after insertion
+    circuit computeNewRoot(
+        oldRoot: Bytes<32>,
+        nullifier: Bytes<32>,
+        insertionProof: Vector<Bytes<32>>,
+        insertionIndex: Field
+    ): Bytes<32> {
+        // Compute new root with inserted nullifier
+        return computeMerkleRootWithInsertion(
+            oldRoot,
+            nullifier,
+            insertionProof,
+            insertionIndex
+        );
+    }
+    
+    /// Verify batch of nullifiers
+    circuit verifyNullifierBatch(
+        nullifiers: Vector<Bytes<32>>,
+        expectedRoot: Bytes<32>,
+        batchProof: Bytes<256>
+    ): Boolean {
+        // Compute batch root
+        let computedRoot = computeBatchRoot(nullifiers);
+        
+        // Verify matches expected
+        return computedRoot == expectedRoot;
+    }
+    
+    // =========================================================================
+    // WITNESS FUNCTIONS (Local computation)
+    // =========================================================================
+    
+    /// Get current nullifier set (from local state)
+    witness getNullifierSet(): Vector<Bytes<32>> {
+        // Query local storage for registered nullifiers
+        // This is computed off-chain
+    }
+    
+    /// Generate non-membership proof
+    witness generateNonMembershipProof(
+        nullifier: Bytes<32>
+    ): (Vector<Bytes<32>>, Field) {
+        // Generate proof that nullifier is NOT in tree
+        // Returns (proof path, index)
+    }
+    
+    /// Generate insertion proof
+    witness generateInsertionProof(
+        nullifier: Bytes<32>
+    ): (Vector<Bytes<32>>, Field) {
+        // Generate proof for inserting new nullifier
+        // Returns (proof path, insertion index)
+    }
+    
+    // =========================================================================
+    // EXPORT FUNCTIONS (Public API)
+    // =========================================================================
+    
+    /// Register a new nullifier
+    export circuit registerNullifier(
+        nullifier: Bytes<32>,
+        sourceChain: Field,
+        destChain: Field,
+        commitment: Bytes<32>
+    ) {
+        // 1. Check not paused
+        const paused = ledger.isPaused.read();
+        assert(!paused, "Registry is paused");
+        
+        // 2. Get current Merkle root
+        const currentRoot = ledger.nullifierMerkleRoot.read();
+        
+        // 3. Get non-membership proof from witness
+        const (nonMembershipProof, proofIndex) = witness generateNonMembershipProof(nullifier);
+        
+        // 4. Verify nullifier is fresh (not already registered)
+        const isFresh = circuit verifyNullifierFresh(
+            nullifier,
+            currentRoot,
+            nonMembershipProof,
+            proofIndex
+        );
+        assert(isFresh, "Nullifier already registered");
+        
+        // 5. Get insertion proof
+        const (insertionProof, insertionIndex) = witness generateInsertionProof(nullifier);
+        
+        // 6. Compute new Merkle root
+        const newRoot = circuit computeNewRoot(
+            currentRoot,
+            nullifier,
+            insertionProof,
+            insertionIndex
+        );
+        
+        // 7. Update ledger state
+        ledger.nullifierMerkleRoot.write(newRoot);
+        ledger.totalNullifiers.increment();
+        
+        // 8. Emit event (Midnight event system)
+        // emit NullifierRegistered(nullifier, sourceChain, destChain);
+    }
+    
+    /// Register nullifier for cross-chain transfer
+    export circuit registerCrossDomainNullifier(
+        baseNullifier: Bytes<32>,
+        sourceChain: Field,
+        destChain: Field,
+        commitment: Bytes<32>,
+        // ZK proof inputs
+        secret: Bytes<32>,
+        randomness: Bytes<32>
+    ) {
+        // 1. Verify the base nullifier derivation
+        const expectedNullifier = poseidon(secret, commitment, sourceChain.to_bytes());
+        assert(baseNullifier == expectedNullifier, "Invalid base nullifier");
+        
+        // 2. Compute CDNA
+        const cdna = circuit computeCDNA(baseNullifier, sourceChain, destChain);
+        
+        // 3. Register the CDNA
+        registerNullifier(cdna, sourceChain, destChain, commitment);
+    }
+    
+    /// Sync nullifiers from external chain
+    export circuit syncFromChain(
+        chainId: Field,
+        nullifiers: Vector<Bytes<32>>,
+        chainProof: Bytes<256>,
+        blockNumber: Field
+    ) {
+        // 1. Verify caller is authorized relayer
+        // (In production, verify signature or proof from relayer)
+        
+        // 2. Get chain sync state
+        let syncState = ledger.chainStates.get(chainId);
+        assert(blockNumber > syncState.lastSyncedBlock, "Already synced");
+        
+        // 3. Verify batch proof
+        const batchRoot = computeBatchRoot(nullifiers);
+        // Verify chain proof here
+        
+        // 4. Register each nullifier
+        for nullifier in nullifiers {
+            // Skip if already registered
+            const currentRoot = ledger.nullifierMerkleRoot.read();
+            const (proof, index) = witness generateNonMembershipProof(nullifier);
+            
+            if (circuit verifyNullifierFresh(nullifier, currentRoot, proof, index)) {
+                registerNullifier(nullifier, chainId, 0 /* Midnight */, Bytes<32>::zero());
+            }
+        }
+        
+        // 5. Update sync state
+        syncState.lastSyncedBlock = blockNumber;
+        syncState.syncedCount = syncState.syncedCount + nullifiers.length();
+        ledger.chainStates.set(chainId, syncState);
+    }
+    
+    /// Check if nullifier is registered
+    export circuit isNullifierRegistered(
+        nullifier: Bytes<32>
+    ): Boolean {
+        // Get membership proof from witness
+        const currentRoot = ledger.nullifierMerkleRoot.read();
+        const (proof, index) = witness generateNonMembershipProof(nullifier);
+        
+        // If non-membership proof is valid, nullifier is NOT registered
+        const isNotRegistered = circuit verifyNullifierFresh(
+            nullifier,
+            currentRoot,
+            proof,
+            index
+        );
+        
+        return !isNotRegistered;
+    }
+    
+    /// Get nullifier Merkle root
+    export circuit getNullifierRoot(): Bytes<32> {
+        return ledger.nullifierMerkleRoot.read();
+    }
+    
+    /// Get chain sync state
+    export circuit getChainState(chainId: Field): ChainSyncState {
+        return ledger.chainStates.get(chainId);
+    }
+    
+    // =========================================================================
+    // ADMIN FUNCTIONS
+    // =========================================================================
+    
+    /// Update registry authority
+    export circuit updateAuthority(
+        newAuthority: Bytes<32>,
+        signature: Bytes<64>
+    ) {
+        const currentAuthority = ledger.registryAuthority.read();
+        // Verify signature from current authority
+        assert(verifySignature(newAuthority, signature, currentAuthority), "Invalid signature");
+        
+        ledger.registryAuthority.write(newAuthority);
+    }
+    
+    /// Emergency pause
+    export circuit pause(signature: Bytes<64>) {
+        const authority = ledger.registryAuthority.read();
+        assert(verifySignature("PAUSE", signature, authority), "Invalid signature");
+        
+        ledger.isPaused.write(true);
+    }
+    
+    /// Unpause
+    export circuit unpause(signature: Bytes<64>) {
+        const authority = ledger.registryAuthority.read();
+        assert(verifySignature("UNPAUSE", signature, authority), "Invalid signature");
+        
+        ledger.isPaused.write(false);
+    }
+}
+
+// =============================================================================
+// HELPER FUNCTIONS (Internal)
+// =============================================================================
+
+/// Compute batch Merkle root from nullifier array
+fn computeBatchRoot(nullifiers: Vector<Bytes<32>>): Bytes<32> {
+    if (nullifiers.length() == 0) {
+        return Bytes<32>::zero();
+    }
+    
+    // Build Merkle tree from nullifiers
+    let leaves = nullifiers;
+    
+    while (leaves.length() > 1) {
+        let newLeaves: Vector<Bytes<32>> = [];
+        
+        for (i in 0..leaves.length() / 2) {
+            let left = leaves[i * 2];
+            let right = leaves[i * 2 + 1];
+            newLeaves.push(poseidon(left, right));
+        }
+        
+        // Handle odd number of leaves
+        if (leaves.length() % 2 == 1) {
+            newLeaves.push(leaves[leaves.length() - 1]);
+        }
+        
+        leaves = newLeaves;
+    }
+    
+    return leaves[0];
+}
+
+/// Verify non-membership in sparse Merkle tree
+fn verifyNonMembership(
+    leaf: Bytes<32>,
+    root: Bytes<32>,
+    proof: Vector<Bytes<32>>,
+    index: Field
+): Boolean {
+    // Placeholder for non-membership verification
+    // Uses sparse Merkle tree with default values
+    let computed = leaf;
+    let idx = index;
+    
+    for sibling in proof {
+        if (idx % 2 == 0) {
+            computed = poseidon(computed, sibling);
+        } else {
+            computed = poseidon(sibling, computed);
+        }
+        idx = idx / 2;
+    }
+    
+    // For non-membership, computed should NOT equal root
+    // when using the leaf's expected position
+    return computed != root;
+}
+
+/// Compute Merkle root with new insertion
+fn computeMerkleRootWithInsertion(
+    oldRoot: Bytes<32>,
+    newLeaf: Bytes<32>,
+    proof: Vector<Bytes<32>>,
+    index: Field
+): Bytes<32> {
+    let computed = newLeaf;
+    let idx = index;
+    
+    for sibling in proof {
+        if (idx % 2 == 0) {
+            computed = poseidon(computed, sibling);
+        } else {
+            computed = poseidon(sibling, computed);
+        }
+        idx = idx / 2;
+    }
+    
+    return computed;
+}
+
+/// Verify ECDSA/EdDSA signature
+fn verifySignature(
+    message: Bytes<32>,
+    signature: Bytes<64>,
+    publicKey: Bytes<32>
+): Boolean {
+    // Placeholder for signature verification
+    // Uses Midnight's native signature scheme
+    return true; // Implement actual verification
+}

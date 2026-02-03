@@ -1,0 +1,54 @@
+{
+  "name": "@soul-midnight/bridge",
+  "version": "0.1.0",
+  "description": "Soul-Midnight Bridge - Cross-chain privacy between Midnight Network and Ethereum/L2s",
+  "main": "index.js",
+  "scripts": {
+    "build": "forge build",
+    "build:contracts": "forge build",
+    "build:sdk": "cd sdk && npm run build",
+    "test": "forge test -vvv",
+    "test:fuzz": "forge test --match-contract Fuzz -vvv",
+    "test:invariant": "forge test --match-contract Invariant -vvv",
+    "test:coverage": "forge coverage --report lcov",
+    "test:gas": "forge test --gas-report",
+    "test:snapshot": "forge snapshot",
+    "lint": "solhint 'contracts/**/*.sol'",
+    "lint:fix": "solhint 'contracts/**/*.sol' --fix",
+    "format": "forge fmt",
+    "format:check": "forge fmt --check",
+    "deploy:local": "forge script scripts/Deploy.s.sol --rpc-url http://localhost:8545 --broadcast",
+    "deploy:sepolia": "forge script scripts/Deploy.s.sol --rpc-url $SEPOLIA_RPC_URL --broadcast --verify",
+    "deploy:mainnet": "forge script scripts/Deploy.s.sol --rpc-url $MAINNET_RPC_URL --broadcast --verify",
+    "verify": "forge verify-contract",
+    "slither": "slither contracts/ --config-file slither.config.json",
+    "mythril": "myth analyze contracts/*.sol --solc-json mythril.config.json",
+    "noir:build": "cd noir && nargo build",
+    "noir:test": "cd noir && nargo test",
+    "noir:prove": "cd noir && nargo prove",
+    "clean": "forge clean && rm -rf out cache"
+  },
+  "keywords": [
+    "midnight",
+    "ethereum",
+    "bridge",
+    "zk-proofs",
+    "privacy",
+    "cross-chain",
+    "solidity",
+    "noir",
+    "foundry"
+  ],
+  "author": "Soul Protocol Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/soul-protocol/midnight-bridge"
+  },
+  "devDependencies": {
+    "solhint": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

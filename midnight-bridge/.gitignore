@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+out/
+cache/
+artifacts/
+forge-cache/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Coverage
+coverage/
+lcov.info
+
+# Noir
+noir/target/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test artifacts
+broadcast/
