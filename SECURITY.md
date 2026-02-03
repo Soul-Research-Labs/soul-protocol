@@ -118,8 +118,17 @@ We take security seriously. If you discover a security vulnerability within Soul
 | VRF Bypass | CRITICAL | Fixed logic error allowing any non-zero gamma to pass VRF |
 | Chain ID Validation | CRITICAL | Added block.chainid check in cross-chain message execution |
 | DoS Protection | HIGH | O(1) relayer removal prevents unbounded loop gas griefing |
-| ReentrancyGuard | HIGH | Added nonReentrant to depositStake() |
+| ReentrancyGuard | HIGH | Added nonReentrant to depositStake() and DirectL2Messenger |
 | Zero-Address Checks | MEDIUM | Validation added to setVerifier/setVerifierRegistry |
+| Unused Return Value | LOW | Fixed unused return in VerifierRegistry._isValidVerifier |
+
+### Known Dependency Issues
+
+| Package | Severity | Status | Details |
+|---------|----------|--------|---------|
+| elliptic | LOW | Upstream Issue | GHSA-848j-6mx2-7j84 - Risky crypto implementation in elliptic used by @ethersproject/signing-key (ethers v5) via circomlibjs. No fix available until circomlibjs migrates to ethers v6. Risk mitigated: circomlibjs is only used for ZK circuit development, not for transaction signing in production. |
+
+**Note:** npm overrides are used to enforce security patches for transitive dependencies (diff, jsonpath, undici, ws, tar). See `package.json` overrides section.
 
 ### Operational Security
 
