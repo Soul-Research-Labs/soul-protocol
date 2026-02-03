@@ -41,7 +41,8 @@ contract VerifierRegistry is AccessControl, IVerifierRegistry {
     mapping(bytes32 => IProofVerifier) public verifiers;
 
     /// @notice Mapping of proof type to a specific version of a verifier
-    mapping(bytes32 => mapping(uint256 => IProofVerifier)) public versionedVerifiers;
+    mapping(bytes32 => mapping(uint256 => IProofVerifier))
+        public versionedVerifiers;
 
     /// @notice Current active version for each proof type
     mapping(bytes32 => uint256) public activeVersions;
@@ -128,7 +129,7 @@ contract VerifierRegistry is AccessControl, IVerifierRegistry {
         if (!_isValidVerifier(verifier)) revert InvalidVerifier();
 
         verifiers[proofType] = IProofVerifier(verifier);
-        
+
         // Also register as version 1
         uint256 version = 1;
         versionedVerifiers[proofType][version] = IProofVerifier(verifier);
@@ -181,7 +182,7 @@ contract VerifierRegistry is AccessControl, IVerifierRegistry {
 
         uint256 oldVersion = activeVersions[proofType];
         activeVersions[proofType] = version;
-        
+
         // Keep legacy mapping in sync for backwards compatibility
         verifiers[proofType] = versionedVerifiers[proofType][version];
 
@@ -202,13 +203,15 @@ contract VerifierRegistry is AccessControl, IVerifierRegistry {
         if (!_isValidVerifier(newVerifier)) revert InvalidVerifier();
 
         address oldVerifier = address(verifiers[proofType]);
-        
+
         // Register as a new version automatically
         uint256 nextVersion = versionCounts[proofType] + 1;
-        versionedVerifiers[proofType][nextVersion] = IProofVerifier(newVerifier);
+        versionedVerifiers[proofType][nextVersion] = IProofVerifier(
+            newVerifier
+        );
         versionCounts[proofType] = nextVersion;
         activeVersions[proofType] = nextVersion;
-        
+
         verifiers[proofType] = IProofVerifier(newVerifier);
 
         emit VerifierUpdated(proofType, oldVerifier, newVerifier);
