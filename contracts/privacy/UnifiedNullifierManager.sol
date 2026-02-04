@@ -5,6 +5,7 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import {IProofVerifier} from "../interfaces/IProofVerifier.sol";
 
 /**
  * @title UnifiedNullifierManager
@@ -658,6 +659,8 @@ contract UnifiedNullifierManager is
 
     /**
      * @notice Derive Soul unified nullifier
+     * @dev HIGH FIX: Changed from abi.encodePacked to abi.encode to prevent hash collision
+     *      abi.encodePacked with multiple bytes32 can have collisions if bits align
      */
     function deriveSoulBinding(
         bytes32 sourceNullifier,
@@ -665,7 +668,7 @@ contract UnifiedNullifierManager is
     ) public pure returns (bytes32) {
         return
             keccak256(
-                abi.encodePacked(sourceNullifier, domainTag, SOUL_BINDING_TAG)
+                abi.encode(sourceNullifier, domainTag, SOUL_BINDING_TAG)
             );
     }
 
@@ -716,16 +719,26 @@ contract UnifiedNullifierManager is
     // =========================================================================
 
     function _verifyDerivationProof(
-        bytes32,
-        uint256,
+        bytes32 sourceNullifier,
+        uint256 destChainId,
         bytes calldata proof
     ) internal view returns (bool) {
-        // If no verifier is set, accept proofs (for testing/dev)
-        if (crossChainVerifier == address(0)) return proof.length > 0;
+        // CRITICAL FIX: Previously accepted any non-empty proof when verifier not set
+        // This allowed attackers to create arbitrary cross-domain bindings
+        if (crossChainVerifier == address(0)) {
+            // In production, verifier MUST be set - revert if not
+            // For testing only: can be bypassed by setting a mock verifier
+            revert("CrossChainVerifier not configured");
+        }
 
-        // In production, verify ZK proof
-        // return IProofVerifier(crossChainVerifier).verifyProof(proof, abi.encode(sourceNullifier, destChainId));
-        return true;
+        // Verify ZK proof using the configured verifier
+        // Proof must demonstrate valid derivation from source to dest chain
+        uint256[] memory publicInputs = new uint256[](3);
+        publicInputs[0] = uint256(sourceNullifier);
+        publicInputs[1] = destChainId;
+        publicInputs[2] = uint256(keccak256(abi.encode(sourceNullifier, destChainId)));
+        
+        return IProofVerifier(crossChainVerifier).verify(proof, publicInputs);
     }
 
     // =========================================================================

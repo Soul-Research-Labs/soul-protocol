@@ -493,6 +493,10 @@ contract CrossChainProofHubV3 is
         uint64 destChainId,
         bytes32 proofType
     ) external payable nonReentrant whenNotPaused returns (bytes32 proofId) {
+        // CRITICAL FIX: Add access control - was missing, allowing anyone to submit
+        if (!rolesSeparated) revert RolesNotSeparated();
+        if (!hasRole(RELAYER_ROLE, msg.sender)) revert UnauthorizedRelayer();
+
         // Verify the proof immediately
         IProofVerifier verifier = verifiers[proofType];
 
@@ -539,6 +543,10 @@ contract CrossChainProofHubV3 is
         BatchProofInput[] calldata _proofs,
         bytes32 merkleRoot
     ) external payable nonReentrant whenNotPaused returns (bytes32 batchId) {
+        // CRITICAL FIX: Add access control - was missing, allowing anyone to submit batches
+        if (!rolesSeparated) revert RolesNotSeparated();
+        if (!hasRole(RELAYER_ROLE, msg.sender)) revert UnauthorizedRelayer();
+
         uint256 len = _proofs.length;
         if (len == 0) revert EmptyBatch();
         if (len > MAX_BATCH_SIZE) revert BatchTooLarge(len, MAX_BATCH_SIZE);

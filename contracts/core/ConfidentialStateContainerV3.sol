@@ -127,9 +127,10 @@ contract ConfidentialStateContainerV3 is
     bytes32 public immutable DOMAIN_SEPARATOR;
 
     /// @notice EIP-712 type hash for state registration
+    /// HIGH SEVERITY FIX: Added encryptedStateHash and metadata to prevent signature manipulation
     bytes32 public constant REGISTER_STATE_TYPEHASH =
         keccak256(
-            "RegisterState(bytes32 commitment,bytes32 nullifier,address owner,uint256 nonce,uint256 deadline,uint256 chainId)"
+            "RegisterState(bytes32 commitment,bytes32 nullifier,address owner,bytes32 encryptedStateHash,bytes32 metadata,uint256 nonce,uint256 deadline,uint256 chainId)"
         );
 
     /// @notice Chain ID for this deployment (immutable for gas savings)
@@ -348,12 +349,16 @@ contract ConfidentialStateContainerV3 is
         if (block.chainid != CHAIN_ID) revert InvalidSignature();
 
         // EIP-712 compliant struct hash with chain ID
+        // HIGH SEVERITY FIX: Include encryptedStateHash and metadata to prevent
+        // attackers from reusing signature with different state data
         bytes32 structHash = keccak256(
             abi.encode(
                 REGISTER_STATE_TYPEHASH,
                 commitment,
                 nullifier,
                 owner,
+                keccak256(encryptedState),  // Bind to actual state data
+                metadata,                     // Bind to metadata
                 nonces[owner]++,
                 deadline,
                 block.chainid

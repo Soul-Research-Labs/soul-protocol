@@ -78,6 +78,7 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
     error TransitionPredicateMismatch(bytes32 expected, bytes32 provided);
     error StateCommitmentMismatch(bytes32 expected, bytes32 provided);
     error ChallengeWindowClosed(bytes32 lockId);
+    error DisputeWindowStillOpen(bytes32 lockId, uint64 finalizeAfter);
     error NoOptimisticUnlock(bytes32 lockId);
     error AlreadyDisputed(bytes32 lockId);
     error InvalidConflictProof(bytes32 lockId);
@@ -471,10 +472,14 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
         ZKSLock storage lock = locks[unlockProof.lockId];
         _validateLockForUnlock(lock);
 
-        // Check nullifier uniqueness
+        // CRITICAL FIX: Check and RESERVE nullifier to prevent double-spend race condition
+        // Without this, an attacker could call optimisticUnlock() and unlock() with same nullifier
+        // The unlock() would succeed since nullifier wasn't marked, causing double-spend
         if (nullifierUsed[unlockProof.nullifier]) {
             revert NullifierAlreadyUsed(unlockProof.nullifier);
         }
+        // Reserve the nullifier immediately to prevent parallel unlock attempts
+        nullifierUsed[unlockProof.nullifier] = true;
 
         // Store optimistic unlock for dispute resolution
         optimisticUnlocks[unlockProof.lockId] = OptimisticUnlock({
@@ -517,7 +522,8 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
         }
 
         if (block.timestamp < optimistic.finalizeAfter) {
-            revert ChallengeWindowClosed(lockId);
+            // SECURITY FIX: Use correct error - window is still OPEN (not closed)
+            revert DisputeWindowStillOpen(lockId, optimistic.finalizeAfter);
         }
 
         ZKSLock storage lock = locks[lockId];
