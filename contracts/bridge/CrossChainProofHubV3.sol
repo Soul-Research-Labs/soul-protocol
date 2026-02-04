@@ -676,11 +676,14 @@ contract CrossChainProofHubV3 is
         if (challenge.challenger == address(0))
             revert ChallengeNotFound(proofId);
         if (challenge.resolved) revert ChallengeNotFound(proofId);
-        
+
         // SECURITY FIX: Only the original challenger can resolve to prevent front-running
         // This prevents relayers from submitting correct proof data before the challenger
-        require(msg.sender == challenge.challenger || hasRole(OPERATOR_ROLE, msg.sender), 
-            "Only challenger or operator can resolve");
+        require(
+            msg.sender == challenge.challenger ||
+                hasRole(OPERATOR_ROLE, msg.sender),
+            "Only challenger or operator can resolve"
+        );
 
         ProofSubmission storage submission = proofs[proofId];
 
@@ -698,7 +701,10 @@ contract CrossChainProofHubV3 is
 
             // SECURITY FIX: If specific verifier not found, DO NOT fallback to default
             // This prevents proof type bypass attacks where attacker uses weaker verifier
-            if (address(verifier) == address(0) && verifierRegistry != address(0)) {
+            if (
+                address(verifier) == address(0) &&
+                verifierRegistry != address(0)
+            ) {
                 (bool regSuccess, bytes memory regData) = verifierRegistry
                     .staticcall(
                         abi.encodeWithSignature(
@@ -778,7 +784,9 @@ contract CrossChainProofHubV3 is
 
     /// @notice Finalizes a proof after challenge period
     /// @param proofId The proof to finalize
-    function finalizeProof(bytes32 proofId) external nonReentrant whenNotPaused {
+    function finalizeProof(
+        bytes32 proofId
+    ) external nonReentrant whenNotPaused {
         ProofSubmission storage submission = proofs[proofId];
         if (submission.relayer == address(0)) revert ProofNotFound(proofId);
 

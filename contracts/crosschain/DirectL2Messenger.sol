@@ -672,9 +672,9 @@ contract DirectL2Messenger is ReentrancyGuard, AccessControl, Pausable {
         msg_.status = MessageStatus.EXECUTED;
 
         // Execute call - SECURITY FIX: Forward the value stored in the message
-        (bool success, bytes memory returnData) = msg_.recipient.call{value: msg_.value}(
-            msg_.payload
-        );
+        (bool success, bytes memory returnData) = msg_.recipient.call{
+            value: msg_.value
+        }(msg_.payload);
 
         // Update final status after call
         if (!success) {

@@ -290,6 +290,12 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
         uint256 bondForfeited
     );
 
+    event ChallengeRejected(
+        bytes32 indexed lockId,
+        address indexed challenger,
+        uint256 stakeLost
+    );
+
     event VerifierRegistered(
         bytes32 indexed verifierKeyHash,
         address indexed verifierContract
@@ -350,9 +356,11 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
         bytes32 domainSeparator,
         uint64 unlockDeadline
     ) external whenNotPaused returns (bytes32 lockId) {
-        // Generate deterministic lock ID
+        // SECURITY FIX: Use abi.encode instead of abi.encodePacked
+        // abi.encodePacked with multiple variable-length inputs can cause hash collisions
+        // abi.encode pads each argument to 32 bytes, preventing collisions
         lockId = keccak256(
-            abi.encodePacked(
+            abi.encode(
                 oldStateCommitment,
                 transitionPredicateHash,
                 policyHash,
@@ -426,8 +434,15 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
             revert NullifierAlreadyUsed(unlockProof.nullifier);
         }
 
+        // SECURITY FIX: Mark nullifier as used BEFORE proof verification
+        // This prevents race conditions where two transactions in the same block
+        // could both pass the nullifier check before either marks it as used
+        nullifierUsed[unlockProof.nullifier] = true;
+
         // Verify ZK proof
         if (!_verifyProof(lock, unlockProof)) {
+            // Rollback nullifier on proof failure
+            nullifierUsed[unlockProof.nullifier] = false;
             revert InvalidProof(unlockProof.lockId);
         }
 
@@ -612,7 +627,9 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
             }("");
             if (!success) revert ETHTransferFailed();
 
-            // Note: We don't revert here to ensure the stake is transferred.
+            // SECURITY FIX: Emit event for failed challenges to provide visibility
+            // This allows off-chain monitoring of challenge outcomes
+            emit ChallengeRejected(lockId, msg.sender, msg.value);
         }
     }
 
