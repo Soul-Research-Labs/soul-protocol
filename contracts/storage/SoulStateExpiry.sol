@@ -494,4 +494,19 @@ contract SoulStateExpiry is ReentrancyGuard, AccessControl {
 
         return string(buffer);
     }
+
+    /**
+     * @notice Emergency withdrawal of ETH
+     * @param to Recipient address
+     * @param amount Amount to withdraw
+     */
+    function emergencyWithdrawETH(
+        address payable to,
+        uint256 amount
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
+        require(to != address(0), "Invalid recipient");
+        require(amount <= address(this).balance, "Insufficient balance");
+        (bool success, ) = to.call{value: amount}("");
+        require(success, "ETH transfer failed");
+    }
 }
