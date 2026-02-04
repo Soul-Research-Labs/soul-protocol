@@ -1,0 +1,8 @@
+[package]
+name = "lookup_table_proof"
+version = "0.1.0"
+type = "bin"
+authors = ["Soul Protocol"]
+compiler_version = ">=0.30.0"
+
+[dependencies]
