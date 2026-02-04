@@ -62,10 +62,10 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
         uint256 destChainId;
         address sender;
         address target;
-        bytes encryptedCalldata;       // Privacy: encrypted call data
-        bytes32 calldataCommitment;    // Commitment for verification
-        bytes32 nullifier;             // Prevents replay
-        uint256 value;                 // ETH to send
+        bytes encryptedCalldata; // Privacy: encrypted call data
+        bytes32 calldataCommitment; // Commitment for verification
+        bytes32 nullifier; // Prevents replay
+        uint256 value; // ETH to send
         uint256 gasLimit;
         uint64 deadline;
         MessageStatus status;
@@ -75,7 +75,7 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
     struct FulfillmentProof {
         bytes32 messageId;
         bytes32 executionResultHash;
-        bytes zkProof;                 // Proof of correct execution
+        bytes zkProof; // Proof of correct execution
         address fulfiller;
         uint64 fulfilledAt;
     }
@@ -153,10 +153,7 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
         bytes32 executionResultHash
     );
 
-    event PrivacyMessageFailed(
-        bytes32 indexed messageId,
-        string reason
-    );
+    event PrivacyMessageFailed(bytes32 indexed messageId, string reason);
 
     event CounterpartSet(uint256 indexed chainId, address messenger);
 
@@ -209,14 +206,15 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
         bytes32 nullifier,
         uint256 gasLimit
     ) external payable nonReentrant returns (bytes32 messageId) {
-        return _sendPrivacyMessageInternal(
-            destChainId,
-            target,
-            encryptedCalldata,
-            calldataCommitment,
-            nullifier,
-            gasLimit
-        );
+        return
+            _sendPrivacyMessageInternal(
+                destChainId,
+                target,
+                encryptedCalldata,
+                calldataCommitment,
+                nullifier,
+                gasLimit
+            );
     }
 
     /// @notice Internal implementation of privacy message sending
@@ -234,15 +232,17 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
         if (usedNullifiers[nullifier]) revert NullifierAlreadyUsed();
         if (gasLimit == 0) gasLimit = defaultGasLimit;
 
-        messageId = keccak256(abi.encode(
-            block.chainid,
-            destChainId,
-            msg.sender,
-            target,
-            calldataCommitment,
-            nullifier,
-            block.timestamp
-        ));
+        messageId = keccak256(
+            abi.encode(
+                block.chainid,
+                destChainId,
+                msg.sender,
+                target,
+                calldataCommitment,
+                nullifier,
+                block.timestamp
+            )
+        );
 
         if (messages[messageId].calldataCommitment != bytes32(0)) {
             revert MessageAlreadyExists();
@@ -280,13 +280,15 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
 
         // Encode first call as privacy message
         Call memory firstCall = request.calls[0];
-        
-        bytes32 nullifier = keccak256(abi.encode(
-            msg.sender,
-            block.timestamp,
-            block.chainid,
-            request.destinationChainId
-        ));
+
+        bytes32 nullifier = keccak256(
+            abi.encode(
+                msg.sender,
+                block.timestamp,
+                block.chainid,
+                request.destinationChainId
+            )
+        );
 
         requestId = _sendPrivacyMessageInternal(
             request.destinationChainId,
@@ -327,11 +329,13 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
         }
 
         // Verify decryption proof
-        if (!_verifyDecryptionProof(
-            message.calldataCommitment,
-            decryptedCalldata,
-            zkProof
-        )) {
+        if (
+            !_verifyDecryptionProof(
+                message.calldataCommitment,
+                decryptedCalldata,
+                zkProof
+            )
+        ) {
             revert InvalidProof();
         }
 
@@ -345,7 +349,7 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
 
         if (success) {
             message.status = MessageStatus.FULFILLED;
-            
+
             fulfillments[messageId] = FulfillmentProof({
                 messageId: messageId,
                 executionResultHash: resultHash,
@@ -377,14 +381,16 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
         uint256 value
     ) external payable nonReentrant {
         // Verify sender is proof hub or counterpart
-        if (msg.sender != proofHub && 
-            msg.sender != counterpartMessengers[sourceChainId]) {
+        if (
+            msg.sender != proofHub &&
+            msg.sender != counterpartMessengers[sourceChainId]
+        ) {
             revert InvalidCounterpart();
         }
 
         // Execute
         (bool success, ) = target.call{value: value}(decryptedCalldata);
-        
+
         if (!success) {
             emit PrivacyMessageFailed(messageId, "Execution failed");
         } else {
@@ -411,24 +417,24 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
     ) external view returns (bytes32 value) {
         // L1SLOAD precompile address (when available)
         address L1SLOAD_PRECOMPILE = 0x0000000000000000000000000000000000000101;
-        
+
         // Check if precompile exists
         uint256 size;
         assembly {
             size := extcodesize(L1SLOAD_PRECOMPILE)
         }
-        
+
         if (size > 0) {
             // Call L1SLOAD precompile
             (bool success, bytes memory result) = L1SLOAD_PRECOMPILE.staticcall(
                 abi.encode(l1Contract, slot)
             );
-            
+
             if (success && result.length == 32) {
                 value = abi.decode(result, (bytes32));
             }
         }
-        
+
         // Fallback: would need oracle or relay
         // For now, return zero if precompile not available
     }
@@ -444,7 +450,7 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
         // L1 keystore slot (simplified)
         bytes32 slot = keccak256(abi.encode(wallet, uint256(0)));
         bytes32 l1KeyHash = this.readL1State(wallet, slot);
-        
+
         return l1KeyHash == expectedKeyHash;
     }
 
@@ -457,7 +463,7 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
         if (msg.value < minFulfillerBond) revert InsufficientBond();
         fulfillerBonds[msg.sender] += msg.value;
         _grantRole(FULFILLER_ROLE, msg.sender);
-        
+
         emit FulfillerRegistered(msg.sender, fulfillerBonds[msg.sender]);
     }
 
@@ -465,11 +471,11 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
     function withdrawBond(uint256 amount) external nonReentrant {
         if (fulfillerBonds[msg.sender] < amount) revert InsufficientBond();
         fulfillerBonds[msg.sender] -= amount;
-        
+
         if (fulfillerBonds[msg.sender] < minFulfillerBond) {
             _revokeRole(FULFILLER_ROLE, msg.sender);
         }
-        
+
         payable(msg.sender).transfer(amount);
     }
 
@@ -505,7 +511,7 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
             // For encrypted data, we'd verify the ZK proof instead
             if (zkProof.length < 128) return false;
         }
-        
+
         return true;
     }
 }

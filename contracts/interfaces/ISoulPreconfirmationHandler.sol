@@ -90,5 +90,8 @@ interface ISoulPreconfirmationHandler {
         OrbitAttestation calldata attestation
     ) external view returns (bool valid);
 
-    function getEffectiveChallengePeriod() external view returns (uint64 period);
+    function getEffectiveChallengePeriod()
+        external
+        view
+        returns (uint64 period);
 }

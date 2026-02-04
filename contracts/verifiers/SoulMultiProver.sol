@@ -57,24 +57,24 @@ contract SoulMultiProver is ReentrancyGuard, AccessControl {
 
     /// @notice Supported prover systems
     enum ProverSystem {
-        NOIR,           // Aztec Noir (UltraPlonk)
-        SP1,            // Succinct SP1 (RISC-V zkVM)
-        JOLT,           // a16z Jolt (Lasso lookups)
-        PLONKY3,        // Polygon Plonky3 (recursive)
-        BINIUS,         // Irreducible Binius (binary field)
-        HALO2,          // ZCash Halo2 (no trusted setup)
-        GROTH16,        // Classic Groth16 (smallest proofs)
-        RISC_ZERO       // RiscZero zkVM
+        NOIR, // Aztec Noir (UltraPlonk)
+        SP1, // Succinct SP1 (RISC-V zkVM)
+        JOLT, // a16z Jolt (Lasso lookups)
+        PLONKY3, // Polygon Plonky3 (recursive)
+        BINIUS, // Irreducible Binius (binary field)
+        HALO2, // ZCash Halo2 (no trusted setup)
+        GROTH16, // Classic Groth16 (smallest proofs)
+        RISC_ZERO // RiscZero zkVM
     }
 
     /// @notice Prover configuration
     struct ProverConfig {
         ProverSystem system;
-        address verifier;          // On-chain verifier contract
+        address verifier; // On-chain verifier contract
         bool isActive;
-        uint256 weight;            // Voting weight (default: 1)
-        uint256 successCount;      // Successful verifications
-        uint256 failureCount;      // Failed verifications
+        uint256 weight; // Voting weight (default: 1)
+        uint256 successCount; // Successful verifications
+        uint256 failureCount; // Failed verifications
     }
 
     /// @notice Multi-proof submission
@@ -82,9 +82,9 @@ contract SoulMultiProver is ReentrancyGuard, AccessControl {
         bytes32 proofId;
         bytes32 publicInputsHash;
         ProofSubmission[] submissions;
-        uint256 consensusReached;  // Timestamp when consensus reached
+        uint256 consensusReached; // Timestamp when consensus reached
         bool isVerified;
-        bytes32 executionHash;     // For cross-chain execution
+        bytes32 executionHash; // For cross-chain execution
     }
 
     /// @notice Individual proof submission
@@ -116,7 +116,8 @@ contract SoulMultiProver is ReentrancyGuard, AccessControl {
     mapping(bytes32 => MultiProof) public multiProofs;
 
     /// @notice Proof submissions by proof ID
-    mapping(bytes32 => mapping(ProverSystem => ProofSubmission)) public submissions;
+    mapping(bytes32 => mapping(ProverSystem => ProofSubmission))
+        public submissions;
 
     /// @notice Active prover systems
     ProverSystem[] public activeProvers;
@@ -140,10 +141,7 @@ contract SoulMultiProver is ReentrancyGuard, AccessControl {
                                 EVENTS
     //////////////////////////////////////////////////////////////*/
 
-    event ProverRegistered(
-        ProverSystem indexed system,
-        address verifier
-    );
+    event ProverRegistered(ProverSystem indexed system, address verifier);
 
     event ProverUpdated(
         ProverSystem indexed system,
@@ -196,7 +194,7 @@ contract SoulMultiProver is ReentrancyGuard, AccessControl {
     constructor() {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(OPERATOR_ROLE, msg.sender);
-        
+
         // Register default provers (verifiers set later)
         _registerDefaultProvers();
     }
@@ -250,9 +248,9 @@ contract SoulMultiProver is ReentrancyGuard, AccessControl {
         if (weight == 0) revert InvalidProverConfig();
 
         ProverConfig storage config = provers[system];
-        
+
         bool isNew = config.verifier == address(0);
-        
+
         config.system = system;
         config.verifier = verifier;
         config.isActive = true;
@@ -353,7 +351,11 @@ contract SoulMultiProver is ReentrancyGuard, AccessControl {
                 mp.publicInputsHash = publicInputsHash;
             }
 
-            bool isValid = _verifyWithProver(proverList[i], publicInputsHash, proofs[i]);
+            bool isValid = _verifyWithProver(
+                proverList[i],
+                publicInputsHash,
+                proofs[i]
+            );
 
             submissions[proofId][proverList[i]] = ProofSubmission({
                 prover: proverList[i],
@@ -378,12 +380,14 @@ contract SoulMultiProver is ReentrancyGuard, AccessControl {
     /// @notice Check if consensus has been reached
     function _checkConsensus(bytes32 proofId) internal {
         MultiProof storage mp = multiProofs[proofId];
-        
+
         uint256 validCount = 0;
         uint256 totalWeight = 0;
-        
+
         for (uint i = 0; i < activeProvers.length; i++) {
-            ProofSubmission storage sub = submissions[proofId][activeProvers[i]];
+            ProofSubmission storage sub = submissions[proofId][
+                activeProvers[i]
+            ];
             if (sub.submittedAt != 0) {
                 totalWeight += provers[activeProvers[i]].weight;
                 if (sub.isValid) {
@@ -398,7 +402,9 @@ contract SoulMultiProver is ReentrancyGuard, AccessControl {
             totalVerifiedProofs++;
 
             // Collect valid provers
-            ProverSystem[] memory validProvers = new ProverSystem[](activeProvers.length);
+            ProverSystem[] memory validProvers = new ProverSystem[](
+                activeProvers.length
+            );
             uint256 validIdx = 0;
             for (uint i = 0; i < activeProvers.length; i++) {
                 if (submissions[proofId][activeProvers[i]].isValid) {
@@ -434,7 +440,11 @@ contract SoulMultiProver is ReentrancyGuard, AccessControl {
 
         if (!mp.isVerified) {
             totalConsensusFailures++;
-            emit ConsensusFailure(proofId, _countValidSubmissions(proofId), requiredConsensus);
+            emit ConsensusFailure(
+                proofId,
+                _countValidSubmissions(proofId),
+                requiredConsensus
+            );
         }
     }
 
@@ -449,7 +459,7 @@ contract SoulMultiProver is ReentrancyGuard, AccessControl {
         bytes calldata proof
     ) internal view returns (bool) {
         ProverConfig storage config = provers[prover];
-        
+
         if (config.verifier == address(0)) {
             // No verifier set, use mock verification
             return proof.length >= 32;
@@ -472,7 +482,9 @@ contract SoulMultiProver is ReentrancyGuard, AccessControl {
     }
 
     /// @notice Count valid submissions for a proof
-    function _countValidSubmissions(bytes32 proofId) internal view returns (uint256 count) {
+    function _countValidSubmissions(
+        bytes32 proofId
+    ) internal view returns (uint256 count) {
         for (uint i = 0; i < activeProvers.length; i++) {
             if (submissions[proofId][activeProvers[i]].isValid) {
                 count++;
@@ -489,9 +501,11 @@ contract SoulMultiProver is ReentrancyGuard, AccessControl {
         bytes32 proofId
     ) external view returns (VerificationResult memory result) {
         MultiProof storage mp = multiProofs[proofId];
-        
+
         uint256 validCount = 0;
-        ProverSystem[] memory validProvers = new ProverSystem[](activeProvers.length);
+        ProverSystem[] memory validProvers = new ProverSystem[](
+            activeProvers.length
+        );
         uint256 validIdx = 0;
 
         for (uint i = 0; i < activeProvers.length; i++) {

@@ -40,10 +40,7 @@ interface ISoulMultiProver {
         ProverSystem[] validProvers;
     }
 
-    event ProverRegistered(
-        ProverSystem indexed system,
-        address verifier
-    );
+    event ProverRegistered(ProverSystem indexed system, address verifier);
 
     event ProofSubmitted(
         bytes32 indexed proofId,

@@ -49,10 +49,7 @@ interface ISoulStateExpiry {
         uint256 newExpiryEpoch
     );
 
-    event CommitmentCreated(
-        bytes32 indexed commitment,
-        uint64 expiryEpoch
-    );
+    event CommitmentCreated(bytes32 indexed commitment, uint64 expiryEpoch);
 
     event KeepAliveSubmitted(
         address indexed stealthAddress,
@@ -64,9 +61,7 @@ interface ISoulStateExpiry {
         bytes32 stateHash
     ) external returns (uint64 expiryEpoch);
 
-    function accessState(
-        bytes32 stateKey
-    ) external returns (bytes32 stateHash);
+    function accessState(bytes32 stateKey) external returns (bytes32 stateHash);
 
     function resurrectState(
         bytes32 stateKey,
@@ -78,10 +73,7 @@ interface ISoulStateExpiry {
         bytes32 nullifierHash
     ) external returns (uint64 expiryEpoch);
 
-    function spendCommitment(
-        bytes32 commitment,
-        bytes32 nullifier
-    ) external;
+    function spendCommitment(bytes32 commitment, bytes32 nullifier) external;
 
     function resurrectCommitment(
         bytes32 commitment,

@@ -47,24 +47,24 @@ contract SoulIntentResolver is ReentrancyGuard, AccessControl {
 
     /// @notice Intent status
     enum IntentStatus {
-        PENDING,        // Awaiting fill
-        FILLED,         // Filled on destination
-        SETTLED,        // Settled with proof
-        CANCELLED,      // Cancelled by user
-        EXPIRED         // Timed out
+        PENDING, // Awaiting fill
+        FILLED, // Filled on destination
+        SETTLED, // Settled with proof
+        CANCELLED, // Cancelled by user
+        EXPIRED // Timed out
     }
 
     /// @notice Private intent structure (ERC-7683 compatible)
     struct PrivateIntent {
-        bytes32 intentId;              // Unique intent identifier
-        bytes32 intentHash;            // Hash of intent parameters
-        bytes32 nullifier;             // Prevents double-execution
-        bytes32 commitment;            // Soul commitment for privacy
-        bytes encryptedPayload;        // Encrypted swap/transfer details
-        uint256[] destinationChains;   // Allowed destination chains
-        address initiator;             // Intent creator
-        uint64 deadline;               // Expiration timestamp
-        uint256 minOutput;             // Minimum output amount (encrypted for privacy)
+        bytes32 intentId; // Unique intent identifier
+        bytes32 intentHash; // Hash of intent parameters
+        bytes32 nullifier; // Prevents double-execution
+        bytes32 commitment; // Soul commitment for privacy
+        bytes encryptedPayload; // Encrypted swap/transfer details
+        uint256[] destinationChains; // Allowed destination chains
+        address initiator; // Intent creator
+        uint64 deadline; // Expiration timestamp
+        uint256 minOutput; // Minimum output amount (encrypted for privacy)
         IntentStatus status;
     }
 
@@ -73,8 +73,8 @@ contract SoulIntentResolver is ReentrancyGuard, AccessControl {
         bytes32 intentId;
         uint256 filledChainId;
         bytes32 fillTxHash;
-        bytes32 outputCommitment;      // Commitment to actual output
-        bytes zkProof;                 // ZK proof of correct fill
+        bytes32 outputCommitment; // Commitment to actual output
+        bytes zkProof; // ZK proof of correct fill
         address filler;
         uint64 filledAt;
     }
@@ -87,7 +87,7 @@ contract SoulIntentResolver is ReentrancyGuard, AccessControl {
         uint32 originChainId;
         uint32 initiateDeadline;
         uint32 fillDeadline;
-        bytes orderData;               // Encoded PrivateIntent
+        bytes orderData; // Encoded PrivateIntent
     }
 
     /// @notice Resolved cross-chain order
@@ -98,9 +98,9 @@ contract SoulIntentResolver is ReentrancyGuard, AccessControl {
         uint32 originChainId;
         uint32 initiateDeadline;
         uint32 fillDeadline;
-        bytes32[] swapperInputs;       // Commitment hashes
-        bytes32[] swapperOutputs;      // Expected output commitments
-        bytes32[] fillerOutputs;       // What filler provides
+        bytes32[] swapperInputs; // Commitment hashes
+        bytes32[] swapperOutputs; // Expected output commitments
+        bytes32[] fillerOutputs; // What filler provides
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -209,14 +209,15 @@ contract SoulIntentResolver is ReentrancyGuard, AccessControl {
         uint256[] calldata destinationChains,
         uint64 deadline
     ) external nonReentrant returns (bytes32 intentId) {
-        return _submitPrivateIntentInternal(
-            intentHash,
-            nullifier,
-            commitment,
-            encryptedPayload,
-            destinationChains,
-            deadline
-        );
+        return
+            _submitPrivateIntentInternal(
+                intentHash,
+                nullifier,
+                commitment,
+                encryptedPayload,
+                destinationChains,
+                deadline
+            );
     }
 
     /// @notice Internal implementation of intent submission
@@ -230,20 +231,22 @@ contract SoulIntentResolver is ReentrancyGuard, AccessControl {
     ) internal returns (bytes32 intentId) {
         if (usedNullifiers[nullifier]) revert NullifierAlreadyUsed();
         if (destinationChains.length == 0) revert InvalidDestinationChain();
-        
+
         if (deadline == 0) {
             deadline = uint64(block.timestamp) + defaultDeadline;
         }
-        
+
         if (deadline <= block.timestamp) revert IntentExpiredError();
 
-        intentId = keccak256(abi.encode(
-            intentHash,
-            nullifier,
-            msg.sender,
-            block.timestamp,
-            block.chainid
-        ));
+        intentId = keccak256(
+            abi.encode(
+                intentHash,
+                nullifier,
+                msg.sender,
+                block.timestamp,
+                block.chainid
+            )
+        );
 
         if (intents[intentId].intentHash != bytes32(0)) {
             revert IntentAlreadyExists();
@@ -264,7 +267,12 @@ contract SoulIntentResolver is ReentrancyGuard, AccessControl {
 
         totalIntents++;
 
-        emit PrivateIntentCreated(intentId, msg.sender, destinationChains, deadline);
+        emit PrivateIntentCreated(
+            intentId,
+            msg.sender,
+            destinationChains,
+            deadline
+        );
     }
 
     /// @notice ERC-7683 compatible: Open a cross-chain order
@@ -281,9 +289,9 @@ contract SoulIntentResolver is ReentrancyGuard, AccessControl {
             bytes memory encryptedPayload,
             uint256[] memory destinationChains
         ) = abi.decode(
-            order.orderData,
-            (bytes32, bytes32, bytes32, bytes, uint256[])
-        );
+                order.orderData,
+                (bytes32, bytes32, bytes32, bytes, uint256[])
+            );
 
         bytes32 intentId = _submitPrivateIntentInternal(
             intentHash,
@@ -329,7 +337,7 @@ contract SoulIntentResolver is ReentrancyGuard, AccessControl {
         bytes calldata zkProof
     ) external nonReentrant {
         if (fillerBonds[msg.sender] < minFillerBond) revert InsufficientBond();
-        
+
         PrivateIntent storage intent = intents[intentId];
         if (intent.intentHash == bytes32(0)) revert IntentNotFound();
         if (intent.status != IntentStatus.PENDING) revert IntentAlreadyFilled();
@@ -387,7 +395,7 @@ contract SoulIntentResolver is ReentrancyGuard, AccessControl {
     /// @param intentId The intent to cancel
     function cancelIntent(bytes32 intentId) external nonReentrant {
         PrivateIntent storage intent = intents[intentId];
-        
+
         if (intent.intentHash == bytes32(0)) revert IntentNotFound();
         if (msg.sender != intent.initiator) revert NotIntentInitiator();
         if (intent.status != IntentStatus.PENDING) revert IntentAlreadyFilled();
@@ -406,7 +414,7 @@ contract SoulIntentResolver is ReentrancyGuard, AccessControl {
         if (msg.value < minFillerBond) revert InsufficientBond();
         fillerBonds[msg.sender] += msg.value;
         _grantRole(FILLER_ROLE, msg.sender);
-        
+
         emit FillerRegistered(msg.sender, fillerBonds[msg.sender]);
     }
 
@@ -414,11 +422,11 @@ contract SoulIntentResolver is ReentrancyGuard, AccessControl {
     function withdrawBond(uint256 amount) external nonReentrant {
         if (fillerBonds[msg.sender] < amount) revert InsufficientBond();
         fillerBonds[msg.sender] -= amount;
-        
+
         if (fillerBonds[msg.sender] < minFillerBond) {
             _revokeRole(FILLER_ROLE, msg.sender);
         }
-        
+
         payable(msg.sender).transfer(amount);
     }
 
@@ -427,12 +435,16 @@ contract SoulIntentResolver is ReentrancyGuard, AccessControl {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Get intent details
-    function getIntent(bytes32 intentId) external view returns (PrivateIntent memory) {
+    function getIntent(
+        bytes32 intentId
+    ) external view returns (PrivateIntent memory) {
         return intents[intentId];
     }
 
     /// @notice Get fill proof for intent
-    function getFillProof(bytes32 intentId) external view returns (FillProof memory) {
+    function getFillProof(
+        bytes32 intentId
+    ) external view returns (FillProof memory) {
         return fillProofs[intentId];
     }
 
@@ -453,14 +465,16 @@ contract SoulIntentResolver is ReentrancyGuard, AccessControl {
         // In production: call fillProofVerifier
         // For now: verify proof has minimum length
         if (zkProof.length < 128) return false;
-        
+
         // Verify proof matches intent
         // (Would verify using Noir/Groth16 verifier)
         return true;
     }
 
     /// @notice Set the fill proof verifier
-    function setFillProofVerifier(address verifier) external onlyRole(OPERATOR_ROLE) {
+    function setFillProofVerifier(
+        address verifier
+    ) external onlyRole(OPERATOR_ROLE) {
         fillProofVerifier = verifier;
     }
 }

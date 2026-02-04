@@ -102,7 +102,9 @@ interface ISoulIntentResolver {
 
     function cancelIntent(bytes32 intentId) external;
 
-    function getIntent(bytes32 intentId) external view returns (PrivateIntent memory);
+    function getIntent(
+        bytes32 intentId
+    ) external view returns (PrivateIntent memory);
 
     function isNullifierUsed(bytes32 nullifier) external view returns (bool);
 }

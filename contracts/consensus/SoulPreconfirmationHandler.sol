@@ -49,41 +49,41 @@ contract SoulPreconfirmationHandler is ReentrancyGuard, AccessControl {
 
     /// @notice Preconfirmation status
     enum PreconfStatus {
-        PENDING,        // Awaiting proposer acceptance
-        PRECONFIRMED,   // Proposer has committed
-        INCLUDED,       // Included in block
-        EXPIRED,        // Timed out
-        SLASHED         // Proposer violated commitment
+        PENDING, // Awaiting proposer acceptance
+        PRECONFIRMED, // Proposer has committed
+        INCLUDED, // Included in block
+        EXPIRED, // Timed out
+        SLASHED // Proposer violated commitment
     }
 
     /// @notice Preconfirmation request for a privacy operation
     struct PreconfRequest {
-        bytes32 txHash;            // Hash of the privacy transaction
-        bytes32 commitmentHash;    // Soul commitment being used
-        bytes32 nullifier;         // Nullifier (for double-spend protection)
-        address submitter;         // Who submitted the request
-        uint64 requestedSlot;      // Slot requested for inclusion
-        uint64 submittedAt;        // Timestamp of submission
-        uint256 tip;               // Priority fee offered
+        bytes32 txHash; // Hash of the privacy transaction
+        bytes32 commitmentHash; // Soul commitment being used
+        bytes32 nullifier; // Nullifier (for double-spend protection)
+        address submitter; // Who submitted the request
+        uint64 requestedSlot; // Slot requested for inclusion
+        uint64 submittedAt; // Timestamp of submission
+        uint256 tip; // Priority fee offered
         PreconfStatus status;
     }
 
     /// @notice Proposer preconfirmation commitment
     struct ProposerCommitment {
-        bytes32 preconfId;         // ID of the preconfirmation
-        address proposer;          // Proposer address
-        uint64 slot;               // Committed slot
-        bytes signature;           // Proposer's signature
-        uint64 committedAt;        // When commitment was made
-        bool honored;              // Was the commitment honored?
+        bytes32 preconfId; // ID of the preconfirmation
+        address proposer; // Proposer address
+        uint64 slot; // Committed slot
+        bytes signature; // Proposer's signature
+        uint64 committedAt; // When commitment was made
+        bool honored; // Was the commitment honored?
     }
 
     /// @notice Orbit SSF committee attestation
     struct OrbitAttestation {
-        bytes32 stateRoot;         // State root being attested
-        uint256[] committee;       // Committee member indices
-        bytes aggregatedSig;       // Aggregated BLS signature
-        uint64 slot;               // Slot number
+        bytes32 stateRoot; // State root being attested
+        uint256[] committee; // Committee member indices
+        bytes aggregatedSig; // Aggregated BLS signature
+        uint64 slot; // Slot number
         uint256 participationBits; // Bitmap of who signed
     }
 
@@ -199,18 +199,21 @@ contract SoulPreconfirmationHandler is ReentrancyGuard, AccessControl {
         uint64 requestedSlot
     ) external payable nonReentrant returns (bytes32 preconfId) {
         uint64 currentSlot = _getCurrentSlot();
-        
-        if (requestedSlot <= currentSlot) revert InvalidSlot();
-        if (requestedSlot > currentSlot + preconfValidityPeriod) revert InvalidSlot();
 
-        preconfId = keccak256(abi.encode(
-            txHash,
-            commitmentHash,
-            nullifier,
-            msg.sender,
-            requestedSlot,
-            block.timestamp
-        ));
+        if (requestedSlot <= currentSlot) revert InvalidSlot();
+        if (requestedSlot > currentSlot + preconfValidityPeriod)
+            revert InvalidSlot();
+
+        preconfId = keccak256(
+            abi.encode(
+                txHash,
+                commitmentHash,
+                nullifier,
+                msg.sender,
+                requestedSlot,
+                block.timestamp
+            )
+        );
 
         if (preconfRequests[preconfId].txHash != bytes32(0)) {
             revert PreconfAlreadyExists();
@@ -229,7 +232,13 @@ contract SoulPreconfirmationHandler is ReentrancyGuard, AccessControl {
 
         slotPreconfs[requestedSlot].push(preconfId);
 
-        emit PreconfRequested(preconfId, txHash, msg.sender, requestedSlot, msg.value);
+        emit PreconfRequested(
+            preconfId,
+            txHash,
+            msg.sender,
+            requestedSlot,
+            msg.value
+        );
     }
 
     /// @notice Proposer accepts a preconfirmation request
@@ -247,16 +256,17 @@ contract SoulPreconfirmationHandler is ReentrancyGuard, AccessControl {
 
         PreconfRequest storage request = preconfRequests[preconfId];
         if (request.txHash == bytes32(0)) revert PreconfNotFound();
-        if (request.status != PreconfStatus.PENDING) revert AlreadyPreconfirmed();
+        if (request.status != PreconfStatus.PENDING)
+            revert AlreadyPreconfirmed();
 
         // Verify signature
-        bytes32 commitmentMessage = keccak256(abi.encode(
-            preconfId,
-            slot,
-            msg.sender
-        ));
-        
-        bytes32 ethSignedHash = MessageHashUtils.toEthSignedMessageHash(commitmentMessage);
+        bytes32 commitmentMessage = keccak256(
+            abi.encode(preconfId, slot, msg.sender)
+        );
+
+        bytes32 ethSignedHash = MessageHashUtils.toEthSignedMessageHash(
+            commitmentMessage
+        );
         if (ECDSA.recover(ethSignedHash, signature) != msg.sender) {
             revert InvalidSignature();
         }
@@ -284,9 +294,9 @@ contract SoulPreconfirmationHandler is ReentrancyGuard, AccessControl {
     ) external nonReentrant {
         PreconfRequest storage request = preconfRequests[preconfId];
         if (request.txHash == bytes32(0)) revert PreconfNotFound();
-        
+
         ProposerCommitment storage commitment = commitments[preconfId];
-        
+
         // Verify inclusion (simplified - in production would verify merkle proof)
         // For now, trusted operator confirms
         if (!hasRole(OPERATOR_ROLE, msg.sender)) revert UnauthorizedCaller();
@@ -307,28 +317,28 @@ contract SoulPreconfirmationHandler is ReentrancyGuard, AccessControl {
     function slashProposer(bytes32 preconfId) external nonReentrant {
         ProposerCommitment storage commitment = commitments[preconfId];
         PreconfRequest storage request = preconfRequests[preconfId];
-        
+
         if (commitment.proposer == address(0)) revert PreconfNotFound();
         if (commitment.honored) revert UnauthorizedCaller();
-        
+
         // Check if slot has passed
         uint64 currentSlot = _getCurrentSlot();
         if (currentSlot <= commitment.slot + 1) revert InvalidSlot();
-        
+
         // Slash
         uint256 slashAmount = proposerStakes[commitment.proposer] / 10; // 10% slash
         proposerStakes[commitment.proposer] -= slashAmount;
-        
+
         // Refund tip to submitter
         if (request.tip > 0) {
             payable(request.submitter).transfer(request.tip);
         }
-        
+
         // Reward slasher
         payable(msg.sender).transfer(slashAmount / 2);
-        
+
         request.status = PreconfStatus.SLASHED;
-        
+
         emit ProposerSlashed(commitment.proposer, preconfId, slashAmount);
     }
 
@@ -346,17 +356,17 @@ contract SoulPreconfirmationHandler is ReentrancyGuard, AccessControl {
         // Verify participation threshold (e.g., 2/3 of committee)
         uint256 participantCount = _countBits(attestation.participationBits);
         uint256 committeeSize = attestation.committee.length;
-        
+
         if (participantCount * 3 < committeeSize * 2) {
             return false;
         }
-        
+
         // In production: verify BLS aggregate signature
         // For now, simplified check
         if (attestation.aggregatedSig.length < 96) {
             return false;
         }
-        
+
         return true;
     }
 
@@ -368,9 +378,9 @@ contract SoulPreconfirmationHandler is ReentrancyGuard, AccessControl {
         if (!this.verifyOrbitCommittee(attestation)) {
             revert InvalidOrbitAttestation();
         }
-        
+
         uint256 participantCount = _countBits(attestation.participationBits);
-        
+
         emit OrbitAttestationVerified(
             attestation.stateRoot,
             attestation.slot,
@@ -387,13 +397,17 @@ contract SoulPreconfirmationHandler is ReentrancyGuard, AccessControl {
     ) external onlyRole(OPERATOR_ROLE) {
         ssfEnabled = enabled;
         ssfChallengePeriod = challengePeriod;
-        
+
         emit SSFEnabled(enabled, challengePeriod);
     }
 
     /// @notice Get the effective challenge period (SSF-aware)
     /// @return period Challenge period in seconds
-    function getEffectiveChallengePeriod() external view returns (uint64 period) {
+    function getEffectiveChallengePeriod()
+        external
+        view
+        returns (uint64 period)
+    {
         if (ssfEnabled) {
             return ssfChallengePeriod; // 12s with SSF
         }
@@ -415,11 +429,11 @@ contract SoulPreconfirmationHandler is ReentrancyGuard, AccessControl {
     function withdrawStake(uint256 amount) external nonReentrant {
         if (proposerStakes[msg.sender] < amount) revert InsufficientStake();
         proposerStakes[msg.sender] -= amount;
-        
+
         if (proposerStakes[msg.sender] < minProposerStake) {
             _revokeRole(PROPOSER_ROLE, msg.sender);
         }
-        
+
         payable(msg.sender).transfer(amount);
     }
 

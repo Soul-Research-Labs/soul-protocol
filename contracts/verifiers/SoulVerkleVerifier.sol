@@ -46,27 +46,27 @@ contract SoulVerkleVerifier is ReentrancyGuard, AccessControl {
 
     /// @notice Verkle proof structure
     struct VerkleProof {
-        bytes32 commitment;        // Verkle commitment (IPA)
-        bytes32[] path;            // Path to leaf
-        uint256 pathBits;          // Path direction bits
-        bytes ipaProof;            // Inner product argument proof
-        bytes32 leafValue;         // Leaf value being proven
+        bytes32 commitment; // Verkle commitment (IPA)
+        bytes32[] path; // Path to leaf
+        uint256 pathBits; // Path direction bits
+        bytes ipaProof; // Inner product argument proof
+        bytes32 leafValue; // Leaf value being proven
     }
 
     /// @notice Verkle witness for stateless verification
     struct VerkleWitness {
-        bytes32 stateRoot;         // Verkle state root
-        VerkleProof[] proofs;      // All proofs needed
-        bytes32[] accessedKeys;    // Keys that will be accessed
-        bytes32[] accessedValues;  // Corresponding values
+        bytes32 stateRoot; // Verkle state root
+        VerkleProof[] proofs; // All proofs needed
+        bytes32[] accessedKeys; // Keys that will be accessed
+        bytes32[] accessedValues; // Corresponding values
     }
 
     /// @notice Soul privacy proof with Verkle witness
     struct SoulVerklePrivacyProof {
-        bytes32 commitmentHash;    // Soul commitment
-        bytes32 nullifier;         // Nullifier
+        bytes32 commitmentHash; // Soul commitment
+        bytes32 nullifier; // Nullifier
         VerkleWitness stateWitness; // Verkle state witness
-        bytes zkProof;             // ZK proof of valid operation
+        bytes zkProof; // ZK proof of valid operation
     }
 
     /// @notice Bandersnatch curve point (Verkle uses this)
@@ -180,11 +180,13 @@ contract SoulVerkleVerifier is ReentrancyGuard, AccessControl {
 
         // Verify each proof in the witness
         for (uint i = 0; i < witness.proofs.length; i++) {
-            if (!this.verifyVerkleProof(
-                witness.proofs[i],
-                witness.stateRoot,
-                witness.accessedKeys[i]
-            )) {
+            if (
+                !this.verifyVerkleProof(
+                    witness.proofs[i],
+                    witness.stateRoot,
+                    witness.accessedKeys[i]
+                )
+            ) {
                 return false;
             }
 
@@ -209,15 +211,23 @@ contract SoulVerkleVerifier is ReentrancyGuard, AccessControl {
         }
 
         // Then verify the ZK privacy proof
-        if (!_verifyZKProof(proof.zkProof, proof.commitmentHash, proof.nullifier)) {
+        if (
+            !_verifyZKProof(
+                proof.zkProof,
+                proof.commitmentHash,
+                proof.nullifier
+            )
+        ) {
             return false;
         }
 
-        bytes32 proofId = keccak256(abi.encode(
-            proof.commitmentHash,
-            proof.nullifier,
-            proof.stateWitness.stateRoot
-        ));
+        bytes32 proofId = keccak256(
+            abi.encode(
+                proof.commitmentHash,
+                proof.nullifier,
+                proof.stateWitness.stateRoot
+            )
+        );
 
         verifiedProofs[proofId] = true;
 
@@ -244,15 +254,15 @@ contract SoulVerkleVerifier is ReentrancyGuard, AccessControl {
         // 1. Parse the IPA proof components
         // 2. Compute the challenges using Fiat-Shamir
         // 3. Verify the inner product relation
-        
+
         // In production, this would use the Bandersnatch curve
         // For now, verify proof has correct structure
-        
+
         if (proof.ipaProof.length < 64) return false;
-        
+
         // Verify commitment is non-zero
         if (proof.commitment == bytes32(0)) return false;
-        
+
         // More rigorous verification would happen on-chain
         // or via a precompile when available
         return true;
@@ -266,15 +276,15 @@ contract SoulVerkleVerifier is ReentrancyGuard, AccessControl {
     ) external pure returns (bool valid) {
         // Bandersnatch curve equation: y² = x³ + ax + b
         // a = -5, b = specific value for Bandersnatch
-        
+
         // Simplified check (in production: full curve verification)
         if (point.x == 0 && point.y == 0) return false;
-        
+
         // Field modulus for Bandersnatch
         uint256 p = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001;
-        
+
         if (point.x >= p || point.y >= p) return false;
-        
+
         return true;
     }
 
@@ -290,11 +300,11 @@ contract SoulVerkleVerifier is ReentrancyGuard, AccessControl {
     ) internal pure returns (bytes32 commitment) {
         // Start from leaf
         commitment = leafValue;
-        
+
         // Walk up the tree
         for (uint i = 0; i < path.length; i++) {
             bool isRight = (pathBits >> i) & 1 == 1;
-            
+
             if (isRight) {
                 commitment = keccak256(abi.encode(path[i], commitment));
             } else {
@@ -312,7 +322,7 @@ contract SoulVerkleVerifier is ReentrancyGuard, AccessControl {
         bytes32[] calldata values
     ) external pure returns (bytes32 commitment) {
         require(keys.length == values.length, "Length mismatch");
-        
+
         // Simplified: hash all key-value pairs
         // In production: build proper Verkle tree
         commitment = keccak256(abi.encode(keys, values));
@@ -331,7 +341,7 @@ contract SoulVerkleVerifier is ReentrancyGuard, AccessControl {
         if (zkProof.length < 128) return false;
         if (commitmentHash == bytes32(0)) return false;
         if (nullifier == bytes32(0)) return false;
-        
+
         return true;
     }
 
@@ -345,14 +355,12 @@ contract SoulVerkleVerifier is ReentrancyGuard, AccessControl {
     ) external onlyRole(OPERATOR_ROLE) {
         bytes32 oldRoot = verkleStateRoot;
         verkleStateRoot = newRoot;
-        
+
         emit VerkleStateRootUpdated(oldRoot, newRoot);
     }
 
     /// @notice Enable/disable Verkle mode
-    function setVerkleEnabled(
-        bool enabled
-    ) external onlyRole(OPERATOR_ROLE) {
+    function setVerkleEnabled(bool enabled) external onlyRole(OPERATOR_ROLE) {
         verkleEnabled = enabled;
         emit VerkleEnabled(enabled);
     }

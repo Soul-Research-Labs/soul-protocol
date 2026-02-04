@@ -59,10 +59,7 @@ interface ISoulL2Messenger {
         bytes32 executionResultHash
     );
 
-    event PrivacyMessageFailed(
-        bytes32 indexed messageId,
-        string reason
-    );
+    event PrivacyMessageFailed(bytes32 indexed messageId, string reason);
 
     function sendPrivacyMessage(
         uint256 destChainId,

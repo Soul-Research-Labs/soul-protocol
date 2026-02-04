@@ -51,31 +51,31 @@ contract SoulStateExpiry is ReentrancyGuard, AccessControl {
 
     /// @notice State entry with expiry tracking
     struct ExpiringState {
-        bytes32 stateHash;         // Hash of the state data
-        uint64 createdAt;          // When state was created
-        uint64 lastAccessed;       // Last access time
-        uint64 expiryEpoch;        // Epoch when it expires
-        bool isActive;             // Currently in active tree
-        bool isResurrected;        // Was previously expired and resurrected
+        bytes32 stateHash; // Hash of the state data
+        uint64 createdAt; // When state was created
+        uint64 lastAccessed; // Last access time
+        uint64 expiryEpoch; // Epoch when it expires
+        bool isActive; // Currently in active tree
+        bool isResurrected; // Was previously expired and resurrected
     }
 
     /// @notice Resurrection proof for expired state
     struct ResurrectionProof {
-        bytes32 stateHash;         // State being resurrected
-        bytes32 archiveRoot;       // Root of archive tree
-        bytes32[] merkleProof;     // Proof of inclusion in archive
-        bytes32 leafValue;         // The archived value
-        uint256 archiveEpoch;      // When it was archived
+        bytes32 stateHash; // State being resurrected
+        bytes32 archiveRoot; // Root of archive tree
+        bytes32[] merkleProof; // Proof of inclusion in archive
+        bytes32 leafValue; // The archived value
+        uint256 archiveEpoch; // When it was archived
     }
 
     /// @notice Soul commitment with expiry
     struct ExpiringCommitment {
-        bytes32 commitment;        // Soul commitment
-        bytes32 nullifierHash;     // Hash of expected nullifier
-        uint64 createdEpoch;       // Creation epoch
-        uint64 expiryEpoch;        // Expiry epoch
-        bool isSpent;              // Whether nullified
-        bool isExpired;            // Whether expired
+        bytes32 commitment; // Soul commitment
+        bytes32 nullifierHash; // Hash of expected nullifier
+        uint64 createdEpoch; // Creation epoch
+        uint64 expiryEpoch; // Expiry epoch
+        bool isSpent; // Whether nullified
+        bool isExpired; // Whether expired
     }
 
     /// @notice Keep-alive transaction for stealth addresses
@@ -136,15 +136,9 @@ contract SoulStateExpiry is ReentrancyGuard, AccessControl {
         uint64 expiryEpoch
     );
 
-    event StateAccessed(
-        bytes32 indexed stateKey,
-        uint64 newExpiry
-    );
+    event StateAccessed(bytes32 indexed stateKey, uint64 newExpiry);
 
-    event StateExpired(
-        bytes32 indexed stateKey,
-        uint256 epoch
-    );
+    event StateExpired(bytes32 indexed stateKey, uint256 epoch);
 
     event StateResurrected(
         bytes32 indexed stateKey,
@@ -152,19 +146,11 @@ contract SoulStateExpiry is ReentrancyGuard, AccessControl {
         uint256 newExpiryEpoch
     );
 
-    event ArchiveRootUpdated(
-        uint256 indexed epoch,
-        bytes32 archiveRoot
-    );
+    event ArchiveRootUpdated(uint256 indexed epoch, bytes32 archiveRoot);
 
-    event CommitmentCreated(
-        bytes32 indexed commitment,
-        uint64 expiryEpoch
-    );
+    event CommitmentCreated(bytes32 indexed commitment, uint64 expiryEpoch);
 
-    event CommitmentResurrected(
-        bytes32 indexed commitment
-    );
+    event CommitmentResurrected(bytes32 indexed commitment);
 
     event KeepAliveSubmitted(
         address indexed stealthAddress,
@@ -234,7 +220,7 @@ contract SoulStateExpiry is ReentrancyGuard, AccessControl {
         bytes32 stateKey
     ) external nonReentrant returns (bytes32 stateHash) {
         ExpiringState storage state = expiringStates[stateKey];
-        
+
         if (state.stateHash == bytes32(0)) revert StateNotFound();
         if (!state.isActive) revert StateNotFound();
 
@@ -255,9 +241,9 @@ contract SoulStateExpiry is ReentrancyGuard, AccessControl {
         ResurrectionProof calldata proof
     ) external payable nonReentrant {
         ExpiringState storage state = expiringStates[stateKey];
-        
+
         if (state.isActive) revert StateAlreadyActive();
-        
+
         // Verify within grace period
         if (currentEpoch > state.expiryEpoch + gracePeriodEpochs) {
             revert StatePermantlyDeleted();
@@ -269,12 +255,14 @@ contract SoulStateExpiry is ReentrancyGuard, AccessControl {
         }
 
         // Verify merkle proof
-        if (!_verifyMerkleProof(
-            proof.merkleProof,
-            proof.archiveRoot,
-            proof.stateHash,
-            proof.leafValue
-        )) {
+        if (
+            !_verifyMerkleProof(
+                proof.merkleProof,
+                proof.archiveRoot,
+                proof.stateHash,
+                proof.leafValue
+            )
+        ) {
             revert InvalidResurrectionProof();
         }
 
@@ -324,7 +312,7 @@ contract SoulStateExpiry is ReentrancyGuard, AccessControl {
         bytes32 nullifier
     ) external nonReentrant {
         ExpiringCommitment storage c = expiringCommitments[commitment];
-        
+
         if (c.commitment == bytes32(0)) revert StateNotFound();
         if (c.isSpent) revert CommitmentAlreadySpent();
         if (c.isExpired) revert CommitmentExpired();
@@ -333,7 +321,7 @@ contract SoulStateExpiry is ReentrancyGuard, AccessControl {
         // Verify nullifier matches
         require(
             keccak256(abi.encode(nullifier)) == c.nullifierHash ||
-            nullifier == c.nullifierHash,
+                nullifier == c.nullifierHash,
             "Invalid nullifier"
         );
 
@@ -348,19 +336,21 @@ contract SoulStateExpiry is ReentrancyGuard, AccessControl {
         ResurrectionProof calldata proof
     ) external payable nonReentrant {
         ExpiringCommitment storage c = expiringCommitments[commitment];
-        
+
         if (c.commitment == bytes32(0)) revert StateNotFound();
         if (!c.isExpired && currentEpoch <= c.expiryEpoch) {
             revert StateAlreadyActive();
         }
 
         // Verify proof (same as state resurrection)
-        if (!_verifyMerkleProof(
-            proof.merkleProof,
-            proof.archiveRoot,
-            proof.stateHash,
-            proof.leafValue
-        )) {
+        if (
+            !_verifyMerkleProof(
+                proof.merkleProof,
+                proof.archiveRoot,
+                proof.stateHash,
+                proof.leafValue
+            )
+        ) {
             revert InvalidResurrectionProof();
         }
 
@@ -382,7 +372,7 @@ contract SoulStateExpiry is ReentrancyGuard, AccessControl {
         bytes32 viewingKeyHash
     ) external nonReentrant {
         KeepAlive storage ka = keepAlives[stealthAddress];
-        
+
         ka.stealthAddress = stealthAddress;
         ka.viewingKeyHash = viewingKeyHash;
         ka.lastKeepAlive = uint64(block.timestamp);
@@ -398,7 +388,7 @@ contract SoulStateExpiry is ReentrancyGuard, AccessControl {
         address stealthAddress
     ) external view returns (bool isActive) {
         KeepAlive storage ka = keepAlives[stealthAddress];
-        
+
         if (ka.stealthAddress == address(0)) return true; // Not registered = active
         return block.timestamp < ka.nextRequired;
     }
@@ -409,12 +399,13 @@ contract SoulStateExpiry is ReentrancyGuard, AccessControl {
 
     /// @notice Advance to next epoch
     function advanceEpoch() external {
-        uint256 expectedEpoch = (block.timestamp - genesisTimestamp) / epochDuration;
-        
+        uint256 expectedEpoch = (block.timestamp - genesisTimestamp) /
+            epochDuration;
+
         if (expectedEpoch > currentEpoch) {
             uint256 oldEpoch = currentEpoch;
             currentEpoch = expectedEpoch;
-            
+
             emit EpochAdvanced(oldEpoch, currentEpoch);
         }
     }
@@ -455,10 +446,10 @@ contract SoulStateExpiry is ReentrancyGuard, AccessControl {
         uint256 blockNumber
     ) external pure returns (string memory archiveURI) {
         // Return Portal Network URI format
-        return string(abi.encodePacked(
-            "portal://eth/block/",
-            _uint2str(blockNumber)
-        ));
+        return
+            string(
+                abi.encodePacked("portal://eth/block/", _uint2str(blockNumber))
+            );
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -472,7 +463,7 @@ contract SoulStateExpiry is ReentrancyGuard, AccessControl {
         bytes32 /* value */
     ) internal pure returns (bool) {
         bytes32 computed = leaf;
-        
+
         for (uint i = 0; i < proof.length; i++) {
             if (computed <= proof[i]) {
                 computed = keccak256(abi.encode(computed, proof[i]));
@@ -480,27 +471,27 @@ contract SoulStateExpiry is ReentrancyGuard, AccessControl {
                 computed = keccak256(abi.encode(proof[i], computed));
             }
         }
-        
+
         return computed == root;
     }
 
     function _uint2str(uint256 value) internal pure returns (string memory) {
         if (value == 0) return "0";
-        
+
         uint256 temp = value;
         uint256 digits;
         while (temp != 0) {
             digits++;
             temp /= 10;
         }
-        
+
         bytes memory buffer = new bytes(digits);
         while (value != 0) {
             digits--;
-            buffer[digits] = bytes1(uint8(48 + value % 10));
+            buffer[digits] = bytes1(uint8(48 + (value % 10)));
             value /= 10;
         }
-        
+
         return string(buffer);
     }
 }
