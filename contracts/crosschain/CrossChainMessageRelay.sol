@@ -556,6 +556,9 @@ contract CrossChainMessageRelay is AccessControl, ReentrancyGuard, Pausable {
                         messages[i].sender,
                         messages[i].target
                     );
+                } else {
+                    // M-22: Emit event for failed verifications instead of silent skip
+                    emit MessageFailed(msgId, "Proof verification failed");
                 }
             }
             unchecked {

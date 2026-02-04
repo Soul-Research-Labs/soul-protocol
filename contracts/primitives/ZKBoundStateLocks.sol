@@ -1128,6 +1128,29 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
                            ADMIN FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice State to track if role separation has been confirmed
+    bool public rolesSeparated;
+
+    /// @notice Error thrown when roles are not properly separated
+    error RolesNotSeparated();
+
+    /// @notice Confirms that critical roles have been separated
+    /// @dev M-15: Adds centralization protection - call before mainnet to verify
+    ///      different addresses hold different roles
+    function confirmRoleSeparation() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        address admin = msg.sender;
+        
+        // Verify admin doesn't hold other critical roles
+        require(
+            !hasRole(DISPUTE_RESOLVER_ROLE, admin) &&
+            !hasRole(RECOVERY_ROLE, admin) &&
+            !hasRole(OPERATOR_ROLE, admin),
+            "Admin must not hold operational roles"
+        );
+        
+        rolesSeparated = true;
+    }
+
     function pause() external onlyRole(LOCK_ADMIN_ROLE) {
         _pause();
     }

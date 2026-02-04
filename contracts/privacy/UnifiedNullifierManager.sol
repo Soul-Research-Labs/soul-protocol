@@ -773,10 +773,41 @@ contract UnifiedNullifierManager is
         return soulBindings[sourceNullifier];
     }
 
+    /// @notice Gets all source nullifiers for a soul binding
+    /// @dev WARNING: May run out of gas for bindings with many nullifiers. Use paginated version for large sets.
     function getSourceNullifiers(
         bytes32 soulBinding
     ) external view returns (bytes32[] memory) {
         return reverseSoulLookup[soulBinding];
+    }
+
+    /// @notice Gets source nullifiers with pagination
+    /// @param soulBinding The soul binding to query
+    /// @param offset Starting index
+    /// @param limit Maximum number of nullifiers to return
+    /// @return nullifiers Array of source nullifiers
+    /// @return total Total number of nullifiers for this binding
+    /// @dev M-12: Added pagination to prevent out-of-gas for large arrays
+    function getSourceNullifiersPaginated(
+        bytes32 soulBinding,
+        uint256 offset,
+        uint256 limit
+    ) external view returns (bytes32[] memory nullifiers, uint256 total) {
+        bytes32[] storage allNullifiers = reverseSoulLookup[soulBinding];
+        total = allNullifiers.length;
+        
+        if (offset >= total) {
+            return (new bytes32[](0), total);
+        }
+        
+        uint256 remaining = total - offset;
+        uint256 count = remaining < limit ? remaining : limit;
+        nullifiers = new bytes32[](count);
+        
+        for (uint256 i = 0; i < count; ) {
+            nullifiers[i] = allNullifiers[offset + i];
+            unchecked { ++i; }
+        }
     }
 
     function getBatch(

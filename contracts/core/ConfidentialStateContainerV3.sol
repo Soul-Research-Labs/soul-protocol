@@ -710,10 +710,40 @@ contract ConfidentialStateContainerV3 is
     /// @notice Gets all commitments for an owner
     /// @param owner The owner address
     /// @return commitments Array of commitment hashes
+    /// @dev WARNING: This may run out of gas for owners with many commitments. Use paginated version for large sets.
     function getOwnerCommitments(
         address owner
     ) external view returns (bytes32[] memory commitments) {
         return _ownerCommitments[owner];
+    }
+
+    /// @notice Gets commitments for an owner with pagination
+    /// @param owner The owner address
+    /// @param offset Starting index
+    /// @param limit Maximum number of commitments to return
+    /// @return commitments Array of commitment hashes
+    /// @return total Total number of commitments for this owner
+    /// @dev M-14: Added pagination to prevent out-of-gas for large arrays
+    function getOwnerCommitmentsPaginated(
+        address owner,
+        uint256 offset,
+        uint256 limit
+    ) external view returns (bytes32[] memory commitments, uint256 total) {
+        bytes32[] storage allCommitments = _ownerCommitments[owner];
+        total = allCommitments.length;
+        
+        if (offset >= total) {
+            return (new bytes32[](0), total);
+        }
+        
+        uint256 remaining = total - offset;
+        uint256 count = remaining < limit ? remaining : limit;
+        commitments = new bytes32[](count);
+        
+        for (uint256 i = 0; i < count; ) {
+            commitments[i] = allCommitments[offset + i];
+            unchecked { ++i; }
+        }
     }
 
     /// @notice Gets state transition history
