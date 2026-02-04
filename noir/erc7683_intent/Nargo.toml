@@ -1,0 +1,7 @@
+[package]
+name = "erc7683_intent"
+type = "bin"
+authors = ["Soul Protocol"]
+compiler_version = ">=0.30.0"
+
+[dependencies]

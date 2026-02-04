@@ -463,6 +463,88 @@ From The Verge, Soul should enable light client verification:
 
 ---
 
+## Implementation Status
+
+### Contracts Implemented
+
+The following contracts have been created to align Soul Protocol with Ethereum's roadmap:
+
+#### The Merge Alignment
+| Contract | Purpose | Status |
+|----------|---------|--------|
+| [SoulPreconfirmationHandler](../contracts/consensus/SoulPreconfirmationHandler.sol) | SSF-aware preconfirmations, Orbit committee verification | ✅ Implemented |
+| [ISoulPreconfirmationHandler](../contracts/interfaces/ISoulPreconfirmationHandler.sol) | Interface | ✅ Implemented |
+
+#### The Surge Alignment
+| Contract | Purpose | Status |
+|----------|---------|--------|
+| [SoulIntentResolver](../contracts/crosschain/SoulIntentResolver.sol) | ERC-7683 private cross-chain intents | ✅ Implemented |
+| [SoulL2Messenger](../contracts/crosschain/SoulL2Messenger.sol) | RIP-7755 privacy-preserving L2 messaging | ✅ Implemented |
+| [ISoulIntentResolver](../contracts/interfaces/ISoulIntentResolver.sol) | Interface | ✅ Implemented |
+| [ISoulL2Messenger](../contracts/interfaces/ISoulL2Messenger.sol) | Interface | ✅ Implemented |
+
+#### The Verge Alignment
+| Contract | Purpose | Status |
+|----------|---------|--------|
+| [SoulVerkleVerifier](../contracts/verifiers/SoulVerkleVerifier.sol) | Verkle witness verification, IPA proofs | ✅ Implemented |
+| [SoulMultiProver](../contracts/verifiers/SoulMultiProver.sol) | 2-of-3 multi-prover consensus (Noir/SP1/Jolt) | ✅ Implemented |
+| [ISoulVerkleVerifier](../contracts/interfaces/ISoulVerkleVerifier.sol) | Interface | ✅ Implemented |
+| [ISoulMultiProver](../contracts/interfaces/ISoulMultiProver.sol) | Interface | ✅ Implemented |
+
+#### The Purge Alignment
+| Contract | Purpose | Status |
+|----------|---------|--------|
+| [SoulStateExpiry](../contracts/storage/SoulStateExpiry.sol) | EIP-7736 state expiry, resurrection proofs | ✅ Implemented |
+| [ISoulStateExpiry](../contracts/interfaces/ISoulStateExpiry.sol) | Interface | ✅ Implemented |
+
+### Noir Circuits Implemented
+
+| Circuit | Purpose | Roadmap Alignment |
+|---------|---------|-------------------|
+| [erc7683_intent](../noir/erc7683_intent/) | Private cross-chain intent proofs | The Surge |
+| [verkle_witness](../noir/verkle_witness/) | Stateless Verkle verification | The Verge |
+| [state_expiry_proof](../noir/state_expiry_proof/) | Resurrection proofs for expired state | The Purge |
+| [preconfirmation_proof](../noir/preconfirmation_proof/) | Privacy tx preconfirmation proofs | The Merge |
+
+### Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│              ETHEREUM ROADMAP ALIGNED SOUL ARCHITECTURE                  │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  THE MERGE                    THE SURGE                                 │
+│  ┌─────────────────────┐      ┌─────────────────────────────────────┐   │
+│  │ SoulPreconfirmation │      │ SoulIntentResolver (ERC-7683)       │   │
+│  │ Handler             │      │ SoulL2Messenger (RIP-7755)          │   │
+│  │ • SSF support       │      │ • Private cross-chain intents       │   │
+│  │ • Orbit attestation │      │ • L1SLOAD keystore wallet           │   │
+│  │ • 12s finality      │      │ • Privacy-preserving L2 calls       │   │
+│  └─────────────────────┘      └─────────────────────────────────────┘   │
+│                                                                          │
+│  THE VERGE                    THE PURGE                                 │
+│  ┌─────────────────────┐      ┌─────────────────────────────────────┐   │
+│  │ SoulVerkleVerifier  │      │ SoulStateExpiry                     │   │
+│  │ SoulMultiProver     │      │ • EIP-7736 resurrection proofs      │   │
+│  │ • Verkle witnesses  │      │ • Keep-alive for stealth addresses  │   │
+│  │ • IPA proof verify  │      │ • Archive root management           │   │
+│  │ • 2-of-3 consensus  │      │ • EIP-4444 Portal Network URIs      │   │
+│  │ • Noir/SP1/Jolt     │      └─────────────────────────────────────┘   │
+│  └─────────────────────┘                                                │
+│                                                                          │
+│  NOIR CIRCUITS                                                          │
+│  ┌─────────────────────────────────────────────────────────────────┐    │
+│  │ erc7683_intent  │ verkle_witness │ state_expiry  │ preconf     │    │
+│  │ • Intent hash   │ • IPA verify   │ • Archive     │ • SSF-ready │    │
+│  │ • Fill proof    │ • Path verify  │   inclusion   │ • Nullifier │    │
+│  │ • Min output    │ • State proof  │ • Ownership   │ • Balance   │    │
+│  └─────────────────────────────────────────────────────────────────┘    │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## State Expiry Compatibility
 
 From The Purge, Soul must handle state expiry:

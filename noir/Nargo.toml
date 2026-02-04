@@ -14,5 +14,10 @@ members = [
     "policy_bound_proof",
     "aggregator",
     "pqc_verifier",
-    "invariant_checker"
+    "invariant_checker",
+    # Ethereum Roadmap Alignment (Oct 2024)
+    "erc7683_intent",           # The Surge: ERC-7683 private intents
+    "verkle_witness",           # The Verge: Verkle tree verification  
+    "state_expiry_proof",       # The Purge: EIP-7736 resurrection proofs
+    "preconfirmation_proof"     # The Merge: SSF preconfirmations
 ]

@@ -21,16 +21,16 @@ interface ISoulExecutionTable {
 
     /// @notice Type of privacy action
     enum ActionType {
-        CALL,              // Standard cross-chain call
-        RESULT,            // Return from a call
-        REVERT,            // Revert a call
-        REVERT_CONTINUE,   // Continue after revert handling
-        PRIVATE_TRANSFER,  // Privacy-preserving transfer
-        NULLIFIER_REGISTER,// Register a nullifier cross-chain
-        STATE_UNLOCK,      // Unlock ZK-bound state
-        ATOMIC_SWAP,       // Private atomic swap
-        POLICY_CHECK,      // Policy compliance verification
-        CREDENTIAL_VERIFY  // Private credential verification
+        CALL, // Standard cross-chain call
+        RESULT, // Return from a call
+        REVERT, // Revert a call
+        REVERT_CONTINUE, // Continue after revert handling
+        PRIVATE_TRANSFER, // Privacy-preserving transfer
+        NULLIFIER_REGISTER, // Register a nullifier cross-chain
+        STATE_UNLOCK, // Unlock ZK-bound state
+        ATOMIC_SWAP, // Private atomic swap
+        POLICY_CHECK, // Policy compliance verification
+        CREDENTIAL_VERIFY // Private credential verification
     }
 
     /// @notice Execution entry in the table
@@ -71,9 +71,9 @@ interface ISoulExecutionTable {
     struct ExecutionTable {
         bytes32 tableId;
         ExecutionEntry[] entries;
-        bytes32 merkleRoot;     // Root of entries for verification
-        bytes aggregatedProof;   // Single proof for all entries
-        bytes32 proofType;       // Type of proof (GROTH16, PLONK, etc.)
+        bytes32 merkleRoot; // Root of entries for verification
+        bytes aggregatedProof; // Single proof for all entries
+        bytes32 proofType; // Type of proof (GROTH16, PLONK, etc.)
         address submitter;
         uint64 submittedAt;
         uint64 expiresAt;
@@ -82,12 +82,12 @@ interface ISoulExecutionTable {
 
     /// @notice Status of execution table
     enum TableStatus {
-        PENDING,    // Submitted, not yet validated
-        VALIDATED,  // Proof verified, ready for execution
-        EXECUTING,  // Currently being executed
-        COMPLETED,  // All entries executed
-        REVERTED,   // Execution reverted
-        EXPIRED     // Table expired before completion
+        PENDING, // Submitted, not yet validated
+        VALIDATED, // Proof verified, ready for execution
+        EXECUTING, // Currently being executed
+        COMPLETED, // All entries executed
+        REVERTED, // Execution reverted
+        EXPIRED // Table expired before completion
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -103,10 +103,7 @@ interface ISoulExecutionTable {
     );
 
     /// @notice Emitted when an execution table is validated
-    event ExecutionTableValidated(
-        bytes32 indexed tableId,
-        bytes32 merkleRoot
-    );
+    event ExecutionTableValidated(bytes32 indexed tableId, bytes32 merkleRoot);
 
     /// @notice Emitted when an entry is executed
     event EntryExecuted(
@@ -140,7 +137,11 @@ interface ISoulExecutionTable {
     error TableExpired(bytes32 tableId, uint64 expiresAt);
 
     /// @notice Invalid table status for operation
-    error InvalidTableStatus(bytes32 tableId, TableStatus current, TableStatus required);
+    error InvalidTableStatus(
+        bytes32 tableId,
+        TableStatus current,
+        TableStatus required
+    );
 
     /// @notice Entry index out of bounds
     error EntryIndexOutOfBounds(uint256 index, uint256 totalEntries);
@@ -202,12 +203,16 @@ interface ISoulExecutionTable {
     /// @notice Get table status
     /// @param tableId Table to query
     /// @return status Current status
-    function getTableStatus(bytes32 tableId) external view returns (TableStatus status);
+    function getTableStatus(
+        bytes32 tableId
+    ) external view returns (TableStatus status);
 
     /// @notice Get execution table details
     /// @param tableId Table to query
     /// @return table The execution table
-    function getTable(bytes32 tableId) external view returns (ExecutionTable memory table);
+    function getTable(
+        bytes32 tableId
+    ) external view returns (ExecutionTable memory table);
 
     /*//////////////////////////////////////////////////////////////
                               EXECUTION
@@ -242,10 +247,7 @@ interface ISoulExecutionTable {
     /// @notice Handle a revert and continue execution
     /// @param tableId Table being executed
     /// @param revertData Revert data from failed entry
-    function handleRevert(
-        bytes32 tableId,
-        bytes calldata revertData
-    ) external;
+    function handleRevert(bytes32 tableId, bytes calldata revertData) external;
 
     /*//////////////////////////////////////////////////////////////
                            STATE MANAGEMENT
@@ -254,7 +256,9 @@ interface ISoulExecutionTable {
     /// @notice Get current execution index for a table
     /// @param tableId Table to query
     /// @return index Current execution index
-    function getCurrentExecutionIndex(bytes32 tableId) external view returns (uint256 index);
+    function getCurrentExecutionIndex(
+        bytes32 tableId
+    ) external view returns (uint256 index);
 
     /// @notice Get state root after executing up to an index
     /// @param tableId Table to query

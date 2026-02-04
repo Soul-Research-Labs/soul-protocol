@@ -29,7 +29,7 @@ contract SoulPrivacyProxy {
         address remoteContract;
         address lookupTable;
         address executionTable;
-        bool requirePreProven;  // If true, only pre-proven operations allowed
+        bool requirePreProven; // If true, only pre-proven operations allowed
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -87,10 +87,7 @@ contract SoulPrivacyProxy {
     );
 
     /// @notice Emitted when an atomic swap is executed
-    event AtomicSwapExecuted(
-        bytes32 indexed swapId,
-        address indexed initiator
-    );
+    event AtomicSwapExecuted(bytes32 indexed swapId, address indexed initiator);
 
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
@@ -162,14 +159,20 @@ contract SoulPrivacyProxy {
 
         // Try lookup table first
         if (lookupTable.lookupExists(inputHash)) {
-            ISoulLookupTable.LookupEntry memory entry = lookupTable.consumeLookup(inputHash);
-            
+            ISoulLookupTable.LookupEntry memory entry = lookupTable
+                .consumeLookup(inputHash);
+
             // Verify nullifier delta matches
             require(entry.nullifierDelta == nullifier, "Nullifier mismatch");
-            
+
             emit PrivateTransferExecuted(commitment, nullifier, msg.sender);
-            emit ProxyCallExecuted(inputHash, entry.outputHash, msg.sender, true);
-            
+            emit ProxyCallExecuted(
+                inputHash,
+                entry.outputHash,
+                msg.sender,
+                true
+            );
+
             return true;
         }
 
@@ -212,11 +215,17 @@ contract SoulPrivacyProxy {
         );
 
         if (lookupTable.lookupExists(inputHash)) {
-            ISoulLookupTable.LookupEntry memory entry = lookupTable.consumeLookup(inputHash);
-            
+            ISoulLookupTable.LookupEntry memory entry = lookupTable
+                .consumeLookup(inputHash);
+
             emit AtomicSwapExecuted(swapId, msg.sender);
-            emit ProxyCallExecuted(inputHash, entry.outputHash, msg.sender, true);
-            
+            emit ProxyCallExecuted(
+                inputHash,
+                entry.outputHash,
+                msg.sender,
+                true
+            );
+
             return true;
         }
 
@@ -240,12 +249,18 @@ contract SoulPrivacyProxy {
         );
 
         if (lookupTable.lookupExists(inputHash)) {
-            ISoulLookupTable.LookupEntry memory entry = lookupTable.consumeLookup(inputHash);
-            
+            ISoulLookupTable.LookupEntry memory entry = lookupTable
+                .consumeLookup(inputHash);
+
             // Return data is encoded in the output hash
             // In practice, we'd store the actual return data
-            emit ProxyCallExecuted(inputHash, entry.outputHash, msg.sender, true);
-            
+            emit ProxyCallExecuted(
+                inputHash,
+                entry.outputHash,
+                msg.sender,
+                true
+            );
+
             return abi.encode(entry.outputHash);
         }
 
@@ -267,17 +282,19 @@ contract SoulPrivacyProxy {
         bytes calldata proof
     ) external returns (bool valid) {
         bytes32 inputHash = keccak256(
-            abi.encode(
-                this.verifyCredential.selector,
-                credentialHash,
-                policyId
-            )
+            abi.encode(this.verifyCredential.selector, credentialHash, policyId)
         );
 
         if (lookupTable.lookupExists(inputHash)) {
-            ISoulLookupTable.LookupEntry memory entry = lookupTable.consumeLookup(inputHash);
-            emit ProxyCallExecuted(inputHash, entry.outputHash, msg.sender, true);
-            
+            ISoulLookupTable.LookupEntry memory entry = lookupTable
+                .consumeLookup(inputHash);
+            emit ProxyCallExecuted(
+                inputHash,
+                entry.outputHash,
+                msg.sender,
+                true
+            );
+
             // Output hash encodes validity
             return entry.outputHash != bytes32(0);
         }
@@ -297,10 +314,7 @@ contract SoulPrivacyProxy {
     /// @dev Called by execution table when starting cross-chain execution
     /// @param tableId The table being executed
     /// @param entryIndex Current entry index
-    function setExecutionContext(
-        bytes32 tableId,
-        uint256 entryIndex
-    ) external {
+    function setExecutionContext(bytes32 tableId, uint256 entryIndex) external {
         require(msg.sender == address(executionTable), "Only execution table");
         activeTableId = tableId;
         currentEntryIndex = entryIndex;
@@ -331,13 +345,21 @@ contract SoulPrivacyProxy {
     /// @notice Generic proxy call with pre-proven I/O
     /// @param callData The call data to execute
     /// @return result The return data
-    function proxyCall(bytes calldata callData) external returns (bytes memory result) {
+    function proxyCall(
+        bytes calldata callData
+    ) external returns (bytes memory result) {
         bytes32 inputHash = keccak256(callData);
 
         if (lookupTable.lookupExists(inputHash)) {
-            ISoulLookupTable.LookupEntry memory entry = lookupTable.consumeLookup(inputHash);
-            emit ProxyCallExecuted(inputHash, entry.outputHash, msg.sender, true);
-            
+            ISoulLookupTable.LookupEntry memory entry = lookupTable
+                .consumeLookup(inputHash);
+            emit ProxyCallExecuted(
+                inputHash,
+                entry.outputHash,
+                msg.sender,
+                true
+            );
+
             // In a full implementation, we'd return the actual stored return data
             return abi.encode(entry.outputHash);
         }
@@ -367,19 +389,22 @@ contract SoulPrivacyProxy {
     /// @notice Get proxy configuration
     /// @return config The proxy configuration
     function getConfig() external view returns (ProxyConfig memory config) {
-        return ProxyConfig({
-            remoteChainId: remoteChainId,
-            remoteContract: remoteContract,
-            lookupTable: address(lookupTable),
-            executionTable: address(executionTable),
-            requirePreProven: requirePreProven
-        });
+        return
+            ProxyConfig({
+                remoteChainId: remoteChainId,
+                remoteContract: remoteContract,
+                lookupTable: address(lookupTable),
+                executionTable: address(executionTable),
+                requirePreProven: requirePreProven
+            });
     }
 
     /// @notice Check if an operation is pre-proven
     /// @param callData The call data to check
     /// @return proven Whether the operation is pre-proven
-    function isPreProven(bytes calldata callData) external view returns (bool proven) {
+    function isPreProven(
+        bytes calldata callData
+    ) external view returns (bool proven) {
         bytes32 inputHash = keccak256(callData);
         return lookupTable.lookupExists(inputHash);
     }

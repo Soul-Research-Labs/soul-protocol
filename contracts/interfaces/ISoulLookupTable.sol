@@ -81,10 +81,7 @@ interface ISoulLookupTable {
     );
 
     /// @notice Emitted when a lookup expires or is invalidated
-    event LookupInvalidated(
-        bytes32 indexed inputHash,
-        string reason
-    );
+    event LookupInvalidated(bytes32 indexed inputHash, string reason);
 
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
@@ -161,7 +158,9 @@ interface ISoulLookupTable {
     /// @notice Check if a lookup exists and is not expired
     /// @param inputHash The input hash to check
     /// @return exists Whether the lookup exists and is valid
-    function lookupExists(bytes32 inputHash) external view returns (bool exists);
+    function lookupExists(
+        bytes32 inputHash
+    ) external view returns (bool exists);
 
     /// @notice Get the expected output for a given input
     /// @param inputHash The input hash
@@ -195,7 +194,9 @@ interface ISoulLookupTable {
     /// @notice Check if a lookup has been consumed
     /// @param inputHash The input hash to check
     /// @return consumed Whether the lookup has been used
-    function isConsumed(bytes32 inputHash) external view returns (bool consumed);
+    function isConsumed(
+        bytes32 inputHash
+    ) external view returns (bool consumed);
 
     /*//////////////////////////////////////////////////////////////
                             ADMINISTRATION
@@ -224,7 +225,9 @@ interface ISoulLookupTable {
     /// @notice Get the current state root for a chain
     /// @param chainId The chain to query
     /// @return stateRoot The current state root
-    function getStateRoot(uint64 chainId) external view returns (bytes32 stateRoot);
+    function getStateRoot(
+        uint64 chainId
+    ) external view returns (bytes32 stateRoot);
 
     /// @notice Get total number of registered lookups
     /// @return count Total lookup count
@@ -233,5 +236,7 @@ interface ISoulLookupTable {
     /// @notice Get proof verifier for a proof type
     /// @param proofType The proof type
     /// @return verifier Address of the verifier contract
-    function getVerifier(bytes32 proofType) external view returns (address verifier);
+    function getVerifier(
+        bytes32 proofType
+    ) external view returns (address verifier);
 }
