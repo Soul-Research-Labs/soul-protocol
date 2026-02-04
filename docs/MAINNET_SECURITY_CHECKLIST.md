@@ -13,6 +13,12 @@
 - [x] Slither analysis: No critical/high findings
 - [x] Code coverage: >80% on core contracts
 
+#### ✅ Internal Security Audit (February 2026)
+- [x] **26 vulnerabilities fixed** - see [SECURITY_AUDIT_REPORT.md](./SECURITY_AUDIT_REPORT.md)
+- [x] 5 Critical: Nullifier race, access control, proof verification
+- [x] 6 High: EIP-712 binding, hash collisions, reward mapping
+- [x] 15 Medium: Events, validation, pagination, role separation
+
 #### 🔄 Pending Verification
 - [ ] External audit (Trail of Bits / OpenZeppelin / Consensys Diligence)
 - [ ] Certora formal verification specs executed
@@ -20,6 +26,19 @@
 - [ ] 30+ days testnet stability
 
 ### Access Control Verification
+
+#### Pre-Mainnet Role Separation ⚠️ REQUIRED
+```bash
+# After deployment, call these to enforce role separation:
+ZKBoundStateLocks.confirmRoleSeparation()
+CrossChainProofHubV3.confirmRoleSeparation()
+```
+
+| Role | Required Setup | Status |
+|------|----------------|--------|
+| DEFAULT_ADMIN_ROLE | Must NOT hold OPERATOR, DISPUTE_RESOLVER, RECOVERY | [ ] Verify |
+| RELAYER_ROLE | Separate from admin | [ ] Verify |
+| CHALLENGER | Any address (open participation) | ✅ |
 
 ```bash
 # Run access control tests
