@@ -320,8 +320,9 @@ contract UnifiedNullifierManager is
         bytes32 domainTag,
         address bridgeAdapter
     ) external onlyRole(OPERATOR_ROLE) {
+        // SECURITY FIX: Changed from abi.encodePacked to abi.encode
         bytes32 nullifierPrefix = keccak256(
-            abi.encodePacked(NULLIFIER_DOMAIN, chainId, domainTag)
+            abi.encode(NULLIFIER_DOMAIN, chainId, domainTag)
         );
 
         chainDomains[chainId] = ChainDomain({
@@ -382,8 +383,9 @@ contract UnifiedNullifierManager is
             chainId: chainId,
             chainType: chainType,
             domainTag: domainTag,
+            // SECURITY FIX: Changed from abi.encodePacked to abi.encode
             nullifierPrefix: keccak256(
-                abi.encodePacked(NULLIFIER_DOMAIN, chainId, domainTag)
+                abi.encode(NULLIFIER_DOMAIN, chainId, domainTag)
             ),
             bridgeAdapter: address(0),
             isActive: true,
@@ -684,9 +686,10 @@ contract UnifiedNullifierManager is
         ChainDomain storage domain = chainDomains[chainId];
         if (!domain.isActive) revert ChainDomainNotRegistered();
 
+        // SECURITY FIX: Changed from abi.encodePacked to abi.encode
         return
             keccak256(
-                abi.encodePacked(
+                abi.encode(
                     secret,
                     commitment,
                     chainId,
@@ -704,9 +707,10 @@ contract UnifiedNullifierManager is
         uint256 sourceChainId,
         uint256 destChainId
     ) external pure returns (bytes32) {
+        // SECURITY FIX: Changed from abi.encodePacked to abi.encode
         return
             keccak256(
-                abi.encodePacked(
+                abi.encode(
                     sourceNullifier,
                     sourceChainId,
                     destChainId,

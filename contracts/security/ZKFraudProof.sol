@@ -492,7 +492,8 @@ contract ZKFraudProof is AccessControl, ReentrancyGuard, Pausable {
     ) external onlyRole(DEFAULT_ADMIN_ROLE) returns (bytes32 vkId) {
         if (vkData.length == 0) revert InvalidVerificationKey();
 
-        vkId = keccak256(abi.encodePacked(proofType, vkData, block.timestamp));
+        // SECURITY FIX: Changed from abi.encodePacked to abi.encode
+        vkId = keccak256(abi.encode(proofType, vkData, block.timestamp));
 
         verificationKeys[vkId] = VerificationKey({
             id: vkId,

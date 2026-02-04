@@ -380,8 +380,9 @@ contract SelectiveDisclosureCircuit is
             if (roleRequirement == bytes32(0)) revert RoleRequired();
         }
 
+        // SECURITY FIX: Changed from abi.encodePacked to abi.encode to prevent hash collision
         ruleId = keccak256(
-            abi.encodePacked(
+            abi.encode(
                 dataFieldId,
                 dataTypeHash,
                 target,
@@ -443,8 +444,9 @@ contract SelectiveDisclosureCircuit is
             }
         }
 
+        // SECURITY FIX: Changed from abi.encodePacked to abi.encode to prevent hash collision
         circuitId = keccak256(
-            abi.encodePacked(
+            abi.encode(
                 name,
                 ruleIds,
                 circuitHash,
@@ -453,8 +455,9 @@ contract SelectiveDisclosureCircuit is
             )
         );
 
+        // SECURITY FIX: Changed from abi.encodePacked to abi.encode
         bytes32 domainSeparator = keccak256(
-            abi.encodePacked(
+            abi.encode(
                 "SOUL_DISCLOSURE_CIRCUIT",
                 block.chainid,
                 circuitId

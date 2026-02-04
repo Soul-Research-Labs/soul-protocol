@@ -255,6 +255,14 @@ contract SoulProtocolHub is AccessControl, ReentrancyGuard, Pausable {
     error ChainNotSupported(uint256 chainId);
     error InvalidConfiguration();
     error UnauthorizedCaller();
+    error BatchTooLarge(uint256 provided, uint256 max);
+
+    /*//////////////////////////////////////////////////////////////
+                              CONSTANTS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Maximum batch size for DoS prevention
+    uint256 public constant MAX_BATCH_SIZE = 50;
 
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
@@ -356,6 +364,10 @@ contract SoulProtocolHub is AccessControl, ReentrancyGuard, Pausable {
         address[] calldata verifierAddresses,
         uint256[] calldata gasLimits
     ) external onlyRole(OPERATOR_ROLE) {
+        // SECURITY FIX: Add batch size limit to prevent DoS
+        if (verifierTypes.length > MAX_BATCH_SIZE) {
+            revert BatchTooLarge(verifierTypes.length, MAX_BATCH_SIZE);
+        }
         require(
             verifierTypes.length == verifierAddresses.length &&
                 verifierTypes.length == gasLimits.length,
@@ -458,6 +470,10 @@ contract SoulProtocolHub is AccessControl, ReentrancyGuard, Pausable {
         bool[] calldata supportsPrivacy,
         uint256[] calldata minConfirmations
     ) external onlyRole(OPERATOR_ROLE) {
+        // SECURITY FIX: Add batch size limit to prevent DoS
+        if (chainIds.length > MAX_BATCH_SIZE) {
+            revert BatchTooLarge(chainIds.length, MAX_BATCH_SIZE);
+        }
         require(
             chainIds.length == adapters.length &&
                 chainIds.length == supportsPrivacy.length &&
