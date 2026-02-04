@@ -2,11 +2,62 @@
 
 > **Soul Protocol alignment with Ethereum's native rollup precompile and synchronous composability**
 
-This document outlines how Soul Protocol can maximize interoperability with Ethereum's emerging native rollup architecture, incorporating insights from Vitalik's "Possible Futures of the Ethereum Protocol" series (October 2024).
+This document outlines how Soul Protocol can maximize interoperability with Ethereum's emerging native rollup architecture, incorporating insights from Vitalik's "Possible Futures of the Ethereum Protocol" series (October 2024) and the "Glue and Coprocessor Architectures" post (September 2024).
 
 ---
 
 ## Background: Emerging Ethereum Standards
+
+### Glue and Coprocessor Architectures (September 2024)
+
+Vitalik's "Glue and Coprocessor" post establishes a foundational mental model for modern computation:
+
+> Modern computation is increasingly following what I call a **glue and coprocessor architecture**: you have some central "glue" component, which has high generality but low efficiency, which is responsible for shuttling data between one or more coprocessor components, which have low generality but high efficiency.
+
+#### Key Insights for Soul Protocol
+
+**1. Computation Separation Pattern**
+| Component | Characteristics | Examples |
+|-----------|-----------------|----------|
+| **Glue** | High generality, low efficiency, business logic | EVM, Python, JavaScript |
+| **Coprocessor** | Low generality, high efficiency, structured work | Precompiles, CUDA/GPU, ASIC, ZK modules |
+
+**2. EVM Cost Breakdown** (from ENS hash update example)
+- ~73-85% of computation is **structured expensive operations**: storage reads/writes, logs, cryptography
+- Only ~15-27% is **business logic**: data parsing, balance manipulation, loops
+- Implication: Optimize coprocessors (precompiles), not the VM itself
+
+**3. ZK Proving Architecture**
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    Glue + Coprocessor in ZK Proving                      │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│   ┌───────────────────┐          ┌────────────────────────────┐         │
+│   │   RISC-V zkVM     │          │   Specialized Modules      │         │
+│   │   (Glue Layer)    │◄────────▶│   (Coprocessors)           │         │
+│   │                   │          │                            │         │
+│   │ • General purpose │          │ • Hash functions (100x)    │         │
+│   │ • ~10,000x        │          │ • Signatures (~100x)       │         │
+│   │   overhead        │          │ • Matrix ops (for AI)      │         │
+│   │ • Developer       │          │ • Elliptic curve ops       │         │
+│   │   friendly        │          │ • FFT                      │         │
+│   └───────────────────┘          └────────────────────────────┘         │
+│                                                                          │
+│   Total overhead manageable because intensive parts use coprocessors    │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**4. Implications for Soul**
+- **Privacy business logic** (intent parsing, commitment management) → EVM/Noir glue
+- **Intensive operations** (nullifier hashing, Pedersen commitments, Merkle proofs) → Optimized precompiles/circuits
+- **Multi-prover approach** benefits from this: each prover optimizes different coprocessors
+
+**5. Key Quote on EVM**
+> "Blockchain virtual machines (eg. EVM) don't need to be efficient, they just need to be familiar. Computation in an inefficient VM can be made almost as efficient in practice as computation in a natively efficient VM by just adding the right coprocessors (aka 'precompiles')."
+
+---
 
 ### Vitalik's "Possible Futures" Series - Key Takeaways
 
@@ -576,6 +627,7 @@ struct ResurrectableState {
 
 ## References
 
+- [Glue and Coprocessor Architectures](https://vitalik.eth.limo/general/2024/09/02/gluecp.html) - Vitalik (Sep 2024)
 - [Possible futures of Ethereum, Part 1: The Merge](https://vitalik.eth.limo/general/2024/10/14/futures1.html) - Vitalik
 - [Possible futures of Ethereum, Part 2: The Surge](https://vitalik.eth.limo/general/2024/10/17/futures2.html) - Vitalik
 - [Possible futures of Ethereum, Part 3: The Scourge](https://vitalik.eth.limo/general/2024/10/20/futures3.html) - Vitalik
