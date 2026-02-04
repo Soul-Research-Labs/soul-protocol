@@ -1,46 +1,27 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.20;
 
-import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title SoulTimelock
  * @author Soul Protocol
- * @notice Time-locked controller for sensitive Soul administrative operations
+ * @notice Time-locked controller for sensitive Soul v2 administrative operations
  * @dev Implements a delay mechanism for critical operations to prevent malicious instant changes
  *
- * Architecture:
- * ┌─────────────────────────────────────────────────────────────────────────────┐
- * │                         Soul Timelock Controller                            │
- * ├─────────────────────────────────────────────────────────────────────────────┤
- * │                                                                              │
- * │  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐  │
- * │  │   Propose   │───▶│   Confirm   │───▶│    Wait     │───▶│   Execute   │  │
- * │  │  Operation  │    │  (Multi-sig)│    │  (Timelock) │    │  Operation  │  │
- * │  └─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘  │
- * │                                                                              │
- * │  Time Delays:                                                               │
- * │  • Standard: 48 hours minimum                                               │
- * │  • Emergency: 6 hours (requires EMERGENCY_ROLE)                             │
- * │  • Maximum: 30 days                                                         │
- * │  • Grace Period: 7 days after ready                                         │
- * │                                                                              │
- * │  Security Properties:                                                        │
- * │  • All operations require delay before execution                            │
- * │  • Operations can be cancelled during delay                                 │
- * │  • Supports predecessor chain for ordered execution                         │
- * │  • Multi-confirmation requirement                                           │
- * │                                                                              │
- * └─────────────────────────────────────────────────────────────────────────────┘
+ * Security Properties:
+ * - All sensitive operations require a minimum delay before execution
+ * - Operations can be cancelled during the delay period
+ * - Emergency operations have a shorter delay but require more confirmations
+ * - Supports multi-sig style execution with minimum proposers
  *
  * @custom:security-contact security@soulprotocol.io
  */
-contract SoulTimelock is AccessControl, ReentrancyGuard, Pausable {
-    // ============================================
-    // ROLES
-    // ============================================
+contract SoulTimelock is AccessControl, ReentrancyGuard {
+    /*//////////////////////////////////////////////////////////////
+                               ROLES
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Role that can propose operations
     bytes32 public constant PROPOSER_ROLE = keccak256("PROPOSER_ROLE");
@@ -54,9 +35,9 @@ contract SoulTimelock is AccessControl, ReentrancyGuard, Pausable {
     /// @notice Role for emergency operations with reduced delay
     bytes32 public constant EMERGENCY_ROLE = keccak256("EMERGENCY_ROLE");
 
-    // ============================================
-    // TYPES
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                               TYPES
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Operation status
     enum OperationStatus {
@@ -91,9 +72,15 @@ contract SoulTimelock is AccessControl, ReentrancyGuard, Pausable {
         bytes[] datas;
     }
 
-    // ============================================
-    // CONSTANTS
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                               STATE
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Minimum delay for standard operations (default: 48 hours)
+    uint256 public minDelay;
+
+    /// @notice Minimum delay for emergency operations (default: 6 hours)
+    uint256 public emergencyDelay;
 
     /// @notice Maximum delay allowed (30 days)
     uint256 public constant MAX_DELAY = 30 days;
@@ -103,16 +90,6 @@ contract SoulTimelock is AccessControl, ReentrancyGuard, Pausable {
 
     /// @notice Grace period after ready time (7 days)
     uint256 public constant GRACE_PERIOD = 7 days;
-
-    // ============================================
-    // STATE
-    // ============================================
-
-    /// @notice Minimum delay for standard operations (default: 48 hours)
-    uint256 public minDelay;
-
-    /// @notice Minimum delay for emergency operations (default: 6 hours)
-    uint256 public emergencyDelay;
 
     /// @notice Required confirmations for standard operations (immutable)
     uint8 public immutable requiredConfirmations;
@@ -132,9 +109,9 @@ contract SoulTimelock is AccessControl, ReentrancyGuard, Pausable {
     /// @notice Total executed operations
     uint256 public executedOperations;
 
-    // ============================================
-    // EVENTS
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                               EVENTS
+    //////////////////////////////////////////////////////////////*/
 
     event OperationProposed(
         bytes32 indexed operationId,
@@ -175,9 +152,9 @@ contract SoulTimelock is AccessControl, ReentrancyGuard, Pausable {
 
     event EmergencyDelayUpdated(uint256 oldDelay, uint256 newDelay);
 
-    // ============================================
-    // ERRORS
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                              ERRORS
+    //////////////////////////////////////////////////////////////*/
 
     error InvalidDelay(uint256 delay, uint256 min, uint256 max);
     error OperationNotFound(bytes32 operationId);
@@ -193,9 +170,9 @@ contract SoulTimelock is AccessControl, ReentrancyGuard, Pausable {
     error ZeroAddress();
     error InvalidConfirmations();
 
-    // ============================================
-    // CONSTRUCTOR
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                            CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Initialize the timelock controller
@@ -252,9 +229,9 @@ contract SoulTimelock is AccessControl, ReentrancyGuard, Pausable {
         }
     }
 
-    // ============================================
-    // PROPOSE OPERATIONS
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                         PROPOSE OPERATIONS
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Propose a new timelocked operation
@@ -271,12 +248,7 @@ contract SoulTimelock is AccessControl, ReentrancyGuard, Pausable {
         bytes calldata data,
         bytes32 predecessor,
         bytes32 salt
-    )
-        external
-        onlyRole(PROPOSER_ROLE)
-        whenNotPaused
-        returns (bytes32 operationId)
-    {
+    ) external onlyRole(PROPOSER_ROLE) returns (bytes32 operationId) {
         operationId = computeOperationId(
             target,
             value,
@@ -333,12 +305,7 @@ contract SoulTimelock is AccessControl, ReentrancyGuard, Pausable {
         uint256 value,
         bytes calldata data,
         bytes32 salt
-    )
-        external
-        onlyRole(EMERGENCY_ROLE)
-        whenNotPaused
-        returns (bytes32 operationId)
-    {
+    ) external onlyRole(EMERGENCY_ROLE) returns (bytes32 operationId) {
         operationId = computeOperationId(target, value, data, bytes32(0), salt);
 
         if (operations[operationId].proposedAt != 0) {
@@ -391,12 +358,7 @@ contract SoulTimelock is AccessControl, ReentrancyGuard, Pausable {
         bytes[] calldata datas,
         bytes32 predecessor,
         bytes32 salt
-    )
-        external
-        onlyRole(PROPOSER_ROLE)
-        whenNotPaused
-        returns (bytes32 operationId)
-    {
+    ) external onlyRole(PROPOSER_ROLE) returns (bytes32 operationId) {
         if (targets.length != values.length || values.length != datas.length) {
             revert ArrayLengthMismatch();
         }
@@ -445,17 +407,15 @@ contract SoulTimelock is AccessControl, ReentrancyGuard, Pausable {
         );
     }
 
-    // ============================================
-    // CONFIRM OPERATIONS
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                         CONFIRM OPERATIONS
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Confirm a pending operation
      * @param operationId The operation to confirm
      */
-    function confirm(
-        bytes32 operationId
-    ) external onlyRole(PROPOSER_ROLE) whenNotPaused {
+    function confirm(bytes32 operationId) external onlyRole(PROPOSER_ROLE) {
         TimelockOperation storage op = operations[operationId];
 
         if (op.proposedAt == 0) {
@@ -474,9 +434,9 @@ contract SoulTimelock is AccessControl, ReentrancyGuard, Pausable {
         emit OperationConfirmed(operationId, msg.sender, op.confirmations);
     }
 
-    // ============================================
-    // EXECUTE OPERATIONS
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                         EXECUTE OPERATIONS
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Execute a ready operation
@@ -580,9 +540,9 @@ contract SoulTimelock is AccessControl, ReentrancyGuard, Pausable {
         }
     }
 
-    // ============================================
-    // CANCEL OPERATIONS
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                         CANCEL OPERATIONS
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Cancel a pending operation
@@ -604,9 +564,9 @@ contract SoulTimelock is AccessControl, ReentrancyGuard, Pausable {
         emit OperationCancelled(operationId, msg.sender);
     }
 
-    // ============================================
-    // ADMIN FUNCTIONS
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                           ADMIN FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Update the minimum delay
@@ -642,23 +602,9 @@ contract SoulTimelock is AccessControl, ReentrancyGuard, Pausable {
         emit EmergencyDelayUpdated(oldDelay, newDelay);
     }
 
-    /**
-     * @notice Pause the contract
-     */
-    function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
-        _pause();
-    }
-
-    /**
-     * @notice Unpause the contract
-     */
-    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
-        _unpause();
-    }
-
-    // ============================================
-    // VIEW FUNCTIONS
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                           VIEW FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Compute operation ID
@@ -735,18 +681,9 @@ contract SoulTimelock is AccessControl, ReentrancyGuard, Pausable {
         return operations[operationId].readyAt;
     }
 
-    /**
-     * @notice Get operation details
-     */
-    function getOperation(
-        bytes32 operationId
-    ) external view returns (TimelockOperation memory) {
-        return operations[operationId];
-    }
-
-    // ============================================
-    // INTERNAL FUNCTIONS
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                         INTERNAL FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Validate operation can be executed

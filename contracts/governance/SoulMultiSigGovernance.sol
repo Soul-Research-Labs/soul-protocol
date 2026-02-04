@@ -1,55 +1,55 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.20;
 
-import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
-import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
-import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 /**
  * @title SoulMultiSigGovernance
  * @author Soul Protocol
  * @notice Multi-signature governance contract for Soul protocol
- * @dev Implements operational security with role separation
+ * @dev Implements operational security with role separation:
+ *      - Deployer: One-time deployment operations
+ *      - Admin: Configuration and upgrade management
+ *      - Guardian: Emergency pause and security operations
+ *      - Operator: Day-to-day protocol operations
  *
- * Architecture:
- * ┌────────────────────────────────────────────────────────────────────────────┐
- * │                    SOUL GOVERNANCE STRUCTURE                               │
- * ├────────────────────────────────────────────────────────────────────────────┤
- * │                                                                            │
- * │                        ┌──────────────────┐                                │
- * │                        │   SUPER_ADMIN    │                                │
- * │                        │  (5-of-9 Multisig)│                               │
- * │                        └────────┬─────────┘                                │
- * │                                 │                                          │
- * │          ┌──────────────────────┼──────────────────────┐                   │
- * │          │                      │                      │                   │
- * │  ┌───────▼───────┐      ┌───────▼───────┐      ┌───────▼───────┐          │
- * │  │   ADMIN       │      │   GUARDIAN    │      │   OPERATOR    │          │
- * │  │   (3-of-5)    │      │   (2-of-3)    │      │   (2-of-5)    │          │
- * │  │               │      │               │      │               │          │
- * │  │ - Upgrades    │      │ - Pause       │      │ - Relay       │          │
- * │  │ - Config      │      │ - Blacklist   │      │ - Process     │          │
- * │  │ - Roles       │      │ - Emergency   │      │ - Maintain    │          │
- * │  └───────────────┘      └───────────────┘      └───────────────┘          │
- * │                                                                            │
- * │  SEPARATION OF DUTIES:                                                     │
- * │  • Deployer ≠ Admin (deployment is one-time)                              │
- * │  • Admin ≠ Operator (config vs operations)                                │
- * │  • Guardian ≠ Operator (security vs management)                           │
- * │                                                                            │
- * └────────────────────────────────────────────────────────────────────────────┘
- *
- * @custom:security-contact security@soulprotocol.io
+ * ROLE HIERARCHY:
+ * ┌────────────────────────────────────────────────────────────────────────┐
+ * │                    Soul GOVERNANCE STRUCTURE                            │
+ * ├────────────────────────────────────────────────────────────────────────┤
+ * │                                                                        │
+ * │                        ┌──────────────────┐                            │
+ * │                        │  SUPER_ADMIN     │                            │
+ * │                        │  (5-of-9 Multisig)│                           │
+ * │                        └────────┬─────────┘                            │
+ * │                                 │                                      │
+ * │          ┌──────────────────────┼──────────────────────┐               │
+ * │          │                      │                      │               │
+ * │  ┌───────▼───────┐      ┌───────▼───────┐      ┌───────▼───────┐      │
+ * │  │   ADMIN       │      │   GUARDIAN    │      │   OPERATOR    │      │
+ * │  │ (3-of-5)      │      │ (2-of-3)      │      │ (2-of-5)      │      │
+ * │  │               │      │               │      │               │      │
+ * │  │ - Upgrades    │      │ - Pause       │      │ - Relay       │      │
+ * │  │ - Config      │      │ - Blacklist   │      │ - Process     │      │
+ * │  │ - Roles       │      │ - Emergency   │      │ - Maintain    │      │
+ * │  └───────────────┘      └───────────────┘      └───────────────┘      │
+ * │                                                                        │
+ * │  SEPARATION OF DUTIES:                                                 │
+ * │  - Deployer ≠ Admin (deployment is one-time)                          │
+ * │  - Admin ≠ Operator (config vs operations)                            │
+ * │  - Guardian ≠ Admin (security vs management)                          │
+ * │                                                                        │
+ * └────────────────────────────────────────────────────────────────────────┘
  */
-contract SoulMultiSigGovernance is AccessControl, Pausable, ReentrancyGuard {
+contract SoulMultiSigGovernance is AccessControl {
     using ECDSA for bytes32;
     using MessageHashUtils for bytes32;
 
-    // ============================================
-    // ROLES
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                              ROLES
+    //////////////////////////////////////////////////////////////*/
 
     bytes32 public constant SUPER_ADMIN_ROLE = keccak256("SUPER_ADMIN_ROLE");
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
@@ -57,9 +57,9 @@ contract SoulMultiSigGovernance is AccessControl, Pausable, ReentrancyGuard {
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
     bytes32 public constant DEPLOYER_ROLE = keccak256("DEPLOYER_ROLE");
 
-    // ============================================
-    // STRUCTS
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                              STRUCTS
+    //////////////////////////////////////////////////////////////*/
 
     struct RoleConfig {
         uint256 requiredSignatures;
@@ -88,9 +88,9 @@ contract SoulMultiSigGovernance is AccessControl, Pausable, ReentrancyGuard {
         uint256 signedAt;
     }
 
-    // ============================================
-    // CONSTANTS
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                              CONSTANTS
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Proposal validity period
     uint256 public constant PROPOSAL_VALIDITY = 7 days;
@@ -101,12 +101,9 @@ contract SoulMultiSigGovernance is AccessControl, Pausable, ReentrancyGuard {
     /// @notice Maximum signatures per proposal
     uint256 public constant MAX_SIGNATURES = 20;
 
-    /// @notice Contract version
-    string public constant VERSION = "2.0.0";
-
-    // ============================================
-    // STATE
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                              STATE
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Role configurations
     mapping(bytes32 => RoleConfig) public roleConfigs;
@@ -126,15 +123,18 @@ contract SoulMultiSigGovernance is AccessControl, Pausable, ReentrancyGuard {
     /// @notice Nonce for proposal IDs
     uint256 public proposalNonce;
 
+    /// @notice Contract version
+    string public constant VERSION = "1.0.0";
+
     /// @notice Whether role separation is enforced
     bool public roleSeparationEnforced = true;
 
     /// @notice Blocked role combinations (role1 => role2 => blocked)
     mapping(bytes32 => mapping(bytes32 => bool)) public blockedRoleCombinations;
 
-    // ============================================
-    // EVENTS
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                              EVENTS
+    //////////////////////////////////////////////////////////////*/
 
     event ProposalCreated(
         bytes32 indexed proposalId,
@@ -172,12 +172,11 @@ contract SoulMultiSigGovernance is AccessControl, Pausable, ReentrancyGuard {
     );
 
     event MemberAdded(bytes32 indexed role, address indexed member);
-
     event MemberRemoved(bytes32 indexed role, address indexed member);
 
-    // ============================================
-    // ERRORS
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                              ERRORS
+    //////////////////////////////////////////////////////////////*/
 
     error ProposalNotFound();
     error ProposalExpired();
@@ -191,19 +190,13 @@ contract SoulMultiSigGovernance is AccessControl, Pausable, ReentrancyGuard {
     error ExecutionFailed();
     error TooManySignatures();
     error NotRoleAdmin();
-    error ZeroAddress();
 
-    // ============================================
-    // CONSTRUCTOR
-    // ============================================
 
-    /**
-     * @notice Initialize the multi-sig governance
-     * @param superAdmin Initial super admin address
-     */
+    /*//////////////////////////////////////////////////////////////
+                            CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
+
     constructor(address superAdmin) {
-        if (superAdmin == address(0)) revert ZeroAddress();
-
         // Grant super admin to deployer
         _grantRole(DEFAULT_ADMIN_ROLE, superAdmin);
         _grantRole(SUPER_ADMIN_ROLE, superAdmin);
@@ -247,9 +240,9 @@ contract SoulMultiSigGovernance is AccessControl, Pausable, ReentrancyGuard {
         blockedRoleCombinations[OPERATOR_ROLE][GUARDIAN_ROLE] = true;
     }
 
-    // ============================================
-    // PROPOSAL FUNCTIONS
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                      PROPOSAL FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Create a new proposal
@@ -266,7 +259,7 @@ contract SoulMultiSigGovernance is AccessControl, Pausable, ReentrancyGuard {
         bytes calldata data,
         string calldata description,
         bytes32 requiredRole
-    ) external whenNotPaused returns (bytes32 proposalId) {
+    ) external returns (bytes32 proposalId) {
         // Must be a member of the required role
         if (!hasRole(requiredRole, msg.sender)) {
             revert NotRoleMember();
@@ -321,7 +314,7 @@ contract SoulMultiSigGovernance is AccessControl, Pausable, ReentrancyGuard {
      * @notice Sign a proposal
      * @param proposalId The proposal to sign
      */
-    function signProposal(bytes32 proposalId) external whenNotPaused {
+    function signProposal(bytes32 proposalId) external {
         Proposal storage proposal = proposals[proposalId];
 
         if (proposal.createdAt == 0) revert ProposalNotFound();
@@ -340,7 +333,7 @@ contract SoulMultiSigGovernance is AccessControl, Pausable, ReentrancyGuard {
      */
     function executeProposal(
         bytes32 proposalId
-    ) external nonReentrant returns (bool success) {
+    ) external returns (bool success) {
         Proposal storage proposal = proposals[proposalId];
 
         if (proposal.createdAt == 0) revert ProposalNotFound();
@@ -381,9 +374,9 @@ contract SoulMultiSigGovernance is AccessControl, Pausable, ReentrancyGuard {
         emit ProposalCancelled(proposalId, msg.sender);
     }
 
-    // ============================================
-    // ROLE MANAGEMENT FUNCTIONS
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                      ROLE MANAGEMENT FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Configure a role's signature requirements
@@ -413,7 +406,6 @@ contract SoulMultiSigGovernance is AccessControl, Pausable, ReentrancyGuard {
      * @param member The member to add
      */
     function addRoleMember(bytes32 role, address member) external {
-        if (member == address(0)) revert ZeroAddress();
         // Check caller has admin rights for this role
         if (!hasRole(getRoleAdmin(role), msg.sender)) revert NotRoleAdmin();
 
@@ -471,27 +463,9 @@ contract SoulMultiSigGovernance is AccessControl, Pausable, ReentrancyGuard {
         roleSeparationEnforced = enforced;
     }
 
-    // ============================================
-    // ADMIN FUNCTIONS
-    // ============================================
-
-    /**
-     * @notice Pause the contract
-     */
-    function pause() external onlyRole(GUARDIAN_ROLE) {
-        _pause();
-    }
-
-    /**
-     * @notice Unpause the contract
-     */
-    function unpause() external onlyRole(SUPER_ADMIN_ROLE) {
-        _unpause();
-    }
-
-    // ============================================
-    // VIEW FUNCTIONS
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                          VIEW FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Get proposal details
@@ -577,18 +551,9 @@ contract SoulMultiSigGovernance is AccessControl, Pausable, ReentrancyGuard {
         return (true, bytes32(0));
     }
 
-    /**
-     * @notice Get role config
-     */
-    function getRoleConfig(
-        bytes32 role
-    ) external view returns (RoleConfig memory) {
-        return roleConfigs[role];
-    }
-
-    // ============================================
-    // INTERNAL FUNCTIONS
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                         INTERNAL FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
     function _signProposal(bytes32 proposalId, address signer) internal {
         Proposal storage proposal = proposals[proposalId];

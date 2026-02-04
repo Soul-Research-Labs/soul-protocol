@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.20;
 
-import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title SharedSequencer
@@ -11,7 +11,7 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
  * @notice Shared sequencer infrastructure for multi-L2 coordination
  * @dev Enables atomic cross-L2 transactions with shared ordering guarantees
  *
- * Architecture:
+ * SHARED SEQUENCER ARCHITECTURE:
  * ┌─────────────────────────────────────────────────────────────────────────┐
  * │                    Shared Sequencer Infrastructure                       │
  * ├─────────────────────────────────────────────────────────────────────────┤
@@ -44,33 +44,30 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
  * │  ┌─────────────────────────────────────────────────────────────────┐    │
  * │  │                        L2 Chains                                 │    │
  * │  │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐            │    │
- * │  │  │Arbitrum │  │Optimism │  │  Base   │  │ zkSync  │            │    │
+ * │  │  │Arbitrum │  │Optimism │  │  Base   │  │Starknet │            │    │
  * │  │  └─────────┘  └─────────┘  └─────────┘  └─────────┘            │    │
  * │  └─────────────────────────────────────────────────────────────────┘    │
  * └─────────────────────────────────────────────────────────────────────────┘
  *
- * Security Properties:
+ * SECURITY PROPERTIES:
  * - Stake-weighted sequencer selection
- * - Slashing for misbehavior (configurable up to 100%)
+ * - Slashing for misbehavior
  * - Rotation to prevent centralization
  * - Atomic cross-L2 ordering guarantees
- * - 7-day exit delay for stake withdrawal
- *
- * @custom:security-contact security@soulprotocol.io
  */
 contract SharedSequencer is AccessControl, ReentrancyGuard, Pausable {
-    // ============================================
-    // ROLES
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                                 ROLES
+    //////////////////////////////////////////////////////////////*/
 
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
     bytes32 public constant SEQUENCER_ROLE = keccak256("SEQUENCER_ROLE");
     bytes32 public constant SLASHER_ROLE = keccak256("SLASHER_ROLE");
     bytes32 public constant GOVERNANCE_ROLE = keccak256("GOVERNANCE_ROLE");
 
-    // ============================================
-    // TYPES
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                                 TYPES
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Sequencer status
     enum SequencerStatus {
@@ -155,28 +152,9 @@ contract SharedSequencer is AccessControl, ReentrancyGuard, Pausable {
         bool executed;
     }
 
-    // ============================================
-    // CONSTANTS
-    // ============================================
-
-    /// @notice Exit delay in seconds
-    uint256 public constant EXIT_DELAY = 7 days;
-
-    /// @notice Maximum slashing percentage (100%)
-    uint256 public constant MAX_SLASHING_PERCENTAGE = 10000;
-
-    /// @notice Minimum stake floor
-    uint256 public constant MIN_STAKE_FLOOR = 0.1 ether;
-
-    /// @notice Minimum slot duration
-    uint256 public constant MIN_SLOT_DURATION = 1 seconds;
-
-    /// @notice Slashing points threshold for jailing
-    uint256 public constant JAIL_THRESHOLD = 3;
-
-    // ============================================
-    // STORAGE
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                                STORAGE
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Minimum stake to become a sequencer
     uint256 public minimumStake;
@@ -192,6 +170,9 @@ contract SharedSequencer is AccessControl, ReentrancyGuard, Pausable {
 
     /// @notice Active sequencer set size
     uint256 public activeSetSize;
+
+    /// @notice Exit delay in seconds
+    uint256 public constant EXIT_DELAY = 7 days;
 
     /// @notice Slashing percentage (basis points)
     uint256 public slashingPercentage;
@@ -225,9 +206,9 @@ contract SharedSequencer is AccessControl, ReentrancyGuard, Pausable {
     /// @notice Total staked amount
     uint256 public totalStaked;
 
-    // ============================================
-    // EVENTS
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                                EVENTS
+    //////////////////////////////////////////////////////////////*/
 
     event SequencerRegistered(
         address indexed sequencer,
@@ -273,11 +254,9 @@ contract SharedSequencer is AccessControl, ReentrancyGuard, Pausable {
 
     event RotationTriggered(uint256 slotNumber, address[] newActiveSet);
 
-    event StakeAdded(address indexed sequencer, uint256 amount);
-
-    // ============================================
-    // ERRORS
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                              CUSTOM ERRORS
+    //////////////////////////////////////////////////////////////*/
 
     error InsufficientStake(uint256 provided, uint256 required);
     error SequencerNotRegistered(address sequencer);
@@ -295,6 +274,7 @@ contract SharedSequencer is AccessControl, ReentrancyGuard, Pausable {
     error SequencerJailed(address sequencer);
     error InvalidRandomness();
     error InactiveChain(ChainType chain);
+
     error StakeTooLow();
     error SlotTooShort();
     error ActiveSetTooSmall();
@@ -308,19 +288,12 @@ contract SharedSequencer is AccessControl, ReentrancyGuard, Pausable {
     error AlreadyFinalized();
     error InvalidBridgeAdapter();
     error SetTooSmall();
-    error ZeroAddress();
 
-    // ============================================
-    // CONSTRUCTOR
-    // ============================================
 
-    /**
-     * @notice Initialize the SharedSequencer
-     * @param _minimumStake Minimum stake required (must be >= 1 ether)
-     * @param _slotDuration Duration of each slot in seconds
-     * @param _activeSetSize Maximum size of active sequencer set
-     * @param _slashingPercentage Slashing percentage in basis points
-     */
+    /*//////////////////////////////////////////////////////////////
+                             CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
+
     constructor(
         uint256 _minimumStake,
         uint256 _slotDuration,
@@ -328,10 +301,9 @@ contract SharedSequencer is AccessControl, ReentrancyGuard, Pausable {
         uint256 _slashingPercentage
     ) {
         if (_minimumStake < 1 ether) revert StakeTooLow();
-        if (_slotDuration < MIN_SLOT_DURATION) revert SlotTooShort();
+        if (_slotDuration < 1 seconds) revert SlotTooShort();
         if (_activeSetSize < 1) revert ActiveSetTooSmall();
-        if (_slashingPercentage > MAX_SLASHING_PERCENTAGE)
-            revert InvalidPercentage();
+        if (_slashingPercentage > 10000) revert InvalidPercentage();
 
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(OPERATOR_ROLE, msg.sender);
@@ -351,9 +323,9 @@ contract SharedSequencer is AccessControl, ReentrancyGuard, Pausable {
         );
     }
 
-    // ============================================
-    // SEQUENCER MANAGEMENT
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                         SEQUENCER MANAGEMENT
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Register as a sequencer
@@ -370,6 +342,7 @@ contract SharedSequencer is AccessControl, ReentrancyGuard, Pausable {
         if (msg.value < minimumStake) {
             revert InsufficientStake(msg.value, minimumStake);
         }
+
         if (signer == address(0)) revert InvalidSigner();
         if (supportedChainsList.length == 0) revert NoChainsSpecified();
 
@@ -411,8 +384,6 @@ contract SharedSequencer is AccessControl, ReentrancyGuard, Pausable {
 
         seq.stake += msg.value;
         totalStaked += msg.value;
-
-        emit StakeAdded(msg.sender, msg.value);
     }
 
     /**
@@ -433,9 +404,7 @@ contract SharedSequencer is AccessControl, ReentrancyGuard, Pausable {
         if (
             seq.status != SequencerStatus.PENDING &&
             seq.status != SequencerStatus.STANDBY
-        ) {
-            revert InvalidStatusForActivation();
-        }
+        ) revert InvalidStatusForActivation();
 
         seq.status = SequencerStatus.ACTIVE;
 
@@ -459,9 +428,7 @@ contract SharedSequencer is AccessControl, ReentrancyGuard, Pausable {
         if (
             seq.status == SequencerStatus.EXITING ||
             seq.status == SequencerStatus.EXITED
-        ) {
-            revert AlreadyExiting();
-        }
+        ) revert AlreadyExiting();
 
         seq.status = SequencerStatus.EXITING;
         seq.exitInitiatedAt = block.timestamp;
@@ -501,9 +468,9 @@ contract SharedSequencer is AccessControl, ReentrancyGuard, Pausable {
         emit SequencerExited(msg.sender, amount);
     }
 
-    // ============================================
-    // SLOT MANAGEMENT
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                           SLOT MANAGEMENT
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Get current slot based on time
@@ -532,8 +499,8 @@ contract SharedSequencer is AccessControl, ReentrancyGuard, Pausable {
             seq.blocksMissed++;
             seq.slashingPoints++;
 
-            // Auto-jail if too many missed blocks
-            if (seq.slashingPoints >= JAIL_THRESHOLD) {
+            // Auto-slash if too many missed blocks
+            if (seq.slashingPoints >= 3) {
                 _jailSequencer(prevSlot.sequencer, "Too many missed blocks");
             }
         }
@@ -661,9 +628,9 @@ contract SharedSequencer is AccessControl, ReentrancyGuard, Pausable {
         emit BatchFinalized(batchId, orderingProof);
     }
 
-    // ============================================
-    // ROTATION
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                              ROTATION
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Trigger sequencer rotation
@@ -686,9 +653,9 @@ contract SharedSequencer is AccessControl, ReentrancyGuard, Pausable {
         emit RotationTriggered(currentSlot, activeSequencers);
     }
 
-    // ============================================
-    // SLASHING
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                              SLASHING
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Slash a sequencer for misbehavior
@@ -734,9 +701,9 @@ contract SharedSequencer is AccessControl, ReentrancyGuard, Pausable {
         emit SequencerSlashed(sequencer, slashAmount, reason);
     }
 
-    // ============================================
-    // CHAIN CONFIGURATION
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                           CHAIN CONFIG
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Configure an L2 chain
@@ -782,9 +749,9 @@ contract SharedSequencer is AccessControl, ReentrancyGuard, Pausable {
         chainConfigs[chainType].isActive = false;
     }
 
-    // ============================================
-    // GOVERNANCE
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                            GOVERNANCE
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Update minimum stake requirement
@@ -792,7 +759,7 @@ contract SharedSequencer is AccessControl, ReentrancyGuard, Pausable {
     function setMinimumStake(
         uint256 newMinimum
     ) external onlyRole(GOVERNANCE_ROLE) {
-        if (newMinimum < MIN_STAKE_FLOOR) revert StakeTooLow();
+        if (newMinimum < 0.1 ether) revert StakeTooLow();
         minimumStake = newMinimum;
     }
 
@@ -802,7 +769,7 @@ contract SharedSequencer is AccessControl, ReentrancyGuard, Pausable {
     function setSlotDuration(
         uint256 newDuration
     ) external onlyRole(GOVERNANCE_ROLE) {
-        if (newDuration < MIN_SLOT_DURATION) revert SlotTooShort();
+        if (newDuration < 1 seconds) revert SlotTooShort();
         slotDuration = newDuration;
     }
 
@@ -822,7 +789,7 @@ contract SharedSequencer is AccessControl, ReentrancyGuard, Pausable {
     function setSlashingPercentage(
         uint256 newPercentage
     ) external onlyRole(GOVERNANCE_ROLE) {
-        if (newPercentage > MAX_SLASHING_PERCENTAGE) revert InvalidPercentage();
+        if (newPercentage > 10000) revert InvalidPercentage();
         slashingPercentage = newPercentage;
     }
 
@@ -840,9 +807,9 @@ contract SharedSequencer is AccessControl, ReentrancyGuard, Pausable {
         _unpause();
     }
 
-    // ============================================
-    // VIEW FUNCTIONS
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                              VIEWS
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Get sequencer info
@@ -898,23 +865,9 @@ contract SharedSequencer is AccessControl, ReentrancyGuard, Pausable {
             seq.status == SequencerStatus.PENDING;
     }
 
-    /**
-     * @notice Get time remaining until exit completion
-     */
-    function getExitTimeRemaining(
-        address sequencer
-    ) external view returns (uint256) {
-        Sequencer storage seq = sequencers[sequencer];
-        if (seq.status != SequencerStatus.EXITING) return 0;
-
-        uint256 exitTime = seq.exitInitiatedAt + EXIT_DELAY;
-        if (block.timestamp >= exitTime) return 0;
-        return exitTime - block.timestamp;
-    }
-
-    // ============================================
-    // INTERNAL FUNCTIONS
-    // ============================================
+    /*//////////////////////////////////////////////////////////////
+                           INTERNAL FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Select sequencer for a slot using weighted randomness

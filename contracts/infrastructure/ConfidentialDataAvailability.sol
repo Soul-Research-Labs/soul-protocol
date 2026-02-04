@@ -541,15 +541,15 @@ contract ConfidentialDataAvailability is
      */
     function _verifyAvailabilityProof(
         bytes32 /* blobId */,
-        bytes32[] calldata /* sampledShardIndices */,
+        bytes32[] calldata sampledShardIndices,
         bytes32[] calldata shardProofs,
         bytes32 zkProofHash
-    ) internal pure returns (bool) {
+    ) internal view returns (bool) {
         // Simplified verification - production would use ZK verifier
         // ConfidentialBlob storage blob = blobs[blobId];
 
         // Verify each sampled shard has a valid proof
-        for (uint256 i = 0; i < shardProofs.length; i++) {
+        for (uint256 i = 0; i < sampledShardIndices.length; i++) {
             // In production: verify Merkle proof against encryptedDataRoot
             // For now: check proof is non-zero
             if (shardProofs[i] == bytes32(0)) {
@@ -852,12 +852,10 @@ contract ConfidentialDataAvailability is
 
     function _verifyShardProof(
         bytes32 blobId,
-        uint8 /* shardIndex */,
+        uint8 shardIndex,
         bytes32 shardProof
     ) internal view returns (bool) {
         ConfidentialBlob storage blob = blobs[blobId];
-        // Silence unused variable warning - blob used for verification context
-        if (blob.totalShards == 0) return false;
 
         // Verify proof against stored commitment
         if (shardVerifier != address(0)) {
