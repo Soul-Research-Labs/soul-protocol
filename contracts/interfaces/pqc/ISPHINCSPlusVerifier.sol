@@ -8,7 +8,7 @@ import {PQCLib} from "../../libraries/PQCLib.sol";
  * @notice Interface for SPHINCS+ (SLH-DSA) hash-based signature verification
  * @dev SPHINCS+ is stateless and relies only on hash function security,
  *      making it the most conservative post-quantum signature scheme.
- * 
+ *
  * NIST FIPS 205 (SLH-DSA) - Finalized August 2024
  * Variants:
  * - SPHINCS+-128s: Security Level 1, 7856 byte signatures (small)
@@ -76,11 +76,11 @@ interface ISPHINCSPlusVerifier {
      * @notice SPHINCS+ variant enumeration
      */
     enum SPHINCSVariant {
-        NONE,           // 0: Invalid
-        SPHINCS_128s,   // 1: 128-bit security, small signatures
-        SPHINCS_128f,   // 2: 128-bit security, fast signing
-        SPHINCS_256s,   // 3: 256-bit security, small signatures
-        SPHINCS_256f    // 4: 256-bit security, fast signing
+        NONE, // 0: Invalid
+        SPHINCS_128s, // 1: 128-bit security, small signatures
+        SPHINCS_128f, // 2: 128-bit security, fast signing
+        SPHINCS_256s, // 3: 256-bit security, small signatures
+        SPHINCS_256f // 4: 256-bit security, fast signing
     }
 
     // ============ Structs ============
@@ -121,14 +121,19 @@ interface ISPHINCSPlusVerifier {
      * @notice Get current verification mode
      * @return mode Current mode
      */
-    function getVerificationMode() external view returns (PQCLib.VerificationMode mode);
+    function getVerificationMode()
+        external
+        view
+        returns (PQCLib.VerificationMode mode);
 
     /**
      * @notice Get configuration for a SPHINCS+ variant
      * @param variant The variant to query
      * @return config Variant configuration
      */
-    function getVariantConfig(SPHINCSVariant variant) external view returns (VariantConfig memory config);
+    function getVariantConfig(
+        SPHINCSVariant variant
+    ) external view returns (VariantConfig memory config);
 
     /**
      * @notice Get expected sizes for a variant
@@ -136,10 +141,9 @@ interface ISPHINCSPlusVerifier {
      * @return pkSize Public key size
      * @return sigSize Signature size
      */
-    function getExpectedSizes(SPHINCSVariant variant) external pure returns (
-        uint256 pkSize,
-        uint256 sigSize
-    );
+    function getExpectedSizes(
+        SPHINCSVariant variant
+    ) external pure returns (uint256 pkSize, uint256 sigSize);
 
     /**
      * @notice Check if a result is cached
@@ -147,10 +151,9 @@ interface ISPHINCSPlusVerifier {
      * @return cached Whether result is cached
      * @return valid The cached result
      */
-    function getCachedResult(bytes32 cacheKey) external view returns (
-        bool cached,
-        bool valid
-    );
+    function getCachedResult(
+        bytes32 cacheKey
+    ) external view returns (bool cached, bool valid);
 
     /**
      * @notice Estimate gas for verification
@@ -169,11 +172,10 @@ interface ISPHINCSPlusVerifier {
      * @return successful Successful verifications
      * @return cached Cache hits
      */
-    function getStats() external view returns (
-        uint256 total,
-        uint256 successful,
-        uint256 cached
-    );
+    function getStats()
+        external
+        view
+        returns (uint256 total, uint256 successful, uint256 cached);
 
     // ============ Verification Functions ============
 

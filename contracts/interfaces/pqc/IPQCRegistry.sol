@@ -183,14 +183,18 @@ interface IPQCRegistry {
      * @param account The account address
      * @return config Account configuration
      */
-    function getAccountConfig(address account) external view returns (AccountConfig memory config);
+    function getAccountConfig(
+        address account
+    ) external view returns (AccountConfig memory config);
 
     /**
      * @notice Check if account is configured for PQC
      * @param account The account address
      * @return configured True if configured
      */
-    function isConfigured(address account) external view returns (bool configured);
+    function isConfigured(
+        address account
+    ) external view returns (bool configured);
 
     /**
      * @notice Check if account configuration is active
@@ -204,7 +208,9 @@ interface IPQCRegistry {
      * @param account The account address
      * @return required True if hybrid required
      */
-    function requiresHybrid(address account) external view returns (bool required);
+    function requiresHybrid(
+        address account
+    ) external view returns (bool required);
 
     /**
      * @notice Get protocol-wide PQC statistics
@@ -217,7 +223,9 @@ interface IPQCRegistry {
      * @param exchangeId The exchange identifier
      * @return session Exchange session details
      */
-    function getKeyExchange(bytes32 exchangeId) external view returns (KeyExchangeSession memory session);
+    function getKeyExchange(
+        bytes32 exchangeId
+    ) external view returns (KeyExchangeSession memory session);
 
     /**
      * @notice Get Dilithium verifier address
@@ -247,13 +255,19 @@ interface IPQCRegistry {
      * @notice Get supported signature algorithms
      * @return algorithms Array of supported algorithms
      */
-    function getSupportedSignatureAlgorithms() external view returns (PQCLib.SignatureAlgorithm[] memory algorithms);
+    function getSupportedSignatureAlgorithms()
+        external
+        view
+        returns (PQCLib.SignatureAlgorithm[] memory algorithms);
 
     /**
      * @notice Get supported KEM algorithms
      * @return algorithms Array of supported algorithms
      */
-    function getSupportedKEMAlgorithms() external view returns (PQCLib.KEMAlgorithm[] memory algorithms);
+    function getSupportedKEMAlgorithms()
+        external
+        view
+        returns (PQCLib.KEMAlgorithm[] memory algorithms);
 
     // ============ Account Configuration Functions ============
 
@@ -403,14 +417,20 @@ interface IPQCRegistry {
      * @param algorithm Algorithm to configure
      * @param enabled Whether to enable
      */
-    function setSignatureAlgorithmEnabled(PQCLib.SignatureAlgorithm algorithm, bool enabled) external;
+    function setSignatureAlgorithmEnabled(
+        PQCLib.SignatureAlgorithm algorithm,
+        bool enabled
+    ) external;
 
     /**
      * @notice Enable/disable a KEM algorithm
      * @param algorithm Algorithm to configure
      * @param enabled Whether to enable
      */
-    function setKEMAlgorithmEnabled(PQCLib.KEMAlgorithm algorithm, bool enabled) external;
+    function setKEMAlgorithmEnabled(
+        PQCLib.KEMAlgorithm algorithm,
+        bool enabled
+    ) external;
 
     /**
      * @notice Set default configuration expiration

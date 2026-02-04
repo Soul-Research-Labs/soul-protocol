@@ -179,7 +179,9 @@ contract KyberKEM is Ownable, Pausable, ReentrancyGuard {
 
         _validatePublicKeySize(publicKey, algorithm);
 
-        bytes32 pkHash = keccak256(abi.encodePacked(DOMAIN_SEPARATOR, publicKey));
+        bytes32 pkHash = keccak256(
+            abi.encodePacked(DOMAIN_SEPARATOR, publicKey)
+        );
 
         registeredKeys[msg.sender] = RegisteredKey({
             publicKeyHash: pkHash,
@@ -192,7 +194,12 @@ contract KyberKEM is Ownable, Pausable, ReentrancyGuard {
         // Store full public key on-chain (expensive but enables trustless verification)
         publicKeyStorage[pkHash] = publicKey;
 
-        emit KeyRegistered(msg.sender, pkHash, algorithm, uint64(block.timestamp + keyExpiry));
+        emit KeyRegistered(
+            msg.sender,
+            pkHash,
+            algorithm,
+            uint64(block.timestamp + keyExpiry)
+        );
     }
 
     /**
@@ -215,8 +222,10 @@ contract KyberKEM is Ownable, Pausable, ReentrancyGuard {
         delete publicKeyStorage[key.publicKeyHash];
 
         // Register new key
-        bytes32 newPkHash = keccak256(abi.encodePacked(DOMAIN_SEPARATOR, newPublicKey));
-        
+        bytes32 newPkHash = keccak256(
+            abi.encodePacked(DOMAIN_SEPARATOR, newPublicKey)
+        );
+
         key.publicKeyHash = newPkHash;
         key.algorithm = algorithm;
         key.registeredAt = uint64(block.timestamp);
@@ -237,7 +246,7 @@ contract KyberKEM is Ownable, Pausable, ReentrancyGuard {
         }
 
         bytes32 pkHash = key.publicKeyHash;
-        
+
         delete publicKeyStorage[pkHash];
         delete registeredKeys[msg.sender];
 
@@ -270,13 +279,15 @@ contract KyberKEM is Ownable, Pausable, ReentrancyGuard {
 
         _validateCiphertextSize(ciphertext, recipientKey.algorithm);
 
-        exchangeId = keccak256(abi.encodePacked(
-            DOMAIN_SEPARATOR,
-            msg.sender,
-            recipient,
-            ++exchangeCount,
-            block.timestamp
-        ));
+        exchangeId = keccak256(
+            abi.encodePacked(
+                DOMAIN_SEPARATOR,
+                msg.sender,
+                recipient,
+                ++exchangeCount,
+                block.timestamp
+            )
+        );
 
         exchanges[exchangeId] = KeyExchange({
             initiator: msg.sender,
@@ -290,7 +301,12 @@ contract KyberKEM is Ownable, Pausable, ReentrancyGuard {
             isCancelled: false
         });
 
-        emit KeyExchangeInitiated(exchangeId, msg.sender, recipient, recipientKey.algorithm);
+        emit KeyExchangeInitiated(
+            exchangeId,
+            msg.sender,
+            recipient,
+            recipientKey.algorithm
+        );
     }
 
     /**
@@ -303,7 +319,7 @@ contract KyberKEM is Ownable, Pausable, ReentrancyGuard {
         bytes32 sharedSecretCommitment
     ) external whenNotPaused nonReentrant {
         KeyExchange storage exchange = exchanges[exchangeId];
-        
+
         if (exchange.initiator == address(0)) {
             revert ExchangeNotFound();
         }
@@ -323,7 +339,11 @@ contract KyberKEM is Ownable, Pausable, ReentrancyGuard {
         exchange.isCompleted = true;
         completedExchanges[exchangeId] = true;
 
-        emit KeyExchangeCompleted(exchangeId, msg.sender, sharedSecretCommitment);
+        emit KeyExchangeCompleted(
+            exchangeId,
+            msg.sender,
+            sharedSecretCommitment
+        );
     }
 
     /**
@@ -332,11 +352,13 @@ contract KyberKEM is Ownable, Pausable, ReentrancyGuard {
      */
     function cancelExchange(bytes32 exchangeId) external {
         KeyExchange storage exchange = exchanges[exchangeId];
-        
+
         if (exchange.initiator == address(0)) {
             revert ExchangeNotFound();
         }
-        if (exchange.initiator != msg.sender && exchange.recipient != msg.sender) {
+        if (
+            exchange.initiator != msg.sender && exchange.recipient != msg.sender
+        ) {
             revert UnauthorizedCaller();
         }
         if (exchange.isCompleted) {
@@ -379,7 +401,9 @@ contract KyberKEM is Ownable, Pausable, ReentrancyGuard {
             ciphertext
         );
 
-        (bool success, bytes memory result) = KYBER_PRECOMPILE.staticcall(input);
+        (bool success, bytes memory result) = KYBER_PRECOMPILE.staticcall(
+            input
+        );
 
         if (!success || result.length == 0) {
             if (useMockMode) {
@@ -480,13 +504,19 @@ contract KyberKEM is Ownable, Pausable, ReentrancyGuard {
     // VIEW FUNCTIONS
     // =============================================================================
 
-    function getRegisteredKey(address owner) external view returns (
-        bytes32 publicKeyHash,
-        PQCLib.KEMAlgorithm algorithm,
-        uint64 registeredAt,
-        uint64 expiresAt,
-        bool isActive
-    ) {
+    function getRegisteredKey(
+        address owner
+    )
+        external
+        view
+        returns (
+            bytes32 publicKeyHash,
+            PQCLib.KEMAlgorithm algorithm,
+            uint64 registeredAt,
+            uint64 expiresAt,
+            bool isActive
+        )
+    {
         RegisteredKey memory key = registeredKeys[owner];
         return (
             key.publicKeyHash,
@@ -501,14 +531,20 @@ contract KyberKEM is Ownable, Pausable, ReentrancyGuard {
         return publicKeyStorage[pkHash];
     }
 
-    function getExchange(bytes32 exchangeId) external view returns (
-        address initiator,
-        address recipient,
-        bytes32 ciphertextHash,
-        PQCLib.KEMAlgorithm algorithm,
-        bool isCompleted,
-        bool isCancelled
-    ) {
+    function getExchange(
+        bytes32 exchangeId
+    )
+        external
+        view
+        returns (
+            address initiator,
+            address recipient,
+            bytes32 ciphertextHash,
+            PQCLib.KEMAlgorithm algorithm,
+            bool isCompleted,
+            bool isCancelled
+        )
+    {
         KeyExchange memory exchange = exchanges[exchangeId];
         return (
             exchange.initiator,
@@ -522,9 +558,10 @@ contract KyberKEM is Ownable, Pausable, ReentrancyGuard {
 
     function isExchangeValid(bytes32 exchangeId) external view returns (bool) {
         KeyExchange memory exchange = exchanges[exchangeId];
-        return exchange.initiator != address(0) &&
-               !exchange.isCompleted &&
-               !exchange.isCancelled &&
-               block.timestamp <= exchange.expiresAt;
+        return
+            exchange.initiator != address(0) &&
+            !exchange.isCompleted &&
+            !exchange.isCancelled &&
+            block.timestamp <= exchange.expiresAt;
     }
 }

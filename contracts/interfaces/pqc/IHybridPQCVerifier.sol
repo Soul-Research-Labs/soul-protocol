@@ -8,7 +8,7 @@ import {PQCLib} from "../../libraries/PQCLib.sol";
  * @notice Interface for hybrid classical + post-quantum signature verification
  * @dev Provides defense-in-depth by requiring both ECDSA and PQC signatures.
  *      If either cryptosystem is compromised, the other provides protection.
- * 
+ *
  * Security Model:
  * - Both signatures must be valid in HybridMandatory/PQPreferred phases
  * - Either signature validates in ClassicalOnly/HybridOptional phases
@@ -64,7 +64,10 @@ interface IHybridPQCVerifier {
      * @param oldMode Previous mode
      * @param newMode New mode
      */
-    event HybridModeChanged(HybridMode indexed oldMode, HybridMode indexed newMode);
+    event HybridModeChanged(
+        HybridMode indexed oldMode,
+        HybridMode indexed newMode
+    );
 
     // ============ Errors ============
 
@@ -104,21 +107,21 @@ interface IHybridPQCVerifier {
      * @notice Hybrid verification mode
      */
     enum HybridMode {
-        CLASSICAL_ONLY,    // 0: Only ECDSA required
-        HYBRID_OPTIONAL,   // 1: ECDSA required, PQC optional
-        HYBRID_MANDATORY,  // 2: Both required
-        PQC_PREFERRED,     // 3: Both required, PQC verification first
-        PQC_ONLY          // 4: Only PQC required
+        CLASSICAL_ONLY, // 0: Only ECDSA required
+        HYBRID_OPTIONAL, // 1: ECDSA required, PQC optional
+        HYBRID_MANDATORY, // 2: Both required
+        PQC_PREFERRED, // 3: Both required, PQC verification first
+        PQC_ONLY // 4: Only PQC required
     }
 
     /**
      * @notice Verification result details
      */
     enum HybridResult {
-        INVALID,           // 0: Both failed
-        ECDSA_ONLY,        // 1: Only ECDSA valid
-        PQC_ONLY,          // 2: Only PQC valid
-        HYBRID_VALID       // 3: Both valid
+        INVALID, // 0: Both failed
+        ECDSA_ONLY, // 1: Only ECDSA valid
+        PQC_ONLY, // 2: Only PQC valid
+        HYBRID_VALID // 3: Both valid
     }
 
     // ============ Structs ============
@@ -131,7 +134,6 @@ interface IHybridPQCVerifier {
         bytes32 r;
         bytes32 s;
         uint8 v;
-        
         // PQC component
         bytes pqcSignature;
         bytes pqcPublicKey;
@@ -202,7 +204,9 @@ interface IHybridPQCVerifier {
      * @param encoded Encoded hybrid signature bytes
      * @return data Decoded signature components
      */
-    function decodeHybridSignature(bytes calldata encoded) external pure returns (HybridSignatureData memory data);
+    function decodeHybridSignature(
+        bytes calldata encoded
+    ) external pure returns (HybridSignatureData memory data);
 
     /**
      * @notice Estimate gas for hybrid verification
@@ -268,7 +272,9 @@ interface IHybridPQCVerifier {
         bytes calldata pqcPublicKey,
         PQCLib.SignatureAlgorithm pqcAlgorithm,
         bytes32 messageHash
-    ) external returns (bool ecdsaValid, bool pqcValid, address recoveredSigner);
+    )
+        external
+        returns (bool ecdsaValid, bool pqcValid, address recoveredSigner);
 
     /**
      * @notice Verify ECDSA signature only

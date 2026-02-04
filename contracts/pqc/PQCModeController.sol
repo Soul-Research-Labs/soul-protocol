@@ -178,7 +178,11 @@ contract PQCModeController is AccessControl {
         PQCLib.TransitionPhase newPhase
     );
 
-    event ProposalCancelled(uint256 indexed proposalId, string proposalType, address cancelledBy);
+    event ProposalCancelled(
+        uint256 indexed proposalId,
+        string proposalType,
+        address cancelledBy
+    );
 
     event DelayUpdated(uint256 oldDelay, uint256 newDelay);
 
@@ -279,10 +283,13 @@ contract PQCModeController is AccessControl {
      * @notice Approves a mode change proposal
      * @param proposalId The proposal to approve
      */
-    function approveModeProposal(uint256 proposalId) external onlyRole(APPROVER_ROLE) {
+    function approveModeProposal(
+        uint256 proposalId
+    ) external onlyRole(APPROVER_ROLE) {
         ModeChangeProposal storage proposal = modeProposals[proposalId];
 
-        if (proposal.proposer == address(0)) revert ProposalNotFound(proposalId);
+        if (proposal.proposer == address(0))
+            revert ProposalNotFound(proposalId);
         if (proposal.executed) revert ProposalAlreadyExecuted(proposalId);
         if (proposal.cancelled) revert ProposalIsCancelled(proposalId);
         if (block.timestamp > proposal.proposedAt + PROPOSAL_VALIDITY) {
@@ -298,30 +305,40 @@ contract PQCModeController is AccessControl {
         hasModeApproved[proposalId][msg.sender] = true;
         proposal.approvalCount++;
 
-        emit ModeProposalApproved(proposalId, msg.sender, proposal.approvalCount);
+        emit ModeProposalApproved(
+            proposalId,
+            msg.sender,
+            proposal.approvalCount
+        );
     }
 
     /**
      * @notice Executes a mode change proposal
      * @param proposalId The proposal to execute
      */
-    function executeModeProposal(uint256 proposalId) external onlyRole(EXECUTOR_ROLE) {
+    function executeModeProposal(
+        uint256 proposalId
+    ) external onlyRole(EXECUTOR_ROLE) {
         if (emergencyPaused) revert EmergencyPauseActive();
 
         ModeChangeProposal storage proposal = modeProposals[proposalId];
 
-        if (proposal.proposer == address(0)) revert ProposalNotFound(proposalId);
+        if (proposal.proposer == address(0))
+            revert ProposalNotFound(proposalId);
         if (proposal.executed) revert ProposalAlreadyExecuted(proposalId);
         if (proposal.cancelled) revert ProposalIsCancelled(proposalId);
         if (block.timestamp < proposal.executeAfter) {
             revert TimelockNotExpired(proposal.executeAfter, block.timestamp);
         }
         if (proposal.approvalCount < REQUIRED_APPROVALS) {
-            revert InsufficientApprovals(proposal.approvalCount, REQUIRED_APPROVALS);
+            revert InsufficientApprovals(
+                proposal.approvalCount,
+                REQUIRED_APPROVALS
+            );
         }
 
         PQCLib.VerificationMode oldMode = verifier.currentMode();
-        
+
         // Execute mode change on verifier
         verifier.setMode(proposal.newMode);
 
@@ -339,12 +356,14 @@ contract PQCModeController is AccessControl {
     function cancelModeProposal(uint256 proposalId) external {
         ModeChangeProposal storage proposal = modeProposals[proposalId];
 
-        if (proposal.proposer == address(0)) revert ProposalNotFound(proposalId);
+        if (proposal.proposer == address(0))
+            revert ProposalNotFound(proposalId);
         if (proposal.executed) revert ProposalAlreadyExecuted(proposalId);
-        
+
         // Only proposer or admin can cancel
         require(
-            msg.sender == proposal.proposer || hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
+            msg.sender == proposal.proposer ||
+                hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
             "Not authorized"
         );
 
@@ -369,9 +388,11 @@ contract PQCModeController is AccessControl {
         if (emergencyPaused) revert EmergencyPauseActive();
 
         // Validate phase transition (cannot go back to ClassicalOnly)
-        if (phaseHistory.length > 0 && 
+        if (
+            phaseHistory.length > 0 &&
             phaseHistory[phaseHistory.length - 1] > newPhase &&
-            newPhase == PQCLib.TransitionPhase.ClassicalOnly) {
+            newPhase == PQCLib.TransitionPhase.ClassicalOnly
+        ) {
             revert InvalidPhaseTransition();
         }
 
@@ -401,10 +422,13 @@ contract PQCModeController is AccessControl {
      * @notice Approves a phase change proposal
      * @param proposalId The proposal to approve
      */
-    function approvePhaseProposal(uint256 proposalId) external onlyRole(APPROVER_ROLE) {
+    function approvePhaseProposal(
+        uint256 proposalId
+    ) external onlyRole(APPROVER_ROLE) {
         PhaseChangeProposal storage proposal = phaseProposals[proposalId];
 
-        if (proposal.proposer == address(0)) revert ProposalNotFound(proposalId);
+        if (proposal.proposer == address(0))
+            revert ProposalNotFound(proposalId);
         if (proposal.executed) revert ProposalAlreadyExecuted(proposalId);
         if (proposal.cancelled) revert ProposalIsCancelled(proposalId);
         if (block.timestamp > proposal.proposedAt + PROPOSAL_VALIDITY) {
@@ -420,7 +444,11 @@ contract PQCModeController is AccessControl {
         hasPhaseApproved[proposalId][msg.sender] = true;
         proposal.approvalCount++;
 
-        emit PhaseProposalApproved(proposalId, msg.sender, proposal.approvalCount);
+        emit PhaseProposalApproved(
+            proposalId,
+            msg.sender,
+            proposal.approvalCount
+        );
     }
 
     // =============================================================================
@@ -454,7 +482,9 @@ contract PQCModeController is AccessControl {
      * @notice Updates the mode change delay
      * @param newDelay The new delay in seconds
      */
-    function setModeChangeDelay(uint256 newDelay) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setModeChangeDelay(
+        uint256 newDelay
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (newDelay < MIN_DELAY || newDelay > MAX_DELAY) {
             revert InvalidDelay(newDelay);
         }
@@ -468,15 +498,21 @@ contract PQCModeController is AccessControl {
     // VIEW FUNCTIONS
     // =============================================================================
 
-    function getModeProposal(uint256 proposalId) external view returns (
-        PQCLib.VerificationMode newMode,
-        address proposer,
-        uint256 proposedAt,
-        uint256 executeAfter,
-        uint256 approvalCount,
-        bool executed,
-        bool cancelled
-    ) {
+    function getModeProposal(
+        uint256 proposalId
+    )
+        external
+        view
+        returns (
+            PQCLib.VerificationMode newMode,
+            address proposer,
+            uint256 proposedAt,
+            uint256 executeAfter,
+            uint256 approvalCount,
+            bool executed,
+            bool cancelled
+        )
+    {
         ModeChangeProposal memory proposal = modeProposals[proposalId];
         return (
             proposal.newMode,
@@ -489,15 +525,21 @@ contract PQCModeController is AccessControl {
         );
     }
 
-    function getPhaseProposal(uint256 proposalId) external view returns (
-        PQCLib.TransitionPhase newPhase,
-        address proposer,
-        uint256 proposedAt,
-        uint256 executeAfter,
-        uint256 approvalCount,
-        bool executed,
-        bool cancelled
-    ) {
+    function getPhaseProposal(
+        uint256 proposalId
+    )
+        external
+        view
+        returns (
+            PQCLib.TransitionPhase newPhase,
+            address proposer,
+            uint256 proposedAt,
+            uint256 executeAfter,
+            uint256 approvalCount,
+            bool executed,
+            bool cancelled
+        )
+    {
         PhaseChangeProposal memory proposal = phaseProposals[proposalId];
         return (
             proposal.newPhase,
@@ -510,29 +552,43 @@ contract PQCModeController is AccessControl {
         );
     }
 
-    function getModeHistory() external view returns (PQCLib.VerificationMode[] memory) {
+    function getModeHistory()
+        external
+        view
+        returns (PQCLib.VerificationMode[] memory)
+    {
         return modeHistory;
     }
 
-    function getPhaseHistory() external view returns (PQCLib.TransitionPhase[] memory) {
+    function getPhaseHistory()
+        external
+        view
+        returns (PQCLib.TransitionPhase[] memory)
+    {
         return phaseHistory;
     }
 
-    function canExecuteModeProposal(uint256 proposalId) external view returns (bool) {
+    function canExecuteModeProposal(
+        uint256 proposalId
+    ) external view returns (bool) {
         ModeChangeProposal memory proposal = modeProposals[proposalId];
-        return !proposal.executed &&
-               !proposal.cancelled &&
-               !emergencyPaused &&
-               block.timestamp >= proposal.executeAfter &&
-               proposal.approvalCount >= REQUIRED_APPROVALS;
+        return
+            !proposal.executed &&
+            !proposal.cancelled &&
+            !emergencyPaused &&
+            block.timestamp >= proposal.executeAfter &&
+            proposal.approvalCount >= REQUIRED_APPROVALS;
     }
 
-    function canExecutePhaseProposal(uint256 proposalId) external view returns (bool) {
+    function canExecutePhaseProposal(
+        uint256 proposalId
+    ) external view returns (bool) {
         PhaseChangeProposal memory proposal = phaseProposals[proposalId];
-        return !proposal.executed &&
-               !proposal.cancelled &&
-               !emergencyPaused &&
-               block.timestamp >= proposal.executeAfter &&
-               proposal.approvalCount >= REQUIRED_APPROVALS;
+        return
+            !proposal.executed &&
+            !proposal.cancelled &&
+            !emergencyPaused &&
+            block.timestamp >= proposal.executeAfter &&
+            proposal.approvalCount >= REQUIRED_APPROVALS;
     }
 }

@@ -7,7 +7,7 @@ import {PQCLib} from "../../libraries/PQCLib.sol";
  * @title IKyberKEM
  * @notice Interface for CRYSTALS-Kyber (ML-KEM) key encapsulation mechanism
  * @dev Enables quantum-secure key exchange on-chain
- * 
+ *
  * NIST FIPS 203 (ML-KEM) - Finalized August 2024
  * - Kyber512: Security Level 1, 800 byte public key, 768 byte ciphertext
  * - Kyber768: Security Level 3, 1184 byte public key, 1088 byte ciphertext
@@ -109,7 +109,10 @@ interface IKyberKEM {
     error NotAuthorized(address caller, address expected);
 
     /// @notice Algorithm mismatch between parties
-    error AlgorithmMismatch(PQCLib.KEMAlgorithm expected, PQCLib.KEMAlgorithm provided);
+    error AlgorithmMismatch(
+        PQCLib.KEMAlgorithm expected,
+        PQCLib.KEMAlgorithm provided
+    );
 
     /// @notice Replay attack detected
     error ReplayDetected(bytes32 ciphertextHash);
@@ -147,7 +150,9 @@ interface IKyberKEM {
      * @param owner Address of the key owner
      * @return key The registered key info
      */
-    function getRegisteredKey(address owner) external view returns (RegisteredKey memory key);
+    function getRegisteredKey(
+        address owner
+    ) external view returns (RegisteredKey memory key);
 
     /**
      * @notice Check if an address has a valid (non-expired) key
@@ -161,21 +166,27 @@ interface IKyberKEM {
      * @param exchangeId The exchange identifier
      * @return exchange The exchange details
      */
-    function getKeyExchange(bytes32 exchangeId) external view returns (KeyExchange memory exchange);
+    function getKeyExchange(
+        bytes32 exchangeId
+    ) external view returns (KeyExchange memory exchange);
 
     /**
      * @notice Check if a ciphertext has been used (replay protection)
      * @param ciphertextHash Hash of the ciphertext to check
      * @return used True if ciphertext was already used
      */
-    function isCiphertextUsed(bytes32 ciphertextHash) external view returns (bool used);
+    function isCiphertextUsed(
+        bytes32 ciphertextHash
+    ) external view returns (bool used);
 
     /**
      * @notice Get recommended Kyber variant based on security requirements
      * @param securityLevel Desired NIST security level (1, 3, or 5)
      * @return algorithm Recommended Kyber variant
      */
-    function getRecommendedAlgorithm(uint8 securityLevel) external pure returns (PQCLib.KEMAlgorithm algorithm);
+    function getRecommendedAlgorithm(
+        uint8 securityLevel
+    ) external pure returns (PQCLib.KEMAlgorithm algorithm);
 
     /**
      * @notice Get expected sizes for a Kyber variant
@@ -184,11 +195,16 @@ interface IKyberKEM {
      * @return ciphertextSize Expected ciphertext size
      * @return sharedSecretSize Expected shared secret size (32 bytes for all)
      */
-    function getSizes(PQCLib.KEMAlgorithm algorithm) external pure returns (
-        uint256 publicKeySize,
-        uint256 ciphertextSize,
-        uint256 sharedSecretSize
-    );
+    function getSizes(
+        PQCLib.KEMAlgorithm algorithm
+    )
+        external
+        pure
+        returns (
+            uint256 publicKeySize,
+            uint256 ciphertextSize,
+            uint256 sharedSecretSize
+        );
 
     // ============ Key Registration Functions ============
 

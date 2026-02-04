@@ -46,6 +46,7 @@ interface IZKBoundStateLocks {
     }
 
     function getLock(bytes32 lockId) external view returns (Lock memory);
+
     function createLock(
         bytes32 stateRoot,
         bytes32 commitment,
@@ -53,6 +54,7 @@ interface IZKBoundStateLocks {
         bytes32 zkProof,
         uint64 duration
     ) external returns (bytes32 lockId);
+
     function recoverLock(bytes32 lockId, address recipient) external;
 }
 
@@ -187,7 +189,10 @@ contract PQCProtectedLock is AccessControl, Pausable, ReentrancyGuard {
         address indexed newOwner
     );
 
-    event EmergencyRecoveryCancelled(bytes32 indexed lockId, address cancelledBy);
+    event EmergencyRecoveryCancelled(
+        bytes32 indexed lockId,
+        address cancelledBy
+    );
 
     event LockValueSet(bytes32 indexed lockId, uint256 value);
 
@@ -261,7 +266,7 @@ contract PQCProtectedLock is AccessControl, Pausable, ReentrancyGuard {
         uint256 recoveryDelay
     ) external whenNotPaused {
         if (address(zkSlocks) == address(0)) revert InvalidLock();
-        
+
         IZKBoundStateLocks.Lock memory lock = zkSlocks.getLock(lockId);
         if (lock.owner != msg.sender) revert NotLockOwner();
         if (lock.isUnlocked) revert InvalidLock();
@@ -274,7 +279,9 @@ contract PQCProtectedLock is AccessControl, Pausable, ReentrancyGuard {
             requireHybrid: requireHybrid,
             requirePQOnly: false,
             pqRegisteredAt: uint64(block.timestamp),
-            recoveryDelay: recoveryDelay > 0 ? recoveryDelay : defaultRecoveryDelay
+            recoveryDelay: recoveryDelay > 0
+                ? recoveryDelay
+                : defaultRecoveryDelay
         });
 
         emit PQCConfigured(lockId, pqKeyHash, algorithm, requireHybrid);
@@ -294,7 +301,7 @@ contract PQCProtectedLock is AccessControl, Pausable, ReentrancyGuard {
         PQCLib.SignatureAlgorithm algorithm
     ) external whenNotPaused {
         if (address(zkSlocks) == address(0)) revert InvalidLock();
-        
+
         IZKBoundStateLocks.Lock memory lock = zkSlocks.getLock(lockId);
         if (lock.owner != msg.sender) revert NotLockOwner();
 
@@ -335,7 +342,7 @@ contract PQCProtectedLock is AccessControl, Pausable, ReentrancyGuard {
         UnlockAuth calldata auth
     ) external whenNotPaused nonReentrant returns (bool valid) {
         PQCLockConfig memory config = lockPQCConfigs[auth.lockId];
-        
+
         if (config.pqPublicKeyHash == bytes32(0)) {
             revert PQCNotConfigured();
         }
@@ -363,7 +370,11 @@ contract PQCProtectedLock is AccessControl, Pausable, ReentrancyGuard {
         );
 
         // Verify classical signature
-        bool classicalValid = _verifyECDSA(digest, auth.recipient, auth.classicalSig);
+        bool classicalValid = _verifyECDSA(
+            digest,
+            auth.recipient,
+            auth.classicalSig
+        );
         if (!classicalValid && config.requireHybrid) {
             revert ClassicalVerificationFailed();
         }
@@ -382,7 +393,11 @@ contract PQCProtectedLock is AccessControl, Pausable, ReentrancyGuard {
 
         valid = config.requireHybrid ? (classicalValid && pqcValid) : pqcValid;
 
-        emit PQCUnlockVerified(auth.lockId, auth.recipient, config.requireHybrid);
+        emit PQCUnlockVerified(
+            auth.lockId,
+            auth.recipient,
+            config.requireHybrid
+        );
     }
 
     // =============================================================================
@@ -403,7 +418,7 @@ contract PQCProtectedLock is AccessControl, Pausable, ReentrancyGuard {
         bytes calldata pqPublicKey
     ) external whenNotPaused nonReentrant {
         if (newOwner == address(0)) revert ZeroAddress();
-        
+
         PQCLockConfig memory config = lockPQCConfigs[lockId];
         if (config.pqPublicKeyHash == bytes32(0)) {
             revert PQCNotConfigured();
@@ -446,7 +461,12 @@ contract PQCProtectedLock is AccessControl, Pausable, ReentrancyGuard {
             cancelled: false
         });
 
-        emit EmergencyRecoveryInitiated(lockId, msg.sender, newOwner, executeAfter);
+        emit EmergencyRecoveryInitiated(
+            lockId,
+            msg.sender,
+            newOwner,
+            executeAfter
+        );
     }
 
     /**
@@ -455,7 +475,7 @@ contract PQCProtectedLock is AccessControl, Pausable, ReentrancyGuard {
      */
     function executeEmergencyRecovery(bytes32 lockId) external nonReentrant {
         PendingRecovery storage recovery = pendingRecoveries[lockId];
-        
+
         if (recovery.lockId == bytes32(0)) revert RecoveryNotPending();
         if (recovery.executed) revert RecoveryAlreadyExecuted();
         if (recovery.cancelled) revert RecoveryCancelled();
@@ -481,7 +501,7 @@ contract PQCProtectedLock is AccessControl, Pausable, ReentrancyGuard {
      */
     function cancelEmergencyRecovery(bytes32 lockId) external {
         PendingRecovery storage recovery = pendingRecoveries[lockId];
-        
+
         if (recovery.lockId == bytes32(0)) revert RecoveryNotPending();
         if (recovery.executed) revert RecoveryAlreadyExecuted();
 
@@ -545,11 +565,15 @@ contract PQCProtectedLock is AccessControl, Pausable, ReentrancyGuard {
         zkSlocks = IZKBoundStateLocks(_zkSlocks);
     }
 
-    function setDefaultRecoveryDelay(uint256 _delay) external onlyRole(ADMIN_ROLE) {
+    function setDefaultRecoveryDelay(
+        uint256 _delay
+    ) external onlyRole(ADMIN_ROLE) {
         defaultRecoveryDelay = _delay;
     }
 
-    function setPQCMandatoryForHighValue(bool _mandatory) external onlyRole(ADMIN_ROLE) {
+    function setPQCMandatoryForHighValue(
+        bool _mandatory
+    ) external onlyRole(ADMIN_ROLE) {
         pqcMandatoryForHighValue = _mandatory;
     }
 
@@ -565,14 +589,20 @@ contract PQCProtectedLock is AccessControl, Pausable, ReentrancyGuard {
     // VIEW FUNCTIONS
     // =============================================================================
 
-    function getLockPQCConfig(bytes32 lockId) external view returns (
-        bytes32 pqPublicKeyHash,
-        PQCLib.SignatureAlgorithm algorithm,
-        bool requireHybrid,
-        bool requirePQOnly,
-        uint64 pqRegisteredAt,
-        uint256 recoveryDelay
-    ) {
+    function getLockPQCConfig(
+        bytes32 lockId
+    )
+        external
+        view
+        returns (
+            bytes32 pqPublicKeyHash,
+            PQCLib.SignatureAlgorithm algorithm,
+            bool requireHybrid,
+            bool requirePQOnly,
+            uint64 pqRegisteredAt,
+            uint256 recoveryDelay
+        )
+    {
         PQCLockConfig memory config = lockPQCConfigs[lockId];
         return (
             config.pqPublicKeyHash,
@@ -593,7 +623,9 @@ contract PQCProtectedLock is AccessControl, Pausable, ReentrancyGuard {
         if (address(zkSlocks) != address(0)) {
             IZKBoundStateLocks.Lock memory lock = zkSlocks.getLock(lockId);
             uint64 duration = lock.expiresAt - lock.createdAt;
-            if (duration >= PQC_THRESHOLD_DURATION && pqcMandatoryForHighValue) {
+            if (
+                duration >= PQC_THRESHOLD_DURATION && pqcMandatoryForHighValue
+            ) {
                 return true;
             }
         }
@@ -601,14 +633,20 @@ contract PQCProtectedLock is AccessControl, Pausable, ReentrancyGuard {
         return lockPQCConfigs[lockId].pqPublicKeyHash != bytes32(0);
     }
 
-    function getRecoveryStatus(bytes32 lockId) external view returns (
-        address newOwner,
-        uint256 initiatedAt,
-        uint256 executeAfter,
-        bool executed,
-        bool cancelled,
-        bool canExecute
-    ) {
+    function getRecoveryStatus(
+        bytes32 lockId
+    )
+        external
+        view
+        returns (
+            address newOwner,
+            uint256 initiatedAt,
+            uint256 executeAfter,
+            bool executed,
+            bool cancelled,
+            bool canExecute
+        )
+    {
         PendingRecovery memory recovery = pendingRecoveries[lockId];
         return (
             recovery.newOwner,
@@ -616,7 +654,9 @@ contract PQCProtectedLock is AccessControl, Pausable, ReentrancyGuard {
             recovery.executeAfter,
             recovery.executed,
             recovery.cancelled,
-            !recovery.executed && !recovery.cancelled && block.timestamp >= recovery.executeAfter
+            !recovery.executed &&
+                !recovery.cancelled &&
+                block.timestamp >= recovery.executeAfter
         );
     }
 

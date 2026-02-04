@@ -8,7 +8,7 @@ import {PQCLib} from "../../libraries/PQCLib.sol";
  * @notice Interface for CRYSTALS-Dilithium (ML-DSA) signature verification
  * @dev Supports both Dilithium3 (NIST Level 3) and Dilithium5 (NIST Level 5)
  *      with multiple verification modes for gradual EVM integration
- * 
+ *
  * NIST FIPS 204 (ML-DSA) - Finalized August 2024
  * - Dilithium3 (ML-DSA-65): 1952 byte public key, 3293 byte signature
  * - Dilithium5 (ML-DSA-87): 2592 byte public key, 4595 byte signature
@@ -47,7 +47,10 @@ interface IDilithiumVerifier {
      * @param publicKeyHash Hash of the trusted public key
      * @param registrar Address that registered the key
      */
-    event TrustedKeyAdded(bytes32 indexed publicKeyHash, address indexed registrar);
+    event TrustedKeyAdded(
+        bytes32 indexed publicKeyHash,
+        address indexed registrar
+    );
 
     /**
      * @notice Emitted when a trusted public key is removed
@@ -108,14 +111,19 @@ interface IDilithiumVerifier {
      * @notice Get current verification mode
      * @return mode Current verification mode
      */
-    function getVerificationMode() external view returns (PQCLib.VerificationMode mode);
+    function getVerificationMode()
+        external
+        view
+        returns (PQCLib.VerificationMode mode);
 
     /**
      * @notice Check if a public key is trusted
      * @param publicKeyHash Hash of the public key to check
      * @return trusted True if the key is trusted
      */
-    function isTrustedKey(bytes32 publicKeyHash) external view returns (bool trusted);
+    function isTrustedKey(
+        bytes32 publicKeyHash
+    ) external view returns (bool trusted);
 
     /**
      * @notice Check if a signature result is cached
@@ -123,7 +131,9 @@ interface IDilithiumVerifier {
      * @return cached True if result is cached
      * @return valid Cached verification result
      */
-    function getCachedResult(bytes32 cacheKey) external view returns (bool cached, bool valid);
+    function getCachedResult(
+        bytes32 cacheKey
+    ) external view returns (bool cached, bool valid);
 
     /**
      * @notice Estimate gas for verification
@@ -142,11 +152,14 @@ interface IDilithiumVerifier {
      * @return successfulVerifications Number of successful verifications
      * @return failedVerifications Number of failed verifications
      */
-    function getStats() external view returns (
-        uint256 totalVerifications,
-        uint256 successfulVerifications,
-        uint256 failedVerifications
-    );
+    function getStats()
+        external
+        view
+        returns (
+            uint256 totalVerifications,
+            uint256 successfulVerifications,
+            uint256 failedVerifications
+        );
 
     // ============ Verification Functions ============
 

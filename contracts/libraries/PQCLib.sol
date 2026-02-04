@@ -71,37 +71,37 @@ library PQCLib {
     /// @notice Post-quantum signature algorithms
     enum SignatureAlgorithm {
         None,
-        Dilithium3,      // ML-DSA-65 (NIST Level 3)
-        Dilithium5,      // ML-DSA-87 (NIST Level 5)
+        Dilithium3, // ML-DSA-65 (NIST Level 3)
+        Dilithium5, // ML-DSA-87 (NIST Level 5)
         SPHINCSPlus128s, // SLH-DSA-128s (hash-based, small)
         SPHINCSPlus128f, // SLH-DSA-128f (hash-based, fast)
         SPHINCSPlus256s, // SLH-DSA-256s (hash-based, small, high security)
-        SPHINCSPlus256f  // SLH-DSA-256f (hash-based, fast, high security)
+        SPHINCSPlus256f // SLH-DSA-256f (hash-based, fast, high security)
     }
 
     /// @notice Key encapsulation mechanisms
     enum KEMAlgorithm {
         None,
-        Kyber512,   // ML-KEM-512 (NIST Level 1)
-        Kyber768,   // ML-KEM-768 (NIST Level 3, recommended)
-        Kyber1024   // ML-KEM-1024 (NIST Level 5)
+        Kyber512, // ML-KEM-512 (NIST Level 1)
+        Kyber768, // ML-KEM-768 (NIST Level 3, recommended)
+        Kyber1024 // ML-KEM-1024 (NIST Level 5)
     }
 
     /// @notice Verification modes for gradual transition
     enum VerificationMode {
-        Mock,           // Testing only - DO NOT USE IN PRODUCTION
-        PureSolidity,   // Full Solidity verification (~5-10M gas)
-        OffchainZK,     // ZK proof of off-chain verification (~300K gas)
-        Precompile      // Future EIP precompile (~50K gas)
+        Mock, // Testing only - DO NOT USE IN PRODUCTION
+        PureSolidity, // Full Solidity verification (~5-10M gas)
+        OffchainZK, // ZK proof of off-chain verification (~300K gas)
+        Precompile // Future EIP precompile (~50K gas)
     }
 
     /// @notice Transition phases for PQC adoption
     enum TransitionPhase {
-        ClassicalOnly,    // Only classical crypto (ECDSA)
-        HybridOptional,   // Hybrid available but optional
-        HybridMandatory,  // Hybrid required for new operations
-        PQPreferred,      // PQ preferred, classical still accepted
-        PQOnly            // Only PQ accepted (post-quantum era)
+        ClassicalOnly, // Only classical crypto (ECDSA)
+        HybridOptional, // Hybrid available but optional
+        HybridMandatory, // Hybrid required for new operations
+        PQPreferred, // PQ preferred, classical still accepted
+        PQOnly // Only PQ accepted (post-quantum era)
     }
 
     // =============================================================================
@@ -110,12 +110,12 @@ library PQCLib {
 
     /// @notice Hybrid signature combining classical and post-quantum
     struct HybridSignature {
-        bytes4 magic;            // Magic bytes for identification
-        uint8 version;           // Format version
+        bytes4 magic; // Magic bytes for identification
+        uint8 version; // Format version
         SignatureAlgorithm algorithm; // PQ algorithm used
-        bytes ecdsaSig;          // Classical ECDSA signature (65 bytes)
-        bytes pqSignature;       // Post-quantum signature
-        bytes pqPublicKey;       // Post-quantum public key
+        bytes ecdsaSig; // Classical ECDSA signature (65 bytes)
+        bytes pqSignature; // Post-quantum signature
+        bytes pqPublicKey; // Post-quantum public key
     }
 
     /// @notice Compact hybrid signature (for storage efficiency)
@@ -132,8 +132,8 @@ library PQCLib {
 
     /// @notice PQC account configuration
     struct AccountConfig {
-        bytes32 signatureKeyHash;     // Hash of signature public key
-        bytes32 kemKeyHash;           // Hash of KEM public key
+        bytes32 signatureKeyHash; // Hash of signature public key
+        bytes32 kemKeyHash; // Hash of KEM public key
         SignatureAlgorithm sigAlgorithm;
         KEMAlgorithm kemAlgorithm;
         uint64 registeredAt;
@@ -212,17 +212,18 @@ library PQCLib {
     function encodeHybridSignature(
         HybridSignature memory sig
     ) internal pure returns (bytes memory encoded) {
-        return abi.encodePacked(
-            sig.magic,
-            sig.version,
-            uint8(sig.algorithm),
-            uint16(sig.ecdsaSig.length),
-            sig.ecdsaSig,
-            uint16(sig.pqSignature.length),
-            sig.pqSignature,
-            uint16(sig.pqPublicKey.length),
-            sig.pqPublicKey
-        );
+        return
+            abi.encodePacked(
+                sig.magic,
+                sig.version,
+                uint8(sig.algorithm),
+                uint16(sig.ecdsaSig.length),
+                sig.ecdsaSig,
+                uint16(sig.pqSignature.length),
+                sig.pqSignature,
+                uint16(sig.pqPublicKey.length),
+                sig.pqPublicKey
+            );
     }
 
     /**
@@ -254,9 +255,10 @@ library PQCLib {
         offset += 1;
 
         // Read ECDSA signature length and data
-        uint16 ecdsaLen = uint16(uint8(encoded[offset])) << 8 | uint16(uint8(encoded[offset + 1]));
+        uint16 ecdsaLen = (uint16(uint8(encoded[offset])) << 8) |
+            uint16(uint8(encoded[offset + 1]));
         offset += 2;
-        
+
         sig.ecdsaSig = new bytes(ecdsaLen);
         for (uint256 i = 0; i < ecdsaLen; i++) {
             sig.ecdsaSig[i] = encoded[offset + i];
@@ -264,9 +266,10 @@ library PQCLib {
         offset += ecdsaLen;
 
         // Read PQ signature length and data
-        uint16 pqSigLen = uint16(uint8(encoded[offset])) << 8 | uint16(uint8(encoded[offset + 1]));
+        uint16 pqSigLen = (uint16(uint8(encoded[offset])) << 8) |
+            uint16(uint8(encoded[offset + 1]));
         offset += 2;
-        
+
         sig.pqSignature = new bytes(pqSigLen);
         for (uint256 i = 0; i < pqSigLen; i++) {
             sig.pqSignature[i] = encoded[offset + i];
@@ -274,9 +277,10 @@ library PQCLib {
         offset += pqSigLen;
 
         // Read PQ public key length and data
-        uint16 pqPkLen = uint16(uint8(encoded[offset])) << 8 | uint16(uint8(encoded[offset + 1]));
+        uint16 pqPkLen = (uint16(uint8(encoded[offset])) << 8) |
+            uint16(uint8(encoded[offset + 1]));
         offset += 2;
-        
+
         sig.pqPublicKey = new bytes(pqPkLen);
         for (uint256 i = 0; i < pqPkLen; i++) {
             sig.pqPublicKey[i] = encoded[offset + i];
@@ -291,17 +295,18 @@ library PQCLib {
     function encodeCompactHybridSignature(
         CompactHybridSignature memory sig
     ) internal pure returns (bytes memory) {
-        return abi.encodePacked(
-            sig.magic,
-            sig.version,
-            uint8(sig.algorithm),
-            sig.ecdsaR,
-            sig.ecdsaS,
-            sig.ecdsaV,
-            sig.pqPublicKeyHash,
-            uint16(sig.pqSignature.length),
-            sig.pqSignature
-        );
+        return
+            abi.encodePacked(
+                sig.magic,
+                sig.version,
+                uint8(sig.algorithm),
+                sig.ecdsaR,
+                sig.ecdsaS,
+                sig.ecdsaV,
+                sig.pqPublicKeyHash,
+                uint16(sig.pqSignature.length),
+                sig.pqSignature
+            );
     }
 
     // =============================================================================
@@ -318,11 +323,15 @@ library PQCLib {
             return DILITHIUM3_PK_SIZE;
         } else if (algorithm == SignatureAlgorithm.Dilithium5) {
             return DILITHIUM5_PK_SIZE;
-        } else if (algorithm == SignatureAlgorithm.SPHINCSPlus128s || 
-                   algorithm == SignatureAlgorithm.SPHINCSPlus128f) {
+        } else if (
+            algorithm == SignatureAlgorithm.SPHINCSPlus128s ||
+            algorithm == SignatureAlgorithm.SPHINCSPlus128f
+        ) {
             return SPHINCS_128S_PK_SIZE;
-        } else if (algorithm == SignatureAlgorithm.SPHINCSPlus256s ||
-                   algorithm == SignatureAlgorithm.SPHINCSPlus256f) {
+        } else if (
+            algorithm == SignatureAlgorithm.SPHINCSPlus256s ||
+            algorithm == SignatureAlgorithm.SPHINCSPlus256f
+        ) {
             return SPHINCS_256S_PK_SIZE;
         }
         return 0;
@@ -404,8 +413,10 @@ library PQCLib {
         SignatureAlgorithm algorithm
     ) internal pure returns (bytes32) {
         bytes32 domain;
-        if (algorithm == SignatureAlgorithm.Dilithium3 || 
-            algorithm == SignatureAlgorithm.Dilithium5) {
+        if (
+            algorithm == SignatureAlgorithm.Dilithium3 ||
+            algorithm == SignatureAlgorithm.Dilithium5
+        ) {
             domain = DILITHIUM_DOMAIN;
         } else if (algorithm >= SignatureAlgorithm.SPHINCSPlus128s) {
             domain = SPHINCS_DOMAIN;
@@ -421,12 +432,15 @@ library PQCLib {
     function hashVerificationRequest(
         VerificationRequest memory request
     ) internal pure returns (bytes32) {
-        return keccak256(abi.encode(
-            request.algorithm,
-            keccak256(request.publicKey),
-            keccak256(request.message),
-            keccak256(request.signature)
-        ));
+        return
+            keccak256(
+                abi.encode(
+                    request.algorithm,
+                    keccak256(request.publicKey),
+                    keccak256(request.message),
+                    keccak256(request.signature)
+                )
+            );
     }
 
     /**
@@ -438,13 +452,16 @@ library PQCLib {
         bytes memory pqSignature,
         bytes memory pqPublicKey
     ) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked(
-            HYBRID_DOMAIN,
-            messageHash,
-            keccak256(ecdsaSig),
-            keccak256(pqSignature),
-            keccak256(pqPublicKey)
-        ));
+        return
+            keccak256(
+                abi.encodePacked(
+                    HYBRID_DOMAIN,
+                    messageHash,
+                    keccak256(ecdsaSig),
+                    keccak256(pqSignature),
+                    keccak256(pqPublicKey)
+                )
+            );
     }
 
     // =============================================================================
@@ -462,11 +479,15 @@ library PQCLib {
             return 3;
         } else if (algorithm == SignatureAlgorithm.Dilithium5) {
             return 5;
-        } else if (algorithm == SignatureAlgorithm.SPHINCSPlus128s ||
-                   algorithm == SignatureAlgorithm.SPHINCSPlus128f) {
+        } else if (
+            algorithm == SignatureAlgorithm.SPHINCSPlus128s ||
+            algorithm == SignatureAlgorithm.SPHINCSPlus128f
+        ) {
             return 1;
-        } else if (algorithm == SignatureAlgorithm.SPHINCSPlus256s ||
-                   algorithm == SignatureAlgorithm.SPHINCSPlus256f) {
+        } else if (
+            algorithm == SignatureAlgorithm.SPHINCSPlus256s ||
+            algorithm == SignatureAlgorithm.SPHINCSPlus256f
+        ) {
             return 5;
         }
         return 0;
@@ -475,15 +496,20 @@ library PQCLib {
     /**
      * @notice Check if algorithm is lattice-based
      */
-    function isLatticeBased(SignatureAlgorithm algorithm) internal pure returns (bool) {
-        return algorithm == SignatureAlgorithm.Dilithium3 || 
-               algorithm == SignatureAlgorithm.Dilithium5;
+    function isLatticeBased(
+        SignatureAlgorithm algorithm
+    ) internal pure returns (bool) {
+        return
+            algorithm == SignatureAlgorithm.Dilithium3 ||
+            algorithm == SignatureAlgorithm.Dilithium5;
     }
 
     /**
      * @notice Check if algorithm is hash-based
      */
-    function isHashBased(SignatureAlgorithm algorithm) internal pure returns (bool) {
+    function isHashBased(
+        SignatureAlgorithm algorithm
+    ) internal pure returns (bool) {
         return algorithm >= SignatureAlgorithm.SPHINCSPlus128s;
     }
 

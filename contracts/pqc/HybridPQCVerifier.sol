@@ -111,7 +111,11 @@ contract HybridPQCVerifier is AccessControl, Pausable {
         PQCLib.VerificationMode newMode
     );
     event MockModePermanentlyDisabled(address disabledBy);
-    event VerifierUpdated(string verifierType, address oldAddress, address newAddress);
+    event VerifierUpdated(
+        string verifierType,
+        address oldAddress,
+        address newAddress
+    );
     event VerificationCompleted(
         bytes32 indexed requestHash,
         bool isValid,
@@ -188,17 +192,30 @@ contract HybridPQCVerifier is AccessControl, Pausable {
         bytes calldata hybridSig
     ) external whenNotPaused returns (bool valid) {
         // Decode hybrid signature
-        PQCLib.HybridSignature memory sig = PQCLib.decodeHybridSignature(hybridSig);
+        PQCLib.HybridSignature memory sig = PQCLib.decodeHybridSignature(
+            hybridSig
+        );
 
         // Verify ECDSA
         bool ecdsaValid = _verifyECDSA(message, signer, sig.ecdsaSig);
-        
+
         // Verify PQC signature
-        bool pqcValid = _verifyPQC(message, sig.pqSignature, sig.pqPublicKey, sig.algorithm);
+        bool pqcValid = _verifyPQC(
+            message,
+            sig.pqSignature,
+            sig.pqPublicKey,
+            sig.algorithm
+        );
 
         valid = ecdsaValid && pqcValid;
 
-        emit HybridVerificationCompleted(message, signer, ecdsaValid, pqcValid, valid);
+        emit HybridVerificationCompleted(
+            message,
+            signer,
+            ecdsaValid,
+            pqcValid,
+            valid
+        );
     }
 
     /**
@@ -220,11 +237,22 @@ contract HybridPQCVerifier is AccessControl, Pausable {
         PQCLib.SignatureAlgorithm algorithm
     ) external whenNotPaused returns (bool valid) {
         bool ecdsaValid = _verifyECDSA(message, signer, ecdsaSig);
-        bool pqcValid = _verifyPQC(message, pqSignature, pqPublicKey, algorithm);
+        bool pqcValid = _verifyPQC(
+            message,
+            pqSignature,
+            pqPublicKey,
+            algorithm
+        );
 
         valid = ecdsaValid && pqcValid;
 
-        emit HybridVerificationCompleted(message, signer, ecdsaValid, pqcValid, valid);
+        emit HybridVerificationCompleted(
+            message,
+            signer,
+            ecdsaValid,
+            pqcValid,
+            valid
+        );
     }
 
     /**
@@ -268,7 +296,12 @@ contract HybridPQCVerifier is AccessControl, Pausable {
         bytes32 requestHash = PQCLib.hashVerificationRequest(request);
         if (_isCacheValid(requestHash)) {
             result = verificationCache[requestHash];
-            emit VerificationCompleted(requestHash, result.isValid, result.modeUsed, 0);
+            emit VerificationCompleted(
+                requestHash,
+                result.isValid,
+                result.modeUsed,
+                0
+            );
             return result;
         }
 
@@ -294,7 +327,12 @@ contract HybridPQCVerifier is AccessControl, Pausable {
             cacheTimestamps[requestHash] = block.timestamp;
         }
 
-        emit VerificationCompleted(requestHash, result.isValid, result.modeUsed, result.gasUsed);
+        emit VerificationCompleted(
+            requestHash,
+            result.isValid,
+            result.modeUsed,
+            result.gasUsed
+        );
     }
 
     // =============================================================================
@@ -320,18 +358,37 @@ contract HybridPQCVerifier is AccessControl, Pausable {
         bytes memory publicKey,
         PQCLib.SignatureAlgorithm algorithm
     ) internal returns (bool) {
-        if (algorithm == PQCLib.SignatureAlgorithm.Dilithium3 ||
-            algorithm == PQCLib.SignatureAlgorithm.Dilithium5) {
-            if (address(dilithiumVerifier) == address(0)) revert VerifierNotSet();
-            
+        if (
+            algorithm == PQCLib.SignatureAlgorithm.Dilithium3 ||
+            algorithm == PQCLib.SignatureAlgorithm.Dilithium5
+        ) {
+            if (address(dilithiumVerifier) == address(0))
+                revert VerifierNotSet();
+
             if (algorithm == PQCLib.SignatureAlgorithm.Dilithium3) {
-                return dilithiumVerifier.verifyDilithium3(message, signature, publicKey);
+                return
+                    dilithiumVerifier.verifyDilithium3(
+                        message,
+                        signature,
+                        publicKey
+                    );
             } else {
-                return dilithiumVerifier.verifyDilithium5(message, signature, publicKey);
+                return
+                    dilithiumVerifier.verifyDilithium5(
+                        message,
+                        signature,
+                        publicKey
+                    );
             }
         } else if (algorithm >= PQCLib.SignatureAlgorithm.SPHINCSPlus128s) {
             if (address(sphincsVerifier) == address(0)) revert VerifierNotSet();
-            return sphincsVerifier.verify(message, signature, publicKey, algorithm);
+            return
+                sphincsVerifier.verify(
+                    message,
+                    signature,
+                    publicKey,
+                    algorithm
+                );
         }
 
         revert UnsupportedAlgorithm(algorithm);
@@ -369,12 +426,13 @@ contract HybridPQCVerifier is AccessControl, Pausable {
         PQCLib.VerificationRequest calldata request
     ) internal returns (bool) {
         // Route to appropriate verifier
-        return _verifyPQC(
-            keccak256(request.message),
-            request.signature,
-            request.publicKey,
-            request.algorithm
-        );
+        return
+            _verifyPQC(
+                keccak256(request.message),
+                request.signature,
+                request.publicKey,
+                request.algorithm
+            );
     }
 
     function _solidityVerify(
@@ -383,24 +441,26 @@ contract HybridPQCVerifier is AccessControl, Pausable {
         if (gasleft() < MAX_SOLIDITY_GAS) {
             revert GasLimitExceeded(MAX_SOLIDITY_GAS, gasleft());
         }
-        return _verifyPQC(
-            keccak256(request.message),
-            request.signature,
-            request.publicKey,
-            request.algorithm
-        );
+        return
+            _verifyPQC(
+                keccak256(request.message),
+                request.signature,
+                request.publicKey,
+                request.algorithm
+            );
     }
 
     function _zkVerify(
         PQCLib.VerificationRequest calldata request
     ) internal returns (bool) {
         // ZK verification would use the ZK verifier in the underlying verifiers
-        return _verifyPQC(
-            keccak256(request.message),
-            request.signature,
-            request.publicKey,
-            request.algorithm
-        );
+        return
+            _verifyPQC(
+                keccak256(request.message),
+                request.signature,
+                request.publicKey,
+                request.algorithm
+            );
     }
 
     // =============================================================================
@@ -416,7 +476,9 @@ contract HybridPQCVerifier is AccessControl, Pausable {
     // ADMIN FUNCTIONS
     // =============================================================================
 
-    function setMode(PQCLib.VerificationMode newMode) external onlyRole(MODE_ADMIN_ROLE) {
+    function setMode(
+        PQCLib.VerificationMode newMode
+    ) external onlyRole(MODE_ADMIN_ROLE) {
         if (newMode == PQCLib.VerificationMode.Mock) {
             if (block.chainid == 1 || mockModePermanentlyDisabled) {
                 revert MockModeNotAllowed();
@@ -428,7 +490,9 @@ contract HybridPQCVerifier is AccessControl, Pausable {
         emit ModeChanged(oldMode, newMode, msg.sender);
     }
 
-    function setFallbackMode(PQCLib.VerificationMode newMode) external onlyRole(MODE_ADMIN_ROLE) {
+    function setFallbackMode(
+        PQCLib.VerificationMode newMode
+    ) external onlyRole(MODE_ADMIN_ROLE) {
         PQCLib.VerificationMode oldMode = fallbackMode;
         fallbackMode = newMode;
         emit FallbackModeChanged(oldMode, newMode);
@@ -442,13 +506,17 @@ contract HybridPQCVerifier is AccessControl, Pausable {
         emit MockModePermanentlyDisabled(msg.sender);
     }
 
-    function setDilithiumVerifier(address _verifier) external onlyRole(ADMIN_ROLE) {
+    function setDilithiumVerifier(
+        address _verifier
+    ) external onlyRole(ADMIN_ROLE) {
         address old = address(dilithiumVerifier);
         dilithiumVerifier = DilithiumVerifier(_verifier);
         emit VerifierUpdated("Dilithium", old, _verifier);
     }
 
-    function setSPHINCSVerifier(address _verifier) external onlyRole(ADMIN_ROLE) {
+    function setSPHINCSVerifier(
+        address _verifier
+    ) external onlyRole(ADMIN_ROLE) {
         address old = address(sphincsVerifier);
         sphincsVerifier = SPHINCSPlusVerifier(_verifier);
         emit VerifierUpdated("SPHINCS", old, _verifier);
@@ -480,20 +548,23 @@ contract HybridPQCVerifier is AccessControl, Pausable {
     // VIEW FUNCTIONS
     // =============================================================================
 
-    function getStats(PQCLib.VerificationMode mode) external view returns (
-        uint256 count,
-        uint256 gasUsed
-    ) {
+    function getStats(
+        PQCLib.VerificationMode mode
+    ) external view returns (uint256 count, uint256 gasUsed) {
         return (verificationCount[mode], totalGasUsed[mode]);
     }
 
-    function getCurrentConfig() external view returns (
-        PQCLib.VerificationMode mode,
-        PQCLib.VerificationMode fallback_,
-        bool mockDisabled,
-        address dilithium,
-        address sphincs
-    ) {
+    function getCurrentConfig()
+        external
+        view
+        returns (
+            PQCLib.VerificationMode mode,
+            PQCLib.VerificationMode fallback_,
+            bool mockDisabled,
+            address dilithium,
+            address sphincs
+        )
+    {
         return (
             currentMode,
             fallbackMode,

@@ -43,7 +43,7 @@ contract SPHINCSPlusVerifier is Ownable, Pausable {
     /// @notice Hypertree parameters for SPHINCS+-128s
     uint256 public constant SPHINCS_128_TREE_HEIGHT = 64;
     uint256 public constant SPHINCS_128_FORS_TREES = 14;
-    
+
     /// @notice Hypertree parameters for SPHINCS+-256s
     uint256 public constant SPHINCS_256_TREE_HEIGHT = 68;
     uint256 public constant SPHINCS_256_FORS_TREES = 22;
@@ -87,7 +87,10 @@ contract SPHINCSPlusVerifier is Ownable, Pausable {
 
     event TrustedKeyAdded(bytes32 indexed keyHash);
     event TrustedKeyRemoved(bytes32 indexed keyHash);
-    event VerificationModeChanged(PQCLib.VerificationMode oldMode, PQCLib.VerificationMode newMode);
+    event VerificationModeChanged(
+        PQCLib.VerificationMode oldMode,
+        PQCLib.VerificationMode newMode
+    );
 
     // =============================================================================
     // ERRORS
@@ -131,8 +134,10 @@ contract SPHINCSPlusVerifier is Ownable, Pausable {
         PQCLib.SignatureAlgorithm variant
     ) external whenNotPaused returns (bool valid) {
         // Validate variant is SPHINCS+
-        if (variant < PQCLib.SignatureAlgorithm.SPHINCSPlus128s ||
-            variant > PQCLib.SignatureAlgorithm.SPHINCSPlus256f) {
+        if (
+            variant < PQCLib.SignatureAlgorithm.SPHINCSPlus128s ||
+            variant > PQCLib.SignatureAlgorithm.SPHINCSPlus256f
+        ) {
             revert UnsupportedVariant();
         }
 
@@ -143,7 +148,9 @@ contract SPHINCSPlusVerifier is Ownable, Pausable {
         totalVerifications++;
 
         // Check cache
-        bytes32 cacheKey = keccak256(abi.encode(message, keccak256(signature), pkHash));
+        bytes32 cacheKey = keccak256(
+            abi.encode(message, keccak256(signature), pkHash)
+        );
         if (_isCacheValid(cacheKey)) {
             return verificationCache[cacheKey];
         }
@@ -176,7 +183,13 @@ contract SPHINCSPlusVerifier is Ownable, Pausable {
         bytes calldata signature,
         bytes calldata publicKey
     ) external returns (bool) {
-        return this.verify(message, signature, publicKey, PQCLib.SignatureAlgorithm.SPHINCSPlus128s);
+        return
+            this.verify(
+                message,
+                signature,
+                publicKey,
+                PQCLib.SignatureAlgorithm.SPHINCSPlus128s
+            );
     }
 
     /**
@@ -187,7 +200,13 @@ contract SPHINCSPlusVerifier is Ownable, Pausable {
         bytes calldata signature,
         bytes calldata publicKey
     ) external returns (bool) {
-        return this.verify(message, signature, publicKey, PQCLib.SignatureAlgorithm.SPHINCSPlus128f);
+        return
+            this.verify(
+                message,
+                signature,
+                publicKey,
+                PQCLib.SignatureAlgorithm.SPHINCSPlus128f
+            );
     }
 
     /**
@@ -198,7 +217,13 @@ contract SPHINCSPlusVerifier is Ownable, Pausable {
         bytes calldata signature,
         bytes calldata publicKey
     ) external returns (bool) {
-        return this.verify(message, signature, publicKey, PQCLib.SignatureAlgorithm.SPHINCSPlus256s);
+        return
+            this.verify(
+                message,
+                signature,
+                publicKey,
+                PQCLib.SignatureAlgorithm.SPHINCSPlus256s
+            );
     }
 
     /**
@@ -209,7 +234,13 @@ contract SPHINCSPlusVerifier is Ownable, Pausable {
         bytes calldata signature,
         bytes calldata publicKey
     ) external returns (bool) {
-        return this.verify(message, signature, publicKey, PQCLib.SignatureAlgorithm.SPHINCSPlus256f);
+        return
+            this.verify(
+                message,
+                signature,
+                publicKey,
+                PQCLib.SignatureAlgorithm.SPHINCSPlus256f
+            );
     }
 
     /**
@@ -222,10 +253,15 @@ contract SPHINCSPlusVerifier is Ownable, Pausable {
         PQCLib.SignatureAlgorithm variant
     ) external whenNotPaused returns (bool allValid) {
         uint256 len = messages.length;
-        require(len == signatures.length && len == publicKeys.length, "Array length mismatch");
+        require(
+            len == signatures.length && len == publicKeys.length,
+            "Array length mismatch"
+        );
 
         for (uint256 i = 0; i < len; i++) {
-            if (!this.verify(messages[i], signatures[i], publicKeys[i], variant)) {
+            if (
+                !this.verify(messages[i], signatures[i], publicKeys[i], variant)
+            ) {
                 return false;
             }
         }
@@ -298,7 +334,9 @@ contract SPHINCSPlusVerifier is Ownable, Pausable {
             signature
         );
 
-        (bool success, bytes memory result) = SPHINCS_PRECOMPILE.staticcall(input);
+        (bool success, bytes memory result) = SPHINCS_PRECOMPILE.staticcall(
+            input
+        );
 
         if (!success || result.length == 0) {
             if (block.chainid != 1) {
@@ -320,10 +358,10 @@ contract SPHINCSPlusVerifier is Ownable, Pausable {
         // 1. Parse FORS signature and verify
         // 2. Parse hypertree authentication paths
         // 3. Verify each layer of the hypertree
-        
+
         // This is very gas-expensive (5-10M gas)
         // For now, implement simplified verification
-        
+
         // Extract seed from public key
         bytes32 seed;
         assembly {
@@ -337,12 +375,9 @@ contract SPHINCSPlusVerifier is Ownable, Pausable {
         }
 
         // Simplified check (real implementation much more complex)
-        bytes32 computed = keccak256(abi.encodePacked(
-            PQCLib.SPHINCS_DOMAIN,
-            message,
-            seed,
-            variant
-        ));
+        bytes32 computed = keccak256(
+            abi.encodePacked(PQCLib.SPHINCS_DOMAIN, message, seed, variant)
+        );
 
         // Suppress unused variable warning
         return computed != bytes32(0) && sigRoot != bytes32(0);
@@ -366,7 +401,9 @@ contract SPHINCSPlusVerifier is Ownable, Pausable {
     // ADMIN FUNCTIONS
     // =============================================================================
 
-    function setVerificationMode(PQCLib.VerificationMode newMode) external onlyOwner {
+    function setVerificationMode(
+        PQCLib.VerificationMode newMode
+    ) external onlyOwner {
         if (newMode == PQCLib.VerificationMode.Mock && block.chainid == 1) {
             revert MockModeNotAllowedOnMainnet();
         }
@@ -407,11 +444,15 @@ contract SPHINCSPlusVerifier is Ownable, Pausable {
     // VIEW FUNCTIONS
     // =============================================================================
 
-    function getStats() external view returns (
-        uint256 total,
-        uint256 successful,
-        PQCLib.VerificationMode mode
-    ) {
+    function getStats()
+        external
+        view
+        returns (
+            uint256 total,
+            uint256 successful,
+            PQCLib.VerificationMode mode
+        )
+    {
         return (totalVerifications, successfulVerifications, verificationMode);
     }
 
@@ -419,7 +460,13 @@ contract SPHINCSPlusVerifier is Ownable, Pausable {
         return trustedKeyHashes[keyHash];
     }
 
-    function estimateGas(PQCLib.SignatureAlgorithm variant) external pure returns (uint256) {
-        return PQCLib.estimateVerificationGas(PQCLib.VerificationMode.PureSolidity, variant);
+    function estimateGas(
+        PQCLib.SignatureAlgorithm variant
+    ) external pure returns (uint256) {
+        return
+            PQCLib.estimateVerificationGas(
+                PQCLib.VerificationMode.PureSolidity,
+                variant
+            );
     }
 }

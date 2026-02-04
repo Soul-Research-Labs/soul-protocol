@@ -26,5 +26,8 @@ members = [
     # Post-Quantum Cryptography (NIST FIPS 203/204/205)
     "dilithium_proof",          # ZK proof of Dilithium (ML-DSA) verification
     "sphincs_proof",            # ZK proof of SPHINCS+ (SLH-DSA) verification
-    "hybrid_pqc_proof"          # ZK proof of hybrid ECDSA+PQC verification
+    "hybrid_pqc_proof",         # ZK proof of hybrid ECDSA+PQC verification
+    # Multi-Party Computation (MPC)
+    "mpc_proof",                # ZK proof of correct MPC participation
+    "threshold_signature_proof" # ZK proof of threshold signature validity
 ]

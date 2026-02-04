@@ -44,7 +44,8 @@ contract PQCRegistry is AccessControl, Pausable {
     bytes32 public constant PHASE_ADMIN_ROLE = keccak256("PHASE_ADMIN_ROLE");
 
     /// @notice Domain separator
-    bytes32 public constant DOMAIN_SEPARATOR = keccak256("SOUL_PQC_REGISTRY_V1");
+    bytes32 public constant DOMAIN_SEPARATOR =
+        keccak256("SOUL_PQC_REGISTRY_V1");
 
     // =============================================================================
     // STRUCTS
@@ -97,7 +98,8 @@ contract PQCRegistry is AccessControl, Pausable {
     mapping(address => AccountConfig) public accountConfigs;
 
     /// @notice Supported signature algorithms
-    mapping(PQCLib.SignatureAlgorithm => bool) public supportedSignatureAlgorithms;
+    mapping(PQCLib.SignatureAlgorithm => bool)
+        public supportedSignatureAlgorithms;
 
     /// @notice Supported KEM algorithms
     mapping(PQCLib.KEMAlgorithm => bool) public supportedKEMAlgorithms;
@@ -118,8 +120,14 @@ contract PQCRegistry is AccessControl, Pausable {
     // EVENTS
     // =============================================================================
 
-    event VerifierUpdated(string indexed verifierType, address indexed newAddress);
-    event PhaseTransition(PQCLib.TransitionPhase indexed oldPhase, PQCLib.TransitionPhase indexed newPhase);
+    event VerifierUpdated(
+        string indexed verifierType,
+        address indexed newAddress
+    );
+    event PhaseTransition(
+        PQCLib.TransitionPhase indexed oldPhase,
+        PQCLib.TransitionPhase indexed newPhase
+    );
     event AccountConfigured(
         address indexed account,
         PQCLib.SignatureAlgorithm signatureAlg,
@@ -128,10 +136,25 @@ contract PQCRegistry is AccessControl, Pausable {
     );
     event AccountUpdated(address indexed account);
     event AccountDeactivated(address indexed account);
-    event AlgorithmStatusChanged(string algorithmType, uint8 algorithm, bool supported);
-    event RecommendationUpdated(PQCLib.SignatureAlgorithm signature, PQCLib.KEMAlgorithm kem);
-    event SignatureVerified(address indexed account, bool valid, PQCLib.SignatureAlgorithm algorithm);
-    event KeyExchangeInitiated(address indexed initiator, address indexed recipient, bytes32 exchangeId);
+    event AlgorithmStatusChanged(
+        string algorithmType,
+        uint8 algorithm,
+        bool supported
+    );
+    event RecommendationUpdated(
+        PQCLib.SignatureAlgorithm signature,
+        PQCLib.KEMAlgorithm kem
+    );
+    event SignatureVerified(
+        address indexed account,
+        bool valid,
+        PQCLib.SignatureAlgorithm algorithm
+    );
+    event KeyExchangeInitiated(
+        address indexed initiator,
+        address indexed recipient,
+        bytes32 exchangeId
+    );
 
     // =============================================================================
     // ERRORS
@@ -174,10 +197,18 @@ contract PQCRegistry is AccessControl, Pausable {
         currentPhase = PQCLib.TransitionPhase.HybridOptional;
 
         // Enable all standard algorithms
-        supportedSignatureAlgorithms[PQCLib.SignatureAlgorithm.Dilithium3] = true;
-        supportedSignatureAlgorithms[PQCLib.SignatureAlgorithm.Dilithium5] = true;
-        supportedSignatureAlgorithms[PQCLib.SignatureAlgorithm.SPHINCSPlus128s] = true;
-        supportedSignatureAlgorithms[PQCLib.SignatureAlgorithm.SPHINCSPlus256s] = true;
+        supportedSignatureAlgorithms[
+            PQCLib.SignatureAlgorithm.Dilithium3
+        ] = true;
+        supportedSignatureAlgorithms[
+            PQCLib.SignatureAlgorithm.Dilithium5
+        ] = true;
+        supportedSignatureAlgorithms[
+            PQCLib.SignatureAlgorithm.SPHINCSPlus128s
+        ] = true;
+        supportedSignatureAlgorithms[
+            PQCLib.SignatureAlgorithm.SPHINCSPlus256s
+        ] = true;
 
         supportedKEMAlgorithms[PQCLib.KEMAlgorithm.Kyber768] = true;
         supportedKEMAlgorithms[PQCLib.KEMAlgorithm.Kyber1024] = true;
@@ -213,8 +244,10 @@ contract PQCRegistry is AccessControl, Pausable {
         _validateAlgorithms(signatureAlgorithm, kemAlgorithm);
         _validatePhaseRequirements(enableHybrid);
 
-        bytes32 sigKeyHash = keccak256(abi.encodePacked(DOMAIN_SEPARATOR, signaturePubKey));
-        bytes32 kemKeyHash = kemPubKey.length > 0 
+        bytes32 sigKeyHash = keccak256(
+            abi.encodePacked(DOMAIN_SEPARATOR, signaturePubKey)
+        );
+        bytes32 kemKeyHash = kemPubKey.length > 0
             ? keccak256(abi.encodePacked(DOMAIN_SEPARATOR, kemPubKey))
             : bytes32(0);
 
@@ -237,10 +270,14 @@ contract PQCRegistry is AccessControl, Pausable {
 
         // Update stats
         stats.totalAccounts++;
-        if (signatureAlgorithm == PQCLib.SignatureAlgorithm.Dilithium3 ||
-            signatureAlgorithm == PQCLib.SignatureAlgorithm.Dilithium5) {
+        if (
+            signatureAlgorithm == PQCLib.SignatureAlgorithm.Dilithium3 ||
+            signatureAlgorithm == PQCLib.SignatureAlgorithm.Dilithium5
+        ) {
             stats.dilithiumAccounts++;
-        } else if (signatureAlgorithm >= PQCLib.SignatureAlgorithm.SPHINCSPlus128s) {
+        } else if (
+            signatureAlgorithm >= PQCLib.SignatureAlgorithm.SPHINCSPlus128s
+        ) {
             stats.sphincsAccounts++;
         }
         if (kemAlgorithm != PQCLib.KEMAlgorithm.None) {
@@ -250,7 +287,12 @@ contract PQCRegistry is AccessControl, Pausable {
             stats.hybridAccounts++;
         }
 
-        emit AccountConfigured(msg.sender, signatureAlgorithm, kemAlgorithm, enableHybrid);
+        emit AccountConfigured(
+            msg.sender,
+            signatureAlgorithm,
+            kemAlgorithm,
+            enableHybrid
+        );
     }
 
     /**
@@ -278,8 +320,10 @@ contract PQCRegistry is AccessControl, Pausable {
         }
 
         // Update configuration
-        bytes32 sigKeyHash = keccak256(abi.encodePacked(DOMAIN_SEPARATOR, signaturePubKey));
-        bytes32 kemKeyHash = kemPubKey.length > 0 
+        bytes32 sigKeyHash = keccak256(
+            abi.encodePacked(DOMAIN_SEPARATOR, signaturePubKey)
+        );
+        bytes32 kemKeyHash = kemPubKey.length > 0
             ? keccak256(abi.encodePacked(DOMAIN_SEPARATOR, kemPubKey))
             : bytes32(0);
 
@@ -345,7 +389,12 @@ contract PQCRegistry is AccessControl, Pausable {
             revert VerifierNotSet();
         }
 
-        valid = _verifyWithAlgorithm(message, signature, pubKey, config.signatureAlgorithm);
+        valid = _verifyWithAlgorithm(
+            message,
+            signature,
+            pubKey,
+            config.signatureAlgorithm
+        );
 
         if (valid) {
             stats.totalSignatureVerifications++;
@@ -377,9 +426,14 @@ contract PQCRegistry is AccessControl, Pausable {
         }
 
         bytes memory pubKey = publicKeyStorage[config.signatureKeyHash];
-        
+
         // Verify PQC signature
-        bool pqcValid = _verifyWithAlgorithm(message, pqcSig, pubKey, config.signatureAlgorithm);
+        bool pqcValid = _verifyWithAlgorithm(
+            message,
+            pqcSig,
+            pubKey,
+            config.signatureAlgorithm
+        );
 
         // Verify ECDSA (simplified - would use proper ECDSA verification)
         bool ecdsaValid = ecdsaSig.length == 65;
@@ -421,7 +475,11 @@ contract PQCRegistry is AccessControl, Pausable {
             revert VerifierNotSet();
         }
 
-        exchangeId = kyberKEM.initiateExchange(recipient, ciphertext, sharedSecretCommitment);
+        exchangeId = kyberKEM.initiateExchange(
+            recipient,
+            ciphertext,
+            sharedSecretCommitment
+        );
         stats.totalKeyEncapsulations++;
 
         emit KeyExchangeInitiated(msg.sender, recipient, exchangeId);
@@ -435,16 +493,25 @@ contract PQCRegistry is AccessControl, Pausable {
         PQCLib.SignatureAlgorithm sigAlg,
         PQCLib.KEMAlgorithm kemAlg
     ) internal view {
-        if (sigAlg != PQCLib.SignatureAlgorithm.None && !supportedSignatureAlgorithms[sigAlg]) {
+        if (
+            sigAlg != PQCLib.SignatureAlgorithm.None &&
+            !supportedSignatureAlgorithms[sigAlg]
+        ) {
             revert UnsupportedSignatureAlgorithm(sigAlg);
         }
-        if (kemAlg != PQCLib.KEMAlgorithm.None && !supportedKEMAlgorithms[kemAlg]) {
+        if (
+            kemAlg != PQCLib.KEMAlgorithm.None &&
+            !supportedKEMAlgorithms[kemAlg]
+        ) {
             revert UnsupportedKEMAlgorithm(kemAlg);
         }
     }
 
     function _validatePhaseRequirements(bool hybridEnabled) internal view {
-        if (currentPhase == PQCLib.TransitionPhase.HybridMandatory && !hybridEnabled) {
+        if (
+            currentPhase == PQCLib.TransitionPhase.HybridMandatory &&
+            !hybridEnabled
+        ) {
             revert HybridRequired();
         }
         if (currentPhase == PQCLib.TransitionPhase.PQOnly) {
@@ -460,14 +527,32 @@ contract PQCRegistry is AccessControl, Pausable {
         PQCLib.SignatureAlgorithm algorithm
     ) internal returns (bool) {
         if (algorithm == PQCLib.SignatureAlgorithm.Dilithium3) {
-            if (address(dilithiumVerifier) == address(0)) revert VerifierNotSet();
-            return dilithiumVerifier.verifyDilithium3(message, signature, publicKey);
+            if (address(dilithiumVerifier) == address(0))
+                revert VerifierNotSet();
+            return
+                dilithiumVerifier.verifyDilithium3(
+                    message,
+                    signature,
+                    publicKey
+                );
         } else if (algorithm == PQCLib.SignatureAlgorithm.Dilithium5) {
-            if (address(dilithiumVerifier) == address(0)) revert VerifierNotSet();
-            return dilithiumVerifier.verifyDilithium5(message, signature, publicKey);
+            if (address(dilithiumVerifier) == address(0))
+                revert VerifierNotSet();
+            return
+                dilithiumVerifier.verifyDilithium5(
+                    message,
+                    signature,
+                    publicKey
+                );
         } else if (algorithm >= PQCLib.SignatureAlgorithm.SPHINCSPlus128s) {
             if (address(sphincsVerifier) == address(0)) revert VerifierNotSet();
-            return sphincsVerifier.verify(message, signature, publicKey, algorithm);
+            return
+                sphincsVerifier.verify(
+                    message,
+                    signature,
+                    publicKey,
+                    algorithm
+                );
         }
 
         return false;
@@ -477,9 +562,14 @@ contract PQCRegistry is AccessControl, Pausable {
     // ADMIN FUNCTIONS
     // =============================================================================
 
-    function setPhase(PQCLib.TransitionPhase newPhase) external onlyRole(PHASE_ADMIN_ROLE) {
+    function setPhase(
+        PQCLib.TransitionPhase newPhase
+    ) external onlyRole(PHASE_ADMIN_ROLE) {
         // Validate transition (can't go backwards to ClassicalOnly)
-        if (currentPhase > newPhase && newPhase == PQCLib.TransitionPhase.ClassicalOnly) {
+        if (
+            currentPhase > newPhase &&
+            newPhase == PQCLib.TransitionPhase.ClassicalOnly
+        ) {
             revert InvalidPhaseTransition();
         }
 
@@ -488,12 +578,16 @@ contract PQCRegistry is AccessControl, Pausable {
         emit PhaseTransition(oldPhase, newPhase);
     }
 
-    function setDilithiumVerifier(address _verifier) external onlyRole(ADMIN_ROLE) {
+    function setDilithiumVerifier(
+        address _verifier
+    ) external onlyRole(ADMIN_ROLE) {
         dilithiumVerifier = DilithiumVerifier(_verifier);
         emit VerifierUpdated("Dilithium", _verifier);
     }
 
-    function setSPHINCSVerifier(address _verifier) external onlyRole(ADMIN_ROLE) {
+    function setSPHINCSVerifier(
+        address _verifier
+    ) external onlyRole(ADMIN_ROLE) {
         sphincsVerifier = SPHINCSPlusVerifier(_verifier);
         emit VerifierUpdated("SPHINCS", _verifier);
     }
@@ -540,14 +634,20 @@ contract PQCRegistry is AccessControl, Pausable {
     // VIEW FUNCTIONS
     // =============================================================================
 
-    function getAccountConfig(address account) external view returns (
-        bytes32 signatureKeyHash,
-        bytes32 kemKeyHash,
-        PQCLib.SignatureAlgorithm signatureAlgorithm,
-        PQCLib.KEMAlgorithm kemAlgorithm,
-        bool hybridEnabled,
-        bool isActive
-    ) {
+    function getAccountConfig(
+        address account
+    )
+        external
+        view
+        returns (
+            bytes32 signatureKeyHash,
+            bytes32 kemKeyHash,
+            PQCLib.SignatureAlgorithm signatureAlgorithm,
+            PQCLib.KEMAlgorithm kemAlgorithm,
+            bool hybridEnabled,
+            bool isActive
+        )
+    {
         AccountConfig memory config = accountConfigs[account];
         return (
             config.signatureKeyHash,
@@ -567,10 +667,11 @@ contract PQCRegistry is AccessControl, Pausable {
         return stats;
     }
 
-    function getRecommendations() external view returns (
-        PQCLib.SignatureAlgorithm sigAlg,
-        PQCLib.KEMAlgorithm kemAlg
-    ) {
+    function getRecommendations()
+        external
+        view
+        returns (PQCLib.SignatureAlgorithm sigAlg, PQCLib.KEMAlgorithm kemAlg)
+    {
         return (recommendedSignature, recommendedKEM);
     }
 

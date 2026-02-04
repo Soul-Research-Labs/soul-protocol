@@ -101,8 +101,14 @@ contract DilithiumVerifier is Ownable, Pausable {
 
     event TrustedKeyAdded(bytes32 indexed keyHash);
     event TrustedKeyRemoved(bytes32 indexed keyHash);
-    event VerificationModeChanged(PQCLib.VerificationMode oldMode, PQCLib.VerificationMode newMode);
-    event ZKVerifierUpdated(address indexed oldVerifier, address indexed newVerifier);
+    event VerificationModeChanged(
+        PQCLib.VerificationMode oldMode,
+        PQCLib.VerificationMode newMode
+    );
+    event ZKVerifierUpdated(
+        address indexed oldVerifier,
+        address indexed newVerifier
+    );
     event CacheTTLUpdated(uint256 oldTTL, uint256 newTTL);
 
     // =============================================================================
@@ -152,7 +158,13 @@ contract DilithiumVerifier is Ownable, Pausable {
         bytes calldata signature,
         bytes calldata publicKey
     ) external whenNotPaused returns (bool valid) {
-        return _verify(message, signature, publicKey, PQCLib.SignatureAlgorithm.Dilithium3);
+        return
+            _verify(
+                message,
+                signature,
+                publicKey,
+                PQCLib.SignatureAlgorithm.Dilithium3
+            );
     }
 
     /**
@@ -167,7 +179,13 @@ contract DilithiumVerifier is Ownable, Pausable {
         bytes calldata signature,
         bytes calldata publicKey
     ) external whenNotPaused returns (bool valid) {
-        return _verify(message, signature, publicKey, PQCLib.SignatureAlgorithm.Dilithium5);
+        return
+            _verify(
+                message,
+                signature,
+                publicKey,
+                PQCLib.SignatureAlgorithm.Dilithium5
+            );
     }
 
     /**
@@ -185,23 +203,31 @@ contract DilithiumVerifier is Ownable, Pausable {
         PQCLib.SignatureAlgorithm algorithm
     ) external whenNotPaused returns (bool valid) {
         if (address(zkVerifier) == address(0)) revert ZKVerifierNotSet();
-        
+
         // Verify the algorithm is Dilithium
-        if (algorithm != PQCLib.SignatureAlgorithm.Dilithium3 && 
-            algorithm != PQCLib.SignatureAlgorithm.Dilithium5) {
+        if (
+            algorithm != PQCLib.SignatureAlgorithm.Dilithium3 &&
+            algorithm != PQCLib.SignatureAlgorithm.Dilithium5
+        ) {
             revert InvalidSecurityLevel();
         }
 
         totalVerifications++;
 
         // Check cache first
-        bytes32 cacheKey = keccak256(abi.encode(message, publicKeyHash, keccak256(zkProof)));
+        bytes32 cacheKey = keccak256(
+            abi.encode(message, publicKeyHash, keccak256(zkProof))
+        );
         if (_isCacheValid(cacheKey)) {
             return verificationCache[cacheKey];
         }
 
         // Verify ZK proof
-        valid = zkVerifier.verifyDilithiumProof(zkProof, message, publicKeyHash);
+        valid = zkVerifier.verifyDilithiumProof(
+            zkProof,
+            message,
+            publicKeyHash
+        );
 
         if (valid) {
             successfulVerifications++;
@@ -232,10 +258,15 @@ contract DilithiumVerifier is Ownable, Pausable {
         PQCLib.SignatureAlgorithm algorithm
     ) external whenNotPaused returns (bool allValid) {
         uint256 len = messages.length;
-        require(len == signatures.length && len == publicKeys.length, "Array length mismatch");
+        require(
+            len == signatures.length && len == publicKeys.length,
+            "Array length mismatch"
+        );
 
         for (uint256 i = 0; i < len; i++) {
-            if (!_verify(messages[i], signatures[i], publicKeys[i], algorithm)) {
+            if (
+                !_verify(messages[i], signatures[i], publicKeys[i], algorithm)
+            ) {
                 return false;
             }
         }
@@ -260,7 +291,9 @@ contract DilithiumVerifier is Ownable, Pausable {
         totalVerifications++;
 
         // Check cache
-        bytes32 cacheKey = keccak256(abi.encode(message, keccak256(signature), pkHash));
+        bytes32 cacheKey = keccak256(
+            abi.encode(message, keccak256(signature), pkHash)
+        );
         if (_isCacheValid(cacheKey)) {
             return verificationCache[cacheKey];
         }
@@ -283,7 +316,13 @@ contract DilithiumVerifier is Ownable, Pausable {
             _cacheResult(cacheKey, true);
         }
 
-        emit DilithiumVerified(message, pkHash, algorithm, valid, verificationMode);
+        emit DilithiumVerified(
+            message,
+            pkHash,
+            algorithm,
+            valid,
+            verificationMode
+        );
     }
 
     function _validateSizes(
@@ -344,7 +383,9 @@ contract DilithiumVerifier is Ownable, Pausable {
             signature
         );
 
-        (bool success, bytes memory result) = DILITHIUM_PRECOMPILE.staticcall(input);
+        (bool success, bytes memory result) = DILITHIUM_PRECOMPILE.staticcall(
+            input
+        );
 
         if (!success || result.length == 0) {
             // Fallback to mock on testnet if precompile not available
@@ -390,12 +431,9 @@ contract DilithiumVerifier is Ownable, Pausable {
         // 2. Compute w' = Az - ct1 * 2^d
         // 3. Hash to get c' and compare
 
-        bytes32 computed = keccak256(abi.encodePacked(
-            PQCLib.DILITHIUM_DOMAIN,
-            message,
-            rho,
-            algorithm
-        ));
+        bytes32 computed = keccak256(
+            abi.encodePacked(PQCLib.DILITHIUM_DOMAIN, message, rho, algorithm)
+        );
 
         // This is a placeholder - real verification is much more complex
         return computed != bytes32(0) && c != bytes32(0);
@@ -424,7 +462,9 @@ contract DilithiumVerifier is Ownable, Pausable {
     // ADMIN FUNCTIONS
     // =============================================================================
 
-    function setVerificationMode(PQCLib.VerificationMode newMode) external onlyOwner {
+    function setVerificationMode(
+        PQCLib.VerificationMode newMode
+    ) external onlyOwner {
         if (newMode == PQCLib.VerificationMode.Mock && block.chainid == 1) {
             revert MockModeNotAllowedOnMainnet();
         }
@@ -468,11 +508,15 @@ contract DilithiumVerifier is Ownable, Pausable {
     // VIEW FUNCTIONS
     // =============================================================================
 
-    function getStats() external view returns (
-        uint256 total,
-        uint256 successful,
-        PQCLib.VerificationMode mode
-    ) {
+    function getStats()
+        external
+        view
+        returns (
+            uint256 total,
+            uint256 successful,
+            PQCLib.VerificationMode mode
+        )
+    {
         return (totalVerifications, successfulVerifications, verificationMode);
     }
 
