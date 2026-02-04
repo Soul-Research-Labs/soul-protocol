@@ -178,6 +178,32 @@ We take security seriously. If you discover a security vulnerability within Soul
 
 For complete details, see [docs/SECURITY_AUDIT_REPORT.md](./docs/SECURITY_AUDIT_REPORT.md).
 
+### Dependency Vulnerabilities (Known Issues)
+
+As of February 2026, the following dependency vulnerabilities exist with **no upstream fix available**:
+
+| CVE | Package | Severity | Status | Risk Mitigation |
+|-----|---------|----------|--------|-----------------|
+| CVE-2025-14505 | elliptic ≤6.6.1 | Low (2.9/10) | No patch available | See mitigation below |
+
+**CVE-2025-14505 Details:**
+- **Affected**: `elliptic` library (all versions ≤6.6.1), used by ethers.js v5 via `circomlibjs`
+- **Issue**: ECDSA signature generation flaw when interim value 'k' has leading zeros
+- **Impact**: Potential secret key exposure under specific cryptanalysis conditions
+- **EPSS Score**: 0.01% (1st percentile - very low exploitation probability)
+
+**Why This Doesn't Affect Soul Protocol:**
+1. **Smart Contracts**: On-chain signature verification uses `ecrecover` opcode, not JavaScript elliptic
+2. **ZK Proofs**: All cryptographic operations use Noir circuits with BN254, not elliptic curves via JS
+3. **SDK Usage**: The SDK uses ethers.js v6 (main dependency), not v5
+4. **circomlibjs**: Only used for Poseidon hash, not ECDSA signatures
+5. **Post-Quantum**: Protocol uses Dilithium/SPHINCS+ for future-proof signatures
+
+**Monitoring Actions:**
+- Track [indutny/elliptic#321](https://github.com/indutny/elliptic/issues/321) for upstream fix
+- Evaluate `@noble/curves` as potential replacement when circomlibjs migrates
+- npm overrides configured to use latest elliptic version when available
+
 ### Known Dependency Issues
 
 | Package | Severity | Status | Details |
