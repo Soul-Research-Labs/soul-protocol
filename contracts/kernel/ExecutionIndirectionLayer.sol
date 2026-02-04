@@ -418,10 +418,7 @@ contract ExecutionIndirectionLayer is AccessControl, ReentrancyGuard, Pausable {
         bytes32 salt
     ) external pure returns (bytes32 commitment) {
         // SECURITY FIX: Changed from abi.encodePacked to abi.encode to prevent hash collision
-        return
-            keccak256(
-                abi.encode(appId, functionSelector, inputHash, salt)
-            );
+        return keccak256(abi.encode(appId, functionSelector, inputHash, salt));
     }
 
     /**
@@ -496,7 +493,7 @@ contract ExecutionIndirectionLayer is AccessControl, ReentrancyGuard, Pausable {
         assembly {
             proofInputsHash := calldataload(executionProof.offset)
         }
-        
+
         if (proofInputsHash != publicInputsHash) return false;
 
         // Note: In full production, this would call an external ZK verifier contract

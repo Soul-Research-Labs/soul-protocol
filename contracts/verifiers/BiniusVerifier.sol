@@ -767,8 +767,7 @@ contract BiniusVerifier is ReentrancyGuard, AccessControl, Pausable {
         uint256 roundIndex
     ) internal pure returns (bytes32) {
         // SECURITY FIX: Changed from abi.encodePacked to abi.encode to prevent hash collision
-        return
-            keccak256(abi.encode(prevCommitment, roundData, roundIndex));
+        return keccak256(abi.encode(prevCommitment, roundData, roundIndex));
     }
 
     /**

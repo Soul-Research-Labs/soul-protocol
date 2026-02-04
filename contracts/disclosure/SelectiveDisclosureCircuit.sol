@@ -457,11 +457,7 @@ contract SelectiveDisclosureCircuit is
 
         // SECURITY FIX: Changed from abi.encodePacked to abi.encode
         bytes32 domainSeparator = keccak256(
-            abi.encode(
-                "SOUL_DISCLOSURE_CIRCUIT",
-                block.chainid,
-                circuitId
-            )
+            abi.encode("SOUL_DISCLOSURE_CIRCUIT", block.chainid, circuitId)
         );
 
         DisclosureCircuit storage c = _circuits[circuitId];
