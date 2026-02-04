@@ -49,7 +49,8 @@ contract CrossL2Atomicity is AccessControl, ReentrancyGuard, Pausable {
     // ROLES
     // ============================================
 
-    bytes32 public constant BUNDLE_MANAGER_ROLE = keccak256("BUNDLE_MANAGER_ROLE");
+    bytes32 public constant BUNDLE_MANAGER_ROLE =
+        keccak256("BUNDLE_MANAGER_ROLE");
     bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
     bytes32 public constant EMERGENCY_ROLE = keccak256("EMERGENCY_ROLE");
 
@@ -83,7 +84,11 @@ contract CrossL2Atomicity is AccessControl, ReentrancyGuard, Pausable {
     // ============================================
 
     error BundleDoesNotExist(bytes32 bundleId);
-    error InvalidBundlePhase(bytes32 bundleId, BundlePhase expected, BundlePhase actual);
+    error InvalidBundlePhase(
+        bytes32 bundleId,
+        BundlePhase expected,
+        BundlePhase actual
+    );
     error BundleTimeout(bytes32 bundleId);
     error ChainNotInBundle(bytes32 bundleId, uint256 chainId);
     error LockAlreadyConfirmed(bytes32 bundleId, uint256 chainId);
@@ -149,7 +154,8 @@ contract CrossL2Atomicity is AccessControl, ReentrancyGuard, Pausable {
     uint256 public constant MAX_CHAINS_PER_BUNDLE = 10;
 
     /// @notice Superchain L2ToL2CrossDomainMessenger address (predeploy)
-    address public constant SUPERCHAIN_MESSENGER = 0x4200000000000000000000000000000000000023;
+    address public constant SUPERCHAIN_MESSENGER =
+        0x4200000000000000000000000000000000000023;
 
     // ============================================
     // STATE VARIABLES
@@ -190,7 +196,10 @@ contract CrossL2Atomicity is AccessControl, ReentrancyGuard, Pausable {
     // ============================================
 
     event BundleCreated(
-        bytes32 indexed bundleId, address indexed initiator, uint256 sourceChainId, uint256 chainCount
+        bytes32 indexed bundleId,
+        address indexed initiator,
+        uint256 sourceChainId,
+        uint256 chainCount
     );
 
     event BundlePreparing(bytes32 indexed bundleId, uint256 locksRequested);
@@ -201,17 +210,33 @@ contract CrossL2Atomicity is AccessControl, ReentrancyGuard, Pausable {
 
     event BundleExecuting(bytes32 indexed bundleId);
 
-    event ChainExecuted(bytes32 indexed bundleId, uint256 indexed chainId, bytes32 executionProof);
+    event ChainExecuted(
+        bytes32 indexed bundleId,
+        uint256 indexed chainId,
+        bytes32 executionProof
+    );
 
     event BundleCompleted(bytes32 indexed bundleId, uint256 completedAt);
 
     event BundleRolledBack(bytes32 indexed bundleId, string reason);
 
-    event CrossL2MessageSent(bytes32 indexed bundleId, uint256 indexed targetChainId, bytes32 messageHash);
+    event CrossL2MessageSent(
+        bytes32 indexed bundleId,
+        uint256 indexed targetChainId,
+        bytes32 messageHash
+    );
 
-    event CrossL2MessageReceived(bytes32 indexed bundleId, uint256 indexed sourceChainId, bytes32 messageHash);
+    event CrossL2MessageReceived(
+        bytes32 indexed bundleId,
+        uint256 indexed sourceChainId,
+        bytes32 messageHash
+    );
 
-    event ChainMessengerUpdated(uint256 indexed chainId, address messenger, ChainType chainType);
+    event ChainMessengerUpdated(
+        uint256 indexed chainId,
+        address messenger,
+        ChainType chainType
+    );
 
     // ============================================
     // CONSTRUCTOR
@@ -242,29 +267,34 @@ contract CrossL2Atomicity is AccessControl, ReentrancyGuard, Pausable {
      * @param timeout Custom timeout (0 for default)
      * @return bundleId The bundle identifier
      */
-    function createBundle(ChainParticipation[] calldata chains, uint256 timeout)
-        external
-        payable
-        nonReentrant
-        whenNotPaused
-        returns (bytes32 bundleId)
-    {
+    function createBundle(
+        ChainParticipation[] calldata chains,
+        uint256 timeout
+    ) external payable nonReentrant whenNotPaused returns (bytes32 bundleId) {
         if (chains.length == 0 || chains.length > MAX_CHAINS_PER_BUNDLE) {
             revert TooManyChains(chains.length, MAX_CHAINS_PER_BUNDLE);
         }
 
         // Generate bundle ID
-        bundleId = keccak256(abi.encodePacked(msg.sender, CHAIN_ID, block.timestamp, block.number, totalBundles));
+        bundleId = keccak256(
+            abi.encodePacked(
+                msg.sender,
+                CHAIN_ID,
+                block.timestamp,
+                block.number,
+                totalBundles
+            )
+        );
 
         // Calculate total value and validate chains
         uint256 totalValue;
-        for (uint256 i = 0; i < chains.length;) {
+        for (uint256 i = 0; i < chains.length; ) {
             // Validate chain
             if (chains[i].chainId == 0) revert InvalidChainId();
             if (chains[i].targetContract == address(0)) revert ZeroAddress();
 
             // Check for duplicates
-            for (uint256 j = 0; j < i;) {
+            for (uint256 j = 0; j < i; ) {
                 if (chains[i].chainId == chains[j].chainId) {
                     revert DuplicateChain(chains[i].chainId);
                 }
@@ -316,12 +346,18 @@ contract CrossL2Atomicity is AccessControl, ReentrancyGuard, Pausable {
      * @notice Initiate bundle preparation (broadcast to all chains)
      * @param bundleId The bundle to prepare
      */
-    function prepareBundle(bytes32 bundleId) external nonReentrant whenNotPaused {
+    function prepareBundle(
+        bytes32 bundleId
+    ) external nonReentrant whenNotPaused {
         AtomicBundle storage bundle = bundles[bundleId];
 
         if (bundle.bundleId == bytes32(0)) revert BundleDoesNotExist(bundleId);
         if (bundle.phase != BundlePhase.CREATED) {
-            revert InvalidBundlePhase(bundleId, BundlePhase.CREATED, bundle.phase);
+            revert InvalidBundlePhase(
+                bundleId,
+                BundlePhase.CREATED,
+                bundle.phase
+            );
         }
 
         bundle.phase = BundlePhase.PREPARING;
@@ -329,7 +365,7 @@ contract CrossL2Atomicity is AccessControl, ReentrancyGuard, Pausable {
         ChainParticipation[] storage chains = _bundleChains[bundleId];
 
         // Broadcast lock requests to all chains
-        for (uint256 i = 0; i < chains.length;) {
+        for (uint256 i = 0; i < chains.length; ) {
             _sendLockRequest(bundleId, chains[i]);
             unchecked {
                 ++i;
@@ -344,12 +380,19 @@ contract CrossL2Atomicity is AccessControl, ReentrancyGuard, Pausable {
      * @param bundleId The bundle ID
      * @param chainId The chain confirming lock
      */
-    function confirmLock(bytes32 bundleId, uint256 chainId) external nonReentrant whenNotPaused {
+    function confirmLock(
+        bytes32 bundleId,
+        uint256 chainId
+    ) external nonReentrant whenNotPaused {
         AtomicBundle storage bundle = bundles[bundleId];
 
         if (bundle.bundleId == bytes32(0)) revert BundleDoesNotExist(bundleId);
         if (bundle.phase != BundlePhase.PREPARING) {
-            revert InvalidBundlePhase(bundleId, BundlePhase.PREPARING, bundle.phase);
+            revert InvalidBundlePhase(
+                bundleId,
+                BundlePhase.PREPARING,
+                bundle.phase
+            );
         }
         if (block.timestamp > bundle.timeout) {
             revert BundleTimeout(bundleId);
@@ -359,7 +402,7 @@ contract CrossL2Atomicity is AccessControl, ReentrancyGuard, Pausable {
         ChainParticipation[] storage chains = _bundleChains[bundleId];
         bool found = false;
 
-        for (uint256 i = 0; i < chains.length;) {
+        for (uint256 i = 0; i < chains.length; ) {
             if (chains[i].chainId == chainId) {
                 if (chains[i].lockConfirmed) {
                     revert LockAlreadyConfirmed(bundleId, chainId);
@@ -394,12 +437,18 @@ contract CrossL2Atomicity is AccessControl, ReentrancyGuard, Pausable {
      * @notice Execute the committed bundle
      * @param bundleId The bundle to execute
      */
-    function executeBundle(bytes32 bundleId) external nonReentrant whenNotPaused {
+    function executeBundle(
+        bytes32 bundleId
+    ) external nonReentrant whenNotPaused {
         AtomicBundle storage bundle = bundles[bundleId];
 
         if (bundle.bundleId == bytes32(0)) revert BundleDoesNotExist(bundleId);
         if (bundle.phase != BundlePhase.COMMITTED) {
-            revert InvalidBundlePhase(bundleId, BundlePhase.COMMITTED, bundle.phase);
+            revert InvalidBundlePhase(
+                bundleId,
+                BundlePhase.COMMITTED,
+                bundle.phase
+            );
         }
         if (block.timestamp > bundle.timeout) {
             _rollbackBundle(bundleId, "Timeout during execution");
@@ -412,7 +461,7 @@ contract CrossL2Atomicity is AccessControl, ReentrancyGuard, Pausable {
         ChainParticipation[] storage chains = _bundleChains[bundleId];
 
         // Send execution commands to all chains
-        for (uint256 i = 0; i < chains.length;) {
+        for (uint256 i = 0; i < chains.length; ) {
             _sendExecuteCommand(bundleId, chains[i]);
             unchecked {
                 ++i;
@@ -426,22 +475,26 @@ contract CrossL2Atomicity is AccessControl, ReentrancyGuard, Pausable {
      * @param chainId The chain confirming execution
      * @param executionProof Proof of execution
      */
-    function confirmExecution(bytes32 bundleId, uint256 chainId, bytes32 executionProof)
-        external
-        nonReentrant
-        whenNotPaused
-    {
+    function confirmExecution(
+        bytes32 bundleId,
+        uint256 chainId,
+        bytes32 executionProof
+    ) external nonReentrant whenNotPaused {
         AtomicBundle storage bundle = bundles[bundleId];
 
         if (bundle.bundleId == bytes32(0)) revert BundleDoesNotExist(bundleId);
         if (bundle.phase != BundlePhase.EXECUTING) {
-            revert InvalidBundlePhase(bundleId, BundlePhase.EXECUTING, bundle.phase);
+            revert InvalidBundlePhase(
+                bundleId,
+                BundlePhase.EXECUTING,
+                bundle.phase
+            );
         }
 
         // Find and update chain participation
         ChainParticipation[] storage chains = _bundleChains[bundleId];
 
-        for (uint256 i = 0; i < chains.length;) {
+        for (uint256 i = 0; i < chains.length; ) {
             if (chains[i].chainId == chainId) {
                 if (!chains[i].executed) {
                     chains[i].executed = true;
@@ -475,17 +528,27 @@ contract CrossL2Atomicity is AccessControl, ReentrancyGuard, Pausable {
      * @param bundleId The bundle to rollback
      * @param reason Reason for rollback
      */
-    function requestRollback(bytes32 bundleId, string calldata reason) external nonReentrant {
+    function requestRollback(
+        bytes32 bundleId,
+        string calldata reason
+    ) external nonReentrant {
         AtomicBundle storage bundle = bundles[bundleId];
 
         if (bundle.bundleId == bytes32(0)) revert BundleDoesNotExist(bundleId);
-        if (msg.sender != bundle.initiator && !hasRole(BUNDLE_MANAGER_ROLE, msg.sender)) {
+        if (
+            msg.sender != bundle.initiator &&
+            !hasRole(BUNDLE_MANAGER_ROLE, msg.sender)
+        ) {
             revert NotInitiator(bundleId);
         }
 
         // Can only rollback if not completed
         if (bundle.phase == BundlePhase.COMPLETED) {
-            revert InvalidBundlePhase(bundleId, BundlePhase.EXECUTING, bundle.phase);
+            revert InvalidBundlePhase(
+                bundleId,
+                BundlePhase.EXECUTING,
+                bundle.phase
+            );
         }
 
         _rollbackBundle(bundleId, reason);
@@ -504,7 +567,13 @@ contract CrossL2Atomicity is AccessControl, ReentrancyGuard, Pausable {
         // Generate commitment hash
         ChainParticipation[] storage chains = _bundleChains[bundleId];
         bytes32 commitmentHash = keccak256(
-            abi.encodePacked(bundleId, bundle.initiator, bundle.sourceChainId, chains.length, block.timestamp)
+            abi.encodePacked(
+                bundleId,
+                bundle.initiator,
+                bundle.sourceChainId,
+                chains.length,
+                block.timestamp
+            )
         );
 
         bundle.commitmentHash = commitmentHash;
@@ -524,7 +593,7 @@ contract CrossL2Atomicity is AccessControl, ReentrancyGuard, Pausable {
         ChainParticipation[] storage chains = _bundleChains[bundleId];
 
         // Send rollback commands to all chains
-        for (uint256 i = 0; i < chains.length;) {
+        for (uint256 i = 0; i < chains.length; ) {
             _sendRollbackCommand(bundleId, chains[i]);
             unchecked {
                 ++i;
@@ -533,7 +602,9 @@ contract CrossL2Atomicity is AccessControl, ReentrancyGuard, Pausable {
 
         // Refund initiator
         if (bundle.totalValue > 0) {
-            (bool success,) = bundle.initiator.call{value: bundle.totalValue}("");
+            (bool success, ) = bundle.initiator.call{value: bundle.totalValue}(
+                ""
+            );
             require(success, "Refund failed");
         }
 
@@ -547,8 +618,18 @@ contract CrossL2Atomicity is AccessControl, ReentrancyGuard, Pausable {
     /**
      * @notice Send lock request to a chain
      */
-    function _sendLockRequest(bytes32 bundleId, ChainParticipation storage chain) internal {
-        bytes memory payload = abi.encode("LOCK", bundleId, CHAIN_ID, chain.chainId, chain.targetContract, chain.value);
+    function _sendLockRequest(
+        bytes32 bundleId,
+        ChainParticipation storage chain
+    ) internal {
+        bytes memory payload = abi.encode(
+            "LOCK",
+            bundleId,
+            CHAIN_ID,
+            chain.chainId,
+            chain.targetContract,
+            chain.value
+        );
 
         bytes32 messageHash = keccak256(payload);
 
@@ -572,9 +653,19 @@ contract CrossL2Atomicity is AccessControl, ReentrancyGuard, Pausable {
     /**
      * @notice Send execute command to a chain
      */
-    function _sendExecuteCommand(bytes32 bundleId, ChainParticipation storage chain) internal {
-        bytes memory payload =
-            abi.encode("EXECUTE", bundleId, CHAIN_ID, chain.chainId, chain.targetContract, chain.callData, chain.value);
+    function _sendExecuteCommand(
+        bytes32 bundleId,
+        ChainParticipation storage chain
+    ) internal {
+        bytes memory payload = abi.encode(
+            "EXECUTE",
+            bundleId,
+            CHAIN_ID,
+            chain.chainId,
+            chain.targetContract,
+            chain.callData,
+            chain.value
+        );
 
         bytes32 messageHash = keccak256(payload);
 
@@ -593,8 +684,16 @@ contract CrossL2Atomicity is AccessControl, ReentrancyGuard, Pausable {
     /**
      * @notice Send rollback command to a chain
      */
-    function _sendRollbackCommand(bytes32 bundleId, ChainParticipation storage chain) internal {
-        bytes memory payload = abi.encode("ROLLBACK", bundleId, CHAIN_ID, chain.chainId);
+    function _sendRollbackCommand(
+        bytes32 bundleId,
+        ChainParticipation storage chain
+    ) internal {
+        bytes memory payload = abi.encode(
+            "ROLLBACK",
+            bundleId,
+            CHAIN_ID,
+            chain.chainId
+        );
 
         bytes32 messageHash = keccak256(payload);
 
@@ -613,7 +712,11 @@ contract CrossL2Atomicity is AccessControl, ReentrancyGuard, Pausable {
     /**
      * @notice Register a chain with its messenger
      */
-    function _registerChain(uint256 chainId, ChainType chainType, address messenger) internal {
+    function _registerChain(
+        uint256 chainId,
+        ChainType chainType,
+        address messenger
+    ) internal {
         if (chainId == 0) revert InvalidChainId();
         if (messenger == address(0)) revert ZeroAddress();
 
@@ -628,12 +731,16 @@ contract CrossL2Atomicity is AccessControl, ReentrancyGuard, Pausable {
     // ============================================
 
     /// @notice Get bundle details
-    function getBundle(bytes32 bundleId) external view returns (AtomicBundle memory) {
+    function getBundle(
+        bytes32 bundleId
+    ) external view returns (AtomicBundle memory) {
         return bundles[bundleId];
     }
 
     /// @notice Get bundle chains
-    function getBundleChains(bytes32 bundleId) external view returns (ChainParticipation[] memory) {
+    function getBundleChains(
+        bytes32 bundleId
+    ) external view returns (ChainParticipation[] memory) {
         return _bundleChains[bundleId];
     }
 
@@ -643,7 +750,9 @@ contract CrossL2Atomicity is AccessControl, ReentrancyGuard, Pausable {
     }
 
     /// @notice Get chain messenger
-    function getChainMessenger(uint256 chainId) external view returns (address, ChainType) {
+    function getChainMessenger(
+        uint256 chainId
+    ) external view returns (address, ChainType) {
         return (chainMessengers[chainId], chainTypes[chainId]);
     }
 
@@ -654,10 +763,11 @@ contract CrossL2Atomicity is AccessControl, ReentrancyGuard, Pausable {
     /**
      * @notice Register a new chain
      */
-    function registerChain(uint256 chainId, ChainType chainType, address messenger)
-        external
-        onlyRole(BUNDLE_MANAGER_ROLE)
-    {
+    function registerChain(
+        uint256 chainId,
+        ChainType chainType,
+        address messenger
+    ) external onlyRole(BUNDLE_MANAGER_ROLE) {
         _registerChain(chainId, chainType, messenger);
     }
 

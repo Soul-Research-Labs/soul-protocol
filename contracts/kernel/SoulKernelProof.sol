@@ -262,15 +262,32 @@ contract SoulKernelProof is AccessControl, ReentrancyGuard, Pausable {
         bytes32 kernelId
     );
 
-    event InvariantVerified(bytes32 indexed kernelId, string invariantName, bool passed);
+    event InvariantVerified(
+        bytes32 indexed kernelId,
+        string invariantName,
+        bool passed
+    );
 
-    event ExecutionIndirectionVerified(bytes32 indexed intentCommitment, bytes32 indexed resultCommitment);
+    event ExecutionIndirectionVerified(
+        bytes32 indexed intentCommitment,
+        bytes32 indexed resultCommitment
+    );
 
-    event BackendRegistered(bytes32 indexed backendCommitment, ExecutionBackend backendType);
+    event BackendRegistered(
+        bytes32 indexed backendCommitment,
+        ExecutionBackend backendType
+    );
 
-    event ContainerWrapped(bytes32 indexed containerId, bytes32 indexed stateCommitment, bytes32 policyHash);
+    event ContainerWrapped(
+        bytes32 indexed containerId,
+        bytes32 indexed stateCommitment,
+        bytes32 policyHash
+    );
 
-    event RecursiveVerificationComplete(bytes32 indexed kernelId, uint256 depth);
+    event RecursiveVerificationComplete(
+        bytes32 indexed kernelId,
+        uint256 depth
+    );
 
     event KernelProofValidityUpdated(uint256 oldValidity, uint256 newValidity);
 
@@ -311,7 +328,9 @@ contract SoulKernelProof is AccessControl, ReentrancyGuard, Pausable {
      * @param proof The kernel proof to verify
      * @return kernelId The unique identifier for this verified kernel proof
      */
-    function verifyKernelProof(KernelProof calldata proof) external nonReentrant whenNotPaused returns (bytes32 kernelId) {
+    function verifyKernelProof(
+        KernelProof calldata proof
+    ) external nonReentrant whenNotPaused returns (bytes32 kernelId) {
         // Generate deterministic kernel ID
         kernelId = _generateKernelId(proof);
 
@@ -321,27 +340,58 @@ contract SoulKernelProof is AccessControl, ReentrancyGuard, Pausable {
         }
 
         // Invariant 2: Policy must be bound
-        if (!_verifyPolicyBound(proof.container.policyHash, proof.container.proof)) {
+        if (
+            !_verifyPolicyBound(
+                proof.container.policyHash,
+                proof.container.proof
+            )
+        ) {
             revert PolicyNotBound(proof.container.policyHash);
         }
 
         // Invariant 3: Domain separation must be valid
-        if (!_verifyDomainSeparation(proof.sourceChainId, proof.destChainId, proof.container.domainSeparator)) {
-            revert InvalidDomainSeparation(proof.sourceChainId, proof.destChainId);
+        if (
+            !_verifyDomainSeparation(
+                proof.sourceChainId,
+                proof.destChainId,
+                proof.container.domainSeparator
+            )
+        ) {
+            revert InvalidDomainSeparation(
+                proof.sourceChainId,
+                proof.destChainId
+            );
         }
 
         // Invariant 4: Nullifier must be correctly derived
-        if (!_verifyNullifierDerivation(proof.container.nullifier, proof.oldStateCommitment)) {
+        if (
+            !_verifyNullifierDerivation(
+                proof.container.nullifier,
+                proof.oldStateCommitment
+            )
+        ) {
             revert NullifierDerivationFailed(proof.container.nullifier);
         }
 
         // Invariant 5: Execution backend must have integrity
-        if (!_verifyBackendIntegrity(proof.container.backend, proof.executionCommitment)) {
-            revert ExecutionBackendBypassed(keccak256(abi.encode(proof.container.backend)));
+        if (
+            !_verifyBackendIntegrity(
+                proof.container.backend,
+                proof.executionCommitment
+            )
+        ) {
+            revert ExecutionBackendBypassed(
+                keccak256(abi.encode(proof.container.backend))
+            );
         }
 
         // Invariant 6: Linear state - consume old, produce new
-        _consumeState(proof.oldStateCommitment, proof.newStateCommitment, proof.container.nullifier, kernelId);
+        _consumeState(
+            proof.oldStateCommitment,
+            proof.newStateCommitment,
+            proof.container.nullifier,
+            kernelId
+        );
 
         // Invariant 7: Control flow must be hidden
         if (!_verifyControlFlowHidden(proof.executionCommitment)) {
@@ -391,13 +441,32 @@ contract SoulKernelProof is AccessControl, ReentrancyGuard, Pausable {
         ExecutionBackend backend,
         bytes calldata encryptedPayload,
         bytes calldata innerProof
-    ) external whenNotPaused returns (ConfidentialContainerWrapper memory container) {
+    )
+        external
+        whenNotPaused
+        returns (ConfidentialContainerWrapper memory container)
+    {
         // Generate container ID
-        bytes32 containerId =
-            keccak256(abi.encodePacked(stateCommitment, policyHash, nullifier, CHAIN_ID, block.timestamp, msg.sender));
+        bytes32 containerId = keccak256(
+            abi.encodePacked(
+                stateCommitment,
+                policyHash,
+                nullifier,
+                CHAIN_ID,
+                block.timestamp,
+                msg.sender
+            )
+        );
 
         // Generate domain separator
-        bytes32 domainSeparator = keccak256(abi.encodePacked("SOUL_KERNEL_DOMAIN", CHAIN_ID, policyHash, block.chainid));
+        bytes32 domainSeparator = keccak256(
+            abi.encodePacked(
+                "SOUL_KERNEL_DOMAIN",
+                CHAIN_ID,
+                policyHash,
+                block.chainid
+            )
+        );
 
         container = ConfidentialContainerWrapper({
             containerId: containerId,
@@ -433,12 +502,15 @@ contract SoulKernelProof is AccessControl, ReentrancyGuard, Pausable {
         uint256 currentDepth = recursionDepth[parentKernelId];
 
         if (currentDepth + 1 > MAX_RECURSION_DEPTH) {
-            revert MaxRecursionDepthExceeded(currentDepth + 1, MAX_RECURSION_DEPTH);
+            revert MaxRecursionDepthExceeded(
+                currentDepth + 1,
+                MAX_RECURSION_DEPTH
+            );
         }
 
         // Verify each child proof
         bytes32[] memory childIds = new bytes32[](childProofs.length);
-        for (uint256 i = 0; i < childProofs.length;) {
+        for (uint256 i = 0; i < childProofs.length; ) {
             childIds[i] = this.verifyKernelProof(childProofs[i]);
 
             // Track recursion depth
@@ -490,7 +562,9 @@ contract SoulKernelProof is AccessControl, ReentrancyGuard, Pausable {
      * @notice Verify container is well-formed
      * @dev Invariant 1: Proper structure, valid commitment, correct encryption
      */
-    function _verifyContainerWellFormed(ConfidentialContainerWrapper calldata container) internal pure returns (bool) {
+    function _verifyContainerWellFormed(
+        ConfidentialContainerWrapper calldata container
+    ) internal pure returns (bool) {
         // Container must have valid ID
         if (container.containerId == bytes32(0)) return false;
 
@@ -519,7 +593,10 @@ contract SoulKernelProof is AccessControl, ReentrancyGuard, Pausable {
      * @notice Verify policy is cryptographically bound
      * @dev Invariant 2: Policy hash is in proof's domain separator
      */
-    function _verifyPolicyBound(bytes32, /* policyHash */ bytes calldata proof) internal pure returns (bool) {
+    function _verifyPolicyBound(
+        bytes32,
+        /* policyHash */ bytes calldata proof
+    ) internal pure returns (bool) {
         // In production, this would verify the proof contains policy commitment
         // For MVP, we check proof includes policy hash in its structure
         if (proof.length < 32) return false;
@@ -539,7 +616,8 @@ contract SoulKernelProof is AccessControl, ReentrancyGuard, Pausable {
         bytes32 /* domainSeparator */
     ) internal view returns (bool) {
         // Source and dest must be different for cross-chain
-        if (sourceChainId == destChainId && sourceChainId != CHAIN_ID) return false;
+        if (sourceChainId == destChainId && sourceChainId != CHAIN_ID)
+            return false;
 
         // For internal operations, allow self-domain
         if (sourceChainId == CHAIN_ID && destChainId == CHAIN_ID) {
@@ -553,7 +631,10 @@ contract SoulKernelProof is AccessControl, ReentrancyGuard, Pausable {
      * @notice Verify nullifier is correctly derived
      * @dev Invariant 4: Follows CDNA specification
      */
-    function _verifyNullifierDerivation(bytes32 nullifier, bytes32 /* stateCommitment */ ) internal view returns (bool) {
+    function _verifyNullifierDerivation(
+        bytes32 nullifier,
+        bytes32 /* stateCommitment */
+    ) internal view returns (bool) {
         // Nullifier must not already be used
         if (consumedNullifiers[nullifier]) return false;
 
@@ -568,7 +649,10 @@ contract SoulKernelProof is AccessControl, ReentrancyGuard, Pausable {
      * @notice Verify execution backend integrity
      * @dev Invariant 5: Backend did not bypass ZK guarantees
      */
-    function _verifyBackendIntegrity(ExecutionBackend backend, bytes32 executionCommitment) internal view returns (bool) {
+    function _verifyBackendIntegrity(
+        ExecutionBackend backend,
+        bytes32 executionCommitment
+    ) internal view returns (bool) {
         bytes32 backendId = keccak256(abi.encode(backend));
 
         // Backend must be registered
@@ -584,7 +668,9 @@ contract SoulKernelProof is AccessControl, ReentrancyGuard, Pausable {
      * @notice Verify control flow is hidden
      * @dev Invariant 7: Private control flow (like Aztec)
      */
-    function _verifyControlFlowHidden(bytes32 executionCommitment) internal pure returns (bool) {
+    function _verifyControlFlowHidden(
+        bytes32 executionCommitment
+    ) internal pure returns (bool) {
         // Execution commitment hides which functions ran
         // In production, verify the commitment reveals nothing about:
         // - which backend was chosen
@@ -597,7 +683,12 @@ contract SoulKernelProof is AccessControl, ReentrancyGuard, Pausable {
      * @notice Consume old state and produce new state
      * @dev Invariant 6: Linear state semantics (Aztec's key insight)
      */
-    function _consumeState(bytes32 oldCommitment, bytes32 newCommitment, bytes32 nullifier, bytes32 kernelId) internal {
+    function _consumeState(
+        bytes32 oldCommitment,
+        bytes32 newCommitment,
+        bytes32 nullifier,
+        bytes32 kernelId
+    ) internal {
         // Cannot consume zero state (except for creation)
         if (newCommitment == bytes32(0)) {
             revert StateNotConsumed(oldCommitment);
@@ -631,7 +722,9 @@ contract SoulKernelProof is AccessControl, ReentrancyGuard, Pausable {
      * @notice Verify kernel signature/proof
      * @dev Final verification step for kernel proof validity
      */
-    function _verifyKernelSignature(KernelProof calldata proof) internal view returns (bool) {
+    function _verifyKernelSignature(
+        KernelProof calldata proof
+    ) internal view returns (bool) {
         // Check expiration
         if (proof.expiresAt != 0 && block.timestamp > proof.expiresAt) {
             return false;
@@ -657,18 +750,21 @@ contract SoulKernelProof is AccessControl, ReentrancyGuard, Pausable {
     // INTERNAL FUNCTIONS
     // ============================================
 
-    function _generateKernelId(KernelProof calldata proof) internal view returns (bytes32) {
-        return keccak256(
-            abi.encodePacked(
-                proof.container.containerId,
-                proof.oldStateCommitment,
-                proof.newStateCommitment,
-                proof.sourceChainId,
-                proof.destChainId,
-                CHAIN_ID,
-                block.timestamp
-            )
-        );
+    function _generateKernelId(
+        KernelProof calldata proof
+    ) internal view returns (bytes32) {
+        return
+            keccak256(
+                abi.encodePacked(
+                    proof.container.containerId,
+                    proof.oldStateCommitment,
+                    proof.newStateCommitment,
+                    proof.sourceChainId,
+                    proof.destChainId,
+                    CHAIN_ID,
+                    block.timestamp
+                )
+            );
     }
 
     function _registerBackend(ExecutionBackend backend) internal {
@@ -694,22 +790,30 @@ contract SoulKernelProof is AccessControl, ReentrancyGuard, Pausable {
     }
 
     /// @notice Get kernel proof details
-    function getKernelProof(bytes32 kernelId) external view returns (KernelProof memory) {
+    function getKernelProof(
+        bytes32 kernelId
+    ) external view returns (KernelProof memory) {
         return kernelProofs[kernelId];
     }
 
     /// @notice Check if container is verified
-    function isContainerVerified(bytes32 containerId) external view returns (bool) {
+    function isContainerVerified(
+        bytes32 containerId
+    ) external view returns (bool) {
         return verifiedContainers[containerId];
     }
 
     /// @notice Get state consumption details
-    function getStateConsumption(bytes32 commitment) external view returns (StateConsumption memory) {
+    function getStateConsumption(
+        bytes32 commitment
+    ) external view returns (StateConsumption memory) {
         return stateConsumptions[commitment];
     }
 
     /// @notice Get execution indirection details
-    function getExecutionIndirection(bytes32 intentCommitment) external view returns (ExecutionIndirection memory) {
+    function getExecutionIndirection(
+        bytes32 intentCommitment
+    ) external view returns (ExecutionIndirection memory) {
         return executionIndirections[intentCommitment];
     }
 
@@ -720,7 +824,9 @@ contract SoulKernelProof is AccessControl, ReentrancyGuard, Pausable {
     /**
      * @notice Set kernel proof validity period
      */
-    function setKernelProofValidity(uint256 validity) external onlyRole(KERNEL_ADMIN_ROLE) {
+    function setKernelProofValidity(
+        uint256 validity
+    ) external onlyRole(KERNEL_ADMIN_ROLE) {
         uint256 oldValidity = kernelProofValidity;
         kernelProofValidity = validity;
         emit KernelProofValidityUpdated(oldValidity, validity);
@@ -729,7 +835,9 @@ contract SoulKernelProof is AccessControl, ReentrancyGuard, Pausable {
     /**
      * @notice Register a new execution backend
      */
-    function registerBackend(ExecutionBackend backend) external onlyRole(BACKEND_ROLE) {
+    function registerBackend(
+        ExecutionBackend backend
+    ) external onlyRole(BACKEND_ROLE) {
         _registerBackend(backend);
     }
 

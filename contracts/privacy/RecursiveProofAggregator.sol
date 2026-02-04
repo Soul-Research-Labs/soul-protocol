@@ -184,7 +184,8 @@ contract RecursiveProofAggregator is
     uint256 public constant AGGREGATION_WINDOW = 1 hours;
 
     /// @notice BN254 curve order (for Groth16)
-    uint256 public constant BN254_ORDER = 21888242871839275222246405745257275088548364400416034343698204186575808495617;
+    uint256 public constant BN254_ORDER =
+        21888242871839275222246405745257275088548364400416034343698204186575808495617;
 
     // ============================================
     // STATE VARIABLES (V1)
@@ -224,21 +225,42 @@ contract RecursiveProofAggregator is
     // EVENTS
     // ============================================
 
-    event ProofSubmitted(bytes32 indexed proofId, bytes32 indexed batchId, ProofSystem system, uint256 chainId);
+    event ProofSubmitted(
+        bytes32 indexed proofId,
+        bytes32 indexed batchId,
+        ProofSystem system,
+        uint256 chainId
+    );
 
-    event BatchCreated(bytes32 indexed batchId, ProofSystem system, address creator);
+    event BatchCreated(
+        bytes32 indexed batchId,
+        ProofSystem system,
+        address creator
+    );
 
-    event BatchAggregated(bytes32 indexed batchId, bytes32 aggregatedProofHash, uint256 proofCount);
+    event BatchAggregated(
+        bytes32 indexed batchId,
+        bytes32 aggregatedProofHash,
+        uint256 proofCount
+    );
 
     event BatchVerified(bytes32 indexed batchId, bytes32 merkleRoot);
 
     event BatchFinalized(bytes32 indexed batchId);
 
-    event NovaFoldingStep(bytes32 indexed batchId, uint256 step, bytes32 U, bytes32 u);
+    event NovaFoldingStep(
+        bytes32 indexed batchId,
+        uint256 step,
+        bytes32 U,
+        bytes32 u
+    );
 
     event CrossChainBundleCreated(bytes32 indexed bundleId, uint256 chainCount);
 
-    event CrossChainBundleVerified(bytes32 indexed bundleId, bytes32 aggregatedRoot);
+    event CrossChainBundleVerified(
+        bytes32 indexed bundleId,
+        bytes32 aggregatedRoot
+    );
 
     event VerifierUpdated(ProofSystem indexed system, address verifier);
 
@@ -282,18 +304,26 @@ contract RecursiveProofAggregator is
      * @param chainId Source chain ID
      * @return proofId The unique proof identifier
      */
-    function submitProof(ProofSystem system, bytes32 commitmentHash, bytes32 publicInputHash, uint256 chainId)
-        external
-        nonReentrant
-        whenNotPaused
-        returns (bytes32 proofId)
-    {
+    function submitProof(
+        ProofSystem system,
+        bytes32 commitmentHash,
+        bytes32 publicInputHash,
+        uint256 chainId
+    ) external nonReentrant whenNotPaused returns (bytes32 proofId) {
         if (commitmentHash == bytes32(0) || publicInputHash == bytes32(0)) {
             revert InvalidProof();
         }
 
         // Generate proof ID
-        proofId = keccak256(abi.encodePacked(commitmentHash, publicInputHash, chainId, msg.sender, block.timestamp));
+        proofId = keccak256(
+            abi.encodePacked(
+                commitmentHash,
+                publicInputHash,
+                chainId,
+                msg.sender,
+                block.timestamp
+            )
+        );
 
         if (proofSubmissions[proofId].proofId != bytes32(0)) {
             revert ProofAlreadySubmitted(proofId);
@@ -301,7 +331,9 @@ contract RecursiveProofAggregator is
 
         // Get or create active batch
         bytes32 batchId = activeBatches[system];
-        if (batchId == bytes32(0) || _batches[batchId].state != BatchState.OPEN) {
+        if (
+            batchId == bytes32(0) || _batches[batchId].state != BatchState.OPEN
+        ) {
             batchId = _createBatch(system);
         }
 
@@ -342,15 +374,16 @@ contract RecursiveProofAggregator is
      * @param batchId The batch to fold into
      * @param novaProof The Nova proof structure
      */
-    function submitNovaFolding(bytes32 batchId, NovaProof calldata novaProof)
-        external
-        onlyRole(AGGREGATOR_ROLE)
-        nonReentrant
-        whenNotPaused
-    {
+    function submitNovaFolding(
+        bytes32 batchId,
+        NovaProof calldata novaProof
+    ) external onlyRole(AGGREGATOR_ROLE) nonReentrant whenNotPaused {
         AggregationBatch storage batch = _batches[batchId];
         if (batch.batchId == bytes32(0)) revert BatchDoesNotExist(batchId);
-        if (batch.system != ProofSystem.NOVA && batch.system != ProofSystem.SUPERNOVA) {
+        if (
+            batch.system != ProofSystem.NOVA &&
+            batch.system != ProofSystem.SUPERNOVA
+        ) {
             revert InvalidProofSystem(batch.system);
         }
 
@@ -372,8 +405,12 @@ contract RecursiveProofAggregator is
     /**
      * @notice Create a new aggregation batch
      */
-    function _createBatch(ProofSystem system) internal returns (bytes32 batchId) {
-        batchId = keccak256(abi.encodePacked(system, msg.sender, block.timestamp, totalBatches));
+    function _createBatch(
+        ProofSystem system
+    ) internal returns (bytes32 batchId) {
+        batchId = keccak256(
+            abi.encodePacked(system, msg.sender, block.timestamp, totalBatches)
+        );
 
         bytes32[] memory emptyProofs;
 
@@ -420,16 +457,18 @@ contract RecursiveProofAggregator is
      * @param aggregatedProofHash Hash of the aggregated proof
      * @param merkleRoot Merkle root of public inputs
      */
-    function finalizeBatchAggregation(bytes32 batchId, bytes32 aggregatedProofHash, bytes32 merkleRoot)
-        external
-        onlyRole(AGGREGATOR_ROLE)
-        nonReentrant
-        whenNotPaused
-    {
+    function finalizeBatchAggregation(
+        bytes32 batchId,
+        bytes32 aggregatedProofHash,
+        bytes32 merkleRoot
+    ) external onlyRole(AGGREGATOR_ROLE) nonReentrant whenNotPaused {
         AggregationBatch storage batch = _batches[batchId];
 
         if (batch.batchId == bytes32(0)) revert BatchDoesNotExist(batchId);
-        if (batch.state != BatchState.AGGREGATING && batch.state != BatchState.OPEN) {
+        if (
+            batch.state != BatchState.AGGREGATING &&
+            batch.state != BatchState.OPEN
+        ) {
             revert BatchNotOpen(batchId);
         }
 
@@ -439,7 +478,7 @@ contract RecursiveProofAggregator is
         batch.state = BatchState.VERIFIED;
 
         // Mark all proofs as aggregated
-        for (uint256 i = 0; i < batch.proofIds.length;) {
+        for (uint256 i = 0; i < batch.proofIds.length; ) {
             proofSubmissions[batch.proofIds[i]].aggregated = true;
             unchecked {
                 ++i;
@@ -457,7 +496,9 @@ contract RecursiveProofAggregator is
      * @notice Trigger batch aggregation manually
      * @param batchId The batch to aggregate
      */
-    function triggerAggregation(bytes32 batchId) external onlyRole(AGGREGATOR_ROLE) nonReentrant whenNotPaused {
+    function triggerAggregation(
+        bytes32 batchId
+    ) external onlyRole(AGGREGATOR_ROLE) nonReentrant whenNotPaused {
         AggregationBatch storage batch = _batches[batchId];
 
         if (batch.batchId == bytes32(0)) revert BatchDoesNotExist(batchId);
@@ -479,7 +520,10 @@ contract RecursiveProofAggregator is
      * @param proofRoots Proof roots per chain
      * @return bundleId The bundle identifier
      */
-    function createCrossChainBundle(uint256[] calldata chainIds, bytes32[] calldata proofRoots)
+    function createCrossChainBundle(
+        uint256[] calldata chainIds,
+        bytes32[] calldata proofRoots
+    )
         external
         onlyRole(AGGREGATOR_ROLE)
         nonReentrant
@@ -490,7 +534,9 @@ contract RecursiveProofAggregator is
             revert CrossChainProofMismatch();
         }
 
-        bundleId = keccak256(abi.encodePacked(chainIds, proofRoots, block.timestamp));
+        bundleId = keccak256(
+            abi.encodePacked(chainIds, proofRoots, block.timestamp)
+        );
 
         crossChainBundles[bundleId] = CrossChainProofBundle({
             bundleId: bundleId,
@@ -511,12 +557,11 @@ contract RecursiveProofAggregator is
      * @param aggregatedRoot The aggregated root
      * @param aggregatedProof The aggregated proof bytes
      */
-    function finalizeCrossChainBundle(bytes32 bundleId, bytes32 aggregatedRoot, bytes calldata aggregatedProof)
-        external
-        onlyRole(AGGREGATOR_ROLE)
-        nonReentrant
-        whenNotPaused
-    {
+    function finalizeCrossChainBundle(
+        bytes32 bundleId,
+        bytes32 aggregatedRoot,
+        bytes calldata aggregatedProof
+    ) external onlyRole(AGGREGATOR_ROLE) nonReentrant whenNotPaused {
         CrossChainProofBundle storage bundle = crossChainBundles[bundleId];
         if (bundle.bundleId == bytes32(0)) revert BatchDoesNotExist(bundleId);
 
@@ -536,7 +581,9 @@ contract RecursiveProofAggregator is
     /**
      * @notice Verify a Nova folding proof
      */
-    function _verifyNovaFolding(NovaProof calldata proof) internal pure returns (bool) {
+    function _verifyNovaFolding(
+        NovaProof calldata proof
+    ) internal pure returns (bool) {
         // Verify folding equation: U' = U + r·u (simplified)
         // In production, this would use actual Nova verification
         if (proof.U == bytes32(0) || proof.u == bytes32(0)) {
@@ -557,11 +604,11 @@ contract RecursiveProofAggregator is
      * @param proof The proof bytes
      * @param publicInputs Public inputs
      */
-    function verifyAggregatedProof(ProofSystem proofSystem, bytes calldata proof, uint256[] calldata publicInputs)
-        external
-        view
-        returns (bool)
-    {
+    function verifyAggregatedProof(
+        ProofSystem proofSystem,
+        bytes calldata proof,
+        uint256[] calldata publicInputs
+    ) external view returns (bool) {
         address verifier = verifiers[proofSystem];
         if (verifier == address(0)) {
             revert InvalidProofSystem(proofSystem);
@@ -577,22 +624,30 @@ contract RecursiveProofAggregator is
     // ============================================
 
     /// @notice Get batch details
-    function getBatch(bytes32 batchId) external view returns (AggregationBatch memory) {
+    function getBatch(
+        bytes32 batchId
+    ) external view returns (AggregationBatch memory) {
         return _batches[batchId];
     }
 
     /// @notice Get proof submission details
-    function getProofSubmission(bytes32 proofId) external view returns (ProofSubmission memory) {
+    function getProofSubmission(
+        bytes32 proofId
+    ) external view returns (ProofSubmission memory) {
         return proofSubmissions[proofId];
     }
 
     /// @notice Get cross-chain bundle details
-    function getCrossChainBundle(bytes32 bundleId) external view returns (CrossChainProofBundle memory) {
+    function getCrossChainBundle(
+        bytes32 bundleId
+    ) external view returns (CrossChainProofBundle memory) {
         return crossChainBundles[bundleId];
     }
 
     /// @notice Get Nova folding state
-    function getNovaState(bytes32 batchId) external view returns (NovaProof memory) {
+    function getNovaState(
+        bytes32 batchId
+    ) external view returns (NovaProof memory) {
         return novaStates[batchId];
     }
 
@@ -608,7 +663,10 @@ contract RecursiveProofAggregator is
     /**
      * @notice Set verifier for a proof system
      */
-    function setVerifier(ProofSystem system, address verifier) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setVerifier(
+        ProofSystem system,
+        address verifier
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (verifier == address(0)) revert ZeroAddress();
         verifiers[system] = verifier;
         emit VerifierUpdated(system, verifier);
@@ -635,5 +693,7 @@ contract RecursiveProofAggregator is
     /**
      * @notice Authorize upgrade (UUPS)
      */
-    function _authorizeUpgrade(address newImplementation) internal override onlyRole(UPGRADER_ROLE) {}
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override onlyRole(UPGRADER_ROLE) {}
 }

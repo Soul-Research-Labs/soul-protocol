@@ -53,7 +53,8 @@ contract SoulComplianceV2 is AccessControl, ReentrancyGuard, Pausable {
     // ROLES
     // ============================================
 
-    bytes32 public constant COMPLIANCE_ADMIN_ROLE = keccak256("COMPLIANCE_ADMIN_ROLE");
+    bytes32 public constant COMPLIANCE_ADMIN_ROLE =
+        keccak256("COMPLIANCE_ADMIN_ROLE");
     bytes32 public constant KYC_PROVIDER_ROLE = keccak256("KYC_PROVIDER_ROLE");
     bytes32 public constant AUDITOR_ROLE = keccak256("AUDITOR_ROLE");
     bytes32 public constant SANCTION_ROLE = keccak256("SANCTION_ROLE");
@@ -101,7 +102,11 @@ contract SoulComplianceV2 is AccessControl, ReentrancyGuard, Pausable {
     error KYCExpired(address account);
     error KYCPending(address account);
     error KYCRejectedError(address account);
-    error InsufficientKYCTier(address account, KYCTier required, KYCTier actual);
+    error InsufficientKYCTier(
+        address account,
+        KYCTier required,
+        KYCTier actual
+    );
     error AddressSanctioned(address account);
     error JurisdictionRestrictedError(address account, bytes2 jurisdiction);
     error ProviderNotAuthorized(address provider);
@@ -221,11 +226,24 @@ contract SoulComplianceV2 is AccessControl, ReentrancyGuard, Pausable {
     // EVENTS
     // ============================================
 
-    event KYCSubmitted(address indexed account, address indexed provider, bytes32 dataHash);
+    event KYCSubmitted(
+        address indexed account,
+        address indexed provider,
+        bytes32 dataHash
+    );
 
-    event KYCApproved(address indexed account, KYCTier tier, bytes2 jurisdiction, uint64 expiresAt);
+    event KYCApproved(
+        address indexed account,
+        KYCTier tier,
+        bytes2 jurisdiction,
+        uint64 expiresAt
+    );
 
-    event KYCRejected(address indexed account, address indexed provider, string reason);
+    event KYCRejected(
+        address indexed account,
+        address indexed provider,
+        string reason
+    );
 
     event KYCExpiredEvent(address indexed account);
 
@@ -240,14 +258,29 @@ contract SoulComplianceV2 is AccessControl, ReentrancyGuard, Pausable {
     event AuditorAuthorized(address indexed auditor, bool authorized);
 
     event AuditEntryCreated(
-        bytes32 indexed entryId, address indexed account, AuditEventType eventType, address indexed auditor
+        bytes32 indexed entryId,
+        address indexed account,
+        AuditEventType eventType,
+        address indexed auditor
     );
 
-    event DisclosureRequested(bytes32 indexed requestId, address indexed requester, address indexed target);
+    event DisclosureRequested(
+        bytes32 indexed requestId,
+        address indexed requester,
+        address indexed target
+    );
 
-    event DisclosureApproved(bytes32 indexed requestId, address indexed approver);
+    event DisclosureApproved(
+        bytes32 indexed requestId,
+        address indexed approver
+    );
 
-    event TierLimitsUpdated(KYCTier indexed tier, uint256 daily, uint256 monthly, uint256 singleTx);
+    event TierLimitsUpdated(
+        KYCTier indexed tier,
+        uint256 daily,
+        uint256 monthly,
+        uint256 singleTx
+    );
 
     event KYCValidityDurationUpdated(uint256 oldDuration, uint256 newDuration);
 
@@ -261,17 +294,29 @@ contract SoulComplianceV2 is AccessControl, ReentrancyGuard, Pausable {
         _grantRole(EMERGENCY_ROLE, msg.sender);
 
         // Initialize tier limits (in wei, adjust as needed)
-        tierLimits[KYCTier.Unverified] =
-            TierLimits({dailyLimit: 1 ether, monthlyLimit: 5 ether, singleTxLimit: 0.5 ether});
+        tierLimits[KYCTier.Unverified] = TierLimits({
+            dailyLimit: 1 ether,
+            monthlyLimit: 5 ether,
+            singleTxLimit: 0.5 ether
+        });
 
-        tierLimits[KYCTier.Basic] =
-            TierLimits({dailyLimit: 10 ether, monthlyLimit: 50 ether, singleTxLimit: 5 ether});
+        tierLimits[KYCTier.Basic] = TierLimits({
+            dailyLimit: 10 ether,
+            monthlyLimit: 50 ether,
+            singleTxLimit: 5 ether
+        });
 
-        tierLimits[KYCTier.Standard] =
-            TierLimits({dailyLimit: 100 ether, monthlyLimit: 500 ether, singleTxLimit: 50 ether});
+        tierLimits[KYCTier.Standard] = TierLimits({
+            dailyLimit: 100 ether,
+            monthlyLimit: 500 ether,
+            singleTxLimit: 50 ether
+        });
 
-        tierLimits[KYCTier.Enhanced] =
-            TierLimits({dailyLimit: 1000 ether, monthlyLimit: 5000 ether, singleTxLimit: 500 ether});
+        tierLimits[KYCTier.Enhanced] = TierLimits({
+            dailyLimit: 1000 ether,
+            monthlyLimit: 5000 ether,
+            singleTxLimit: 500 ether
+        });
 
         tierLimits[KYCTier.Institutional] = TierLimits({
             dailyLimit: type(uint256).max,
@@ -290,13 +335,14 @@ contract SoulComplianceV2 is AccessControl, ReentrancyGuard, Pausable {
      * @param dataHash Hash of KYC data (stored off-chain)
      * @param jurisdiction ISO country code
      */
-    function submitKYC(address account, bytes32 dataHash, bytes2 jurisdiction)
-        external
-        onlyRole(KYC_PROVIDER_ROLE)
-        whenNotPaused
-    {
+    function submitKYC(
+        address account,
+        bytes32 dataHash,
+        bytes2 jurisdiction
+    ) external onlyRole(KYC_PROVIDER_ROLE) whenNotPaused {
         if (account == address(0)) revert ZeroAddress();
-        if (!authorizedProviders[msg.sender]) revert ProviderNotAuthorized(msg.sender);
+        if (!authorizedProviders[msg.sender])
+            revert ProviderNotAuthorized(msg.sender);
         if (restrictedJurisdictions[jurisdiction]) {
             revert JurisdictionRestrictedError(account, jurisdiction);
         }
@@ -325,11 +371,11 @@ contract SoulComplianceV2 is AccessControl, ReentrancyGuard, Pausable {
      * @param tier Assigned KYC tier
      * @param disclosurePolicy Bound disclosure policy hash
      */
-    function approveKYC(address account, KYCTier tier, bytes32 disclosurePolicy)
-        external
-        onlyRole(KYC_PROVIDER_ROLE)
-        whenNotPaused
-    {
+    function approveKYC(
+        address account,
+        KYCTier tier,
+        bytes32 disclosurePolicy
+    ) external onlyRole(KYC_PROVIDER_ROLE) whenNotPaused {
         if (account == address(0)) revert ZeroAddress();
 
         KYCRecord storage record = kycRecords[account];
@@ -350,7 +396,11 @@ contract SoulComplianceV2 is AccessControl, ReentrancyGuard, Pausable {
             }
         }
 
-        _createAuditEntry(account, AuditEventType.KYC_APPROVED, bytes32(uint256(tier)));
+        _createAuditEntry(
+            account,
+            AuditEventType.KYC_APPROVED,
+            bytes32(uint256(tier))
+        );
 
         emit KYCApproved(account, tier, record.jurisdiction, record.expiresAt);
     }
@@ -360,7 +410,10 @@ contract SoulComplianceV2 is AccessControl, ReentrancyGuard, Pausable {
      * @param account Account to reject
      * @param reason Rejection reason
      */
-    function rejectKYC(address account, string calldata reason) external onlyRole(KYC_PROVIDER_ROLE) whenNotPaused {
+    function rejectKYC(
+        address account,
+        string calldata reason
+    ) external onlyRole(KYC_PROVIDER_ROLE) whenNotPaused {
         if (account == address(0)) revert ZeroAddress();
 
         KYCRecord storage record = kycRecords[account];
@@ -370,7 +423,11 @@ contract SoulComplianceV2 is AccessControl, ReentrancyGuard, Pausable {
 
         record.status = KYCStatus.Rejected;
 
-        _createAuditEntry(account, AuditEventType.KYC_REJECTED, keccak256(bytes(reason)));
+        _createAuditEntry(
+            account,
+            AuditEventType.KYC_REJECTED,
+            keccak256(bytes(reason))
+        );
 
         emit KYCRejected(account, msg.sender, reason);
     }
@@ -380,13 +437,20 @@ contract SoulComplianceV2 is AccessControl, ReentrancyGuard, Pausable {
      * @param accounts Accounts to check
      */
     function expireKYC(address[] calldata accounts) external {
-        for (uint256 i = 0; i < accounts.length;) {
+        for (uint256 i = 0; i < accounts.length; ) {
             KYCRecord storage record = kycRecords[accounts[i]];
 
-            if (record.status == KYCStatus.Approved && block.timestamp > record.expiresAt) {
+            if (
+                record.status == KYCStatus.Approved &&
+                block.timestamp > record.expiresAt
+            ) {
                 record.status = KYCStatus.Expired;
 
-                _createAuditEntry(accounts[i], AuditEventType.KYC_EXPIRED, bytes32(0));
+                _createAuditEntry(
+                    accounts[i],
+                    AuditEventType.KYC_EXPIRED,
+                    bytes32(0)
+                );
 
                 emit KYCExpiredEvent(accounts[i]);
             }
@@ -406,12 +470,19 @@ contract SoulComplianceV2 is AccessControl, ReentrancyGuard, Pausable {
      * @param account Address to sanction
      * @param reason Sanction reason
      */
-    function addSanction(address account, string calldata reason) external onlyRole(SANCTION_ROLE) {
+    function addSanction(
+        address account,
+        string calldata reason
+    ) external onlyRole(SANCTION_ROLE) {
         if (account == address(0)) revert ZeroAddress();
 
         sanctionedAddresses[account] = true;
 
-        _createAuditEntry(account, AuditEventType.SANCTION_CHECK, keccak256(bytes(reason)));
+        _createAuditEntry(
+            account,
+            AuditEventType.SANCTION_CHECK,
+            keccak256(bytes(reason))
+        );
 
         emit SanctionAdded(account, reason);
     }
@@ -433,10 +504,10 @@ contract SoulComplianceV2 is AccessControl, ReentrancyGuard, Pausable {
      * @param jurisdiction ISO country code
      * @param restricted Whether restricted
      */
-    function setJurisdictionRestriction(bytes2 jurisdiction, bool restricted)
-        external
-        onlyRole(COMPLIANCE_ADMIN_ROLE)
-    {
+    function setJurisdictionRestriction(
+        bytes2 jurisdiction,
+        bool restricted
+    ) external onlyRole(COMPLIANCE_ADMIN_ROLE) {
         restrictedJurisdictions[jurisdiction] = restricted;
 
         emit JurisdictionRestricted(jurisdiction, restricted);
@@ -453,7 +524,9 @@ contract SoulComplianceV2 is AccessControl, ReentrancyGuard, Pausable {
      */
     function isKYCVerified(address account) public view returns (bool) {
         KYCRecord storage record = kycRecords[account];
-        return record.status == KYCStatus.Approved && block.timestamp <= record.expiresAt;
+        return
+            record.status == KYCStatus.Approved &&
+            block.timestamp <= record.expiresAt;
     }
 
     /**
@@ -462,7 +535,10 @@ contract SoulComplianceV2 is AccessControl, ReentrancyGuard, Pausable {
      * @param requiredTier Minimum required tier
      * @return True if meets requirement
      */
-    function meetsTierRequirement(address account, KYCTier requiredTier) public view returns (bool) {
+    function meetsTierRequirement(
+        address account,
+        KYCTier requiredTier
+    ) public view returns (bool) {
         if (!isKYCVerified(account)) return false;
         return uint8(kycRecords[account].tier) >= uint8(requiredTier);
     }
@@ -482,7 +558,10 @@ contract SoulComplianceV2 is AccessControl, ReentrancyGuard, Pausable {
      * @param amount Transaction amount
      * @return allowed True if within limits
      */
-    function checkTransactionLimits(address account, uint256 amount) public view returns (bool allowed) {
+    function checkTransactionLimits(
+        address account,
+        uint256 amount
+    ) public view returns (bool allowed) {
         KYCTier tier = kycRecords[account].tier;
         TierLimits storage limits = tierLimits[tier];
 
@@ -495,7 +574,8 @@ contract SoulComplianceV2 is AccessControl, ReentrancyGuard, Pausable {
 
         // Check monthly limit
         uint256 month = block.timestamp / 30 days;
-        if (monthlySpend[account][month] + amount > limits.monthlyLimit) return false;
+        if (monthlySpend[account][month] + amount > limits.monthlyLimit)
+            return false;
 
         return true;
     }
@@ -505,7 +585,10 @@ contract SoulComplianceV2 is AccessControl, ReentrancyGuard, Pausable {
      * @param account Account
      * @param amount Amount spent
      */
-    function recordSpend(address account, uint256 amount) external onlyRole(COMPLIANCE_ADMIN_ROLE) {
+    function recordSpend(
+        address account,
+        uint256 amount
+    ) external onlyRole(COMPLIANCE_ADMIN_ROLE) {
         uint256 day = block.timestamp / 1 days;
         uint256 month = block.timestamp / 30 days;
 
@@ -524,15 +607,23 @@ contract SoulComplianceV2 is AccessControl, ReentrancyGuard, Pausable {
      * @param reason Request reason
      * @return requestId The disclosure request ID
      */
-    function requestDisclosure(address target, bytes32[] calldata dataFields, string calldata reason)
-        external
-        onlyRole(AUDITOR_ROLE)
-        returns (bytes32 requestId)
-    {
+    function requestDisclosure(
+        address target,
+        bytes32[] calldata dataFields,
+        string calldata reason
+    ) external onlyRole(AUDITOR_ROLE) returns (bytes32 requestId) {
         if (target == address(0)) revert ZeroAddress();
-        if (!authorizedAuditors[msg.sender]) revert AuditorNotAuthorized(msg.sender);
+        if (!authorizedAuditors[msg.sender])
+            revert AuditorNotAuthorized(msg.sender);
 
-        requestId = keccak256(abi.encodePacked(msg.sender, target, block.timestamp, totalDisclosureRequests));
+        requestId = keccak256(
+            abi.encodePacked(
+                msg.sender,
+                target,
+                block.timestamp,
+                totalDisclosureRequests
+            )
+        );
 
         disclosureRequests[requestId] = DisclosureRequest({
             requestId: requestId,
@@ -559,7 +650,9 @@ contract SoulComplianceV2 is AccessControl, ReentrancyGuard, Pausable {
      * @notice Approve disclosure request
      * @param requestId Request to approve
      */
-    function approveDisclosure(bytes32 requestId) external onlyRole(COMPLIANCE_ADMIN_ROLE) {
+    function approveDisclosure(
+        bytes32 requestId
+    ) external onlyRole(COMPLIANCE_ADMIN_ROLE) {
         DisclosureRequest storage request = disclosureRequests[requestId];
 
         request.approved = true;
@@ -574,8 +667,20 @@ contract SoulComplianceV2 is AccessControl, ReentrancyGuard, Pausable {
     /**
      * @notice Create audit trail entry
      */
-    function _createAuditEntry(address account, AuditEventType eventType, bytes32 dataHash) internal {
-        bytes32 entryId = keccak256(abi.encodePacked(account, eventType, dataHash, block.timestamp, totalAuditEntries));
+    function _createAuditEntry(
+        address account,
+        AuditEventType eventType,
+        bytes32 dataHash
+    ) internal {
+        bytes32 entryId = keccak256(
+            abi.encodePacked(
+                account,
+                eventType,
+                dataHash,
+                block.timestamp,
+                totalAuditEntries
+            )
+        );
 
         AuditEntry memory entry = AuditEntry({
             entryId: entryId,
@@ -601,7 +706,9 @@ contract SoulComplianceV2 is AccessControl, ReentrancyGuard, Pausable {
      * @param account Account to query
      * @return entries Audit entries
      */
-    function getAuditTrail(address account) external view onlyRole(AUDITOR_ROLE) returns (AuditEntry[] memory) {
+    function getAuditTrail(
+        address account
+    ) external view onlyRole(AUDITOR_ROLE) returns (AuditEntry[] memory) {
         return _auditTrails[account];
     }
 
@@ -609,7 +716,9 @@ contract SoulComplianceV2 is AccessControl, ReentrancyGuard, Pausable {
      * @notice Get audit trail length
      * @param account Account to query
      */
-    function getAuditTrailLength(address account) external view returns (uint256) {
+    function getAuditTrailLength(
+        address account
+    ) external view returns (uint256) {
         return _auditTrails[account].length;
     }
 
@@ -622,7 +731,10 @@ contract SoulComplianceV2 is AccessControl, ReentrancyGuard, Pausable {
      * @param provider Provider address
      * @param authorized Authorization status
      */
-    function authorizeProvider(address provider, bool authorized) external onlyRole(COMPLIANCE_ADMIN_ROLE) {
+    function authorizeProvider(
+        address provider,
+        bool authorized
+    ) external onlyRole(COMPLIANCE_ADMIN_ROLE) {
         if (provider == address(0)) revert ZeroAddress();
 
         authorizedProviders[provider] = authorized;
@@ -641,7 +753,10 @@ contract SoulComplianceV2 is AccessControl, ReentrancyGuard, Pausable {
      * @param auditor Auditor address
      * @param authorized Authorization status
      */
-    function authorizeAuditor(address auditor, bool authorized) external onlyRole(COMPLIANCE_ADMIN_ROLE) {
+    function authorizeAuditor(
+        address auditor,
+        bool authorized
+    ) external onlyRole(COMPLIANCE_ADMIN_ROLE) {
         if (auditor == address(0)) revert ZeroAddress();
 
         authorizedAuditors[auditor] = authorized;
@@ -662,10 +777,12 @@ contract SoulComplianceV2 is AccessControl, ReentrancyGuard, Pausable {
      * @param monthlyLimit New monthly limit
      * @param singleTxLimit New single tx limit
      */
-    function setTierLimits(KYCTier tier, uint256 dailyLimit, uint256 monthlyLimit, uint256 singleTxLimit)
-        external
-        onlyRole(COMPLIANCE_ADMIN_ROLE)
-    {
+    function setTierLimits(
+        KYCTier tier,
+        uint256 dailyLimit,
+        uint256 monthlyLimit,
+        uint256 singleTxLimit
+    ) external onlyRole(COMPLIANCE_ADMIN_ROLE) {
         tierLimits[tier] = TierLimits({
             dailyLimit: dailyLimit,
             monthlyLimit: monthlyLimit,
@@ -679,7 +796,9 @@ contract SoulComplianceV2 is AccessControl, ReentrancyGuard, Pausable {
      * @notice Set KYC validity duration
      * @param duration New duration in seconds
      */
-    function setKYCValidityDuration(uint256 duration) external onlyRole(COMPLIANCE_ADMIN_ROLE) {
+    function setKYCValidityDuration(
+        uint256 duration
+    ) external onlyRole(COMPLIANCE_ADMIN_ROLE) {
         if (duration < MIN_KYC_VALIDITY || duration > MAX_KYC_VALIDITY) {
             revert InvalidKYCDuration(duration);
         }
@@ -709,17 +828,23 @@ contract SoulComplianceV2 is AccessControl, ReentrancyGuard, Pausable {
     // ============================================
 
     /// @notice Get KYC record
-    function getKYCRecord(address account) external view returns (KYCRecord memory) {
+    function getKYCRecord(
+        address account
+    ) external view returns (KYCRecord memory) {
         return kycRecords[account];
     }
 
     /// @notice Get tier limits
-    function getTierLimits(KYCTier tier) external view returns (TierLimits memory) {
+    function getTierLimits(
+        KYCTier tier
+    ) external view returns (TierLimits memory) {
         return tierLimits[tier];
     }
 
     /// @notice Get disclosure request
-    function getDisclosureRequest(bytes32 requestId) external view returns (DisclosureRequest memory) {
+    function getDisclosureRequest(
+        bytes32 requestId
+    ) external view returns (DisclosureRequest memory) {
         return disclosureRequests[requestId];
     }
 }
