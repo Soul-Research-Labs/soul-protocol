@@ -427,3 +427,123 @@ export function parseContractError(error: Error): ContractError {
 export function isSoulError(error: unknown): error is SoulError {
   return error instanceof SoulError;
 }
+
+/**
+ * Retry options for automatic retry with exponential backoff
+ */
+export interface RetryOptions {
+  /** Maximum number of retry attempts (default: 3) */
+  maxAttempts?: number;
+  /** Initial delay in ms before first retry (default: 1000) */
+  initialDelayMs?: number;
+  /** Multiplier for exponential backoff (default: 2) */
+  backoffMultiplier?: number;
+  /** Maximum delay in ms between retries (default: 30000) */
+  maxDelayMs?: number;
+  /** Callback invoked before each retry attempt */
+  onRetry?: (error: SoulError, attempt: number, delayMs: number) => void;
+}
+
+const RETRYABLE_CODES: SoulErrorCode[] = [
+  SoulErrorCode.NETWORK_ERROR,
+  SoulErrorCode.TIMEOUT_ERROR,
+  SoulErrorCode.RATE_LIMITED,
+  SoulErrorCode.NONCE_TOO_LOW,
+];
+
+/**
+ * Execute a function with automatic retry and exponential backoff
+ * @param fn - Async function to execute
+ * @param options - Retry configuration
+ * @returns Result of the function
+ * @throws SoulError if all retries fail
+ */
+export async function withRetry<T>(
+  fn: () => Promise<T>,
+  options: RetryOptions = {}
+): Promise<T> {
+  const {
+    maxAttempts = 3,
+    initialDelayMs = 1000,
+    backoffMultiplier = 2,
+    maxDelayMs = 30000,
+    onRetry,
+  } = options;
+
+  let lastError: SoulError | undefined;
+  let delay = initialDelayMs;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = isSoulError(error) 
+        ? error 
+        : new SoulError(
+            error instanceof Error ? error.message : String(error),
+            SoulErrorCode.UNKNOWN_ERROR,
+            { cause: error instanceof Error ? error : undefined }
+          );
+
+      // Check if error is retryable
+      const isRetryable = lastError.retryable || RETRYABLE_CODES.includes(lastError.code);
+      if (!isRetryable || attempt >= maxAttempts) {
+        throw lastError;
+      }
+
+      // Invoke retry callback if provided
+      if (onRetry) {
+        onRetry(lastError, attempt, delay);
+      }
+
+      // Wait before retrying
+      await new Promise((resolve) => setTimeout(resolve, delay));
+
+      // Calculate next delay with exponential backoff
+      delay = Math.min(delay * backoffMultiplier, maxDelayMs);
+    }
+  }
+
+  throw lastError ?? new SoulError("Unknown error after retries", SoulErrorCode.UNKNOWN_ERROR);
+}
+
+/**
+ * Execute a function with a timeout
+ * @param fn - Async function to execute
+ * @param timeoutMs - Maximum time to wait in milliseconds
+ * @param operation - Name of the operation for error messages
+ * @returns Result of the function
+ * @throws TimeoutError if function doesn't complete in time
+ */
+export async function withTimeout<T>(
+  fn: () => Promise<T>,
+  timeoutMs: number,
+  operation: string = "operation"
+): Promise<T> {
+  return Promise.race([
+    fn(),
+    new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        reject(new TimeoutError(timeoutMs, operation));
+      }, timeoutMs);
+    }),
+  ]);
+}
+
+/**
+ * Combine retry and timeout utilities
+ * @param fn - Async function to execute
+ * @param options - Retry and timeout configuration
+ * @returns Result of the function
+ */
+export async function withRetryAndTimeout<T>(
+  fn: () => Promise<T>,
+  options: RetryOptions & { timeoutMs?: number; operation?: string } = {}
+): Promise<T> {
+  const { timeoutMs = 30000, operation = "operation", ...retryOptions } = options;
+  
+  return withRetry(
+    () => withTimeout(fn, timeoutMs, operation),
+    retryOptions
+  );
+}
