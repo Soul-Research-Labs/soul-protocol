@@ -32,11 +32,11 @@ contract CrossChainIntegrationTest is Test {
     uint256 constant ARBITRUM_CHAIN_ID = 42161;
     uint256 constant OPTIMISM_CHAIN_ID = 10;
     uint256 constant BASE_CHAIN_ID = 8453;
-    
+
     // Test constants - matches DirectL2Messenger.MIN_RELAYER_BOND
     uint256 constant MIN_RELAYER_BOND = 1 ether;
     uint256 constant CHALLENGE_PERIOD = 30 minutes;
-    
+
     /*//////////////////////////////////////////////////////////////
                                STATE
     //////////////////////////////////////////////////////////////*/
@@ -45,21 +45,21 @@ contract CrossChainIntegrationTest is Test {
     uint256 arbitrumForkId;
     uint256 optimismForkId;
     uint256 baseForkId;
-    
+
     // Simulated contracts (deployed on each fork)
     DirectL2Messenger public messengerArbitrum;
     DirectL2Messenger public messengerOptimism;
     DirectL2Messenger public messengerBase;
-    
+
     L2ProofRouter public routerArbitrum;
     L2ProofRouter public routerOptimism;
-    
+
     // Test accounts
     address public relayer;
     address public challenger;
     address public user;
     address public admin;
-    
+
     /*//////////////////////////////////////////////////////////////
                                SETUP
     //////////////////////////////////////////////////////////////*/
@@ -70,20 +70,20 @@ contract CrossChainIntegrationTest is Test {
         relayer = makeAddr("relayer");
         challenger = makeAddr("challenger");
         user = makeAddr("user");
-        
+
         vm.deal(admin, 100 ether);
         vm.deal(relayer, 100 ether);
         vm.deal(challenger, 10 ether);
         vm.deal(user, 10 ether);
-        
+
         // Note: For actual fork testing, you would create forks like this:
         // arbitrumForkId = vm.createFork(vm.envString("ARBITRUM_RPC_URL"));
         // optimismForkId = vm.createFork(vm.envString("OPTIMISM_RPC_URL"));
         // baseForkId = vm.createFork(vm.envString("BASE_RPC_URL"));
-        
+
         // For local testing, we simulate the chain ID
         vm.chainId(ARBITRUM_CHAIN_ID);
-        
+
         // Deploy mock contracts for local testing
         _deployLocalContracts();
     }
@@ -92,8 +92,8 @@ contract CrossChainIntegrationTest is Test {
         // Deploy DirectL2Messenger (requires admin and soulHub addresses)
         address soulHub = makeAddr("soulHub");
         messengerArbitrum = new DirectL2Messenger(admin, soulHub);
-        
-        // Deploy L2ProofRouter 
+
+        // Deploy L2ProofRouter
         routerArbitrum = new L2ProofRouter(admin, soulHub);
     }
 
@@ -116,13 +116,13 @@ contract CrossChainIntegrationTest is Test {
             30 minutes
         );
         vm.stopPrank();
-        
+
         // Send a message
         vm.startPrank(user);
-        
+
         bytes memory payload = abi.encode("Hello Optimism!");
         bytes32 nullifierBinding = bytes32(0);
-        
+
         bytes32 messageId = messengerArbitrum.sendMessage{value: 0.01 ether}(
             OPTIMISM_CHAIN_ID,
             user, // recipient
@@ -130,15 +130,32 @@ contract CrossChainIntegrationTest is Test {
             DirectL2Messenger.MessagePath.FAST_RELAYER,
             nullifierBinding
         );
-        
+
         vm.stopPrank();
-        
+
         // Verify message was recorded
         assertTrue(messageId != bytes32(0), "Message ID generated");
-        
+
         // Check message status (struct has 13 fields)
-        (,,,,,,,,,, DirectL2Messenger.MessagePath path, DirectL2Messenger.MessageStatus status,) = messengerArbitrum.messages(messageId);
-        assertTrue(status == DirectL2Messenger.MessageStatus.SENT, "Message status is SENT");
+        (
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            DirectL2Messenger.MessagePath path,
+            DirectL2Messenger.MessageStatus status,
+
+        ) = messengerArbitrum.messages(messageId);
+        assertTrue(
+            status == DirectL2Messenger.MessageStatus.SENT,
+            "Message status is SENT"
+        );
     }
 
     /**
@@ -146,9 +163,9 @@ contract CrossChainIntegrationTest is Test {
      */
     function test_messageSend_sameChain_reverts() public {
         vm.startPrank(user);
-        
+
         bytes memory payload = abi.encode("Invalid message");
-        
+
         vm.expectRevert(DirectL2Messenger.InvalidDestinationChain.selector);
         messengerArbitrum.sendMessage{value: 0.01 ether}(
             ARBITRUM_CHAIN_ID, // Same chain - should fail
@@ -157,7 +174,7 @@ contract CrossChainIntegrationTest is Test {
             DirectL2Messenger.MessagePath.SLOW_L1,
             bytes32(0)
         );
-        
+
         vm.stopPrank();
     }
 
@@ -166,9 +183,9 @@ contract CrossChainIntegrationTest is Test {
      */
     function test_messageSend_zeroRecipient_reverts() public {
         vm.startPrank(user);
-        
+
         bytes memory payload = abi.encode("Invalid message");
-        
+
         vm.expectRevert(DirectL2Messenger.InvalidMessage.selector);
         messengerArbitrum.sendMessage{value: 0.01 ether}(
             OPTIMISM_CHAIN_ID,
@@ -177,7 +194,7 @@ contract CrossChainIntegrationTest is Test {
             DirectL2Messenger.MessagePath.SLOW_L1,
             bytes32(0)
         );
-        
+
         vm.stopPrank();
     }
 
@@ -199,10 +216,10 @@ contract CrossChainIntegrationTest is Test {
             3,
             30 minutes
         );
-        
+
         // Send batch of messages
         bytes32[] memory messageIds = new bytes32[](5);
-        
+
         vm.startPrank(user);
         for (uint256 i = 0; i < 5; i++) {
             bytes memory payload = abi.encode("Batch message", i);
@@ -215,12 +232,15 @@ contract CrossChainIntegrationTest is Test {
             );
         }
         vm.stopPrank();
-        
+
         // Verify all messages have unique IDs
         for (uint256 i = 0; i < 5; i++) {
             assertTrue(messageIds[i] != bytes32(0), "Message ID generated");
             for (uint256 j = i + 1; j < 5; j++) {
-                assertTrue(messageIds[i] != messageIds[j], "Message IDs are unique");
+                assertTrue(
+                    messageIds[i] != messageIds[j],
+                    "Message IDs are unique"
+                );
             }
         }
     }
@@ -243,12 +263,18 @@ contract CrossChainIntegrationTest is Test {
             3,
             30 minutes
         );
-        
+
         vm.startPrank(user);
-        
-        bytes32 nullifier = keccak256(abi.encodePacked("private_transfer_nullifier", user, block.timestamp));
+
+        bytes32 nullifier = keccak256(
+            abi.encodePacked(
+                "private_transfer_nullifier",
+                user,
+                block.timestamp
+            )
+        );
         bytes memory payload = abi.encode("Private transfer data");
-        
+
         bytes32 messageId = messengerArbitrum.sendMessage{value: 0.01 ether}(
             OPTIMISM_CHAIN_ID,
             user,
@@ -256,11 +282,12 @@ contract CrossChainIntegrationTest is Test {
             DirectL2Messenger.MessagePath.FAST_RELAYER,
             nullifier
         );
-        
+
         vm.stopPrank();
-        
+
         // Verify nullifier binding is stored (struct has 13 fields)
-        (,,,,,,,,,,,,bytes32 storedNullifier) = messengerArbitrum.messages(messageId);
+        (, , , , , , , , , , , , bytes32 storedNullifier) = messengerArbitrum
+            .messages(messageId);
         assertEq(storedNullifier, nullifier, "Nullifier binding stored");
     }
 
@@ -278,12 +305,12 @@ contract CrossChainIntegrationTest is Test {
             3,
             30 minutes
         );
-        
+
         vm.startPrank(user);
-        
+
         // Same nullifier used in two messages - each message is unique but uses same nullifier
         bytes32 nullifier = keccak256(abi.encodePacked("reused_nullifier"));
-        
+
         bytes32 messageId1 = messengerArbitrum.sendMessage{value: 0.01 ether}(
             OPTIMISM_CHAIN_ID,
             user,
@@ -291,7 +318,7 @@ contract CrossChainIntegrationTest is Test {
             DirectL2Messenger.MessagePath.FAST_RELAYER,
             nullifier
         );
-        
+
         bytes32 messageId2 = messengerArbitrum.sendMessage{value: 0.01 ether}(
             OPTIMISM_CHAIN_ID,
             user,
@@ -299,9 +326,9 @@ contract CrossChainIntegrationTest is Test {
             DirectL2Messenger.MessagePath.FAST_RELAYER,
             nullifier
         );
-        
+
         vm.stopPrank();
-        
+
         // Both messages sent - nullifier checking happens on destination chain
         assertTrue(messageId1 != messageId2, "Different message IDs");
     }
@@ -315,10 +342,10 @@ contract CrossChainIntegrationTest is Test {
      */
     function test_relayerRegistration() public {
         vm.startPrank(relayer);
-        
+
         // Register with minimum bond
         messengerArbitrum.registerRelayer{value: MIN_RELAYER_BOND}();
-        
+
         // Verify relayer is active
         (
             address addr,
@@ -327,15 +354,16 @@ contract CrossChainIntegrationTest is Test {
             uint256 failCount,
             uint256 slashedAmount,
             bool active,
+
         ) = messengerArbitrum.relayers(relayer);
-        
+
         assertEq(addr, relayer, "Relayer address correct");
         assertEq(bond, MIN_RELAYER_BOND, "Bond amount correct");
         assertEq(successCount, 0, "Success count starts at 0");
         assertEq(failCount, 0, "Fail count starts at 0");
         assertEq(slashedAmount, 0, "Slashed amount starts at 0");
         assertTrue(active, "Relayer is active");
-        
+
         vm.stopPrank();
     }
 
@@ -344,10 +372,10 @@ contract CrossChainIntegrationTest is Test {
      */
     function test_relayerRegistration_insufficientBond_reverts() public {
         vm.startPrank(relayer);
-        
+
         vm.expectRevert(DirectL2Messenger.InsufficientBond.selector);
         messengerArbitrum.registerRelayer{value: 0.1 ether}(); // Less than MIN_RELAYER_BOND
-        
+
         vm.stopPrank();
     }
 
@@ -356,14 +384,14 @@ contract CrossChainIntegrationTest is Test {
      */
     function test_relayerWithdrawal_beforeUnbonding_reverts() public {
         vm.startPrank(relayer);
-        
+
         // Register relayer
         messengerArbitrum.registerRelayer{value: MIN_RELAYER_BOND}();
-        
+
         // Try to withdraw immediately - should fail
         vm.expectRevert(DirectL2Messenger.UnbondingPeriodNotComplete.selector);
         messengerArbitrum.withdrawRelayerBond();
-        
+
         vm.stopPrank();
     }
 
@@ -372,25 +400,25 @@ contract CrossChainIntegrationTest is Test {
      */
     function test_relayerWithdrawal_afterUnbonding() public {
         vm.startPrank(relayer);
-        
+
         uint256 balanceBefore = relayer.balance;
-        
+
         // Register relayer
         messengerArbitrum.registerRelayer{value: MIN_RELAYER_BOND}();
-        
+
         // Fast forward 7 days
         vm.warp(block.timestamp + 7 days + 1);
-        
+
         // Withdraw bond
         messengerArbitrum.withdrawRelayerBond();
-        
+
         // Verify bond returned
         assertEq(relayer.balance, balanceBefore, "Bond returned");
-        
+
         // Verify relayer is no longer active
-        (,,,,,bool active,) = messengerArbitrum.relayers(relayer);
+        (, , , , , bool active, ) = messengerArbitrum.relayers(relayer);
         assertFalse(active, "Relayer is inactive");
-        
+
         vm.stopPrank();
     }
 
@@ -399,14 +427,14 @@ contract CrossChainIntegrationTest is Test {
      */
     function test_relayerDoubleRegistration_reverts() public {
         vm.startPrank(relayer);
-        
+
         // First registration succeeds
         messengerArbitrum.registerRelayer{value: MIN_RELAYER_BOND}();
-        
+
         // Second registration fails
         vm.expectRevert(DirectL2Messenger.InvalidRelayer.selector);
         messengerArbitrum.registerRelayer{value: MIN_RELAYER_BOND}();
-        
+
         vm.stopPrank();
     }
 
@@ -432,17 +460,23 @@ contract CrossChainIntegrationTest is Test {
         // Create forks
         string memory arbitrumRpc = vm.envString("ARBITRUM_RPC_URL");
         string memory optimismRpc = vm.envOr("OPTIMISM_RPC_URL", arbitrumRpc);
-        
+
         arbitrumForkId = vm.createFork(arbitrumRpc);
         optimismForkId = vm.createFork(optimismRpc);
-        
+
         // Test on Arbitrum
         vm.selectFork(arbitrumForkId);
-        assertTrue(block.chainid == ARBITRUM_CHAIN_ID || block.chainid != 0, "On Arbitrum fork");
-        
+        assertTrue(
+            block.chainid == ARBITRUM_CHAIN_ID || block.chainid != 0,
+            "On Arbitrum fork"
+        );
+
         // Switch to Optimism
         vm.selectFork(optimismForkId);
-        assertTrue(block.chainid == OPTIMISM_CHAIN_ID || block.chainid != 0, "On Optimism fork");
+        assertTrue(
+            block.chainid == OPTIMISM_CHAIN_ID || block.chainid != 0,
+            "On Optimism fork"
+        );
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -464,7 +498,7 @@ contract CrossChainIntegrationTest is Test {
             2, // 2 confirmations
             5 minutes // Fast challenge window
         );
-        
+
         // Verify route is configured
         (
             DirectL2Messenger.MessagePath preferredPath,
@@ -473,8 +507,12 @@ contract CrossChainIntegrationTest is Test {
             uint256 challengeWindow,
             bool active
         ) = messengerArbitrum.routes(ARBITRUM_CHAIN_ID, BASE_CHAIN_ID);
-        
-        assertEq(uint8(preferredPath), uint8(DirectL2Messenger.MessagePath.SUPERCHAIN), "Path correct");
+
+        assertEq(
+            uint8(preferredPath),
+            uint8(DirectL2Messenger.MessagePath.SUPERCHAIN),
+            "Path correct"
+        );
         assertEq(adapter, address(0), "Adapter correct (none)");
         assertEq(minConfirmations, 2, "Min confirmations correct");
         assertEq(challengeWindow, 5 minutes, "Challenge window correct");
@@ -499,11 +537,11 @@ contract CrossChainIntegrationTest is Test {
             3,
             30 minutes
         );
-        
+
         vm.startPrank(user);
-        
+
         bytes memory payload = abi.encode("Gas benchmark message");
-        
+
         uint256 gasBefore = gasleft();
         messengerArbitrum.sendMessage{value: 0.01 ether}(
             OPTIMISM_CHAIN_ID,
@@ -513,9 +551,9 @@ contract CrossChainIntegrationTest is Test {
             bytes32(0)
         );
         uint256 gasUsed = gasBefore - gasleft();
-        
+
         vm.stopPrank();
-        
+
         console.log("Message send gas:", gasUsed);
         // Message sending includes storage writes, so ~350k is expected
         assertTrue(gasUsed < 500_000, "Gas under 500k");
@@ -526,13 +564,13 @@ contract CrossChainIntegrationTest is Test {
      */
     function test_gas_relayerRegistration() public {
         vm.startPrank(relayer);
-        
+
         uint256 gasBefore = gasleft();
         messengerArbitrum.registerRelayer{value: MIN_RELAYER_BOND}();
         uint256 gasUsed = gasBefore - gasleft();
-        
+
         vm.stopPrank();
-        
+
         console.log("Relayer registration gas:", gasUsed);
         assertTrue(gasUsed < 200_000, "Gas under 200k");
     }
@@ -551,9 +589,9 @@ contract CrossChainIntegrationTest is Test {
             3,
             30 minutes
         );
-        
+
         vm.startPrank(user);
-        
+
         uint256 gasBefore = gasleft();
         for (uint256 i = 0; i < 10; i++) {
             messengerArbitrum.sendMessage{value: 0.01 ether}(
@@ -565,9 +603,9 @@ contract CrossChainIntegrationTest is Test {
             );
         }
         uint256 gasUsed = gasBefore - gasleft();
-        
+
         vm.stopPrank();
-        
+
         console.log("10 messages total gas:", gasUsed);
         console.log("Average per message:", gasUsed / 10);
     }

@@ -193,7 +193,6 @@ contract FormalBugBounty is AccessControl, ReentrancyGuard, Pausable {
     error InvalidRange();
     error GracePeriodTooLong();
 
-
     // ============ Constructor ============
     constructor(address _rewardToken, bytes memory _soulPublicKey) {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -509,8 +508,8 @@ contract FormalBugBounty is AccessControl, ReentrancyGuard, Pausable {
         uint256 gracePeriodDays
     ) external onlyRole(TREASURY_ROLE) {
         if (maxPayout < minPayout) revert InvalidRange();
-        if (gracePeriodDays > MAX_GRACE_PERIOD / 1 days) revert GracePeriodTooLong();
-
+        if (gracePeriodDays > MAX_GRACE_PERIOD / 1 days)
+            revert GracePeriodTooLong();
 
         bountyTiers[severity] = BountyTier({
             severity: severity,
@@ -773,7 +772,7 @@ contract FormalBugBounty is AccessControl, ReentrancyGuard, Pausable {
             amount <= totalBountyPool - reservedForPayouts,
             "Cannot withdraw reserved funds"
         );
-        
+
         totalBountyPool -= amount;
         (bool success, ) = to.call{value: amount}("");
         require(success, "ETH transfer failed");
