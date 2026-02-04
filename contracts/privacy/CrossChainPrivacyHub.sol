@@ -417,6 +417,11 @@ contract CrossChainPrivacyHub is
         address guardian,
         address _feeRecipient
     ) external initializer {
+        // M-19: Validate feeRecipient is not zero - consistent with setFeeRecipient()
+        if (admin == address(0)) revert ZeroAddress();
+        if (guardian == address(0)) revert ZeroAddress();
+        if (_feeRecipient == address(0)) revert ZeroAddress();
+        
         __UUPSUpgradeable_init();
         __AccessControl_init();
         __ReentrancyGuard_init();

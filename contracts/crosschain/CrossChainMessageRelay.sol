@@ -216,6 +216,12 @@ contract CrossChainMessageRelay is AccessControl, ReentrancyGuard, Pausable {
         uint256 messageCount
     );
 
+    /// @notice Emitted when gas limits are updated
+    event GasLimitsUpdated(uint256 oldMin, uint256 newMin, uint256 oldMax, uint256 newMax);
+
+    /// @notice Emitted when message expiry is updated
+    event MessageExpiryUpdated(uint256 oldExpiry, uint256 newExpiry);
+
     /*//////////////////////////////////////////////////////////////
                               CUSTOM ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -670,8 +676,11 @@ contract CrossChainMessageRelay is AccessControl, ReentrancyGuard, Pausable {
         uint256 _minGasLimit,
         uint256 _maxGasLimit
     ) external onlyRole(OPERATOR_ROLE) {
+        uint256 oldMin = minGasLimit;
+        uint256 oldMax = maxGasLimit;
         minGasLimit = _minGasLimit;
         maxGasLimit = _maxGasLimit;
+        emit GasLimitsUpdated(oldMin, _minGasLimit, oldMax, _maxGasLimit);
     }
 
     /**
@@ -681,7 +690,9 @@ contract CrossChainMessageRelay is AccessControl, ReentrancyGuard, Pausable {
     function setMessageExpiry(
         uint256 _expiry
     ) external onlyRole(OPERATOR_ROLE) {
+        uint256 oldExpiry = messageExpiry;
         messageExpiry = _expiry;
+        emit MessageExpiryUpdated(oldExpiry, _expiry);
     }
 
     /*//////////////////////////////////////////////////////////////

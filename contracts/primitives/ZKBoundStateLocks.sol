@@ -87,6 +87,7 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
     error InvalidVerifierAddress();
     error DomainAlreadyExists(bytes32 domainSeparator);
     error InvalidLock(bytes32 lockId);
+    error TooManyActiveLocks();
 
     /*//////////////////////////////////////////////////////////////
                                DATA TYPES
@@ -163,8 +164,8 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
      * @dev Domain configuration for cross-chain coordination
      */
     struct Domain {
-        uint64 chainId;  // H-3 FIX: Extended to support Arbitrum, Linea, Scroll etc.
-        uint64 appId;    // H-3 FIX: Extended for consistency
+        uint64 chainId; // H-3 FIX: Extended to support Arbitrum, Linea, Scroll etc.
+        uint64 appId; // H-3 FIX: Extended for consistency
         uint32 epoch;
         string name;
         bool isActive;
@@ -357,6 +358,11 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
         bytes32 domainSeparator,
         uint64 unlockDeadline
     ) external whenNotPaused returns (bytes32 lockId) {
+        // M-23: Enforce maximum active locks to prevent unbounded growth
+        if (_activeLockIds.length >= MAX_ACTIVE_LOCKS) {
+            revert TooManyActiveLocks();
+        }
+        
         // SECURITY FIX: Use abi.encode instead of abi.encodePacked
         // abi.encodePacked with multiple variable-length inputs can cause hash collisions
         // abi.encode pads each argument to 32 bytes, preventing collisions
@@ -681,7 +687,11 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
         string calldata name
     ) external onlyRole(DOMAIN_ADMIN_ROLE) returns (bytes32 domainSeparator) {
         // H-3 FIX: Use extended generator that supports full uint64 chain IDs
-        domainSeparator = generateDomainSeparatorExtended(chainId, appId, epoch);
+        domainSeparator = generateDomainSeparatorExtended(
+            chainId,
+            appId,
+            epoch
+        );
 
         // M-1 Fix: Prevent overwriting existing domains
         if (domains[domainSeparator].registeredAt != 0) {
@@ -712,14 +722,16 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
     ) external nonReentrant onlyRole(RECOVERY_ROLE) {
         ZKSLock storage lock = locks[lockId];
         if (lock.lockId == bytes32(0)) revert InvalidLock(lockId);
-        
+
         // H-2 FIX: Check if lock is already unlocked
         if (lock.isUnlocked) revert LockAlreadyUnlocked(lockId);
 
         // H-2 FIX: Generate a recovery-specific nullifier to prevent replay
         // Use a deterministic nullifier based on lockId and recovery context
-        bytes32 recoveryNullifier = keccak256(abi.encode(lockId, "RECOVERY", block.chainid));
-        
+        bytes32 recoveryNullifier = keccak256(
+            abi.encode(lockId, "RECOVERY", block.chainid)
+        );
+
         // Mark nullifier as used to prevent the same lock from being recovered twice
         // or from being unlocked normally after recovery
         if (nullifierUsed[recoveryNullifier]) {

@@ -298,6 +298,10 @@ contract DirectL2Messenger is ReentrancyGuard, AccessControl, Pausable {
     //////////////////////////////////////////////////////////////*/
 
     constructor(address _admin, address _soulHub) {
+        if (_admin == address(0)) revert ZeroAddress();
+        // M-4: Validate soulHub is not zero - required for nullifier binding
+        if (_soulHub == address(0)) revert ZeroAddress();
+        
         currentChainId = block.chainid;
         soulHub = _soulHub;
 
@@ -930,11 +934,14 @@ contract DirectL2Messenger is ReentrancyGuard, AccessControl, Pausable {
     /**
      * @notice Update required confirmations
      * @param count New confirmation count
+     * @dev M-6: Added upper bound to prevent making fast-path impossible
      */
     function setRequiredConfirmations(
         uint256 count
     ) external onlyRole(OPERATOR_ROLE) {
         if (count == 0) revert InvalidConfirmationCount();
+        // M-6: Upper bound - more than 20 would be impractical
+        if (count > 20) revert InvalidConfirmationCount();
         requiredConfirmations = count;
         emit RequiredConfirmationsUpdated(count);
     }

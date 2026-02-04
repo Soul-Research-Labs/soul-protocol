@@ -306,6 +306,21 @@ contract CrossChainProofHubV3 is
     /// @param verifier The address of the new verifier
     event VerifierSet(bytes32 indexed proofType, address verifier);
 
+    /// @notice Emitted when verifier registry is updated
+    event VerifierRegistryUpdated(address indexed oldRegistry, address indexed newRegistry);
+
+    /// @notice Emitted when challenge period is updated
+    event ChallengePeriodUpdated(uint256 oldPeriod, uint256 newPeriod);
+
+    /// @notice Emitted when minimum stakes are updated
+    event MinStakesUpdated(uint256 relayerStake, uint256 challengerStake);
+
+    /// @notice Emitted when proof submission fee is updated
+    event ProofSubmissionFeeUpdated(uint256 oldFee, uint256 newFee);
+
+    /// @notice Emitted when rate limits are updated
+    event RateLimitsUpdated(uint256 maxProofsPerHour, uint256 maxValuePerHour);
+
     /*//////////////////////////////////////////////////////////////
                               CUSTOM ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -370,6 +385,9 @@ contract CrossChainProofHubV3 is
 
     /// @notice Error thrown when an invalid chain ID is provided
     error InvalidChainId(uint256 chainId);
+
+    /// @notice Error thrown when challenge period is too short
+    error InvalidChallengePeriod();
 
     /// @notice Error thrown when admin tries to perform relayer/challenger actions
     error AdminNotAllowed();
@@ -1048,26 +1066,34 @@ contract CrossChainProofHubV3 is
         address _registry
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_registry == address(0)) revert ZeroAddress();
+        address oldRegistry = verifierRegistry;
         verifierRegistry = _registry;
+        emit VerifierRegistryUpdated(oldRegistry, _registry);
     }
 
     /// @notice Updates challenge period
     /// @param _period New period in seconds
+    /// @dev M-8: Added minimum period validation and event emission
     function setChallengePeriod(
         uint256 _period
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_period < 10 minutes) revert InvalidChallengePeriod();
+        uint256 oldPeriod = challengePeriod;
         challengePeriod = _period;
+        emit ChallengePeriodUpdated(oldPeriod, _period);
     }
 
     /// @notice Updates minimum stakes
     /// @param _relayerStake New relayer stake
     /// @param _challengerStake New challenger stake
+    /// @dev M-9: Added event emission
     function setMinStakes(
         uint256 _relayerStake,
         uint256 _challengerStake
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         minRelayerStake = _relayerStake;
         minChallengerStake = _challengerStake;
+        emit MinStakesUpdated(_relayerStake, _challengerStake);
     }
 
     /// @notice Updates proof submission fee
@@ -1075,18 +1101,22 @@ contract CrossChainProofHubV3 is
     function setProofSubmissionFee(
         uint256 _fee
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        uint256 oldFee = proofSubmissionFee;
         proofSubmissionFee = _fee;
+        emit ProofSubmissionFeeUpdated(oldFee, _fee);
     }
 
     /// @notice Updates circuit breaker limits (admin only)
     /// @param _maxProofsPerHour Maximum proofs per hour
     /// @param _maxValuePerHour Maximum value per hour
+    /// @dev M-24: Added event emission
     function setRateLimits(
         uint256 _maxProofsPerHour,
         uint256 _maxValuePerHour
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         maxProofsPerHour = _maxProofsPerHour;
         maxValuePerHour = _maxValuePerHour;
+        emit RateLimitsUpdated(_maxProofsPerHour, _maxValuePerHour);
     }
 
     /// @notice Withdraws accumulated fees

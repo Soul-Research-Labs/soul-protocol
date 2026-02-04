@@ -357,8 +357,8 @@ contract ConfidentialStateContainerV3 is
                 commitment,
                 nullifier,
                 owner,
-                keccak256(encryptedState),  // Bind to actual state data
-                metadata,                     // Bind to metadata
+                keccak256(encryptedState), // Bind to actual state data
+                metadata, // Bind to metadata
                 nonces[owner]++,
                 deadline,
                 block.chainid

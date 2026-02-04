@@ -667,9 +667,7 @@ contract UnifiedNullifierManager is
         bytes32 domainTag
     ) public pure returns (bytes32) {
         return
-            keccak256(
-                abi.encode(sourceNullifier, domainTag, SOUL_BINDING_TAG)
-            );
+            keccak256(abi.encode(sourceNullifier, domainTag, SOUL_BINDING_TAG));
     }
 
     /**
@@ -736,8 +734,10 @@ contract UnifiedNullifierManager is
         uint256[] memory publicInputs = new uint256[](3);
         publicInputs[0] = uint256(sourceNullifier);
         publicInputs[1] = destChainId;
-        publicInputs[2] = uint256(keccak256(abi.encode(sourceNullifier, destChainId)));
-        
+        publicInputs[2] = uint256(
+            keccak256(abi.encode(sourceNullifier, destChainId))
+        );
+
         return IProofVerifier(crossChainVerifier).verify(proof, publicInputs);
     }
 
