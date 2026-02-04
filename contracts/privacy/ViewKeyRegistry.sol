@@ -326,13 +326,15 @@ contract ViewKeyRegistry is
         if (issuedGrants[msg.sender].length >= MAX_GRANTS_PER_ACCOUNT)
             revert MaxGrantsReached();
 
+        // SECURITY FIX: Changed from abi.encodePacked to abi.encode to prevent hash collision
         grantId = keccak256(
-            abi.encodePacked(msg.sender, grantee, grantNonce[msg.sender]++)
+            abi.encode(msg.sender, grantee, grantNonce[msg.sender]++)
         );
 
         uint256 endTime = block.timestamp + duration;
+        // SECURITY FIX: Use abi.encode for viewKeyHash
         bytes32 viewKeyHash = keccak256(
-            abi.encodePacked(viewKeys[msg.sender][keyType].publicKey)
+            abi.encode(viewKeys[msg.sender][keyType].publicKey)
         );
 
         grants[grantId] = ViewGrant({
@@ -376,13 +378,15 @@ contract ViewKeyRegistry is
         if (issuedGrants[msg.sender].length >= MAX_GRANTS_PER_ACCOUNT)
             revert MaxGrantsReached();
 
+        // SECURITY FIX: Changed from abi.encodePacked to abi.encode to prevent hash collision
         grantId = keccak256(
-            abi.encodePacked(msg.sender, auditor, grantNonce[msg.sender]++)
+            abi.encode(msg.sender, auditor, grantNonce[msg.sender]++)
         );
 
         uint256 endTime = block.timestamp + duration;
+        // SECURITY FIX: Use abi.encode for viewKeyHash
         bytes32 viewKeyHash = keccak256(
-            abi.encodePacked(viewKeys[msg.sender][ViewKeyType.AUDIT].publicKey)
+            abi.encode(viewKeys[msg.sender][ViewKeyType.AUDIT].publicKey)
         );
 
         grants[grantId] = ViewGrant({
@@ -626,7 +630,8 @@ contract ViewKeyRegistry is
         bytes32 newPublicKey
     ) internal {
         bytes32[] storage grantIds = issuedGrants[granter];
-        bytes32 newKeyHash = keccak256(abi.encodePacked(newPublicKey));
+        // SECURITY FIX: Changed from abi.encodePacked to abi.encode
+        bytes32 newKeyHash = keccak256(abi.encode(newPublicKey));
 
         for (uint256 i = 0; i < grantIds.length; ) {
             ViewGrant storage grant = grants[grantIds[i]];

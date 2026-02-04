@@ -269,8 +269,9 @@ contract SelectiveDisclosureCircuit is
         uint64 timeCondition,
         uint256 thresholdValue
     ) external onlyRole(CIRCUIT_ADMIN_ROLE) returns (bytes32 predicateId) {
+        // SECURITY FIX: Changed from abi.encodePacked to abi.encode to prevent hash collision
         predicateId = keccak256(
-            abi.encodePacked(
+            abi.encode(
                 predicateType,
                 conditionHash,
                 timeCondition,
@@ -322,8 +323,9 @@ contract SelectiveDisclosureCircuit is
             }
         }
 
+        // SECURITY FIX: Changed from abi.encodePacked to abi.encode to prevent hash collision
         predicateId = keccak256(
-            abi.encodePacked(
+            abi.encode(
                 predicateType,
                 subPredicates,
                 block.timestamp,
@@ -534,8 +536,9 @@ contract SelectiveDisclosureCircuit is
             revert FieldRecipientMismatch();
         }
 
+        // SECURITY FIX: Changed from abi.encodePacked to abi.encode to prevent hash collision
         proofId = keccak256(
-            abi.encodePacked(
+            abi.encode(
                 circuitId,
                 executionId,
                 proofHash,
@@ -578,8 +581,9 @@ contract SelectiveDisclosureCircuit is
 
         // Record field disclosures
         for (uint256 i = 0; i < p.disclosedFieldIds.length; ) {
+            // SECURITY FIX: Changed from abi.encodePacked to abi.encode
             bytes32 disclosureId = keccak256(
-                abi.encodePacked(proofId, p.disclosedFieldIds[i], i)
+                abi.encode(proofId, p.disclosedFieldIds[i], i)
             );
 
             fieldDisclosures[disclosureId] = FieldDisclosure({

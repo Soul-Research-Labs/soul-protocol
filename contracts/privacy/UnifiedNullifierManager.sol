@@ -506,9 +506,9 @@ contract UnifiedNullifierManager is
             revert InvalidProof();
         }
 
-        // Derive destination nullifier
+        // SECURITY FIX: Changed from abi.encodePacked to abi.encode to prevent hash collision
         destNullifier = keccak256(
-            abi.encodePacked(
+            abi.encode(
                 sourceNullifier,
                 sourceChainId,
                 destChainId,
@@ -522,8 +522,9 @@ contract UnifiedNullifierManager is
             sourceDomain.domainTag
         );
 
+        // SECURITY FIX: Changed from abi.encodePacked to abi.encode
         bytes32 bindingId = keccak256(
-            abi.encodePacked(sourceNullifier, destNullifier)
+            abi.encode(sourceNullifier, destNullifier)
         );
 
         crossDomainBindings[bindingId] = CrossDomainBinding({
@@ -567,8 +568,9 @@ contract UnifiedNullifierManager is
         bytes32 sourceNullifier,
         bytes32 destNullifier
     ) external view returns (bool valid, bytes32 soulBinding) {
+        // SECURITY FIX: Changed from abi.encodePacked to abi.encode
         bytes32 bindingId = keccak256(
-            abi.encodePacked(sourceNullifier, destNullifier)
+            abi.encode(sourceNullifier, destNullifier)
         );
 
         CrossDomainBinding storage binding = crossDomainBindings[bindingId];
@@ -594,8 +596,9 @@ contract UnifiedNullifierManager is
         }
         if (nullifiers.length != commitments.length) revert InvalidBatchSize();
 
+        // SECURITY FIX: Changed from abi.encodePacked to abi.encode to prevent hash collision
         batchId = keccak256(
-            abi.encodePacked(merkleRoot, chainId, block.timestamp, totalBatches)
+            abi.encode(merkleRoot, chainId, block.timestamp, totalBatches)
         );
 
         ChainDomain storage domain = chainDomains[chainId];
@@ -755,8 +758,9 @@ contract UnifiedNullifierManager is
         bytes32 sourceNullifier,
         bytes32 destNullifier
     ) external view returns (CrossDomainBinding memory) {
+        // SECURITY FIX: Changed from abi.encodePacked to abi.encode
         bytes32 bindingId = keccak256(
-            abi.encodePacked(sourceNullifier, destNullifier)
+            abi.encode(sourceNullifier, destNullifier)
         );
         return crossDomainBindings[bindingId];
     }

@@ -417,9 +417,10 @@ contract ExecutionIndirectionLayer is AccessControl, ReentrancyGuard, Pausable {
         bytes32 inputHash,
         bytes32 salt
     ) external pure returns (bytes32 commitment) {
+        // SECURITY FIX: Changed from abi.encodePacked to abi.encode to prevent hash collision
         return
             keccak256(
-                abi.encodePacked(appId, functionSelector, inputHash, salt)
+                abi.encode(appId, functionSelector, inputHash, salt)
             );
     }
 
@@ -435,7 +436,8 @@ contract ExecutionIndirectionLayer is AccessControl, ReentrancyGuard, Pausable {
         uint256 version,
         bytes32 salt
     ) external pure returns (bytes32 commitment) {
-        return keccak256(abi.encodePacked(uint8(backendType), version, salt));
+        // SECURITY FIX: Changed from abi.encodePacked to abi.encode to prevent hash collision
+        return keccak256(abi.encode(uint8(backendType), version, salt));
     }
 
     /**
@@ -450,7 +452,8 @@ contract ExecutionIndirectionLayer is AccessControl, ReentrancyGuard, Pausable {
         bytes32 branchingHash,
         bytes32 salt
     ) external pure returns (bytes32 commitment) {
-        return keccak256(abi.encodePacked(pathHash, branchingHash, salt));
+        // SECURITY FIX: Changed from abi.encodePacked to abi.encode to prevent hash collision
+        return keccak256(abi.encode(pathHash, branchingHash, salt));
     }
 
     /*//////////////////////////////////////////////////////////////

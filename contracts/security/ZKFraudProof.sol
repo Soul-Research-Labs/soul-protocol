@@ -232,8 +232,9 @@ contract ZKFraudProof is AccessControl, ReentrancyGuard, Pausable {
             revert InvalidStateTransition();
         }
 
+        // SECURITY FIX: Changed from abi.encodePacked to abi.encode to prevent hash collision
         batchId = keccak256(
-            abi.encodePacked(
+            abi.encode(
                 stateRoot,
                 previousStateRoot,
                 transactionsRoot,
@@ -318,8 +319,9 @@ contract ZKFraudProof is AccessControl, ReentrancyGuard, Pausable {
         if (msg.value < MIN_BOND) revert InsufficientBond();
         if (zkProof.length > MAX_PROOF_SIZE) revert ProofTooLarge();
 
+        // SECURITY FIX: Changed from abi.encodePacked to abi.encode to prevent hash collision
         proofId = keccak256(
-            abi.encodePacked(
+            abi.encode(
                 proofType,
                 batchId,
                 transactionIndex,
@@ -652,8 +654,8 @@ contract ZKFraudProof is AccessControl, ReentrancyGuard, Pausable {
         // Call external ZK verifier
         if (zkVerifier == address(0)) return false;
 
-        // Construct public inputs
-        bytes memory publicInputs = abi.encodePacked(
+        // SECURITY FIX: Changed from abi.encodePacked to abi.encode to prevent hash collision
+        bytes memory publicInputs = abi.encode(
             proof.stateRoot,
             proof.correctStateRoot,
             proof.batchId,
@@ -699,7 +701,8 @@ contract ZKFraudProof is AccessControl, ReentrancyGuard, Pausable {
         // Find active VK for this proof type
         // In production, maintain a mapping for O(1) lookup
         for (uint256 i = 0; i < proofIds.length; ) {
-            bytes32 vkId = keccak256(abi.encodePacked(proofType, i));
+            // SECURITY FIX: Changed from abi.encodePacked to abi.encode
+            bytes32 vkId = keccak256(abi.encode(proofType, i));
             if (
                 verificationKeys[vkId].active &&
                 verificationKeys[vkId].proofType == proofType
