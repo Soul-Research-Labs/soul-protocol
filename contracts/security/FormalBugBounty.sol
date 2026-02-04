@@ -757,4 +757,25 @@ contract FormalBugBounty is AccessControl, ReentrancyGuard, Pausable {
 
         reservedForPayouts += submission.bountyAmount;
     }
+
+    /**
+     * @notice Emergency withdrawal of ETH from bounty pool
+     * @param to Recipient address
+     * @param amount Amount to withdraw
+     */
+    function emergencyWithdrawETH(
+        address payable to,
+        uint256 amount
+    ) external onlyRole(EMERGENCY_ROLE) nonReentrant {
+        require(to != address(0), "Invalid recipient");
+        require(amount <= address(this).balance, "Insufficient balance");
+        require(
+            amount <= totalBountyPool - reservedForPayouts,
+            "Cannot withdraw reserved funds"
+        );
+        
+        totalBountyPool -= amount;
+        (bool success, ) = to.call{value: amount}("");
+        require(success, "ETH transfer failed");
+    }
 }
