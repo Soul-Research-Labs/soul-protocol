@@ -1,0 +1,10 @@
+[package]
+name = "evm_max"
+version = "0.1.0"
+type = "lib"
+authors = ["Soul Protocol"]
+compiler_version = ">=0.30.0"
+description = "EVM-MAX modular arithmetic extensions with SIMD support for efficient cryptography"
+
+[dependencies]
+hekate_hash = { path = "../hekate_hash" }

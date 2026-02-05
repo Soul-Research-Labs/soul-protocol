@@ -36,6 +36,9 @@ members = [
     "gkr_sumcheck",             # GKR sumcheck with Gruen's trick optimizations
     # Private Information Retrieval
     "plinko_pir",               # Plinko PIR for private cross-chain state reads
+    # The Splurge: EVM-MAX, VDF, FHE (Nov 2025)
+    "evm_max",                  # EVM-MAX modular arithmetic (EIP-6690)
+    "vdf_proof",                # VDF for unbiasable randomness
     "balance_proof",            # Balance verification proofs
     "private_order",            # Private order matching proofs
     "private_transfer",         # Private transfer proofs

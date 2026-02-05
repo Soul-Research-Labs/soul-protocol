@@ -1,0 +1,10 @@
+[package]
+name = "vdf_proof"
+version = "0.1.0"
+type = "lib"
+authors = ["Soul Protocol"]
+compiler_version = ">=0.30.0"
+description = "Verifiable Delay Function proofs for unbiasable randomness"
+
+[dependencies]
+hekate_hash = { path = "../hekate_hash" }

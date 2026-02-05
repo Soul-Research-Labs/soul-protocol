@@ -7,9 +7,21 @@
 // 2. Operation was applied correctly to ciphertexts
 // 3. Output handle corresponds to valid result
 // 4. No information about plaintext values is leaked
+// 5. Bootstrapping maintains correctness (enhanced)
+// 6. Cross-chain FHE state consistency (enhanced)
+//
+// Reference: Vitalik's "The Splurge" - FHE computation proofs
+// https://vitalik.eth.limo/general/2024/10/29/futures6.html
+
+use dep::hekate_hash;
 
 // Domain separator for Soul FHE operations
 global DOMAIN_SEPARATOR: Field = 0x8a35acfbc15ff81a39ae7d344fd709f28e8600b4aa8c65c6b64bfe7fe36bd19a;
+
+// Bootstrapping constants
+global MAX_NOISE_LEVEL: u64 = 1000;
+global NOISE_THRESHOLD: u64 = 800;
+global BOOTSTRAP_REQUIRED: u64 = 900;
 
 // Operation codes matching FHELib.Opcode
 global OP_ADD: u8 = 0;
@@ -26,6 +38,43 @@ global OP_AND: u8 = 12;
 global OP_OR: u8 = 13;
 global OP_XOR: u8 = 14;
 global OP_SELECT: u8 = 22;
+
+// ============================================================================
+// ENHANCED FHE STRUCTURES (Splurge Integration)
+// ============================================================================
+
+/// FHE ciphertext with noise tracking
+struct FHECiphertext {
+    commitment: Field,
+    noise_level: u64,
+    handle: Field,
+    chain_id: u64,
+}
+
+/// Bootstrapping proof for noise reduction
+struct BootstrapProof {
+    input_ciphertext: FHECiphertext,
+    output_ciphertext: FHECiphertext,
+    decryption_proof: Field,
+    reencryption_proof: Field,
+}
+
+/// Cross-chain FHE transfer proof
+struct CrossChainFHEProof {
+    source_chain: u64,
+    target_chain: u64,
+    ciphertext_commitment: Field,
+    nullifier: Field,
+    merkle_root: Field,
+}
+
+/// Batched FHE operation for efficiency
+struct BatchedFHEOp {
+    opcodes: [u8; 8],
+    inputs: [Field; 16],
+    outputs: [Field; 8],
+    batch_proof: Field,
+}
 
 /// Pedersen hash for commitments
 fn pedersen_hash(inputs: [Field; 2]) -> Field {
@@ -341,6 +390,198 @@ fn test_fhe_add_proof() {
     );
     
     assert(valid);
+}
+// ============================================================================
+// ENHANCED FHE FUNCTIONS (Splurge Integration)
+// ============================================================================
+
+/// Verify bootstrapping maintains plaintext correctness
+fn verify_bootstrap(
+    input: FHECiphertext,
+    output: FHECiphertext,
+    plaintext: Field,
+    input_randomness: Field,
+    output_randomness: Field
+) -> bool {
+    // Input noise must be above threshold
+    assert(input.noise_level >= NOISE_THRESHOLD);
+    
+    // Output noise must be reset to minimum
+    assert(output.noise_level < 100);
+    
+    // Verify plaintext is preserved
+    let input_commit = pedersen_hash([plaintext, input_randomness]);
+    let output_commit = pedersen_hash([plaintext, output_randomness]);
+    
+    (input_commit == input.commitment) & (output_commit == output.commitment)
+}
+
+/// Calculate noise growth from homomorphic addition
+fn compute_add_noise(noise_a: u64, noise_b: u64) -> u64 {
+    // Noise grows additively for addition
+    noise_a + noise_b + 1
+}
+
+/// Calculate noise growth from homomorphic multiplication
+fn compute_mul_noise(noise_a: u64, noise_b: u64, plaintext_bound: u64) -> u64 {
+    // Noise grows multiplicatively for multiplication
+    noise_a * plaintext_bound + noise_b * plaintext_bound + noise_a * noise_b
+}
+
+/// Verify noise level is within bounds
+fn verify_noise_bounds(
+    operation: u8,
+    input1_noise: u64,
+    input2_noise: u64,
+    output_noise: u64,
+    plaintext_bound: u64
+) -> bool {
+    let expected_noise = if operation == OP_ADD {
+        compute_add_noise(input1_noise, input2_noise)
+    } else if operation == OP_MUL {
+        compute_mul_noise(input1_noise, input2_noise, plaintext_bound)
+    } else {
+        // Default: additive noise growth
+        input1_noise + input2_noise + 1
+    };
+    
+    // Allow small variance due to implementation details
+    let noise_valid = output_noise <= expected_noise + 10;
+    let bounds_valid = output_noise < MAX_NOISE_LEVEL;
+    
+    noise_valid & bounds_valid
+}
+
+/// Verify cross-chain FHE ciphertext transfer
+fn verify_cross_chain_fhe(
+    proof: CrossChainFHEProof,
+    plaintext: Field,
+    randomness: Field,
+    merkle_proof: [Field; 16],
+    merkle_depth: u32
+) -> bool {
+    // Verify commitment matches
+    let expected_commit = pedersen_hash([plaintext, randomness]);
+    assert(expected_commit == proof.ciphertext_commitment);
+    
+    // Verify nullifier is correctly computed
+    let null_input: [Field; 3] = [
+        proof.ciphertext_commitment,
+        proof.source_chain as Field,
+        randomness
+    ];
+    let expected_nullifier = hekate_hash::hekate_hash_array(null_input)[0];
+    assert(expected_nullifier == proof.nullifier);
+    
+    // Verify Merkle inclusion
+    let mut computed_root = proof.ciphertext_commitment;
+    for i in 0..merkle_depth {
+        let sibling = merkle_proof[i];
+        computed_root = hekate_hash::hekate_hash_pair(computed_root, sibling);
+    }
+    
+    computed_root == proof.merkle_root
+}
+
+/// Verify batched FHE operations for efficiency
+fn verify_batched_operations(
+    batch: BatchedFHEOp,
+    plaintexts: [Field; 16],
+    randomness: [Field; 16],
+    output_randomness: [Field; 8],
+    num_ops: u32
+) -> bool {
+    let mut all_valid = true;
+    
+    for i in 0..num_ops {
+        let opcode = batch.opcodes[i];
+        let input1_idx = i * 2;
+        let input2_idx = i * 2 + 1;
+        
+        let commit_a = pedersen_hash([plaintexts[input1_idx], randomness[input1_idx]]);
+        let commit_b = pedersen_hash([plaintexts[input2_idx], randomness[input2_idx]]);
+        
+        // Verify inputs match
+        assert(commit_a == batch.inputs[input1_idx]);
+        assert(commit_b == batch.inputs[input2_idx]);
+        
+        // Compute expected output
+        let result = if opcode == OP_ADD {
+            plaintexts[input1_idx] + plaintexts[input2_idx]
+        } else if opcode == OP_MUL {
+            plaintexts[input1_idx] * plaintexts[input2_idx]
+        } else if opcode == OP_SUB {
+            plaintexts[input1_idx] - plaintexts[input2_idx]
+        } else {
+            plaintexts[input1_idx] // Default: pass through
+        };
+        
+        let expected_output = pedersen_hash([result, output_randomness[i]]);
+        if expected_output != batch.outputs[i] {
+            all_valid = false;
+        }
+    }
+    
+    // Verify batch proof commitment
+    let batch_input: [Field; 4] = [
+        batch.outputs[0],
+        batch.outputs[1],
+        batch.outputs[2],
+        batch.outputs[3]
+    ];
+    let expected_batch_proof = poseidon_hash(batch_input);
+    
+    all_valid & (expected_batch_proof == batch.batch_proof)
+}
+
+/// Check if bootstrapping is needed based on noise level
+fn needs_bootstrap(noise_level: u64) -> bool {
+    noise_level >= BOOTSTRAP_REQUIRED
+}
+
+/// Compute secure FHE handle with chain binding
+fn compute_fhe_handle(
+    commitment: Field,
+    chain_id: u64,
+    nonce: Field
+) -> Field {
+    let input: [Field; 3] = [commitment, chain_id as Field, nonce];
+    hekate_hash::hekate_hash_array(input)[0]
+}
+
+// ============================================================================
+// TESTS
+// ============================================================================
+
+#[test]
+fn test_noise_bounds() {
+    let add_noise = compute_add_noise(100, 200);
+    assert(add_noise == 301);
+    
+    let mul_noise = compute_mul_noise(10, 20, 100);
+    assert(mul_noise > 2000); // Multiplicative growth
+}
+
+#[test]
+fn test_needs_bootstrap() {
+    assert(needs_bootstrap(900));
+    assert(needs_bootstrap(950));
+    assert(!needs_bootstrap(800));
+    assert(!needs_bootstrap(100));
+}
+
+#[test]
+fn test_compute_fhe_handle() {
+    let commitment: Field = 0x1234;
+    let chain_id: u64 = 1;
+    let nonce: Field = 0x5678;
+    
+    let handle = compute_fhe_handle(commitment, chain_id, nonce);
+    assert(handle != 0);
+    
+    // Different nonce = different handle
+    let handle2 = compute_fhe_handle(commitment, chain_id, nonce + 1);
+    assert(handle != handle2);
 }
 
 #[test]
