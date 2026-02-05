@@ -117,6 +117,21 @@
     "@ethersproject/signing-key": {
       "elliptic": "^6.6.1"
     },
+    "@nomicfoundation/hardhat-verify": {
+      "@ethersproject/abi": {
+        "@ethersproject/hash": {
+          "@ethersproject/abstract-signer": {
+            "@ethersproject/abstract-provider": {
+              "@ethersproject/transactions": {
+                "@ethersproject/signing-key": {
+                  "elliptic": "^6.6.1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "lodash-es": "^4.17.21",
     "diff": "^8.0.3",
     "undici": "^6.23.0",
