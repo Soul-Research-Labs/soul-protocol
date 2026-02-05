@@ -190,12 +190,7 @@ contract GKRVerifier is AccessControl, IProofVerifier {
     ) internal view returns (uint256[4] memory coeffs) {
         // Denominators: Π_{m≠k} (k - m) for k = 0,1,2,3
         // (-6, 2, -2, 6) in the field
-        uint256[4] memory denoms = [
-            fieldModulus - 6,
-            2,
-            fieldModulus - 2,
-            6
-        ];
+        uint256[4] memory denoms = [fieldModulus - 6, 2, fieldModulus - 2, 6];
 
         for (uint256 k = 0; k < 4; k++) {
             uint256 num = 1;
@@ -241,10 +236,7 @@ contract GKRVerifier is AccessControl, IProofVerifier {
         // Interpolate to find hsum at challenge point
         uint256[4] memory coeffs = _deg3LagrangeWeights(challenge);
         uint256 hsumChallenge = _fieldAdd(
-            _fieldAdd(
-                _fieldMul(coeffs[0], hsum0),
-                _fieldMul(coeffs[1], hsum1)
-            ),
+            _fieldAdd(_fieldMul(coeffs[0], hsum0), _fieldMul(coeffs[1], hsum1)),
             _fieldAdd(_fieldMul(coeffs[2], hsum2), _fieldMul(coeffs[3], hsum3))
         );
 

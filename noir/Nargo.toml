@@ -34,6 +34,8 @@ members = [
     "hekate_hash",              # Hekate-Groestl hash for GKR recursion
     "hekate_benchmark",         # Benchmark: Hekate vs Poseidon vs Keccak
     "gkr_sumcheck",             # GKR sumcheck with Gruen's trick optimizations
+    # Private Information Retrieval
+    "plinko_pir",               # Plinko PIR for private cross-chain state reads
     "balance_proof",            # Balance verification proofs
     "private_order",            # Private order matching proofs
     "private_transfer",         # Private transfer proofs

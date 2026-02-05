@@ -46,15 +46,15 @@ contract GKRVerifierTest is Test {
 
         // Create test partial sums (3 per round with Gruen's trick)
         uint256[] memory partialSums = new uint256[](9);
-        partialSums[0] = 10;  // hsum0 round 0
-        partialSums[1] = 30;  // hsum2 round 0
-        partialSums[2] = 50;  // hsum3 round 0
-        partialSums[3] = 15;  // hsum0 round 1
-        partialSums[4] = 35;  // hsum2 round 1
-        partialSums[5] = 55;  // hsum3 round 1
-        partialSums[6] = 20;  // hsum0 round 2
-        partialSums[7] = 40;  // hsum2 round 2
-        partialSums[8] = 60;  // hsum3 round 2
+        partialSums[0] = 10; // hsum0 round 0
+        partialSums[1] = 30; // hsum2 round 0
+        partialSums[2] = 50; // hsum3 round 0
+        partialSums[3] = 15; // hsum0 round 1
+        partialSums[4] = 35; // hsum2 round 1
+        partialSums[5] = 55; // hsum3 round 1
+        partialSums[6] = 20; // hsum0 round 2
+        partialSums[7] = 40; // hsum2 round 2
+        partialSums[8] = 60; // hsum3 round 2
 
         uint256[] memory challenges = new uint256[](3);
         challenges[0] = 7;
@@ -69,7 +69,15 @@ contract GKRVerifierTest is Test {
         // This will fail validation due to inconsistent test data
         // In production, these values would be computed correctly
         // The test verifies the function doesn't revert unexpectedly
-        try verifier.verifySumcheck(numRounds, partialSums, challenges, evalPoints, 100) {
+        try
+            verifier.verifySumcheck(
+                numRounds,
+                partialSums,
+                challenges,
+                evalPoints,
+                100
+            )
+        {
             // May or may not pass depending on test data
         } catch {
             // Expected for invalid test data
@@ -164,7 +172,11 @@ contract GKRVerifierTest is Test {
         // Proof must be at least 64 bytes
         bytes memory proof = abi.encodePacked(commitmentRoot, bytes32(0));
 
-        bool result = verifier.verifyBatchHash(proof, inputHashes, outputHashes);
+        bool result = verifier.verifyBatchHash(
+            proof,
+            inputHashes,
+            outputHashes
+        );
         assertTrue(result);
     }
 
@@ -174,7 +186,11 @@ contract GKRVerifierTest is Test {
 
         bytes memory proof = abi.encodePacked(bytes32(0));
 
-        bool result = verifier.verifyBatchHash(proof, inputHashes, outputHashes);
+        bool result = verifier.verifyBatchHash(
+            proof,
+            inputHashes,
+            outputHashes
+        );
         assertFalse(result);
     }
 
@@ -184,7 +200,11 @@ contract GKRVerifierTest is Test {
 
         bytes memory proof = abi.encodePacked(bytes32(0));
 
-        bool result = verifier.verifyBatchHash(proof, inputHashes, outputHashes);
+        bool result = verifier.verifyBatchHash(
+            proof,
+            inputHashes,
+            outputHashes
+        );
         assertFalse(result);
     }
 
@@ -300,7 +320,15 @@ contract GKRVerifierTest is Test {
         console.log("Rounds: %d", numRounds);
 
         uint256 gasStart = gasleft();
-        try verifier.verifySumcheck(numRounds, partialSums, challenges, evalPoints, 100) {
+        try
+            verifier.verifySumcheck(
+                numRounds,
+                partialSums,
+                challenges,
+                evalPoints,
+                100
+            )
+        {
             // May fail due to invalid test data
         } catch {
             // Expected
@@ -378,7 +406,11 @@ contract GKRVerifierTest is Test {
         // Proof must be at least 64 bytes
         bytes memory proof = abi.encodePacked(commitmentRoot, bytes32(0));
 
-        bool result = verifier.verifyBatchHash(proof, inputHashes, outputHashes);
+        bool result = verifier.verifyBatchHash(
+            proof,
+            inputHashes,
+            outputHashes
+        );
         assertTrue(result);
     }
 }

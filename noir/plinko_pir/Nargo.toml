@@ -1,0 +1,10 @@
+[package]
+name = "plinko_pir"
+version = "0.1.0"
+type = "lib"
+authors = ["Soul Protocol"]
+compiler_version = ">=0.30.0"
+description = "Plinko PIR (Private Information Retrieval) for private cross-chain state reads"
+
+[dependencies]
+hekate_hash = { path = "../hekate_hash" }
