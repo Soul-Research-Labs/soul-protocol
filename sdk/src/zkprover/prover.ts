@@ -1,5 +1,5 @@
 import * as snarkjs from "snarkjs";
-import { buildPoseidon } from "circomlibjs";
+import { poseidon2 } from "poseidon-lite";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -61,26 +61,28 @@ const CIRCUIT_PATHS: Record<string, CircuitConfig> = {
 // Cache for loaded circuits (significant performance improvement)
 const circuitCache: Map<string, { wasm: Buffer; zkey: Buffer; vkey: any }> = new Map();
 
-// Poseidon hasher instance (reusable)
-let poseidonInstance: any = null;
-
 /**
- * Initialize Poseidon hasher
+ * Poseidon hash function wrapper using poseidon-lite
+ * @param inputs Array of bigints to hash
+ * @returns Hash result as bigint
  */
-async function getPoseidon(): Promise<any> {
-  if (!poseidonInstance) {
-    poseidonInstance = await buildPoseidon();
+export function poseidonHash(inputs: bigint[]): bigint {
+  // poseidon-lite supports variable-length inputs via chaining
+  if (inputs.length === 0) {
+    throw new Error("Poseidon hash requires at least one input");
   }
-  return poseidonInstance;
-}
-
-/**
- * Poseidon hash function wrapper
- */
-export async function poseidonHash(inputs: bigint[]): Promise<bigint> {
-  const poseidon = await getPoseidon();
-  const hash = poseidon(inputs);
-  return poseidon.F.toObject(hash);
+  if (inputs.length === 1) {
+    return poseidon2([inputs[0], BigInt(0)]);
+  }
+  if (inputs.length === 2) {
+    return poseidon2(inputs);
+  }
+  // For more inputs, chain hashes
+  let result = poseidon2([inputs[0], inputs[1]]);
+  for (let i = 2; i < inputs.length; i++) {
+    result = poseidon2([result, inputs[i]]);
+  }
+  return result;
 }
 
 /**
@@ -337,13 +339,13 @@ export async function batchGenerateProofs(
 /**
  * Compute commitment from state fields
  */
-export async function computeCommitment(
+export function computeCommitment(
   stateFields: bigint[],
   salt: bigint,
   ownerSecret: bigint
-): Promise<bigint> {
+): bigint {
   // Hash state fields
-  const stateHash = await poseidonHash(stateFields);
+  const stateHash = poseidonHash(stateFields);
   // Final commitment
   return poseidonHash([stateHash, salt, ownerSecret]);
 }
@@ -351,18 +353,18 @@ export async function computeCommitment(
 /**
  * Compute nullifier from commitment
  */
-export async function computeNullifier(
+export function computeNullifier(
   commitment: bigint,
   ownerSecret: bigint,
   nonce: bigint
-): Promise<bigint> {
+): bigint {
   return poseidonHash([commitment, ownerSecret, nonce]);
 }
 
 /**
  * Compute public key from secret
  */
-export async function computePubkey(secret: bigint): Promise<bigint> {
+export function computePubkey(secret: bigint): bigint {
   return poseidonHash([secret]);
 }
 

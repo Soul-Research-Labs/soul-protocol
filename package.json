@@ -90,7 +90,7 @@
     "@nomicfoundation/hardhat-mocha": "^3.0.9",
     "@nomicfoundation/hardhat-network-helpers": "^3.0.0",
     "@nomicfoundation/hardhat-toolbox-viem": "^5.0.1",
-    "@nomicfoundation/hardhat-verify": "^3.0.0",
+    "@nomicfoundation/hardhat-verify": "^3.0.9",
     "@nomicfoundation/hardhat-viem": "^3.0.0",
     "@nomicfoundation/ignition-core": "^3.0.0",
     "@openzeppelin/contracts": "^5.4.0",
@@ -106,20 +106,14 @@
   },
   "dependencies": {
     "@openzeppelin/contracts-upgradeable": "^5.4.0",
-    "circomlibjs": "^0.1.7",
     "ffjavascript": "^0.3.1",
     "forge-std": "^1.1.2",
+    "poseidon-lite": "^0.3.0",
     "snarkjs": "^0.7.6"
   },
   "overrides": {
     "elliptic": "^6.6.1",
-    "circomlibjs": {
-      "ethers": {
-        "@ethersproject/signing-key": {
-          "elliptic": "^6.6.1"
-        }
-      }
-    },
+    "bn.js": "^5.2.1",
     "@ethersproject/signing-key": {
       "elliptic": "^6.6.1"
     },

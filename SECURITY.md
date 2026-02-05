@@ -187,7 +187,7 @@ As of February 2026, the following dependency vulnerabilities exist with **no up
 | CVE-2025-14505 | elliptic ≤6.6.1 | Low (2.9/10) | No patch available | See mitigation below |
 
 **CVE-2025-14505 Details:**
-- **Affected**: `elliptic` library (all versions ≤6.6.1), used by ethers.js v5 via `circomlibjs`
+- **Affected**: `elliptic` library (all versions ≤6.6.1), used by ethers.js v5 via `@nomicfoundation/hardhat-verify`
 - **Issue**: ECDSA signature generation flaw when interim value 'k' has leading zeros
 - **Impact**: Potential secret key exposure under specific cryptanalysis conditions
 - **EPSS Score**: 0.01% (1st percentile - very low exploitation probability)
@@ -196,19 +196,23 @@ As of February 2026, the following dependency vulnerabilities exist with **no up
 1. **Smart Contracts**: On-chain signature verification uses `ecrecover` opcode, not JavaScript elliptic
 2. **ZK Proofs**: All cryptographic operations use Noir circuits with BN254, not elliptic curves via JS
 3. **SDK Usage**: The SDK uses ethers.js v6 (main dependency), not v5
-4. **circomlibjs**: Only used for Poseidon hash, not ECDSA signatures
+4. **Hardhat Verify**: Only used for contract verification on block explorers (dev tooling), not production code
 5. **Post-Quantum**: Protocol uses Dilithium/SPHINCS+ for future-proof signatures
+
+**Actions Taken:**
+- ✅ Replaced `circomlibjs` with `poseidon-lite` (zero dependencies) for Poseidon hashing
+- ✅ Reduced vulnerabilities from 19 to 11 (all remaining are in Hardhat verify tooling)
+- npm overrides configured to use latest elliptic version when available
 
 **Monitoring Actions:**
 - Track [indutny/elliptic#321](https://github.com/indutny/elliptic/issues/321) for upstream fix
-- Evaluate `@noble/curves` as potential replacement when circomlibjs migrates
-- npm overrides configured to use latest elliptic version when available
+- Monitor `@nomicfoundation/hardhat-verify` for migration to ethers v6
 
 ### Known Dependency Issues
 
 | Package | Severity | Status | Details |
 |---------|----------|--------|---------|
-| elliptic | LOW | Upstream Issue | GHSA-848j-6mx2-7j84 - Risky crypto implementation in elliptic used by @ethersproject/signing-key (ethers v5) via circomlibjs. No fix available until circomlibjs migrates to ethers v6. Risk mitigated: circomlibjs is only used for ZK circuit development, not for transaction signing in production. |
+| elliptic | LOW | Upstream Issue | GHSA-848j-6mx2-7j84 - Risky crypto implementation in elliptic used by @ethersproject/signing-key (ethers v5) via @nomicfoundation/hardhat-verify. No fix available until Hardhat migrates to ethers v6. Risk mitigated: hardhat-verify is only used for contract verification on block explorers, not for transaction signing or production operations. |
 
 **Note:** npm overrides are used to enforce security patches for transitive dependencies (diff, jsonpath, undici, ws, tar). See `package.json` overrides section.
 
