@@ -87,9 +87,7 @@ interface IEncryptedERC20 {
      * @param account The account address
      * @return handle The encrypted balance handle
      */
-    function balanceOf(
-        address account
-    ) external view returns (euint256 handle);
+    function balanceOf(address account) external view returns (euint256 handle);
 
     /**
      * @notice Request decryption of own balance
@@ -167,10 +165,7 @@ interface IEncryptedERC20 {
      * @param from Address to burn from
      * @param encryptedAmount Encrypted amount to burn
      */
-    function burnEncrypted(
-        address from,
-        euint256 encryptedAmount
-    ) external;
+    function burnEncrypted(address from, euint256 encryptedAmount) external;
 
     // ============================================
     // BALANCE VIEWING

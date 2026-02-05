@@ -339,7 +339,9 @@ library FHETypes {
         );
 
         // Verify data integrity
-        if (dataHash != keccak256(abi.encode(handle, typeCode, ciphertextData))) {
+        if (
+            dataHash != keccak256(abi.encode(handle, typeCode, ciphertextData))
+        ) {
             revert DataIntegrityCheckFailed();
         }
     }
