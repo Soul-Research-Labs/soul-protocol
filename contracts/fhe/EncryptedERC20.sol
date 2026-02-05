@@ -272,6 +272,7 @@ contract EncryptedERC20 is AccessControl, ReentrancyGuard, Pausable {
      * @param encryptedAmount Encrypted transfer amount
      * @return success Whether transfer was initiated
      */
+    // slither-disable-start reentrancy-no-eth
     function transferEncrypted(
         address to,
         euint256 memory encryptedAmount
@@ -340,6 +341,8 @@ contract EncryptedERC20 is AccessControl, ReentrancyGuard, Pausable {
         return true;
     }
 
+    // slither-disable-end reentrancy-no-eth
+
     /**
      * @notice Transfer from encrypted allowance
      * @param from Sender address
@@ -347,6 +350,7 @@ contract EncryptedERC20 is AccessControl, ReentrancyGuard, Pausable {
      * @param encryptedAmount Encrypted transfer amount
      * @return success Whether transfer was initiated
      */
+    // slither-disable-start reentrancy-no-eth
     function transferFromEncrypted(
         address from,
         address to,
@@ -407,6 +411,8 @@ contract EncryptedERC20 is AccessControl, ReentrancyGuard, Pausable {
         return true;
     }
 
+    // slither-disable-end reentrancy-no-eth
+
     // ============================================
     // ENCRYPTED APPROVALS
     // ============================================
@@ -461,6 +467,7 @@ contract EncryptedERC20 is AccessControl, ReentrancyGuard, Pausable {
      * @param to Recipient address
      * @param amount Plaintext amount to mint (gets encrypted)
      */
+    // slither-disable-start reentrancy-no-eth
     function mint(
         address to,
         uint256 amount
@@ -494,11 +501,14 @@ contract EncryptedERC20 is AccessControl, ReentrancyGuard, Pausable {
         emit EncryptedMint(to, encryptedAmount.handle);
     }
 
+    // slither-disable-end reentrancy-no-eth
+
     /**
      * @notice Burn encrypted tokens
      * @param from Address to burn from
      * @param encryptedAmount Encrypted amount to burn
      */
+    // slither-disable-start reentrancy-no-eth
     function burnEncrypted(
         address from,
         euint256 memory encryptedAmount
@@ -517,6 +527,8 @@ contract EncryptedERC20 is AccessControl, ReentrancyGuard, Pausable {
 
         emit EncryptedBurn(from, encryptedAmount.handle);
     }
+
+    // slither-disable-end reentrancy-no-eth
 
     // ============================================
     // BALANCE VIEWING

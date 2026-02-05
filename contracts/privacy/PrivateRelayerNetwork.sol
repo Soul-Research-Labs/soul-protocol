@@ -598,7 +598,7 @@ contract PrivateRelayerNetwork is
         uint256 selectionPoint = uint256(vrfOutput) % totalStake;
         uint256 cumulativeStake = 0;
 
-        address selectedRelayer;
+        address selectedRelayer = address(0);
         for (uint256 i = 0; i < activeRelayers.length; i++) {
             Relayer storage r = relayers[activeRelayers[i]];
             if (r.status == RelayerStatus.ACTIVE) {

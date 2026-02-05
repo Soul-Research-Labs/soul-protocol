@@ -698,7 +698,7 @@ contract MPCKeyRegistry is AccessControl, ReentrancyGuard, Pausable {
         );
 
         // Aggregate public key (simplified - XOR of all contributions)
-        bytes32 aggregatedPK;
+        bytes32 aggregatedPK = bytes32(0);
         uint8 qualifiedCount = 0;
 
         for (uint8 i = 1; i <= session.registeredCount; i++) {

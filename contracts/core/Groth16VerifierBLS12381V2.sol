@@ -108,7 +108,7 @@ contract Groth16VerifierBN254 {
         if (numInputs + 1 != _vk.ic.length) revert InvalidPublicInputsLength();
 
         // Parse proof points
-        uint256[8] memory proofData;
+        uint256[8] memory proofData = [uint256(0), 0, 0, 0, 0, 0, 0, 0];
         for (uint256 i = 0; i < 8; i++) {
             proofData[i] = _bytesToUint(proof, i * 32);
         }

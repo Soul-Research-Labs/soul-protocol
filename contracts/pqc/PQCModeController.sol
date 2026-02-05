@@ -234,6 +234,10 @@ contract PQCModeController is AccessControl {
         // Record initial mode
         modeHistory.push(verifier.currentMode());
         modeChangeTimestamps.push(block.timestamp);
+
+        // Record initial phase
+        phaseHistory.push(PQCLib.TransitionPhase.ClassicalOnly);
+        phaseChangeTimestamps.push(block.timestamp);
     }
 
     // =============================================================================
@@ -339,12 +343,12 @@ contract PQCModeController is AccessControl {
 
         PQCLib.VerificationMode oldMode = verifier.currentMode();
 
-        // Execute mode change on verifier
-        verifier.setMode(proposal.newMode);
-
         proposal.executed = true;
         modeHistory.push(proposal.newMode);
         modeChangeTimestamps.push(block.timestamp);
+
+        // Execute mode change on verifier
+        verifier.setMode(proposal.newMode);
 
         emit ModeProposalExecuted(proposalId, oldMode, proposal.newMode);
     }
@@ -449,6 +453,42 @@ contract PQCModeController is AccessControl {
             msg.sender,
             proposal.approvalCount
         );
+    }
+
+    /**
+     * @notice Executes a phase change proposal
+     * @param proposalId The proposal to execute
+     */
+    function executePhaseProposal(
+        uint256 proposalId
+    ) external onlyRole(EXECUTOR_ROLE) {
+        if (emergencyPaused) revert EmergencyPauseActive();
+
+        PhaseChangeProposal storage proposal = phaseProposals[proposalId];
+
+        if (proposal.proposer == address(0))
+            revert ProposalNotFound(proposalId);
+        if (proposal.executed) revert ProposalAlreadyExecuted(proposalId);
+        if (proposal.cancelled) revert ProposalIsCancelled(proposalId);
+        if (block.timestamp < proposal.executeAfter) {
+            revert TimelockNotExpired(proposal.executeAfter, block.timestamp);
+        }
+        if (proposal.approvalCount < REQUIRED_APPROVALS) {
+            revert InsufficientApprovals(
+                proposal.approvalCount,
+                REQUIRED_APPROVALS
+            );
+        }
+
+        PQCLib.TransitionPhase oldPhase = phaseHistory.length > 0
+            ? phaseHistory[phaseHistory.length - 1]
+            : PQCLib.TransitionPhase.ClassicalOnly;
+
+        proposal.executed = true;
+        phaseHistory.push(proposal.newPhase);
+        phaseChangeTimestamps.push(block.timestamp);
+
+        emit PhaseProposalExecuted(proposalId, oldPhase, proposal.newPhase);
     }
 
     // =============================================================================

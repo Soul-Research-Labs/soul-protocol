@@ -338,6 +338,8 @@ contract LayerZeroBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     error UnauthorizedCaller();
     error WithdrawalFailed();
     error FeeTooHigh();
+    error InvalidRecipient();
+    error NoFeesToWithdraw();
 
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
@@ -812,11 +814,18 @@ contract LayerZeroBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Withdraw accumulated fees
+     * @dev SECURITY: This function intentionally sends ETH to admin-specified address.
+     *      Access is restricted to DEFAULT_ADMIN_ROLE only.
+     *      Slither arbitrary-send-eth warning is acknowledged and accepted.
+     * @param recipient Address to receive the fees (must be trusted)
      */
+    // slither-disable-next-line arbitrary-send-eth
     function withdrawFees(
         address payable recipient
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
+        if (recipient == address(0)) revert InvalidRecipient();
         uint256 amount = accumulatedFees;
+        if (amount == 0) revert NoFeesToWithdraw();
         accumulatedFees = 0;
 
         (bool success, ) = recipient.call{value: amount}("");

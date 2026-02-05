@@ -209,7 +209,6 @@ contract FHEPrivacyIntegration is AccessControl, ReentrancyGuard {
     error AlreadyVoted();
     error InvalidInputCount();
 
-
     // =========================================================================
     // CONSTRUCTOR
     // =========================================================================
@@ -275,6 +274,13 @@ contract FHEPrivacyIntegration is AccessControl, ReentrancyGuard {
         bytes calldata ciphertext,
         CiphertextType ctype
     ) external returns (bytes32 ciphertextHash) {
+        return _storeCiphertext(ciphertext, ctype);
+    }
+
+    function _storeCiphertext(
+        bytes calldata ciphertext,
+        CiphertextType ctype
+    ) internal returns (bytes32 ciphertextHash) {
         if (ciphertext.length == 0) revert InvalidCiphertext();
         if (ciphertext.length > MAX_CIPHERTEXT_SIZE)
             revert CiphertextTooLarge();
@@ -327,6 +333,13 @@ contract FHEPrivacyIntegration is AccessControl, ReentrancyGuard {
         Operation operation,
         bytes32[] calldata inputHashes
     ) external returns (bytes32 requestId) {
+        return _requestComputation(operation, inputHashes);
+    }
+
+    function _requestComputation(
+        Operation operation,
+        bytes32[] memory inputHashes
+    ) internal returns (bytes32 requestId) {
         // Validate inputs exist
         for (uint256 i = 0; i < inputHashes.length; i++) {
             if (ciphertexts[inputHashes[i]].ciphertextHash == bytes32(0)) {
@@ -421,7 +434,6 @@ contract FHEPrivacyIntegration is AccessControl, ReentrancyGuard {
         }
     }
 
-
     /// @notice Determine result ciphertext type
     function _getResultType(
         Operation op,
@@ -511,7 +523,6 @@ contract FHEPrivacyIntegration is AccessControl, ReentrancyGuard {
         return request.decryptedValue;
     }
 
-
     // =========================================================================
     // PRIVACY-PRESERVING OPERATIONS
     // =========================================================================
@@ -527,7 +538,7 @@ contract FHEPrivacyIntegration is AccessControl, ReentrancyGuard {
         bytes32[] memory inputs = new bytes32[](2);
         inputs[0] = balanceHash;
         inputs[1] = thresholdHash;
-        return this.requestComputation(Operation.GE, inputs);
+        return _requestComputation(Operation.GE, inputs);
     }
 
     /// @notice Encrypted transfer amount selection
@@ -544,7 +555,7 @@ contract FHEPrivacyIntegration is AccessControl, ReentrancyGuard {
         inputs[0] = conditionHash;
         inputs[1] = trueAmountHash;
         inputs[2] = falseAmountHash;
-        return this.requestComputation(Operation.CMUX, inputs);
+        return _requestComputation(Operation.CMUX, inputs);
     }
 
     // =========================================================================
@@ -614,7 +625,7 @@ contract FHEPrivateVoting is FHEPrivacyIntegration {
     ) external returns (bytes32 proposalId) {
         proposalId = keccak256(abi.encodePacked(description, block.timestamp));
 
-        bytes32 zeroCiphertextHash = this.storeCiphertext(
+        bytes32 zeroCiphertextHash = _storeCiphertext(
             initialZeroCiphertext,
             CiphertextType.EUINT64
         );
@@ -645,8 +656,7 @@ contract FHEPrivateVoting is FHEPrivacyIntegration {
         if (block.timestamp >= proposal.endTime) revert VotingEnded();
         if (hasVoted[proposalId][msg.sender]) revert AlreadyVoted();
 
-
-        bytes32 voteHash = this.storeCiphertext(
+        bytes32 voteHash = _storeCiphertext(
             encryptedVote,
             CiphertextType.EUINT64
         );
@@ -657,7 +667,7 @@ contract FHEPrivateVoting is FHEPrivacyIntegration {
         inputs[1] = voteHash;
 
         // This would be fulfilled by oracle with FHE addition
-        this.requestComputation(Operation.ADD, inputs);
+        _requestComputation(Operation.ADD, inputs);
 
         hasVoted[proposalId][msg.sender] = true;
 

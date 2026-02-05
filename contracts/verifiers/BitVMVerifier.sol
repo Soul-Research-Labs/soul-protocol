@@ -79,7 +79,11 @@ contract BitVMVerifier is AccessControl {
                                 EVENTS
     //////////////////////////////////////////////////////////////*/
 
-    event BitCommitmentCreated(bytes32 indexed commitmentId, bytes32 hash0, bytes32 hash1);
+    event BitCommitmentCreated(
+        bytes32 indexed commitmentId,
+        bytes32 hash0,
+        bytes32 hash1
+    );
     event BitCommitmentRevealed(bytes32 indexed commitmentId, uint8 value);
     event GateVerified(bytes32 indexed gateId, bool isValid);
     event FraudProofVerified(bytes32 indexed circuitId, bytes32 faultyGateId);
@@ -238,19 +242,21 @@ contract BitVMVerifier is AccessControl {
         BitCommitment storage commitA = bitCommitments[inputACommitment];
         bytes32 hashA = keccak256(abi.encodePacked(preimageA, inputA));
         bool validA = (inputA == 0 && hashA == commitA.hash0) ||
-                      (inputA == 1 && hashA == commitA.hash1);
+            (inputA == 1 && hashA == commitA.hash1);
 
         // Verify input B commitment
         BitCommitment storage commitB = bitCommitments[inputBCommitment];
         bytes32 hashB = keccak256(abi.encodePacked(preimageB, inputB));
         bool validB = (inputB == 0 && hashB == commitB.hash0) ||
-                      (inputB == 1 && hashB == commitB.hash1);
+            (inputB == 1 && hashB == commitB.hash1);
 
         // Verify output commitment
         BitCommitment storage commitOut = bitCommitments[outputCommitment];
-        bytes32 hashOut = keccak256(abi.encodePacked(preimageOut, claimedOutput));
+        bytes32 hashOut = keccak256(
+            abi.encodePacked(preimageOut, claimedOutput)
+        );
         bool validOut = (claimedOutput == 0 && hashOut == commitOut.hash0) ||
-                        (claimedOutput == 1 && hashOut == commitOut.hash1);
+            (claimedOutput == 1 && hashOut == commitOut.hash1);
 
         // Compute expected output
         uint8 expectedOutput = (inputA & inputB) == 1 ? 0 : 1; // NAND
@@ -261,7 +267,10 @@ contract BitVMVerifier is AccessControl {
             inputB: inputB,
             claimedOutput: claimedOutput,
             expectedOutput: expectedOutput,
-            isValid: validA && validB && validOut && (claimedOutput == expectedOutput)
+            isValid: validA &&
+                validB &&
+                validOut &&
+                (claimedOutput == expectedOutput)
         });
 
         totalVerifications++;
@@ -276,6 +285,19 @@ contract BitVMVerifier is AccessControl {
     /*//////////////////////////////////////////////////////////////
                      CIRCUIT VERIFICATION FUNCTIONS
     //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Set circuit verification status
+     * @param circuitId Circuit identifier
+     * @param isValid Whether the circuit is verified
+     */
+    function setCircuitVerified(
+        bytes32 circuitId,
+        bool isValid
+    ) external onlyRole(VERIFIER_ROLE) {
+        verifiedCircuits[circuitId] = isValid;
+        emit CircuitVerified(circuitId, isValid);
+    }
 
     /**
      * @notice Verify gate inclusion in circuit via Merkle proof
@@ -320,7 +342,9 @@ contract BitVMVerifier is AccessControl {
         uint256 index
     ) external returns (bool isFraud) {
         // Verify gate is in circuit
-        bytes32 gateData = keccak256(abi.encodePacked(inputA, inputB, claimedOutput));
+        bytes32 gateData = keccak256(
+            abi.encodePacked(inputA, inputB, claimedOutput)
+        );
         bytes32 leaf = keccak256(abi.encodePacked(gateId, gateData));
         bytes32 computedRoot = _computeMerkleRoot(leaf, proof, index);
 
@@ -344,7 +368,9 @@ contract BitVMVerifier is AccessControl {
                           VIEW FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    function getBitCommitment(bytes32 commitmentId) external view returns (BitCommitment memory) {
+    function getBitCommitment(
+        bytes32 commitmentId
+    ) external view returns (BitCommitment memory) {
         return bitCommitments[commitmentId];
     }
 
@@ -352,7 +378,11 @@ contract BitVMVerifier is AccessControl {
         return verifiedCircuits[circuitId];
     }
 
-    function getStats() external view returns (uint256 verifications, uint256 fraudProofs) {
+    function getStats()
+        external
+        view
+        returns (uint256 verifications, uint256 fraudProofs)
+    {
         return (totalVerifications, totalFraudProofs);
     }
 
@@ -374,9 +404,13 @@ contract BitVMVerifier is AccessControl {
             bytes32 proofElement = proof[i];
 
             if (index % 2 == 0) {
-                computedHash = keccak256(abi.encodePacked(computedHash, proofElement));
+                computedHash = keccak256(
+                    abi.encodePacked(computedHash, proofElement)
+                );
             } else {
-                computedHash = keccak256(abi.encodePacked(proofElement, computedHash));
+                computedHash = keccak256(
+                    abi.encodePacked(proofElement, computedHash)
+                );
             }
 
             index = index / 2;

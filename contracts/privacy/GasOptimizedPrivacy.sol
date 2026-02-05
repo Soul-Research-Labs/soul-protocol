@@ -210,7 +210,7 @@ contract GasOptimizedStealthRegistry {
         address[] calldata candidates,
         uint8 targetViewTag
     ) external view returns (address[] memory matches) {
-        uint256 count;
+        uint256 count = 0;
         for (uint256 i = 0; i < candidates.length; ) {
             if (stealthData[candidates[i]].viewTag == targetViewTag) {
                 unchecked {
@@ -223,7 +223,7 @@ contract GasOptimizedStealthRegistry {
         }
 
         matches = new address[](count);
-        uint256 index;
+        uint256 index = 0;
         for (uint256 i = 0; i < candidates.length; ) {
             if (stealthData[candidates[i]].viewTag == targetViewTag) {
                 matches[index] = candidates[i];

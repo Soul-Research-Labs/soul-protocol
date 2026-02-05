@@ -126,6 +126,19 @@ contract BitVMBridge is IBitVMBridge, AccessControl, ReentrancyGuard, Pausable {
     uint256 public totalFinalized;
 
     /*//////////////////////////////////////////////////////////////
+                                EVENTS
+    //////////////////////////////////////////////////////////////*/
+
+    event CircuitRegistered(
+        bytes32 indexed circuitId,
+        uint256 numGates,
+        uint256 numInputs,
+        uint256 numOutputs,
+        bytes32 merkleRoot
+    );
+    event CircuitVerificationUpdated(bytes32 indexed circuitId, bool verified);
+
+    /*//////////////////////////////////////////////////////////////
                              CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
@@ -152,9 +165,54 @@ contract BitVMBridge is IBitVMBridge, AccessControl, ReentrancyGuard, Pausable {
         bitcoinBridge = _bitcoinBridge;
     }
 
-    function setTreasury(address _treasury) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setTreasury(
+        address _treasury
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_treasury == address(0)) revert ZeroAddress();
         treasury = _treasury;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                         CIRCUIT REGISTRATION
+    //////////////////////////////////////////////////////////////*/
+
+    function registerCircuit(
+        bytes32 circuitId,
+        uint256 numGates,
+        uint256 numInputs,
+        uint256 numOutputs,
+        bytes32 merkleRoot
+    ) external onlyRole(OPERATOR_ROLE) {
+        if (circuitId == bytes32(0)) revert InvalidCircuitCommitment();
+        if (merkleRoot == bytes32(0)) revert InvalidCircuitCommitment();
+
+        circuits[circuitId] = CircuitInfo({
+            circuitId: circuitId,
+            numGates: numGates,
+            numInputs: numInputs,
+            numOutputs: numOutputs,
+            merkleRoot: merkleRoot,
+            verified: false
+        });
+
+        emit CircuitRegistered(
+            circuitId,
+            numGates,
+            numInputs,
+            numOutputs,
+            merkleRoot
+        );
+    }
+
+    function setCircuitVerified(
+        bytes32 circuitId,
+        bool verified
+    ) external onlyRole(GUARDIAN_ROLE) {
+        CircuitInfo storage info = circuits[circuitId];
+        if (info.circuitId == bytes32(0)) revert InvalidCircuitCommitment();
+
+        info.verified = verified;
+        emit CircuitVerificationUpdated(circuitId, verified);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -180,7 +238,13 @@ contract BitVMBridge is IBitVMBridge, AccessControl, ReentrancyGuard, Pausable {
         // if (msg.value < MIN_PROVER_STAKE) revert InsufficientStake();
 
         depositId = keccak256(
-            abi.encodePacked(msg.sender, prover, amount, circuitCommitment, depositNonce++)
+            abi.encodePacked(
+                msg.sender,
+                prover,
+                amount,
+                circuitCommitment,
+                depositNonce++
+            )
         );
 
         deposits[depositId] = BitVMDeposit({
@@ -223,10 +287,11 @@ contract BitVMBridge is IBitVMBridge, AccessControl, ReentrancyGuard, Pausable {
         }
         if (msg.sender != deposit.prover) revert NotProver(depositId);
         if (taprootPubKey == bytes32(0)) revert InvalidTaprootKey();
-        if (address(0) == address(0) && msg.value < MIN_PROVER_STAKE) revert InsufficientStake();
+        if (address(0) == address(0) && msg.value < MIN_PROVER_STAKE)
+            revert InsufficientStake();
         // Check if stake was already paid (if we supported user-paid stake), otherwise require msg.value
         // Here we assume Prover ALWAYS pays the stake now.
-        
+
         deposit.stake += msg.value;
 
         deposit.taprootPubKey = taprootPubKey;
@@ -243,7 +308,9 @@ contract BitVMBridge is IBitVMBridge, AccessControl, ReentrancyGuard, Pausable {
      * @notice Finalize deposit after challenge window
      * @param depositId Deposit to finalize
      */
-    function finalizeDeposit(bytes32 depositId) external nonReentrant whenNotPaused {
+    function finalizeDeposit(
+        bytes32 depositId
+    ) external nonReentrant whenNotPaused {
         BitVMDeposit storage deposit = deposits[depositId];
 
         if (deposit.initiatedAt == 0) revert DepositNotFound(depositId);
@@ -306,7 +373,13 @@ contract BitVMBridge is IBitVMBridge, AccessControl, ReentrancyGuard, Pausable {
         bytes32 depositId,
         bytes32 gateId,
         bytes32 expectedOutput
-    ) external payable nonReentrant whenNotPaused returns (bytes32 challengeId) {
+    )
+        external
+        payable
+        nonReentrant
+        whenNotPaused
+        returns (bytes32 challengeId)
+    {
         BitVMDeposit storage deposit = deposits[depositId];
 
         if (deposit.initiatedAt == 0) revert DepositNotFound(depositId);
@@ -396,7 +469,8 @@ contract BitVMBridge is IBitVMBridge, AccessControl, ReentrancyGuard, Pausable {
         if (challenge.state != ChallengeState.RESPONDED) {
             revert InvalidChallengeState(challengeId, challenge.state);
         }
-        if (msg.sender != challenge.challenger) revert NotChallenger(challengeId);
+        if (msg.sender != challenge.challenger)
+            revert NotChallenger(challengeId);
 
         challenge.gateId = newGateId;
         challenge.gateIndex++;
@@ -415,14 +489,18 @@ contract BitVMBridge is IBitVMBridge, AccessControl, ReentrancyGuard, Pausable {
      * @notice Resolve challenge due to timeout
      * @param challengeId Challenge to resolve
      */
-    function resolveChallengeTimeout(bytes32 challengeId) external nonReentrant {
+    function resolveChallengeTimeout(
+        bytes32 challengeId
+    ) external nonReentrant {
         Challenge storage challenge = challenges[challengeId];
         BitVMDeposit storage deposit = deposits[challenge.depositId];
 
         if (challenge.createdAt == 0) revert ChallengeNotFound(challengeId);
-        if (challenge.state == ChallengeState.PROVER_WON ||
+        if (
+            challenge.state == ChallengeState.PROVER_WON ||
             challenge.state == ChallengeState.CHALLENGER_WON ||
-            challenge.state == ChallengeState.EXPIRED) {
+            challenge.state == ChallengeState.EXPIRED
+        ) {
             revert InvalidChallengeState(challengeId, challenge.state);
         }
         if (block.timestamp <= challenge.responseDeadline) {
@@ -438,7 +516,9 @@ contract BitVMBridge is IBitVMBridge, AccessControl, ReentrancyGuard, Pausable {
 
         // Slash prover stake to challenger
         uint256 slashAmount = deposit.stake;
-        (bool success, ) = challenge.challenger.call{value: slashAmount + challenge.stake}("");
+        (bool success, ) = challenge.challenger.call{
+            value: slashAmount + challenge.stake
+        }("");
         if (!success) revert SlashTransferFailed();
 
         emit ChallengeExpired(challengeId);
@@ -468,7 +548,8 @@ contract BitVMBridge is IBitVMBridge, AccessControl, ReentrancyGuard, Pausable {
 
         if (challenge.createdAt == 0) revert ChallengeNotFound(challengeId);
         if (gate.gateId == bytes32(0)) revert GateNotFound(gateId);
-        if (msg.sender != challenge.challenger) revert NotChallenger(challengeId);
+        if (msg.sender != challenge.challenger)
+            revert NotChallenger(challengeId);
 
         // Verify bit commitments
         bytes32 hashA = keccak256(abi.encodePacked(preimageA, inputA));
@@ -479,9 +560,9 @@ contract BitVMBridge is IBitVMBridge, AccessControl, ReentrancyGuard, Pausable {
         BitCommitment storage commitB = bitCommitments[gate.inputB];
 
         bool validA = (inputA == 0 && hashA == commitA.hash0) ||
-                      (inputA == 1 && hashA == commitA.hash1);
+            (inputA == 1 && hashA == commitA.hash1);
         bool validB = (inputB == 0 && hashB == commitB.hash0) ||
-                      (inputB == 1 && hashB == commitB.hash1);
+            (inputB == 1 && hashB == commitB.hash1);
 
         if (!validA) revert InvalidPreimage();
         if (!validB) revert InvalidPreimage();
@@ -501,7 +582,9 @@ contract BitVMBridge is IBitVMBridge, AccessControl, ReentrancyGuard, Pausable {
             totalSlashed++;
 
             // Slash prover stake to challenger
-            (bool success, ) = challenge.challenger.call{value: deposit.stake + challenge.stake}("");
+            (bool success, ) = challenge.challenger.call{
+                value: deposit.stake + challenge.stake
+            }("");
             if (!success) revert SlashTransferFailed();
 
             emit FraudProven(challengeId, challenge.challenger);
@@ -566,13 +649,17 @@ contract BitVMBridge is IBitVMBridge, AccessControl, ReentrancyGuard, Pausable {
         bytes32 hashB = keccak256(abi.encodePacked(preimageB, inputBValue));
 
         bool validA = (inputAValue == 0 && hashA == commitA.hash0) ||
-                      (inputAValue == 1 && hashA == commitA.hash1);
+            (inputAValue == 1 && hashA == commitA.hash1);
         bool validB = (inputBValue == 0 && hashB == commitB.hash0) ||
-                      (inputBValue == 1 && hashB == commitB.hash1);
+            (inputBValue == 1 && hashB == commitB.hash1);
 
         if (!validA || !validB) revert InvalidPreimage();
 
-        uint8 outputValue = _computeGate(gate.gateType, inputAValue, inputBValue);
+        uint8 outputValue = _computeGate(
+            gate.gateType,
+            inputAValue,
+            inputBValue
+        );
 
         gate.revealed = true;
 
@@ -588,36 +675,52 @@ contract BitVMBridge is IBitVMBridge, AccessControl, ReentrancyGuard, Pausable {
                           VIEW FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    function getDeposit(bytes32 depositId) external view returns (BitVMDeposit memory) {
+    function getDeposit(
+        bytes32 depositId
+    ) external view returns (BitVMDeposit memory) {
         return deposits[depositId];
     }
 
-    function getChallenge(bytes32 challengeId) external view returns (Challenge memory) {
+    function getChallenge(
+        bytes32 challengeId
+    ) external view returns (Challenge memory) {
         return challenges[challengeId];
     }
 
-    function getGateCommitment(bytes32 gateId) external view returns (GateCommitment memory) {
+    function getGateCommitment(
+        bytes32 gateId
+    ) external view returns (GateCommitment memory) {
         return gateCommitments[gateId];
     }
 
-    function getCircuitInfo(bytes32 circuitId) external view returns (CircuitInfo memory) {
+    function getCircuitInfo(
+        bytes32 circuitId
+    ) external view returns (CircuitInfo memory) {
         return circuits[circuitId];
     }
 
-    function getUserDeposits(address user) external view returns (bytes32[] memory) {
+    function getUserDeposits(
+        address user
+    ) external view returns (bytes32[] memory) {
         return userDeposits[user];
     }
 
-    function getProverDeposits(address prover) external view returns (bytes32[] memory) {
+    function getProverDeposits(
+        address prover
+    ) external view returns (bytes32[] memory) {
         return proverDeposits[prover];
     }
 
-    function getBridgeStats() external view returns (
-        uint256 depositsCount,
-        uint256 challengesCount,
-        uint256 slashedCount,
-        uint256 finalizedCount
-    ) {
+    function getBridgeStats()
+        external
+        view
+        returns (
+            uint256 depositsCount,
+            uint256 challengesCount,
+            uint256 slashedCount,
+            uint256 finalizedCount
+        )
+    {
         return (totalDeposits, totalChallenges, totalSlashed, totalFinalized);
     }
 

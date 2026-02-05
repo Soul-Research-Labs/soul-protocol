@@ -209,16 +209,24 @@ contract VerifierHub is AccessControl, Pausable {
             if (verifierRegistry != address(0)) {
                 // Map CircuitType to bytes32 proofType for Registry lookup
                 // This matches the PROOF_TYPES mapping used in migrate_to_noir.ts
-                bytes32 proofType;
-                if (circuitType == CircuitType.StateTransfer) proofType = keccak256("STATE_TRANSITION_PROOF");
-                else if (circuitType == CircuitType.StateCommitment) proofType = keccak256("STATE_COMMITMENT_PROOF");
-                else if (circuitType == CircuitType.CrossChainProof) proofType = keccak256("CROSS_DOMAIN_PROOF");
-                else if (circuitType == CircuitType.ComplianceProof) proofType = keccak256("COMPLIANCE_PROOF");
-                
+                bytes32 proofType = bytes32(0);
+                if (circuitType == CircuitType.StateTransfer)
+                    proofType = keccak256("STATE_TRANSITION_PROOF");
+                else if (circuitType == CircuitType.StateCommitment)
+                    proofType = keccak256("STATE_COMMITMENT_PROOF");
+                else if (circuitType == CircuitType.CrossChainProof)
+                    proofType = keccak256("CROSS_DOMAIN_PROOF");
+                else if (circuitType == CircuitType.ComplianceProof)
+                    proofType = keccak256("COMPLIANCE_PROOF");
+
                 if (proofType != bytes32(0)) {
-                    (bool regSuccess, bytes memory regData) = verifierRegistry.staticcall(
-                        abi.encodeWithSignature("getVerifier(bytes32)", proofType)
-                    );
+                    (bool regSuccess, bytes memory regData) = verifierRegistry
+                        .staticcall(
+                            abi.encodeWithSignature(
+                                "getVerifier(bytes32)",
+                                proofType
+                            )
+                        );
                     if (regSuccess && regData.length == 32) {
                         verifier = abi.decode(regData, (address));
                     }

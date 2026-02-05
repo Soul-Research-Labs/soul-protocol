@@ -430,23 +430,22 @@ contract CrossL2Atomicity is ReentrancyGuard, AccessControl, Pausable {
 
         bundle.phase = BundlePhase.EXECUTING;
 
-        // Execute the operation
-        (bool success, ) = op.target.call{value: op.value}(op.data);
-
         op.executed = true;
         bundle.executedCount++;
 
+        if (bundle.executedCount == bundle.chainCount) {
+            bundle.phase = BundlePhase.COMPLETED;
+        }
+
+        // Execute the operation
+        (bool success, ) = op.target.call{value: op.value}(op.data);
+
         emit ChainExecuted(bundleId, currentChainId, success);
 
-        if (!success) {
-            // Trigger rollback across all chains
-            _initiateRollback(bundleId, "Execution failed on chain");
-            return;
-        }
+        if (!success) revert ExecutionFailed();
 
         // Check if all chains executed
         if (bundle.executedCount == bundle.chainCount) {
-            bundle.phase = BundlePhase.COMPLETED;
             emit BundleCompleted(bundleId, true);
         }
     }

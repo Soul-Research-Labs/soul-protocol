@@ -556,6 +556,30 @@ contract FHEGateway is AccessControl, ReentrancyGuard, Pausable {
     // ============================================
 
     /**
+     * @notice Preview the next reencryption request ID
+     * @param handleId The handle to reencrypt
+     * @param targetPublicKey The target's public key
+     * @param requester The requester address
+     * @return requestId The expected request ID for the next nonce
+     */
+    function previewReencryptionRequest(
+        bytes32 handleId,
+        bytes32 targetPublicKey,
+        address requester
+    ) external view returns (bytes32 requestId) {
+        uint256 nextNonce = requestNonce + 1;
+        requestId = keccak256(
+            abi.encode(
+                "REENCRYPT",
+                handleId,
+                targetPublicKey,
+                requester,
+                nextNonce
+            )
+        );
+    }
+
+    /**
      * @notice Request reencryption to a different public key
      * @param handleId The handle to reencrypt
      * @param targetPublicKey The target's public key

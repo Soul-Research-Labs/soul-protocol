@@ -218,7 +218,7 @@ contract EmergencyRecovery is AccessControl, ReentrancyGuard, Pausable {
     error ETHTransferFailed();
     error TokenTransferFailed();
     error InvalidStage();
-
+    error PauseCallFailed(address contractAddress);
 
     /*//////////////////////////////////////////////////////////////
                              CONSTRUCTOR
@@ -441,6 +441,9 @@ contract EmergencyRecovery is AccessControl, ReentrancyGuard, Pausable {
         if (currentStage < RecoveryStage.Degraded) revert InvalidStage();
 
         uint256 len = protectedContractList.length;
+        address[] memory toPause = new address[](len);
+        uint256 pauseCount;
+
         for (uint256 i = 0; i < len; ) {
             address addr = protectedContractList[i];
             ProtectedContract storage pc = protectedContracts[addr];
@@ -448,15 +451,21 @@ contract EmergencyRecovery is AccessControl, ReentrancyGuard, Pausable {
             if (pc.isPausable && !pc.isPaused) {
                 pc.isPaused = true;
                 pc.lastActionAt = block.timestamp;
-                // SECURITY: Check return value for each pause call
-                (bool success, ) = addr.call(
-                    abi.encodeWithSignature("pause()")
-                );
-                if (!success) {
-                    emit PauseCallResult(addr, false);
-                }
-                emit ContractPaused(addr, reason);
+                toPause[pauseCount] = addr;
+                pauseCount++;
             }
+            unchecked {
+                ++i;
+            }
+        }
+
+        for (uint256 i = 0; i < pauseCount; ) {
+            address addr = toPause[i];
+            (bool success, ) = addr.call(abi.encodeWithSignature("pause()"));
+            if (!success) {
+                revert PauseCallFailed(addr);
+            }
+            emit ContractPaused(addr, reason);
             unchecked {
                 ++i;
             }

@@ -1,0 +1,50 @@
+'forge clean' running (wd: /Users/manishghimire/Downloads/Soul Protocol)
+'forge config --json' running
+'forge build --build-info --skip ./test/** ./script/** --force' running (wd: /Users/manishghimire/Downloads/Soul Protocol)
+'forge' returned non-zero exit code 1
+Compiling 247 files with Solc 0.8.24
+stdout: Solc 0.8.24 finished in 522.89ms
+Error: Compiler run failed:
+stderr: Error (2314): Expected ';' but got '='
+stderr:    --> contracts/mpc/MPCExecutor.sol:235:28:
+stderr:     |
+stderr: 235 |         bytes32 resultHash = bytes32(0);
+stderr:     |                            ^
+stderr: 
+stderr: Error (2314): Expected ';' but got '='
+stderr:    --> contracts/privacy/PrivateRelayerNetwork.sol:181:33:
+stderr:     |
+stderr: 181 |         address selectedRelayer = address(0);
+stderr:     |                                 ^
+Traceback (most recent call last):
+  File "/Users/manishghimire/.local/bin/slither", line 7, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/Users/manishghimire/.local/pipx/venvs/slither-analyzer/lib/python3.14/site-packages/slither/__main__.py", line 760, in main
+    main_impl(all_detector_classes=detectors, all_printer_classes=printers)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/manishghimire/.local/pipx/venvs/slither-analyzer/lib/python3.14/site-packages/slither/__main__.py", line 865, in main_impl
+    ) = process_all(filename, args, detector_classes, printer_classes)
+        ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/manishghimire/.local/pipx/venvs/slither-analyzer/lib/python3.14/site-packages/slither/__main__.py", line 95, in process_all
+    compilations = compile_all(target, **vars(args))
+  File "/Users/manishghimire/.local/pipx/venvs/slither-analyzer/lib/python3.14/site-packages/crytic_compile/crytic_compile.py", line 722, in compile_all
+    compilations.append(CryticCompile(target, **kwargs))
+                        ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/Users/manishghimire/.local/pipx/venvs/slither-analyzer/lib/python3.14/site-packages/crytic_compile/crytic_compile.py", line 211, in __init__
+    self._compile(**kwargs)
+    ~~~~~~~~~~~~~^^^^^^^^^^
+  File "/Users/manishghimire/.local/pipx/venvs/slither-analyzer/lib/python3.14/site-packages/crytic_compile/crytic_compile.py", line 633, in _compile
+    self._platform.compile(self, **kwargs)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/Users/manishghimire/.local/pipx/venvs/slither-analyzer/lib/python3.14/site-packages/crytic_compile/platform/foundry.py", line 102, in compile
+    hardhat_like_parsing(
+    ~~~~~~~~~~~~~~~~~~~~^
+        crytic_compile, str(self._target), build_directory, str(self._project_root)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/manishghimire/.local/pipx/venvs/slither-analyzer/lib/python3.14/site-packages/crytic_compile/platform/hardhat.py", line 52, in hardhat_like_parsing
+    raise InvalidCompilation(txt)
+crytic_compile.platform.exceptions.InvalidCompilation: Compilation failed. Can you run build command?
+/Users/manishghimire/Downloads/Soul Protocol/out/build-info is not a directory.

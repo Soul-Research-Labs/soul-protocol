@@ -202,9 +202,7 @@ contract StealthContractFactory is
         if (spendingPubKey.length != 33) revert InvalidPubKey();
         if (viewingPubKey.length != 33) revert InvalidPubKey();
 
-        recipientId = keccak256(
-            abi.encodePacked(spendingPubKey, viewingPubKey)
-        );
+        recipientId = keccak256(abi.encode(spendingPubKey, viewingPubKey));
 
         registeredRecipients[recipientId] = StealthKeys({
             spendingPubKey: spendingPubKey,
@@ -249,7 +247,7 @@ contract StealthContractFactory is
 
         // Generate unique salt
         bytes32 salt = keccak256(
-            abi.encodePacked(
+            abi.encode(
                 ephemeralPubKey,
                 encryptedMetadata,
                 block.timestamp,
@@ -270,7 +268,7 @@ contract StealthContractFactory is
 
         // Create meta hash for scanning
         bytes32 stealthMetaHash = keccak256(
-            abi.encodePacked(ephemeralPubKey, encryptedMetadata)
+            abi.encode(ephemeralPubKey, encryptedMetadata)
         );
 
         // Store deployment
@@ -306,7 +304,7 @@ contract StealthContractFactory is
         uint256 nonce
     ) external view returns (address) {
         bytes32 salt = keccak256(
-            abi.encodePacked(
+            abi.encode(
                 ephemeralPubKey,
                 encryptedMetadata,
                 block.timestamp,
@@ -384,7 +382,11 @@ contract StealthContractFactory is
             "Array length mismatch"
         );
 
-        for (uint256 i = 0; i < contractAddresses.length; ) {
+        uint256 len = contractAddresses.length;
+        bool[] memory shouldWithdraw = new bool[](len);
+        uint256[] memory balances = new uint256[](len);
+
+        for (uint256 i = 0; i < len; ) {
             StealthDeployment storage deployment = deployments[
                 contractAddresses[i]
             ];
@@ -399,22 +401,44 @@ contract StealthContractFactory is
                 );
 
                 if (isValid) {
-                    deployment.isWithdrawn = true;
-                    totalWithdrawn++;
-
-                    uint256 balance = contractAddresses[i].balance;
-                    StealthWallet(payable(contractAddresses[i])).withdraw(
-                        recipient,
-                        balance
-                    );
-
-                    emit StealthWithdraw(
-                        contractAddresses[i],
-                        recipient,
-                        balance,
-                        block.timestamp
-                    );
+                    shouldWithdraw[i] = true;
+                    balances[i] = contractAddresses[i].balance;
                 }
+            }
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        for (uint256 i = 0; i < len; ) {
+            if (shouldWithdraw[i]) {
+                StealthDeployment storage deployment = deployments[
+                    contractAddresses[i]
+                ];
+
+                deployment.isWithdrawn = true;
+                totalWithdrawn++;
+            }
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        for (uint256 i = 0; i < len; ) {
+            if (shouldWithdraw[i]) {
+                StealthWallet(payable(contractAddresses[i])).withdraw(
+                    recipient,
+                    balances[i]
+                );
+
+                emit StealthWithdraw(
+                    contractAddresses[i],
+                    recipient,
+                    balances[i],
+                    block.timestamp
+                );
             }
 
             unchecked {

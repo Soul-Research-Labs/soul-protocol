@@ -327,7 +327,7 @@ contract SPHINCSPlusVerifier is Ownable, Pausable {
         bytes calldata publicKey,
         PQCLib.SignatureAlgorithm variant
     ) internal view returns (bool) {
-        bytes memory input = abi.encodePacked(
+        bytes memory input = abi.encode(
             uint8(variant),
             message,
             publicKey,

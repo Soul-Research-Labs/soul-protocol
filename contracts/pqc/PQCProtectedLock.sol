@@ -485,7 +485,7 @@ contract PQCProtectedLock is AccessControl, Pausable, ReentrancyGuard {
 
         recovery.executed = true;
 
-        address oldOwner;
+        address oldOwner = address(0);
         if (address(zkSlocks) != address(0)) {
             IZKBoundStateLocks.Lock memory lock = zkSlocks.getLock(lockId);
             oldOwner = lock.owner;

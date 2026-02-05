@@ -192,7 +192,6 @@ contract PQCKeyRegistry is
     error InvalidAlgorithm(PQSignatureAlgorithm algorithm);
     error InvalidWeight();
 
-
     /*//////////////////////////////////////////////////////////////
                              CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
@@ -214,6 +213,15 @@ contract PQCKeyRegistry is
         bytes calldata publicKey,
         uint64 expiresAt
     ) external override nonReentrant whenNotPaused returns (bytes32 keyHash) {
+        return _registerKeyInternal(keyType, publicKey, expiresAt, bytes32(0));
+    }
+
+    function _registerKeyInternal(
+        PQSignatureAlgorithm keyType,
+        bytes calldata publicKey,
+        uint64 expiresAt,
+        bytes32 metadataHash
+    ) internal returns (bytes32 keyHash) {
         // Validate expiration
         if (expiresAt != 0) {
             if (expiresAt < block.timestamp + MIN_VALIDITY_PERIOD) {
@@ -263,7 +271,7 @@ contract PQCKeyRegistry is
             rotationGraceEnd: 0,
             attestationCount: 0,
             totalAttestationWeight: 0,
-            metadataHash: bytes32(0)
+            metadataHash: metadataHash
         });
 
         _ownerKeys[msg.sender].push(keyHash);
@@ -297,8 +305,12 @@ contract PQCKeyRegistry is
         uint64 expiresAt,
         bytes32 metadataHash
     ) external nonReentrant whenNotPaused returns (bytes32 keyHash) {
-        keyHash = this.registerKey(keyType, publicKey, expiresAt);
-        keys[keyHash].metadataHash = metadataHash;
+        keyHash = _registerKeyInternal(
+            keyType,
+            publicKey,
+            expiresAt,
+            metadataHash
+        );
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -393,7 +405,12 @@ contract PQCKeyRegistry is
         }
 
         // Register new key
-        newKeyHash = this.registerKey(newKeyType, newPublicKey, newExpiresAt);
+        newKeyHash = _registerKeyInternal(
+            newKeyType,
+            newPublicKey,
+            newExpiresAt,
+            bytes32(0)
+        );
 
         // Link keys
         keys[newKeyHash].previousKeyHash = oldKeyHash;

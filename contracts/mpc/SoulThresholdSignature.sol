@@ -146,7 +146,6 @@ contract SoulThresholdSignature is AccessControl, ReentrancyGuard {
     error SignatureMismatch();
     error ExecutionFailed();
 
-
     // ============================================
     // Constructor
     // ============================================
@@ -224,7 +223,8 @@ contract SoulThresholdSignature is AccessControl, ReentrancyGuard {
         uint256 newThreshold
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (newThreshold < 2) revert InvalidThreshold();
-        if (newThreshold > config.totalSigners) revert ThresholdExceedsSigners();
+        if (newThreshold > config.totalSigners)
+            revert ThresholdExceedsSigners();
 
         uint256 old = config.threshold;
         config.threshold = newThreshold;
@@ -300,7 +300,8 @@ contract SoulThresholdSignature is AccessControl, ReentrancyGuard {
         if (session.sessionId != sessionId) revert InvalidSession();
         if (block.timestamp >= session.expiresAt) revert SessionExpired();
         if (session.completed) revert SessionCompleted();
-        if (session.commitments[msg.sender] != bytes32(0)) revert AlreadySigned();
+        if (session.commitments[msg.sender] != bytes32(0))
+            revert AlreadySigned();
 
         require(
             _isParticipant(session.participants, msg.sender),
@@ -528,7 +529,7 @@ contract SoulThresholdSignature is AccessControl, ReentrancyGuard {
         SigningSession storage session = _sessions[sessionId];
 
         // Collect partial signatures
-        bytes memory combined;
+        bytes memory combined = new bytes(0);
         for (uint256 i = 0; i < session.participants.length; i++) {
             address participant = session.participants[i];
             if (session.partialSignatures[participant].length > 0) {

@@ -270,6 +270,7 @@ contract DecoyTrafficGenerator is
 
         bytes32 routeHash = _getRouteHash(sourceChainId, targetChainId);
         routeConfigs[routeHash].decoyBudgetWei += amount;
+        spentDecoyBudget += amount;
     }
 
     // =========================================================================

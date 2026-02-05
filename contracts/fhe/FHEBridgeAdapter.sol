@@ -209,6 +209,7 @@ contract FHEBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     error ZeroAddress();
     error InvalidChainId();
     error SameChainTransfer();
+    error ReencryptionRequestMismatch(bytes32 expected, bytes32 actual);
 
     // ============================================
     // CONSTRUCTOR
@@ -369,14 +370,24 @@ contract FHEBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     ) internal {
         OutboundTransfer storage transfer = outboundTransfers[transferId];
 
+        bytes32 expectedRequestId = fheGateway.previewReencryptionRequest(
+            transfer.encryptedAmount.handle,
+            destinationPublicKey,
+            address(this)
+        );
+
+        transfer.reencryptionRequest = expectedRequestId;
+        transfer.status = TransferStatus.ReencryptionRequested;
+        reencryptionToTransfer[expectedRequestId] = transferId;
+
         bytes32 requestId = fheGateway.requestReencryption(
             transfer.encryptedAmount.handle,
             destinationPublicKey
         );
 
-        transfer.reencryptionRequest = requestId;
-        transfer.status = TransferStatus.ReencryptionRequested;
-        reencryptionToTransfer[requestId] = transferId;
+        if (requestId != expectedRequestId) {
+            revert ReencryptionRequestMismatch(expectedRequestId, requestId);
+        }
 
         emit ReencryptionRequested(transferId, requestId);
     }

@@ -433,9 +433,7 @@ contract EmergencyResponseAutomation is
         bool autoExecute,
         uint256 cooldownPeriod
     ) external onlyRole(RUNBOOK_ADMIN_ROLE) returns (bytes32 runbookId) {
-        runbookId = keccak256(
-            abi.encode(name, block.timestamp, msg.sender)
-        );
+        runbookId = keccak256(abi.encode(name, block.timestamp, msg.sender));
 
         runbooks[runbookId] = Runbook({
             id: runbookId,
@@ -487,12 +485,7 @@ contract EmergencyResponseAutomation is
             revert InvalidParameters();
 
         actionId = keccak256(
-            abi.encode(
-                runbookId,
-                actionType,
-                targetContract,
-                block.timestamp
-            )
+            abi.encode(runbookId, actionType, targetContract, block.timestamp)
         );
 
         actions[actionId] = AutomatedAction({
@@ -546,32 +539,48 @@ contract EmergencyResponseAutomation is
             string(abi.encodePacked("Executing runbook: ", runbook.name))
         );
 
-        // Execute each action
-        for (uint256 i = 0; i < runbook.actionIds.length; i++) {
+        uint256 runbookActionCount = runbook.actionIds.length;
+        bytes32[] memory actionIdsToExecute = new bytes32[](runbookActionCount);
+        uint256 actionCount;
+
+        // Collect actions to execute
+        for (uint256 i = 0; i < runbookActionCount; i++) {
             bytes32 actionId = runbook.actionIds[i];
             AutomatedAction storage action = actions[actionId];
 
             if (!action.active) continue;
 
-            // Check if confirmation is needed
             if (action.requiresConfirmation) {
                 if (
                     pendingConfirmations[action.targetContract][actionId] <
                     action.confirmationsRequired
                 ) {
-                    continue; // Skip actions requiring more confirmations
+                    continue;
                 }
             }
 
-            bool success = _executeAction(action, incidentId);
-            if (success) {
-                actionsExecuted++;
-                incident.executedActions.push(actionId);
-            }
+            actionIdsToExecute[actionCount] = actionId;
+            actionCount++;
+        }
+
+        actionsExecuted = actionCount;
+
+        // Record planned execution before external calls
+        for (uint256 i = 0; i < actionCount; i++) {
+            incident.executedActions.push(actionIdsToExecute[i]);
         }
 
         runbook.executionCount++;
         runbook.lastExecutedAt = block.timestamp;
+
+        // Execute each action (reverts on failure to preserve state)
+        for (uint256 i = 0; i < actionCount; i++) {
+            AutomatedAction storage action = actions[actionIdsToExecute[i]];
+            bool success = _executeAction(action, incidentId);
+            if (!success) {
+                revert ExecutionFailed();
+            }
+        }
 
         emit RunbookExecuted(runbookId, incidentId, actionsExecuted);
     }
@@ -825,8 +834,19 @@ contract EmergencyResponseAutomation is
         AutomatedAction storage action,
         bytes32 incidentId
     ) internal returns (bool success) {
-        uint256 gasStart = gasleft();
-        bytes memory returnData;
+        bytes memory returnData = new bytes(0);
+
+        executionHistory[action.id].push(
+            ExecutionRecord({
+                actionId: action.id,
+                incidentId: incidentId,
+                executor: msg.sender,
+                executedAt: block.timestamp,
+                success: true,
+                returnData: returnData,
+                gasUsed: 0
+            })
+        );
 
         if (action.actionType == ActionType.PAUSE_CONTRACT) {
             (success, returnData) = action.targetContract.call{
@@ -844,20 +864,6 @@ contract EmergencyResponseAutomation is
                 gas: action.gasLimit
             }(abi.encodePacked(action.functionSelector, action.parameters));
         }
-
-        uint256 gasUsed = gasStart - gasleft();
-
-        executionHistory[action.id].push(
-            ExecutionRecord({
-                actionId: action.id,
-                incidentId: incidentId,
-                executor: msg.sender,
-                executedAt: block.timestamp,
-                success: success,
-                returnData: returnData,
-                gasUsed: gasUsed
-            })
-        );
 
         emit ActionExecuted(action.id, incidentId, success);
     }

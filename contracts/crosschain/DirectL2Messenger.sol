@@ -81,6 +81,7 @@ contract DirectL2Messenger is ReentrancyGuard, AccessControl, Pausable {
     error InsufficientConfirmations();
     error MessageNotFound();
     error WithdrawalFailed();
+    error MessageExecutionFailed();
     error ZeroAddress();
     error InvalidConfirmationCount();
 
@@ -680,10 +681,7 @@ contract DirectL2Messenger is ReentrancyGuard, AccessControl, Pausable {
             value: msg_.value
         }(msg_.payload);
 
-        // Update final status after call
-        if (!success) {
-            msg_.status = MessageStatus.FAILED;
-        }
+        if (!success) revert MessageExecutionFailed();
 
         emit MessageExecuted(messageId, success, returnData);
     }

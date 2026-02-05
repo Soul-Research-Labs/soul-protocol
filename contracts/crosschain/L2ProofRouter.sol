@@ -495,62 +495,38 @@ contract L2ProofRouter is ReentrancyGuard, AccessControl, Pausable {
         bytes memory compressed = _compressBatch(batchId);
         batch.compressedData = compressed;
 
-        // Route based on selected path
-        bool success = _executeRouting(batchId, selectedPath, compressed);
+        // Finalize state before external call (CEI)
+        batch.status = BatchStatus.COMPLETED;
+        batch.routedAt = block.timestamp;
+        batch.usedPath = selectedPath;
 
-        if (success) {
-            batch.status = BatchStatus.COMPLETED;
-            batch.routedAt = block.timestamp;
-            batch.usedPath = selectedPath;
+        // Update metrics
+        _updateMetrics(
+            currentChainId,
+            batch.destChainId,
+            true,
+            batch.totalGasEstimate
+        );
 
-            // Update metrics
-            _updateMetrics(
-                currentChainId,
-                batch.destChainId,
-                true,
-                batch.totalGasEstimate
-            );
-
-            // Cache proofs for future use
-            _cacheProofs(batch.proofIds);
-
-            emit BatchRouted(
-                batchId,
-                batch.destChainId,
-                selectedPath,
-                batch.totalGasEstimate
-            );
-        } else {
-            // Try fallback path
-            selectedPath = RoutingPath.VIA_L1;
-            success = _executeRouting(batchId, selectedPath, compressed);
-
-            if (success) {
-                batch.status = BatchStatus.COMPLETED;
-                batch.routedAt = block.timestamp;
-                batch.usedPath = selectedPath;
-                _updateMetrics(
-                    currentChainId,
-                    batch.destChainId,
-                    true,
-                    batch.totalGasEstimate
-                );
-                emit BatchRouted(
-                    batchId,
-                    batch.destChainId,
-                    selectedPath,
-                    batch.totalGasEstimate
-                );
-            } else {
-                batch.status = BatchStatus.FAILED;
-                _updateMetrics(currentChainId, batch.destChainId, false, 0);
-            }
-        }
+        // Cache proofs for future use
+        _cacheProofs(batch.proofIds);
+        _markProofsProcessed(batch.proofIds);
 
         // Clear active batch
         if (activeBatch[batch.destChainId] == batchId) {
             activeBatch[batch.destChainId] = bytes32(0);
         }
+
+        // Route based on selected path
+        bool success = _executeRouting(batchId, selectedPath, compressed);
+        if (!success) revert BatchNotReady();
+
+        emit BatchRouted(
+            batchId,
+            batch.destChainId,
+            selectedPath,
+            batch.totalGasEstimate
+        );
     }
 
     /**
@@ -707,6 +683,15 @@ contract L2ProofRouter is ReentrancyGuard, AccessControl, Pausable {
             cacheKeys.push(cacheKey);
 
             emit ProofCached(p.proofId, cacheKey, block.timestamp + CACHE_TTL);
+        }
+    }
+
+    /**
+     * @notice Mark proofs as processed to prevent replay
+     */
+    function _markProofsProcessed(bytes32[] storage proofIds) internal {
+        for (uint256 i = 0; i < proofIds.length; i++) {
+            processedProofs[proofIds[i]] = true;
         }
     }
 

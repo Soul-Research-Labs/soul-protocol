@@ -301,13 +301,13 @@ contract HyperlaneAdapter is ReentrancyGuard, AccessControl, Pausable {
 
         // FIX: Extract nonce and body from message payload
         if (message.length < 32) revert MessageNotVerified();
-        
+
         uint256 nonce;
         // Extract nonce (first 32 bytes)
         assembly {
             nonce := calldataload(message.offset)
         }
-        
+
         // Extract actual message body
         bytes calldata body = message[32:];
 
@@ -376,7 +376,11 @@ contract HyperlaneAdapter is ReentrancyGuard, AccessControl, Pausable {
                 msg_.originDomain
             );
         } else {
+            // CEI: mark verified before external custom ISM call
+            msg_.verified = true;
             verified = _verifyCustom(messageId, metadata, config.ism);
+            if (!verified) revert InvalidISM();
+            return true;
         }
 
         if (verified) {
@@ -414,7 +418,7 @@ contract HyperlaneAdapter is ReentrancyGuard, AccessControl, Pausable {
         bytes[] memory signatures = abi.decode(metadata, (bytes[]));
 
         if (signatures.length < params.threshold) {
-             return false;
+            return false;
         }
 
         uint8 validSignatures = 0;
@@ -423,7 +427,7 @@ contract HyperlaneAdapter is ReentrancyGuard, AccessControl, Pausable {
         for (uint256 i = 0; i < signatures.length; i++) {
             // Recover signer
             address signer = ECDSA.recover(params.commitment, signatures[i]);
-            
+
             // Check duplications (signatures must be sorted/unique)
             if (signer <= lastSigner) continue;
             lastSigner = signer;

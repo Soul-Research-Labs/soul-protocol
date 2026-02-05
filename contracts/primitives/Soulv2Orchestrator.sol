@@ -381,6 +381,8 @@ contract Soulv2Orchestrator is AccessControl, ReentrancyGuard, Pausable {
         if (transition.isComplete)
             revert TransitionAlreadyComplete(transitionId);
 
+        transition.isComplete = true;
+
         // Add attestation to commitment
         easc.attestCommitment(
             transition.commitmentId,
@@ -394,8 +396,6 @@ contract Soulv2Orchestrator is AccessControl, ReentrancyGuard, Pausable {
 
         // Consume nullifier
         cdna.consumeNullifier(transition.nullifier);
-
-        transition.isComplete = true;
 
         emit CoordinatedTransitionCompleted(transitionId);
     }

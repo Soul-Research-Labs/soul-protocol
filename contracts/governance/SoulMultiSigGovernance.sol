@@ -191,7 +191,6 @@ contract SoulMultiSigGovernance is AccessControl {
     error TooManySignatures();
     error NotRoleAdmin();
 
-
     /*//////////////////////////////////////////////////////////////
                             CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
@@ -351,8 +350,6 @@ contract SoulMultiSigGovernance is AccessControl {
         );
 
         if (!success) {
-            // Revert execution status on failure
-            proposal.executed = false;
             revert ExecutionFailed();
         }
 

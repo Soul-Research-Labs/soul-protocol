@@ -730,7 +730,7 @@ contract MPCExecutor is AccessControl, ReentrancyGuard, Pausable {
 
         // Generate result hash from all outputs
         Circuit storage circuit = circuits[comp.circuitId];
-        bytes32 resultHash;
+        bytes32 resultHash = bytes32(0);
 
         for (uint256 i = 0; i < circuit.numOutputWires; i++) {
             uint256 outputWireIndex = circuit.numWires -

@@ -30,7 +30,7 @@ contract ZKSLockIntegration {
     error UnauthorizedCaller();
     error IntegrationDisabled();
     error UserEntropyRequired();
-
+    error LockIdMismatch(bytes32 expected, bytes32 actual);
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -136,20 +136,39 @@ contract ZKSLockIntegration {
             containerId
         );
 
+        bytes32 actualDomainSeparator = domainSeparator != bytes32(0)
+            ? domainSeparator
+            : defaultDomainSeparator;
+
+        // Precompute lock ID (matches ZKBoundStateLocks.createLock)
+        lockId = keccak256(
+            abi.encode(
+                stateCommitment,
+                transitionPredicateHash,
+                policyBinding,
+                actualDomainSeparator,
+                address(this),
+                block.chainid,
+                block.timestamp
+            )
+        );
+
+        // Store bindings before external call (CEI)
+        containerToLock[containerId] = lockId;
+        lockToContainer[lockId] = containerId;
+
         // Create ZK-SLock using the actual function signature
-        lockId = zkSlocks.createLock(
+        bytes32 createdLockId = zkSlocks.createLock(
             stateCommitment,
             transitionPredicateHash,
             policyBinding,
-            domainSeparator != bytes32(0)
-                ? domainSeparator
-                : defaultDomainSeparator,
+            actualDomainSeparator,
             unlockDeadline
         );
 
-        // Store bindings
-        containerToLock[containerId] = lockId;
-        lockToContainer[lockId] = containerId;
+        if (createdLockId != lockId) {
+            revert LockIdMismatch(lockId, createdLockId);
+        }
 
         emit ContainerLocked(containerId, lockId, stateCommitment);
     }
@@ -167,12 +186,12 @@ contract ZKSLockIntegration {
         if (lockId == bytes32(0)) revert InvalidLockId();
         if (lockId != unlockProof.lockId) revert InvalidLockId();
 
-        // Unlock the ZK-SLock
-        zkSlocks.unlock(unlockProof);
-
-        // Clear bindings
+        // Clear bindings before external call (CEI)
         delete containerToLock[containerId];
         delete lockToContainer[lockId];
+
+        // Unlock the ZK-SLock
+        zkSlocks.unlock(unlockProof);
 
         emit ContainerUnlocked(
             containerId,

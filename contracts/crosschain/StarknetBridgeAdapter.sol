@@ -150,6 +150,7 @@ contract StarknetBridgeAdapter is
 
     error ETHDepositsNotSupported();
     error TransferFailed();
+    error MessageHashMismatch();
 
     /**
      * @notice Map token L1 <-> L2
@@ -190,18 +191,6 @@ contract StarknetBridgeAdapter is
         TokenMapping storage mapping_ = tokenMappings[l1Token];
         if (!mapping_.active) revert TokenNotMapped();
 
-        // Transfer tokens to bridge
-        // Implementation note: use SafeERC20 in production
-        (bool success, ) = l1Token.call(
-            abi.encodeWithSelector(
-                0x23b872dd,
-                msg.sender,
-                address(this),
-                amount
-            )
-        );
-        if (!success) revert TransferFailed();
-
         // Construct payload for Cairo contract: [l1_token, amount_low, amount_high, l2_recipient]
         uint256[] memory payload = new uint256[](4);
         payload[0] = uint256(uint160(l1Token));
@@ -209,14 +198,13 @@ contract StarknetBridgeAdapter is
         payload[2] = amount / 2 ** 128; // High 128 bits
         payload[3] = l2Recipient;
 
-        // Send message to L2
-        IStarknetMessaging messaging = IStarknetMessaging(
-            config.starknetMessaging
-        );
-        (bytes32 msgHash, ) = messaging.sendMessageToL2{value: msg.value}(
-            config.l2BridgeAddress,
-            DEPOSIT_SELECTOR,
-            payload
+        bytes32 expectedMsgHash = keccak256(
+            abi.encodePacked(
+                uint256(uint160(address(this))),
+                config.l2BridgeAddress,
+                DEPOSIT_SELECTOR,
+                payload
+            )
         );
 
         // Store deposit record
@@ -239,13 +227,36 @@ contract StarknetBridgeAdapter is
             l2Token: mapping_.l2Token,
             amount: amount,
             nonce: depositNonce - 1,
-            messageHash: msgHash,
+            messageHash: expectedMsgHash,
             status: TransferStatus.MESSAGE_SENT,
             initiatedAt: block.timestamp,
             consumedAt: 0
         });
 
         mapping_.totalDeposited += amount;
+
+        // Transfer tokens to bridge
+        // Implementation note: use SafeERC20 in production
+        (bool success, ) = l1Token.call(
+            abi.encodeWithSelector(
+                0x23b872dd,
+                msg.sender,
+                address(this),
+                amount
+            )
+        );
+        if (!success) revert TransferFailed();
+
+        // Send message to L2
+        IStarknetMessaging messaging = IStarknetMessaging(
+            config.starknetMessaging
+        );
+        (bytes32 msgHash, ) = messaging.sendMessageToL2{value: msg.value}(
+            config.l2BridgeAddress,
+            DEPOSIT_SELECTOR,
+            payload
+        );
+        if (msgHash != expectedMsgHash) revert MessageHashMismatch();
 
         emit DepositInitiated(
             depositId,

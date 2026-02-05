@@ -419,14 +419,10 @@ contract GriefingProtection is ReentrancyGuard, AccessControl, Pausable {
         stats.totalRefundsReceived += amount;
 
         (bool success, ) = user.call{value: amount}("");
-        if (success) {
-            emit RefundIssued(user, amount, reason);
-            return true;
-        }
+        if (!success) revert WithdrawalFailed();
 
-        // Refund failed, return to pool
-        refundPool += amount;
-        return false;
+        emit RefundIssued(user, amount, reason);
+        return true;
     }
 
     /**

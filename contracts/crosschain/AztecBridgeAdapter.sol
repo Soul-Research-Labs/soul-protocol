@@ -195,6 +195,10 @@ contract AztecBridgeAdapter is
     error MainnetPlaceholderNotAllowed();
     error FeeWithdrawalFailed();
     error InvalidProofLength();
+    error NoFeesToWithdraw();
+
+    /// @notice Emitted when fees are withdrawn to treasury
+    event FeesWithdrawn(address indexed recipient, uint256 amount);
 
     /*//////////////////////////////////////////////////////////////
                              CONSTRUCTOR
@@ -227,7 +231,11 @@ contract AztecBridgeAdapter is
         address _inbox,
         address _outbox
     ) external onlyRole(OPERATOR_ROLE) {
-        if (_rollup == address(0) || _inbox == address(0) || _outbox == address(0)) {
+        if (
+            _rollup == address(0) ||
+            _inbox == address(0) ||
+            _outbox == address(0)
+        ) {
             revert ZeroAddress();
         }
 
@@ -276,7 +284,11 @@ contract AztecBridgeAdapter is
         address _plonkVerifier,
         address _crossChainVerifier
     ) external onlyRole(OPERATOR_ROLE) {
-        if (_soulVerifier == address(0) || _plonkVerifier == address(0) || _crossChainVerifier == address(0)) {
+        if (
+            _soulVerifier == address(0) ||
+            _plonkVerifier == address(0) ||
+            _crossChainVerifier == address(0)
+        ) {
             revert ZeroAddress();
         }
 
@@ -359,7 +371,12 @@ contract AztecBridgeAdapter is
         pendingOutboundRequests++;
         accumulatedFees += fee;
 
-        emit SoulToAztecInitiated(requestId, soulCommitment, aztecRecipient, amount);
+        emit SoulToAztecInitiated(
+            requestId,
+            soulCommitment,
+            aztecRecipient,
+            amount
+        );
     }
 
     /**
@@ -378,7 +395,14 @@ contract AztecBridgeAdapter is
         if (request.processed) revert RequestAlreadyProcessed(requestId);
 
         // Verify Aztec note creation proof
-        if (!_verifyAztecNoteCreation(resultingNoteHash, request.aztecRecipient, request.amount, proof)) {
+        if (
+            !_verifyAztecNoteCreation(
+                resultingNoteHash,
+                request.aztecRecipient,
+                request.amount,
+                proof
+            )
+        ) {
             revert InvalidProof(requestId);
         }
 
@@ -424,7 +448,14 @@ contract AztecBridgeAdapter is
         }
 
         // Verify Aztec note ownership proof against synced state
-        if (!_verifyAztecNoteOwnership(aztecNoteHash, aztecNullifier, amount, proof)) {
+        if (
+            !_verifyAztecNoteOwnership(
+                aztecNoteHash,
+                aztecNullifier,
+                amount,
+                proof
+            )
+        ) {
             revert InvalidProof(aztecNoteHash);
         }
 
@@ -443,7 +474,11 @@ contract AztecBridgeAdapter is
         );
 
         // Generate Soul commitment (would be computed from note data)
-        bytes32 soulCommitment = _deriveCommitmentFromNote(aztecNoteHash, soulRecipient, amount);
+        bytes32 soulCommitment = _deriveCommitmentFromNote(
+            aztecNoteHash,
+            soulRecipient,
+            amount
+        );
 
         // Store request
         aztecToSoulRequests[requestId] = AztecToSoulRequest({
@@ -462,7 +497,12 @@ contract AztecBridgeAdapter is
         pendingInboundRequests++;
         totalBridgedFromAztec += amount;
 
-        emit AztecToSoulInitiated(requestId, aztecNoteHash, soulRecipient, amount);
+        emit AztecToSoulInitiated(
+            requestId,
+            aztecNoteHash,
+            soulRecipient,
+            amount
+        );
         emit AztecToSoulCompleted(requestId, soulCommitment);
 
         // Auto-complete for now (would be two-step in production)
@@ -670,12 +710,21 @@ contract AztecBridgeAdapter is
         _unpause();
     }
 
-    function withdrawFees() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    /**
+     * @notice Withdraw accumulated protocol fees to treasury
+     * @dev SECURITY: Sends ETH to pre-configured treasury address.
+     *      Access is restricted to DEFAULT_ADMIN_ROLE only.
+     *      Slither arbitrary-send-eth warning is acknowledged and accepted.
+     */
+    // slither-disable-next-line arbitrary-send-eth
+    function withdrawFees() external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
         uint256 amount = accumulatedFees;
+        if (amount == 0) revert NoFeesToWithdraw();
         accumulatedFees = 0;
 
         (bool success, ) = treasury.call{value: amount}("");
         if (!success) revert FeeWithdrawalFailed();
+        emit FeesWithdrawn(treasury, amount);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -692,7 +741,10 @@ contract AztecBridgeAdapter is
             // H-1 Fix: Block placeholder on mainnet
             _checkMainnetSafety();
             // Fallback: basic validation if no verifier configured
-            return proof.length >= 256 && commitment != bytes32(0) && nullifier != bytes32(0);
+            return
+                proof.length >= 256 &&
+                commitment != bytes32(0) &&
+                nullifier != bytes32(0);
         }
 
         // Construct public inputs for Soul ownership proof
@@ -721,7 +773,11 @@ contract AztecBridgeAdapter is
             // H-1 Fix: Block placeholder on mainnet
             _checkMainnetSafety();
             // Fallback: basic validation if no verifier configured
-            return proof.length >= 256 && noteHash != bytes32(0) && recipient != bytes32(0) && amount > 0;
+            return
+                proof.length >= 256 &&
+                noteHash != bytes32(0) &&
+                recipient != bytes32(0) &&
+                amount > 0;
         }
 
         // Construct public inputs for Aztec note creation
@@ -757,7 +813,11 @@ contract AztecBridgeAdapter is
             // H-1 Fix: Block placeholder on mainnet
             _checkMainnetSafety();
             // Fallback: basic validation
-            return proof.length >= 256 && noteHash != bytes32(0) && nullifier != bytes32(0) && amount > 0;
+            return
+                proof.length >= 256 &&
+                noteHash != bytes32(0) &&
+                nullifier != bytes32(0) &&
+                amount > 0;
         }
 
         // Construct public inputs for Aztec note ownership
@@ -766,8 +826,8 @@ contract AztecBridgeAdapter is
         publicInputs[0] = uint256(noteHash);
         publicInputs[1] = uint256(nullifier);
         publicInputs[2] = amount;
-        publicInputs[3] = uint256(syncedState.dataTreeRoot);  // Merkle root
-        publicInputs[4] = uint256(syncedState.nullifierTreeRoot);  // Nullifier tree root
+        publicInputs[3] = uint256(syncedState.dataTreeRoot); // Merkle root
+        publicInputs[4] = uint256(syncedState.nullifierTreeRoot); // Nullifier tree root
 
         // Call the PLONK verifier
         try plonkVerifier.verify(proof, publicInputs) returns (bool result) {
@@ -791,14 +851,10 @@ contract AztecBridgeAdapter is
     ) internal view returns (bytes32 commitment) {
         // Derive commitment using Poseidon-like hash
         // In production: use Poseidon hash matching Soul's commitment scheme
-        return keccak256(
-            abi.encodePacked(
-                noteHash,
-                recipient,
-                amount,
-                block.timestamp
-            )
-        );
+        return
+            keccak256(
+                abi.encodePacked(noteHash, recipient, amount, block.timestamp)
+            );
     }
 
     function _verifyCrossDomainProofInternal(
@@ -812,7 +868,7 @@ contract AztecBridgeAdapter is
         if (proofType == ProofType.Soul_TO_AZTEC) {
             // Use Groth16 verifier for Soul proofs
             if (address(soulVerifier) == address(0)) {
-                return proof.length >= 288;  // Fallback: Groth16 proof size check
+                return proof.length >= 288; // Fallback: Groth16 proof size check
             }
 
             uint256[] memory publicInputs = new uint256[](4);
@@ -829,7 +885,7 @@ contract AztecBridgeAdapter is
         } else if (proofType == ProofType.AZTEC_TO_Soul) {
             // Use PLONK verifier for Aztec proofs
             if (address(plonkVerifier) == address(0)) {
-                return proof.length >= 512;  // Fallback: UltraPLONK proof size check
+                return proof.length >= 512; // Fallback: UltraPLONK proof size check
             }
 
             uint256[] memory publicInputs = new uint256[](4);
@@ -838,7 +894,9 @@ contract AztecBridgeAdapter is
             publicInputs[2] = uint256(publicInputsHash);
             publicInputs[3] = uint256(keccak256("AZTEC_TO_Soul"));
 
-            try plonkVerifier.verify(proof, publicInputs) returns (bool result) {
+            try plonkVerifier.verify(proof, publicInputs) returns (
+                bool result
+            ) {
                 return result;
             } catch {
                 return false;
@@ -847,10 +905,11 @@ contract AztecBridgeAdapter is
             // Bidirectional - verify with cross-chain verifier
             // This would use a specialized verifier that handles both proof systems
             if (crossChainVerifier == address(0)) {
-                return proof.length >= 512 && 
-                       sourceCommitment != bytes32(0) && 
-                       targetCommitment != bytes32(0) &&
-                       publicInputsHash != bytes32(0);
+                return
+                    proof.length >= 512 &&
+                    sourceCommitment != bytes32(0) &&
+                    targetCommitment != bytes32(0) &&
+                    publicInputsHash != bytes32(0);
             }
 
             // Call cross-chain verifier interface
@@ -861,7 +920,11 @@ contract AztecBridgeAdapter is
                     _extractG1Point(proof, 0),
                     _extractG2Point(proof, 64),
                     _extractG1Point(proof, 192),
-                    _buildPublicSignals(sourceCommitment, targetCommitment, publicInputsHash)
+                    _buildPublicSignals(
+                        sourceCommitment,
+                        targetCommitment,
+                        publicInputsHash
+                    )
                 )
             );
 
@@ -906,8 +969,8 @@ contract AztecBridgeAdapter is
         bytes32 targetCommitment,
         bytes32 publicInputsHash
     ) internal pure returns (uint256[7] memory signals) {
-        signals[0] = uint256(sourceCommitment) >> 128;  // High bits
-        signals[1] = uint256(sourceCommitment) & type(uint128).max;  // Low bits
+        signals[0] = uint256(sourceCommitment) >> 128; // High bits
+        signals[1] = uint256(sourceCommitment) & type(uint128).max; // Low bits
         signals[2] = uint256(targetCommitment) >> 128;
         signals[3] = uint256(targetCommitment) & type(uint128).max;
         signals[4] = uint256(publicInputsHash) >> 128;

@@ -339,6 +339,9 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
             revert InvalidProof();
         }
 
+        // Mark as fulfilled before external call to prevent reentrancy
+        message.status = MessageStatus.FULFILLED;
+
         // Execute the call
         (bool success, bytes memory result) = message.target.call{
             value: message.value,
@@ -347,24 +350,19 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
 
         bytes32 resultHash = keccak256(result);
 
-        if (success) {
-            message.status = MessageStatus.FULFILLED;
+        if (!success) revert ExecutionFailed();
 
-            fulfillments[messageId] = FulfillmentProof({
-                messageId: messageId,
-                executionResultHash: resultHash,
-                zkProof: zkProof,
-                fulfiller: msg.sender,
-                fulfilledAt: uint64(block.timestamp)
-            });
+        fulfillments[messageId] = FulfillmentProof({
+            messageId: messageId,
+            executionResultHash: resultHash,
+            zkProof: zkProof,
+            fulfiller: msg.sender,
+            fulfilledAt: uint64(block.timestamp)
+        });
 
-            totalMessagesFulfilled++;
+        totalMessagesFulfilled++;
 
-            emit PrivacyMessageFulfilled(messageId, msg.sender, resultHash);
-        } else {
-            message.status = MessageStatus.FAILED;
-            emit PrivacyMessageFailed(messageId, "Execution reverted");
-        }
+        emit PrivacyMessageFulfilled(messageId, msg.sender, resultHash);
     }
 
     /// @notice Receive message from counterpart messenger (via L1)

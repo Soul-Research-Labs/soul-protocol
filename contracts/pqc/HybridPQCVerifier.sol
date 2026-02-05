@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import {PQCLib} from "../libraries/PQCLib.sol";
@@ -41,7 +42,7 @@ import {SPHINCSPlusVerifier} from "./SPHINCSPlusVerifier.sol";
  *
  * @custom:security-contact security@soulprotocol.io
  */
-contract HybridPQCVerifier is AccessControl, Pausable {
+contract HybridPQCVerifier is AccessControl, Pausable, ReentrancyGuard {
     using ECDSA for bytes32;
     using MessageHashUtils for bytes32;
     using PQCLib for PQCLib.HybridSignature;
@@ -287,9 +288,15 @@ contract HybridPQCVerifier is AccessControl, Pausable {
      * @param request The verification request
      * @return result The verification result
      */
+    // slither-disable-start reentrancy-no-eth
     function verify(
         PQCLib.VerificationRequest calldata request
-    ) external whenNotPaused returns (PQCLib.VerificationResult memory result) {
+    )
+        external
+        nonReentrant
+        whenNotPaused
+        returns (PQCLib.VerificationResult memory result)
+    {
         uint256 gasStart = gasleft();
 
         // Check cache first
@@ -334,6 +341,8 @@ contract HybridPQCVerifier is AccessControl, Pausable {
             result.gasUsed
         );
     }
+
+    // slither-disable-end reentrancy-no-eth
 
     // =============================================================================
     // INTERNAL VERIFICATION

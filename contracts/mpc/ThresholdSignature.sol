@@ -499,8 +499,8 @@ contract ThresholdSignature is AccessControl, ReentrancyGuard, Pausable {
         PartialSig[] storage partials = partialsArray[requestId];
 
         // Aggregate based on scheme
-        bytes memory aggregated;
-        bool valid;
+        bytes memory aggregated = new bytes(0);
+        bool valid = false;
 
         if (key.scheme == SignatureScheme.ECDSA_GG20) {
             (aggregated, valid) = _aggregateECDSA(
@@ -554,8 +554,8 @@ contract ThresholdSignature is AccessControl, ReentrancyGuard, Pausable {
         // Simplified: In production, use proper GG20 aggregation
         // This combines R commitments and s values using Lagrange
 
-        bytes32 aggregatedR;
-        uint256 aggregatedS;
+        bytes32 aggregatedR = bytes32(0);
+        uint256 aggregatedS = 0;
 
         uint256[] memory indices = new uint256[](partials.length);
         for (uint256 i = 0; i < partials.length; i++) {
@@ -612,8 +612,8 @@ contract ThresholdSignature is AccessControl, ReentrancyGuard, Pausable {
         // FROST aggregation: sum of partial signatures
         // σ = Σ σ_i, R = Σ R_i
 
-        bytes32 aggregatedR;
-        uint256 aggregatedS;
+        bytes32 aggregatedR = bytes32(0);
+        uint256 aggregatedS = 0;
 
         for (uint256 i = 0; i < partials.length; i++) {
             // XOR R values (simplified - real impl uses point addition)
@@ -654,7 +654,7 @@ contract ThresholdSignature is AccessControl, ReentrancyGuard, Pausable {
 
         // In production: use BLS12-381 curve operations
         // Simplified: concatenate partials
-        bytes memory combined;
+        bytes memory combined = new bytes(0);
         for (uint256 i = 0; i < partials.length; i++) {
             uint256 lambda = MPCLib.lagrangeBasis(
                 partials[i].signerIndex,

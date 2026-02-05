@@ -506,7 +506,7 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         uint256 /*chainId*/
     ) external onlyRole(EXECUTOR_ROLE) returns (bytes32 withdrawalId) {
         // Find L1 token
-        address l1Token;
+        address l1Token = address(0);
         for (uint256 i = 0; i < tokenMappingKeys.length; i++) {
             TokenMapping storage m = tokenMappings[tokenMappingKeys[i]];
             if (m.l2Token == l2Token && m.active) {
@@ -560,11 +560,11 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         // Verify outbox proof (using Arbitrum Outbox)
         // FIX: Verify against trusted Outbox
         IOutbox outbox = IOutbox(rollupConfigs[ARB_ONE_CHAIN_ID].outbox);
-        
+
         // This function would normally be called by the Outbox during execution
         // But if we want to manually verify:
         // bytes32 root = outbox.l2ToL1Sender(); // This only works during execution
-        
+
         // Proper pattern: Check if msg.sender is Outbox
         if (msg.sender != address(outbox)) revert InvalidProof();
 
@@ -780,6 +780,8 @@ interface IInbox {
 
 interface IOutbox {
     function l2ToL1Sender() external view returns (bytes32);
+
     function l2ToL1Block() external view returns (uint256);
+
     function l2ToL1Timestamp() external view returns (uint256);
 }

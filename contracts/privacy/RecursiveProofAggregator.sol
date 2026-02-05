@@ -412,7 +412,7 @@ contract RecursiveProofAggregator is
             abi.encodePacked(system, msg.sender, block.timestamp, totalBatches)
         );
 
-        bytes32[] memory emptyProofs;
+        bytes32[] memory emptyProofs = new bytes32[](0);
 
         _batches[batchId] = AggregationBatch({
             batchId: batchId,
@@ -534,9 +534,7 @@ contract RecursiveProofAggregator is
             revert CrossChainProofMismatch();
         }
 
-        bundleId = keccak256(
-            abi.encodePacked(chainIds, proofRoots, block.timestamp)
-        );
+        bundleId = keccak256(abi.encode(chainIds, proofRoots, block.timestamp));
 
         crossChainBundles[bundleId] = CrossChainProofBundle({
             bundleId: bundleId,

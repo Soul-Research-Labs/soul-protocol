@@ -669,7 +669,7 @@ contract BiniusVerifier is ReentrancyGuard, AccessControl, Pausable {
     function _hashEvaluations(
         TowerElement[] calldata evaluations
     ) internal pure returns (bytes32) {
-        bytes memory packed;
+        bytes memory packed = new bytes(0);
         for (uint256 i = 0; i < evaluations.length; ) {
             packed = abi.encodePacked(
                 packed,
@@ -828,6 +828,18 @@ contract BiniusVerifier is ReentrancyGuard, AccessControl, Pausable {
         BiniusProof calldata proof,
         uint256 gasUsed
     ) internal {
+        uint256 estimatedGas = _estimateVerificationGasInternal(
+            proof.commitment.dimension,
+            proof.commitment.towerLevel,
+            proof.variant
+        );
+
+        if (estimatedGas > gasUsed) {
+            unchecked {
+                totalGasSaved += (estimatedGas - gasUsed);
+            }
+        }
+
         verifiedProofs[proof.proofId] = VerificationResult({
             proofId: proof.proofId,
             isValid: true,
@@ -957,6 +969,14 @@ contract BiniusVerifier is ReentrancyGuard, AccessControl, Pausable {
         uint8 towerLevel,
         BiniusVariant variant
     ) external pure returns (uint256) {
+        return _estimateVerificationGasInternal(dimension, towerLevel, variant);
+    }
+
+    function _estimateVerificationGasInternal(
+        uint8 dimension,
+        uint8 towerLevel,
+        BiniusVariant variant
+    ) internal pure returns (uint256) {
         // Base gas
         uint256 gas = 50000;
 

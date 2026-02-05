@@ -331,6 +331,12 @@ contract SoulKernelProof is AccessControl, ReentrancyGuard, Pausable {
     function verifyKernelProof(
         KernelProof calldata proof
     ) external nonReentrant whenNotPaused returns (bytes32 kernelId) {
+        return _verifyKernelProof(proof);
+    }
+
+    function _verifyKernelProof(
+        KernelProof calldata proof
+    ) internal returns (bytes32 kernelId) {
         // Generate deterministic kernel ID
         kernelId = _generateKernelId(proof);
 
@@ -511,7 +517,7 @@ contract SoulKernelProof is AccessControl, ReentrancyGuard, Pausable {
         // Verify each child proof
         bytes32[] memory childIds = new bytes32[](childProofs.length);
         for (uint256 i = 0; i < childProofs.length; ) {
-            childIds[i] = this.verifyKernelProof(childProofs[i]);
+            childIds[i] = _verifyKernelProof(childProofs[i]);
 
             // Track recursion depth
             recursionDepth[childIds[i]] = currentDepth + 1;

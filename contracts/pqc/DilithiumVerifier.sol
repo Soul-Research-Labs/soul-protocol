@@ -330,8 +330,8 @@ contract DilithiumVerifier is Ownable, Pausable {
         bytes calldata publicKey,
         PQCLib.SignatureAlgorithm algorithm
     ) internal pure {
-        uint256 expectedPkSize;
-        uint256 expectedSigSize;
+        uint256 expectedPkSize = 0;
+        uint256 expectedSigSize = 0;
 
         if (algorithm == PQCLib.SignatureAlgorithm.Dilithium3) {
             expectedPkSize = PQCLib.DILITHIUM3_PK_SIZE;
@@ -376,7 +376,7 @@ contract DilithiumVerifier is Ownable, Pausable {
         bytes calldata publicKey,
         PQCLib.SignatureAlgorithm algorithm
     ) internal view returns (bool) {
-        bytes memory input = abi.encodePacked(
+        bytes memory input = abi.encode(
             uint8(algorithm),
             message,
             publicKey,

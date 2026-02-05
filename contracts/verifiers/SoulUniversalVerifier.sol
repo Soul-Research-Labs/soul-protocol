@@ -2,13 +2,14 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title SoulUniversalVerifier
  * @notice Universal verifier supporting multiple ZK proving systems
  * @dev Aggregates all Soul verifiers into a single interface
  */
-contract SoulUniversalVerifier is Ownable {
+contract SoulUniversalVerifier is Ownable, ReentrancyGuard {
     // ============================================
     // Types
     // ============================================
@@ -156,10 +157,11 @@ contract SoulUniversalVerifier is Ownable {
      * @return valid Whether the proof is valid
      * @return gasUsed Gas used for verification
      */
+    // slither-disable-start reentrancy-no-eth
     function verify(
         UniversalProof calldata proof,
         bytes calldata publicInputs
-    ) external returns (bool valid, uint256 gasUsed) {
+    ) external nonReentrant returns (bool valid, uint256 gasUsed) {
         uint256 gasStart = gasleft();
 
         VerifierConfig storage config = verifiers[proof.system];
@@ -203,6 +205,8 @@ contract SoulUniversalVerifier is Ownable {
 
         return (valid, gasUsed);
     }
+
+    // slither-disable-end reentrancy-no-eth
 
     /**
      * @notice Batch verify multiple proofs

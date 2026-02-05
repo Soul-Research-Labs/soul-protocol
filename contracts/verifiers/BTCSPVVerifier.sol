@@ -117,7 +117,11 @@ contract BTCSPVVerifier is AccessControl {
     //////////////////////////////////////////////////////////////*/
 
     event BlockHeaderVerified(bytes32 indexed blockHash, uint256 height);
-    event ChainTipUpdated(bytes32 indexed blockHash, uint256 height, uint256 totalWork);
+    event ChainTipUpdated(
+        bytes32 indexed blockHash,
+        uint256 height,
+        uint256 totalWork
+    );
     event GenesisBlockSet(bytes32 indexed blockHash);
 
     /*//////////////////////////////////////////////////////////////
@@ -298,11 +302,15 @@ contract BTCSPVVerifier is AccessControl {
                           VIEW FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    function getBlockHeader(bytes32 blockHash) external view returns (BlockHeader memory) {
+    function getBlockHeader(
+        bytes32 blockHash
+    ) external view returns (BlockHeader memory) {
         return blockHeaders[blockHash];
     }
 
-    function getBlockHashAtHeight(uint256 height) external view returns (bytes32) {
+    function getBlockHashAtHeight(
+        uint256 height
+    ) external view returns (bytes32) {
         return blockHashByHeight[height];
     }
 
@@ -314,7 +322,9 @@ contract BTCSPVVerifier is AccessControl {
         return blockHeaders[blockHash].verified;
     }
 
-    function getConfirmations(bytes32 blockHash) external view returns (uint256) {
+    function getConfirmations(
+        bytes32 blockHash
+    ) external view returns (uint256) {
         BlockHeader storage header = blockHeaders[blockHash];
         if (!header.verified) return 0;
         return chainTip.height - header.height + 1;
@@ -327,14 +337,18 @@ contract BTCSPVVerifier is AccessControl {
     /**
      * @dev Double SHA256 hash of block header (Bitcoin's hash function)
      */
-    function _hashBlockHeader(bytes calldata headerBytes) internal pure returns (bytes32) {
+    function _hashBlockHeader(
+        bytes calldata headerBytes
+    ) internal pure returns (bytes32) {
         return sha256(abi.encodePacked(sha256(headerBytes)));
     }
 
     /**
      * @dev Extract previous block hash from header (bytes 4-35)
      */
-    function _extractPrevBlockHash(bytes calldata headerBytes) internal pure returns (bytes32) {
+    function _extractPrevBlockHash(
+        bytes calldata headerBytes
+    ) internal pure returns (bytes32) {
         bytes32 prevHash;
         assembly {
             prevHash := calldataload(add(headerBytes.offset, 4))
@@ -345,7 +359,9 @@ contract BTCSPVVerifier is AccessControl {
     /**
      * @dev Extract Merkle root from header (bytes 36-67)
      */
-    function _extractMerkleRoot(bytes calldata headerBytes) internal pure returns (bytes32) {
+    function _extractMerkleRoot(
+        bytes calldata headerBytes
+    ) internal pure returns (bytes32) {
         bytes32 merkleRoot;
         assembly {
             merkleRoot := calldataload(add(headerBytes.offset, 36))
@@ -356,7 +372,9 @@ contract BTCSPVVerifier is AccessControl {
     /**
      * @dev Extract timestamp from header (bytes 68-71)
      */
-    function _extractTimestamp(bytes calldata headerBytes) internal pure returns (uint32) {
+    function _extractTimestamp(
+        bytes calldata headerBytes
+    ) internal pure returns (uint32) {
         uint32 blockTs;
         assembly {
             blockTs := shr(224, calldataload(add(headerBytes.offset, 68)))
@@ -367,7 +385,9 @@ contract BTCSPVVerifier is AccessControl {
     /**
      * @dev Extract difficulty bits from header (bytes 72-75)
      */
-    function _extractBits(bytes calldata headerBytes) internal pure returns (uint32) {
+    function _extractBits(
+        bytes calldata headerBytes
+    ) internal pure returns (uint32) {
         uint32 bits;
         assembly {
             bits := shr(224, calldataload(add(headerBytes.offset, 72)))
@@ -378,7 +398,9 @@ contract BTCSPVVerifier is AccessControl {
     /**
      * @dev Extract nonce from header (bytes 76-79)
      */
-    function _extractNonce(bytes calldata headerBytes) internal pure returns (uint32) {
+    function _extractNonce(
+        bytes calldata headerBytes
+    ) internal pure returns (uint32) {
         uint32 nonce;
         assembly {
             nonce := shr(224, calldataload(add(headerBytes.offset, 76)))
@@ -389,7 +411,10 @@ contract BTCSPVVerifier is AccessControl {
     /**
      * @dev Verify proof of work meets difficulty target
      */
-    function _verifyProofOfWork(bytes32 blockHash, uint32 bits) internal pure returns (bool) {
+    function _verifyProofOfWork(
+        bytes32 blockHash,
+        uint32 bits
+    ) internal pure returns (bool) {
         // Convert compact bits to target
         uint256 target = _bitsToTarget(bits);
 
@@ -460,7 +485,7 @@ contract BTCSPVVerifier is AccessControl {
      * @dev Reverse bytes in bytes32 (Bitcoin uses little-endian)
      */
     function _reverseBytes32(bytes32 input) internal pure returns (bytes32) {
-        bytes32 output;
+        bytes32 output = bytes32(0);
         for (uint256 i = 0; i < 32; i++) {
             output |= bytes32(uint256(uint8(input[i])) << (8 * (31 - i)));
         }
@@ -471,9 +496,10 @@ contract BTCSPVVerifier is AccessControl {
      * @dev Reverse bytes in uint32 (little-endian to big-endian)
      */
     function _reverseBytes4(uint32 input) internal pure returns (uint32) {
-        return ((input & 0xff) << 24) |
-               ((input & 0xff00) << 8) |
-               ((input & 0xff0000) >> 8) |
-               ((input & 0xff000000) >> 24);
+        return
+            ((input & 0xff) << 24) |
+            ((input & 0xff00) << 8) |
+            ((input & 0xff0000) >> 8) |
+            ((input & 0xff000000) >> 24);
     }
 }

@@ -395,7 +395,7 @@ contract KyberKEM is Ownable, Pausable, ReentrancyGuard {
         }
 
         // Call precompile for verification
-        bytes memory input = abi.encodePacked(
+        bytes memory input = abi.encode(
             uint8(algorithm),
             publicKey,
             ciphertext
@@ -423,7 +423,7 @@ contract KyberKEM is Ownable, Pausable, ReentrancyGuard {
         bytes calldata publicKey,
         PQCLib.KEMAlgorithm algorithm
     ) internal pure {
-        uint256 expected;
+        uint256 expected = 0;
         if (algorithm == PQCLib.KEMAlgorithm.Kyber512) {
             expected = PQCLib.KYBER512_PK_SIZE;
         } else if (algorithm == PQCLib.KEMAlgorithm.Kyber768) {
@@ -443,7 +443,7 @@ contract KyberKEM is Ownable, Pausable, ReentrancyGuard {
         bytes calldata ciphertext,
         PQCLib.KEMAlgorithm algorithm
     ) internal pure {
-        uint256 expected;
+        uint256 expected = 0;
         if (algorithm == PQCLib.KEMAlgorithm.Kyber512) {
             expected = PQCLib.KYBER512_CT_SIZE;
         } else if (algorithm == PQCLib.KEMAlgorithm.Kyber768) {

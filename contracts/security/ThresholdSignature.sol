@@ -933,7 +933,7 @@ contract ThresholdSignature is AccessControl, ReentrancyGuard, Pausable {
     function _modInverse(uint256 a, uint256 m) internal pure returns (uint256) {
         if (a == 0) return 0;
 
-        uint256 t1;
+        uint256 t1 = 0;
         uint256 t2 = 1;
         uint256 r1 = m;
         uint256 r2 = a;

@@ -313,8 +313,8 @@ contract PostQuantumSignatureVerifier is
         uint8 variant
     ) external view override returns (bool valid) {
         // Validate based on variant
-        uint256 expectedSigSize;
-        uint256 expectedPkSize;
+        uint256 expectedSigSize = 0;
+        uint256 expectedPkSize = 0;
 
         if (variant == 0) {
             // SPHINCS-SHA2-128f
@@ -848,9 +848,7 @@ contract PostQuantumSignatureVerifier is
         if (publicKey.length != expectedPkSize) return false;
 
         // Check attestation from trusted verifier
-        bytes32 sigHash = keccak256(
-            abi.encodePacked(message, signature, publicKey)
-        );
+        bytes32 sigHash = keccak256(abi.encode(message, signature, publicKey));
         VerifierAttestation storage att = attestations[sigHash];
         return att.valid && att.verifier != address(0);
     }
@@ -889,9 +887,7 @@ contract PostQuantumSignatureVerifier is
         if (publicKey.length != expectedPkSize) return false;
 
         // Check attestation from trusted verifier
-        bytes32 sigHash = keccak256(
-            abi.encodePacked(message, signature, publicKey)
-        );
+        bytes32 sigHash = keccak256(abi.encode(message, signature, publicKey));
         VerifierAttestation storage att = attestations[sigHash];
         return att.valid && att.verifier != address(0);
     }
@@ -930,9 +926,7 @@ contract PostQuantumSignatureVerifier is
         if (publicKey.length != expectedPkSize) return false;
 
         // Check attestation from trusted verifier
-        bytes32 sigHash = keccak256(
-            abi.encodePacked(message, signature, publicKey)
-        );
+        bytes32 sigHash = keccak256(abi.encode(message, signature, publicKey));
         VerifierAttestation storage att = attestations[sigHash];
         return att.valid && att.verifier != address(0);
     }
@@ -965,7 +959,7 @@ contract PostQuantumSignatureVerifier is
 
         // Verify message hash binding
         bytes32 computedBinding = keccak256(
-            abi.encodePacked(messageHash, signatureHash)
+            abi.encode(messageHash, signatureHash)
         );
         if (computedBinding == bytes32(0)) return false;
 

@@ -469,7 +469,17 @@ contract RuntimeSecurityMonitor is AccessControl, ReentrancyGuard, Pausable {
         if (!monitoredContracts[target].active)
             revert ContractNotMonitored(target);
 
+        monitoredContracts[target].lastChecked = block.timestamp;
+
         bytes32[] storage invIds = monitoredContracts[target].invariantIds;
+        bytes32[] memory violatedIds = new bytes32[](invIds.length);
+        InvariantType[] memory violationTypes = new InvariantType[](
+            invIds.length
+        );
+        ViolationSeverity[]
+            memory violationSeverities = new ViolationSeverity[](invIds.length);
+        uint256 violationIndex;
+
         for (uint256 i = 0; i < invIds.length; i++) {
             Invariant storage inv = invariants[invIds[i]];
             if (!inv.active) continue;
@@ -480,17 +490,22 @@ contract RuntimeSecurityMonitor is AccessControl, ReentrancyGuard, Pausable {
             );
 
             if (violated) {
-                _recordViolation(
-                    invIds[i],
-                    target,
-                    inv.invariantType,
-                    severity
-                );
-                violationCount++;
+                violatedIds[violationIndex] = invIds[i];
+                violationTypes[violationIndex] = inv.invariantType;
+                violationSeverities[violationIndex] = severity;
+                violationIndex++;
             }
         }
 
-        monitoredContracts[target].lastChecked = block.timestamp;
+        for (uint256 i = 0; i < violationIndex; i++) {
+            _recordViolation(
+                violatedIds[i],
+                target,
+                violationTypes[i],
+                violationSeverities[i]
+            );
+            violationCount++;
+        }
     }
 
     // ============================================

@@ -559,8 +559,8 @@ contract MPCCoordinator is AccessControl, ReentrancyGuard, Pausable {
         Session storage session = sessions[sessionId];
 
         // Aggregate results (simplified: use first result as consensus)
-        bytes32 consensusResult;
-        uint256 matchCount;
+        bytes32 consensusResult = bytes32(0);
+        uint256 matchCount = 0;
 
         for (uint8 i = 1; i <= session.joinedCount; i++) {
             address participant = participantByIndex[sessionId][i];

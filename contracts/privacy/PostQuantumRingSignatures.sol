@@ -195,6 +195,7 @@ contract PostQuantumRingSignatures is AccessControl, ReentrancyGuard, Pausable {
         _grantRole(VERIFIER_ROLE, msg.sender);
 
         verificationMode = VerificationMode.HYBRID;
+        totalClassicalFallbacks = 0;
     }
 
     // =========================================================================

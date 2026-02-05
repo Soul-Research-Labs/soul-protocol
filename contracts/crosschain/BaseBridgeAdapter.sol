@@ -325,6 +325,15 @@ contract BaseBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     error InvalidAmount();
     error TransferAlreadyCompleted();
     error TransferFailed();
+    error InvalidAddress();
+    error InsufficientBalance();
+
+    /*//////////////////////////////////////////////////////////////
+                                EVENTS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Emitted on emergency withdrawal
+    event EmergencyWithdrawal(address indexed recipient, uint256 amount);
 
     /*//////////////////////////////////////////////////////////////
                             CONSTRUCTOR
@@ -837,13 +846,22 @@ contract BaseBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Emergency withdraw stuck funds
+     * @dev SECURITY: This function intentionally sends ETH to admin-specified address.
+     *      Access is restricted to DEFAULT_ADMIN_ROLE only.
+     *      Slither arbitrary-send-eth warning is acknowledged and accepted.
+     * @param to Recipient address (must be trusted admin-controlled address)
+     * @param amount Amount of ETH to withdraw
      */
+    // slither-disable-next-line arbitrary-send-eth
     function emergencyWithdraw(
         address to,
         uint256 amount
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
+        if (to == address(0)) revert InvalidAddress();
+        if (amount > address(this).balance) revert InsufficientBalance();
         (bool success, ) = to.call{value: amount}("");
         if (!success) revert TransferFailed();
+        emit EmergencyWithdrawal(to, amount);
     }
 
     /*//////////////////////////////////////////////////////////////
