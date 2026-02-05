@@ -139,10 +139,11 @@ contract PrivacyFuzz is Test {
         uint256 key1,
         uint256 key2
     ) public pure {
-        vm.assume(key1 != key2);
-
         key1 = bound(key1, 1, ED25519_L - 1);
         key2 = bound(key2, 1, ED25519_L - 1);
+        
+        // Check uniqueness AFTER bounding
+        vm.assume(key1 != key2);
 
         bytes32 image1 = _computeKeyImage(key1);
         bytes32 image2 = _computeKeyImage(key2);
@@ -296,10 +297,12 @@ contract PrivacyFuzz is Test {
     ) public pure {
         vm.assume(spendKey != bytes32(0));
         vm.assume(viewKey != bytes32(0));
-        vm.assume(eph1 != eph2);
 
         eph1 = bound(eph1, 1, SECP256K1_N - 1);
         eph2 = bound(eph2, 1, SECP256K1_N - 1);
+        
+        // Check uniqueness AFTER bounding
+        vm.assume(eph1 != eph2);
 
         address stealth1 = _deriveStealthAddress(spendKey, viewKey, eph1);
         address stealth2 = _deriveStealthAddress(spendKey, viewKey, eph2);
