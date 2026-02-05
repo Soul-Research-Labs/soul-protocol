@@ -1,7 +1,0 @@
-# Test artifacts - keep tests, ignore generated output
-*.log
-coverage/
-.nyc_output/
-
-# OS
-.DS_Store

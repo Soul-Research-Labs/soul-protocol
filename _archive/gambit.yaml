@@ -1,9 +1,0 @@
-mutate:
-  - filename: contracts/security/SecurityModule.sol
-    contract: SecurityModule
-  - filename: contracts/primitives/ZKBoundStateLocks.sol
-    contract: ZKBoundStateLocks
-
-remappings:
-  - "@openzeppelin/=node_modules/@openzeppelin/"
-  - "forge-std/=lib/forge-std/src/"
