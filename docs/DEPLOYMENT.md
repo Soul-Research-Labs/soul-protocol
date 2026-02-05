@@ -116,10 +116,14 @@ Expected costs (at ~30 gwei):
 | CDNA | ~2,300,000 | ~0.069 |
 | Soulv2Orchestrator | ~1,400,000 | ~0.042 |
 | SoulTimelock | ~2,300,000 | ~0.069 |
-| SoulGovernance | ~3,500,000 | ~0.105 |
+| SoulMultiSigGovernance | ~3,500,000 | ~0.105 |
 | TEEAttestation | ~2,200,000 | ~0.066 |
 | ZKBoundStateLocks | ~3,000,000 | ~0.090 |
-| **Total** | **~24,300,000** | **~0.73** |
+| BridgeWatchtower | ~2,100,000 | ~0.063 |
+| SoulPreconfirmationHandler | ~1,800,000 | ~0.054 |
+| ConfidentialDataAvailability | ~3,200,000 | ~0.096 |
+| MPCGateway | ~3,100,000 | ~0.093 |
+| **Total** | **~35,500,000** | **~1.07** |
 
 ### Step 3: Deploy to Mainnet
 

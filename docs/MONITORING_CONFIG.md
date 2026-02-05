@@ -98,6 +98,67 @@ events:
     alert: medium
     description: Swap expired and refunded
     threshold:
+```
+
+### SoulMultiSigGovernance
+
+```yaml
+events:
+  - name: ProposalCreated
+    alert: low
+    description: New governance proposal created
+    
+  - name: ProposalExecuted
+    alert: high
+    description: Governance proposal executed
+    response: "Verify execution matches expected behavior"
+    
+  - name: ProposalCancelled
+    alert: medium
+    description: Governance proposal cancelled
+```
+
+### BridgeWatchtower
+
+```yaml
+events:
+  - name: WatchtowerSlashed
+    alert: high
+    description: Watchtower slashed for misbehavior
+    
+  - name: ReportSubmitted
+    alert: medium
+    description: Anomaly report submitted
+    threshold:
+      warning: "> 10/hour"
+      critical: "> 50/hour"
+      
+  - name: ReportFinalized
+    alert: high
+    description: Report consensus reached
+```
+
+### ConfidentialDataAvailability
+
+```yaml
+events:
+  - name: BlobPublished
+    alert: low
+    description: New confidential blob published
+    
+  - name: ChallengeCreated
+    alert: high
+    description: Data availability challenged
+    
+  - name: MinChallengeStakeUpdated
+    alert: medium
+    description: Admin configuration changed
+    
+  - name: VerifiersUpdated
+    alert: high
+    description: Verifier addresses changed
+    response: "Verify new verifiers are legitimate"
+```
       warning: "> 10% of swaps refunded"
 ```
 

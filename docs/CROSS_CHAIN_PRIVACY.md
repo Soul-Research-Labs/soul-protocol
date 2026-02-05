@@ -66,6 +66,8 @@ The following sections document cryptographic primitives for educational purpose
 ```
 contracts/privacy/
 ├── StealthAddressRegistry.sol     # ERC-5564 stealth addresses
+├── UnifiedNullifierManager.sol    # Cross-domain nullifier management
+└── CrossChainPrivacyHub.sol       # Privacy-preserving cross-chain hub
 
 contracts/crosschain/
 ├── ArbitrumBridgeAdapter.sol      # Arbitrum native messaging
@@ -74,10 +76,31 @@ contracts/crosschain/
 ├── LayerZeroAdapter.sol           # LayerZero V2 OApp
 ├── DirectL2Messenger.sol          # Direct L2-to-L2 messaging
 ├── EthereumL1Bridge.sol           # L1 state commitments
+├── SoulIntentResolver.sol         # ERC-7683 cross-chain intents
+├── SoulL2Messenger.sol            # RIP-7755 L2 messaging
+└── L2ChainAdapter.sol             # Generic L2 chain adapter
 
 contracts/core/
 ├── NullifierRegistryV3.sol        # CDNA implementation
 └── ConfidentialStateContainerV3.sol # Encrypted state management
+
+contracts/governance/
+├── SoulMultiSigGovernance.sol     # Multi-signature governance
+└── SoulTimelock.sol               # Time-locked admin operations
+
+contracts/security/
+└── BridgeWatchtower.sol           # Decentralized watchtower network
+
+contracts/consensus/
+└── SoulPreconfirmationHandler.sol # L1 preconfirmations
+
+contracts/infrastructure/
+└── ConfidentialDataAvailability.sol # Confidential DA layer
+
+contracts/mpc/
+├── MPCGateway.sol                 # MPC operations gateway
+├── MPCCoordinator.sol             # MPC session coordination
+└── MPCKeyRegistry.sol             # Threshold key management
 ```
 
 ---

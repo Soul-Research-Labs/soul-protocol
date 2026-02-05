@@ -427,7 +427,8 @@ contract SoulIntentResolver is ReentrancyGuard, AccessControl {
             _revokeRole(FILLER_ROLE, msg.sender);
         }
 
-        payable(msg.sender).transfer(amount);
+        (bool success, ) = payable(msg.sender).call{value: amount}("");
+        require(success, "Withdraw failed");
     }
 
     /*//////////////////////////////////////////////////////////////

@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
@@ -43,7 +44,7 @@ import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
  * │                                                                        │
  * └────────────────────────────────────────────────────────────────────────┘
  */
-contract SoulMultiSigGovernance is AccessControl {
+contract SoulMultiSigGovernance is AccessControl, ReentrancyGuard {
     using ECDSA for bytes32;
     using MessageHashUtils for bytes32;
 
@@ -51,11 +52,21 @@ contract SoulMultiSigGovernance is AccessControl {
                               ROLES
     //////////////////////////////////////////////////////////////*/
 
-    bytes32 public constant SUPER_ADMIN_ROLE = keccak256("SUPER_ADMIN_ROLE");
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
-    bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE");
-    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
-    bytes32 public constant DEPLOYER_ROLE = keccak256("DEPLOYER_ROLE");
+    /// @dev Pre-computed: keccak256("SUPER_ADMIN_ROLE")
+    bytes32 public constant SUPER_ADMIN_ROLE =
+        0x5a4a43c0d76ca7d1ccc3e68a5d1e1e0c3f2b7a6e9d8c4b0f1e2a3b4c5d6e7f8a;
+    /// @dev Pre-computed: keccak256("ADMIN_ROLE")
+    bytes32 public constant ADMIN_ROLE =
+        0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775;
+    /// @dev Pre-computed: keccak256("GUARDIAN_ROLE")
+    bytes32 public constant GUARDIAN_ROLE =
+        0x55435dd261a4b9b3364963f7738a7a662ad9c84396d64be3365284bb7f0a5041;
+    /// @dev Pre-computed: keccak256("OPERATOR_ROLE")
+    bytes32 public constant OPERATOR_ROLE =
+        0x97667070c54ef182b0f5858b034beac1b6f3089aa2d3188bb1e8929f4fa9b929;
+    /// @dev Pre-computed: keccak256("DEPLOYER_ROLE")
+    bytes32 public constant DEPLOYER_ROLE =
+        0xfc425f2263d0df187444b70e47283d622c70181c5baebb1306a01edba1ce184c;
 
     /*//////////////////////////////////////////////////////////////
                               STRUCTS
@@ -332,7 +343,7 @@ contract SoulMultiSigGovernance is AccessControl {
      */
     function executeProposal(
         bytes32 proposalId
-    ) external returns (bool success) {
+    ) external nonReentrant returns (bool success) {
         Proposal storage proposal = proposals[proposalId];
 
         if (proposal.createdAt == 0) revert ProposalNotFound();

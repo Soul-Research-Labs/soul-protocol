@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
@@ -40,7 +41,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
  * │                                                                        │
  * └────────────────────────────────────────────────────────────────────────┘
  */
-contract BridgeWatchtower is AccessControl, Pausable {
+contract BridgeWatchtower is AccessControl, ReentrancyGuard, Pausable {
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
@@ -240,7 +241,6 @@ contract BridgeWatchtower is AccessControl, Pausable {
     error TransferFailed();
     error NoRewardsAvailable();
 
-
     /*//////////////////////////////////////////////////////////////
                             CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
@@ -314,7 +314,7 @@ contract BridgeWatchtower is AccessControl, Pausable {
     /**
      * @notice Complete exit and withdraw stake
      */
-    function completeExit() external {
+    function completeExit() external nonReentrant {
         Watchtower storage wt = watchtowers[msg.sender];
         if (wt.status != WatchtowerStatus.EXITING) revert ExitNotRequested();
         if (block.timestamp < exitRequests[msg.sender])
@@ -525,7 +525,10 @@ contract BridgeWatchtower is AccessControl, Pausable {
      * @notice Slash inactive watchtowers
      */
     function slashInactive() external {
-        for (uint256 i = 0; i < activeWatchtowers.length; i++) {
+        uint256 len = activeWatchtowers.length;
+        uint256 totalSlashAmount = 0;
+
+        for (uint256 i = 0; i < len; i++) {
             address op = activeWatchtowers[i];
             Watchtower storage wt = watchtowers[op];
 
@@ -536,11 +539,16 @@ contract BridgeWatchtower is AccessControl, Pausable {
                 uint256 slashAmount = (wt.stake * INACTIVITY_SLASH_PERCENT) /
                     100;
                 wt.stake -= slashAmount;
-                totalStaked -= slashAmount;
-                rewardPool += slashAmount;
+                totalSlashAmount += slashAmount;
 
                 emit WatchtowerSlashed(op, slashAmount, "Inactivity");
             }
+        }
+
+        // Single storage write for accumulated values
+        if (totalSlashAmount > 0) {
+            totalStaked -= totalSlashAmount;
+            rewardPool += totalSlashAmount;
         }
     }
 
@@ -551,7 +559,7 @@ contract BridgeWatchtower is AccessControl, Pausable {
     /**
      * @notice Claim rewards for correct reports
      */
-    function claimRewards() external {
+    function claimRewards() external nonReentrant {
         Watchtower storage wt = watchtowers[msg.sender];
         if (wt.operator == address(0)) revert NotRegistered();
 

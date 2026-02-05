@@ -80,11 +80,17 @@ This document provides a comprehensive threat model for the Soul Protocol (Soul)
 **Affected Components**:
 - `SoulAtomicSwapV2.sol`
 - `ConfidentialStateContainerV3.sol`
+- `SoulMultiSigGovernance.sol`
+- `BridgeWatchtower.sol`
+- `SoulPreconfirmationHandler.sol`
+- `SoulIntentResolver.sol`
+- `SoulL2Messenger.sol`
 
 **Mitigations**:
 - ✅ ReentrancyGuard on all external state-changing functions
 - ✅ Checks-Effects-Interactions pattern
 - ✅ Pull-over-push payment patterns
+- ✅ Replaced deprecated `.transfer()` with `.call{value:}()`
 
 **Code Reference**:
 ```solidity

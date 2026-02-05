@@ -284,6 +284,12 @@ contract ConfidentialDataAvailability is
 
     event KeyDisclosed(bytes32 indexed blobId, bytes32 keyHash);
 
+    event MinChallengeStakeUpdated(uint256 oldStake, uint256 newStake);
+    event DefaultRetentionPeriodUpdated(uint64 oldPeriod, uint64 newPeriod);
+    event ChallengeWindowUpdated(uint64 oldWindow, uint64 newWindow);
+    event MinSamplingRatioUpdated(uint8 oldRatio, uint8 newRatio);
+    event VerifiersUpdated(address shardVerifier, address zkVerifier);
+
     /*//////////////////////////////////////////////////////////////
                                  CUSTOM ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -318,6 +324,7 @@ contract ConfidentialDataAvailability is
     error InvalidProof();
     error StakeTransferFailed();
     error Unauthorized();
+    error ZeroAddress();
     error ChallengeDeadlinePassed(bytes32 challengeId);
     error ChallengeDeadlineNotPassed(bytes32 challengeId);
 
@@ -1065,34 +1072,46 @@ contract ConfidentialDataAvailability is
     function setMinChallengeStake(
         uint256 stake
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        uint256 oldStake = minChallengeStake;
         minChallengeStake = stake;
+        emit MinChallengeStakeUpdated(oldStake, stake);
     }
 
     function setDefaultRetentionPeriod(
         uint64 period
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        uint64 oldPeriod = defaultRetentionPeriod;
         defaultRetentionPeriod = period;
+        emit DefaultRetentionPeriodUpdated(oldPeriod, period);
     }
 
     function setChallengeWindow(
         uint64 window
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        uint64 oldWindow = challengeWindow;
         challengeWindow = window;
+        emit ChallengeWindowUpdated(oldWindow, window);
     }
 
     function setMinSamplingRatio(
         uint8 ratio
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (ratio > 100) revert InvalidRatio(ratio);
+        uint8 oldRatio = minSamplingRatio;
         minSamplingRatio = ratio;
+        emit MinSamplingRatioUpdated(oldRatio, ratio);
     }
 
     function setVerifiers(
         address _shardVerifier,
         address _zkVerifier
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_shardVerifier == address(0) || _zkVerifier == address(0)) {
+            revert ZeroAddress();
+        }
         shardVerifier = _shardVerifier;
         zkVerifier = _zkVerifier;
+        emit VerifiersUpdated(_shardVerifier, _zkVerifier);
     }
 
     function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {

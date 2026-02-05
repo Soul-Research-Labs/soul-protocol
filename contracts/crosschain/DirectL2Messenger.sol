@@ -228,9 +228,15 @@ contract DirectL2Messenger is ReentrancyGuard, AccessControl, Pausable {
                             STATE VARIABLES
     //////////////////////////////////////////////////////////////*/
 
-    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
-    bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
-    bytes32 public constant SEQUENCER_ROLE = keccak256("SEQUENCER_ROLE");
+    /// @dev Pre-computed: keccak256("OPERATOR_ROLE")
+    bytes32 public constant OPERATOR_ROLE =
+        0x97667070c54ef182b0f5858b034beac1b6f3089aa2d3188bb1e8929f4fa9b929;
+    /// @dev Pre-computed: keccak256("RELAYER_ROLE")
+    bytes32 public constant RELAYER_ROLE =
+        0xe2b7fb3b832174769106daebcfd6d1970523240dda11281102db9363b83b0dc4;
+    /// @dev Pre-computed: keccak256("SEQUENCER_ROLE")
+    bytes32 public constant SEQUENCER_ROLE =
+        0x849fce1dece1cc934b40fd6265c7df1e5b7d75ab9dfc0fbb2c0fb4e4c4dec694;
 
     /// @notice Current chain ID (immutable)
     uint256 public immutable currentChainId;
@@ -595,15 +601,25 @@ contract DirectL2Messenger is ReentrancyGuard, AccessControl, Pausable {
             )
         ).toEthSignedMessageHash();
 
-        address[] memory signers = new address[](signatures.length);
-        for (uint256 i = 0; i < signatures.length; i++) {
+        // GAS OPT: Cache array length and use unchecked increment
+        uint256 sigLen = signatures.length;
+        address[] memory signers = new address[](sigLen);
+
+        // GAS OPT: Cache timestamp to avoid repeated TIMESTAMP opcode
+        uint256 currentTimestamp = block.timestamp;
+
+        for (uint256 i = 0; i < sigLen; ) {
             address signer = messageHash.recover(signatures[i]);
 
             if (!relayers[signer].active) revert InvalidRelayer();
 
             // Check for duplicate signers
-            for (uint256 j = 0; j < i; j++) {
+            // GAS OPT: Use unchecked increment for inner loop
+            for (uint256 j = 0; j < i; ) {
                 if (signers[j] == signer) revert RelayerAlreadySigned();
+                unchecked {
+                    ++j;
+                }
             }
             signers[i] = signer;
 
@@ -612,9 +628,13 @@ contract DirectL2Messenger is ReentrancyGuard, AccessControl, Pausable {
                 RelayerConfirmation({
                     relayer: signer,
                     signature: signatures[i],
-                    timestamp: block.timestamp
+                    timestamp: currentTimestamp
                 })
             );
+
+            unchecked {
+                ++i;
+            }
         }
 
         // Mark as processed

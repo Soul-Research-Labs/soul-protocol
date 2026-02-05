@@ -146,7 +146,9 @@ We take security seriously. If you discover a security vulnerability within Soul
 
 ### Recent Security Fixes (February 2026)
 
-#### Critical Fixes
+#### Phase 1: Core Protocol Fixes
+
+##### Critical Fixes
 | Fix | Contract | Description |
 |-----|----------|-------------|
 | Nullifier Race Condition | ZKBoundStateLocks | Fixed double-spend via optimisticUnlock() race |
@@ -156,7 +158,7 @@ We take security seriously. If you discover a security vulnerability within Soul
 | VRF Bypass | Various | Fixed logic error allowing any non-zero gamma |
 | Chain ID Validation | CrossChainMessageRelay | Added block.chainid check in proof verification |
 
-#### High Fixes
+##### High Fixes
 | Fix | Contract | Description |
 |-----|----------|-------------|
 | EIP-712 Binding | ConfidentialStateContainerV3 | Signature now binds to encryptedState/metadata |
@@ -166,7 +168,7 @@ We take security seriously. If you discover a security vulnerability within Soul
 | Double-Counting | CrossChainProofHubV3 | Fixed relayerSuccessCount double increment |
 | Challenger Rewards | CrossChainProofHubV3 | Added claimableRewards + withdrawRewards() |
 
-#### Medium Fixes
+##### Medium Fixes
 | Fix | Contract | Description |
 |-----|----------|-------------|
 | Missing Events | Multiple | Added events for all admin configuration changes |
@@ -175,6 +177,31 @@ We take security seriously. If you discover a security vulnerability within Soul
 | Pagination | ConfidentialStateContainerV3, UnifiedNullifierManager | Added paginated getters |
 | Role Separation | ZKBoundStateLocks | Added confirmRoleSeparation() |
 | Silent Failures | CrossChainMessageRelay | Emit MessageFailed on batch verification failure |
+
+#### Phase 2: Governance & Infrastructure Fixes (February 5, 2026)
+
+##### Critical Fixes
+| Fix | Contract | Description |
+|-----|----------|-------------|
+| Reentrancy | SoulMultiSigGovernance | Added ReentrancyGuard + nonReentrant to executeProposal() |
+| Reentrancy | BridgeWatchtower | Added ReentrancyGuard to completeExit() and claimRewards() |
+
+##### High Fixes
+| Fix | Contract | Description |
+|-----|----------|-------------|
+| DoS via .transfer() | SoulPreconfirmationHandler | Replaced .transfer() with .call{value:}() in 4 locations |
+| DoS via .transfer() | SoulIntentResolver | Replaced .transfer() with .call{value:}() in withdrawBond() |
+| DoS via .transfer() | SoulL2Messenger | Replaced .transfer() with .call{value:}() in withdrawBond() |
+| Loop Gas | BridgeWatchtower | Optimized slashInactive() with cached length + batch storage writes |
+
+##### Medium Fixes
+| Fix | Contract | Description |
+|-----|----------|-------------|
+| Zero-Address | MPCGateway | Added validation to addSupportedChain() |
+| Zero-Address | ConfidentialDataAvailability | Added validation to setVerifiers() |
+| Missing Events | ConfidentialDataAvailability | Added 5 events for admin config changes |
+
+**Total: 44 vulnerabilities fixed across both phases**
 
 For complete details, see [docs/SECURITY_AUDIT_REPORT.md](./docs/SECURITY_AUDIT_REPORT.md).
 

@@ -69,12 +69,18 @@ contract StealthAddressRegistry is
     ReentrancyGuardUpgradeable
 {
     // =========================================================================
-    // ROLES
+    // ROLES (Pre-computed for gas efficiency)
     // =========================================================================
 
-    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
-    bytes32 public constant ANNOUNCER_ROLE = keccak256("ANNOUNCER_ROLE");
-    bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
+    /// @dev Pre-computed: keccak256("OPERATOR_ROLE")
+    bytes32 public constant OPERATOR_ROLE =
+        0x97667070c54ef182b0f5858b034beac1b6f3089aa2d3188bb1e8929f4fa9b929;
+    /// @dev Pre-computed: keccak256("ANNOUNCER_ROLE")
+    bytes32 public constant ANNOUNCER_ROLE =
+        0x28bf751bc1d0e1ce1e07469dfe6d05c5c0e65f1e92e0f41bfd3cc6c120c1ec3c;
+    /// @dev Pre-computed: keccak256("UPGRADER_ROLE")
+    bytes32 public constant UPGRADER_ROLE =
+        0x189ab7a9244df0848122154315af71fe140f3db0fe014031783b0946b8c9d2e3;
 
     // =========================================================================
     // CONSTANTS

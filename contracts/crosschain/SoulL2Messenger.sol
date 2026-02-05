@@ -474,7 +474,8 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
             _revokeRole(FULFILLER_ROLE, msg.sender);
         }
 
-        payable(msg.sender).transfer(amount);
+        (bool success, ) = payable(msg.sender).call{value: amount}("");
+        require(success, "Withdraw failed");
     }
 
     /*//////////////////////////////////////////////////////////////

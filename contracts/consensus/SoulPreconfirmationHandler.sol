@@ -306,7 +306,10 @@ contract SoulPreconfirmationHandler is ReentrancyGuard, AccessControl {
 
         // Pay tip to proposer
         if (request.tip > 0) {
-            payable(commitment.proposer).transfer(request.tip);
+            (bool success, ) = payable(commitment.proposer).call{
+                value: request.tip
+            }("");
+            require(success, "Transfer failed");
         }
 
         emit PreconfIncluded(preconfId, request.txHash, commitment.slot);
@@ -331,11 +334,17 @@ contract SoulPreconfirmationHandler is ReentrancyGuard, AccessControl {
 
         // Refund tip to submitter
         if (request.tip > 0) {
-            payable(request.submitter).transfer(request.tip);
+            (bool tipSuccess, ) = payable(request.submitter).call{
+                value: request.tip
+            }("");
+            require(tipSuccess, "Tip refund failed");
         }
 
         // Reward slasher
-        payable(msg.sender).transfer(slashAmount / 2);
+        (bool slashSuccess, ) = payable(msg.sender).call{
+            value: slashAmount / 2
+        }("");
+        require(slashSuccess, "Slasher reward failed");
 
         request.status = PreconfStatus.SLASHED;
 
@@ -434,7 +443,8 @@ contract SoulPreconfirmationHandler is ReentrancyGuard, AccessControl {
             _revokeRole(PROPOSER_ROLE, msg.sender);
         }
 
-        payable(msg.sender).transfer(amount);
+        (bool success, ) = payable(msg.sender).call{value: amount}("");
+        require(success, "Withdraw failed");
     }
 
     /*//////////////////////////////////////////////////////////////

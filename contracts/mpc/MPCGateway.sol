@@ -1008,6 +1008,7 @@ contract MPCGateway is AccessControl, ReentrancyGuard, Pausable {
         uint256 chainId,
         address messenger
     ) external onlyRole(GATEWAY_ADMIN_ROLE) {
+        if (messenger == address(0)) revert ZeroAddress();
         supportedChains[chainId] = true;
         chainMessengers[chainId] = messenger;
     }

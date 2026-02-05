@@ -261,6 +261,27 @@ Chain A                    Relayer Network                    Chain B
 | Relayer collusion | Economic slashing, reputation |
 | Traffic analysis | Mixnet routing, decoy traffic |
 | Front-running | Commit-reveal schemes |
+| Reentrancy | ReentrancyGuard on all state-changing functions |
+| DoS via .transfer() | Using .call{value:}() for all ETH transfers |
+| Access control bypass | Role-based access with separation of duties |
+
+### Security Hardening (February 2026)
+
+All critical contracts include:
+
+1. **ReentrancyGuard**: Protection against recursive call attacks
+2. **Safe ETH Transfers**: `.call{value:}()` instead of deprecated `.transfer()`
+3. **Zero-Address Validation**: All admin setters validate inputs
+4. **Event Emission**: All config changes emit events for monitoring
+5. **Loop Gas Optimization**: Array length caching, batch storage writes
+
+**Protected Contracts**:
+- `SoulMultiSigGovernance` - Multi-sig governance with reentrancy protection
+- `BridgeWatchtower` - Watchtower network with optimized slashing
+- `SoulPreconfirmationHandler` - Preconfirmation with safe ETH transfers
+- `SoulIntentResolver` - Cross-chain intents with bond management
+- `SoulL2Messenger` - L2 messaging with fulfiller protection
+- `ConfidentialDataAvailability` - DA with comprehensive event logging
 
 ### Cryptographic Assumptions
 

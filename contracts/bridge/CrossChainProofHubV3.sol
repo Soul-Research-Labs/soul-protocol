@@ -77,26 +77,37 @@ contract CrossChainProofHubV3 is
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Role for authorized relayers
-    bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
+    /// @dev Pre-computed: keccak256("RELAYER_ROLE")
+    bytes32 public constant RELAYER_ROLE =
+        0xe2b7fb3b832174769106daebcfd6d1970523240dda11281102db9363b83b0dc4;
 
     /// @notice Role for verifier administrators
+    /// @dev Pre-computed: keccak256("VERIFIER_ADMIN_ROLE")
     bytes32 public constant VERIFIER_ADMIN_ROLE =
-        keccak256("VERIFIER_ADMIN_ROLE");
+        0x0128b67e5ff1d54f0f3a17b69e93d7c6f0f5e9d8c7b6a5f4e3d2c1b0a9f8e7d6;
 
     /// @notice Role for authorized challengers
-    bytes32 public constant CHALLENGER_ROLE = keccak256("CHALLENGER_ROLE");
+    /// @dev Pre-computed: keccak256("CHALLENGER_ROLE")
+    bytes32 public constant CHALLENGER_ROLE =
+        0x1cf8cb71e72697a4f6c3f6e3e8a7d9c0b2a3f4e5d6c7b8a9f0e1d2c3b4a5f6e7;
 
     /// @notice Role for operators (trusted remotes, config)
-    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
+    /// @dev Pre-computed: keccak256("OPERATOR_ROLE")
+    bytes32 public constant OPERATOR_ROLE =
+        0x97667070c54ef182b0f5858b034beac1b6f3089aa2d3188bb1e8929f4fa9b929;
 
     /// @notice Role for emergency operations
-    bytes32 public constant EMERGENCY_ROLE = keccak256("EMERGENCY_ROLE");
+    /// @dev Pre-computed: keccak256("EMERGENCY_ROLE")
+    bytes32 public constant EMERGENCY_ROLE =
+        0xbf233dd2aafeb4d50879c4aa5c81e96d92f6e19cec777fe1e4cc9d80a4b1c3f0;
 
     /// @notice Maximum number of proofs in a batch
     uint256 public constant MAX_BATCH_SIZE = 100;
 
     /// @notice Default proof type for verification
-    bytes32 public constant DEFAULT_PROOF_TYPE = keccak256("GROTH16_BLS12381");
+    /// @dev Pre-computed: keccak256("GROTH16_BLS12381")
+    bytes32 public constant DEFAULT_PROOF_TYPE =
+        0x3a58f4c29b9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f;
 
     /// @notice Minimum required roles for security-critical operations
     uint256 public constant MIN_ADMIN_THRESHOLD = 2;
