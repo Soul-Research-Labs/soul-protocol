@@ -298,12 +298,17 @@ contract PlinkoPIR is ReentrancyGuard, Ownable {
 
         // 3. Verify source state root
         bytes32 expectedRoot = chainStateRoots[proof.sourceChain];
-        if (expectedRoot != proof.sourceStateRoot && expectedRoot != bytes32(0)) {
+        if (
+            expectedRoot != proof.sourceStateRoot && expectedRoot != bytes32(0)
+        ) {
             revert InvalidProof();
         }
 
         // 4. Verify PIR proof against source state
-        bool pirValid = _verifyPIRProofInternal(proof.pirProof, proof.sourceStateRoot);
+        bool pirValid = _verifyPIRProofInternal(
+            proof.pirProof,
+            proof.sourceStateRoot
+        );
 
         if (pirValid) {
             // Mark nullifier as used
@@ -349,10 +354,7 @@ contract PlinkoPIR is ReentrancyGuard, Ownable {
      * @param chainId The chain ID
      * @param stateRoot The new state root
      */
-    function updateStateRoot(
-        uint64 chainId,
-        bytes32 stateRoot
-    ) external {
+    function updateStateRoot(uint64 chainId, bytes32 stateRoot) external {
         if (!trustedRelayers[msg.sender] && msg.sender != owner()) {
             revert UnauthorizedRelayer();
         }
@@ -423,7 +425,13 @@ contract PlinkoPIR is ReentrancyGuard, Ownable {
         )
     {
         DatabaseRegistration storage db = databases[databaseId];
-        return (db.merkleRoot, db.gridSize, db.cellCount, db.lastUpdate, db.active);
+        return (
+            db.merkleRoot,
+            db.gridSize,
+            db.cellCount,
+            db.lastUpdate,
+            db.active
+        );
     }
 
     /**
@@ -456,7 +464,9 @@ contract PlinkoPIR is ReentrancyGuard, Ownable {
      * @param nullifier The nullifier to check
      * @return used Whether the nullifier has been used
      */
-    function isNullifierUsed(bytes32 nullifier) external view returns (bool used) {
+    function isNullifierUsed(
+        bytes32 nullifier
+    ) external view returns (bool used) {
         return usedNullifiers[nullifier];
     }
 
@@ -465,7 +475,9 @@ contract PlinkoPIR is ReentrancyGuard, Ownable {
      * @param chainId The chain ID
      * @return stateRoot The state root
      */
-    function getStateRoot(uint64 chainId) external view returns (bytes32 stateRoot) {
+    function getStateRoot(
+        uint64 chainId
+    ) external view returns (bytes32 stateRoot) {
         return chainStateRoots[chainId];
     }
 
@@ -517,9 +529,13 @@ contract PlinkoPIR is ReentrancyGuard, Ownable {
 
         for (uint256 i = 0; i < path.length; i++) {
             if (pathIndices[i] == 0) {
-                computedRoot = keccak256(abi.encodePacked(computedRoot, path[i]));
+                computedRoot = keccak256(
+                    abi.encodePacked(computedRoot, path[i])
+                );
             } else {
-                computedRoot = keccak256(abi.encodePacked(path[i], computedRoot));
+                computedRoot = keccak256(
+                    abi.encodePacked(path[i], computedRoot)
+                );
             }
         }
 

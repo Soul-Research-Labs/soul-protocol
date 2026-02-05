@@ -135,7 +135,10 @@ contract PlinkoPIRTest is Test {
             merklePathIndices: new uint8[](0)
         });
 
-        (bool success, bytes32 value) = pir.verifyPIRProof(proof, TEST_DATABASE_ID);
+        (bool success, bytes32 value) = pir.verifyPIRProof(
+            proof,
+            TEST_DATABASE_ID
+        );
 
         assertTrue(success);
         assertEq(value, retrievedValue);
@@ -203,7 +206,10 @@ contract PlinkoPIRTest is Test {
             merklePathIndices: merklePathIndices
         });
 
-        (bool success, bytes32 value) = pir.verifyPIRProof(proof, TEST_DATABASE_ID);
+        (bool success, bytes32 value) = pir.verifyPIRProof(
+            proof,
+            TEST_DATABASE_ID
+        );
 
         assertTrue(success);
         assertEq(value, leaf);
@@ -260,13 +266,14 @@ contract PlinkoPIRTest is Test {
             merklePathIndices: new uint8[](0)
         });
 
-        PlinkoPIR.CrossChainPIRProof memory proof = PlinkoPIR.CrossChainPIRProof({
-            sourceChain: sourceChain,
-            targetChain: targetChain,
-            pirProof: pirProof,
-            nullifier: nullifier,
-            sourceStateRoot: sourceStateRoot
-        });
+        PlinkoPIR.CrossChainPIRProof memory proof = PlinkoPIR
+            .CrossChainPIRProof({
+                sourceChain: sourceChain,
+                targetChain: targetChain,
+                pirProof: pirProof,
+                nullifier: nullifier,
+                sourceStateRoot: sourceStateRoot
+            });
 
         bool success = pir.verifyCrossChainPIR(proof);
         assertTrue(success);
@@ -287,13 +294,14 @@ contract PlinkoPIRTest is Test {
             merklePathIndices: new uint8[](0)
         });
 
-        PlinkoPIR.CrossChainPIRProof memory proof = PlinkoPIR.CrossChainPIRProof({
-            sourceChain: 1,
-            targetChain: 1, // Same chain!
-            pirProof: pirProof,
-            nullifier: bytes32(0),
-            sourceStateRoot: bytes32(0)
-        });
+        PlinkoPIR.CrossChainPIRProof memory proof = PlinkoPIR
+            .CrossChainPIRProof({
+                sourceChain: 1,
+                targetChain: 1, // Same chain!
+                pirProof: pirProof,
+                nullifier: bytes32(0),
+                sourceStateRoot: bytes32(0)
+            });
 
         vm.expectRevert(PlinkoPIR.InvalidChainId.selector);
         pir.verifyCrossChainPIR(proof);
@@ -326,13 +334,14 @@ contract PlinkoPIRTest is Test {
             merklePathIndices: new uint8[](0)
         });
 
-        PlinkoPIR.CrossChainPIRProof memory proof = PlinkoPIR.CrossChainPIRProof({
-            sourceChain: sourceChain,
-            targetChain: targetChain,
-            pirProof: pirProof,
-            nullifier: nullifier,
-            sourceStateRoot: sourceStateRoot
-        });
+        PlinkoPIR.CrossChainPIRProof memory proof = PlinkoPIR
+            .CrossChainPIRProof({
+                sourceChain: sourceChain,
+                targetChain: targetChain,
+                pirProof: pirProof,
+                nullifier: nullifier,
+                sourceStateRoot: sourceStateRoot
+            });
 
         // First verification succeeds
         bool success = pir.verifyCrossChainPIR(proof);
@@ -460,7 +469,12 @@ contract PlinkoPIRTest is Test {
 
         pir.verifyPIRProof(proof, TEST_DATABASE_ID);
 
-        (uint256 total, uint256 successful, uint256 failed, uint256 gasUsed) = pir.getStats();
+        (
+            uint256 total,
+            uint256 successful,
+            uint256 failed,
+            uint256 gasUsed
+        ) = pir.getStats();
 
         assertEq(total, 1);
         assertEq(successful, 1);
@@ -590,7 +604,10 @@ contract PlinkoPIRTest is Test {
             merklePathIndices: new uint8[](0)
         });
 
-        (bool success, bytes32 value) = pir.verifyPIRProof(proof, TEST_DATABASE_ID);
+        (bool success, bytes32 value) = pir.verifyPIRProof(
+            proof,
+            TEST_DATABASE_ID
+        );
 
         assertTrue(success);
         assertEq(value, retrievedValue);
@@ -607,7 +624,9 @@ contract PlinkoPIRTest is Test {
 
         pir.setStrictMode(false);
 
-        bytes32 sourceStateRoot = keccak256(abi.encodePacked("state", sourceChain));
+        bytes32 sourceStateRoot = keccak256(
+            abi.encodePacked("state", sourceChain)
+        );
         pir.updateStateRoot(sourceChain, sourceStateRoot);
 
         bytes32 hintCommitment = keccak256("hint");
@@ -625,13 +644,14 @@ contract PlinkoPIRTest is Test {
             merklePathIndices: new uint8[](0)
         });
 
-        PlinkoPIR.CrossChainPIRProof memory proof = PlinkoPIR.CrossChainPIRProof({
-            sourceChain: sourceChain,
-            targetChain: targetChain,
-            pirProof: pirProof,
-            nullifier: nullifier,
-            sourceStateRoot: sourceStateRoot
-        });
+        PlinkoPIR.CrossChainPIRProof memory proof = PlinkoPIR
+            .CrossChainPIRProof({
+                sourceChain: sourceChain,
+                targetChain: targetChain,
+                pirProof: pirProof,
+                nullifier: nullifier,
+                sourceStateRoot: sourceStateRoot
+            });
 
         bool success = pir.verifyCrossChainPIR(proof);
         assertTrue(success);
