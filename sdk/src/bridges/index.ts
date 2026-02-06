@@ -13,6 +13,7 @@ export * from './aztec';
 export * from './layerzero';
 export * from './hyperlane';
 export * from './l2-adapters';
+export * from './solana';
 
 import { 
     keccak256, 
@@ -664,6 +665,74 @@ export class StarknetBridgeAdapterSDK extends BaseBridgeAdapter {
 }
 
 // ============================================
+// Solana Bridge Adapter
+// ============================================
+
+export class SolanaBridgeAdapterSDK extends BaseBridgeAdapter {
+  private bridgeProgramId: string;
+
+  constructor(
+    publicClient: PublicClient,
+    walletClient: WalletClient,
+    bridgeProgramId: string
+  ) {
+    super({
+      name: 'Solana',
+      chainId: 0x534f4c, // "SOL"
+      nativeToken: 'SOL',
+      finality: 32, // ~32 slots (~13s)
+      maxAmount: 1_000_000_000_000_000_000n, // 1M SOL in lamports
+      minAmount: 100_000_000n // 0.1 SOL in lamports
+    }, publicClient, walletClient);
+
+    this.bridgeProgramId = bridgeProgramId;
+  }
+
+  async bridgeTransfer(params: BridgeTransferParams): Promise<BridgeTransferResult> {
+    this.validateAmount(params.amount);
+
+    const transferId = keccak256(encodeAbiParameters(
+      [{ type: 'address' }, { type: 'bytes32' }, { type: 'uint256' }, { type: 'uint256' }],
+      [params.recipient as Hex, this.bridgeProgramId as Hex, params.amount, BigInt(Date.now())]
+    ));
+
+    return {
+      transferId,
+      txHash: '0x...',
+      estimatedArrival: Date.now() + (13 * 1000), // ~13 seconds (32 slots)
+      fees: await this.estimateFees(params.amount, params.targetChainId)
+    };
+  }
+
+  async completeBridge(transferId: string, proof: Uint8Array): Promise<string> {
+    return '0x...';
+  }
+
+  async getStatus(transferId: string): Promise<BridgeStatus> {
+    return {
+      state: 'pending',
+      sourceChainId: 1,
+      targetChainId: this.config.chainId,
+      confirmations: 0,
+      requiredConfirmations: 32
+    };
+  }
+
+  async estimateFees(amount: bigint, targetChainId: number): Promise<BridgeFees> {
+    const protocolFee = amount * 25n / 10000n; // 0.25% bridge fee
+    const relayerFee = 5_000_000n; // 0.005 SOL
+    const gasFee = 5_000n; // 5000 lamports (Solana priority fee)
+
+    return {
+      protocolFee,
+      relayerFee,
+      gasFee,
+      total: protocolFee + relayerFee + gasFee
+    };
+  }
+}
+
+// ============================================
 // Bridge Factory
 // ============================================
 
@@ -723,6 +792,11 @@ export class BridgeFactory {
         return new StarknetBridgeAdapterSDK(
           publicClient, walletClient,
           config.bridgeAddress
+        );
+      case 'solana':
+        return new SolanaBridgeAdapterSDK(
+          publicClient, walletClient,
+          config.bridgeProgramId
         );
       default:
         throw new Error(`Unsupported chain: ${chain}`);
