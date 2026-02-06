@@ -196,6 +196,7 @@ contract AztecBridgeAdapter is
     error FeeWithdrawalFailed();
     error InvalidProofLength();
     error NoFeesToWithdraw();
+    error VerifierNotConfigured();
 
     /// @notice Emitted when fees are withdrawn to treasury
     event FeesWithdrawn(address indexed recipient, uint256 amount);
@@ -868,7 +869,7 @@ contract AztecBridgeAdapter is
         if (proofType == ProofType.Soul_TO_AZTEC) {
             // Use Groth16 verifier for Soul proofs
             if (address(soulVerifier) == address(0)) {
-                return proof.length >= 288; // Fallback: Groth16 proof size check
+                revert VerifierNotConfigured();
             }
 
             uint256[] memory publicInputs = new uint256[](4);
@@ -885,7 +886,7 @@ contract AztecBridgeAdapter is
         } else if (proofType == ProofType.AZTEC_TO_Soul) {
             // Use PLONK verifier for Aztec proofs
             if (address(plonkVerifier) == address(0)) {
-                return proof.length >= 512; // Fallback: UltraPLONK proof size check
+                revert VerifierNotConfigured();
             }
 
             uint256[] memory publicInputs = new uint256[](4);
@@ -903,13 +904,8 @@ contract AztecBridgeAdapter is
             }
         } else {
             // Bidirectional - verify with cross-chain verifier
-            // This would use a specialized verifier that handles both proof systems
             if (crossChainVerifier == address(0)) {
-                return
-                    proof.length >= 512 &&
-                    sourceCommitment != bytes32(0) &&
-                    targetCommitment != bytes32(0) &&
-                    publicInputsHash != bytes32(0);
+                revert VerifierNotConfigured();
             }
 
             // Call cross-chain verifier interface

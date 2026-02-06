@@ -232,6 +232,9 @@ contract SoulIntentResolver is ReentrancyGuard, AccessControl {
         if (usedNullifiers[nullifier]) revert NullifierAlreadyUsed();
         if (destinationChains.length == 0) revert InvalidDestinationChain();
 
+        // Mark nullifier as used immediately to prevent double-spend
+        usedNullifiers[nullifier] = true;
+
         if (deadline == 0) {
             deadline = uint64(block.timestamp) + defaultDeadline;
         }
@@ -383,9 +386,7 @@ contract SoulIntentResolver is ReentrancyGuard, AccessControl {
         if (intent.intentHash == bytes32(0)) revert IntentNotFound();
         if (intent.status != IntentStatus.FILLED) revert IntentAlreadyFilled();
 
-        // Mark nullifier as used
-        usedNullifiers[intent.nullifier] = true;
-
+        // Nullifier already marked used at submit time
         intent.status = IntentStatus.SETTLED;
 
         emit IntentSettled(intentId, intent.nullifier, proof.filler);
@@ -463,13 +464,24 @@ contract SoulIntentResolver is ReentrancyGuard, AccessControl {
         bytes32 outputCommitment,
         bytes calldata zkProof
     ) internal view returns (bool) {
-        // In production: call fillProofVerifier
-        // For now: verify proof has minimum length
         if (zkProof.length < 128) return false;
 
-        // Verify proof matches intent
-        // (Would verify using Noir/Groth16 verifier)
-        return true;
+        // If verifier is configured, delegate to on-chain verifier
+        if (fillProofVerifier != address(0)) {
+            (bool success, bytes memory result) = fillProofVerifier.staticcall(
+                abi.encodeWithSignature(
+                    "verifyFillProof(bytes32,bytes32,bytes)",
+                    intentId,
+                    outputCommitment,
+                    zkProof
+                )
+            );
+            if (!success || result.length < 32) return false;
+            return abi.decode(result, (bool));
+        }
+
+        // No verifier set — reject proof to prevent exploitation
+        return false;
     }
 
     /// @notice Set the fill proof verifier

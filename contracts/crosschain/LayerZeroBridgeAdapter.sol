@@ -556,16 +556,48 @@ contract LayerZeroBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
 
         uint64 nonce = senderNonces[msg.sender]++;
 
-        guid = keccak256(
-            abi.encodePacked(
-                localEid,
-                dstEid,
-                msg.sender,
-                receiver,
-                nonce,
-                block.timestamp
-            )
-        );
+        // Dispatch via LayerZero endpoint
+        if (lzEndpoint != address(0)) {
+            // Encode options for LZ V2: type 3 (executor lzReceive option)
+            bytes memory lzOptions = abi.encodePacked(
+                uint16(3),       // Options type: lzReceive
+                uint16(1),       // Worker ID: executor
+                uint16(16 + 32), // Option length
+                uint128(options.gas),
+                uint128(options.value)
+            );
+
+            // Build MessagingParams and call endpoint.send()
+            (bool success, bytes memory result) = lzEndpoint.call{value: fee.nativeFee}(
+                abi.encodeWithSignature(
+                    "send((uint32,bytes32,bytes,bytes,bytes),address)",
+                    dstEid,
+                    receiver,
+                    message,
+                    lzOptions,
+                    "",  // refundAddress is msg.sender — handled by endpoint
+                    msg.sender
+                )
+            );
+            if (success && result.length >= 32) {
+                // Extract guid from endpoint response
+                guid = abi.decode(result, (bytes32));
+            }
+        }
+
+        // If endpoint call didn't set guid, generate one locally
+        if (guid == bytes32(0)) {
+            guid = keccak256(
+                abi.encodePacked(
+                    localEid,
+                    dstEid,
+                    msg.sender,
+                    receiver,
+                    nonce,
+                    block.timestamp
+                )
+            );
+        }
 
         messages[guid] = OmniMessage({
             guid: guid,
@@ -580,7 +612,7 @@ contract LayerZeroBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
             options: abi.encode(options)
         });
 
-        accumulatedFees += msg.value;
+        accumulatedFees += msg.value - fee.nativeFee; // Only protocol fee portion
         totalMessagesSent++;
         messageNonce++;
 
@@ -597,7 +629,10 @@ contract LayerZeroBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         bytes32 guid,
         bytes calldata message,
         bytes calldata /* extraData */
-    ) external onlyRole(EXECUTOR_ROLE) nonReentrant whenNotPaused {
+    ) external nonReentrant whenNotPaused {
+        // Only accept messages from the LayerZero endpoint
+        if (msg.sender != lzEndpoint) revert UnauthorizedCaller();
+
         PeerConfig storage peer = peers[srcEid];
         if (peer.eid == 0) revert PeerNotSet();
         if (sender != peer.peerAddress) revert UnauthorizedCaller();

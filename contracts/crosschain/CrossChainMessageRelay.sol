@@ -399,8 +399,9 @@ contract CrossChainMessageRelay is AccessControl, ReentrancyGuard, Pausable {
             revert MessageExpired(message.messageId);
         }
 
-        // Verify nonce
-        if (message.nonce != inboundNonces[message.sourceChainId]) {
+        // Verify nonce (replay prevention using message ID hash, allows out-of-order delivery)
+        if (messageStatus[message.messageId] != MessageStatus.PENDING &&
+            storedMessages[message.messageId].messageId != bytes32(0)) {
             revert InvalidNonce(
                 inboundNonces[message.sourceChainId],
                 message.nonce
@@ -412,7 +413,10 @@ contract CrossChainMessageRelay is AccessControl, ReentrancyGuard, Pausable {
             revert InvalidSignature();
         }
 
-        inboundNonces[message.sourceChainId]++;
+        // Track highest nonce seen for compatibility
+        if (message.nonce >= inboundNonces[message.sourceChainId]) {
+            inboundNonces[message.sourceChainId] = message.nonce + 1;
+        }
         messageStatus[message.messageId] = MessageStatus.RELAYED;
         storedMessages[message.messageId] = message;
         totalMessagesReceived++;

@@ -90,7 +90,7 @@ describe("L2 Bridge Adapters", function () {
                 const { adapter, admin, user } = await deployScrollAdapter();
 
                 // Admin can set Soul Hub L2
-                await adapter.write.setPilHubL2([user.account.address]);
+                await adapter.write.setSoulHubL2([user.account.address]);
 
                 const soulHub = await adapter.read.soulHubL2();
                 expect(soulHub.toLowerCase()).to.equal(user.account.address.toLowerCase());
@@ -172,7 +172,7 @@ describe("L2 Bridge Adapters", function () {
                 const { adapter, admin, user } = await deployLineaAdapter();
 
                 // Admin can set Soul Hub L2
-                await adapter.write.setPilHubL2([user.account.address]);
+                await adapter.write.setSoulHubL2([user.account.address]);
 
                 const soulHub = await adapter.read.soulHubL2();
                 expect(soulHub.toLowerCase()).to.equal(user.account.address.toLowerCase());
@@ -254,7 +254,7 @@ describe("L2 Bridge Adapters", function () {
                 const { adapter, admin, user } = await deployPolygonZkEVMAdapter();
 
                 // Admin can set Soul Hub L2
-                await adapter.write.setPilHubL2([user.account.address]);
+                await adapter.write.setSoulHubL2([user.account.address]);
 
                 const soulHub = await adapter.read.soulHubL2();
                 expect(soulHub.toLowerCase()).to.equal(user.account.address.toLowerCase());

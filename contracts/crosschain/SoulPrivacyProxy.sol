@@ -108,6 +108,22 @@ contract SoulPrivacyProxy {
     /// @notice Lookup already consumed
     error LookupAlreadyConsumed(bytes32 inputHash);
 
+    /// @notice Unauthorized caller
+    error Unauthorized();
+
+    /*//////////////////////////////////////////////////////////////
+                                STORAGE (owner)
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Owner/admin of this proxy
+    address public owner;
+
+    /// @notice Only owner modifier
+    modifier onlyOwner() {
+        if (msg.sender != owner) revert Unauthorized();
+        _;
+    }
+
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
@@ -128,6 +144,7 @@ contract SoulPrivacyProxy {
         remoteChainId = _remoteChainId;
         remoteContract = _remoteContract;
         thisChainId = uint64(block.chainid);
+        owner = msg.sender;
         requirePreProven = true;
     }
 
@@ -377,8 +394,7 @@ contract SoulPrivacyProxy {
 
     /// @notice Toggle pre-proven requirement
     /// @param required Whether pre-proven is required
-    function setRequirePreProven(bool required) external {
-        // In production, this would be access controlled
+    function setRequirePreProven(bool required) external onlyOwner {
         requirePreProven = required;
     }
 

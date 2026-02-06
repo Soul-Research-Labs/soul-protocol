@@ -679,11 +679,12 @@ contract SharedSequencerIntegration is
         bytes32 root
     ) internal pure returns (bool) {
         bytes32 computedHash = proof.transactionHash;
+        uint256 index = proof.leafIndex;
 
         for (uint256 i = 0; i < proof.merkleProof.length; i++) {
             bytes32 proofElement = proof.merkleProof[i];
 
-            if (proof.leafIndex % 2 == 0) {
+            if (index % 2 == 0) {
                 computedHash = keccak256(
                     abi.encodePacked(computedHash, proofElement)
                 );
@@ -692,6 +693,7 @@ contract SharedSequencerIntegration is
                     abi.encodePacked(proofElement, computedHash)
                 );
             }
+            index = index / 2;
         }
 
         return computedHash == root;

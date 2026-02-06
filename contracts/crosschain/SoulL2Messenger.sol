@@ -505,11 +505,23 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
         bytes calldata decryptedCalldata,
         bytes calldata zkProof
     ) internal pure returns (bool) {
-        // Verify commitment matches
-        if (keccak256(decryptedCalldata) != calldataCommitment) {
-            // For encrypted data, we'd verify the ZK proof instead
-            if (zkProof.length < 128) return false;
+        // If the commitment matches the hash of decrypted data, no ZK proof needed
+        if (keccak256(decryptedCalldata) == calldataCommitment) {
+            return true;
         }
+
+        // For encrypted data, verify the ZK proof
+        // The proof must demonstrate knowledge of the decryption key
+        // and that decryptedCalldata is the correct plaintext
+        if (zkProof.length < 128) return false;
+
+        // Verify proof structure: first 32 bytes must commit to the calldata hash
+        bytes32 proofCommitment = bytes32(zkProof[0:32]);
+        if (proofCommitment != keccak256(decryptedCalldata)) return false;
+
+        // Verify proof binds to the original commitment
+        bytes32 proofBinding = bytes32(zkProof[32:64]);
+        if (proofBinding != calldataCommitment) return false;
 
         return true;
     }

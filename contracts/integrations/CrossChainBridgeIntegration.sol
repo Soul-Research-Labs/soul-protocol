@@ -272,6 +272,12 @@ contract CrossChainBridgeIntegration is
     /// @notice Processed message hashes
     mapping(bytes32 => bool) public processedMessages;
 
+    /// @notice Transfer nonce to prevent ID collisions
+    uint256 public transferNonce;
+
+    /// @notice Accumulated protocol fees claimable by feeRecipient
+    uint256 public accruedProtocolFees;
+
     /// @notice Auto-router enabled
     bool public autoRouterEnabled;
 
@@ -447,7 +453,7 @@ contract CrossChainBridgeIntegration is
             IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
         }
 
-        // Generate transfer ID
+        // Generate transfer ID (include nonce to prevent collisions)
         transferId = keccak256(
             abi.encodePacked(
                 BRIDGE_DOMAIN,
@@ -457,7 +463,8 @@ contract CrossChainBridgeIntegration is
                 recipient,
                 token,
                 amount,
-                block.timestamp
+                block.timestamp,
+                transferNonce++
             )
         );
 
@@ -491,10 +498,9 @@ contract CrossChainBridgeIntegration is
         // Execute bridge call
         _executeBridgeCall(adapter.adapter, request, totalFee);
 
-        // Send protocol fee
+        // Accrue protocol fee (non-blocking to prevent griefing)
         if (protocolFee > 0) {
-            (bool success, ) = feeRecipient.call{value: protocolFee}("");
-            if (!success) revert TransferFailed();
+            accruedProtocolFees += protocolFee;
         }
 
         emit BridgeTransferInitiated(
@@ -677,17 +683,47 @@ contract CrossChainBridgeIntegration is
         address token,
         uint256 amount,
         bytes calldata proof
-    ) internal pure returns (bool) {
-        // Simplified proof verification
-        // Real implementation would verify Merkle proof or signature
-        if (proof.length < 32) return false;
+    ) internal view returns (bool) {
+        // Require ECDSA signature from a RELAYER_ROLE holder
+        if (proof.length < 65) return false;
 
-        bytes32 expectedHash = keccak256(
-            abi.encodePacked(transferId, recipient, token, amount)
+        bytes32 messageHash = keccak256(
+            abi.encodePacked(
+                "\x19Ethereum Signed Message:\n32",
+                keccak256(abi.encodePacked(transferId, recipient, token, amount))
+            )
         );
 
-        bytes32 proofHash = bytes32(proof[0:32]);
-        return proofHash == expectedHash;
+        // Extract ECDSA signature (r, s, v)
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+        assembly {
+            r := calldataload(proof.offset)
+            s := calldataload(add(proof.offset, 32))
+            v := byte(0, calldataload(add(proof.offset, 64)))
+        }
+
+        // Signature malleability protection
+        if (uint256(s) > 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0) {
+            return false;
+        }
+
+        address signer = ecrecover(messageHash, v, r, s);
+        if (signer == address(0)) return false;
+
+        // Verify signer has RELAYER_ROLE
+        return hasRole(RELAYER_ROLE, signer);
+    }
+
+    /// @notice Claim accrued protocol fees
+    function claimProtocolFees() external nonReentrant {
+        if (msg.sender != feeRecipient) revert Unauthorized();
+        uint256 amount = accruedProtocolFees;
+        if (amount == 0) revert ZeroAmount();
+        accruedProtocolFees = 0;
+        (bool success, ) = feeRecipient.call{value: amount}("");
+        if (!success) revert TransferFailed();
     }
 
     /*//////////////////////////////////////////////////////////////

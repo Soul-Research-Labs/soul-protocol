@@ -156,6 +156,18 @@ contract EthereumL1Bridge is AccessControl, ReentrancyGuard, Pausable {
     /// @notice Minimum bond for state commitment submission
     uint256 public minSubmissionBond = 0.1 ether;
 
+    /// @notice Minimum bond required to challenge a commitment
+    uint256 public minChallengeBond = 0.05 ether;
+
+    /// @notice Actual bond deposited per commitment (commitmentId => bond)
+    mapping(bytes32 => uint256) public commitmentBonds;
+
+    /// @notice Challenge details (commitmentId => challenger)
+    mapping(bytes32 => address) public challengeChallenger;
+
+    /// @notice Challenge bonds (commitmentId => bond amount)
+    mapping(bytes32 => uint256) public challengeBonds;
+
     /// @notice Rate limiting: max commitments per hour
     uint256 public maxCommitmentsPerHour = 100;
     uint256 public hourlyCommitmentCount;
@@ -200,6 +212,17 @@ contract EthereumL1Bridge is AccessControl, ReentrancyGuard, Pausable {
     event StateCommitmentFinalized(
         bytes32 indexed commitmentId,
         bytes32 stateRoot
+    );
+
+    event StateCommitmentRejected(
+        bytes32 indexed commitmentId,
+        address challenger
+    );
+
+    event ChallengeResolved(
+        bytes32 indexed commitmentId,
+        bool rejected,
+        address bondRecipient
     );
 
     event DepositInitiated(
@@ -254,6 +277,8 @@ contract EthereumL1Bridge is AccessControl, ReentrancyGuard, Pausable {
     error ZeroAddress();
     error ZeroAmount();
     error TransferFailed();
+    error CommitmentNotChallenged(bytes32 commitmentId);
+    error InsufficientChallengeBond(uint256 provided, uint256 required);
 
     /*//////////////////////////////////////////////////////////////
                              CONSTRUCTOR
@@ -566,6 +591,9 @@ contract EthereumL1Bridge is AccessControl, ReentrancyGuard, Pausable {
             revert CommitmentAlreadyExists(commitmentId);
         }
 
+        // Store the actual bond amount for accurate return later
+        commitmentBonds[commitmentId] = msg.value;
+
         uint256 challengeDeadline = config.rollupType == RollupType.ZK_ROLLUP
             ? block.timestamp // ZK rollups finalize immediately
             : block.timestamp + config.challengePeriod;
@@ -611,7 +639,10 @@ contract EthereumL1Bridge is AccessControl, ReentrancyGuard, Pausable {
     function challengeCommitment(
         bytes32 commitmentId,
         bytes32 reason
-    ) external nonReentrant {
+    ) external payable nonReentrant {
+        if (msg.value < minChallengeBond)
+            revert InsufficientChallengeBond(msg.value, minChallengeBond);
+
         StateCommitment storage commitment = stateCommitments[commitmentId];
 
         if (commitment.commitmentId == bytes32(0))
@@ -623,6 +654,8 @@ contract EthereumL1Bridge is AccessControl, ReentrancyGuard, Pausable {
         }
 
         commitment.status = CommitmentStatus.CHALLENGED;
+        challengeChallenger[commitmentId] = msg.sender;
+        challengeBonds[commitmentId] = msg.value;
 
         emit StateCommitmentChallenged(commitmentId, msg.sender, reason);
     }
@@ -650,13 +683,66 @@ contract EthereumL1Bridge is AccessControl, ReentrancyGuard, Pausable {
         l2Configs[commitment.sourceChainId].lastSyncedBlock = commitment
             .blockNumber;
 
-        // Return bond to submitter
+        // Return stored bond to submitter (not current minSubmissionBond which may drift)
+        uint256 bondAmount = commitmentBonds[commitmentId];
+        delete commitmentBonds[commitmentId];
+
         (bool success, ) = payable(commitment.submitter).call{
-            value: minSubmissionBond
+            value: bondAmount
         }("");
         if (!success) revert TransferFailed();
 
         emit StateCommitmentFinalized(commitmentId, commitment.stateRoot);
+    }
+
+    /**
+     * @notice Resolve a challenged commitment (GUARDIAN or OPERATOR only)
+     * @param commitmentId The challenged commitment
+     * @param reject True if the commitment is invalid (challenger wins), false if valid (submitter wins)
+     */
+    function resolveChallenge(
+        bytes32 commitmentId,
+        bool reject
+    ) external nonReentrant onlyRole(GUARDIAN_ROLE) {
+        StateCommitment storage commitment = stateCommitments[commitmentId];
+
+        if (commitment.commitmentId == bytes32(0))
+            revert InvalidCommitment(commitmentId);
+        if (commitment.status != CommitmentStatus.CHALLENGED)
+            revert CommitmentNotChallenged(commitmentId);
+
+        uint256 submitterBond = commitmentBonds[commitmentId];
+        uint256 challengerBond = challengeBonds[commitmentId];
+        address challenger = challengeChallenger[commitmentId];
+
+        // Clean up storage
+        delete commitmentBonds[commitmentId];
+        delete challengeBonds[commitmentId];
+        delete challengeChallenger[commitmentId];
+
+        if (reject) {
+            // Challenger wins: commitment is invalid
+            commitment.status = CommitmentStatus.REJECTED;
+
+            // Challenger gets their bond back + submitter's bond as reward
+            uint256 totalReward = challengerBond + submitterBond;
+            (bool success, ) = payable(challenger).call{value: totalReward}("");
+            if (!success) revert TransferFailed();
+
+            emit StateCommitmentRejected(commitmentId, challenger);
+            emit ChallengeResolved(commitmentId, true, challenger);
+        } else {
+            // Submitter wins: commitment is valid, resume to PENDING for finalization
+            commitment.status = CommitmentStatus.PENDING;
+            commitmentBonds[commitmentId] = submitterBond;
+
+            // Submitter gets challenger's bond as reward
+            uint256 totalReward = challengerBond;
+            (bool success, ) = payable(commitment.submitter).call{value: totalReward}("");
+            if (!success) revert TransferFailed();
+
+            emit ChallengeResolved(commitmentId, false, commitment.submitter);
+        }
     }
 
     /*//////////////////////////////////////////////////////////////

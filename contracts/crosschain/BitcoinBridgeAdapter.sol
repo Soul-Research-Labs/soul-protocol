@@ -857,16 +857,28 @@ contract BitcoinBridgeAdapter is
         bytes32[] calldata merkleProof,
         bytes calldata blockHeader
     ) internal view returns (bool valid) {
-        // In production: Call SPV verifier contract
-        if (spvVerifier == address(0)) {
-            // Development mode - basic validation
-            return
-                btcTxId != bytes32(0) &&
-                merkleProof.length > 0 &&
-                blockHeader.length == 80;
+        // Basic validation always required
+        if (btcTxId == bytes32(0)) return false;
+        if (merkleProof.length == 0) return false;
+        if (blockHeader.length != 80) return false;
+
+        // If SPV verifier is configured, delegate to it
+        if (spvVerifier != address(0)) {
+            (bool success, bytes memory result) = spvVerifier.staticcall(
+                abi.encodeWithSignature(
+                    "verify(bytes32,bytes32[],bytes)",
+                    btcTxId,
+                    merkleProof,
+                    blockHeader
+                )
+            );
+            if (success && result.length >= 32) {
+                return abi.decode(result, (bool));
+            }
+            return false;
         }
 
-        // Would call: IBTCSPVVerifier(spvVerifier).verify(btcTxId, merkleProof, blockHeader)
+        // Development mode - basic structural validation only
         return true;
     }
 

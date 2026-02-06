@@ -295,9 +295,11 @@ contract LayerZeroAdapter is ReentrancyGuard, AccessControl, Pausable {
         // Check message hasn't been processed
         if (processedMessages[guid]) revert MessageAlreadyProcessed();
 
-        // Verify nonce ordering
-        if (nonce != inboundNonce[srcEid] + 1) revert InvalidPayload();
-        inboundNonce[srcEid] = nonce;
+        // Track nonce for ordering awareness (but don't block on gaps)
+        // LZ V2 supports unordered delivery; enforce via processedMessages instead
+        if (nonce > inboundNonce[srcEid]) {
+            inboundNonce[srcEid] = nonce;
+        }
 
         // Store receipt
         messageReceipts[guid] = MessageReceipt({
@@ -379,20 +381,19 @@ contract LayerZeroAdapter is ReentrancyGuard, AccessControl, Pausable {
         );
 
         // Call LayerZero endpoint to send message
-        // LayerZero V2 uses the following interface:
-        // ILayerZeroEndpointV2(lzEndpoint).send{value: fee}(
-        //     MessagingParams(dstEid, peer, payload, options, payInLzToken),
-        //     msg.sender
-        // );
+        // LayerZero V2 MessagingParams struct: (dstEid, peer, payload, options, payInLzToken)
+        bytes memory messagingParams = abi.encode(
+            dstEid,
+            trustedRemotes[dstEid],
+            payload,
+            abi.encode(options),
+            false // payInLzToken
+        );
 
         (bool success, ) = lzEndpoint.call{value: fee}(
             abi.encodeWithSignature(
                 "send((uint32,bytes32,bytes,bytes,bool),address)",
-                dstEid,
-                trustedRemotes[dstEid],
-                payload,
-                abi.encode(options),
-                false, // payInLzToken
+                messagingParams,
                 msg.sender
             )
         );

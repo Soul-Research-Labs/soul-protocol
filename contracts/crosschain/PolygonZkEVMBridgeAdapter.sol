@@ -54,7 +54,7 @@ contract PolygonZkEVMBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         _grantRole(OPERATOR_ROLE, _admin);
     }
 
-    function setPilHubL2(
+    function setSoulHubL2(
         address _soulHubL2
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         soulHubL2 = _soulHubL2;

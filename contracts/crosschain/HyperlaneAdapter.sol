@@ -408,7 +408,7 @@ contract HyperlaneAdapter is ReentrancyGuard, AccessControl, Pausable {
     }
 
     function _verifyMultisig(
-        bytes32,
+        bytes32 messageId,
         bytes memory metadata,
         uint32 originDomain
     ) internal view returns (bool) {
@@ -424,9 +424,13 @@ contract HyperlaneAdapter is ReentrancyGuard, AccessControl, Pausable {
         uint8 validSignatures = 0;
         address lastSigner = address(0);
 
+        // Validators sign the messageId, not the commitment
+        // This ensures each message is individually verified
+        bytes32 digest = keccak256(abi.encodePacked(messageId, originDomain, params.commitment));
+
         for (uint256 i = 0; i < signatures.length; i++) {
-            // Recover signer
-            address signer = ECDSA.recover(params.commitment, signatures[i]);
+            // Recover signer from the message-specific digest
+            address signer = ECDSA.recover(digest, signatures[i]);
 
             // Check duplications (signatures must be sorted/unique)
             if (signer <= lastSigner) continue;

@@ -68,6 +68,7 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
     error InsufficientOracleSignatures();
     error StateRootNotSet();
     error SignatureMalleability();
+    error ZeroAddress();
 
     mapping(bytes32 => Message) public messages;
 
@@ -115,10 +116,10 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
             ChainConfig({
                 chainId: 42161,
                 name: "Arbitrum One",
-                bridge: address(0), // Set actual bridge address
+                bridge: address(0),
                 messenger: address(0),
                 confirmations: 1,
-                enabled: true,
+                enabled: false, // Disabled until real bridge addresses are configured
                 gasLimit: 1000000
             })
         );
@@ -131,7 +132,7 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
                 bridge: address(0),
                 messenger: address(0),
                 confirmations: 1,
-                enabled: true,
+                enabled: false,
                 gasLimit: 1000000
             })
         );
@@ -144,7 +145,7 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
                 bridge: address(0),
                 messenger: address(0),
                 confirmations: 1,
-                enabled: true,
+                enabled: false,
                 gasLimit: 1000000
             })
         );
@@ -157,7 +158,7 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
                 bridge: address(0),
                 messenger: address(0),
                 confirmations: 1,
-                enabled: true,
+                enabled: false,
                 gasLimit: 2000000
             })
         );
@@ -170,7 +171,7 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
                 bridge: address(0),
                 messenger: address(0),
                 confirmations: 1,
-                enabled: true,
+                enabled: false,
                 gasLimit: 1500000
             })
         );
@@ -183,7 +184,7 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
                 bridge: address(0),
                 messenger: address(0),
                 confirmations: 1,
-                enabled: true,
+                enabled: false,
                 gasLimit: 1000000
             })
         );
@@ -196,7 +197,7 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
                 bridge: address(0),
                 messenger: address(0),
                 confirmations: 1,
-                enabled: true,
+                enabled: false,
                 gasLimit: 1500000
             })
         );
@@ -220,6 +221,7 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
         uint256 gasLimit
     ) external onlyRole(ADMIN_ROLE) {
         if (chainConfigs[chainId].chainId != 0) revert ChainAlreadyExists();
+        if (bridge == address(0) || messenger == address(0)) revert ZeroAddress();
 
         _addChain(
             ChainConfig({
@@ -246,6 +248,9 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
         bool enabled
     ) external onlyRole(ADMIN_ROLE) {
         if (chainConfigs[chainId].chainId == 0) revert ChainNotFound();
+
+        // Cannot enable chain with zero bridge/messenger addresses
+        if (enabled && (bridge == address(0) || messenger == address(0))) revert ZeroAddress();
 
         ChainConfig storage config = chainConfigs[chainId];
         config.bridge = bridge;
@@ -303,7 +308,6 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
         bytes calldata proof
     ) external onlyRole(RELAYER_ROLE) nonReentrant {
         if (
-            messages[messageId].status != MessageStatus.PENDING &&
             messages[messageId].id != bytes32(0)
         ) revert InvalidMessageStatus();
 

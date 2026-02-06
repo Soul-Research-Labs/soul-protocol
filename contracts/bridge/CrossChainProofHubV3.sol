@@ -837,6 +837,34 @@ contract CrossChainProofHubV3 is
         }
     }
 
+    /// @notice Expires a stale challenge after its deadline, resolving in the relayer's favor
+    /// @dev Callable by anyone after the challenge deadline passes without resolution
+    /// @param proofId The proof with a stale challenge
+    function expireChallenge(
+        bytes32 proofId
+    ) external nonReentrant whenNotPaused {
+        Challenge storage challenge = challenges[proofId];
+        if (challenge.challenger == address(0))
+            revert ChallengeNotFound(proofId);
+        if (challenge.resolved) revert ChallengeNotFound(proofId);
+        if (block.timestamp < challenge.deadline)
+            revert ChallengePeriodNotOver(proofId, challenge.deadline);
+
+        ProofSubmission storage submission = proofs[proofId];
+
+        // Challenge expired — relayer wins by default
+        challenge.resolved = true;
+        challenge.challengerWon = false;
+        submission.status = ProofStatus.Verified;
+
+        // Reward relayer with challenger's forfeited stake
+        uint256 reward = challenge.stake;
+        relayerStakes[submission.relayer] += reward;
+
+        emit ChallengeResolved(proofId, false, submission.relayer, reward);
+        emit ProofVerified(proofId, ProofStatus.Verified);
+    }
+
     /*//////////////////////////////////////////////////////////////
                           FINALIZATION
     //////////////////////////////////////////////////////////////*/

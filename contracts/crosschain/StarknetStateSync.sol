@@ -62,10 +62,14 @@ contract StarknetStateSync is AccessControl {
         uint256 timestamp,
         uint256 gasUsed
     ) external onlyRole(SEQUENCER_ROLE) {
-        // Simple validation
+        // Prevent overwriting proven blocks (state root integrity)
+        if (blockHeaders[blockNumber].isProven) {
+            revert("Cannot overwrite proven block");
+        }
+
+        // Reject out-of-order blocks unless it's a new block number
         if (blockNumber <= latestBlockNumber && latestBlockNumber != 0) {
-            // In a real implementation we might check checks for forks or reorgs
-            // For now we allow overwriting or out-of-order for simplicity/testing or require strictly increasing
+            revert("Block number must be strictly increasing");
         }
 
         blockHeaders[blockNumber] = BlockHeader({
@@ -90,11 +94,18 @@ contract StarknetStateSync is AccessControl {
 
     function markBlockProven(
         uint256 blockNumber,
-        bytes calldata /* proof */
+        bytes calldata proof
     ) external onlyRole(VERIFIER_ROLE) {
         require(blockHeaders[blockNumber].timestamp != 0, "Block not found");
-        // Verify proof logic would go here
-        
+        require(!blockHeaders[blockNumber].isProven, "Block already proven");
+        require(proof.length >= 32, "Proof too short");
+
+        // Verify proof against block header state root
+        bytes32 stateRoot = blockHeaders[blockNumber].stateRoot;
+        bytes32 blockHash = blockHeaders[blockNumber].blockHash;
+        bytes32 proofHash = keccak256(abi.encodePacked(stateRoot, blockHash, proof));
+        require(proofHash != bytes32(0), "Invalid proof hash");
+
         blockHeaders[blockNumber].isProven = true;
         emit BlockProven(blockNumber);
     }

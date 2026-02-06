@@ -147,7 +147,7 @@ contract ScrollBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
      * @notice Set Soul Hub L2 address
      * @param _soulHubL2 Soul Hub L2 address
      */
-    function setPilHubL2(
+    function setSoulHubL2(
         address _soulHubL2
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         soulHubL2 = _soulHubL2;

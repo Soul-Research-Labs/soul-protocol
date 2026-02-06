@@ -67,6 +67,7 @@ contract CrossL2Atomicity is ReentrancyGuard, AccessControl, Pausable {
     error TimeoutNotReached();
     error InsufficientValue();
     error SuperchainSendFailed();
+    error DuplicateChainId(uint256 chainId);
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -303,8 +304,12 @@ contract CrossL2Atomicity is ReentrancyGuard, AccessControl, Pausable {
         bundle.chainCount = chainCount;
         bundle.chainIds = chainIds;
 
-        // Add operations
+        // Add operations (with duplicate chainId check)
         for (uint256 i = 0; i < chainCount; i++) {
+            // Check for duplicate chainIds
+            for (uint256 j = 0; j < i; j++) {
+                if (chainIds[j] == chainIds[i]) revert DuplicateChainId(chainIds[i]);
+            }
             bundle.operations[chainIds[i]] = ChainOperation({
                 chainId: chainIds[i],
                 chainType: chainTypes[i],
@@ -430,22 +435,20 @@ contract CrossL2Atomicity is ReentrancyGuard, AccessControl, Pausable {
 
         bundle.phase = BundlePhase.EXECUTING;
 
-        op.executed = true;
-        bundle.executedCount++;
-
-        if (bundle.executedCount == bundle.chainCount) {
-            bundle.phase = BundlePhase.COMPLETED;
-        }
-
-        // Execute the operation
+        // Execute the operation first (CEI: check, then external call, then state update)
         (bool success, ) = op.target.call{value: op.value}(op.data);
 
         emit ChainExecuted(bundleId, currentChainId, success);
 
         if (!success) revert ExecutionFailed();
 
+        // Update state only after successful execution
+        op.executed = true;
+        bundle.executedCount++;
+
         // Check if all chains executed
         if (bundle.executedCount == bundle.chainCount) {
+            bundle.phase = BundlePhase.COMPLETED;
             emit BundleCompleted(bundleId, true);
         }
     }

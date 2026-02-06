@@ -132,6 +132,7 @@ contract DirectL2Messenger is ReentrancyGuard, AccessControl, Pausable {
     event SharedSequencerUpdated(address indexed sequencer, bool active);
     event RequiredConfirmationsUpdated(uint256 newCount);
     event ChallengerRewardUpdated(uint256 newReward);
+    event PathOverridden(bytes32 indexed messageId, MessagePath requestedPath, MessagePath actualPath);
 
     event MessageChallenged(
         bytes32 indexed messageId,
@@ -349,6 +350,7 @@ contract DirectL2Messenger is ReentrancyGuard, AccessControl, Pausable {
         MessagePath actualPath = path;
         if (route.active && route.preferredPath != path) {
             actualPath = route.preferredPath;
+            // Emit event so user is aware of path override
         }
 
         // Generate message ID
@@ -383,6 +385,11 @@ contract DirectL2Messenger is ReentrancyGuard, AccessControl, Pausable {
 
         // Route message based on path
         _routeMessage(messageId, actualPath, destChainId, payload);
+
+        // Emit path override event if path was changed
+        if (actualPath != path) {
+            emit PathOverridden(messageId, path, actualPath);
+        }
 
         emit MessageSent(
             messageId,

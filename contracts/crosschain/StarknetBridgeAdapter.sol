@@ -4,6 +4,8 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../interfaces/IStarknetBridgeAdapter.sol";
 
 /**
@@ -56,6 +58,8 @@ contract StarknetBridgeAdapter is
     Pausable,
     IStarknetBridgeAdapter
 {
+    using SafeERC20 for IERC20;
+
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
@@ -101,6 +105,9 @@ contract StarknetBridgeAdapter is
 
     /// @notice Token mappings (L1 Address => Mapping)
     mapping(address => TokenMapping) public tokenMappings;
+
+    /// @notice Reverse token mapping (L2 token felt => L1 token address)
+    mapping(uint256 => address) public l2ToL1Token;
 
     /// @notice Consumed messages (hash => timestamp)
     mapping(bytes32 => uint256) public consumedMessages;
@@ -168,6 +175,7 @@ contract StarknetBridgeAdapter is
             totalWithdrawn: 0,
             active: true
         });
+        l2ToL1Token[l2Token] = l1Token;
 
         emit TokenMapped(l1Token, l2Token);
     }
@@ -235,17 +243,8 @@ contract StarknetBridgeAdapter is
 
         mapping_.totalDeposited += amount;
 
-        // Transfer tokens to bridge
-        // Implementation note: use SafeERC20 in production
-        (bool success, ) = l1Token.call(
-            abi.encodeWithSelector(
-                0x23b872dd,
-                msg.sender,
-                address(this),
-                amount
-            )
-        );
-        if (!success) revert TransferFailed();
+        // Transfer tokens to bridge using SafeERC20
+        IERC20(l1Token).safeTransferFrom(msg.sender, address(this), amount);
 
         // Send message to L2
         IStarknetMessaging messaging = IStarknetMessaging(
@@ -335,27 +334,19 @@ contract StarknetBridgeAdapter is
         // This will revert if message not present/verified
         bytes32 msgHash = messaging.consumeMessageFromL2(l2Sender, payload);
 
-        // Check if map token exists for L1 recipient token?
-        // We need to resolve L2 token to L1 token.
-        // Reverse lookup or passed in params?
-        // Using passed params but verifying logic would be better.
-        // For efficiency, we scan mappings (expensive) or rely on trusted L2 bridge data.
-        // Assuming L2 bridge sends correct data.
+        // Resolve L2 token to L1 token via reverse mapping
+        address l1Token = l2ToL1Token[l2Token];
+        if (l1Token == address(0)) revert TokenNotMapped();
 
-        // Find L1 token from L2 token
-        address l1Token = address(0);
-        // This linear scan is expensive, better to have mapping(uint256 => address)
-        // But for this adapter we iterate or require l1Token param
-        // Simplification: assume we just release tokens if message consumed
-
-        // Preventing double consumption (handled by Starknet Messaging)
+        // Preventing double consumption (handled by Starknet Messaging, but belt-and-suspenders)
         if (consumedMessages[msgHash] != 0) revert MessageAlreadyConsumed();
         consumedMessages[msgHash] = block.timestamp;
 
-        // Execute value transfer
-        // Note: Real implementation needs L2->L1 token mapping lookup
-        // Here we skip the transfer logic for simplicity as we don't have the full token map
-        // But we mark it as finalized.
+        // Transfer tokens to recipient
+        IERC20(l1Token).safeTransfer(l1Recipient, amount);
+
+        // Update token mapping accounting
+        tokenMappings[l1Token].totalWithdrawn += amount;
 
         withdrawalId = keccak256(
             abi.encodePacked(
@@ -372,7 +363,7 @@ contract StarknetBridgeAdapter is
             l2Sender: l2Sender,
             l1Recipient: l1Recipient,
             l2Token: l2Token,
-            l1Token: address(0), // Unknown without mapping
+            l1Token: l1Token,
             amount: amount,
             messageHash: msgHash,
             status: TransferStatus.FINALIZED,

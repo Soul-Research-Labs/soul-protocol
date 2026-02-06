@@ -59,6 +59,7 @@ contract BaseBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE");
     bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
     bytes32 public constant CCTP_ROLE = keccak256("CCTP_ROLE");
+    bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
 
     /*//////////////////////////////////////////////////////////////
                               CONSTANTS
@@ -464,9 +465,8 @@ contract BaseBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         bytes calldata proof,
         bytes calldata publicInputs,
         uint256 sourceChainId
-    ) external whenNotPaused {
-        // Verify caller is the messenger
-        // In production: require(msg.sender == l2CrossDomainMessenger)
+    ) external whenNotPaused onlyRole(RELAYER_ROLE) {
+        // Verify caller is authorized (L2CrossDomainMessenger or trusted relayer)
 
         if (relayedProofs[proofHash]) revert ProofAlreadyRelayed();
 
@@ -730,7 +730,7 @@ contract BaseBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     function receiveStateFromL1(
         bytes32 stateRoot,
         uint256 blockNumber
-    ) external whenNotPaused {
+    ) external whenNotPaused onlyRole(RELAYER_ROLE) {
         confirmedStateRoots[stateRoot] = blockNumber;
         totalMessagesReceived++;
 
