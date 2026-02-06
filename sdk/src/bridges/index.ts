@@ -16,6 +16,7 @@ export * from './l2-adapters';
 export * from './solana';
 export * from './bnb';
 export * from './hyperliquid';
+export * from './provenance';
 
 import { 
     keccak256, 
@@ -870,13 +871,77 @@ export class HyperliquidBridgeAdapterSDK extends BaseBridgeAdapter {
   }
 }
 
+export class ProvenanceBridgeAdapterSDK extends BaseBridgeAdapter {
+  private provBridgeAddress: string;
+
+  constructor(
+    publicClient: PublicClient,
+    walletClient: WalletClient,
+    provBridgeAddress: string
+  ) {
+    super({
+      name: 'Provenance',
+      chainId: 505,
+      nativeToken: 'HASH',
+      finality: 10, // ~10 blocks (~60s BFT finality)
+      maxAmount: 1_000_000n * 1_000_000_000n, // 1M HASH in nhash
+      minAmount: 1_000_000_000n / 10n // 0.1 HASH in nhash
+    }, publicClient, walletClient);
+
+    this.provBridgeAddress = provBridgeAddress;
+  }
+
+  async bridgeTransfer(params: BridgeTransferParams): Promise<BridgeTransferResult> {
+    this.validateAmount(params.amount);
+
+    const transferId = keccak256(encodeAbiParameters(
+      [{ type: 'address' }, { type: 'address' }, { type: 'uint256' }, { type: 'uint256' }],
+      [params.recipient as Hex, this.provBridgeAddress as Hex, params.amount, BigInt(Date.now())]
+    ));
+
+    return {
+      transferId,
+      txHash: '0x...',
+      estimatedArrival: Date.now() + 60_000, // ~60 seconds (10 blocks × 6s)
+      fees: await this.estimateFees(params.amount, params.targetChainId)
+    };
+  }
+
+  async completeBridge(transferId: string, proof: Uint8Array): Promise<string> {
+    return '0x...';
+  }
+
+  async getStatus(transferId: string): Promise<BridgeStatus> {
+    return {
+      state: 'pending',
+      sourceChainId: 1,
+      targetChainId: this.config.chainId,
+      confirmations: 0,
+      requiredConfirmations: 10
+    };
+  }
+
+  async estimateFees(amount: bigint, targetChainId: number): Promise<BridgeFees> {
+    const protocolFee = amount * 10n / 10000n; // 0.10% bridge fee
+    const relayerFee = 1_000_000n; // 0.001 HASH in nhash
+    const gasFee = 100_000n; // 0.0001 HASH (Tendermint gas)
+
+    return {
+      protocolFee,
+      relayerFee,
+      gasFee,
+      total: protocolFee + relayerFee + gasFee
+    };
+  }
+}
+
 // ============================================
 // Bridge Factory
 // ============================================
 
 export type SupportedChain = 
   | 'cardano' | 'midnight' | 'polkadot' | 'cosmos' | 'near'
-  | 'avalanche' | 'arbitrum' | 'solana' | 'bitcoin' | 'starknet' | 'bnb' | 'hyperliquid';
+  | 'avalanche' | 'arbitrum' | 'solana' | 'bitcoin' | 'starknet' | 'bnb' | 'hyperliquid' | 'provenance';
 
 export class BridgeFactory {
   static createAdapter(
@@ -945,6 +1010,11 @@ export class BridgeFactory {
         return new HyperliquidBridgeAdapterSDK(
           publicClient, walletClient,
           config.hlBridgeAddress
+        );
+      case 'provenance':
+        return new ProvenanceBridgeAdapterSDK(
+          publicClient, walletClient,
+          config.provBridgeAddress
         );
       default:
         throw new Error(`Unsupported chain: ${chain}`);
