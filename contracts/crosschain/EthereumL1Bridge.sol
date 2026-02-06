@@ -738,7 +738,9 @@ contract EthereumL1Bridge is AccessControl, ReentrancyGuard, Pausable {
 
             // Submitter gets challenger's bond as reward
             uint256 totalReward = challengerBond;
-            (bool success, ) = payable(commitment.submitter).call{value: totalReward}("");
+            (bool success, ) = payable(commitment.submitter).call{
+                value: totalReward
+            }("");
             if (!success) revert TransferFailed();
 
             emit ChallengeResolved(commitmentId, false, commitment.submitter);

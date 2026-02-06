@@ -132,7 +132,11 @@ contract DirectL2Messenger is ReentrancyGuard, AccessControl, Pausable {
     event SharedSequencerUpdated(address indexed sequencer, bool active);
     event RequiredConfirmationsUpdated(uint256 newCount);
     event ChallengerRewardUpdated(uint256 newReward);
-    event PathOverridden(bytes32 indexed messageId, MessagePath requestedPath, MessagePath actualPath);
+    event PathOverridden(
+        bytes32 indexed messageId,
+        MessagePath requestedPath,
+        MessagePath actualPath
+    );
 
     event MessageChallenged(
         bytes32 indexed messageId,

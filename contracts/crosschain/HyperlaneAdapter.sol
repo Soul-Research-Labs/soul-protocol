@@ -426,7 +426,9 @@ contract HyperlaneAdapter is ReentrancyGuard, AccessControl, Pausable {
 
         // Validators sign the messageId, not the commitment
         // This ensures each message is individually verified
-        bytes32 digest = keccak256(abi.encodePacked(messageId, originDomain, params.commitment));
+        bytes32 digest = keccak256(
+            abi.encodePacked(messageId, originDomain, params.commitment)
+        );
 
         for (uint256 i = 0; i < signatures.length; i++) {
             // Recover signer from the message-specific digest

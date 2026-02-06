@@ -221,7 +221,8 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
         uint256 gasLimit
     ) external onlyRole(ADMIN_ROLE) {
         if (chainConfigs[chainId].chainId != 0) revert ChainAlreadyExists();
-        if (bridge == address(0) || messenger == address(0)) revert ZeroAddress();
+        if (bridge == address(0) || messenger == address(0))
+            revert ZeroAddress();
 
         _addChain(
             ChainConfig({
@@ -250,7 +251,8 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
         if (chainConfigs[chainId].chainId == 0) revert ChainNotFound();
 
         // Cannot enable chain with zero bridge/messenger addresses
-        if (enabled && (bridge == address(0) || messenger == address(0))) revert ZeroAddress();
+        if (enabled && (bridge == address(0) || messenger == address(0)))
+            revert ZeroAddress();
 
         ChainConfig storage config = chainConfigs[chainId];
         config.bridge = bridge;
@@ -307,9 +309,7 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
         bytes calldata payload,
         bytes calldata proof
     ) external onlyRole(RELAYER_ROLE) nonReentrant {
-        if (
-            messages[messageId].id != bytes32(0)
-        ) revert InvalidMessageStatus();
+        if (messages[messageId].id != bytes32(0)) revert InvalidMessageStatus();
 
         // Verify the message proof (chain-specific)
         if (!_verifyMessageProof(sourceChain, messageId, payload, proof))

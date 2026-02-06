@@ -451,7 +451,9 @@ contract L2ProofRouter is ReentrancyGuard, AccessControl, Pausable {
      * @notice Route a batch to destination
      * @param batchId Batch identifier
      */
-    function routeBatch(bytes32 batchId) external nonReentrant whenNotPaused onlyRole(OPERATOR_ROLE) {
+    function routeBatch(
+        bytes32 batchId
+    ) external nonReentrant whenNotPaused onlyRole(OPERATOR_ROLE) {
         _routeBatch(batchId);
     }
 

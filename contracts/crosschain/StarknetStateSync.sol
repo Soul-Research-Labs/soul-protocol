@@ -31,14 +31,18 @@ contract StarknetStateSync is AccessControl {
     // Storage
     mapping(uint256 => BlockHeader) public blockHeaders;
     mapping(uint256 => Checkpoint) public checkpoints;
-    
+
     uint256 public latestBlockNumber;
     uint256 public latestCheckpointIndex;
     address public starknetCore;
 
     event BlockHeaderCached(uint256 indexed blockNumber, bytes32 blockHash);
     event BlockProven(uint256 indexed blockNumber);
-    event CheckpointCreated(uint256 indexed index, uint256 blockNumber, bytes32 stateRoot);
+    event CheckpointCreated(
+        uint256 indexed index,
+        uint256 blockNumber,
+        bytes32 stateRoot
+    );
     event StarknetCoreUpdated(address indexed newCore);
 
     constructor() {
@@ -103,16 +107,20 @@ contract StarknetStateSync is AccessControl {
         // Verify proof against block header state root
         bytes32 stateRoot = blockHeaders[blockNumber].stateRoot;
         bytes32 blockHash = blockHeaders[blockNumber].blockHash;
-        bytes32 proofHash = keccak256(abi.encodePacked(stateRoot, blockHash, proof));
+        bytes32 proofHash = keccak256(
+            abi.encodePacked(stateRoot, blockHash, proof)
+        );
         require(proofHash != bytes32(0), "Invalid proof hash");
 
         blockHeaders[blockNumber].isProven = true;
         emit BlockProven(blockNumber);
     }
 
-    function createCheckpoint(uint256 blockNumber) external onlyRole(OPERATOR_ROLE) {
+    function createCheckpoint(
+        uint256 blockNumber
+    ) external onlyRole(OPERATOR_ROLE) {
         require(blockHeaders[blockNumber].isProven, "Block not proven");
-        
+
         latestCheckpointIndex++;
         checkpoints[latestCheckpointIndex] = Checkpoint({
             index: latestCheckpointIndex,
@@ -121,6 +129,10 @@ contract StarknetStateSync is AccessControl {
             timestamp: block.timestamp
         });
 
-        emit CheckpointCreated(latestCheckpointIndex, blockNumber, blockHeaders[blockNumber].stateRoot);
+        emit CheckpointCreated(
+            latestCheckpointIndex,
+            blockNumber,
+            blockHeaders[blockNumber].stateRoot
+        );
     }
 }

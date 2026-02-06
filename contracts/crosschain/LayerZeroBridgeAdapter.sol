@@ -560,22 +560,24 @@ contract LayerZeroBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         if (lzEndpoint != address(0)) {
             // Encode options for LZ V2: type 3 (executor lzReceive option)
             bytes memory lzOptions = abi.encodePacked(
-                uint16(3),       // Options type: lzReceive
-                uint16(1),       // Worker ID: executor
+                uint16(3), // Options type: lzReceive
+                uint16(1), // Worker ID: executor
                 uint16(16 + 32), // Option length
                 uint128(options.gas),
                 uint128(options.value)
             );
 
             // Build MessagingParams and call endpoint.send()
-            (bool success, bytes memory result) = lzEndpoint.call{value: fee.nativeFee}(
+            (bool success, bytes memory result) = lzEndpoint.call{
+                value: fee.nativeFee
+            }(
                 abi.encodeWithSignature(
                     "send((uint32,bytes32,bytes,bytes,bytes),address)",
                     dstEid,
                     receiver,
                     message,
                     lzOptions,
-                    "",  // refundAddress is msg.sender — handled by endpoint
+                    "", // refundAddress is msg.sender — handled by endpoint
                     msg.sender
                 )
             );

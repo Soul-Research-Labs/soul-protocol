@@ -690,7 +690,9 @@ contract CrossChainBridgeIntegration is
         bytes32 messageHash = keccak256(
             abi.encodePacked(
                 "\x19Ethereum Signed Message:\n32",
-                keccak256(abi.encodePacked(transferId, recipient, token, amount))
+                keccak256(
+                    abi.encodePacked(transferId, recipient, token, amount)
+                )
             )
         );
 
@@ -705,7 +707,10 @@ contract CrossChainBridgeIntegration is
         }
 
         // Signature malleability protection
-        if (uint256(s) > 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0) {
+        if (
+            uint256(s) >
+            0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0
+        ) {
             return false;
         }
 

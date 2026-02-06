@@ -413,7 +413,6 @@ contract SharedSequencerIntegration is
         uint256 uniqueCount = 0;
 
         for (uint256 i = 0; i < transactions.length; i++) {
-
             bool found = false;
             for (uint256 j = 0; j < uniqueCount; j++) {
                 if (tempChainIds[j] == transactions[i].targetChainId) {
@@ -762,7 +761,6 @@ contract SharedSequencerIntegration is
     function setEspressoLightClient(
         address lightClient
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-
         espressoLightClient = lightClient;
     }
 

@@ -400,8 +400,10 @@ contract CrossChainMessageRelay is AccessControl, ReentrancyGuard, Pausable {
         }
 
         // Verify nonce (replay prevention using message ID hash, allows out-of-order delivery)
-        if (messageStatus[message.messageId] != MessageStatus.PENDING &&
-            storedMessages[message.messageId].messageId != bytes32(0)) {
+        if (
+            messageStatus[message.messageId] != MessageStatus.PENDING &&
+            storedMessages[message.messageId].messageId != bytes32(0)
+        ) {
             revert InvalidNonce(
                 inboundNonces[message.sourceChainId],
                 message.nonce

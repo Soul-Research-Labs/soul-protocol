@@ -308,7 +308,8 @@ contract CrossL2Atomicity is ReentrancyGuard, AccessControl, Pausable {
         for (uint256 i = 0; i < chainCount; i++) {
             // Check for duplicate chainIds
             for (uint256 j = 0; j < i; j++) {
-                if (chainIds[j] == chainIds[i]) revert DuplicateChainId(chainIds[i]);
+                if (chainIds[j] == chainIds[i])
+                    revert DuplicateChainId(chainIds[i]);
             }
             bundle.operations[chainIds[i]] = ChainOperation({
                 chainId: chainIds[i],
