@@ -94,7 +94,9 @@ contract XRPLBridgeFuzz is Test {
         returns (IXRPLBridgeAdapter.ValidatorAttestation[] memory)
     {
         IXRPLBridgeAdapter.ValidatorAttestation[]
-            memory attestations = new IXRPLBridgeAdapter.ValidatorAttestation[](3);
+            memory attestations = new IXRPLBridgeAdapter.ValidatorAttestation[](
+                3
+            );
         attestations[0] = IXRPLBridgeAdapter.ValidatorAttestation({
             validatorPubKey: VAL_KEY_1,
             signature: hex"0123456789"
@@ -124,12 +126,13 @@ contract XRPLBridgeFuzz is Test {
         bytes32[] memory branchKeys = new bytes32[](1);
         branchKeys[0] = bytes32(0);
 
-        return IXRPLBridgeAdapter.SHAMapProof({
-            leafHash: keccak256("leaf"),
-            innerNodes: innerNodes,
-            nodeTypes: nodeTypes,
-            branchKeys: branchKeys
-        });
+        return
+            IXRPLBridgeAdapter.SHAMapProof({
+                leafHash: keccak256("leaf"),
+                innerNodes: innerNodes,
+                nodeTypes: nodeTypes,
+                branchKeys: branchKeys
+            });
     }
 
     function _submitValidatedLedger(uint256 ledgerIndex) internal {
@@ -341,7 +344,11 @@ contract XRPLBridgeFuzz is Test {
         vm.assume(minSigs > 0);
 
         // Zero multisig should revert
-        if (multisig == bytes20(0) || wrappedXRP == address(0) || oracleAddr == address(0)) {
+        if (
+            multisig == bytes20(0) ||
+            wrappedXRP == address(0) ||
+            oracleAddr == address(0)
+        ) {
             vm.prank(admin);
             vm.expectRevert(IXRPLBridgeAdapter.ZeroAddress.selector);
             bridge.configure(multisig, wrappedXRP, oracleAddr, minSigs, 32);
@@ -505,7 +512,11 @@ contract XRPLBridgeFuzz is Test {
         uint256 balBefore = user2.balance;
         vm.prank(user2);
         bridge.finishEscrow(escrowId, preimage);
-        assertEq(user2.balance - balBefore, 1 ether, "Escrow funds not released");
+        assertEq(
+            user2.balance - balBefore,
+            1 ether,
+            "Escrow funds not released"
+        );
 
         // Cannot finish again
         vm.prank(user2);
@@ -540,7 +551,11 @@ contract XRPLBridgeFuzz is Test {
         uint256 balBefore = user1.balance;
         vm.prank(user1);
         bridge.cancelEscrow(escrowId);
-        assertEq(user1.balance - balBefore, 1 ether, "Escrow funds not returned");
+        assertEq(
+            user1.balance - balBefore,
+            1 ether,
+            "Escrow funds not returned"
+        );
 
         // Cannot cancel again
         vm.prank(user1);
@@ -642,12 +657,16 @@ contract XRPLBridgeFuzz is Test {
     //////////////////////////////////////////////////////////////*/
 
     function test_getDepositReturnsEmpty() public view {
-        IXRPLBridgeAdapter.XRPDeposit memory dep = bridge.getDeposit(bytes32(0));
+        IXRPLBridgeAdapter.XRPDeposit memory dep = bridge.getDeposit(
+            bytes32(0)
+        );
         assertEq(dep.depositId, bytes32(0));
     }
 
     function test_getWithdrawalReturnsEmpty() public view {
-        IXRPLBridgeAdapter.XRPWithdrawal memory w = bridge.getWithdrawal(bytes32(0));
+        IXRPLBridgeAdapter.XRPWithdrawal memory w = bridge.getWithdrawal(
+            bytes32(0)
+        );
         assertEq(w.withdrawalId, bytes32(0));
     }
 

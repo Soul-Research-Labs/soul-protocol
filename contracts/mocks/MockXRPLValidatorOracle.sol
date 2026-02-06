@@ -66,7 +66,9 @@ contract MockXRPLValidatorOracle is AccessControl {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Register a validator public key
-    function registerValidator(bytes32 pubKey) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function registerValidator(
+        bytes32 pubKey
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(!validators[pubKey], "Already registered");
         validators[pubKey] = true;
         validatorCount++;
@@ -74,7 +76,9 @@ contract MockXRPLValidatorOracle is AccessControl {
     }
 
     /// @notice Remove a validator public key
-    function removeValidator(bytes32 pubKey) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function removeValidator(
+        bytes32 pubKey
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(validators[pubKey], "Not registered");
         validators[pubKey] = false;
         validatorCount--;
@@ -82,7 +86,9 @@ contract MockXRPLValidatorOracle is AccessControl {
     }
 
     /// @notice Batch register validators
-    function registerValidators(bytes32[] calldata pubKeys) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function registerValidators(
+        bytes32[] calldata pubKeys
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         for (uint256 i = 0; i < pubKeys.length; i++) {
             if (!validators[pubKeys[i]]) {
                 validators[pubKeys[i]] = true;
@@ -140,7 +146,9 @@ contract MockXRPLValidatorOracle is AccessControl {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Set whether verification should succeed or fail
-    function setVerificationResult(bool _result) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setVerificationResult(
+        bool _result
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         verificationResult = _result;
     }
 
