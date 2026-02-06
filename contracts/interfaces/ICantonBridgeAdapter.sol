@@ -205,10 +205,7 @@ interface ICantonBridgeAdapter {
     );
     event EscrowFinished(bytes32 indexed escrowId, bytes32 preimage);
     event EscrowCancelled(bytes32 indexed escrowId);
-    event RoundHeaderSubmitted(
-        uint256 indexed roundNumber,
-        bytes32 roundHash
-    );
+    event RoundHeaderSubmitted(uint256 indexed roundNumber, bytes32 roundHash);
     event PrivateDepositRegistered(
         bytes32 indexed depositId,
         bytes32 commitment,

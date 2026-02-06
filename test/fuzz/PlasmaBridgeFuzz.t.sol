@@ -2,27 +2,28 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "../../contracts/crosschain/CantonBridgeAdapter.sol";
-import "../../contracts/interfaces/ICantonBridgeAdapter.sol";
-import "../../contracts/mocks/MockWrappedCANTON.sol";
-import "../../contracts/mocks/MockCantonMediatorOracle.sol";
+import "../../contracts/crosschain/PlasmaBridgeAdapter.sol";
+import "../../contracts/interfaces/IPlasmaBridgeAdapter.sol";
+import "../../contracts/mocks/MockWrappedPLASMA.sol";
+import "../../contracts/mocks/MockPlasmaOperatorOracle.sol";
 
 /**
- * @title CantonBridgeFuzz
- * @notice Foundry fuzz & invariant tests for CantonBridgeAdapter
+ * @title PlasmaBridgeFuzz
+ * @notice Foundry fuzz & invariant tests for PlasmaBridgeAdapter
  * @dev Tests cover deposit/withdrawal flows, escrow lifecycle,
- *      round header submission, and security invariants
+ *      block commitment submission, and security invariants
  *
- * Canton-specific test parameters:
- * - 1 CANTON = 1e6 microcanton (6 decimals)
- * - Chain ID 510 (canton-global-1 EVM mapping)
- * - 5 round confirmations (~10s synchronizer finality)
- * - 6 active mediators (test set), 5/6 supermajority
+ * Plasma-specific test parameters:
+ * - 1 PLASMA = 1e8 satoplasma (8 decimals, UTXO-inspired)
+ * - Chain ID 515 (plasma-mainnet-1 EVM mapping)
+ * - 12 L1 commitment confirmations (Ethereum finality)
+ * - Single operator model (security via fraud proofs)
+ * - 7-day challenge period for exits
  */
-contract CantonBridgeFuzz is Test {
-    CantonBridgeAdapter public bridge;
-    MockWrappedCANTON public wCANTON;
-    MockCantonMediatorOracle public oracle;
+contract PlasmaBridgeFuzz is Test {
+    PlasmaBridgeAdapter public bridge;
+    MockWrappedPLASMA public wPLASMA;
+    MockPlasmaOperatorOracle public oracle;
 
     address public admin = makeAddr("admin");
     address public relayer = makeAddr("relayer");
@@ -32,28 +33,22 @@ contract CantonBridgeFuzz is Test {
     address public user2 = makeAddr("user2");
     address public treasury = makeAddr("treasury");
 
-    address public constant CANTON_BRIDGE_CONTRACT =
+    address public constant PLASMA_BRIDGE_CONTRACT =
         address(0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB);
-    address public constant CANTON_USER =
+    address public constant PLASMA_USER =
         address(0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC);
 
-    uint256 public constant MICROCANTON_PER_CANTON = 1_000_000; // 1e6
-    uint256 public constant MIN_DEPOSIT = MICROCANTON_PER_CANTON / 10; // 0.1 CANTON = 100_000 microcanton
-    uint256 public constant MAX_DEPOSIT = 10_000_000 * MICROCANTON_PER_CANTON; // 10M CANTON
+    uint256 public constant SATOPLASMA_PER_PLASMA = 100_000_000; // 1e8
+    uint256 public constant MIN_DEPOSIT = SATOPLASMA_PER_PLASMA / 10; // 0.1 PLASMA
+    uint256 public constant MAX_DEPOSIT = 5_000_000 * SATOPLASMA_PER_PLASMA; // 5M PLASMA
 
-    // Mediator addresses (6 mediators for Canton test set)
-    address public constant MEDIATOR_1 =
+    // Operator addresses (Plasma uses a single operator, but we test with 3 for robustness)
+    address public constant OPERATOR_1 =
         address(0x1111111111111111111111111111111111111111);
-    address public constant MEDIATOR_2 =
+    address public constant OPERATOR_2 =
         address(0x2222222222222222222222222222222222222222);
-    address public constant MEDIATOR_3 =
+    address public constant OPERATOR_3 =
         address(0x3333333333333333333333333333333333333333);
-    address public constant MEDIATOR_4 =
-        address(0x4444444444444444444444444444444444444444);
-    address public constant MEDIATOR_5 =
-        address(0x5555555555555555555555555555555555555555);
-    address public constant MEDIATOR_6 =
-        address(0x6666666666666666666666666666666666666666);
 
     /*//////////////////////////////////////////////////////////////
                               SETUP
@@ -63,11 +58,11 @@ contract CantonBridgeFuzz is Test {
         vm.startPrank(admin);
 
         // Deploy mocks
-        wCANTON = new MockWrappedCANTON();
-        oracle = new MockCantonMediatorOracle();
+        wPLASMA = new MockWrappedPLASMA();
+        oracle = new MockPlasmaOperatorOracle();
 
         // Deploy bridge
-        bridge = new CantonBridgeAdapter(admin);
+        bridge = new PlasmaBridgeAdapter(admin);
 
         // Grant roles
         bridge.grantRole(bridge.RELAYER_ROLE(), relayer);
@@ -75,103 +70,88 @@ contract CantonBridgeFuzz is Test {
         bridge.grantRole(bridge.GUARDIAN_ROLE(), guardian);
         bridge.grantRole(bridge.TREASURY_ROLE(), treasury);
 
-        // Register 6 Canton mediators
-        oracle.addMediator(MEDIATOR_1);
-        oracle.addMediator(MEDIATOR_2);
-        oracle.addMediator(MEDIATOR_3);
-        oracle.addMediator(MEDIATOR_4);
-        oracle.addMediator(MEDIATOR_5);
-        oracle.addMediator(MEDIATOR_6);
+        // Register 3 Plasma operators
+        oracle.addOperator(OPERATOR_1);
+        oracle.addOperator(OPERATOR_2);
+        oracle.addOperator(OPERATOR_3);
 
-        // Configure bridge (5 min sigs, 5 round confirmations)
+        // Configure bridge (2 min confirmations, 12 L1 confirmations)
         bridge.configure(
-            CANTON_BRIDGE_CONTRACT,
-            address(wCANTON),
+            PLASMA_BRIDGE_CONTRACT,
+            address(wPLASMA),
             address(oracle),
-            5, // minMediatorSignatures (5/6 supermajority)
-            5 // requiredRoundConfirmations (~10s)
+            2, // minOperatorConfirmations
+            12 // requiredL1Confirmations
         );
 
-        // Fund user1 with wCANTON for withdrawal tests (10K CANTON in microcanton)
-        wCANTON.mint(user1, 10_000 * MICROCANTON_PER_CANTON);
+        // Fund user1 with wPLASMA for withdrawal tests (10K PLASMA in satoplasma)
+        wPLASMA.mint(user1, 10_000 * SATOPLASMA_PER_PLASMA);
 
         vm.stopPrank();
 
-        // Approve bridge to spend user1's wCANTON
+        // Approve bridge to spend user1's wPLASMA
         vm.prank(user1);
-        IERC20(address(wCANTON)).approve(address(bridge), type(uint256).max);
+        IERC20(address(wPLASMA)).approve(address(bridge), type(uint256).max);
     }
 
     /*//////////////////////////////////////////////////////////////
                         HELPER FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    function _buildMediatorAttestations()
+    function _buildOperatorConfirmations()
         internal
         pure
-        returns (ICantonBridgeAdapter.MediatorAttestation[] memory)
+        returns (IPlasmaBridgeAdapter.OperatorConfirmation[] memory)
     {
-        ICantonBridgeAdapter.MediatorAttestation[]
-            memory attestations = new ICantonBridgeAdapter.MediatorAttestation[](
-                6
+        IPlasmaBridgeAdapter.OperatorConfirmation[]
+            memory confirmations = new IPlasmaBridgeAdapter.OperatorConfirmation[](
+                3
             );
-        attestations[0] = ICantonBridgeAdapter.MediatorAttestation({
-            mediator: MEDIATOR_1,
+        confirmations[0] = IPlasmaBridgeAdapter.OperatorConfirmation({
+            operator: OPERATOR_1,
             signature: hex"0123456789"
         });
-        attestations[1] = ICantonBridgeAdapter.MediatorAttestation({
-            mediator: MEDIATOR_2,
+        confirmations[1] = IPlasmaBridgeAdapter.OperatorConfirmation({
+            operator: OPERATOR_2,
             signature: hex"0123456789"
         });
-        attestations[2] = ICantonBridgeAdapter.MediatorAttestation({
-            mediator: MEDIATOR_3,
+        confirmations[2] = IPlasmaBridgeAdapter.OperatorConfirmation({
+            operator: OPERATOR_3,
             signature: hex"0123456789"
         });
-        attestations[3] = ICantonBridgeAdapter.MediatorAttestation({
-            mediator: MEDIATOR_4,
-            signature: hex"0123456789"
-        });
-        attestations[4] = ICantonBridgeAdapter.MediatorAttestation({
-            mediator: MEDIATOR_5,
-            signature: hex"0123456789"
-        });
-        attestations[5] = ICantonBridgeAdapter.MediatorAttestation({
-            mediator: MEDIATOR_6,
-            signature: hex"0123456789"
-        });
-        return attestations;
+        return confirmations;
     }
 
-    function _buildMerkleProof()
+    function _buildInclusionProof()
         internal
         pure
-        returns (ICantonBridgeAdapter.CantonMerkleProof memory)
+        returns (IPlasmaBridgeAdapter.PlasmaInclusionProof memory)
     {
         bytes32[] memory proof = new bytes32[](1);
         proof[0] = keccak256("sibling");
 
         return
-            ICantonBridgeAdapter.CantonMerkleProof({
+            IPlasmaBridgeAdapter.PlasmaInclusionProof({
                 leafHash: keccak256("leaf"),
                 proof: proof,
                 index: 0
             });
     }
 
-    function _submitFinalizedRound(uint256 roundNum) internal {
+    function _submitCommittedBlock(uint256 blockNum) internal {
         vm.prank(relayer);
-        bridge.submitRoundHeader(
-            roundNum,
-            keccak256(abi.encodePacked("round", roundNum)),
-            roundNum > 0
-                ? keccak256(abi.encodePacked("round", roundNum - 1))
+        bridge.submitBlockCommitment(
+            blockNum,
+            keccak256(abi.encodePacked("block", blockNum)),
+            blockNum > 0
+                ? keccak256(abi.encodePacked("block", blockNum - 1))
                 : bytes32(0),
-            keccak256(abi.encodePacked("txRoot", roundNum)),
-            keccak256(abi.encodePacked("stateRoot", roundNum)),
-            keccak256(abi.encodePacked("mediatorSet", roundNum)),
-            keccak256(abi.encodePacked("domainTopology", roundNum)),
+            keccak256(abi.encodePacked("txRoot", blockNum)),
+            keccak256(abi.encodePacked("stateRoot", blockNum)),
+            OPERATOR_1,
+            keccak256(abi.encodePacked("l1Tx", blockNum)),
             block.timestamp,
-            _buildMediatorAttestations()
+            _buildOperatorConfirmations()
         );
     }
 
@@ -182,50 +162,50 @@ contract CantonBridgeFuzz is Test {
     function testFuzz_depositRejectsAmountBelowMin(uint256 amount) public {
         amount = bound(amount, 0, MIN_DEPOSIT - 1);
 
-        _submitFinalizedRound(1);
+        _submitCommittedBlock(1);
 
         bytes32 txHash = keccak256(abi.encodePacked("tx", amount));
 
         vm.prank(relayer);
         vm.expectRevert(
             abi.encodeWithSelector(
-                ICantonBridgeAdapter.AmountTooSmall.selector,
+                IPlasmaBridgeAdapter.AmountTooSmall.selector,
                 amount
             )
         );
-        bridge.initiateCANTONDeposit(
+        bridge.initiatePLASMADeposit(
             txHash,
-            CANTON_USER,
+            PLASMA_USER,
             user1,
             amount,
             1,
-            _buildMerkleProof(),
-            _buildMediatorAttestations()
+            _buildInclusionProof(),
+            _buildOperatorConfirmations()
         );
     }
 
     function testFuzz_depositRejectsAmountAboveMax(uint256 amount) public {
         amount = bound(amount, MAX_DEPOSIT + 1, type(uint256).max);
 
-        _submitFinalizedRound(1);
+        _submitCommittedBlock(1);
 
         bytes32 txHash = keccak256(abi.encodePacked("tx", amount));
 
         vm.prank(relayer);
         vm.expectRevert(
             abi.encodeWithSelector(
-                ICantonBridgeAdapter.AmountTooLarge.selector,
+                IPlasmaBridgeAdapter.AmountTooLarge.selector,
                 amount
             )
         );
-        bridge.initiateCANTONDeposit(
+        bridge.initiatePLASMADeposit(
             txHash,
-            CANTON_USER,
+            PLASMA_USER,
             user1,
             amount,
             1,
-            _buildMerkleProof(),
-            _buildMediatorAttestations()
+            _buildInclusionProof(),
+            _buildOperatorConfirmations()
         );
     }
 
@@ -239,11 +219,11 @@ contract CantonBridgeFuzz is Test {
         vm.prank(user1);
         vm.expectRevert(
             abi.encodeWithSelector(
-                ICantonBridgeAdapter.AmountTooSmall.selector,
+                IPlasmaBridgeAdapter.AmountTooSmall.selector,
                 amount
             )
         );
-        bridge.initiateWithdrawal(CANTON_USER, amount);
+        bridge.initiateWithdrawal(PLASMA_USER, amount);
     }
 
     function testFuzz_withdrawalRejectsAmountAboveMax(uint256 amount) public {
@@ -252,11 +232,11 @@ contract CantonBridgeFuzz is Test {
         vm.prank(user1);
         vm.expectRevert(
             abi.encodeWithSelector(
-                ICantonBridgeAdapter.AmountTooLarge.selector,
+                IPlasmaBridgeAdapter.AmountTooLarge.selector,
                 amount
             )
         );
-        bridge.initiateWithdrawal(CANTON_USER, amount);
+        bridge.initiateWithdrawal(PLASMA_USER, amount);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -270,8 +250,8 @@ contract CantonBridgeFuzz is Test {
         finishOffset = bound(finishOffset, 1, 365 days);
         uint256 finishAfter = block.timestamp + finishOffset;
 
-        // Duration too short (< 2 hours)
-        duration = bound(duration, 0, 2 hours - 1);
+        // Duration too short (< 1 hour)
+        duration = bound(duration, 0, 1 hours - 1);
         uint256 cancelAfter = finishAfter + duration;
 
         vm.deal(user1, 10 ether);
@@ -279,7 +259,7 @@ contract CantonBridgeFuzz is Test {
         (bool success, ) = address(bridge).call{value: 1 ether}(
             abi.encodeWithSelector(
                 bridge.createEscrow.selector,
-                CANTON_USER,
+                PLASMA_USER,
                 keccak256("hashlock"),
                 finishAfter,
                 cancelAfter
@@ -295,8 +275,8 @@ contract CantonBridgeFuzz is Test {
         finishOffset = bound(finishOffset, 1, 365 days);
         uint256 finishAfter = block.timestamp + finishOffset;
 
-        // Duration too long (> 60 days)
-        duration = bound(duration, 60 days + 1, 365 days);
+        // Duration too long (> 45 days)
+        duration = bound(duration, 45 days + 1, 365 days);
         uint256 cancelAfter = finishAfter + duration;
 
         vm.deal(user1, 10 ether);
@@ -304,7 +284,7 @@ contract CantonBridgeFuzz is Test {
         (bool success, ) = address(bridge).call{value: 1 ether}(
             abi.encodeWithSelector(
                 bridge.createEscrow.selector,
-                CANTON_USER,
+                PLASMA_USER,
                 keccak256("hashlock"),
                 finishAfter,
                 cancelAfter
@@ -320,7 +300,7 @@ contract CantonBridgeFuzz is Test {
     function testFuzz_feeCalculation(uint256 amount) public pure {
         amount = bound(amount, MIN_DEPOSIT, MAX_DEPOSIT);
 
-        uint256 expectedFee = (amount * 5) / 10_000; // 0.05% fee
+        uint256 expectedFee = (amount * 8) / 10_000; // 0.08% fee
         uint256 expectedNet = amount - expectedFee;
 
         // Fee should never exceed 1% even with rounding
@@ -337,10 +317,10 @@ contract CantonBridgeFuzz is Test {
     function testFuzz_txHashReplayProtection(bytes32 txHash) public {
         vm.assume(txHash != bytes32(0));
 
-        _submitFinalizedRound(1);
+        _submitCommittedBlock(1);
 
         // Tx hash should initially be unused
-        assertFalse(bridge.usedCantonTxHashes(txHash));
+        assertFalse(bridge.usedPlasmaTxHashes(txHash));
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -349,7 +329,6 @@ contract CantonBridgeFuzz is Test {
 
     function testFuzz_nullifierCannotBeReused(bytes32 nullifier) public {
         vm.assume(nullifier != bytes32(0));
-        // Initially unused
         assertFalse(bridge.usedNullifiers(nullifier));
     }
 
@@ -358,27 +337,21 @@ contract CantonBridgeFuzz is Test {
     //////////////////////////////////////////////////////////////*/
 
     function testFuzz_configCannotSetZeroAddresses(
-        address cantonBridge,
-        address wrappedCANTONAddr,
+        address plasmaBridge,
+        address wrappedPLASMAAddr,
         address oracleAddr,
-        uint256 minSigs
+        uint256 minConfirmations
     ) public {
-        vm.assume(minSigs > 0);
+        vm.assume(minConfirmations > 0);
 
         if (
-            cantonBridge == address(0) ||
-            wrappedCANTONAddr == address(0) ||
+            plasmaBridge == address(0) ||
+            wrappedPLASMAAddr == address(0) ||
             oracleAddr == address(0)
         ) {
             vm.prank(admin);
-            vm.expectRevert(ICantonBridgeAdapter.ZeroAddress.selector);
-            bridge.configure(
-                cantonBridge,
-                wrappedCANTONAddr,
-                oracleAddr,
-                minSigs,
-                5
-            );
+            vm.expectRevert(IPlasmaBridgeAdapter.ZeroAddress.selector);
+            bridge.configure(plasmaBridge, wrappedPLASMAAddr, oracleAddr, minConfirmations, 12);
         }
     }
 
@@ -417,18 +390,18 @@ contract CantonBridgeFuzz is Test {
     function testFuzz_onlyRelayerCanInitiateDeposit(address caller) public {
         vm.assume(caller != relayer && caller != admin);
 
-        _submitFinalizedRound(1);
+        _submitCommittedBlock(1);
 
         vm.prank(caller);
         vm.expectRevert();
-        bridge.initiateCANTONDeposit(
+        bridge.initiatePLASMADeposit(
             keccak256("tx"),
-            CANTON_USER,
+            PLASMA_USER,
             user1,
             MIN_DEPOSIT,
             1,
-            _buildMerkleProof(),
-            _buildMediatorAttestations()
+            _buildInclusionProof(),
+            _buildOperatorConfirmations()
         );
     }
 
@@ -437,7 +410,7 @@ contract CantonBridgeFuzz is Test {
 
         vm.prank(caller);
         vm.expectRevert();
-        bridge.completeCANTONDeposit(keccak256("deposit"));
+        bridge.completePLASMADeposit(keccak256("deposit"));
     }
 
     function testFuzz_onlyGuardianCanPause(address caller) public {
@@ -453,21 +426,21 @@ contract CantonBridgeFuzz is Test {
     //////////////////////////////////////////////////////////////*/
 
     function testFuzz_pauseBlocksDeposits() public {
-        _submitFinalizedRound(1);
+        _submitCommittedBlock(1);
 
         vm.prank(guardian);
         bridge.pause();
 
         vm.prank(relayer);
         vm.expectRevert();
-        bridge.initiateCANTONDeposit(
+        bridge.initiatePLASMADeposit(
             keccak256("tx"),
-            CANTON_USER,
+            PLASMA_USER,
             user1,
             MIN_DEPOSIT,
             1,
-            _buildMerkleProof(),
-            _buildMediatorAttestations()
+            _buildInclusionProof(),
+            _buildOperatorConfirmations()
         );
     }
 
@@ -477,7 +450,7 @@ contract CantonBridgeFuzz is Test {
 
         vm.prank(user1);
         vm.expectRevert();
-        bridge.initiateWithdrawal(CANTON_USER, MIN_DEPOSIT);
+        bridge.initiateWithdrawal(PLASMA_USER, MIN_DEPOSIT);
     }
 
     function testFuzz_pauseBlocksEscrow() public {
@@ -489,9 +462,9 @@ contract CantonBridgeFuzz is Test {
         (bool success, ) = address(bridge).call{value: 1 ether}(
             abi.encodeWithSelector(
                 bridge.createEscrow.selector,
-                CANTON_USER,
+                PLASMA_USER,
                 keccak256("hashlock"),
-                block.timestamp + 3 hours,
+                block.timestamp + 2 hours,
                 block.timestamp + 26 hours
             )
         );
@@ -506,14 +479,14 @@ contract CantonBridgeFuzz is Test {
         bytes32 preimage = keccak256("secret_preimage");
         bytes32 hashlock = sha256(abi.encodePacked(preimage));
 
-        uint256 finishAfter = block.timestamp + 3 hours;
+        uint256 finishAfter = block.timestamp + 2 hours;
         uint256 cancelAfter = block.timestamp + 48 hours;
 
         vm.deal(user1, 10 ether);
 
         vm.prank(user1);
         bytes32 escrowId = bridge.createEscrow{value: 1 ether}(
-            CANTON_USER,
+            PLASMA_USER,
             hashlock,
             finishAfter,
             cancelAfter
@@ -532,31 +505,24 @@ contract CantonBridgeFuzz is Test {
         vm.prank(user2);
         bridge.finishEscrow(escrowId, preimage);
 
-        // User2 should receive the escrowed ETH
         assertEq(user2.balance - balBefore, 1 ether);
 
-        // Verify escrow status
-        ICantonBridgeAdapter.CANTONEscrow memory esc = bridge.getEscrow(
-            escrowId
-        );
-        assertEq(
-            uint8(esc.status),
-            uint8(ICantonBridgeAdapter.EscrowStatus.FINISHED)
-        );
+        IPlasmaBridgeAdapter.PLASMAEscrow memory esc = bridge.getEscrow(escrowId);
+        assertEq(uint8(esc.status), uint8(IPlasmaBridgeAdapter.EscrowStatus.FINISHED));
         assertEq(esc.preimage, preimage);
     }
 
     function test_escrowCreateCancelLifecycle() public {
         bytes32 hashlock = sha256(abi.encodePacked(keccak256("secret")));
 
-        uint256 finishAfter = block.timestamp + 3 hours;
+        uint256 finishAfter = block.timestamp + 2 hours;
         uint256 cancelAfter = block.timestamp + 48 hours;
 
         vm.deal(user1, 10 ether);
 
         vm.prank(user1);
         bytes32 escrowId = bridge.createEscrow{value: 1 ether}(
-            CANTON_USER,
+            PLASMA_USER,
             hashlock,
             finishAfter,
             cancelAfter
@@ -574,17 +540,10 @@ contract CantonBridgeFuzz is Test {
         vm.prank(user1);
         bridge.cancelEscrow(escrowId);
 
-        // User1 should get funds back
         assertEq(user1.balance - balBefore, 1 ether);
 
-        // Verify escrow status
-        ICantonBridgeAdapter.CANTONEscrow memory esc = bridge.getEscrow(
-            escrowId
-        );
-        assertEq(
-            uint8(esc.status),
-            uint8(ICantonBridgeAdapter.EscrowStatus.CANCELLED)
-        );
+        IPlasmaBridgeAdapter.PLASMAEscrow memory esc = bridge.getEscrow(escrowId);
+        assertEq(uint8(esc.status), uint8(IPlasmaBridgeAdapter.EscrowStatus.CANCELLED));
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -592,43 +551,46 @@ contract CantonBridgeFuzz is Test {
     //////////////////////////////////////////////////////////////*/
 
     function test_withdrawalRefundAfterDelay() public {
-        uint256 amount = 1 * MICROCANTON_PER_CANTON; // 1 CANTON in microcanton
+        uint256 amount = 1 * SATOPLASMA_PER_PLASMA; // 1 PLASMA in satoplasma
 
         vm.prank(user1);
-        bytes32 withdrawalId = bridge.initiateWithdrawal(CANTON_USER, amount);
+        bytes32 withdrawalId = bridge.initiateWithdrawal(PLASMA_USER, amount);
 
-        // Cannot refund before 72 hours
+        // Cannot refund before 192 hours (8 days)
         vm.prank(user1);
         vm.expectRevert();
         bridge.refundWithdrawal(withdrawalId);
 
-        // Advance 72 hours
-        vm.warp(block.timestamp + 72 hours + 1);
+        // Advance 192 hours
+        vm.warp(block.timestamp + 192 hours + 1);
 
         vm.prank(user1);
         bridge.refundWithdrawal(withdrawalId);
 
-        ICantonBridgeAdapter.CANTONWithdrawal memory w = bridge.getWithdrawal(
-            withdrawalId
-        );
-        assertEq(
-            uint8(w.status),
-            uint8(ICantonBridgeAdapter.WithdrawalStatus.REFUNDED)
-        );
+        IPlasmaBridgeAdapter.PLASMAWithdrawal memory w = bridge.getWithdrawal(withdrawalId);
+        assertEq(uint8(w.status), uint8(IPlasmaBridgeAdapter.WithdrawalStatus.REFUNDED));
     }
 
     /*//////////////////////////////////////////////////////////////
-            ROUND HEADER: PARENT CHAIN VALIDATION
+            BLOCK COMMITMENT: CHAIN VALIDATION
     //////////////////////////////////////////////////////////////*/
 
-    function testFuzz_roundHeaderParentChain(uint8 count) public {
+    function testFuzz_blockCommitmentChain(uint8 count) public {
         count = uint8(bound(count, 1, 10));
 
         for (uint8 i = 0; i < count; i++) {
-            _submitFinalizedRound(i + 1);
+            _submitCommittedBlock(i + 1);
         }
 
-        assertEq(bridge.latestRoundNumber(), count);
+        assertEq(bridge.latestBlockNumber(), count);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+            CHALLENGE PERIOD VALIDATION
+    //////////////////////////////////////////////////////////////*/
+
+    function test_challengePeriodConstant() public view {
+        assertEq(bridge.CHALLENGE_PERIOD(), 7 days);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -649,8 +611,8 @@ contract CantonBridgeFuzz is Test {
     //////////////////////////////////////////////////////////////*/
 
     function test_constructorRejectsZeroAdmin() public {
-        vm.expectRevert(ICantonBridgeAdapter.ZeroAddress.selector);
-        new CantonBridgeAdapter(address(0));
+        vm.expectRevert(IPlasmaBridgeAdapter.ZeroAddress.selector);
+        new PlasmaBridgeAdapter(address(0));
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -658,19 +620,13 @@ contract CantonBridgeFuzz is Test {
     //////////////////////////////////////////////////////////////*/
 
     function test_viewFunctionsReturnDefaults() public view {
-        ICantonBridgeAdapter.CANTONDeposit memory dep = bridge.getDeposit(
-            bytes32(0)
-        );
+        IPlasmaBridgeAdapter.PLASMADeposit memory dep = bridge.getDeposit(bytes32(0));
         assertEq(dep.depositId, bytes32(0));
 
-        ICantonBridgeAdapter.CANTONWithdrawal memory w = bridge.getWithdrawal(
-            bytes32(0)
-        );
+        IPlasmaBridgeAdapter.PLASMAWithdrawal memory w = bridge.getWithdrawal(bytes32(0));
         assertEq(w.withdrawalId, bytes32(0));
 
-        ICantonBridgeAdapter.CANTONEscrow memory esc = bridge.getEscrow(
-            bytes32(0)
-        );
+        IPlasmaBridgeAdapter.PLASMAEscrow memory esc = bridge.getEscrow(bytes32(0));
         assertEq(esc.escrowId, bytes32(0));
     }
 
@@ -700,7 +656,7 @@ contract CantonBridgeFuzz is Test {
 
     function test_treasuryRejectsZeroAddress() public {
         vm.prank(admin);
-        vm.expectRevert(ICantonBridgeAdapter.ZeroAddress.selector);
+        vm.expectRevert(IPlasmaBridgeAdapter.ZeroAddress.selector);
         bridge.setTreasury(address(0));
     }
 
@@ -709,99 +665,104 @@ contract CantonBridgeFuzz is Test {
     //////////////////////////////////////////////////////////////*/
 
     function test_constantsAreCorrect() public view {
-        assertEq(bridge.CANTON_CHAIN_ID(), 510);
-        assertEq(bridge.MICROCANTON_PER_CANTON(), 1_000_000); // 1e6
-        assertEq(bridge.MIN_DEPOSIT_MICROCANTON(), MICROCANTON_PER_CANTON / 10); // 0.1 CANTON
-        assertEq(
-            bridge.MAX_DEPOSIT_MICROCANTON(),
-            10_000_000 * MICROCANTON_PER_CANTON
-        ); // 10M CANTON
-        assertEq(bridge.BRIDGE_FEE_BPS(), 5); // 0.05%
+        assertEq(bridge.PLASMA_CHAIN_ID(), 515);
+        assertEq(bridge.SATOPLASMA_PER_PLASMA(), 100_000_000); // 1e8
+        assertEq(bridge.MIN_DEPOSIT_SATOPLASMA(), SATOPLASMA_PER_PLASMA / 10); // 0.1 PLASMA
+        assertEq(bridge.MAX_DEPOSIT_SATOPLASMA(), 5_000_000 * SATOPLASMA_PER_PLASMA); // 5M PLASMA
+        assertEq(bridge.BRIDGE_FEE_BPS(), 8); // 0.08%
         assertEq(bridge.BPS_DENOMINATOR(), 10_000);
-        assertEq(bridge.MIN_ESCROW_TIMELOCK(), 2 hours);
-        assertEq(bridge.MAX_ESCROW_TIMELOCK(), 60 days);
-        assertEq(bridge.WITHDRAWAL_REFUND_DELAY(), 72 hours);
-        assertEq(bridge.DEFAULT_ROUND_CONFIRMATIONS(), 5);
+        assertEq(bridge.MIN_ESCROW_TIMELOCK(), 1 hours);
+        assertEq(bridge.MAX_ESCROW_TIMELOCK(), 45 days);
+        assertEq(bridge.WITHDRAWAL_REFUND_DELAY(), 192 hours); // 8 days
+        assertEq(bridge.DEFAULT_L1_CONFIRMATIONS(), 12);
+        assertEq(bridge.CHALLENGE_PERIOD(), 7 days);
     }
 
     /*//////////////////////////////////////////////////////////////
-            CANTON-SPECIFIC: MICROCANTON PRECISION
+            PLASMA-SPECIFIC: SATOPLASMA PRECISION
     //////////////////////////////////////////////////////////////*/
 
-    function testFuzz_microcantonPrecision(uint256 cantonAmount) public pure {
-        cantonAmount = bound(cantonAmount, 1, 10_000_000);
+    function testFuzz_satoplasmaPrecision(uint256 plasmaAmount) public pure {
+        plasmaAmount = bound(plasmaAmount, 1, 5_000_000);
 
-        uint256 microcanton = cantonAmount * MICROCANTON_PER_CANTON;
-        uint256 backToCanton = microcanton / MICROCANTON_PER_CANTON;
+        uint256 satoplasma = plasmaAmount * SATOPLASMA_PER_PLASMA;
+        uint256 backToPlasma = satoplasma / SATOPLASMA_PER_PLASMA;
 
-        assertEq(
-            backToCanton,
-            cantonAmount,
-            "Microcanton conversion not reversible"
-        );
-        assertEq(
-            microcanton % MICROCANTON_PER_CANTON,
-            0,
-            "Microcanton should be exact multiple"
-        );
+        assertEq(backToPlasma, plasmaAmount, "Satoplasma conversion not reversible");
+        assertEq(satoplasma % SATOPLASMA_PER_PLASMA, 0, "Satoplasma should be exact multiple");
     }
 
-    function testFuzz_microcantonSubUnitDeposit(
-        uint256 subUnitMicrocanton
-    ) public {
-        // Test deposits of fractional CANTON amounts (sub-unit microcanton)
-        subUnitMicrocanton = bound(
-            subUnitMicrocanton,
-            MIN_DEPOSIT,
-            MICROCANTON_PER_CANTON - 1
-        );
+    function testFuzz_satoplasmaSubUnitDeposit(uint256 subUnitSatoplasma) public {
+        subUnitSatoplasma = bound(subUnitSatoplasma, MIN_DEPOSIT, SATOPLASMA_PER_PLASMA - 1);
 
         bytes32 txHash = keccak256(
-            abi.encodePacked("sub_unit_tx", subUnitMicrocanton)
+            abi.encodePacked("sub_unit_tx", subUnitSatoplasma)
         );
 
-        // Build a merkle proof that matches the txHash and derive txRoot
         bytes32 sibling = keccak256("sibling");
         bytes32 txRoot = keccak256(abi.encodePacked(txHash, sibling));
 
-        // Submit round with a txRoot that matches our proof
+        // Submit block with matching txRoot
         vm.prank(relayer);
-        bridge.submitRoundHeader(
+        bridge.submitBlockCommitment(
             1,
-            keccak256(abi.encodePacked("round", uint256(1))),
-            keccak256(abi.encodePacked("round", uint256(0))),
+            keccak256(abi.encodePacked("block", uint256(1))),
+            keccak256(abi.encodePacked("block", uint256(0))),
             txRoot,
             keccak256(abi.encodePacked("stateRoot", uint256(1))),
-            keccak256(abi.encodePacked("mediatorSet", uint256(1))),
-            keccak256(abi.encodePacked("domainTopology", uint256(1))),
+            OPERATOR_1,
+            keccak256(abi.encodePacked("l1Tx", uint256(1))),
             block.timestamp,
-            _buildMediatorAttestations()
+            _buildOperatorConfirmations()
         );
 
         bytes32[] memory proof = new bytes32[](1);
         proof[0] = sibling;
-        ICantonBridgeAdapter.CantonMerkleProof
-            memory merkleProof = ICantonBridgeAdapter.CantonMerkleProof({
-                leafHash: txHash,
-                proof: proof,
-                index: 0
-            });
+        IPlasmaBridgeAdapter.PlasmaInclusionProof
+            memory inclusionProof = IPlasmaBridgeAdapter
+                .PlasmaInclusionProof({
+                    leafHash: txHash,
+                    proof: proof,
+                    index: 0
+                });
 
-        // Should succeed — fractional CANTON deposits above min are valid
+        // Should succeed — fractional PLASMA deposits above min are valid
         vm.prank(relayer);
-        bytes32 depositId = bridge.initiateCANTONDeposit(
+        bytes32 depositId = bridge.initiatePLASMADeposit(
             txHash,
-            CANTON_USER,
+            PLASMA_USER,
             user1,
-            subUnitMicrocanton,
+            subUnitSatoplasma,
             1,
-            merkleProof,
-            _buildMediatorAttestations()
+            inclusionProof,
+            _buildOperatorConfirmations()
         );
 
-        ICantonBridgeAdapter.CANTONDeposit memory dep = bridge.getDeposit(
-            depositId
+        IPlasmaBridgeAdapter.PLASMADeposit memory dep = bridge.getDeposit(depositId);
+        assertEq(dep.amountSatoplasma, subUnitSatoplasma);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+            BLOCK COMMITMENT: L1 REQUIRED
+    //////////////////////////////////////////////////////////////*/
+
+    function test_depositRequiresCommittedBlock() public {
+        // Try deposit without submitting a block commitment first
+        vm.prank(relayer);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IPlasmaBridgeAdapter.BlockNotCommitted.selector,
+                999
+            )
         );
-        assertEq(dep.amountMicrocanton, subUnitMicrocanton);
+        bridge.initiatePLASMADeposit(
+            keccak256("tx"),
+            PLASMA_USER,
+            user1,
+            MIN_DEPOSIT,
+            999,
+            _buildInclusionProof(),
+            _buildOperatorConfirmations()
+        );
     }
 }

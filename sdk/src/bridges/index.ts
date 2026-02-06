@@ -18,6 +18,7 @@ export * from './bnb';
 export * from './hyperliquid';
 export * from './provenance';
 export * from './canton';
+export * from './plasma';
 
 import { 
     keccak256, 
@@ -1000,13 +1001,77 @@ export class CantonBridgeAdapterSDK extends BaseBridgeAdapter {
   }
 }
 
+export class PlasmaBridgeAdapterSDK extends BaseBridgeAdapter {
+  private plasmaBridgeAddress: string;
+
+  constructor(
+    publicClient: PublicClient,
+    walletClient: WalletClient,
+    plasmaBridgeAddress: string
+  ) {
+    super({
+      name: 'Plasma',
+      chainId: 515,
+      nativeToken: 'PLASMA',
+      finality: 12, // 12 L1 commitment confirmations (Ethereum finality)
+      maxAmount: 5_000_000n * 100_000_000n, // 5M PLASMA in satoplasma
+      minAmount: 100_000_000n / 10n // 0.1 PLASMA in satoplasma
+    }, publicClient, walletClient);
+
+    this.plasmaBridgeAddress = plasmaBridgeAddress;
+  }
+
+  async bridgeTransfer(params: BridgeTransferParams): Promise<BridgeTransferResult> {
+    this.validateAmount(params.amount);
+
+    const transferId = keccak256(encodeAbiParameters(
+      [{ type: 'address' }, { type: 'address' }, { type: 'uint256' }, { type: 'uint256' }],
+      [params.recipient as Hex, this.plasmaBridgeAddress as Hex, params.amount, BigInt(Date.now())]
+    ));
+
+    return {
+      transferId,
+      txHash: '0x...',
+      estimatedArrival: Date.now() + 12_000, // ~12 seconds (12 L1 confirmations × 1s child chain blocks)
+      fees: await this.estimateFees(params.amount, params.targetChainId)
+    };
+  }
+
+  async completeBridge(transferId: string, proof: Uint8Array): Promise<string> {
+    return '0x...';
+  }
+
+  async getStatus(transferId: string): Promise<BridgeStatus> {
+    return {
+      state: 'pending',
+      sourceChainId: 1,
+      targetChainId: this.config.chainId,
+      confirmations: 0,
+      requiredConfirmations: 12
+    };
+  }
+
+  async estimateFees(amount: bigint, targetChainId: number): Promise<BridgeFees> {
+    const protocolFee = amount * 8n / 10000n; // 0.08% bridge fee
+    const relayerFee = 10_000_000n; // 0.1 PLASMA in satoplasma
+    const gasFee = 1_000_000n; // 0.01 PLASMA (Plasma child chain gas)
+
+    return {
+      protocolFee,
+      relayerFee,
+      gasFee,
+      total: protocolFee + relayerFee + gasFee
+    };
+  }
+}
+
 // ============================================
 // Bridge Factory
 // ============================================
 
 export type SupportedChain = 
   | 'cardano' | 'midnight' | 'polkadot' | 'cosmos' | 'near'
-  | 'avalanche' | 'arbitrum' | 'solana' | 'bitcoin' | 'starknet' | 'bnb' | 'hyperliquid' | 'provenance' | 'canton';
+  | 'avalanche' | 'arbitrum' | 'solana' | 'bitcoin' | 'starknet' | 'bnb' | 'hyperliquid' | 'provenance' | 'canton' | 'plasma';
 
 export class BridgeFactory {
   static createAdapter(
@@ -1085,6 +1150,11 @@ export class BridgeFactory {
         return new CantonBridgeAdapterSDK(
           publicClient, walletClient,
           config.cantonBridgeAddress
+        );
+      case 'plasma':
+        return new PlasmaBridgeAdapterSDK(
+          publicClient, walletClient,
+          config.plasmaBridgeAddress
         );
       default:
         throw new Error(`Unsupported chain: ${chain}`);

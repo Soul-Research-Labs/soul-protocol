@@ -85,8 +85,10 @@ contract CantonBridgeAdapter is
 
     uint256 public constant CANTON_CHAIN_ID = 510;
     uint256 public constant MICROCANTON_PER_CANTON = 1_000_000; // 1e6
-    uint256 public constant MIN_DEPOSIT_MICROCANTON = MICROCANTON_PER_CANTON / 10; // 0.1 CANTON
-    uint256 public constant MAX_DEPOSIT_MICROCANTON = 10_000_000 * MICROCANTON_PER_CANTON; // 10M CANTON
+    uint256 public constant MIN_DEPOSIT_MICROCANTON =
+        MICROCANTON_PER_CANTON / 10; // 0.1 CANTON
+    uint256 public constant MAX_DEPOSIT_MICROCANTON =
+        10_000_000 * MICROCANTON_PER_CANTON; // 10M CANTON
     uint256 public constant BRIDGE_FEE_BPS = 5; // 0.05% — institutional-grade lowest fee
     uint256 public constant BPS_DENOMINATOR = 10_000;
     uint256 public constant DEFAULT_ESCROW_TIMELOCK = 6 hours;
@@ -221,11 +223,7 @@ contract CantonBridgeAdapter is
         if (!header.finalized) revert RoundNotFinalized(roundNumber);
 
         if (
-            !_verifyMerkleProof(
-                txProof,
-                header.transactionsRoot,
-                cantonTxHash
-            )
+            !_verifyMerkleProof(txProof, header.transactionsRoot, cantonTxHash)
         ) {
             revert InvalidRoundProof();
         }
