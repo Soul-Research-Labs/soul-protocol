@@ -2,55 +2,56 @@
 pragma solidity ^0.8.20;
 
 /**
- * @title IAptosBridgeAdapter
+ * @title IZilliqaBridgeAdapter
  * @author Soul Protocol
- * @notice Interface for the Aptos bridge adapter
- * @dev Enables cross-chain interoperability between Soul Protocol and the Aptos Network
+ * @notice Interface for the Zilliqa bridge adapter
+ * @dev Enables cross-chain interoperability between Soul Protocol and the Zilliqa Network
  *
- * APTOS INTEGRATION MODEL:
+ * ZILLIQA INTEGRATION MODEL:
  *
  *   ┌───────────────────────────┐         ┌───────────────────────────┐
- *   │      Soul Protocol        │         │       Aptos Network       │
+ *   │      Soul Protocol        │         │      Zilliqa Network      │
  *   │  ┌─────────────────────┐  │         │  ┌─────────────────────┐  │
- *   │  │ AptosBridge          │◄─┼────────►│  │  Move VM            │  │
- *   │  │ Adapter (EVM side)  │  │         │  │  (Resource Model)   │  │
+ *   │  │ ZilliqaBridge        │◄─┼────────►│  │  Scilla Contracts   │  │
+ *   │  │ Adapter (EVM side)  │  │         │  │  (Typed Functional) │  │
  *   │  └─────────────────────┘  │         │  └─────────────────────┘  │
  *   │        │                  │         │        │                  │
  *   │  ┌─────▼───────────────┐  │         │  ┌─────▼───────────────┐  │
- *   │  │  Privacy Layer      │  │         │  │  AptosBFT           │  │
- *   │  │  (ZK Commitments)   │  │         │  │  Consensus (<1s)    │  │
+ *   │  │  Privacy Layer      │  │         │  │  pBFT + PoW         │  │
+ *   │  │  (ZK Commitments)   │  │         │  │  Hybrid Consensus   │  │
  *   │  └─────────────────────┘  │         │  └─────────────────────┘  │
  *   └───────────────────────────┘         └───────────────────────────┘
  *
  * BRIDGE MECHANISMS:
- * 1. Lock & Mint: Lock APT on Aptos → Mint wAPT on Soul Protocol
- * 2. Burn & Release: Burn wAPT on Soul → Release APT on Aptos Network
- * 3. Validator Attestation: AptosBFT validators attest to ledger state
+ * 1. Lock & Mint: Lock ZIL on Zilliqa → Mint wZIL on Soul Protocol
+ * 2. Burn & Release: Burn wZIL on Soul → Release ZIL on Zilliqa
+ * 3. DS Committee Attestation: DS nodes attest to finalized blocks
  * 4. HTLC Escrow: Atomic swaps with hashlock/timelock conditions
  *
  * PROOF VERIFICATION:
- * - Aptos uses AptosBFT (DiemBFT v4) consensus with sub-second finality
- * - Validators sign LedgerInfo; 2/3+1 voting power required for commitment
- * - State proofs use Jellyfish Merkle Trees for efficient verification
- * - Block-STM: parallel transaction execution with optimistic concurrency
- * - Epochs rotate validator sets; epoch changes require 2/3+1 agreement
+ * - Zilliqa uses pBFT consensus within DS committee (2/3+1 majority)
+ * - PoW used for Sybil resistance in shard joins (Ethash/Sha3)
+ * - DS blocks finalize every ~30 seconds; TX blocks every ~1-2 minutes
+ * - Sharding: network, transaction, and computational sharding
+ * - Microblocks from each shard aggregated into TX blocks by DS committee
  *
- * APTOS CONCEPTS:
- * - Octas: Smallest unit of APT (1 APT = 1e8 Octas, 8 decimals)
- * - Move VM: Resource-oriented smart contract language
- * - Block-STM: Parallel execution engine with MVCC
- * - Jellyfish Merkle Tree: Sparse Merkle tree for state proofs
- * - LedgerInfo: Signed summary of committed blockchain state
- * - Chain ID: aptos-mainnet → 1
- * - Finality: 6 ledger version confirmations for cross-chain safety
- * - Block time: ~160ms per block (AptosBFT consensus)
+ * ZILLIQA CONCEPTS:
+ * - Qa: Smallest unit of ZIL (1 ZIL = 1e12 Qa, 12 decimals)
+ * - Scilla: Safe-by-design smart contract language
+ * - DS Committee: Directory Service committee managing consensus
+ * - DS Block: Directory Service block (~30s, epoch marker)
+ * - TX Block: Transaction block containing microblocks from shards
+ * - Microblock: Shard-level block with transactions
+ * - Chain ID: zilliqa-mainnet → 1
+ * - Finality: 30 TX block confirmations for cross-chain safety
+ * - Block time: ~30s DS blocks, ~1-2min TX blocks
  */
-interface IAptosBridgeAdapter {
+interface IZilliqaBridgeAdapter {
     /*//////////////////////////////////////////////////////////////
                                 ENUMS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Status of a deposit from Aptos → Soul
+    /// @notice Status of a deposit from Zilliqa → Soul
     enum DepositStatus {
         PENDING,
         VERIFIED,
@@ -58,7 +59,7 @@ interface IAptosBridgeAdapter {
         FAILED
     }
 
-    /// @notice Status of a withdrawal from Soul → Aptos
+    /// @notice Status of a withdrawal from Soul → Zilliqa
     enum WithdrawalStatus {
         PENDING,
         PROCESSING,
@@ -74,12 +75,12 @@ interface IAptosBridgeAdapter {
         CANCELLED
     }
 
-    /// @notice Operation types for the Aptos bridge
-    enum AptosBridgeOpType {
-        COIN_TRANSFER, // Standard AptosCoin transfer
-        RESOURCE_TRANSFER, // Move resource transfer
-        VALIDATOR_UPDATE, // Epoch validator set rotation
-        EMERGENCY_OP // Emergency governance action
+    /// @notice Operation types for the Zilliqa bridge
+    enum ZilliqaBridgeOpType {
+        ZIL_TRANSFER,       // Standard ZIL transfer
+        ZRC2_TRANSFER,      // ZRC-2 fungible token transfer
+        DS_COMMITTEE_UPDATE, // DS committee rotation
+        EMERGENCY_OP        // Emergency governance action
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -87,62 +88,62 @@ interface IAptosBridgeAdapter {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Bridge configuration
-    /// @param aptosBridgeContract Address of the Aptos-side bridge module
-    /// @param wrappedAPT ERC-20 wrapper for APT
-    /// @param validatorOracle Oracle for AptosBFT validator verification
-    /// @param minValidatorSignatures Minimum validator signatures required
-    /// @param requiredLedgerConfirmations Ledger version confirmations needed
+    /// @param zilliqaBridgeContract Address of the Zilliqa-side Scilla bridge contract
+    /// @param wrappedZIL ERC-20 wrapper for ZIL
+    /// @param dsCommitteeOracle Oracle for DS committee verification
+    /// @param minDSSignatures Minimum DS committee signatures required
+    /// @param requiredTxBlockConfirmations TX block confirmations needed
     /// @param active Whether the bridge is accepting transfers
     struct BridgeConfig {
-        address aptosBridgeContract;
-        address wrappedAPT;
-        address validatorOracle;
-        uint256 minValidatorSignatures;
-        uint256 requiredLedgerConfirmations;
+        address zilliqaBridgeContract;
+        address wrappedZIL;
+        address dsCommitteeOracle;
+        uint256 minDSSignatures;
+        uint256 requiredTxBlockConfirmations;
         bool active;
     }
 
-    /// @notice Deposit record (Aptos → Soul)
+    /// @notice Deposit record (Zilliqa → Soul)
     /// @param depositId Unique deposit identifier
-    /// @param aptosTxHash Aptos transaction hash (32 bytes)
-    /// @param aptosSender Aptos account address (32 bytes)
+    /// @param zilliqaTxHash Zilliqa transaction hash (32 bytes)
+    /// @param zilliqaSender Zilliqa bech32 address encoded as bytes32
     /// @param evmRecipient EVM recipient address
-    /// @param amountOctas Amount in Octas (1e8 per APT)
-    /// @param netAmountOctas Amount after fee deduction
+    /// @param amountQa Amount in Qa (1e12 per ZIL)
+    /// @param netAmountQa Amount after fee deduction
     /// @param fee Bridge fee deducted
     /// @param status Current deposit status
-    /// @param ledgerVersion Aptos ledger version for this deposit
+    /// @param txBlockNumber Zilliqa TX block number for this deposit
     /// @param initiatedAt Block timestamp when initiated
     /// @param completedAt Block timestamp when completed
-    struct APTDeposit {
+    struct ZILDeposit {
         bytes32 depositId;
-        bytes32 aptosTxHash;
-        bytes32 aptosSender;
+        bytes32 zilliqaTxHash;
+        bytes32 zilliqaSender;
         address evmRecipient;
-        uint256 amountOctas;
-        uint256 netAmountOctas;
+        uint256 amountQa;
+        uint256 netAmountQa;
         uint256 fee;
         DepositStatus status;
-        uint256 ledgerVersion;
+        uint256 txBlockNumber;
         uint256 initiatedAt;
         uint256 completedAt;
     }
 
-    /// @notice Withdrawal record (Soul → Aptos)
+    /// @notice Withdrawal record (Soul → Zilliqa)
     /// @param withdrawalId Unique withdrawal identifier
     /// @param evmSender EVM sender address
-    /// @param aptosRecipient Aptos account address (32 bytes)
-    /// @param amountOctas Amount in Octas
-    /// @param aptosTxHash Confirmed Aptos transaction hash
+    /// @param zilliqaRecipient Zilliqa bech32 address encoded as bytes32
+    /// @param amountQa Amount in Qa
+    /// @param zilliqaTxHash Confirmed Zilliqa transaction hash
     /// @param status Current withdrawal status
     /// @param initiatedAt Block timestamp when initiated
     /// @param completedAt Block timestamp when completed
-    struct APTWithdrawal {
+    struct ZILWithdrawal {
         bytes32 withdrawalId;
         address evmSender;
-        bytes32 aptosRecipient;
-        uint256 amountOctas;
-        bytes32 aptosTxHash;
+        bytes32 zilliqaRecipient;
+        uint256 amountQa;
+        bytes32 zilliqaTxHash;
         WithdrawalStatus status;
         uint256 initiatedAt;
         uint256 completedAt;
@@ -151,19 +152,19 @@ interface IAptosBridgeAdapter {
     /// @notice HTLC Escrow record for atomic swaps
     /// @param escrowId Unique escrow identifier
     /// @param evmParty EVM-side participant
-    /// @param aptosParty Aptos-side participant (32-byte address)
-    /// @param amountOctas Amount locked in Octas
+    /// @param zilliqaParty Zilliqa-side participant (bech32 as bytes32)
+    /// @param amountQa Amount locked in Qa
     /// @param hashlock SHA-256 hashlock
     /// @param preimage Revealed preimage (zero until finished)
     /// @param finishAfter Earliest time the escrow can be finished
     /// @param cancelAfter Earliest time the escrow can be cancelled
     /// @param status Current escrow status
     /// @param createdAt Block timestamp when created
-    struct APTEscrow {
+    struct ZILEscrow {
         bytes32 escrowId;
         address evmParty;
-        bytes32 aptosParty;
-        uint256 amountOctas;
+        bytes32 zilliqaParty;
+        uint256 amountQa;
         bytes32 hashlock;
         bytes32 preimage;
         uint256 finishAfter;
@@ -172,41 +173,41 @@ interface IAptosBridgeAdapter {
         uint256 createdAt;
     }
 
-    /// @notice Aptos LedgerInfo header for cross-chain verification
-    /// @param ledgerVersion Ledger version (monotonically increasing)
-    /// @param transactionHash Hash of the transaction at this version
-    /// @param stateRootHash Root hash of the Jellyfish Merkle state tree
-    /// @param eventRootHash Root hash of the event accumulator
-    /// @param epoch Current epoch number
-    /// @param round Consensus round within epoch
-    /// @param timestamp Block timestamp (microseconds)
-    /// @param numTransactions Number of transactions in the block
+    /// @notice Zilliqa DS Block header for cross-chain verification
+    /// @param dsBlockNumber DS block number (monotonically increasing)
+    /// @param blockHash Hash of the DS block
+    /// @param stateRootHash Root hash of the global state trie
+    /// @param txBlockStart First TX block in this DS epoch
+    /// @param txBlockEnd Last TX block in this DS epoch
+    /// @param dsCommitteeHash Hash of the DS committee for this epoch
+    /// @param shardCount Number of shards in this DS epoch
+    /// @param timestamp Block timestamp
     /// @param verified Whether this header has been verified
-    struct AptosLedgerInfo {
-        uint256 ledgerVersion;
-        bytes32 transactionHash;
+    struct ZilliqaDSBlock {
+        uint256 dsBlockNumber;
+        bytes32 blockHash;
         bytes32 stateRootHash;
-        bytes32 eventRootHash;
-        uint256 epoch;
-        uint256 round;
+        uint256 txBlockStart;
+        uint256 txBlockEnd;
+        bytes32 dsCommitteeHash;
+        uint256 shardCount;
         uint256 timestamp;
-        uint256 numTransactions;
         bool verified;
     }
 
-    /// @notice Validator attestation for AptosBFT consensus
-    /// @param validator Validator address (EVM-mapped)
-    /// @param signature Validator's BLS signature over ledger info
-    struct ValidatorAttestation {
-        address validator;
+    /// @notice DS committee member attestation
+    /// @param member DS committee member address (EVM-mapped)
+    /// @param signature Member's signature over block data
+    struct DSCommitteeAttestation {
+        address member;
         bytes signature;
     }
 
-    /// @notice Jellyfish Merkle proof for state/transaction inclusion
+    /// @notice Zilliqa state proof (Patricia-Merkle trie)
     /// @param leafHash Hash of the leaf node
     /// @param proof Array of sibling hashes
-    /// @param index Position in the tree
-    struct AptosStateProof {
+    /// @param index Position in the trie
+    struct ZilliqaStateProof {
         bytes32 leafHash;
         bytes32[] proof;
         uint256 index;
@@ -217,48 +218,48 @@ interface IAptosBridgeAdapter {
     //////////////////////////////////////////////////////////////*/
 
     event BridgeConfigured(
-        address indexed aptosBridgeContract,
-        address wrappedAPT,
-        address validatorOracle
+        address indexed zilliqaBridgeContract,
+        address wrappedZIL,
+        address dsCommitteeOracle
     );
 
-    event APTDepositInitiated(
+    event ZILDepositInitiated(
         bytes32 indexed depositId,
-        bytes32 indexed aptosTxHash,
-        bytes32 aptosSender,
+        bytes32 indexed zilliqaTxHash,
+        bytes32 zilliqaSender,
         address indexed evmRecipient,
-        uint256 amountOctas
+        uint256 amountQa
     );
 
-    event APTDepositCompleted(
+    event ZILDepositCompleted(
         bytes32 indexed depositId,
         address indexed evmRecipient,
-        uint256 amountOctas
+        uint256 amountQa
     );
 
-    event APTWithdrawalInitiated(
+    event ZILWithdrawalInitiated(
         bytes32 indexed withdrawalId,
         address indexed evmSender,
-        bytes32 aptosRecipient,
-        uint256 amountOctas
+        bytes32 zilliqaRecipient,
+        uint256 amountQa
     );
 
-    event APTWithdrawalCompleted(
+    event ZILWithdrawalCompleted(
         bytes32 indexed withdrawalId,
-        bytes32 aptosTxHash
+        bytes32 zilliqaTxHash
     );
 
-    event APTWithdrawalRefunded(
+    event ZILWithdrawalRefunded(
         bytes32 indexed withdrawalId,
         address indexed evmSender,
-        uint256 amountOctas
+        uint256 amountQa
     );
 
     event EscrowCreated(
         bytes32 indexed escrowId,
         address indexed evmParty,
-        bytes32 aptosParty,
-        uint256 amountOctas,
+        bytes32 zilliqaParty,
+        uint256 amountQa,
         bytes32 hashlock
     );
 
@@ -266,10 +267,10 @@ interface IAptosBridgeAdapter {
 
     event EscrowCancelled(bytes32 indexed escrowId);
 
-    event LedgerInfoVerified(
-        uint256 indexed ledgerVersion,
-        bytes32 transactionHash,
-        uint256 epoch
+    event DSBlockVerified(
+        uint256 indexed dsBlockNumber,
+        bytes32 blockHash,
+        uint256 shardCount
     );
 
     event PrivateDepositRegistered(
@@ -290,7 +291,7 @@ interface IAptosBridgeAdapter {
     error InvalidAmount();
     error AmountBelowMinimum(uint256 amount, uint256 minimum);
     error AmountAboveMaximum(uint256 amount, uint256 maximum);
-    error AptosTxAlreadyUsed(bytes32 txHash);
+    error ZilliqaTxAlreadyUsed(bytes32 txHash);
     error DepositNotFound(bytes32 depositId);
     error DepositAlreadyCompleted(bytes32 depositId);
     error DepositNotVerified(bytes32 depositId);
@@ -303,9 +304,9 @@ interface IAptosBridgeAdapter {
     error EscrowTimelockNotMet();
     error InvalidPreimage(bytes32 expected, bytes32 actual);
     error InvalidTimelockRange();
-    error LedgerVersionNotVerified(uint256 version);
+    error TxBlockNotConfirmed(uint256 txBlock);
     error InvalidStateProof();
-    error InsufficientValidatorSignatures(uint256 got, uint256 required);
+    error InsufficientDSSignatures(uint256 got, uint256 required);
     error NullifierAlreadyUsed(bytes32 nullifier);
 
     /*//////////////////////////////////////////////////////////////
@@ -313,43 +314,43 @@ interface IAptosBridgeAdapter {
     //////////////////////////////////////////////////////////////*/
 
     function configure(
-        address aptosBridgeContract,
-        address wrappedAPT,
-        address validatorOracle,
-        uint256 minValidatorSignatures,
-        uint256 requiredLedgerConfirmations
+        address zilliqaBridgeContract,
+        address wrappedZIL,
+        address dsCommitteeOracle,
+        uint256 minDSSignatures,
+        uint256 requiredTxBlockConfirmations
     ) external;
 
     function setTreasury(address treasury) external;
 
-    function initiateAPTDeposit(
-        bytes32 aptosTxHash,
-        bytes32 aptosSender,
+    function initiateZILDeposit(
+        bytes32 zilliqaTxHash,
+        bytes32 zilliqaSender,
         address evmRecipient,
-        uint256 amountOctas,
-        uint256 ledgerVersion,
-        AptosStateProof calldata txProof,
-        ValidatorAttestation[] calldata attestations
+        uint256 amountQa,
+        uint256 txBlockNumber,
+        ZilliqaStateProof calldata txProof,
+        DSCommitteeAttestation[] calldata attestations
     ) external returns (bytes32 depositId);
 
-    function completeAPTDeposit(bytes32 depositId) external;
+    function completeZILDeposit(bytes32 depositId) external;
 
     function initiateWithdrawal(
-        bytes32 aptosRecipient,
-        uint256 amountOctas
+        bytes32 zilliqaRecipient,
+        uint256 amountQa
     ) external returns (bytes32 withdrawalId);
 
     function completeWithdrawal(
         bytes32 withdrawalId,
-        bytes32 aptosTxHash,
-        AptosStateProof calldata txProof,
-        ValidatorAttestation[] calldata attestations
+        bytes32 zilliqaTxHash,
+        ZilliqaStateProof calldata txProof,
+        DSCommitteeAttestation[] calldata attestations
     ) external;
 
     function refundWithdrawal(bytes32 withdrawalId) external;
 
     function createEscrow(
-        bytes32 aptosParty,
+        bytes32 zilliqaParty,
         bytes32 hashlock,
         uint256 finishAfter,
         uint256 cancelAfter
@@ -366,33 +367,33 @@ interface IAptosBridgeAdapter {
         bytes calldata zkProof
     ) external;
 
-    function submitLedgerInfo(
-        uint256 ledgerVersion,
-        bytes32 transactionHash,
+    function submitDSBlock(
+        uint256 dsBlockNumber,
+        bytes32 blockHash,
         bytes32 stateRootHash,
-        bytes32 eventRootHash,
-        uint256 epoch,
-        uint256 round,
+        uint256 txBlockStart,
+        uint256 txBlockEnd,
+        bytes32 dsCommitteeHash,
+        uint256 shardCount,
         uint256 timestamp,
-        uint256 numTransactions,
-        ValidatorAttestation[] calldata attestations
+        DSCommitteeAttestation[] calldata attestations
     ) external;
 
     function getDeposit(
         bytes32 depositId
-    ) external view returns (APTDeposit memory);
+    ) external view returns (ZILDeposit memory);
 
     function getWithdrawal(
         bytes32 withdrawalId
-    ) external view returns (APTWithdrawal memory);
+    ) external view returns (ZILWithdrawal memory);
 
     function getEscrow(
         bytes32 escrowId
-    ) external view returns (APTEscrow memory);
+    ) external view returns (ZILEscrow memory);
 
-    function getLedgerInfo(
-        uint256 version
-    ) external view returns (AptosLedgerInfo memory);
+    function getDSBlock(
+        uint256 dsBlockNumber
+    ) external view returns (ZilliqaDSBlock memory);
 
     function getUserDeposits(
         address user

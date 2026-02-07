@@ -6,51 +6,54 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IAptosBridgeAdapter} from "../interfaces/IAptosBridgeAdapter.sol";
+import {IZilliqaBridgeAdapter} from "../interfaces/IZilliqaBridgeAdapter.sol";
 
 /**
- * @title AptosBridgeAdapter
+ * @title ZilliqaBridgeAdapter
  * @author Soul Protocol
- * @notice Bridge adapter for Aptos Network interoperability with Soul Protocol
- * @dev Enables cross-chain transfers between Soul Protocol (EVM) and the Aptos Network
+ * @notice Bridge adapter for Zilliqa Network interoperability with Soul Protocol
+ * @dev Enables cross-chain transfers between Soul Protocol (EVM) and the Zilliqa Network
  *
  * ARCHITECTURE:
  * ┌─────────────────────────────────────────────────────────────────────────────┐
- * │                       Soul <-> Aptos Bridge                                 │
+ * │                       Soul <-> Zilliqa Bridge                               │
  * ├─────────────────────────────────────────────────────────────────────────────┤
  * │                                                                             │
  * │  ┌───────────────────┐           ┌───────────────────────────────────┐     │
- * │  │   Soul Side       │           │     Aptos Side                    │     │
+ * │  │   Soul Side       │           │     Zilliqa Side                  │     │
  * │  │  ┌─────────────┐  │           │  ┌────────────────────────────┐   │     │
- * │  │  │ wAPT        │  │           │  │  Move VM                   │   │     │
- * │  │  │ Token       │  │           │  │  (Resource Model)          │   │     │
+ * │  │  │ wZIL        │  │           │  │  Scilla Contracts           │   │     │
+ * │  │  │ Token       │  │           │  │  (Typed Functional Lang)    │   │     │
  * │  │  │ (ERC-20)    │  │           │  └────────────────────────────┘   │     │
  * │  │  └─────────────┘  │           │        │                          │     │
  * │  │        │          │           │  ┌─────▼──────────────────────┐   │     │
- * │  │  ┌─────▼───────┐  │           │  │  AptosBFT Consensus        │   │     │
- * │  │  │ Bridge      │  │◄─────────►│  │  (~160ms block time)       │   │     │
+ * │  │  ┌─────▼───────┐  │           │  │  pBFT + PoW Hybrid         │   │     │
+ * │  │  │ Bridge      │  │◄─────────►│  │  (~30s DS blocks)          │   │     │
  * │  │  │ Adapter     │  │  Relayer  │  └────────────────────────────┘   │     │
  * │  │  └─────────────┘  │           │        │                          │     │
  * │  │        │          │           │  ┌─────▼──────────────────────┐   │     │
- * │  │  ┌─────▼───────┐  │           │  │  Block-STM Parallel Exec   │   │     │
- * │  │  │ ZK Privacy  │  │           │  │  (Optimistic Concurrency)  │   │     │
+ * │  │  ┌─────▼───────┐  │           │  │  Network Sharding          │   │     │
+ * │  │  │ ZK Privacy  │  │           │  │  (Transaction + Compute)   │   │     │
  * │  │  │ Layer       │  │           │  └────────────────────────────┘   │     │
  * │  │  └─────────────┘  │           │                                   │     │
  * │  └───────────────────┘           └───────────────────────────────────┘     │
  * └─────────────────────────────────────────────────────────────────────────────┘
  *
- * APTOS CONCEPTS:
- * - Octas: Smallest unit (1 APT = 100,000,000 Octas = 1e8)
- * - Move VM: Resource-oriented smart contract language
- * - Block-STM: Parallel execution with optimistic MVCC
- * - Jellyfish Merkle Tree: Sparse Merkle tree for state proofs
- * - LedgerInfo: Signed summary of committed blockchain state
- * - Chain ID: aptos-mainnet → 1
- * - Finality: 6 ledger version confirmations for cross-chain safety
- * - Block time: ~160ms (AptosBFT consensus)
+ * ZILLIQA CONCEPTS:
+ * - Qa: Smallest unit (1 ZIL = 1,000,000,000,000 Qa = 1e12)
+ * - Scilla: Safe-by-design smart contract language (typed, functional)
+ * - DS Committee: Directory Service committee managing consensus
+ * - pBFT: practical Byzantine Fault Tolerance within DS committee
+ * - PoW: Proof-of-Work for Sybil resistance in shard joins
+ * - Sharding: Network, transaction, and computational sharding
+ * - DS Block: Directory Service block (~30s, epoch marker)
+ * - TX Block: Transaction block containing microblocks from shards
+ * - ZRC-2: Zilliqa fungible token standard (like ERC-20)
+ * - Chain ID: zilliqa-mainnet → 1
+ * - Finality: 30 TX block confirmations for cross-chain safety
  */
-contract AptosBridgeAdapter is
-    IAptosBridgeAdapter,
+contract ZilliqaBridgeAdapter is
+    IZilliqaBridgeAdapter,
     AccessControl,
     ReentrancyGuard,
     Pausable
@@ -61,20 +64,20 @@ contract AptosBridgeAdapter is
                               CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Aptos mainnet chain ID
-    uint256 public constant APTOS_CHAIN_ID = 1;
+    /// @notice Zilliqa mainnet chain ID
+    uint256 public constant ZILLIQA_CHAIN_ID = 1;
 
-    /// @notice 1 APT = 1e8 Octas (8 decimals)
-    uint256 public constant OCTAS_PER_APT = 100_000_000;
+    /// @notice 1 ZIL = 1e12 Qa (12 decimals)
+    uint256 public constant QA_PER_ZIL = 1_000_000_000_000;
 
-    /// @notice Minimum deposit: 0.1 APT = 10,000,000 Octas
-    uint256 public constant MIN_DEPOSIT_OCTAS = OCTAS_PER_APT / 10;
+    /// @notice Minimum deposit: 100 ZIL
+    uint256 public constant MIN_DEPOSIT_QA = 100 * QA_PER_ZIL;
 
-    /// @notice Maximum deposit: 10,000,000 APT
-    uint256 public constant MAX_DEPOSIT_OCTAS = 10_000_000 * OCTAS_PER_APT;
+    /// @notice Maximum deposit: 50,000,000 ZIL
+    uint256 public constant MAX_DEPOSIT_QA = 50_000_000 * QA_PER_ZIL;
 
-    /// @notice Bridge fee: 4 BPS (0.04%)
-    uint256 public constant BRIDGE_FEE_BPS = 4;
+    /// @notice Bridge fee: 5 BPS (0.05%)
+    uint256 public constant BRIDGE_FEE_BPS = 5;
 
     /// @notice BPS denominator
     uint256 public constant BPS_DENOMINATOR = 10_000;
@@ -88,8 +91,8 @@ contract AptosBridgeAdapter is
     /// @notice Maximum escrow timelock: 30 days
     uint256 public constant MAX_ESCROW_TIMELOCK = 30 days;
 
-    /// @notice Default ledger version confirmations for finality
-    uint256 public constant DEFAULT_LEDGER_CONFIRMATIONS = 6;
+    /// @notice Default TX block confirmations for finality
+    uint256 public constant DEFAULT_TX_BLOCK_CONFIRMATIONS = 30;
 
     /*//////////////////////////////////////////////////////////////
                             ACCESS ROLES
@@ -118,16 +121,16 @@ contract AptosBridgeAdapter is
     /// @notice Escrow nonce (monotonically increasing)
     uint256 public escrowNonce;
 
-    /// @notice Latest verified ledger version
-    uint256 public latestLedgerVersion;
+    /// @notice Latest verified DS block number
+    uint256 public latestDSBlockNumber;
 
-    /// @notice Current epoch
-    uint256 public currentEpoch;
+    /// @notice Current DS epoch
+    uint256 public currentDSEpoch;
 
-    /// @notice Total deposited in Octas
+    /// @notice Total deposited in Qa
     uint256 public totalDeposited;
 
-    /// @notice Total withdrawn in Octas
+    /// @notice Total withdrawn in Qa
     uint256 public totalWithdrawn;
 
     /// @notice Total escrows created
@@ -139,23 +142,23 @@ contract AptosBridgeAdapter is
     /// @notice Total escrows cancelled
     uint256 public totalEscrowsCancelled;
 
-    /// @notice Accumulated fees in Octas
+    /// @notice Accumulated fees in Qa
     uint256 public accumulatedFees;
 
     /// @notice Deposits by ID
-    mapping(bytes32 => APTDeposit) private deposits;
+    mapping(bytes32 => ZILDeposit) private deposits;
 
     /// @notice Withdrawals by ID
-    mapping(bytes32 => APTWithdrawal) private withdrawals;
+    mapping(bytes32 => ZILWithdrawal) private withdrawals;
 
     /// @notice Escrows by ID
-    mapping(bytes32 => APTEscrow) private escrows;
+    mapping(bytes32 => ZILEscrow) private escrows;
 
-    /// @notice Ledger info by version
-    mapping(uint256 => AptosLedgerInfo) private ledgerInfos;
+    /// @notice DS blocks by number
+    mapping(uint256 => ZilliqaDSBlock) private dsBlocks;
 
-    /// @notice Used Aptos tx hashes (replay protection)
-    mapping(bytes32 => bool) public usedAptosTxHashes;
+    /// @notice Used Zilliqa tx hashes (replay protection)
+    mapping(bytes32 => bool) public usedZilliqaTxHashes;
 
     /// @notice Used nullifiers (privacy replay protection)
     mapping(bytes32 => bool) public usedNullifiers;
@@ -186,31 +189,31 @@ contract AptosBridgeAdapter is
                           CONFIGURATION
     //////////////////////////////////////////////////////////////*/
 
-    /// @inheritdoc IAptosBridgeAdapter
+    /// @inheritdoc IZilliqaBridgeAdapter
     function configure(
-        address aptosBridgeContract,
-        address wrappedAPT,
-        address validatorOracle,
-        uint256 minValidatorSignatures,
-        uint256 requiredLedgerConfirmations
+        address zilliqaBridgeContract,
+        address wrappedZIL,
+        address dsCommitteeOracle,
+        uint256 minDSSignatures,
+        uint256 requiredTxBlockConfirmations
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (aptosBridgeContract == address(0)) revert ZeroAddress();
-        if (wrappedAPT == address(0)) revert ZeroAddress();
-        if (validatorOracle == address(0)) revert ZeroAddress();
+        if (zilliqaBridgeContract == address(0)) revert ZeroAddress();
+        if (wrappedZIL == address(0)) revert ZeroAddress();
+        if (dsCommitteeOracle == address(0)) revert ZeroAddress();
 
         config = BridgeConfig({
-            aptosBridgeContract: aptosBridgeContract,
-            wrappedAPT: wrappedAPT,
-            validatorOracle: validatorOracle,
-            minValidatorSignatures: minValidatorSignatures,
-            requiredLedgerConfirmations: requiredLedgerConfirmations,
+            zilliqaBridgeContract: zilliqaBridgeContract,
+            wrappedZIL: wrappedZIL,
+            dsCommitteeOracle: dsCommitteeOracle,
+            minDSSignatures: minDSSignatures,
+            requiredTxBlockConfirmations: requiredTxBlockConfirmations,
             active: true
         });
 
-        emit BridgeConfigured(aptosBridgeContract, wrappedAPT, validatorOracle);
+        emit BridgeConfigured(zilliqaBridgeContract, wrappedZIL, dsCommitteeOracle);
     }
 
-    /// @inheritdoc IAptosBridgeAdapter
+    /// @inheritdoc IZilliqaBridgeAdapter
     function setTreasury(
         address _treasury
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -219,73 +222,70 @@ contract AptosBridgeAdapter is
     }
 
     /*//////////////////////////////////////////////////////////////
-                       LEDGER INFO VERIFICATION
+                       DS BLOCK VERIFICATION
     //////////////////////////////////////////////////////////////*/
 
-    /// @inheritdoc IAptosBridgeAdapter
-    function submitLedgerInfo(
-        uint256 ledgerVersion,
-        bytes32 transactionHash,
+    /// @inheritdoc IZilliqaBridgeAdapter
+    function submitDSBlock(
+        uint256 dsBlockNumber,
+        bytes32 blockHash,
         bytes32 stateRootHash,
-        bytes32 eventRootHash,
-        uint256 epoch,
-        uint256 round,
+        uint256 txBlockStart,
+        uint256 txBlockEnd,
+        bytes32 dsCommitteeHash,
+        uint256 shardCount,
         uint256 timestamp,
-        uint256 numTransactions,
-        ValidatorAttestation[] calldata attestations
+        DSCommitteeAttestation[] calldata attestations
     ) external onlyRole(RELAYER_ROLE) nonReentrant {
-        _verifyValidatorAttestations(
+        _verifyDSCommitteeAttestations(
             keccak256(
                 abi.encodePacked(
-                    ledgerVersion,
-                    transactionHash,
+                    dsBlockNumber,
+                    blockHash,
                     stateRootHash,
-                    eventRootHash,
-                    epoch,
-                    round,
-                    timestamp,
-                    numTransactions
+                    txBlockStart,
+                    txBlockEnd,
+                    dsCommitteeHash,
+                    shardCount,
+                    timestamp
                 )
             ),
             attestations
         );
 
-        ledgerInfos[ledgerVersion] = AptosLedgerInfo({
-            ledgerVersion: ledgerVersion,
-            transactionHash: transactionHash,
+        dsBlocks[dsBlockNumber] = ZilliqaDSBlock({
+            dsBlockNumber: dsBlockNumber,
+            blockHash: blockHash,
             stateRootHash: stateRootHash,
-            eventRootHash: eventRootHash,
-            epoch: epoch,
-            round: round,
+            txBlockStart: txBlockStart,
+            txBlockEnd: txBlockEnd,
+            dsCommitteeHash: dsCommitteeHash,
+            shardCount: shardCount,
             timestamp: timestamp,
-            numTransactions: numTransactions,
             verified: true
         });
 
-        if (ledgerVersion > latestLedgerVersion) {
-            latestLedgerVersion = ledgerVersion;
+        if (dsBlockNumber > latestDSBlockNumber) {
+            latestDSBlockNumber = dsBlockNumber;
+            currentDSEpoch = dsBlockNumber;
         }
 
-        if (epoch > currentEpoch) {
-            currentEpoch = epoch;
-        }
-
-        emit LedgerInfoVerified(ledgerVersion, transactionHash, epoch);
+        emit DSBlockVerified(dsBlockNumber, blockHash, shardCount);
     }
 
     /*//////////////////////////////////////////////////////////////
                           DEPOSIT OPERATIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @inheritdoc IAptosBridgeAdapter
-    function initiateAPTDeposit(
-        bytes32 aptosTxHash,
-        bytes32 aptosSender,
+    /// @inheritdoc IZilliqaBridgeAdapter
+    function initiateZILDeposit(
+        bytes32 zilliqaTxHash,
+        bytes32 zilliqaSender,
         address evmRecipient,
-        uint256 amountOctas,
-        uint256 ledgerVersion,
-        AptosStateProof calldata txProof,
-        ValidatorAttestation[] calldata attestations
+        uint256 amountQa,
+        uint256 txBlockNumber,
+        ZilliqaStateProof calldata txProof,
+        DSCommitteeAttestation[] calldata attestations
     )
         external
         onlyRole(RELAYER_ROLE)
@@ -294,74 +294,75 @@ contract AptosBridgeAdapter is
         returns (bytes32 depositId)
     {
         if (evmRecipient == address(0)) revert ZeroAddress();
-        if (amountOctas < MIN_DEPOSIT_OCTAS)
-            revert AmountBelowMinimum(amountOctas, MIN_DEPOSIT_OCTAS);
-        if (amountOctas > MAX_DEPOSIT_OCTAS)
-            revert AmountAboveMaximum(amountOctas, MAX_DEPOSIT_OCTAS);
-        if (usedAptosTxHashes[aptosTxHash])
-            revert AptosTxAlreadyUsed(aptosTxHash);
-        if (!ledgerInfos[ledgerVersion].verified)
-            revert LedgerVersionNotVerified(ledgerVersion);
+        if (amountQa < MIN_DEPOSIT_QA)
+            revert AmountBelowMinimum(amountQa, MIN_DEPOSIT_QA);
+        if (amountQa > MAX_DEPOSIT_QA)
+            revert AmountAboveMaximum(amountQa, MAX_DEPOSIT_QA);
+        if (usedZilliqaTxHashes[zilliqaTxHash])
+            revert ZilliqaTxAlreadyUsed(zilliqaTxHash);
 
-        _verifyValidatorAttestations(
+        // Verify TX block is within a verified DS epoch
+        _verifyTxBlockInDSEpoch(txBlockNumber);
+
+        _verifyDSCommitteeAttestations(
             keccak256(
                 abi.encodePacked(
-                    aptosTxHash,
-                    aptosSender,
+                    zilliqaTxHash,
+                    zilliqaSender,
                     evmRecipient,
-                    amountOctas
+                    amountQa
                 )
             ),
             attestations
         );
 
-        usedAptosTxHashes[aptosTxHash] = true;
+        usedZilliqaTxHashes[zilliqaTxHash] = true;
 
-        uint256 fee = (amountOctas * BRIDGE_FEE_BPS) / BPS_DENOMINATOR;
-        uint256 netAmount = amountOctas - fee;
+        uint256 fee = (amountQa * BRIDGE_FEE_BPS) / BPS_DENOMINATOR;
+        uint256 netAmount = amountQa - fee;
 
         depositNonce++;
         depositId = keccak256(
             abi.encodePacked(
-                APTOS_CHAIN_ID,
+                ZILLIQA_CHAIN_ID,
                 depositNonce,
-                aptosTxHash,
+                zilliqaTxHash,
                 block.timestamp
             )
         );
 
-        deposits[depositId] = APTDeposit({
+        deposits[depositId] = ZILDeposit({
             depositId: depositId,
-            aptosTxHash: aptosTxHash,
-            aptosSender: aptosSender,
+            zilliqaTxHash: zilliqaTxHash,
+            zilliqaSender: zilliqaSender,
             evmRecipient: evmRecipient,
-            amountOctas: amountOctas,
-            netAmountOctas: netAmount,
+            amountQa: amountQa,
+            netAmountQa: netAmount,
             fee: fee,
             status: DepositStatus.VERIFIED,
-            ledgerVersion: ledgerVersion,
+            txBlockNumber: txBlockNumber,
             initiatedAt: block.timestamp,
             completedAt: 0
         });
 
         accumulatedFees += fee;
-        totalDeposited += amountOctas;
+        totalDeposited += amountQa;
         userDeposits[evmRecipient].push(depositId);
 
-        emit APTDepositInitiated(
+        emit ZILDepositInitiated(
             depositId,
-            aptosTxHash,
-            aptosSender,
+            zilliqaTxHash,
+            zilliqaSender,
             evmRecipient,
-            amountOctas
+            amountQa
         );
     }
 
-    /// @inheritdoc IAptosBridgeAdapter
-    function completeAPTDeposit(
+    /// @inheritdoc IZilliqaBridgeAdapter
+    function completeZILDeposit(
         bytes32 depositId
     ) external onlyRole(OPERATOR_ROLE) nonReentrant whenNotPaused {
-        APTDeposit storage dep = deposits[depositId];
+        ZILDeposit storage dep = deposits[depositId];
         if (dep.initiatedAt == 0) revert DepositNotFound(depositId);
         if (dep.status == DepositStatus.COMPLETED)
             revert DepositAlreadyCompleted(depositId);
@@ -371,15 +372,15 @@ contract AptosBridgeAdapter is
         dep.status = DepositStatus.COMPLETED;
         dep.completedAt = block.timestamp;
 
-        IERC20(config.wrappedAPT).safeTransfer(
+        IERC20(config.wrappedZIL).safeTransfer(
             dep.evmRecipient,
-            dep.netAmountOctas
+            dep.netAmountQa
         );
 
-        emit APTDepositCompleted(
+        emit ZILDepositCompleted(
             depositId,
             dep.evmRecipient,
-            dep.netAmountOctas
+            dep.netAmountQa
         );
     }
 
@@ -387,85 +388,85 @@ contract AptosBridgeAdapter is
                         WITHDRAWAL OPERATIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @inheritdoc IAptosBridgeAdapter
+    /// @inheritdoc IZilliqaBridgeAdapter
     function initiateWithdrawal(
-        bytes32 aptosRecipient,
-        uint256 amountOctas
+        bytes32 zilliqaRecipient,
+        uint256 amountQa
     ) external nonReentrant whenNotPaused returns (bytes32 withdrawalId) {
-        if (aptosRecipient == bytes32(0)) revert ZeroAddress();
-        if (amountOctas < MIN_DEPOSIT_OCTAS)
-            revert AmountBelowMinimum(amountOctas, MIN_DEPOSIT_OCTAS);
-        if (amountOctas > MAX_DEPOSIT_OCTAS)
-            revert AmountAboveMaximum(amountOctas, MAX_DEPOSIT_OCTAS);
+        if (zilliqaRecipient == bytes32(0)) revert ZeroAddress();
+        if (amountQa < MIN_DEPOSIT_QA)
+            revert AmountBelowMinimum(amountQa, MIN_DEPOSIT_QA);
+        if (amountQa > MAX_DEPOSIT_QA)
+            revert AmountAboveMaximum(amountQa, MAX_DEPOSIT_QA);
 
-        IERC20(config.wrappedAPT).safeTransferFrom(
+        IERC20(config.wrappedZIL).safeTransferFrom(
             msg.sender,
             address(this),
-            amountOctas
+            amountQa
         );
 
         withdrawalNonce++;
         withdrawalId = keccak256(
             abi.encodePacked(
-                APTOS_CHAIN_ID,
+                ZILLIQA_CHAIN_ID,
                 withdrawalNonce,
                 msg.sender,
-                aptosRecipient,
+                zilliqaRecipient,
                 block.timestamp
             )
         );
 
-        withdrawals[withdrawalId] = APTWithdrawal({
+        withdrawals[withdrawalId] = ZILWithdrawal({
             withdrawalId: withdrawalId,
             evmSender: msg.sender,
-            aptosRecipient: aptosRecipient,
-            amountOctas: amountOctas,
-            aptosTxHash: bytes32(0),
+            zilliqaRecipient: zilliqaRecipient,
+            amountQa: amountQa,
+            zilliqaTxHash: bytes32(0),
             status: WithdrawalStatus.PENDING,
             initiatedAt: block.timestamp,
             completedAt: 0
         });
 
-        totalWithdrawn += amountOctas;
+        totalWithdrawn += amountQa;
         userWithdrawals[msg.sender].push(withdrawalId);
 
-        emit APTWithdrawalInitiated(
+        emit ZILWithdrawalInitiated(
             withdrawalId,
             msg.sender,
-            aptosRecipient,
-            amountOctas
+            zilliqaRecipient,
+            amountQa
         );
     }
 
-    /// @inheritdoc IAptosBridgeAdapter
+    /// @inheritdoc IZilliqaBridgeAdapter
     function completeWithdrawal(
         bytes32 withdrawalId,
-        bytes32 aptosTxHash,
-        AptosStateProof calldata txProof,
-        ValidatorAttestation[] calldata attestations
+        bytes32 zilliqaTxHash,
+        ZilliqaStateProof calldata txProof,
+        DSCommitteeAttestation[] calldata attestations
     ) external onlyRole(RELAYER_ROLE) nonReentrant {
-        APTWithdrawal storage w = withdrawals[withdrawalId];
+        ZILWithdrawal storage w = withdrawals[withdrawalId];
         if (w.initiatedAt == 0) revert WithdrawalNotFound(withdrawalId);
         if (w.status != WithdrawalStatus.PENDING)
             revert WithdrawalNotPending(withdrawalId);
 
-        _verifyValidatorAttestations(
-            keccak256(abi.encodePacked(withdrawalId, aptosTxHash)),
+        _verifyDSCommitteeAttestations(
+            keccak256(abi.encodePacked(withdrawalId, zilliqaTxHash)),
             attestations
         );
 
         w.status = WithdrawalStatus.COMPLETED;
-        w.aptosTxHash = aptosTxHash;
+        w.zilliqaTxHash = zilliqaTxHash;
         w.completedAt = block.timestamp;
 
-        // Burn the held wAPT tokens
-        // In production, this would call burn on the wAPT contract
-        emit APTWithdrawalCompleted(withdrawalId, aptosTxHash);
+        // Burn the held wZIL tokens
+        // In production, this would call burn on the wZIL contract
+        emit ZILWithdrawalCompleted(withdrawalId, zilliqaTxHash);
     }
 
-    /// @inheritdoc IAptosBridgeAdapter
+    /// @inheritdoc IZilliqaBridgeAdapter
     function refundWithdrawal(bytes32 withdrawalId) external nonReentrant {
-        APTWithdrawal storage w = withdrawals[withdrawalId];
+        ZILWithdrawal storage w = withdrawals[withdrawalId];
         if (w.initiatedAt == 0) revert WithdrawalNotFound(withdrawalId);
         if (w.status != WithdrawalStatus.PENDING)
             revert WithdrawalNotPending(withdrawalId);
@@ -478,24 +479,24 @@ contract AptosBridgeAdapter is
         w.status = WithdrawalStatus.REFUNDED;
         w.completedAt = block.timestamp;
 
-        IERC20(config.wrappedAPT).safeTransfer(w.evmSender, w.amountOctas);
+        IERC20(config.wrappedZIL).safeTransfer(w.evmSender, w.amountQa);
 
-        emit APTWithdrawalRefunded(withdrawalId, w.evmSender, w.amountOctas);
+        emit ZILWithdrawalRefunded(withdrawalId, w.evmSender, w.amountQa);
     }
 
     /*//////////////////////////////////////////////////////////////
                           ESCROW OPERATIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @inheritdoc IAptosBridgeAdapter
+    /// @inheritdoc IZilliqaBridgeAdapter
     function createEscrow(
-        bytes32 aptosParty,
+        bytes32 zilliqaParty,
         bytes32 hashlock,
         uint256 finishAfter,
         uint256 cancelAfter
     ) external payable nonReentrant whenNotPaused returns (bytes32 escrowId) {
         if (msg.value == 0) revert InvalidAmount();
-        if (aptosParty == bytes32(0)) revert ZeroAddress();
+        if (zilliqaParty == bytes32(0)) revert ZeroAddress();
 
         uint256 duration = cancelAfter - finishAfter;
         if (duration < MIN_ESCROW_TIMELOCK || duration > MAX_ESCROW_TIMELOCK)
@@ -504,19 +505,19 @@ contract AptosBridgeAdapter is
         escrowNonce++;
         escrowId = keccak256(
             abi.encodePacked(
-                APTOS_CHAIN_ID,
+                ZILLIQA_CHAIN_ID,
                 escrowNonce,
                 msg.sender,
-                aptosParty,
+                zilliqaParty,
                 block.timestamp
             )
         );
 
-        escrows[escrowId] = APTEscrow({
+        escrows[escrowId] = ZILEscrow({
             escrowId: escrowId,
             evmParty: msg.sender,
-            aptosParty: aptosParty,
-            amountOctas: msg.value,
+            zilliqaParty: zilliqaParty,
+            amountQa: msg.value,
             hashlock: hashlock,
             preimage: bytes32(0),
             finishAfter: finishAfter,
@@ -531,18 +532,18 @@ contract AptosBridgeAdapter is
         emit EscrowCreated(
             escrowId,
             msg.sender,
-            aptosParty,
+            zilliqaParty,
             msg.value,
             hashlock
         );
     }
 
-    /// @inheritdoc IAptosBridgeAdapter
+    /// @inheritdoc IZilliqaBridgeAdapter
     function finishEscrow(
         bytes32 escrowId,
         bytes32 preimage
     ) external nonReentrant {
-        APTEscrow storage e = escrows[escrowId];
+        ZILEscrow storage e = escrows[escrowId];
         if (e.createdAt == 0) revert EscrowNotFound(escrowId);
         if (e.status != EscrowStatus.ACTIVE) revert EscrowNotActive(escrowId);
         if (block.timestamp < e.finishAfter) revert EscrowTimelockNotMet();
@@ -558,9 +559,9 @@ contract AptosBridgeAdapter is
         emit EscrowFinished(escrowId, preimage);
     }
 
-    /// @inheritdoc IAptosBridgeAdapter
+    /// @inheritdoc IZilliqaBridgeAdapter
     function cancelEscrow(bytes32 escrowId) external nonReentrant {
-        APTEscrow storage e = escrows[escrowId];
+        ZILEscrow storage e = escrows[escrowId];
         if (e.createdAt == 0) revert EscrowNotFound(escrowId);
         if (e.status != EscrowStatus.ACTIVE) revert EscrowNotActive(escrowId);
         if (block.timestamp < e.cancelAfter) revert EscrowTimelockNotMet();
@@ -568,7 +569,7 @@ contract AptosBridgeAdapter is
         e.status = EscrowStatus.CANCELLED;
         totalEscrowsCancelled++;
 
-        (bool sent, ) = e.evmParty.call{value: e.amountOctas}("");
+        (bool sent, ) = e.evmParty.call{value: e.amountQa}("");
         require(sent, "ETH transfer failed");
 
         emit EscrowCancelled(escrowId);
@@ -578,7 +579,7 @@ contract AptosBridgeAdapter is
                           PRIVACY OPERATIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @inheritdoc IAptosBridgeAdapter
+    /// @inheritdoc IZilliqaBridgeAdapter
     function registerPrivateDeposit(
         bytes32 depositId,
         bytes32 commitment,
@@ -611,7 +612,7 @@ contract AptosBridgeAdapter is
         uint256 amount = accumulatedFees;
         accumulatedFees = 0;
 
-        IERC20(config.wrappedAPT).safeTransfer(treasury, amount);
+        IERC20(config.wrappedZIL).safeTransfer(treasury, amount);
 
         emit FeesWithdrawn(treasury, amount);
     }
@@ -620,49 +621,49 @@ contract AptosBridgeAdapter is
                            VIEW FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @inheritdoc IAptosBridgeAdapter
+    /// @inheritdoc IZilliqaBridgeAdapter
     function getDeposit(
         bytes32 depositId
-    ) external view returns (APTDeposit memory) {
+    ) external view returns (ZILDeposit memory) {
         return deposits[depositId];
     }
 
-    /// @inheritdoc IAptosBridgeAdapter
+    /// @inheritdoc IZilliqaBridgeAdapter
     function getWithdrawal(
         bytes32 withdrawalId
-    ) external view returns (APTWithdrawal memory) {
+    ) external view returns (ZILWithdrawal memory) {
         return withdrawals[withdrawalId];
     }
 
-    /// @inheritdoc IAptosBridgeAdapter
+    /// @inheritdoc IZilliqaBridgeAdapter
     function getEscrow(
         bytes32 escrowId
-    ) external view returns (APTEscrow memory) {
+    ) external view returns (ZILEscrow memory) {
         return escrows[escrowId];
     }
 
-    /// @inheritdoc IAptosBridgeAdapter
-    function getLedgerInfo(
-        uint256 version
-    ) external view returns (AptosLedgerInfo memory) {
-        return ledgerInfos[version];
+    /// @inheritdoc IZilliqaBridgeAdapter
+    function getDSBlock(
+        uint256 dsBlockNumber
+    ) external view returns (ZilliqaDSBlock memory) {
+        return dsBlocks[dsBlockNumber];
     }
 
-    /// @inheritdoc IAptosBridgeAdapter
+    /// @inheritdoc IZilliqaBridgeAdapter
     function getUserDeposits(
         address user
     ) external view returns (bytes32[] memory) {
         return userDeposits[user];
     }
 
-    /// @inheritdoc IAptosBridgeAdapter
+    /// @inheritdoc IZilliqaBridgeAdapter
     function getUserWithdrawals(
         address user
     ) external view returns (bytes32[] memory) {
         return userWithdrawals[user];
     }
 
-    /// @inheritdoc IAptosBridgeAdapter
+    /// @inheritdoc IZilliqaBridgeAdapter
     function getUserEscrows(
         address user
     ) external view returns (bytes32[] memory) {
@@ -680,7 +681,7 @@ contract AptosBridgeAdapter is
             uint256 _totalEscrowsFinished,
             uint256 _totalEscrowsCancelled,
             uint256 _accumulatedFees,
-            uint256 _latestLedgerVersion
+            uint256 _latestDSBlockNumber
         )
     {
         return (
@@ -690,7 +691,7 @@ contract AptosBridgeAdapter is
             totalEscrowsFinished,
             totalEscrowsCancelled,
             accumulatedFees,
-            latestLedgerVersion
+            latestDSBlockNumber
         );
     }
 
@@ -698,21 +699,37 @@ contract AptosBridgeAdapter is
                         INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Verify validator attestation signatures meet threshold
-    function _verifyValidatorAttestations(
+    /// @dev Verify TX block falls within a verified DS epoch
+    function _verifyTxBlockInDSEpoch(uint256 txBlockNumber) internal view {
+        // Check that we have at least one verified DS block
+        // and the TX block is within a verified DS epoch range
+        if (latestDSBlockNumber == 0) revert TxBlockNotConfirmed(txBlockNumber);
+
+        ZilliqaDSBlock storage dsBlock = dsBlocks[latestDSBlockNumber];
+        if (!dsBlock.verified) revert TxBlockNotConfirmed(txBlockNumber);
+
+        // TX block must be within the range of the latest verified DS epoch
+        // or a previous verified DS epoch
+        // For simplicity, we verify it's not beyond the latest known range
+        if (txBlockNumber > dsBlock.txBlockEnd + config.requiredTxBlockConfirmations)
+            revert TxBlockNotConfirmed(txBlockNumber);
+    }
+
+    /// @dev Verify DS committee attestation signatures meet threshold
+    function _verifyDSCommitteeAttestations(
         bytes32 messageHash,
-        ValidatorAttestation[] calldata attestations
+        DSCommitteeAttestation[] calldata attestations
     ) internal view {
         uint256 validCount = 0;
 
         for (uint256 i = 0; i < attestations.length; i++) {
-            // In production: verify BLS signature against validator set
-            // For now: verify via the validator oracle
-            (bool valid, ) = config.validatorOracle.staticcall(
+            // In production: verify Schnorr multi-signature against DS committee
+            // For now: verify via the DS committee oracle
+            (bool valid, ) = config.dsCommitteeOracle.staticcall(
                 abi.encodeWithSignature(
                     "verifyAttestation(bytes32,address,bytes)",
                     messageHash,
-                    attestations[i].validator,
+                    attestations[i].member,
                     attestations[i].signature
                 )
             );
@@ -720,11 +737,11 @@ contract AptosBridgeAdapter is
             if (valid) {
                 // Decode the return value
                 bytes memory returnData;
-                (, returnData) = config.validatorOracle.staticcall(
+                (, returnData) = config.dsCommitteeOracle.staticcall(
                     abi.encodeWithSignature(
                         "verifyAttestation(bytes32,address,bytes)",
                         messageHash,
-                        attestations[i].validator,
+                        attestations[i].member,
                         attestations[i].signature
                     )
                 );
@@ -733,10 +750,10 @@ contract AptosBridgeAdapter is
             }
         }
 
-        if (validCount < config.minValidatorSignatures)
-            revert InsufficientValidatorSignatures(
+        if (validCount < config.minDSSignatures)
+            revert InsufficientDSSignatures(
                 validCount,
-                config.minValidatorSignatures
+                config.minDSSignatures
             );
     }
 }

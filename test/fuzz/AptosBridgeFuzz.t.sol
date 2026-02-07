@@ -50,7 +50,7 @@ contract AptosBridgeFuzz is Test {
             address(wAPT),
             address(oracle),
             2, // minValidatorSignatures
-            6  // requiredLedgerConfirmations
+            6 // requiredLedgerConfirmations
         );
 
         bridge.setTreasury(treasury);
@@ -72,7 +72,9 @@ contract AptosBridgeFuzz is Test {
         returns (IAptosBridgeAdapter.ValidatorAttestation[] memory)
     {
         IAptosBridgeAdapter.ValidatorAttestation[]
-            memory attestations = new IAptosBridgeAdapter.ValidatorAttestation[](3);
+            memory attestations = new IAptosBridgeAdapter.ValidatorAttestation[](
+                3
+            );
 
         attestations[0] = IAptosBridgeAdapter.ValidatorAttestation({
             validator: VALIDATOR_1,
@@ -90,10 +92,7 @@ contract AptosBridgeFuzz is Test {
         return attestations;
     }
 
-    function _submitVerifiedLedger(
-        uint256 version,
-        bytes32 txHash
-    ) internal {
+    function _submitVerifiedLedger(uint256 version, bytes32 txHash) internal {
         IAptosBridgeAdapter.ValidatorAttestation[]
             memory attestations = _buildValidatorAttestations();
 
@@ -188,7 +187,9 @@ contract AptosBridgeFuzz is Test {
         bytes32 txHash = keccak256(abi.encode("apt_tx_sub", octas));
         bytes32 depositId = _initiateDeposit(octas, txHash);
 
-        IAptosBridgeAdapter.APTDeposit memory dep = bridge.getDeposit(depositId);
+        IAptosBridgeAdapter.APTDeposit memory dep = bridge.getDeposit(
+            depositId
+        );
         assertEq(dep.amountOctas, octas);
         assertEq(dep.fee, (octas * 4) / 10_000);
         assertEq(dep.netAmountOctas, octas - dep.fee);
@@ -222,7 +223,8 @@ contract AptosBridgeFuzz is Test {
             bytes32 txHash = keccak256(abi.encode("ledger", i));
             _submitVerifiedLedger(i, txHash);
 
-            IAptosBridgeAdapter.AptosLedgerInfo memory li = bridge.getLedgerInfo(i);
+            IAptosBridgeAdapter.AptosLedgerInfo memory li = bridge
+                .getLedgerInfo(i);
             assertTrue(li.verified);
             assertEq(li.transactionHash, txHash);
         }
@@ -358,7 +360,8 @@ contract AptosBridgeFuzz is Test {
 
             IAptosBridgeAdapter.ValidatorAttestation[]
                 memory attestations = _buildValidatorAttestations();
-            IAptosBridgeAdapter.AptosStateProof memory proof = _buildStateProof();
+            IAptosBridgeAdapter.AptosStateProof
+                memory proof = _buildStateProof();
 
             vm.prank(relayer);
             bridge.initiateAPTDeposit(
@@ -538,7 +541,9 @@ contract AptosBridgeFuzz is Test {
         duration = bound(duration, 1 hours, 30 days);
         uint256 cancel = finish + duration;
 
-        bytes32 hashlock = sha256(abi.encodePacked(keccak256("timelock_aptos")));
+        bytes32 hashlock = sha256(
+            abi.encodePacked(keccak256("timelock_aptos"))
+        );
 
         vm.deal(user, 1 ether);
         vm.prank(user);
@@ -655,7 +660,10 @@ contract AptosBridgeFuzz is Test {
 
         vm.prank(user);
         vm.expectRevert();
-        bridge.initiateWithdrawal(keccak256("aptos_recipient"), 1 * OCTAS_PER_APT);
+        bridge.initiateWithdrawal(
+            keccak256("aptos_recipient"),
+            1 * OCTAS_PER_APT
+        );
     }
 
     function testFuzz_pauseBlocksEscrow() public {
@@ -724,7 +732,13 @@ contract AptosBridgeFuzz is Test {
 
         vm.prank(admin);
         vm.expectRevert(IAptosBridgeAdapter.ZeroAddress.selector);
-        bridge.configure(a == address(0) ? address(1) : a, address(0), c, sigs, 6);
+        bridge.configure(
+            a == address(0) ? address(1) : a,
+            address(0),
+            c,
+            sigs,
+            6
+        );
     }
 
     function test_treasuryCanBeUpdated() public {

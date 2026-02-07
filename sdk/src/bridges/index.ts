@@ -22,6 +22,7 @@ export * from './plasma';
 export * from './sui';
 export * from './sei';
 export * from './aptos';
+export * from './zilliqa';
 
 import { 
     keccak256, 
@@ -1260,13 +1261,77 @@ export class AptosBridgeAdapterSDK extends BaseBridgeAdapter {
   }
 }
 
+export class ZilliqaBridgeAdapterSDK extends BaseBridgeAdapter {
+  private zilliqaBridgeAddress: string;
+
+  constructor(
+    publicClient: PublicClient,
+    walletClient: WalletClient,
+    zilliqaBridgeAddress: string
+  ) {
+    super({
+      name: 'Zilliqa',
+      chainId: 1,
+      nativeToken: 'ZIL',
+      finality: 30, // 30 TX block confirmations (~30-60 min)
+      maxAmount: 50_000_000n * 1_000_000_000_000n, // 50M ZIL in Qa
+      minAmount: 100n * 1_000_000_000_000n // 100 ZIL in Qa
+    }, publicClient, walletClient);
+
+    this.zilliqaBridgeAddress = zilliqaBridgeAddress;
+  }
+
+  async bridgeTransfer(params: BridgeTransferParams): Promise<BridgeTransferResult> {
+    this.validateAmount(params.amount);
+
+    const transferId = keccak256(encodeAbiParameters(
+      [{ type: 'address' }, { type: 'address' }, { type: 'uint256' }, { type: 'uint256' }],
+      [params.recipient as Hex, this.zilliqaBridgeAddress as Hex, params.amount, BigInt(Date.now())]
+    ));
+
+    return {
+      transferId,
+      txHash: '0x...',
+      estimatedArrival: Date.now() + 30 * 90_000, // ~30 TX blocks × 90s
+      fees: await this.estimateFees(params.amount, params.targetChainId)
+    };
+  }
+
+  async completeBridge(transferId: string, proof: Uint8Array): Promise<string> {
+    return '0x...';
+  }
+
+  async getStatus(transferId: string): Promise<BridgeStatus> {
+    return {
+      state: 'pending',
+      sourceChainId: 1,
+      targetChainId: this.config.chainId,
+      confirmations: 0,
+      requiredConfirmations: 30
+    };
+  }
+
+  async estimateFees(amount: bigint, targetChainId: number): Promise<BridgeFees> {
+    const protocolFee = amount * 5n / 10000n; // 0.05% bridge fee
+    const relayerFee = 100_000_000_000n; // 0.1 ZIL in Qa
+    const gasFee = 50_000_000_000n; // 0.05 ZIL (Zilliqa gas)
+
+    return {
+      protocolFee,
+      relayerFee,
+      gasFee,
+      total: protocolFee + relayerFee + gasFee
+    };
+  }
+}
+
 // ============================================
 // Bridge Factory
 // ============================================
 
 export type SupportedChain = 
   | 'cardano' | 'midnight' | 'polkadot' | 'cosmos' | 'near'
-  | 'avalanche' | 'arbitrum' | 'solana' | 'bitcoin' | 'starknet' | 'bnb' | 'hyperliquid' | 'provenance' | 'canton' | 'plasma' | 'sui' | 'sei' | 'aptos';
+  | 'avalanche' | 'arbitrum' | 'solana' | 'bitcoin' | 'starknet' | 'bnb' | 'hyperliquid' | 'provenance' | 'canton' | 'plasma' | 'sui' | 'sei' | 'aptos' | 'zilliqa';
 
 export class BridgeFactory {
   static createAdapter(
@@ -1365,6 +1430,11 @@ export class BridgeFactory {
         return new AptosBridgeAdapterSDK(
           publicClient, walletClient,
           config.aptosBridgeAddress
+        );
+      case 'zilliqa':
+        return new ZilliqaBridgeAdapterSDK(
+          publicClient, walletClient,
+          config.zilliqaBridgeAddress
         );
       default:
         throw new Error(`Unsupported chain: ${chain}`);
