@@ -257,3 +257,34 @@ export type {
   BridgeTransferParams,
   BridgeTransferResult,
 } from "./bridges";
+
+// ERC-8004 Trustless Agents
+export {
+  ERC8004SDK,
+  buildAgentGlobalId,
+  parseAgentGlobalId,
+  buildSetAgentWalletTypedData,
+  hashSetAgentWalletData,
+  isValidResponse,
+  isValidFeedbackDecimals,
+  formatFeedbackValue,
+  parseFeedbackValue,
+  AGENT_WALLET_TYPEHASH,
+  AGENT_WALLET_KEY,
+  MAX_FEEDBACK_DECIMALS,
+  VALIDATION_MIN_RESPONSE,
+  VALIDATION_MAX_RESPONSE,
+  ERC8004_VERSION,
+} from "./erc8004";
+
+export type {
+  MetadataEntry,
+  AgentIdentity,
+  FeedbackEntry,
+  FeedbackParams,
+  ValidationRequestParams,
+  ValidationResponseParams,
+  ValidationStatus,
+  ReputationSummary,
+  ValidationSummary,
+} from "./erc8004";

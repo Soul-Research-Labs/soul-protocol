@@ -77,10 +77,10 @@ interface IZilliqaBridgeAdapter {
 
     /// @notice Operation types for the Zilliqa bridge
     enum ZilliqaBridgeOpType {
-        ZIL_TRANSFER,       // Standard ZIL transfer
-        ZRC2_TRANSFER,      // ZRC-2 fungible token transfer
+        ZIL_TRANSFER, // Standard ZIL transfer
+        ZRC2_TRANSFER, // ZRC-2 fungible token transfer
         DS_COMMITTEE_UPDATE, // DS committee rotation
-        EMERGENCY_OP        // Emergency governance action
+        EMERGENCY_OP // Emergency governance action
     }
 
     /*//////////////////////////////////////////////////////////////

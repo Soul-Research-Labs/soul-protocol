@@ -96,13 +96,15 @@ contract ZilliqaBridgeFuzz is Test {
 
         _submitVerifiedDSBlock(1, keccak256("block1"));
 
-        IZilliqaBridgeAdapter.DSCommitteeAttestation[] memory atts = _createDSAttestations();
+        IZilliqaBridgeAdapter.DSCommitteeAttestation[]
+            memory atts = _createDSAttestations();
 
-        IZilliqaBridgeAdapter.ZilliqaStateProof memory proof = IZilliqaBridgeAdapter.ZilliqaStateProof({
-            leafHash: keccak256("leaf"),
-            proof: new bytes32[](0),
-            index: 0
-        });
+        IZilliqaBridgeAdapter.ZilliqaStateProof
+            memory proof = IZilliqaBridgeAdapter.ZilliqaStateProof({
+                leafHash: keccak256("leaf"),
+                proof: new bytes32[](0),
+                index: 0
+            });
 
         bytes32 txHash = keccak256(abi.encodePacked("sub_unit", subUnit));
 
@@ -133,7 +135,7 @@ contract ZilliqaBridgeFuzz is Test {
 
         // Fee is always 0.05% (5 BPS)
         assertLe(fee, amount);
-        assertGe(net, amount * 9995 / 10000);
+        assertGe(net, (amount * 9995) / 10000);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -143,18 +145,19 @@ contract ZilliqaBridgeFuzz is Test {
     function testFuzz_dsBlockChain(uint8 blockCount) public {
         uint256 count = bound(uint256(blockCount), 1, 20);
 
-        IZilliqaBridgeAdapter.DSCommitteeAttestation[] memory atts = _createDSAttestations();
+        IZilliqaBridgeAdapter.DSCommitteeAttestation[]
+            memory atts = _createDSAttestations();
 
         for (uint256 i = 1; i <= count; i++) {
             bridge.submitDSBlock(
-                i,                          // dsBlockNumber
+                i, // dsBlockNumber
                 keccak256(abi.encodePacked("block", i)), // blockHash
                 keccak256(abi.encodePacked("state", i)), // stateRootHash
-                (i - 1) * 100 + 1,          // txBlockStart
-                i * 100,                     // txBlockEnd
+                (i - 1) * 100 + 1, // txBlockStart
+                i * 100, // txBlockEnd
                 keccak256(abi.encodePacked("committee", i)), // dsCommitteeHash
-                4,                           // shardCount
-                block.timestamp + i,         // timestamp
+                4, // shardCount
+                block.timestamp + i, // timestamp
                 atts
             );
         }
@@ -168,12 +171,14 @@ contract ZilliqaBridgeFuzz is Test {
     //////////////////////////////////////////////////////////////*/
 
     function test_depositRequiresVerifiedDSBlock() public {
-        IZilliqaBridgeAdapter.DSCommitteeAttestation[] memory atts = _createDSAttestations();
-        IZilliqaBridgeAdapter.ZilliqaStateProof memory proof = IZilliqaBridgeAdapter.ZilliqaStateProof({
-            leafHash: keccak256("leaf"),
-            proof: new bytes32[](0),
-            index: 0
-        });
+        IZilliqaBridgeAdapter.DSCommitteeAttestation[]
+            memory atts = _createDSAttestations();
+        IZilliqaBridgeAdapter.ZilliqaStateProof
+            memory proof = IZilliqaBridgeAdapter.ZilliqaStateProof({
+                leafHash: keccak256("leaf"),
+                proof: new bytes32[](0),
+                index: 0
+            });
 
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -197,12 +202,14 @@ contract ZilliqaBridgeFuzz is Test {
 
         _submitVerifiedDSBlock(1, keccak256("block1"));
 
-        IZilliqaBridgeAdapter.DSCommitteeAttestation[] memory atts = _createDSAttestations();
-        IZilliqaBridgeAdapter.ZilliqaStateProof memory proof = IZilliqaBridgeAdapter.ZilliqaStateProof({
-            leafHash: keccak256("leaf"),
-            proof: new bytes32[](0),
-            index: 0
-        });
+        IZilliqaBridgeAdapter.DSCommitteeAttestation[]
+            memory atts = _createDSAttestations();
+        IZilliqaBridgeAdapter.ZilliqaStateProof
+            memory proof = IZilliqaBridgeAdapter.ZilliqaStateProof({
+                leafHash: keccak256("leaf"),
+                proof: new bytes32[](0),
+                index: 0
+            });
 
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -227,12 +234,14 @@ contract ZilliqaBridgeFuzz is Test {
 
         _submitVerifiedDSBlock(1, keccak256("block1"));
 
-        IZilliqaBridgeAdapter.DSCommitteeAttestation[] memory atts = _createDSAttestations();
-        IZilliqaBridgeAdapter.ZilliqaStateProof memory proof = IZilliqaBridgeAdapter.ZilliqaStateProof({
-            leafHash: keccak256("leaf"),
-            proof: new bytes32[](0),
-            index: 0
-        });
+        IZilliqaBridgeAdapter.DSCommitteeAttestation[]
+            memory atts = _createDSAttestations();
+        IZilliqaBridgeAdapter.ZilliqaStateProof
+            memory proof = IZilliqaBridgeAdapter.ZilliqaStateProof({
+                leafHash: keccak256("leaf"),
+                proof: new bytes32[](0),
+                index: 0
+            });
 
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -257,12 +266,14 @@ contract ZilliqaBridgeFuzz is Test {
 
         _submitVerifiedDSBlock(1, keccak256("block1"));
 
-        IZilliqaBridgeAdapter.DSCommitteeAttestation[] memory atts = _createDSAttestations();
-        IZilliqaBridgeAdapter.ZilliqaStateProof memory proof = IZilliqaBridgeAdapter.ZilliqaStateProof({
-            leafHash: keccak256("leaf"),
-            proof: new bytes32[](0),
-            index: 0
-        });
+        IZilliqaBridgeAdapter.DSCommitteeAttestation[]
+            memory atts = _createDSAttestations();
+        IZilliqaBridgeAdapter.ZilliqaStateProof
+            memory proof = IZilliqaBridgeAdapter.ZilliqaStateProof({
+                leafHash: keccak256("leaf"),
+                proof: new bytes32[](0),
+                index: 0
+            });
 
         bridge.initiateZILDeposit(
             txHash,
@@ -296,12 +307,14 @@ contract ZilliqaBridgeFuzz is Test {
 
         _submitVerifiedDSBlock(1, keccak256("block1"));
 
-        IZilliqaBridgeAdapter.DSCommitteeAttestation[] memory atts = _createDSAttestations();
-        IZilliqaBridgeAdapter.ZilliqaStateProof memory proof = IZilliqaBridgeAdapter.ZilliqaStateProof({
-            leafHash: keccak256("leaf"),
-            proof: new bytes32[](0),
-            index: 0
-        });
+        IZilliqaBridgeAdapter.DSCommitteeAttestation[]
+            memory atts = _createDSAttestations();
+        IZilliqaBridgeAdapter.ZilliqaStateProof
+            memory proof = IZilliqaBridgeAdapter.ZilliqaStateProof({
+                leafHash: keccak256("leaf"),
+                proof: new bytes32[](0),
+                index: 0
+            });
 
         uint256 prevNonce = 0;
         for (uint256 i = 0; i < numDeposits; i++) {
@@ -359,10 +372,7 @@ contract ZilliqaBridgeFuzz is Test {
 
         uint256 prevNonce = 0;
         for (uint256 i = 0; i < numWithdrawals; i++) {
-            bridge.initiateWithdrawal(
-                bytes32(uint256(0xABC)),
-                MIN_DEPOSIT
-            );
+            bridge.initiateWithdrawal(bytes32(uint256(0xABC)), MIN_DEPOSIT);
             uint256 currentNonce = bridge.withdrawalNonce();
             assertGt(currentNonce, prevNonce);
             prevNonce = currentNonce;
@@ -444,7 +454,10 @@ contract ZilliqaBridgeFuzz is Test {
         assertEq(bridge.totalEscrowsCancelled(), 1);
     }
 
-    function testFuzz_escrowTimelockBounds(uint256 finishOffset, uint256 duration) public {
+    function testFuzz_escrowTimelockBounds(
+        uint256 finishOffset,
+        uint256 duration
+    ) public {
         finishOffset = bound(finishOffset, 1 hours, 365 days);
         duration = bound(duration, 1 hours, 30 days);
 
@@ -463,7 +476,10 @@ contract ZilliqaBridgeFuzz is Test {
         assertEq(bridge.totalEscrows(), 1);
     }
 
-    function testFuzz_escrowTimelockTooLong(uint256 finishOffset, uint256 duration) public {
+    function testFuzz_escrowTimelockTooLong(
+        uint256 finishOffset,
+        uint256 duration
+    ) public {
         finishOffset = bound(finishOffset, 1 hours, 365 days);
         duration = bound(duration, 30 days + 1, 365 days);
 
@@ -491,12 +507,14 @@ contract ZilliqaBridgeFuzz is Test {
 
         _submitVerifiedDSBlock(1, keccak256("block1"));
 
-        IZilliqaBridgeAdapter.DSCommitteeAttestation[] memory atts = _createDSAttestations();
-        IZilliqaBridgeAdapter.ZilliqaStateProof memory proof = IZilliqaBridgeAdapter.ZilliqaStateProof({
-            leafHash: keccak256("leaf"),
-            proof: new bytes32[](0),
-            index: 0
-        });
+        IZilliqaBridgeAdapter.DSCommitteeAttestation[]
+            memory atts = _createDSAttestations();
+        IZilliqaBridgeAdapter.ZilliqaStateProof
+            memory proof = IZilliqaBridgeAdapter.ZilliqaStateProof({
+                leafHash: keccak256("leaf"),
+                proof: new bytes32[](0),
+                index: 0
+            });
 
         vm.prank(caller);
         vm.expectRevert();
@@ -517,12 +535,14 @@ contract ZilliqaBridgeFuzz is Test {
 
         _submitVerifiedDSBlock(1, keccak256("block1"));
 
-        IZilliqaBridgeAdapter.DSCommitteeAttestation[] memory atts = _createDSAttestations();
-        IZilliqaBridgeAdapter.ZilliqaStateProof memory proof = IZilliqaBridgeAdapter.ZilliqaStateProof({
-            leafHash: keccak256("leaf"),
-            proof: new bytes32[](0),
-            index: 0
-        });
+        IZilliqaBridgeAdapter.DSCommitteeAttestation[]
+            memory atts = _createDSAttestations();
+        IZilliqaBridgeAdapter.ZilliqaStateProof
+            memory proof = IZilliqaBridgeAdapter.ZilliqaStateProof({
+                leafHash: keccak256("leaf"),
+                proof: new bytes32[](0),
+                index: 0
+            });
 
         bytes32 depositId = bridge.initiateZILDeposit(
             keccak256("tx_complete"),
@@ -557,12 +577,14 @@ contract ZilliqaBridgeFuzz is Test {
 
         bridge.pause();
 
-        IZilliqaBridgeAdapter.DSCommitteeAttestation[] memory atts = _createDSAttestations();
-        IZilliqaBridgeAdapter.ZilliqaStateProof memory proof = IZilliqaBridgeAdapter.ZilliqaStateProof({
-            leafHash: keccak256("leaf"),
-            proof: new bytes32[](0),
-            index: 0
-        });
+        IZilliqaBridgeAdapter.DSCommitteeAttestation[]
+            memory atts = _createDSAttestations();
+        IZilliqaBridgeAdapter.ZilliqaStateProof
+            memory proof = IZilliqaBridgeAdapter.ZilliqaStateProof({
+                leafHash: keccak256("leaf"),
+                proof: new bytes32[](0),
+                index: 0
+            });
 
         vm.expectRevert();
         bridge.initiateZILDeposit(
@@ -638,9 +660,15 @@ contract ZilliqaBridgeFuzz is Test {
     ) public {
         // One of the three addresses must be zero
         mask = bound(mask, 0, 2);
-        address addr0 = mask == 0 ? address(0) : (a == address(0) ? address(1) : a);
-        address addr1 = mask == 1 ? address(0) : (b == address(0) ? address(1) : b);
-        address addr2 = mask == 2 ? address(0) : (c == address(0) ? address(1) : c);
+        address addr0 = mask == 0
+            ? address(0)
+            : (a == address(0) ? address(1) : a);
+        address addr1 = mask == 1
+            ? address(0)
+            : (b == address(0) ? address(1) : b);
+        address addr2 = mask == 2
+            ? address(0)
+            : (c == address(0) ? address(1) : c);
 
         ZilliqaBridgeAdapter newBridge = new ZilliqaBridgeAdapter(admin);
 
@@ -664,10 +692,14 @@ contract ZilliqaBridgeFuzz is Test {
     //////////////////////////////////////////////////////////////*/
 
     function test_viewFunctionsReturnDefaults() public view {
-        IZilliqaBridgeAdapter.ZILDeposit memory dep = bridge.getDeposit(bytes32(0));
+        IZilliqaBridgeAdapter.ZILDeposit memory dep = bridge.getDeposit(
+            bytes32(0)
+        );
         assertEq(dep.initiatedAt, 0);
 
-        IZilliqaBridgeAdapter.ZILWithdrawal memory w = bridge.getWithdrawal(bytes32(0));
+        IZilliqaBridgeAdapter.ZILWithdrawal memory w = bridge.getWithdrawal(
+            bytes32(0)
+        );
         assertEq(w.initiatedAt, 0);
 
         IZilliqaBridgeAdapter.ZILEscrow memory e = bridge.getEscrow(bytes32(0));
@@ -721,17 +753,21 @@ contract ZilliqaBridgeFuzz is Test {
                           HELPER FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    function _submitVerifiedDSBlock(uint256 dsBlockNumber, bytes32 blockHash) internal {
-        IZilliqaBridgeAdapter.DSCommitteeAttestation[] memory atts = _createDSAttestations();
+    function _submitVerifiedDSBlock(
+        uint256 dsBlockNumber,
+        bytes32 blockHash
+    ) internal {
+        IZilliqaBridgeAdapter.DSCommitteeAttestation[]
+            memory atts = _createDSAttestations();
 
         bridge.submitDSBlock(
             dsBlockNumber,
             blockHash,
             keccak256(abi.encodePacked("state", dsBlockNumber)),
-            1,    // txBlockStart
-            100,  // txBlockEnd
+            1, // txBlockStart
+            100, // txBlockEnd
             keccak256(abi.encodePacked("committee", dsBlockNumber)),
-            4,    // shardCount
+            4, // shardCount
             block.timestamp,
             atts
         );
@@ -742,7 +778,8 @@ contract ZilliqaBridgeFuzz is Test {
         pure
         returns (IZilliqaBridgeAdapter.DSCommitteeAttestation[] memory)
     {
-        IZilliqaBridgeAdapter.DSCommitteeAttestation[] memory atts = new IZilliqaBridgeAdapter.DSCommitteeAttestation[](3);
+        IZilliqaBridgeAdapter.DSCommitteeAttestation[]
+            memory atts = new IZilliqaBridgeAdapter.DSCommitteeAttestation[](3);
         atts[0] = IZilliqaBridgeAdapter.DSCommitteeAttestation({
             member: DS_MEMBER_1,
             signature: hex"01"

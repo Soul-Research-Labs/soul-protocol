@@ -210,7 +210,11 @@ contract ZilliqaBridgeAdapter is
             active: true
         });
 
-        emit BridgeConfigured(zilliqaBridgeContract, wrappedZIL, dsCommitteeOracle);
+        emit BridgeConfigured(
+            zilliqaBridgeContract,
+            wrappedZIL,
+            dsCommitteeOracle
+        );
     }
 
     /// @inheritdoc IZilliqaBridgeAdapter
@@ -377,11 +381,7 @@ contract ZilliqaBridgeAdapter is
             dep.netAmountQa
         );
 
-        emit ZILDepositCompleted(
-            depositId,
-            dep.evmRecipient,
-            dep.netAmountQa
-        );
+        emit ZILDepositCompleted(depositId, dep.evmRecipient, dep.netAmountQa);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -711,8 +711,10 @@ contract ZilliqaBridgeAdapter is
         // TX block must be within the range of the latest verified DS epoch
         // or a previous verified DS epoch
         // For simplicity, we verify it's not beyond the latest known range
-        if (txBlockNumber > dsBlock.txBlockEnd + config.requiredTxBlockConfirmations)
-            revert TxBlockNotConfirmed(txBlockNumber);
+        if (
+            txBlockNumber >
+            dsBlock.txBlockEnd + config.requiredTxBlockConfirmations
+        ) revert TxBlockNotConfirmed(txBlockNumber);
     }
 
     /// @dev Verify DS committee attestation signatures meet threshold
@@ -751,9 +753,6 @@ contract ZilliqaBridgeAdapter is
         }
 
         if (validCount < config.minDSSignatures)
-            revert InsufficientDSSignatures(
-                validCount,
-                config.minDSSignatures
-            );
+            revert InsufficientDSSignatures(validCount, config.minDSSignatures);
     }
 }
