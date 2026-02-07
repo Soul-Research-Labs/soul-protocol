@@ -95,6 +95,36 @@ export {
   type ProtocolStats,
 } from "./client/SoulProtocolClient";
 
+// Privacy Middleware Clients
+export {
+  PrivacyRouterClient,
+  createPrivacyRouterClient,
+  type PrivacyRouterConfig,
+  type DepositParams,
+  type WithdrawParams,
+  type CrossChainTransferParams,
+  type OperationReceipt,
+  OperationType,
+} from "./client/PrivacyRouterClient";
+
+export {
+  ShieldedPoolClient,
+  createShieldedPoolClient,
+  type ShieldedPoolConfig,
+  type DepositNote,
+  type PoolStats,
+  type AssetConfig,
+} from "./client/ShieldedPoolClient";
+
+export {
+  RelayerFeeMarketClient,
+  createRelayerFeeMarketClient,
+  type RelayerFeeMarketConfig,
+  type RelayRequest,
+  type FeeEstimate,
+  RequestStatus,
+} from "./client/RelayerFeeMarketClient";
+
 // Contract Addresses & ABIs
 export {
   SEPOLIA_ADDRESSES,

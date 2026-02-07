@@ -195,18 +195,21 @@ Soul sits between **privacy chains** and **public chains**, enabling confidentia
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
+│  Layer 6: Privacy Router (dApp Facade)                      │
+│           Unified deposit/withdraw/cross-chain/stealth API  │
+├─────────────────────────────────────────────────────────────┤
 │  Layer 5: ZK-Bound State Locks (ZK-SLocks)                  │
 │           Lock on Aztec → Unlock on Ethereum (or reverse)   │
 ├─────────────────────────────────────────────────────────────┤
 │  Layer 4: Soul v2 Primitives                                │
 │           PC³ │ PBP │ EASC │ CDNA                           │
 ├─────────────────────────────────────────────────────────────┤
-│  Layer 3: Execution Layer                                   │
-│           AtomicSwap │ Compliance │ FHE │ MPC               │
+│  Layer 3: Privacy Middleware                                │
+│           ShieldedPool │ SanctionsOracle │ RelayerFeeMarket │
 ├─────────────────────────────────────────────────────────────┤
 │  Layer 2: Proof Translation                                 │
 │           Groth16 ↔ PLONK ↔ STARK ↔ Bulletproofs            │
-│           (Aztec UltraPLONK ↔ Soul Groth16)                  │
+│           UniversalProofTranslator + Universal Adapters     │
 ├─────────────────────────────────────────────────────────────┤
 │  Layer 1: Core Infrastructure                               │
 │           Confidential State │ Nullifier Registry │ TEE     │
@@ -247,21 +250,24 @@ Soul sits between **privacy chains** and **public chains**, enabling confidentia
 ## Project Structure
 
 ```
-contracts/           # Production Solidity contracts (44 files)
-├── core/            # ConfidentialStateContainer, NullifierRegistry, SovereignPrivacyDomain
+contracts/           # Production Solidity contracts
+├── core/            # ConfidentialStateContainer, NullifierRegistry, PrivacyRouter
 ├── primitives/      # ZK-SLocks, PC³, CDNA, EASC, Orchestrator
 ├── crosschain/      # Bridge adapters (Arbitrum, Base, LayerZero, Hyperlane)
-├── privacy/         # Stealth addresses, constant-time crypto
+├── privacy/         # UniversalShieldedPool, UniversalProofTranslator, Stealth addresses
+├── compliance/      # CrossChainSanctionsOracle, KYC gating
+├── relayer/         # RelayerFeeMarket (incentivized relaying)
 ├── bridge/          # AtomicSwap, CrossChainProofHub
 ├── verifiers/       # Groth16 BN254 verifier, VerifierRegistry
 ├── libraries/       # CryptoLib, PoseidonYul, GasOptimizations
-├── interfaces/      # Contract interfaces
+├── interfaces/      # Contract interfaces (46+ files)
 └── security/        # Timelock, circuit breaker, rate limiter, MEV protection
 
-noir/                # 12 Noir ZK circuits
-sdk/                 # TypeScript SDK
-certora/             # Formal verification specs
-_archive/            # Non-essential contracts (research, tests, experimental)
+noir/                # Noir ZK circuits (shielded_pool, nullifiers, transfers, etc.)
+sdk/                 # TypeScript SDK (viem-based clients)
+certora/             # Formal verification specs (CVL)
+test/                # Foundry + Hardhat tests
+scripts/             # Deployment scripts
 ```
 
 ## Quick Start
@@ -289,6 +295,16 @@ npx hardhat run scripts/deploy.js --network localhost
 | `ProofCarryingContainer` | PC³ - Self-authenticating containers with embedded proofs |
 | `ZKBoundStateLocks` | Cross-chain state locks unlocked by ZK proofs |
 | `CrossDomainNullifierAlgebra` | Domain-separated nullifiers with composability |
+
+### Privacy Middleware
+
+| Contract | Purpose |
+|----------|----------|
+| `PrivacyRouter` | Unified facade for deposit, withdraw, cross-chain, stealth operations |
+| `UniversalShieldedPool` | Multi-asset shielded pool with Poseidon Merkle tree (depth-32) |
+| `UniversalProofTranslator` | Translate ZK proofs between proof systems (Groth16 ↔ PLONK ↔ STARK) |
+| `CrossChainSanctionsOracle` | Multi-provider compliance screening with weighted quorum |
+| `RelayerFeeMarket` | Incentivized relay marketplace with fee estimation |
 
 See [API Reference](docs/API_REFERENCE.md) for full contract documentation.
 
@@ -416,6 +432,31 @@ const isValid = await prover.verifyProof('balance_proof', proof);
 | `soul.proofHub.submitProof()` | Submit proof for aggregation |
 | `soul.atomicSwap.initiateSwap()` | Start atomic swap |
 | `soul.getProtocolStats()` | Get protocol statistics |
+
+### Privacy Middleware SDK
+
+```typescript
+import { 
+  PrivacyRouterClient, 
+  ShieldedPoolClient, 
+  RelayerFeeMarketClient 
+} from '@soul/sdk';
+
+// Unified privacy router (recommended entry point)
+const router = new PrivacyRouterClient({ publicClient, walletClient, routerAddress });
+const { operationId } = await router.depositETH(commitment, parseEther('1'));
+await router.withdraw({ nullifierHash, recipient, root, proof });
+
+// Direct shielded pool access
+const pool = new ShieldedPoolClient({ publicClient, walletClient, poolAddress });
+const note = pool.generateDepositNote(parseEther('1'));  // { commitment, secret, nullifier }
+const stats = await pool.getPoolStats();
+
+// Relayer fee market
+const feeMarket = new RelayerFeeMarketClient({ publicClient, walletClient, feeMarketAddress });
+const fee = await feeMarket.estimateFee(1, 42161); // Ethereum → Arbitrum
+await feeMarket.submitRelayRequest(1, 42161, proofData, deadline, fee);
+```
 
 ### Supported Networks
 

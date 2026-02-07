@@ -8,6 +8,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IUniversalChainAdapter} from "../interfaces/IUniversalChainAdapter.sol";
 import {UniversalChainRegistry} from "../libraries/UniversalChainRegistry.sol";
+import {PoseidonYul} from "../libraries/PoseidonYul.sol";
 
 /**
  * @title UniversalShieldedPool
@@ -183,6 +184,10 @@ contract UniversalShieldedPool is AccessControl, ReentrancyGuard, Pausable {
     /// @notice ZK verifier for withdrawal proofs
     address public withdrawalVerifier;
 
+    /// @notice Test mode flag — allows proof bypass for testing only
+    /// @dev MUST be false in production. Cannot be re-enabled once disabled.
+    bool public testMode;
+
     /// @notice ZK verifier for cross-chain batch proofs
     address public batchVerifier;
 
@@ -263,11 +268,12 @@ contract UniversalShieldedPool is AccessControl, ReentrancyGuard, Pausable {
                             CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    constructor(address _admin, address _withdrawalVerifier) {
+    constructor(address _admin, address _withdrawalVerifier, bool _testMode) {
         if (_admin == address(0)) revert ZeroAddress();
 
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(OPERATOR_ROLE, _admin);
+        testMode = _testMode;
 
         universalChainId = UniversalChainRegistry.computeEVMChainId(
             block.chainid
@@ -506,6 +512,12 @@ contract UniversalShieldedPool is AccessControl, ReentrancyGuard, Pausable {
         emit VerifierUpdated(_verifier, "withdrawal");
     }
 
+    /// @notice Permanently disable test mode (one-way, irreversible)
+    /// @dev Once disabled, withdrawals require a real verifier contract
+    function disableTestMode() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        testMode = false;
+    }
+
     /// @notice Set the cross-chain batch verifier
     function setBatchVerifier(
         address _verifier
@@ -674,13 +686,13 @@ contract UniversalShieldedPool is AccessControl, ReentrancyGuard, Pausable {
         return z;
     }
 
-    /// @notice Hash a pair of nodes (Poseidon-style, using keccak256 as placeholder)
-    /// @dev In production, replace with Poseidon hash for ZK-friendliness
+    /// @notice Hash a pair of nodes using Poseidon (BN254, T=3)
+    /// @dev Uses PoseidonYul for ZK-compatible Merkle tree hashing
     function _hashPair(
         bytes32 left,
         bytes32 right
     ) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked(left, right));
+        return bytes32(PoseidonYul.hash2(uint256(left), uint256(right)));
     }
 
     /// @notice Verify a withdrawal ZK proof
@@ -688,7 +700,8 @@ contract UniversalShieldedPool is AccessControl, ReentrancyGuard, Pausable {
         WithdrawalProof calldata wp
     ) internal view returns (bool) {
         if (withdrawalVerifier == address(0)) {
-            // No verifier set — verify proof structure only (testing mode)
+            // No verifier set — only accept in explicit test mode
+            require(testMode, "No verifier configured");
             return wp.proof.length >= 64;
         }
 
