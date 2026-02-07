@@ -650,9 +650,8 @@ contract OptimismBridgeAdapter is
         escrow.preimage = preimage;
         totalEscrowsFinished++;
 
-        // Release funds to the fulfillment provider (msg.sender)
-        // The L2 party reveals the preimage to claim funds on L1
-        (bool success, ) = payable(msg.sender).call{value: escrow.amountWei}(
+        // Release funds to the L2 party counterparty
+        (bool success, ) = payable(escrow.l2Party).call{value: escrow.amountWei}(
             ""
         );
         if (!success) revert InvalidAmount();
@@ -893,6 +892,10 @@ contract OptimismBridgeAdapter is
         uint256 validCount = 0;
 
         for (uint256 i = 0; i < attestations.length; i++) {
+            // Check for duplicate validators
+            for (uint256 j = 0; j < i; j++) {
+                require(attestations[j].validator != attestations[i].validator, "Duplicate validator");
+            }
             // Delegate ECDSA signature verification to the oracle contract
             // The oracle maintains the validator set and verifies each attestation
             (bool success, bytes memory result) = bridgeConfig

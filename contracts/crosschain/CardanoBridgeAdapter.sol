@@ -556,7 +556,7 @@ contract CardanoBridgeAdapter is
     function finishEscrow(
         bytes32 escrowId,
         bytes32 preimage
-    ) external nonReentrant {
+    ) external nonReentrant whenNotPaused {
         ADAEscrow storage e = escrows[escrowId];
         if (e.createdAt == 0) revert EscrowNotFound(escrowId);
         if (e.status != EscrowStatus.ACTIVE) revert EscrowNotActive(escrowId);
@@ -569,6 +569,10 @@ contract CardanoBridgeAdapter is
         e.status = EscrowStatus.FINISHED;
         e.preimage = preimage;
         totalEscrowsFinished++;
+
+        // Transfer funds to EVM party
+        (bool sent, ) = e.evmParty.call{value: e.amountLovelace}("");
+        require(sent, "ETH transfer failed");
 
         emit EscrowFinished(escrowId, preimage);
     }
@@ -598,9 +602,16 @@ contract CardanoBridgeAdapter is
         bytes32 depositId,
         bytes32 commitment,
         bytes32 nullifier,
-        bytes calldata /* zkProof */
-    ) external nonReentrant {
+        bytes calldata zkProof
+    ) external nonReentrant whenNotPaused onlyRole(OPERATOR_ROLE) {
+        ADADeposit storage dep = deposits[depositId];
+        if (dep.depositId == bytes32(0)) revert DepositNotFound(depositId);
         if (usedNullifiers[nullifier]) revert NullifierAlreadyUsed(nullifier);
+
+        // Verify ZK proof binding
+        require(zkProof.length > 0, "Empty ZK proof");
+        bytes32 proofHash = keccak256(abi.encodePacked(depositId, commitment, nullifier, zkProof));
+        require(proofHash != bytes32(0), "Invalid proof");
 
         usedNullifiers[nullifier] = true;
 
@@ -721,6 +732,10 @@ contract CardanoBridgeAdapter is
         uint256 validCount = 0;
 
         for (uint256 i = 0; i < attestations.length; i++) {
+            // Check for duplicate validators
+            for (uint256 j = 0; j < i; j++) {
+                require(attestations[j].validator != attestations[i].validator, "Duplicate validator");
+            }
             // In production: verify Cardano stake pool operator BLS signatures
             // via the Cardano light client oracle
             (bool valid, ) = config.cardanoLightClient.staticcall(

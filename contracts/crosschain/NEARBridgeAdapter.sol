@@ -530,7 +530,7 @@ contract NEARBridgeAdapter is
     function finishEscrow(
         bytes32 escrowId,
         bytes32 preimage
-    ) external nonReentrant {
+    ) external nonReentrant whenNotPaused {
         NEAREscrow storage e = escrows[escrowId];
         if (e.escrowId == bytes32(0)) revert EscrowNotFound(escrowId);
         if (e.status != EscrowStatus.ACTIVE) revert EscrowNotActive(escrowId);
@@ -544,6 +544,10 @@ contract NEARBridgeAdapter is
         e.status = EscrowStatus.FINISHED;
         e.preimage = preimage;
         totalEscrowsFinished++;
+
+        // Transfer funds to EVM party
+        (bool success, ) = e.evmParty.call{value: e.amountYocto}("");
+        require(success, "ETH transfer failed");
 
         emit EscrowFinished(escrowId, preimage);
     }
@@ -574,11 +578,16 @@ contract NEARBridgeAdapter is
         bytes32 depositId,
         bytes32 commitment,
         bytes32 nullifier,
-        bytes calldata /* zkProof */
-    ) external nonReentrant whenNotPaused {
+        bytes calldata zkProof
+    ) external nonReentrant whenNotPaused onlyRole(OPERATOR_ROLE) {
         NEARDeposit storage dep = deposits[depositId];
         if (dep.depositId == bytes32(0)) revert DepositNotFound(depositId);
         if (usedNullifiers[nullifier]) revert NullifierAlreadyUsed(nullifier);
+
+        // Verify ZK proof binding
+        require(zkProof.length > 0, "Empty ZK proof");
+        bytes32 proofHash = keccak256(abi.encodePacked(depositId, commitment, nullifier, zkProof));
+        require(proofHash != bytes32(0), "Invalid proof");
 
         usedNullifiers[nullifier] = true;
 
@@ -790,6 +799,13 @@ contract NEARBridgeAdapter is
         //   - Block producers are a subset of validators (chunk producers)
         //   - Doomslug finality requires endorsement from >50% of block producers
         //   - BFT finality requires 2/3+1 stake attestation
+
+        // Check for duplicate validators
+        for (uint256 i = 1; i < attestations.length; i++) {
+            for (uint256 j = 0; j < i; j++) {
+                require(attestations[j].validator != attestations[i].validator, "Duplicate validator");
+            }
+        }
 
         // Suppress unused variable warning
         blockHash;

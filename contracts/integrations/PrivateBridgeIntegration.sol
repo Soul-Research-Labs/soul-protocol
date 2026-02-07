@@ -152,6 +152,7 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
         uint256 destChain;
         bytes32 destRecipient;
         address token;
+        uint256 amount;
         TransferStatus status;
         uint256 initiatedAt;
         uint256 completedAt;
@@ -346,6 +347,7 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
             destChain: message.destChain,
             destRecipient: message.destRecipient,
             token: NATIVE_TOKEN, // Simplified for ETH
+            amount: msg.value,
             status: TransferStatus.PENDING,
             initiatedAt: block.timestamp,
             completedAt: 0
@@ -500,8 +502,8 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
         address refundRecipient = _extractRefundRecipient(refundProof);
 
         // Return funds (implementation depends on token type)
-        // For ETH transfers
-        (bool success, ) = refundRecipient.call{value: address(this).balance}(
+        // For ETH transfers - use recorded amount, not full balance
+        (bool success, ) = refundRecipient.call{value: transfer.amount}(
             ""
         );
         if (!success) revert InvalidRecipient();
@@ -669,8 +671,8 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
         // Convert bytes32 stealth address to EVM address
         address recipient = address(uint160(uint256(stealthRecipient)));
 
-        // Transfer funds (simplified - actual amount from proof)
-        uint256 amount = address(this).balance;
+        // Transfer funds - use msg.value for the current transaction amount
+        uint256 amount = msg.value;
         if (amount > 0) {
             (bool success, ) = recipient.call{value: amount}("");
             if (!success) revert InvalidRecipient();

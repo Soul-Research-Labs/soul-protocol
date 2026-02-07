@@ -54,6 +54,9 @@ contract ERC8004ValidationRegistry is
     /// @notice Whether the registry has been initialized
     bool public initialized;
 
+    /// @notice Contract deployer
+    address private immutable _deployer;
+
     /// @notice Validation entries: requestHash → ValidationEntry
     mapping(bytes32 => ValidationEntry) private _validations;
 
@@ -64,11 +67,20 @@ contract ERC8004ValidationRegistry is
     mapping(address => bytes32[]) private _validatorRequests;
 
     /*//////////////////////////////////////////////////////////////
+                          CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
+
+    constructor() {
+        _deployer = msg.sender;
+    }
+
+    /*//////////////////////////////////////////////////////////////
                           INITIALIZATION
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Initialize with identity registry address
     function initialize(address identityRegistry_) external {
+        require(msg.sender == _deployer, "Only deployer");
         require(!initialized, "Already initialized");
         require(identityRegistry_ != address(0), "Zero address");
         identityRegistry = identityRegistry_;

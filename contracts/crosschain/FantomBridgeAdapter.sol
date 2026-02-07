@@ -668,8 +668,8 @@ contract FantomBridgeAdapter is
         escrow.preimage = preimage;
         totalEscrowsFinished++;
 
-        // Release funds to the preimage provider
-        (bool success, ) = payable(msg.sender).call{value: escrow.amountWei}(
+        // Release funds to the counterparty (Fantom party)
+        (bool success, ) = payable(escrow.ftmParty).call{value: escrow.amountWei}(
             ""
         );
         if (!success) revert InvalidAmount();
@@ -909,6 +909,10 @@ contract FantomBridgeAdapter is
         uint256 validCount = 0;
 
         for (uint256 i = 0; i < attestations.length; i++) {
+            // Check for duplicate validators
+            for (uint256 j = 0; j < i; j++) {
+                require(attestations[j].validator != attestations[i].validator, "Duplicate validator");
+            }
             (bool success, bytes memory result) = bridgeConfig
                 .lachesisVerifier
                 .staticcall(

@@ -57,6 +57,9 @@ contract ERC8004ReputationRegistry is
     /// @notice Whether the registry has been initialized
     bool public initialized;
 
+    /// @notice Contract deployer
+    address private immutable _deployer;
+
     /// @notice Feedback storage: agentId → client → feedbackIndex → entry
     mapping(uint256 => mapping(address => mapping(uint64 => FeedbackEntry)))
         private _feedback;
@@ -75,11 +78,20 @@ contract ERC8004ReputationRegistry is
         private _responses;
 
     /*//////////////////////////////////////////////////////////////
+                          CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
+
+    constructor() {
+        _deployer = msg.sender;
+    }
+
+    /*//////////////////////////////////////////////////////////////
                           INITIALIZATION
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Initialize with identity registry address
     function initialize(address identityRegistry_) external {
+        require(msg.sender == _deployer, "Only deployer");
         require(!initialized, "Already initialized");
         require(identityRegistry_ != address(0), "Zero address");
         identityRegistry = identityRegistry_;
