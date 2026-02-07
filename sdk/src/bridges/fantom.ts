@@ -1,0 +1,480 @@
+/**
+ * Soul Protocol - Fantom Bridge SDK Module
+ *
+ * TypeScript utilities and types for interacting with the FantomBridgeAdapter contract.
+ * Provides Fantom-specific helpers: wei conversions, address validation,
+ * fee calculations, Lachesis DAG proof utilities, and escrow helpers.
+ *
+ * Fantom is an EVM-compatible Layer 1 using the Lachesis aBFT (asynchronous Byzantine
+ * Fault Tolerant) consensus protocol. It features ~1s block times, DAG-based event
+ * ordering with instant finality, epoch-based validator rotation, and 18-decimal
+ * precision (wei) for its native FTM token.
+ *
+ * @example
+ * ```typescript
+ * import { ftmToWei, weiToFtm, calculateFantomBridgeFee, FANTOM_BRIDGE_ABI } from './fantom';
+ *
+ * const amount = ftmToWei(10); // 10_000_000_000_000_000_000n (10 FTM in wei)
+ * const fee = calculateFantomBridgeFee(amount); // 4_000_000_000_000_000n (0.04%)
+ * ```
+ */
+
+// =============================================================================
+// CONSTANTS
+// =============================================================================
+
+/** 1 FTM = 1e18 wei (18 decimals) */
+export const WEI_PER_FTM = 10n ** 18n;
+
+/** Minimum deposit: 0.01 FTM (1e16 wei) */
+export const FTM_MIN_DEPOSIT_WEI = 10n ** 16n;
+
+/** Maximum deposit: 10,000,000 FTM */
+export const FTM_MAX_DEPOSIT_WEI = 10_000_000n * WEI_PER_FTM;
+
+/** Bridge fee: 4 BPS (0.04%) */
+export const FTM_BRIDGE_FEE_BPS = 4n;
+
+/** BPS denominator */
+export const FTM_BPS_DENOMINATOR = 10_000n;
+
+/** Minimum escrow timelock: 1 hour */
+export const FTM_MIN_ESCROW_TIMELOCK = 3600;
+
+/** Maximum escrow timelock: 30 days */
+export const FTM_MAX_ESCROW_TIMELOCK = 30 * 24 * 3600;
+
+/** Withdrawal refund delay: 24 hours */
+export const FTM_WITHDRAWAL_REFUND_DELAY = 24 * 3600;
+
+/** Default block confirmations for finality */
+export const FTM_DEFAULT_BLOCK_CONFIRMATIONS = 1;
+
+/** Fantom block time in ms (~1s Lachesis aBFT consensus) */
+export const FTM_BLOCK_TIME_MS = 1000;
+
+/** Fantom mainnet chain ID */
+export const FANTOM_CHAIN_ID = 250;
+
+/** Fantom epoch duration (~4 hours) */
+export const FANTOM_EPOCH_DURATION_MS = 4 * 60 * 60 * 1000;
+
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+export enum FTMDepositStatus {
+    PENDING = 0,
+    VERIFIED = 1,
+    COMPLETED = 2,
+    FAILED = 3,
+}
+
+export enum FTMWithdrawalStatus {
+    PENDING = 0,
+    PROCESSING = 1,
+    COMPLETED = 2,
+    REFUNDED = 3,
+    FAILED = 4,
+}
+
+export enum FTMEscrowStatus {
+    ACTIVE = 0,
+    FINISHED = 1,
+    CANCELLED = 2,
+}
+
+export enum FantomBridgeOpType {
+    FTM_TRANSFER = 0,
+    ERC20_TRANSFER = 1,
+    VALIDATOR_UPDATE = 2,
+    EMERGENCY_OP = 3,
+}
+
+// =============================================================================
+// TYPES
+// =============================================================================
+
+export interface FTMDeposit {
+    depositId: `0x${string}`;
+    ftmTxHash: `0x${string}`;
+    ftmSender: `0x${string}`;
+    evmRecipient: `0x${string}`;
+    amountWei: bigint;
+    netAmountWei: bigint;
+    fee: bigint;
+    status: FTMDepositStatus;
+    eventEpoch: bigint;
+    initiatedAt: bigint;
+    completedAt: bigint;
+}
+
+export interface FTMWithdrawal {
+    withdrawalId: `0x${string}`;
+    evmSender: `0x${string}`;
+    ftmRecipient: `0x${string}`;
+    amountWei: bigint;
+    ftmTxHash: `0x${string}`;
+    status: FTMWithdrawalStatus;
+    initiatedAt: bigint;
+    completedAt: bigint;
+}
+
+export interface FTMEscrow {
+    escrowId: `0x${string}`;
+    evmParty: `0x${string}`;
+    ftmParty: `0x${string}`;
+    amountWei: bigint;
+    hashlock: `0x${string}`;
+    preimage: `0x${string}`;
+    finishAfter: bigint;
+    cancelAfter: bigint;
+    status: FTMEscrowStatus;
+    createdAt: bigint;
+}
+
+export interface FantomBridgeConfig {
+    fantomBridgeContract: `0x${string}`;
+    wrappedFTM: `0x${string}`;
+    validatorOracle: `0x${string}`;
+    minValidatorSignatures: bigint;
+    requiredBlockConfirmations: bigint;
+    active: boolean;
+}
+
+export interface LachesisEvent {
+    eventId: bigint;
+    epoch: bigint;
+    eventHash: `0x${string}`;
+    parentHash: `0x${string}`;
+    stateRoot: `0x${string}`;
+    timestamp: bigint;
+    verified: boolean;
+}
+
+export interface DAGStateProof {
+    merkleProof: `0x${string}`[];
+    eventIndex: bigint;
+    leafHash: `0x${string}`;
+}
+
+export interface ValidatorAttestation {
+    validator: `0x${string}`;
+    signature: `0x${string}`;
+}
+
+export interface FantomBridgeStats {
+    totalDeposited: bigint;
+    totalWithdrawn: bigint;
+    totalEscrows: bigint;
+    totalEscrowsFinished: bigint;
+    totalEscrowsCancelled: bigint;
+    accumulatedFees: bigint;
+    latestEventEpoch: bigint;
+}
+
+// =============================================================================
+// CONVERSION UTILITIES
+// =============================================================================
+
+/**
+ * Convert FTM to wei (smallest unit)
+ * @param ftm Amount in FTM (supports decimals as string)
+ * @returns Amount in wei as bigint
+ */
+export function ftmToWei(ftm: number | string): bigint {
+    if (typeof ftm === 'string') {
+        const parts = ftm.split('.');
+        const whole = BigInt(parts[0]) * WEI_PER_FTM;
+        if (parts.length === 1) return whole;
+
+        const decStr = parts[1].padEnd(18, '0').slice(0, 18);
+        return whole + BigInt(decStr);
+    }
+    return ftmToWei(ftm.toString());
+}
+
+/**
+ * Convert wei to FTM string
+ * @param wei Amount in wei
+ * @returns Formatted FTM amount string (up to 18 decimals)
+ */
+export function weiToFtm(wei: bigint): string {
+    const whole = wei / WEI_PER_FTM;
+    const remainder = wei % WEI_PER_FTM;
+
+    if (remainder === 0n) return whole.toString();
+
+    const fracStr = remainder.toString().padStart(18, '0').replace(/0+$/, '');
+    return `${whole}.${fracStr}`;
+}
+
+/**
+ * Format wei as human-readable string with units
+ * @param wei Amount in wei
+ * @returns e.g. "1.5 FTM" or "500,000 wei"
+ */
+export function formatFTMWei(wei: bigint): string {
+    if (wei >= WEI_PER_FTM) {
+        return `${weiToFtm(wei)} FTM`;
+    }
+    return `${wei.toLocaleString()} wei`;
+}
+
+// =============================================================================
+// VALIDATION UTILITIES
+// =============================================================================
+
+/**
+ * Validate a Fantom address (20-byte hex, 0x-prefixed, 40 hex chars)
+ * @param address Fantom address string
+ * @returns True if the address format appears valid
+ */
+export function isValidFtmAddress(address: string): boolean {
+    return /^0x[0-9a-fA-F]{40}$/.test(address);
+}
+
+/**
+ * Validate a deposit amount is within bridge limits
+ * @param amountWei Amount in wei
+ * @returns Object with valid flag and error message if invalid
+ */
+export function validateFTMDepositAmount(amountWei: bigint): {
+    valid: boolean;
+    error?: string;
+} {
+    if (amountWei < FTM_MIN_DEPOSIT_WEI) {
+        return {
+            valid: false,
+            error: `Amount ${formatFTMWei(amountWei)} is below minimum deposit of ${formatFTMWei(FTM_MIN_DEPOSIT_WEI)}`,
+        };
+    }
+    if (amountWei > FTM_MAX_DEPOSIT_WEI) {
+        return {
+            valid: false,
+            error: `Amount ${formatFTMWei(amountWei)} exceeds maximum deposit of ${formatFTMWei(FTM_MAX_DEPOSIT_WEI)}`,
+        };
+    }
+    return { valid: true };
+}
+
+// =============================================================================
+// FEE CALCULATIONS
+// =============================================================================
+
+/**
+ * Calculate the bridge fee for a given amount
+ * @param amountWei Gross amount in wei
+ * @returns Fee in wei (0.04% by default)
+ */
+export function calculateFantomBridgeFee(amountWei: bigint): bigint {
+    return (amountWei * FTM_BRIDGE_FEE_BPS) / FTM_BPS_DENOMINATOR;
+}
+
+/**
+ * Calculate the net amount after bridge fee
+ * @param amountWei Gross amount in wei
+ * @returns Net amount in wei
+ */
+export function calculateFantomNetAmount(amountWei: bigint): bigint {
+    return amountWei - calculateFantomBridgeFee(amountWei);
+}
+
+// =============================================================================
+// ESCROW UTILITIES
+// =============================================================================
+
+/**
+ * Generate a random preimage for HTLC escrow
+ * @returns 32-byte hex preimage
+ */
+export function generateFantomPreimage(): `0x${string}` {
+    const bytes = new Uint8Array(32);
+    crypto.getRandomValues(bytes);
+    return `0x${Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('')}`;
+}
+
+/**
+ * Compute the SHA-256 hashlock from a preimage
+ * @param preimage The 32-byte hex preimage
+ * @returns SHA-256 hash of the preimage
+ */
+export async function computeFantomHashlock(preimage: `0x${string}`): Promise<`0x${string}`> {
+    const bytes = new Uint8Array(
+        (preimage.slice(2).match(/.{2}/g) || []).map((b) => parseInt(b, 16))
+    );
+    const hash = await crypto.subtle.digest('SHA-256', bytes);
+    return `0x${Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, '0')).join('')}`;
+}
+
+/**
+ * Validate escrow timelock parameters
+ * @param finishAfter Earliest finish time (UNIX seconds)
+ * @param cancelAfter Earliest cancel time (UNIX seconds)
+ * @returns Validation result
+ */
+export function validateFantomEscrowTimelocks(
+    finishAfter: number,
+    cancelAfter: number
+): { valid: boolean; error?: string } {
+    const now = Math.floor(Date.now() / 1000);
+
+    if (finishAfter <= now) {
+        return { valid: false, error: 'finishAfter must be in the future' };
+    }
+
+    const duration = cancelAfter - finishAfter;
+
+    if (duration < FTM_MIN_ESCROW_TIMELOCK) {
+        return {
+            valid: false,
+            error: `Escrow duration ${duration}s is below minimum ${FTM_MIN_ESCROW_TIMELOCK}s (1 hour)`,
+        };
+    }
+
+    if (duration > FTM_MAX_ESCROW_TIMELOCK) {
+        return {
+            valid: false,
+            error: `Escrow duration ${duration}s exceeds maximum ${FTM_MAX_ESCROW_TIMELOCK}s (30 days)`,
+        };
+    }
+
+    return { valid: true };
+}
+
+// =============================================================================
+// TIMING UTILITIES
+// =============================================================================
+
+/**
+ * Estimate block finalization time on Fantom
+ * @param confirmations Number of block confirmations (default: 1)
+ * @returns Estimated time in milliseconds
+ */
+export function estimateFantomBlockFinalityMs(confirmations?: number): number {
+    const n = confirmations ?? FTM_DEFAULT_BLOCK_CONFIRMATIONS;
+    return n * FTM_BLOCK_TIME_MS;
+}
+
+/**
+ * Check if a withdrawal is eligible for refund
+ * @param initiatedAt Timestamp when withdrawal was initiated (UNIX seconds)
+ * @returns True if the refund delay (24 hours) has passed
+ */
+export function isFantomRefundEligible(initiatedAt: number): boolean {
+    const now = Math.floor(Date.now() / 1000);
+    return now >= initiatedAt + FTM_WITHDRAWAL_REFUND_DELAY;
+}
+
+/**
+ * Estimate remaining time until epoch change
+ * @param epochStartMs Epoch start time in milliseconds
+ * @returns Remaining time in milliseconds (0 if epoch should have ended)
+ */
+export function estimateRemainingEpochMs(epochStartMs: number): number {
+    const now = Date.now();
+    const epochEnd = epochStartMs + FANTOM_EPOCH_DURATION_MS;
+    return Math.max(0, epochEnd - now);
+}
+
+/**
+ * Estimate time for a given number of Lachesis aBFT consensus rounds
+ * @param rounds Number of consensus rounds
+ * @returns Estimated time in milliseconds
+ */
+export function estimateFantomConsensusTimeMs(rounds: number): number {
+    return rounds * FTM_BLOCK_TIME_MS;
+}
+
+// =============================================================================
+// ABI FRAGMENTS
+// =============================================================================
+
+export const FANTOM_BRIDGE_ABI = [
+    // Configuration
+    'function configure(address fantomBridgeContract, address wrappedFTM, address validatorOracle, uint256 minValidatorSignatures, uint256 requiredBlockConfirmations) external',
+    'function setTreasury(address _treasury) external',
+
+    // Deposits (Fantom → Soul)
+    'function initiateFTMDeposit(bytes32 ftmTxHash, address ftmSender, address evmRecipient, uint256 amountWei, uint256 eventEpoch, (bytes32[] merkleProof, uint256 eventIndex, bytes32 leafHash) txProof, (address validator, bytes signature)[] attestations) external returns (bytes32)',
+    'function completeFTMDeposit(bytes32 depositId) external',
+
+    // Withdrawals (Soul → Fantom)
+    'function initiateWithdrawal(address ftmRecipient, uint256 amountWei) external returns (bytes32)',
+    'function completeWithdrawal(bytes32 withdrawalId, bytes32 ftmTxHash, (bytes32[] merkleProof, uint256 eventIndex, bytes32 leafHash) txProof, (address validator, bytes signature)[] attestations) external',
+    'function refundWithdrawal(bytes32 withdrawalId) external',
+
+    // Escrow (Atomic Swaps)
+    'function createEscrow(address ftmParty, bytes32 hashlock, uint256 finishAfter, uint256 cancelAfter) external payable returns (bytes32)',
+    'function finishEscrow(bytes32 escrowId, bytes32 preimage) external',
+    'function cancelEscrow(bytes32 escrowId) external',
+
+    // Privacy
+    'function registerPrivateDeposit(bytes32 depositId, bytes32 commitment, bytes32 nullifier, bytes zkProof) external',
+
+    // LachesisEvent Verification
+    'function submitLachesisEvent(uint256 eventId, uint256 epoch, bytes32 eventHash, bytes32 parentHash, bytes32 stateRoot, uint256 timestamp, (address validator, bytes signature)[] attestations) external',
+
+    // Views
+    'function getDeposit(bytes32 depositId) external view returns (tuple)',
+    'function getWithdrawal(bytes32 withdrawalId) external view returns (tuple)',
+    'function getEscrow(bytes32 escrowId) external view returns (tuple)',
+    'function getLachesisEvent(uint256 eventId) external view returns (tuple)',
+    'function getUserDeposits(address user) external view returns (bytes32[])',
+    'function getUserWithdrawals(address user) external view returns (bytes32[])',
+    'function getUserEscrows(address user) external view returns (bytes32[])',
+    'function getBridgeStats() external view returns (uint256, uint256, uint256, uint256, uint256, uint256, uint256)',
+
+    // Admin
+    'function pause() external',
+    'function unpause() external',
+    'function withdrawFees() external',
+
+    // Constants
+    'function FANTOM_CHAIN_ID() view returns (uint256)',
+    'function WEI_PER_FTM() view returns (uint256)',
+    'function MIN_DEPOSIT_WEI() view returns (uint256)',
+    'function MAX_DEPOSIT_WEI() view returns (uint256)',
+    'function BRIDGE_FEE_BPS() view returns (uint256)',
+    'function WITHDRAWAL_REFUND_DELAY() view returns (uint256)',
+    'function DEFAULT_BLOCK_CONFIRMATIONS() view returns (uint256)',
+
+    // State
+    'function depositNonce() view returns (uint256)',
+    'function withdrawalNonce() view returns (uint256)',
+    'function escrowNonce() view returns (uint256)',
+    'function latestEventEpoch() view returns (uint256)',
+    'function currentEpoch() view returns (uint256)',
+    'function totalDeposited() view returns (uint256)',
+    'function totalWithdrawn() view returns (uint256)',
+    'function accumulatedFees() view returns (uint256)',
+    'function treasury() view returns (address)',
+    'function usedFtmTxHashes(bytes32) view returns (bool)',
+    'function usedNullifiers(bytes32) view returns (bool)',
+
+    // Events
+    'event BridgeConfigured(address indexed fantomBridgeContract, address wrappedFTM, address validatorOracle)',
+    'event FTMDepositInitiated(bytes32 indexed depositId, bytes32 indexed ftmTxHash, address ftmSender, address indexed evmRecipient, uint256 amountWei)',
+    'event FTMDepositCompleted(bytes32 indexed depositId, address indexed evmRecipient, uint256 amountWei)',
+    'event FTMWithdrawalInitiated(bytes32 indexed withdrawalId, address indexed evmSender, address ftmRecipient, uint256 amountWei)',
+    'event FTMWithdrawalCompleted(bytes32 indexed withdrawalId, bytes32 ftmTxHash)',
+    'event FTMWithdrawalRefunded(bytes32 indexed withdrawalId, address indexed evmSender, uint256 amountWei)',
+    'event EscrowCreated(bytes32 indexed escrowId, address indexed evmParty, address ftmParty, uint256 amountWei, bytes32 hashlock)',
+    'event EscrowFinished(bytes32 indexed escrowId, bytes32 preimage)',
+    'event EscrowCancelled(bytes32 indexed escrowId)',
+    'event LachesisEventVerified(uint256 indexed eventId, bytes32 eventHash, uint256 epoch)',
+    'event PrivateDepositRegistered(bytes32 indexed depositId, bytes32 commitment, bytes32 nullifier)',
+    'event FeesWithdrawn(address indexed recipient, uint256 amount)',
+] as const;
+
+export const WRAPPED_FTM_ABI = [
+    'function mint(address to, uint256 amount) external',
+    'function burn(uint256 amount) external',
+    'function balanceOf(address account) view returns (uint256)',
+    'function approve(address spender, uint256 amount) returns (bool)',
+    'function transfer(address to, uint256 amount) returns (bool)',
+    'function transferFrom(address from, address to, uint256 amount) returns (bool)',
+    'function allowance(address owner, address spender) view returns (uint256)',
+    'function decimals() view returns (uint8)',
+    'function totalSupply() view returns (uint256)',
+] as const;
