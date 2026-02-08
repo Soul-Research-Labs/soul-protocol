@@ -141,6 +141,9 @@ contract ComposableRevocationProofs is
     uint256 public totalRevocations;
     uint256 public totalProofs;
 
+    /// @notice External ZK proof verifier for non-membership proofs
+    address public nonMembershipVerifier;
+
     /*//////////////////////////////////////////////////////////////
                                EVENTS
     //////////////////////////////////////////////////////////////*/
@@ -517,13 +520,24 @@ contract ComposableRevocationProofs is
         if (!accumulator.isActive) revert AccumulatorInactive();
 
         // Check if credential was NOT revoked at proof time
-        // In production, this would verify the ZK proof
         // Also verify the accumulator value matches the proof's recorded value
-        /// @custom:security PLACEHOLDER — replace length check with real non-membership proof verifier
-        isValid =
+        bool stateValid =
             !isRevoked[proof.accumulatorId][proof.credentialHash] &&
-            proof.proof.length >= 32 &&
             proof.accumulatorValue == accumulator.currentValue;
+
+        // Delegate ZK proof verification to external verifier if configured
+        /// @custom:security PLACEHOLDER — replace length check with real non-membership proof verifier
+        bool proofValid;
+        if (nonMembershipVerifier != address(0)) {
+            (bool success, bytes memory result) = nonMembershipVerifier.staticcall(
+                abi.encodeWithSignature("verify(bytes)", proof.proof)
+            );
+            proofValid = success && result.length >= 32 && abi.decode(result, (bool));
+        } else {
+            proofValid = proof.proof.length >= 32;
+        }
+
+        isValid = stateValid && proofValid;
 
         proof.isVerified = true;
 
@@ -740,5 +754,10 @@ contract ComposableRevocationProofs is
         bytes32 accumulatorId
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         accumulators[accumulatorId].isActive = false;
+    }
+
+    function setNonMembershipVerifier(address verifier) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(verifier != address(0), "Zero address");
+        nonMembershipVerifier = verifier;
     }
 }

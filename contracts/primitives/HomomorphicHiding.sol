@@ -116,6 +116,9 @@ contract HomomorphicHiding is AccessControl, ReentrancyGuard, Pausable {
     /// @notice Total operations performed
     uint256 public totalOperations;
 
+    /// @notice External ZK proof verifier for range proofs
+    address public rangeProofVerifier;
+
     /*//////////////////////////////////////////////////////////////
                                EVENTS
     //////////////////////////////////////////////////////////////*/
@@ -524,9 +527,16 @@ contract HomomorphicHiding is AccessControl, ReentrancyGuard, Pausable {
         RangeProof storage rangeProof = rangeProofs[proofId];
         if (rangeProof.proofId == bytes32(0)) revert InvalidProof();
 
-        // Simplified verification - in production would use a ZK verifier
+        // Delegate to external verifier if configured
         /// @custom:security PLACEHOLDER — replace with real range proof verifier
-        isValid = rangeProof.proof.length >= 32;
+        if (rangeProofVerifier != address(0)) {
+            (bool success, bytes memory result) = rangeProofVerifier.staticcall(
+                abi.encodeWithSignature("verify(bytes)", rangeProof.proof)
+            );
+            isValid = success && result.length >= 32 && abi.decode(result, (bool));
+        } else {
+            isValid = rangeProof.proof.length >= 32;
+        }
 
         rangeProof.isVerified = true;
         rangeProof.verifiedAt = uint64(block.timestamp);
@@ -661,5 +671,10 @@ contract HomomorphicHiding is AccessControl, ReentrancyGuard, Pausable {
         bytes32 commitmentId
     ) external onlyRole(COMMITMENT_MANAGER_ROLE) {
         commitments[commitmentId].isActive = false;
+    }
+
+    function setRangeProofVerifier(address verifier) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(verifier != address(0), "Zero address");
+        rangeProofVerifier = verifier;
     }
 }

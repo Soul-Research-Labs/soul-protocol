@@ -154,6 +154,9 @@ contract AggregateDisclosureAlgebra is
     uint256 public totalDisclosures;
     uint256 public totalAggregates;
 
+    /// @notice External ZK proof verifier for selective disclosure proofs
+    address public disclosureProofVerifier;
+
     /*//////////////////////////////////////////////////////////////
                                EVENTS
     //////////////////////////////////////////////////////////////*/
@@ -413,9 +416,16 @@ contract AggregateDisclosureAlgebra is
         ];
         if (credential.isRevoked) revert CredentialIsRevoked();
 
-        // Simplified verification - in production would verify ZK proof
+        // Delegate to external verifier if configured
         /// @custom:security PLACEHOLDER — replace with real disclosure proof verifier
-        isValid = disclosure.proof.length >= 32;
+        if (disclosureProofVerifier != address(0)) {
+            (bool success, bytes memory result) = disclosureProofVerifier.staticcall(
+                abi.encodeWithSignature("verify(bytes)", disclosure.proof)
+            );
+            isValid = success && result.length >= 32 && abi.decode(result, (bool));
+        } else {
+            isValid = disclosure.proof.length >= 32;
+        }
 
         disclosure.isConsumed = true;
 
@@ -664,5 +674,10 @@ contract AggregateDisclosureAlgebra is
 
     function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
+    }
+
+    function setDisclosureProofVerifier(address verifier) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(verifier != address(0), "Zero address");
+        disclosureProofVerifier = verifier;
     }
 }
