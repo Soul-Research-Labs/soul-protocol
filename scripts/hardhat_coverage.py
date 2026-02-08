@@ -44,8 +44,6 @@ CORE_CONTRACTS = [
 # Contracts that cause stack-too-deep (skip in coverage, verify via fuzz/symbolic)
 SKIP_CONTRACTS = [
     "contracts/verifiers/",
-    "contracts/pqc/",
-    "contracts/fhe/",
     "contracts/research/",
 ]
 

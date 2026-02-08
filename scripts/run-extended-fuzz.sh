@@ -48,8 +48,6 @@ CAMPAIGNS=(
     "bridge-adapters:75000:300000:300"
     "atomic-operations:100000:400000:250"
     "governance:50000:200000:100"
-    "fhe-primitives:75000:300000:150"
-    "pqc-verifiers:50000:200000:100"
 )
 
 run_foundry_fuzz() {
@@ -87,18 +85,6 @@ run_foundry_fuzz() {
             ;;
         "governance")
             forge test --match-contract "Governance" \
-                --fuzz-runs $runs \
-                -vvv \
-                2>&1 | tee "$output_dir/results_$TIMESTAMP.log"
-            ;;
-        "fhe-primitives")
-            forge test --match-path "test/fuzz/*FHE*.t.sol" \
-                --fuzz-runs $runs \
-                -vvv \
-                2>&1 | tee "$output_dir/results_$TIMESTAMP.log"
-            ;;
-        "pqc-verifiers")
-            forge test --match-path "test/fuzz/*PQC*.t.sol" \
                 --fuzz-runs $runs \
                 -vvv \
                 2>&1 | tee "$output_dir/results_$TIMESTAMP.log"

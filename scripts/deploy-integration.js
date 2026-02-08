@@ -202,18 +202,11 @@ async function main() {
     await hybridCryptoVerifier.waitForDeployment();
     console.log("HybridCryptoVerifier deployed to:", await hybridCryptoVerifier.getAddress());
 
-    // Post-Quantum Signature Verifier
-    const PostQuantumSignatureVerifier = await ethers.getContractFactory("PostQuantumSignatureVerifier");
-    const pqcSigVerifier = await PostQuantumSignatureVerifier.deploy();
-    await pqcSigVerifier.waitForDeployment();
-    console.log("PostQuantumSignatureVerifier deployed to:", await pqcSigVerifier.getAddress());
-
     // Register security modules with hub
     await hub.setBridgeProofValidator(await bridgeProofValidator.getAddress());
     await hub.setBridgeWatchtower(await bridgeWatchtower.getAddress());
     await hub.setSecurityOracle(await securityOracle.getAddress());
     await hub.setHybridCryptoVerifier(await hybridCryptoVerifier.getAddress());
-    await hub.setPostQuantumSignatureVerifier(await pqcSigVerifier.getAddress());
     console.log("Security modules registered with SoulProtocolHub");
 
     // =========================================================================
@@ -237,28 +230,6 @@ async function main() {
 
     // Set cross-chain message relay in hub
     await hub.setCrossChainMessageRelay(ethers.ZeroAddress); // Replace with actual address
-
-    // =========================================================================
-    // STEP 7: Deploy MPC Modules
-    // =========================================================================
-    console.log("\n[7/7] Deploying MPC Modules...");
-
-    // Threshold Signature
-    const ThresholdSignature = await ethers.getContractFactory("ThresholdSignature");
-    const thresholdSig = await ThresholdSignature.deploy();
-    await thresholdSig.waitForDeployment();
-    console.log("ThresholdSignature deployed to:", await thresholdSig.getAddress());
-
-    // MPC Compliance Module
-    const SoulMPCComplianceModule = await ethers.getContractFactory("SoulMPCComplianceModule");
-    const mpcCompliance = await SoulMPCComplianceModule.deploy();
-    await mpcCompliance.waitForDeployment();
-    console.log("SoulMPCComplianceModule deployed to:", await mpcCompliance.getAddress());
-
-    // Register MPC modules with hub
-    await hub.setThresholdSignature(await thresholdSig.getAddress());
-    await hub.setMPCComplianceModule(await mpcCompliance.getAddress());
-    console.log("MPC modules registered with SoulProtocolHub");
 
     // =========================================================================
     // DEPLOYMENT SUMMARY
@@ -295,12 +266,7 @@ async function main() {
             bridgeProofValidator: await bridgeProofValidator.getAddress(),
             bridgeWatchtower: await bridgeWatchtower.getAddress(),
             securityOracle: await securityOracle.getAddress(),
-            hybridCryptoVerifier: await hybridCryptoVerifier.getAddress(),
-            pqcSigVerifier: await pqcSigVerifier.getAddress()
-        },
-        mpc: {
-            thresholdSignature: await thresholdSig.getAddress(),
-            mpcCompliance: await mpcCompliance.getAddress()
+            hybridCryptoVerifier: await hybridCryptoVerifier.getAddress()
         }
     };
 
