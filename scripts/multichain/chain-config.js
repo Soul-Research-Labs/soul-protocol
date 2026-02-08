@@ -85,6 +85,74 @@ const CHAIN_CONFIGS = {
         isTestnet: false,
     },
 
+    // zkSync Era
+    324: {
+        name: "zkSync Era",
+        rpcUrl: process.env.ZKSYNC_RPC_URL,
+        explorerUrl: "https://explorer.zksync.io",
+        explorerApiUrl: "https://block-explorer-api.mainnet.zksync.io/api",
+        explorerApiKey: process.env.ZKSYNC_API_KEY,
+        nativeToken: "ETH",
+        gasConfig: {
+            maxPriorityFeePerGas: ethers.parseUnits("0.01", "gwei"),
+            maxFeePerGas: ethers.parseUnits("0.25", "gwei"),
+        },
+        confirmations: 5,
+        timelockDelay: 48 * 3600,
+        isTestnet: false,
+    },
+
+    // Scroll
+    534352: {
+        name: "Scroll",
+        rpcUrl: process.env.SCROLL_RPC_URL,
+        explorerUrl: "https://scrollscan.com",
+        explorerApiUrl: "https://api.scrollscan.com/api",
+        explorerApiKey: process.env.SCROLLSCAN_API_KEY,
+        nativeToken: "ETH",
+        gasConfig: {
+            maxPriorityFeePerGas: ethers.parseUnits("0.001", "gwei"),
+            maxFeePerGas: ethers.parseUnits("0.01", "gwei"),
+        },
+        confirmations: 5,
+        timelockDelay: 48 * 3600,
+        isTestnet: false,
+    },
+
+    // Linea
+    59144: {
+        name: "Linea",
+        rpcUrl: process.env.LINEA_RPC_URL,
+        explorerUrl: "https://lineascan.build",
+        explorerApiUrl: "https://api.lineascan.build/api",
+        explorerApiKey: process.env.LINEASCAN_API_KEY,
+        nativeToken: "ETH",
+        gasConfig: {
+            maxPriorityFeePerGas: ethers.parseUnits("0.01", "gwei"),
+            maxFeePerGas: ethers.parseUnits("0.1", "gwei"),
+        },
+        confirmations: 5,
+        timelockDelay: 48 * 3600,
+        isTestnet: false,
+    },
+
+    // Polygon zkEVM
+    1101: {
+        name: "Polygon zkEVM",
+        rpcUrl: process.env.POLYGON_ZKEVM_RPC_URL,
+        explorerUrl: "https://zkevm.polygonscan.com",
+        explorerApiUrl: "https://api-zkevm.polygonscan.com/api",
+        explorerApiKey: process.env.POLYGON_ZKEVM_API_KEY,
+        nativeToken: "ETH",
+        gasConfig: {
+            maxPriorityFeePerGas: ethers.parseUnits("1", "gwei"),
+            maxFeePerGas: ethers.parseUnits("5", "gwei"),
+        },
+        confirmations: 5,
+        timelockDelay: 48 * 3600,
+        isTestnet: false,
+    },
+
     // ============================================
     // TESTNET CHAINS
     // ============================================
@@ -151,6 +219,74 @@ const CHAIN_CONFIGS = {
         gasConfig: {
             maxPriorityFeePerGas: ethers.parseUnits("30", "gwei"),
             maxFeePerGas: ethers.parseUnits("50", "gwei"),
+        },
+        confirmations: 2,
+        timelockDelay: 1 * 3600,
+        isTestnet: true,
+    },
+
+    // zkSync Era Sepolia
+    300: {
+        name: "zkSync Sepolia",
+        rpcUrl: process.env.ZKSYNC_SEPOLIA_RPC_URL,
+        explorerUrl: "https://sepolia.explorer.zksync.io",
+        explorerApiUrl: "https://block-explorer-api.sepolia.zksync.dev/api",
+        explorerApiKey: process.env.ZKSYNC_API_KEY,
+        nativeToken: "ETH",
+        gasConfig: {
+            maxPriorityFeePerGas: ethers.parseUnits("0.01", "gwei"),
+            maxFeePerGas: ethers.parseUnits("0.25", "gwei"),
+        },
+        confirmations: 2,
+        timelockDelay: 1 * 3600,
+        isTestnet: true,
+    },
+
+    // Scroll Sepolia
+    534351: {
+        name: "Scroll Sepolia",
+        rpcUrl: process.env.SCROLL_SEPOLIA_RPC_URL,
+        explorerUrl: "https://sepolia.scrollscan.com",
+        explorerApiUrl: "https://api-sepolia.scrollscan.com/api",
+        explorerApiKey: process.env.SCROLLSCAN_API_KEY,
+        nativeToken: "ETH",
+        gasConfig: {
+            maxPriorityFeePerGas: ethers.parseUnits("0.001", "gwei"),
+            maxFeePerGas: ethers.parseUnits("0.01", "gwei"),
+        },
+        confirmations: 2,
+        timelockDelay: 1 * 3600,
+        isTestnet: true,
+    },
+
+    // Linea Sepolia
+    59141: {
+        name: "Linea Sepolia",
+        rpcUrl: process.env.LINEA_SEPOLIA_RPC_URL,
+        explorerUrl: "https://sepolia.lineascan.build",
+        explorerApiUrl: "https://api-sepolia.lineascan.build/api",
+        explorerApiKey: process.env.LINEASCAN_API_KEY,
+        nativeToken: "ETH",
+        gasConfig: {
+            maxPriorityFeePerGas: ethers.parseUnits("0.01", "gwei"),
+            maxFeePerGas: ethers.parseUnits("0.1", "gwei"),
+        },
+        confirmations: 2,
+        timelockDelay: 1 * 3600,
+        isTestnet: true,
+    },
+
+    // Polygon zkEVM Cardona
+    2442: {
+        name: "Polygon zkEVM Cardona",
+        rpcUrl: process.env.POLYGON_ZKEVM_TESTNET_RPC_URL,
+        explorerUrl: "https://cardona-zkevm.polygonscan.com",
+        explorerApiUrl: "https://api-cardona-zkevm.polygonscan.com/api",
+        explorerApiKey: process.env.POLYGON_ZKEVM_API_KEY,
+        nativeToken: "ETH",
+        gasConfig: {
+            maxPriorityFeePerGas: ethers.parseUnits("1", "gwei"),
+            maxFeePerGas: ethers.parseUnits("5", "gwei"),
         },
         confirmations: 2,
         timelockDelay: 1 * 3600,

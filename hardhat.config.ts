@@ -255,6 +255,62 @@ export default defineConfig({
       url: process.env.OPTIMISM_RPC_URL || "https://mainnet.optimism.io",
       accounts: [PRIVATE_KEY],
       chainId: 10
+    },
+
+    // zkSync Era
+    zkSync: {
+      type: "http",
+      url: process.env.ZKSYNC_RPC_URL || "https://mainnet.era.zksync.io",
+      accounts: [PRIVATE_KEY],
+      chainId: 324
+    },
+    zkSyncSepolia: {
+      type: "http",
+      url: process.env.ZKSYNC_SEPOLIA_RPC_URL || "https://sepolia.era.zksync.dev",
+      accounts: [PRIVATE_KEY],
+      chainId: 300
+    },
+
+    // Scroll
+    scroll: {
+      type: "http",
+      url: process.env.SCROLL_RPC_URL || "https://rpc.scroll.io",
+      accounts: [PRIVATE_KEY],
+      chainId: 534352
+    },
+    scrollSepolia: {
+      type: "http",
+      url: process.env.SCROLL_SEPOLIA_RPC_URL || "https://sepolia-rpc.scroll.io",
+      accounts: [PRIVATE_KEY],
+      chainId: 534351
+    },
+
+    // Linea
+    linea: {
+      type: "http",
+      url: process.env.LINEA_RPC_URL || "https://rpc.linea.build",
+      accounts: [PRIVATE_KEY],
+      chainId: 59144
+    },
+    lineaSepolia: {
+      type: "http",
+      url: process.env.LINEA_SEPOLIA_RPC_URL || "https://rpc.sepolia.linea.build",
+      accounts: [PRIVATE_KEY],
+      chainId: 59141
+    },
+
+    // Polygon zkEVM
+    polygonZkEVM: {
+      type: "http",
+      url: process.env.POLYGON_ZKEVM_RPC_URL || "https://zkevm-rpc.com",
+      accounts: [PRIVATE_KEY],
+      chainId: 1101
+    },
+    polygonZkEVMTestnet: {
+      type: "http",
+      url: process.env.POLYGON_ZKEVM_TESTNET_RPC_URL || "https://rpc.cardona.zkevm-rpc.com",
+      accounts: [PRIVATE_KEY],
+      chainId: 2442
     }
   },
   
