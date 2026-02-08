@@ -1,8 +1,0 @@
-[package]
-name = "proof_carrying_container"
-type = "bin"
-authors = ["Soul Protocol"]
-compiler_version = ">=0.33.0"
-description = "Self-authenticating confidential containers (PC³) circuit"
-
-[dependencies]

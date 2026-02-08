@@ -9,7 +9,6 @@ import "../../contracts/verifiers/adapters/StateTransferAdapter.sol";
 import "../../contracts/verifiers/adapters/NullifierAdapter.sol";
 import "../../contracts/verifiers/adapters/PedersenCommitmentAdapter.sol";
 import "../../contracts/verifiers/adapters/AggregatorAdapter.sol";
-import "../../contracts/verifiers/adapters/InvariantCheckerAdapter.sol";
 import "../../contracts/verifiers/VerifierRegistryV2.sol";
 
 /**
@@ -37,7 +36,6 @@ contract VerifierGasBenchmark is Test {
     NullifierAdapter public nullifierAdapter;
     PedersenCommitmentAdapter public pedersenAdapter;
     AggregatorAdapter public aggregatorAdapter;
-    InvariantCheckerAdapter public invariantAdapter;
 
     // Registry
     VerifierRegistryV2 public registry;
@@ -65,7 +63,6 @@ contract VerifierGasBenchmark is Test {
         nullifierAdapter = new NullifierAdapter(address(mockVerifier));
         pedersenAdapter = new PedersenCommitmentAdapter(address(mockVerifier));
         aggregatorAdapter = new AggregatorAdapter(address(mockVerifier));
-        invariantAdapter = new InvariantCheckerAdapter(address(mockVerifier));
 
         // Deploy registry
         registry = new VerifierRegistryV2();
@@ -144,23 +141,7 @@ contract VerifierGasBenchmark is Test {
         assertLt(gasUsed, 50000, "Gas exceeds 50k threshold");
     }
 
-    function test_gas_InvariantChecker() public {
-        bytes memory proof = _generateMockProof(93);
-        bytes32 soulBinding = keccak256("binding");
-
-        uint256 gasBefore = gasleft();
-        bool result = invariantAdapter.verifySoulBinding(proof, soulBinding);
-        uint256 gasUsed = gasBefore - gasleft();
-
-        assertTrue(result, "Verification should succeed");
-
-        _recordResult("InvariantChecker", gasUsed, gasUsed < 45000);
-
-        emit log_named_uint("InvariantChecker gas", gasUsed);
-        assertLt(gasUsed, 45000, "Gas exceeds 45k threshold");
-    }
-
-    /*//////////////////////////////////////////////////////////////
+    /*////////////////////////////////////////////////////////////////
                          BATCH BENCHMARKS
     //////////////////////////////////////////////////////////////*/
 
@@ -297,7 +278,6 @@ contract VerifierGasBenchmark is Test {
         test_gas_StateTransfer();
         test_gas_Nullifier();
         test_gas_PedersenCommitment();
-        test_gas_InvariantChecker();
 
         emit log_string("");
         emit log_string("=== Gas Benchmark Summary ===");

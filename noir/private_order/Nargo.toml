@@ -1,8 +1,0 @@
-[package]
-name = "private_order"
-type = "bin"
-authors = ["Soul Team"]
-compiler_version = ">=0.30.0"
-description = "Private order commitment and verification circuit for Soul Exchange"
-
-[dependencies]

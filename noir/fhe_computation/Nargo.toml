@@ -1,8 +1,0 @@
-[package]
-name = "fhe_computation"
-type = "bin"
-authors = ["Soul Protocol"]
-compiler_version = ">=0.30.0"
-description = "ZK proof of valid FHE computation for Soul Protocol"
-
-[dependencies]

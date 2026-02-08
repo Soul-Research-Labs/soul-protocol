@@ -45,15 +45,15 @@ contract CrossChainNullifierSync is AccessControl, ReentrancyGuard, Pausable {
 
     struct SyncTarget {
         address nullifierRegistry; // NullifierRegistryV3 address
-        address relay;             // SoulCrossChainRelay address
-        uint256 chainId;           // Target chain ID
+        address relay; // SoulCrossChainRelay address
+        uint256 chainId; // Target chain ID
         bool active;
     }
 
     // ──────────────────────────────────────────────
     //  State
     // ──────────────────────────────────────────────
-    
+
     /// @notice Local NullifierRegistryV3 address
     address public nullifierRegistry;
 
@@ -81,7 +81,7 @@ contract CrossChainNullifierSync is AccessControl, ReentrancyGuard, Pausable {
     //  Events
     // ──────────────────────────────────────────────
     event NullifierQueued(bytes32 indexed nullifier, bytes32 commitment);
-    
+
     event NullifierBatchSent(
         uint256 indexed targetChainId,
         uint256 count,
@@ -145,8 +145,12 @@ contract CrossChainNullifierSync is AccessControl, ReentrancyGuard, Pausable {
         }
 
         syncTargets[chainId] = target;
-        
-        emit SyncTargetConfigured(chainId, target.nullifierRegistry, target.relay);
+
+        emit SyncTargetConfigured(
+            chainId,
+            target.nullifierRegistry,
+            target.relay
+        );
     }
 
     // ──────────────────────────────────────────────
@@ -166,7 +170,7 @@ contract CrossChainNullifierSync is AccessControl, ReentrancyGuard, Pausable {
     ) external onlyRole(SYNCER_ROLE) whenNotPaused {
         pendingNullifiers.push(nullifier);
         pendingCommitments.push(commitment);
-        
+
         emit NullifierQueued(nullifier, commitment);
     }
 
@@ -179,8 +183,10 @@ contract CrossChainNullifierSync is AccessControl, ReentrancyGuard, Pausable {
         bytes32[] calldata nullifiers,
         bytes32[] calldata commitments
     ) external onlyRole(SYNCER_ROLE) whenNotPaused {
-        if (nullifiers.length != commitments.length) revert ArrayLengthMismatch();
-        if (nullifiers.length > MAX_BATCH_SIZE) revert BatchTooLarge(nullifiers.length);
+        if (nullifiers.length != commitments.length)
+            revert ArrayLengthMismatch();
+        if (nullifiers.length > MAX_BATCH_SIZE)
+            revert BatchTooLarge(nullifiers.length);
 
         for (uint256 i = 0; i < nullifiers.length; i++) {
             pendingNullifiers.push(nullifiers[i]);
@@ -204,19 +210,20 @@ contract CrossChainNullifierSync is AccessControl, ReentrancyGuard, Pausable {
 
         // Rate limit
         uint256 nextAllowed = lastSyncTime[targetChainId] + MIN_SYNC_INTERVAL;
-        if (block.timestamp < nextAllowed) revert SyncTooFrequent(targetChainId, nextAllowed);
+        if (block.timestamp < nextAllowed)
+            revert SyncTooFrequent(targetChainId, nextAllowed);
 
         // Get current merkle root from local registry
         bytes32 currentRoot = _getCurrentMerkleRoot();
 
         // Take snapshot of pending nullifiers (up to MAX_BATCH_SIZE)
-        uint256 batchSize = pendingNullifiers.length > MAX_BATCH_SIZE 
-            ? MAX_BATCH_SIZE 
+        uint256 batchSize = pendingNullifiers.length > MAX_BATCH_SIZE
+            ? MAX_BATCH_SIZE
             : pendingNullifiers.length;
 
         bytes32[] memory batchNullifiers = new bytes32[](batchSize);
         bytes32[] memory batchCommitments = new bytes32[](batchSize);
-        
+
         for (uint256 i = 0; i < batchSize; i++) {
             batchNullifiers[i] = pendingNullifiers[i];
             batchCommitments[i] = pendingCommitments[i];
@@ -235,20 +242,28 @@ contract CrossChainNullifierSync is AccessControl, ReentrancyGuard, Pausable {
         );
 
         // Record batch
-        batchHistory.push(NullifierBatch({
-            nullifiers: batchNullifiers,
-            commitments: batchCommitments,
-            merkleRoot: currentRoot,
-            chainId: targetChainId,
-            timestamp: block.timestamp,
-            sent: true
-        }));
+        batchHistory.push(
+            NullifierBatch({
+                nullifiers: batchNullifiers,
+                commitments: batchCommitments,
+                merkleRoot: currentRoot,
+                chainId: targetChainId,
+                timestamp: block.timestamp,
+                sent: true
+            })
+        );
 
         // Send via relay
-        (bool success,) = target.relay.call{value: msg.value}(
+        (bool success, ) = target.relay.call{value: msg.value}(
             abi.encodeWithSignature(
                 "relayProof(bytes32,bytes,bytes,bytes32,uint64,bytes32)",
-                keccak256(abi.encodePacked("nullifier_sync", block.timestamp, batchSize)),
+                keccak256(
+                    abi.encodePacked(
+                        "nullifier_sync",
+                        block.timestamp,
+                        batchSize
+                    )
+                ),
                 payload,
                 "",
                 currentRoot,
@@ -287,12 +302,14 @@ contract CrossChainNullifierSync is AccessControl, ReentrancyGuard, Pausable {
         bytes32[] calldata commitments,
         bytes32 sourceMerkleRoot
     ) external onlyRole(BRIDGE_ROLE) nonReentrant whenNotPaused {
-        if (nullifiers.length != commitments.length) revert ArrayLengthMismatch();
+        if (nullifiers.length != commitments.length)
+            revert ArrayLengthMismatch();
         if (nullifiers.length == 0) revert EmptyBatch();
-        if (nullifiers.length > MAX_BATCH_SIZE) revert BatchTooLarge(nullifiers.length);
+        if (nullifiers.length > MAX_BATCH_SIZE)
+            revert BatchTooLarge(nullifiers.length);
 
         // Submit to local NullifierRegistryV3
-        (bool success,) = nullifierRegistry.call(
+        (bool success, ) = nullifierRegistry.call(
             abi.encodeWithSignature(
                 "receiveCrossChainNullifiers(uint256,bytes32[],bytes32[],bytes32)",
                 sourceChainId,
@@ -304,7 +321,11 @@ contract CrossChainNullifierSync is AccessControl, ReentrancyGuard, Pausable {
 
         inboundSyncCount[sourceChainId] += nullifiers.length;
 
-        emit NullifierBatchReceived(sourceChainId, nullifiers.length, sourceMerkleRoot);
+        emit NullifierBatchReceived(
+            sourceChainId,
+            nullifiers.length,
+            sourceMerkleRoot
+        );
     }
 
     // ──────────────────────────────────────────────

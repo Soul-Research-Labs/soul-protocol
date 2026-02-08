@@ -87,13 +87,22 @@ contract CrossChainIntegrationTest is Test {
     // ═══════════════════════════════════════════════
 
     function test_relayDeployed() public view {
-        assertTrue(address(relaySource) != address(0), "Source relay not deployed");
+        assertTrue(
+            address(relaySource) != address(0),
+            "Source relay not deployed"
+        );
         assertTrue(address(relayDest) != address(0), "Dest relay not deployed");
     }
 
     function test_chainConfigured() public view {
-        assertTrue(relaySource.isChainSupported(BASE_CHAIN_ID), "Base not supported on source");
-        assertTrue(relayDest.isChainSupported(ARBITRUM_CHAIN_ID), "Arbitrum not supported on dest");
+        assertTrue(
+            relaySource.isChainSupported(BASE_CHAIN_ID),
+            "Base not supported on source"
+        );
+        assertTrue(
+            relayDest.isChainSupported(ARBITRUM_CHAIN_ID),
+            "Arbitrum not supported on dest"
+        );
     }
 
     function test_getSupportedChains() public view {
@@ -118,7 +127,7 @@ contract CrossChainIntegrationTest is Test {
             uint64(block.chainid),
             uint64(BASE_CHAIN_ID),
             commitment,
-            bytes32(0)  // messageId is unpredictable
+            bytes32(0) // messageId is unpredictable
         );
 
         bytes32 messageId = relaySource.relayProof(
@@ -351,16 +360,25 @@ contract CrossChainIntegrationTest is Test {
             keccak256("source_root")
         );
 
-        assertEq(nullifierSync.inboundSyncCount(ARBITRUM_CHAIN_ID), 2, "Should track 2 inbound");
+        assertEq(
+            nullifierSync.inboundSyncCount(ARBITRUM_CHAIN_ID),
+            2,
+            "Should track 2 inbound"
+        );
     }
 
     function test_receiveEmptyBatchReverts() public {
         nullifierSync.grantRole(nullifierSync.BRIDGE_ROLE(), address(this));
 
         bytes32[] memory empty = new bytes32[](0);
-        
+
         vm.expectRevert(CrossChainNullifierSync.EmptyBatch.selector);
-        nullifierSync.receiveNullifierBatch(ARBITRUM_CHAIN_ID, empty, empty, bytes32(0));
+        nullifierSync.receiveNullifierBatch(
+            ARBITRUM_CHAIN_ID,
+            empty,
+            empty,
+            bytes32(0)
+        );
     }
 
     function test_syncTargetConfiguration() public view {

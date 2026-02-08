@@ -1,8 +1,0 @@
-[package]
-name = "hekate_hash"
-type = "lib"
-authors = ["Soul Protocol"]
-compiler_version = ">=0.33.0"
-description = "Hekate-Groestl hash function for ZK circuits - GF(2^128) optimized for GKR recursion"
-
-[dependencies]

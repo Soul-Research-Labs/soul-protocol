@@ -1,8 +1,0 @@
-[package]
-name = "binius_proof"
-type = "bin"
-authors = ["Soul Protocol"]
-compiler_version = ">=0.30.0"
-description = "Binius binary field proof verification based on Vitalik's analysis"
-
-[dependencies]

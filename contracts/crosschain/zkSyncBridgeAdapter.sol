@@ -27,7 +27,8 @@ contract zkSyncBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
     bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE");
     bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
-    bytes32 public constant BRIDGE_OPERATOR_ROLE = keccak256("BRIDGE_OPERATOR_ROLE");
+    bytes32 public constant BRIDGE_OPERATOR_ROLE =
+        keccak256("BRIDGE_OPERATOR_ROLE");
     bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
@@ -111,7 +112,12 @@ contract zkSyncBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
                               EVENTS
     //////////////////////////////////////////////////////////////*/
 
-    event MessageSent(bytes32 indexed messageHash, address indexed target, uint256 nonce, bytes32 l2TxHash);
+    event MessageSent(
+        bytes32 indexed messageHash,
+        address indexed target,
+        uint256 nonce,
+        bytes32 l2TxHash
+    );
     event MessageRelayed(bytes32 indexed messageHash, address indexed sender);
     event MessageProved(bytes32 indexed messageHash, uint256 batchNumber);
     event BridgeConfigured(address indexed zkSyncDiamond);
@@ -138,21 +144,27 @@ contract zkSyncBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Update the zkSync Diamond Proxy address
-    function configureZkSyncBridge(address _zkSyncDiamond) external onlyRole(OPERATOR_ROLE) {
+    function configureZkSyncBridge(
+        address _zkSyncDiamond
+    ) external onlyRole(OPERATOR_ROLE) {
         require(_zkSyncDiamond != address(0), "Invalid diamond");
         zkSyncDiamond = _zkSyncDiamond;
         emit BridgeConfigured(_zkSyncDiamond);
     }
 
     /// @notice Set Soul Hub L2 address on zkSync
-    function setSoulHubL2(address _soulHubL2) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setSoulHubL2(
+        address _soulHubL2
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(_soulHubL2 != address(0), "Invalid address");
         soulHubL2 = _soulHubL2;
         emit SoulHubL2Set(_soulHubL2);
     }
 
     /// @notice Set Proof Registry address
-    function setProofRegistry(address _proofRegistry) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setProofRegistry(
+        address _proofRegistry
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(_proofRegistry != address(0), "Invalid address");
         proofRegistry = _proofRegistry;
         emit ProofRegistrySet(_proofRegistry);
@@ -210,7 +222,9 @@ contract zkSyncBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         uint256 l2Gas = gasLimit > 0 ? gasLimit : DEFAULT_L2_GAS_LIMIT;
         uint256 nonce = messageNonce++;
 
-        bytes32 messageHash = keccak256(abi.encode(target, data, nonce, block.timestamp, ZKSYNC_CHAIN_ID));
+        bytes32 messageHash = keccak256(
+            abi.encode(target, data, nonce, block.timestamp, ZKSYNC_CHAIN_ID)
+        );
 
         // Call requestL2Transaction on the zkSync Diamond (Mailbox facet)
         // Signature: requestL2Transaction(address _contractL2, uint256 _l2Value, bytes _calldata,
@@ -226,10 +240,14 @@ contract zkSyncBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
             msg.sender // refund to caller
         );
 
-        (bool success, bytes memory result) = zkSyncDiamond.call{value: msg.value}(mailboxCall);
+        (bool success, bytes memory result) = zkSyncDiamond.call{
+            value: msg.value
+        }(mailboxCall);
         require(success, "Mailbox call failed");
 
-        bytes32 l2TxHash = result.length >= 32 ? abi.decode(result, (bytes32)) : bytes32(0);
+        bytes32 l2TxHash = result.length >= 32
+            ? abi.decode(result, (bytes32))
+            : bytes32(0);
 
         messages[messageHash] = MessageRecord({
             status: MessageStatus.SENT,
@@ -253,14 +271,13 @@ contract zkSyncBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         bytes32 messageHash,
         bytes calldata data,
         L2LogProof calldata proof
-    )
-        external
-        onlyRole(RELAYER_ROLE)
-        nonReentrant
-        whenNotPaused
-    {
+    ) external onlyRole(RELAYER_ROLE) nonReentrant whenNotPaused {
         MessageRecord storage record = messages[messageHash];
-        require(record.status == MessageStatus.SENT || record.status == MessageStatus.PROVED, "Invalid message state");
+        require(
+            record.status == MessageStatus.SENT ||
+                record.status == MessageStatus.PROVED,
+            "Invalid message state"
+        );
         require(!processedL2Txs[record.txHash], "Already processed");
 
         // Verify the L2 log inclusion proof against the zkSync Diamond
@@ -286,10 +303,15 @@ contract zkSyncBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
      * @param messageHash Hash of the message
      * @param proof Proof data (ABI-encoded L2LogProof)
      */
-    function verifyMessage(bytes32 messageHash, bytes calldata proof) external view returns (bool) {
+    function verifyMessage(
+        bytes32 messageHash,
+        bytes calldata proof
+    ) external view returns (bool) {
         if (proof.length == 0) return false;
         MessageRecord storage record = messages[messageHash];
-        return record.status == MessageStatus.RELAYED || record.status == MessageStatus.PROVED;
+        return
+            record.status == MessageStatus.RELAYED ||
+            record.status == MessageStatus.PROVED;
     }
 
     /**
@@ -297,7 +319,9 @@ contract zkSyncBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
      * @param gasLimit L2 gas limit
      * @return baseCost The base cost in ETH
      */
-    function estimateL2TransactionCost(uint256 gasLimit) external view returns (uint256) {
+    function estimateL2TransactionCost(
+        uint256 gasLimit
+    ) external view returns (uint256) {
         uint256 l2Gas = gasLimit > 0 ? gasLimit : DEFAULT_L2_GAS_LIMIT;
 
         // Call l2TransactionBaseCost on the Diamond (Mailbox facet)
@@ -328,7 +352,10 @@ contract zkSyncBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     }
 
     /// @notice Emergency withdrawal of ETH
-    function emergencyWithdrawETH(address payable to, uint256 amount) external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
+    function emergencyWithdrawETH(
+        address payable to,
+        uint256 amount
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
         require(to != address(0), "Invalid recipient");
         require(amount <= address(this).balance, "Insufficient balance");
         (bool success, ) = to.call{value: amount}("");

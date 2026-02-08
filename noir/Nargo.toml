@@ -15,4 +15,11 @@ members = [
     "pedersen_commitment",      # Pedersen commitment utility
     "compliance_proof",         # Compliance / sanctions proof
     "policy",                   # Policy verification
+    "policy_bound_proof",       # Policy-bound proof verification
+    "shielded_pool",            # Shielded pool membership
+    "sanctions_check",          # Sanctions list non-membership proof
+    "accredited_investor",      # Accredited investor qualification
+    "aggregator",               # 4-proof batch aggregation
+    "encrypted_transfer",       # Encrypted transfer proofs
+    "ring_signature",           # Ring signature proofs
 ]

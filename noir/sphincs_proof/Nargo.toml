@@ -1,8 +1,0 @@
-[package]
-name = "sphincs_proof"
-type = "bin"
-authors = ["Soul Protocol"]
-compiler_version = ">=0.30.0"
-description = "ZK proof of correct SPHINCS+ (SLH-DSA) signature verification"
-
-[dependencies]

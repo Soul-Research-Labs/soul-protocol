@@ -393,10 +393,14 @@ contract PolicyBoundProofs is AccessControl, Pausable {
         verifierInputs[2] = uint256(boundProof.domainSeparator);
         for (uint256 i = 0; i < userInputsLen; ) {
             verifierInputs[3 + i] = uint256(boundProof.publicInputs[i]);
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
 
-        try policyVerifier.verify(boundProof.proof, verifierInputs) returns (bool proofValid) {
+        try policyVerifier.verify(boundProof.proof, verifierInputs) returns (
+            bool proofValid
+        ) {
             if (!proofValid) {
                 result.failureReason = "SNARK proof verification failed";
                 return result;

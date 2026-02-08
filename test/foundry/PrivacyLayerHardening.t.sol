@@ -103,9 +103,12 @@ contract PrivacyLayerHardeningTest is Test {
     address public unauthorized = address(0x99);
 
     // ─── CDNA Roles ─────────────────────────────────────────────
-    bytes32 constant BRIDGE_ROLE = 0x52ba824bfabc2bcfcdf7f0edbb486ebb05e1836c90e78047efeb949990f72e5f;
-    bytes32 constant NULLIFIER_REGISTRAR_ROLE = 0x5505d4e1c339d2da96b423eae372f08e27c4388c7bee6502a760802a80405236;
-    bytes32 constant DOMAIN_ADMIN_ROLE = 0x7792e66be7e1c65b630a8198da6bf1636e24cd26934ca652e146dd12060d06fb;
+    bytes32 constant BRIDGE_ROLE =
+        0x52ba824bfabc2bcfcdf7f0edbb486ebb05e1836c90e78047efeb949990f72e5f;
+    bytes32 constant NULLIFIER_REGISTRAR_ROLE =
+        0x5505d4e1c339d2da96b423eae372f08e27c4388c7bee6502a760802a80405236;
+    bytes32 constant DOMAIN_ADMIN_ROLE =
+        0x7792e66be7e1c65b630a8198da6bf1636e24cd26934ca652e146dd12060d06fb;
 
     function setUp() public {
         vm.startPrank(admin);
@@ -153,12 +156,7 @@ contract PrivacyLayerHardeningTest is Test {
         bytes32 transitionId = keccak256("transition1");
 
         vm.prank(registrar);
-        cdna.registerNullifier(
-            domainId,
-            commitment,
-            commitment,
-            transitionId
-        );
+        cdna.registerNullifier(domainId, commitment, commitment, transitionId);
 
         (, , , , , bytes32 domainSep, , ) = cdna.domains(domainId);
         parentNullifier = cdna.computeNullifier(
@@ -388,11 +386,7 @@ contract PrivacyLayerHardeningTest is Test {
     //////////////////////////////////////////////////////////////*/
 
     function test_PBP_FailsWithoutVerifier() public {
-        (
-            bytes32 vkHash,
-            bytes32 policyHash,
-            bytes32 domainSep
-        ) = _setupPBP();
+        (bytes32 vkHash, bytes32 policyHash, bytes32 domainSep) = _setupPBP();
 
         bytes32[] memory publicInputs = new bytes32[](1);
         publicInputs[0] = policyHash;
@@ -429,11 +423,7 @@ contract PrivacyLayerHardeningTest is Test {
         vm.prank(admin);
         pbp.setPolicyVerifier(address(passingVerifier));
 
-        (
-            bytes32 vkHash,
-            bytes32 policyHash,
-            bytes32 domainSep
-        ) = _setupPBP();
+        (bytes32 vkHash, bytes32 policyHash, bytes32 domainSep) = _setupPBP();
 
         bytes32[] memory publicInputs = new bytes32[](1);
         publicInputs[0] = policyHash;
@@ -450,7 +440,10 @@ contract PrivacyLayerHardeningTest is Test {
 
         PolicyBoundProofs.VerificationResult memory result = pbp
             .verifyBoundProof(proof, vkHash);
-        assertTrue(result.proofValid, "Proof should pass with passing verifier");
+        assertTrue(
+            result.proofValid,
+            "Proof should pass with passing verifier"
+        );
         assertTrue(result.policyValid, "Policy should be valid");
     }
 
@@ -458,11 +451,7 @@ contract PrivacyLayerHardeningTest is Test {
         vm.prank(admin);
         pbp.setPolicyVerifier(address(failingVerifier));
 
-        (
-            bytes32 vkHash,
-            bytes32 policyHash,
-            bytes32 domainSep
-        ) = _setupPBP();
+        (bytes32 vkHash, bytes32 policyHash, bytes32 domainSep) = _setupPBP();
 
         bytes32[] memory publicInputs = new bytes32[](1);
         publicInputs[0] = policyHash;
@@ -563,11 +552,7 @@ contract PrivacyLayerHardeningTest is Test {
     }
 
     function test_LengthCheckGone_PBP() public {
-        (
-            bytes32 vkHash,
-            bytes32 policyHash,
-            bytes32 domainSep
-        ) = _setupPBP();
+        (bytes32 vkHash, bytes32 policyHash, bytes32 domainSep) = _setupPBP();
 
         bytes32[] memory publicInputs = new bytes32[](1);
         publicInputs[0] = policyHash;

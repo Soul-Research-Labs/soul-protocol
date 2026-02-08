@@ -426,7 +426,10 @@ contract CrossDomainNullifierAlgebra is AccessControl, Pausable {
             inputs[2] = uint256(transitionId);
             inputs[3] = uint256(targetDomain.domainSeparator);
 
-            bool proofValid = derivationVerifier.verify(derivationProof, inputs);
+            bool proofValid = derivationVerifier.verify(
+                derivationProof,
+                inputs
+            );
             if (!proofValid) {
                 revert InvalidCrossDomainProof();
             }
@@ -561,7 +564,9 @@ contract CrossDomainNullifierAlgebra is AccessControl, Pausable {
             inputs[2] = uint256(proof.sourceDomainId);
             inputs[3] = uint256(proof.targetDomainId);
 
-            try derivationVerifier.verify(proof.proof, inputs) returns (bool proofValid) {
+            try derivationVerifier.verify(proof.proof, inputs) returns (
+                bool proofValid
+            ) {
                 if (!proofValid) return false;
             } catch {
                 return false;

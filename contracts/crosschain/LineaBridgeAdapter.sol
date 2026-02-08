@@ -27,7 +27,8 @@ contract LineaBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
     bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE");
     bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
-    bytes32 public constant BRIDGE_OPERATOR_ROLE = keccak256("BRIDGE_OPERATOR_ROLE");
+    bytes32 public constant BRIDGE_OPERATOR_ROLE =
+        keccak256("BRIDGE_OPERATOR_ROLE");
     bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
@@ -113,9 +114,22 @@ contract LineaBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
                               EVENTS
     //////////////////////////////////////////////////////////////*/
 
-    event MessageSent(bytes32 indexed messageHash, address indexed target, uint256 nonce, uint256 fee);
-    event MessageClaimed(bytes32 indexed messageHash, address indexed claimer, uint256 messageNumber);
-    event BridgeConfigured(address messageService, address tokenBridge, address rollup);
+    event MessageSent(
+        bytes32 indexed messageHash,
+        address indexed target,
+        uint256 nonce,
+        uint256 fee
+    );
+    event MessageClaimed(
+        bytes32 indexed messageHash,
+        address indexed claimer,
+        uint256 messageNumber
+    );
+    event BridgeConfigured(
+        address messageService,
+        address tokenBridge,
+        address rollup
+    );
     event SoulHubL2Set(address indexed soulHubL2);
     event ProofRegistrySet(address indexed proofRegistry);
 
@@ -159,14 +173,18 @@ contract LineaBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     }
 
     /// @notice Set Soul Hub L2 address on Linea
-    function setSoulHubL2(address _soulHubL2) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setSoulHubL2(
+        address _soulHubL2
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(_soulHubL2 != address(0), "Invalid address");
         soulHubL2 = _soulHubL2;
         emit SoulHubL2Set(_soulHubL2);
     }
 
     /// @notice Set Proof Registry address
-    function setProofRegistry(address _proofRegistry) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setProofRegistry(
+        address _proofRegistry
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(_proofRegistry != address(0), "Invalid address");
         proofRegistry = _proofRegistry;
         emit ProofRegistrySet(_proofRegistry);
@@ -226,7 +244,15 @@ contract LineaBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
 
         uint256 nonce = messageNonce++;
 
-        bytes32 messageHash = keccak256(abi.encode(target, data, nonce, block.timestamp, LINEA_MAINNET_CHAIN_ID));
+        bytes32 messageHash = keccak256(
+            abi.encode(
+                target,
+                data,
+                nonce,
+                block.timestamp,
+                LINEA_MAINNET_CHAIN_ID
+            )
+        );
 
         // Call sendMessage on Linea MessageService
         // Signature: sendMessage(address _to, uint256 _fee, bytes _calldata)
@@ -261,12 +287,7 @@ contract LineaBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     function claimMessage(
         bytes32 messageHash,
         ClaimProof calldata proof
-    )
-        external
-        onlyRole(RELAYER_ROLE)
-        nonReentrant
-        whenNotPaused
-    {
+    ) external onlyRole(RELAYER_ROLE) nonReentrant whenNotPaused {
         MessageRecord storage record = messages[messageHash];
         require(record.status == MessageStatus.SENT, "Invalid message state");
         require(!processedMessages[proof.messageNumber], "Already claimed");
@@ -292,7 +313,10 @@ contract LineaBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
      * @param messageHash Hash of the message
      * @param proof Proof data
      */
-    function verifyMessage(bytes32 messageHash, bytes calldata proof) external view returns (bool) {
+    function verifyMessage(
+        bytes32 messageHash,
+        bytes calldata proof
+    ) external view returns (bool) {
         if (proof.length == 0) return false;
         MessageRecord storage record = messages[messageHash];
         return record.status == MessageStatus.CLAIMED;
@@ -326,7 +350,10 @@ contract LineaBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     }
 
     /// @notice Emergency withdrawal of ETH
-    function emergencyWithdrawETH(address payable to, uint256 amount) external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
+    function emergencyWithdrawETH(
+        address payable to,
+        uint256 amount
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
         require(to != address(0), "Invalid recipient");
         require(amount <= address(this).balance, "Insufficient balance");
         (bool success, ) = to.call{value: amount}("");

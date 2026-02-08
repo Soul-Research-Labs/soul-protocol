@@ -49,23 +49,26 @@ contract SoulCrossChainRelay is AccessControl, ReentrancyGuard, Pausable {
     }
 
     struct ChainConfig {
-        address proofHub;           // CrossChainProofHubV3 address on that chain
-        address bridgeAdapter;      // LayerZero or Hyperlane adapter address
-        uint32 bridgeChainId;       // Bridge-specific chain identifier (LZ eid / Hyperlane domain)
+        address proofHub; // CrossChainProofHubV3 address on that chain
+        address bridgeAdapter; // LayerZero or Hyperlane adapter address
+        uint32 bridgeChainId; // Bridge-specific chain identifier (LZ eid / Hyperlane domain)
         bool active;
     }
 
-    enum BridgeType { LAYERZERO, HYPERLANE }
+    enum BridgeType {
+        LAYERZERO,
+        HYPERLANE
+    }
 
     // ──────────────────────────────────────────────
     //  State
     // ──────────────────────────────────────────────
-    address public proofHub;        // Local CrossChainProofHubV3
+    address public proofHub; // Local CrossChainProofHubV3
     BridgeType public bridgeType;
 
     /// @notice Chain configs keyed by EVM chain ID
     mapping(uint256 => ChainConfig) public chainConfigs;
-    
+
     /// @notice Supported destination chain IDs
     uint256[] public supportedChains;
 
@@ -143,7 +146,7 @@ contract SoulCrossChainRelay is AccessControl, ReentrancyGuard, Pausable {
     // ──────────────────────────────────────────────
     //  Configuration
     // ──────────────────────────────────────────────
-    
+
     /**
      * @notice Configure a destination chain for cross-chain relay
      * @param chainId EVM chain ID of the destination
@@ -160,16 +163,21 @@ contract SoulCrossChainRelay is AccessControl, ReentrancyGuard, Pausable {
         if (!chainConfigs[chainId].active) {
             supportedChains.push(chainId);
         }
-        
+
         chainConfigs[chainId] = config;
-        
-        emit ChainConfigured(chainId, config.proofHub, config.bridgeAdapter, config.bridgeChainId);
+
+        emit ChainConfigured(
+            chainId,
+            config.proofHub,
+            config.bridgeAdapter,
+            config.bridgeChainId
+        );
     }
 
     // ──────────────────────────────────────────────
     //  Outbound: Relay Proof to Destination Chain
     // ──────────────────────────────────────────────
-    
+
     /**
      * @notice Relay a finalized proof from the local ProofHub to a destination chain.
      *         Called by authorized relayers after proof finalization.
@@ -188,10 +196,18 @@ contract SoulCrossChainRelay is AccessControl, ReentrancyGuard, Pausable {
         bytes32 commitment,
         uint64 destChainId,
         bytes32 proofType
-    ) external payable onlyRole(RELAYER_ROLE) nonReentrant whenNotPaused returns (bytes32 messageId) {
+    )
+        external
+        payable
+        onlyRole(RELAYER_ROLE)
+        nonReentrant
+        whenNotPaused
+        returns (bytes32 messageId)
+    {
         // Validate sizes
         if (proof.length > MAX_PROOF_SIZE) revert ProofTooLarge(proof.length);
-        if (publicInputs.length > MAX_PUBLIC_INPUTS_SIZE) revert PublicInputsTooLarge(publicInputs.length);
+        if (publicInputs.length > MAX_PUBLIC_INPUTS_SIZE)
+            revert PublicInputsTooLarge(publicInputs.length);
 
         ChainConfig storage config = chainConfigs[destChainId];
         if (!config.active) revert ChainNotSupported(destChainId);
@@ -208,12 +224,9 @@ contract SoulCrossChainRelay is AccessControl, ReentrancyGuard, Pausable {
         );
 
         // Generate unique message ID
-        messageId = keccak256(abi.encodePacked(
-            proofId,
-            block.chainid,
-            destChainId,
-            relayNonce++
-        ));
+        messageId = keccak256(
+            abi.encodePacked(proofId, block.chainid, destChainId, relayNonce++)
+        );
 
         // Store relay record
         relayedProofs[messageId] = RelayedProof({
@@ -231,7 +244,13 @@ contract SoulCrossChainRelay is AccessControl, ReentrancyGuard, Pausable {
         // Dispatch via bridge adapter
         _sendViaBridge(config, payload);
 
-        emit ProofRelayed(proofId, uint64(block.chainid), uint64(destChainId), commitment, messageId);
+        emit ProofRelayed(
+            proofId,
+            uint64(block.chainid),
+            uint64(destChainId),
+            commitment,
+            messageId
+        );
     }
 
     // ──────────────────────────────────────────────
@@ -260,15 +279,26 @@ contract SoulCrossChainRelay is AccessControl, ReentrancyGuard, Pausable {
             bytes32 commitment,
             uint64 srcChainId,
             bytes32 proofType
-        ) = abi.decode(payload, (uint8, bytes32, bytes, bytes, bytes32, uint64, bytes32));
+        ) = abi.decode(
+                payload,
+                (uint8, bytes32, bytes, bytes, bytes32, uint64, bytes32)
+            );
 
         // Dedup check
-        bytes32 msgId = keccak256(abi.encodePacked(proofId, srcChainId, block.chainid));
+        bytes32 msgId = keccak256(
+            abi.encodePacked(proofId, srcChainId, block.chainid)
+        );
         if (processedMessages[msgId]) revert AlreadyProcessed(msgId);
         processedMessages[msgId] = true;
 
         // Submit to local ProofHub
-        bool submitted = _submitToProofHub(proof, publicInputs, commitment, srcChainId, proofType);
+        bool submitted = _submitToProofHub(
+            proof,
+            publicInputs,
+            commitment,
+            srcChainId,
+            proofType
+        );
 
         emit ProofReceived(proofId, srcChainId, commitment, submitted);
     }
@@ -277,7 +307,10 @@ contract SoulCrossChainRelay is AccessControl, ReentrancyGuard, Pausable {
     //  Internal: Bridge dispatch
     // ──────────────────────────────────────────────
 
-    function _sendViaBridge(ChainConfig storage config, bytes memory payload) internal {
+    function _sendViaBridge(
+        ChainConfig storage config,
+        bytes memory payload
+    ) internal {
         if (bridgeType == BridgeType.LAYERZERO) {
             _sendViaLayerZero(config, payload);
         } else {
@@ -285,10 +318,13 @@ contract SoulCrossChainRelay is AccessControl, ReentrancyGuard, Pausable {
         }
     }
 
-    function _sendViaLayerZero(ChainConfig storage config, bytes memory payload) internal {
+    function _sendViaLayerZero(
+        ChainConfig storage config,
+        bytes memory payload
+    ) internal {
         // Call LayerZeroAdapter.sendMessage(dstEid, payload, options)
         // The adapter handles LZ endpoint interaction
-        (bool success,) = config.bridgeAdapter.call{value: msg.value}(
+        (bool success, ) = config.bridgeAdapter.call{value: msg.value}(
             abi.encodeWithSignature(
                 "sendMessage(uint32,bytes,(uint128,uint128))",
                 config.bridgeChainId,
@@ -298,13 +334,20 @@ contract SoulCrossChainRelay is AccessControl, ReentrancyGuard, Pausable {
             )
         );
         if (!success) {
-            emit ProofRelayFailed(bytes32(0), uint64(config.bridgeChainId), "LayerZero send failed");
+            emit ProofRelayFailed(
+                bytes32(0),
+                uint64(config.bridgeChainId),
+                "LayerZero send failed"
+            );
         }
     }
 
-    function _sendViaHyperlane(ChainConfig storage config, bytes memory payload) internal {
+    function _sendViaHyperlane(
+        ChainConfig storage config,
+        bytes memory payload
+    ) internal {
         // Call HyperlaneAdapter.dispatch(destinationDomain, recipient, message)
-        (bool success,) = config.bridgeAdapter.call{value: msg.value}(
+        (bool success, ) = config.bridgeAdapter.call{value: msg.value}(
             abi.encodeWithSignature(
                 "dispatch(uint32,bytes32,bytes)",
                 config.bridgeChainId,
@@ -313,7 +356,11 @@ contract SoulCrossChainRelay is AccessControl, ReentrancyGuard, Pausable {
             )
         );
         if (!success) {
-            emit ProofRelayFailed(bytes32(0), uint64(config.bridgeChainId), "Hyperlane dispatch failed");
+            emit ProofRelayFailed(
+                bytes32(0),
+                uint64(config.bridgeChainId),
+                "Hyperlane dispatch failed"
+            );
         }
     }
 
@@ -325,7 +372,7 @@ contract SoulCrossChainRelay is AccessControl, ReentrancyGuard, Pausable {
         bytes32 proofType
     ) internal returns (bool) {
         // Call CrossChainProofHubV3.submitProofInstant() for immediate verification
-        (bool success,) = proofHub.call(
+        (bool success, ) = proofHub.call(
             abi.encodeWithSignature(
                 "submitProofInstant(bytes,bytes,bytes32,uint64,uint64,bytes32)",
                 proof,
@@ -363,7 +410,9 @@ contract SoulCrossChainRelay is AccessControl, ReentrancyGuard, Pausable {
         _unpause();
     }
 
-    function updateProofHub(address _proofHub) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function updateProofHub(
+        address _proofHub
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_proofHub == address(0)) revert ZeroAddress();
         proofHub = _proofHub;
     }
