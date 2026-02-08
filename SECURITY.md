@@ -138,7 +138,6 @@ We take security seriously. If you discover a security vulnerability within Soul
 
 - Groth16 proofs on BN254 curve
 - Poseidon hash function for circuits
-- Post-quantum cryptography (Dilithium, Kyber, SPHINCS+)
 - Formal verification of key invariants
 - **Signature malleability protection** on all ECDSA operations
 - **VRF verification** for randomness in relayer selection
@@ -197,9 +196,7 @@ We take security seriously. If you discover a security vulnerability within Soul
 ##### Medium Fixes
 | Fix | Contract | Description |
 |-----|----------|-------------|
-| Zero-Address | MPCGateway | Added validation to addSupportedChain() |
-| Zero-Address | ConfidentialDataAvailability | Added validation to setVerifiers() |
-| Missing Events | ConfidentialDataAvailability | Added 5 events for admin config changes |
+| Zero-Address | SoulProtocolHub | Added validation to addSupportedChain() |
 
 **Total: 44 vulnerabilities fixed across both phases**
 
@@ -224,7 +221,7 @@ As of February 2026, the following dependency vulnerabilities exist with **no up
 2. **ZK Proofs**: All cryptographic operations use Noir circuits with BN254, not elliptic curves via JS
 3. **SDK Usage**: The SDK uses ethers.js v6 (main dependency), not v5
 4. **Hardhat Verify**: Only used for contract verification on block explorers (dev tooling), not production code
-5. **Post-Quantum**: Protocol uses Dilithium/SPHINCS+ for future-proof signatures
+5. **ZK Proofs**: All proof verification delegated to registered IProofVerifier implementations
 
 **Actions Taken:**
 - ✅ Replaced `circomlibjs` with `poseidon-lite` (zero dependencies) for Poseidon hashing
