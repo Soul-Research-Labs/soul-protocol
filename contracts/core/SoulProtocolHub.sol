@@ -68,7 +68,7 @@ contract SoulProtocolHub is AccessControl, Pausable {
         BRIDGE,
         PRIVACY,
         SECURITY,
-        MPC,
+        THRESHOLD_SIG,
         PRIMITIVE,
         GOVERNANCE,
         INFRASTRUCTURE
@@ -185,14 +185,14 @@ contract SoulProtocolHub is AccessControl, Pausable {
     address public bridgeCircuitBreaker;
     address public economicSecurityModule;
 
-    // ============ MPC ============
+    // ============ Threshold Signature ============
 
-    /// @notice MPC module addresses
-    address public mpcGateway;
+    /// @notice Threshold signature module addresses
+    address public thresholdSigGateway;
     address public thresholdSignature;
     address public shamirSecretSharing;
-    address public mpcComplianceModule;
-    address public mpcCoordinator;
+    address public thresholdSigComplianceModule;
+    address public thresholdSigCoordinator;
 
     // ============ Primitives ============
 
@@ -248,7 +248,7 @@ contract SoulProtocolHub is AccessControl, Pausable {
 
     event SecurityModuleRegistered(string indexed moduleName, address module);
 
-    event MPCModuleRegistered(string indexed moduleName, address module);
+    event ThresholdSigModuleRegistered(string indexed moduleName, address module);
 
     /*//////////////////////////////////////////////////////////////
                                 ERRORS
@@ -657,7 +657,7 @@ contract SoulProtocolHub is AccessControl, Pausable {
     ) external onlyRole(OPERATOR_ROLE) {
         if (_module == address(0)) revert ZeroAddress();
         postQuantumSignatureVerifier = _module;
-        emit SecurityModuleRegistered("PQC_SIGNATURE_VERIFIER", _module);
+        emit SecurityModuleRegistered("HYBRID_SIGNATURE_VERIFIER", _module);
     }
 
     /**
@@ -683,16 +683,16 @@ contract SoulProtocolHub is AccessControl, Pausable {
     }
 
     /*//////////////////////////////////////////////////////////////
-                          MPC REGISTRATION
+                          THRESHOLD SIG REGISTRATION
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Set MPC Gateway
+     * @notice Set Threshold Signature Gateway
      */
-    function setMPCGateway(address _module) external onlyRole(OPERATOR_ROLE) {
+    function setThresholdSigGateway(address _module) external onlyRole(OPERATOR_ROLE) {
         if (_module == address(0)) revert ZeroAddress();
-        mpcGateway = _module;
-        emit MPCModuleRegistered("MPC_GATEWAY", _module);
+        thresholdSigGateway = _module;
+        emit ThresholdSigModuleRegistered("THRESHOLD_SIG_GATEWAY", _module);
     }
 
     /**
@@ -703,7 +703,7 @@ contract SoulProtocolHub is AccessControl, Pausable {
     ) external onlyRole(OPERATOR_ROLE) {
         if (_module == address(0)) revert ZeroAddress();
         thresholdSignature = _module;
-        emit MPCModuleRegistered("THRESHOLD_SIGNATURE", _module);
+        emit ThresholdSigModuleRegistered("THRESHOLD_SIGNATURE", _module);
     }
 
     /**
@@ -714,29 +714,29 @@ contract SoulProtocolHub is AccessControl, Pausable {
     ) external onlyRole(OPERATOR_ROLE) {
         if (_module == address(0)) revert ZeroAddress();
         shamirSecretSharing = _module;
-        emit MPCModuleRegistered("SHAMIR_SS", _module);
+        emit ThresholdSigModuleRegistered("SHAMIR_SS", _module);
     }
 
     /**
-     * @notice Set MPC Compliance Module
+     * @notice Set Threshold Signature Compliance Module
      */
-    function setMPCComplianceModule(
+    function setThresholdSigComplianceModule(
         address _module
     ) external onlyRole(OPERATOR_ROLE) {
         if (_module == address(0)) revert ZeroAddress();
-        mpcComplianceModule = _module;
-        emit MPCModuleRegistered("MPC_COMPLIANCE", _module);
+        thresholdSigComplianceModule = _module;
+        emit ThresholdSigModuleRegistered("THRESHOLD_SIG_COMPLIANCE", _module);
     }
 
     /**
-     * @notice Set MPC Coordinator
+     * @notice Set Threshold Signature Coordinator
      */
-    function setMPCCoordinator(
+    function setThresholdSigCoordinator(
         address _module
     ) external onlyRole(OPERATOR_ROLE) {
         if (_module == address(0)) revert ZeroAddress();
-        mpcCoordinator = _module;
-        emit MPCModuleRegistered("MPC_COORDINATOR", _module);
+        thresholdSigCoordinator = _module;
+        emit ThresholdSigModuleRegistered("THRESHOLD_SIG_COORDINATOR", _module);
     }
 
     /*//////////////////////////////////////////////////////////////
