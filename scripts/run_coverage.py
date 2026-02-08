@@ -71,8 +71,8 @@ STUB_MAPPING = {
     "contracts/crosschain/DirectL2Messenger.sol": "coverage-stubs/crosschain/DirectL2Messenger.sol",
     "contracts/crosschain/AztecBridgeAdapter.sol": "coverage-stubs/crosschain/AztecBridgeAdapter.sol",
     "contracts/security/EmergencyResponseAutomation.sol": "coverage-stubs/security/EmergencyResponseAutomation.sol",
-    "contracts/kernel/SoulKernelProof.sol": "coverage-stubs/kernel/SoulKernelProof.sol",
-    "contracts/kernel/ParallelKernelVerifier.sol": "coverage-stubs/kernel/ParallelKernelVerifier.sol",
+    # Note: contracts/kernel/, contracts/disclosure/, contracts/pqc/, contracts/fhe/ were removed
+    "contracts/primitives/PolicyBoundProofs.sol": "coverage-stubs/primitives/PolicyBoundProofs.sol",
     # "contracts/crosschain/LayerZeroBridgeAdapter.sol": "coverage-stubs/crosschain/LayerZeroBridgeAdapter.sol",
     "contracts/crosschain/L2ProofRouter.sol": "coverage-stubs/crosschain/L2ProofRouter.sol",
     "contracts/security/RuntimeSecurityMonitor.sol": "coverage-stubs/security/RuntimeSecurityMonitor.sol",
@@ -85,7 +85,6 @@ STUB_MAPPING = {
     "contracts/privacy/GasOptimizedPrivacy.sol": "coverage-stubs/privacy/GasOptimizedPrivacy.sol",
     "contracts/primitives/CrossDomainNullifierAlgebra.sol": "coverage-stubs/primitives/CrossDomainNullifierAlgebra.sol",
     "contracts/integrations/SoulAtomicSwapSecurityIntegration.sol": "coverage-stubs/integrations/SoulAtomicSwapSecurityIntegration.sol",
-    "contracts/disclosure/SelectiveDisclosureCircuit.sol": "coverage-stubs/disclosure/SelectiveDisclosureCircuit.sol",
     "contracts/crosschain/BitcoinBridgeAdapter.sol": "coverage-stubs/crosschain/BitcoinBridgeAdapter.sol",
     "contracts/crosschain/BitVMBridge.sol": "coverage-stubs/crosschain/BitVMBridge.sol",
     "contracts/crosschain/BaseBridgeAdapter.sol": "coverage-stubs/crosschain/BaseBridgeAdapter.sol",
@@ -106,9 +105,8 @@ STUB_MAPPING = {
     "contracts/crosschain/CrossL2Atomicity.sol": "coverage-stubs/crosschain/CrossL2Atomicity.sol",
     "contracts/security/HoneyPotDetector.sol": "coverage-stubs/security/HoneyPotDetector.sol",
     "contracts/bridge/SoulAtomicSwapV2.sol": "coverage-stubs/bridge/SoulAtomicSwapV2.sol",
-    "contracts/kernel/LinearStateManager.sol": "coverage-stubs/kernel/LinearStateManager.sol",
     "contracts/primitives/PolicyBoundProofs.sol": "coverage-stubs/primitives/PolicyBoundProofs.sol",
-    "contracts/kernel/ExecutionIndirectionLayer.sol": "coverage-stubs/kernel/ExecutionIndirectionLayer.sol",
+    # contracts/kernel/ removed
     "contracts/security/SecurityOracle.sol": "coverage-stubs/security/SecurityOracle.sol",
     "contracts/security/EconomicSecurityModule.sol": "coverage-stubs/security/EconomicSecurityModule.sol",
     "contracts/privacy/MLSAGSignatures.sol": "coverage-stubs/privacy/MLSAGSignatures.sol",
@@ -142,7 +140,7 @@ STUB_MAPPING = {
     "contracts/verifiers/StateTransferVerifier.sol": "coverage-stubs/verifiers/StateTransferVerifier.sol",
     "contracts/verifiers/StateCommitmentVerifier.sol": "coverage-stubs/verifiers/StateCommitmentVerifier.sol",
     "contracts/verifiers/VerifierRegistry.sol": "coverage-stubs/verifiers/VerifierRegistry.sol",
-    "contracts/pqc/lib/HybridSignatureLib.sol": "coverage-stubs/pqc/lib/HybridSignatureLib.sol",
+    # contracts/pqc/ removed
     "contracts/core/SovereignPrivacyDomain.sol": "coverage-stubs/core/SovereignPrivacyDomain.sol",
     "contracts/interfaces/TransparentUpgradeableProxy.sol": "coverage-stubs/interfaces/TransparentUpgradeableProxy.sol",
     "contracts/upgradeable/StorageLayout.sol": "coverage-stubs/upgradeable/StorageLayout.sol",
@@ -153,7 +151,7 @@ STUB_MAPPING = {
     "contracts/mocks/MockERC20.sol": "coverage-stubs/mocks/MockERC20.sol",
     "contracts/mocks/MockStarknetMessaging.sol": "coverage-stubs/mocks/MockStarknetMessaging.sol",
     "contracts/mocks/MockEthereumL1Bridge.sol": "coverage-stubs/mocks/MockEthereumL1Bridge.sol",
-    "contracts/fhe/lib/FHEUtils.sol": "coverage-stubs/fhe/lib/FHEUtils.sol",
+    # contracts/fhe/ removed
     "contracts/libraries/StarknetPrimitives.sol": "coverage-stubs/libraries/StarknetPrimitives.sol",
     "contracts/primitives/SoulVDF.sol": "coverage-stubs/primitives/SoulVDF.sol",
     "contracts/primitives/SoulTEE.sol": "coverage-stubs/primitives/SoulTEE.sol",

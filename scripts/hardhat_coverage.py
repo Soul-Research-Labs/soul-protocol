@@ -36,15 +36,12 @@ CORE_CONTRACTS = [
     "contracts/privacy/StealthAddressRegistry.sol",
     "contracts/privacy/RingConfidentialTransactions.sol",
     "contracts/relayer/PrivateRelayerNetwork.sol",
-    "contracts/governance/SoulTimelock.sol",
-    "contracts/governance/SoulMultiSigGovernance.sol",
-    "contracts/security/SoulUpgradeTimelock.sol",
+    "contracts/governance/SoulUpgradeTimelock.sol",
 ]
 
 # Contracts that cause stack-too-deep (skip in coverage, verify via fuzz/symbolic)
 SKIP_CONTRACTS = [
     "contracts/verifiers/",
-    "contracts/research/",
 ]
 
 def check_prerequisites():
