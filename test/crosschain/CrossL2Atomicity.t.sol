@@ -51,7 +51,8 @@ contract CrossL2AtomicityTest is Test {
         chainIds[0] = block.chainid; // Current chain
         chainIds[1] = 10; // Optimism
 
-        CrossL2Atomicity.ChainType[] memory chainTypes = new CrossL2Atomicity.ChainType[](2);
+        CrossL2Atomicity.ChainType[]
+            memory chainTypes = new CrossL2Atomicity.ChainType[](2);
         chainTypes[0] = CrossL2Atomicity.ChainType.OP_STACK;
         chainTypes[1] = CrossL2Atomicity.ChainType.OP_STACK;
 
@@ -67,16 +68,23 @@ contract CrossL2AtomicityTest is Test {
         values[0] = 0;
         values[1] = 0;
 
-        return atomicity.createAtomicBundle(
-            chainIds, chainTypes, targets, datas, values, 0
-        );
+        return
+            atomicity.createAtomicBundle(
+                chainIds,
+                chainTypes,
+                targets,
+                datas,
+                values,
+                0
+            );
     }
 
     function _createBundleWithValue() internal returns (bytes32) {
         uint256[] memory chainIds = new uint256[](1);
         chainIds[0] = block.chainid;
 
-        CrossL2Atomicity.ChainType[] memory chainTypes = new CrossL2Atomicity.ChainType[](1);
+        CrossL2Atomicity.ChainType[]
+            memory chainTypes = new CrossL2Atomicity.ChainType[](1);
         chainTypes[0] = CrossL2Atomicity.ChainType.OP_STACK;
 
         address[] memory targets = new address[](1);
@@ -88,9 +96,15 @@ contract CrossL2AtomicityTest is Test {
         uint256[] memory values = new uint256[](1);
         values[0] = 1 ether;
 
-        return atomicity.createAtomicBundle{value: 1 ether}(
-            chainIds, chainTypes, targets, datas, values, 0
-        );
+        return
+            atomicity.createAtomicBundle{value: 1 ether}(
+                chainIds,
+                chainTypes,
+                targets,
+                datas,
+                values,
+                0
+            );
     }
 
     // ============ Constructor Tests ============
@@ -133,7 +147,8 @@ contract CrossL2AtomicityTest is Test {
         uint256[] memory chainIds = new uint256[](1);
         chainIds[0] = block.chainid;
 
-        CrossL2Atomicity.ChainType[] memory chainTypes = new CrossL2Atomicity.ChainType[](1);
+        CrossL2Atomicity.ChainType[]
+            memory chainTypes = new CrossL2Atomicity.ChainType[](1);
         chainTypes[0] = CrossL2Atomicity.ChainType.OP_STACK;
 
         address[] memory targets = new address[](1);
@@ -146,7 +161,12 @@ contract CrossL2AtomicityTest is Test {
         values[0] = 0;
 
         bytes32 bundleId = atomicity.createAtomicBundle(
-            chainIds, chainTypes, targets, datas, values, 2 hours
+            chainIds,
+            chainTypes,
+            targets,
+            datas,
+            values,
+            2 hours
         );
 
         (, , , , , uint256 timeout) = atomicity.getBundle(bundleId);
@@ -155,21 +175,28 @@ contract CrossL2AtomicityTest is Test {
 
     function test_createBundle_revertsEmptyChains() public {
         uint256[] memory chainIds = new uint256[](0);
-        CrossL2Atomicity.ChainType[] memory chainTypes = new CrossL2Atomicity.ChainType[](0);
+        CrossL2Atomicity.ChainType[]
+            memory chainTypes = new CrossL2Atomicity.ChainType[](0);
         address[] memory targets = new address[](0);
         bytes[] memory datas = new bytes[](0);
         uint256[] memory values = new uint256[](0);
 
         vm.expectRevert(CrossL2Atomicity.InvalidChainCount.selector);
         atomicity.createAtomicBundle(
-            chainIds, chainTypes, targets, datas, values, 0
+            chainIds,
+            chainTypes,
+            targets,
+            datas,
+            values,
+            0
         );
     }
 
     function test_createBundle_revertsTooManyChains() public {
         uint256 count = 11; // > MAX_CHAINS_PER_BUNDLE
         uint256[] memory chainIds = new uint256[](count);
-        CrossL2Atomicity.ChainType[] memory chainTypes = new CrossL2Atomicity.ChainType[](count);
+        CrossL2Atomicity.ChainType[]
+            memory chainTypes = new CrossL2Atomicity.ChainType[](count);
         address[] memory targets = new address[](count);
         bytes[] memory datas = new bytes[](count);
         uint256[] memory values = new uint256[](count);
@@ -182,13 +209,19 @@ contract CrossL2AtomicityTest is Test {
 
         vm.expectRevert(CrossL2Atomicity.InvalidChainCount.selector);
         atomicity.createAtomicBundle(
-            chainIds, chainTypes, targets, datas, values, 0
+            chainIds,
+            chainTypes,
+            targets,
+            datas,
+            values,
+            0
         );
     }
 
     function test_createBundle_revertsMismatchedArrays() public {
         uint256[] memory chainIds = new uint256[](2);
-        CrossL2Atomicity.ChainType[] memory chainTypes = new CrossL2Atomicity.ChainType[](1); // Mismatch
+        CrossL2Atomicity.ChainType[]
+            memory chainTypes = new CrossL2Atomicity.ChainType[](1); // Mismatch
         address[] memory targets = new address[](2);
         bytes[] memory datas = new bytes[](2);
         uint256[] memory values = new uint256[](2);
@@ -200,7 +233,12 @@ contract CrossL2AtomicityTest is Test {
 
         vm.expectRevert(CrossL2Atomicity.InvalidOperationData.selector);
         atomicity.createAtomicBundle(
-            chainIds, chainTypes, targets, datas, values, 0
+            chainIds,
+            chainTypes,
+            targets,
+            datas,
+            values,
+            0
         );
     }
 
@@ -209,16 +247,27 @@ contract CrossL2AtomicityTest is Test {
         chainIds[0] = 10;
         chainIds[1] = 10; // Duplicate
 
-        CrossL2Atomicity.ChainType[] memory chainTypes = new CrossL2Atomicity.ChainType[](2);
+        CrossL2Atomicity.ChainType[]
+            memory chainTypes = new CrossL2Atomicity.ChainType[](2);
         address[] memory targets = new address[](2);
         targets[0] = address(target);
         targets[1] = address(target);
         bytes[] memory datas = new bytes[](2);
         uint256[] memory values = new uint256[](2);
 
-        vm.expectRevert(abi.encodeWithSelector(CrossL2Atomicity.DuplicateChainId.selector, 10));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                CrossL2Atomicity.DuplicateChainId.selector,
+                10
+            )
+        );
         atomicity.createAtomicBundle(
-            chainIds, chainTypes, targets, datas, values, 0
+            chainIds,
+            chainTypes,
+            targets,
+            datas,
+            values,
+            0
         );
     }
 
@@ -226,7 +275,8 @@ contract CrossL2AtomicityTest is Test {
         uint256[] memory chainIds = new uint256[](1);
         chainIds[0] = block.chainid;
 
-        CrossL2Atomicity.ChainType[] memory chainTypes = new CrossL2Atomicity.ChainType[](1);
+        CrossL2Atomicity.ChainType[]
+            memory chainTypes = new CrossL2Atomicity.ChainType[](1);
         address[] memory targets = new address[](1);
         targets[0] = address(target);
         bytes[] memory datas = new bytes[](1);
@@ -237,7 +287,12 @@ contract CrossL2AtomicityTest is Test {
 
         vm.expectRevert(CrossL2Atomicity.InsufficientValue.selector);
         atomicity.createAtomicBundle{value: 0.5 ether}(
-            chainIds, chainTypes, targets, datas, values, 0
+            chainIds,
+            chainTypes,
+            targets,
+            datas,
+            values,
+            0
         );
     }
 
@@ -250,11 +305,21 @@ contract CrossL2AtomicityTest is Test {
         vm.prank(executor);
         atomicity.markChainPrepared(bundleId, block.chainid, proofHash);
 
-        CrossL2Atomicity.ChainOperation memory op = atomicity.getChainOperation(bundleId, block.chainid);
+        CrossL2Atomicity.ChainOperation memory op = atomicity.getChainOperation(
+            bundleId,
+            block.chainid
+        );
         assertTrue(op.prepared);
         assertEq(op.proofHash, proofHash);
 
-        (, CrossL2Atomicity.BundlePhase phase, , uint256 preparedCount, , ) = atomicity.getBundle(bundleId);
+        (
+            ,
+            CrossL2Atomicity.BundlePhase phase,
+            ,
+            uint256 preparedCount,
+            ,
+
+        ) = atomicity.getBundle(bundleId);
         assertEq(uint8(phase), uint8(CrossL2Atomicity.BundlePhase.PREPARING));
         assertEq(preparedCount, 1);
     }
@@ -268,7 +333,14 @@ contract CrossL2AtomicityTest is Test {
         atomicity.markChainPrepared(bundleId, 10, proofHash);
         vm.stopPrank();
 
-        (, CrossL2Atomicity.BundlePhase phase, , uint256 preparedCount, , ) = atomicity.getBundle(bundleId);
+        (
+            ,
+            CrossL2Atomicity.BundlePhase phase,
+            ,
+            uint256 preparedCount,
+            ,
+
+        ) = atomicity.getBundle(bundleId);
         assertEq(uint8(phase), uint8(CrossL2Atomicity.BundlePhase.COMMITTED));
         assertEq(preparedCount, 2);
     }
@@ -278,7 +350,11 @@ contract CrossL2AtomicityTest is Test {
 
         vm.prank(user);
         vm.expectRevert();
-        atomicity.markChainPrepared(bundleId, block.chainid, keccak256("proof"));
+        atomicity.markChainPrepared(
+            bundleId,
+            block.chainid,
+            keccak256("proof")
+        );
     }
 
     function test_markChainPrepared_revertsAfterTimeout() public {
@@ -288,7 +364,11 @@ contract CrossL2AtomicityTest is Test {
 
         vm.prank(executor);
         vm.expectRevert(CrossL2Atomicity.BundleExpired.selector);
-        atomicity.markChainPrepared(bundleId, block.chainid, keccak256("proof"));
+        atomicity.markChainPrepared(
+            bundleId,
+            block.chainid,
+            keccak256("proof")
+        );
     }
 
     function test_markChainPrepared_idempotent() public {
@@ -319,7 +399,9 @@ contract CrossL2AtomicityTest is Test {
         vm.prank(executor);
         atomicity.markChainPrepared(bundleId, 10, proofHash);
         // Auto-commit happens, so check phase
-        (, CrossL2Atomicity.BundlePhase phase, , , , ) = atomicity.getBundle(bundleId);
+        (, CrossL2Atomicity.BundlePhase phase, , , , ) = atomicity.getBundle(
+            bundleId
+        );
         assertEq(uint8(phase), uint8(CrossL2Atomicity.BundlePhase.COMMITTED));
     }
 
@@ -355,7 +437,10 @@ contract CrossL2AtomicityTest is Test {
         assertEq(target.value(), 42);
 
         // Check execution state
-        CrossL2Atomicity.ChainOperation memory op = atomicity.getChainOperation(bundleId, block.chainid);
+        CrossL2Atomicity.ChainOperation memory op = atomicity.getChainOperation(
+            bundleId,
+            block.chainid
+        );
         assertTrue(op.executed);
     }
 
@@ -405,7 +490,9 @@ contract CrossL2AtomicityTest is Test {
 
         atomicity.rollbackAfterTimeout(bundleId);
 
-        (, CrossL2Atomicity.BundlePhase phase, , , , ) = atomicity.getBundle(bundleId);
+        (, CrossL2Atomicity.BundlePhase phase, , , , ) = atomicity.getBundle(
+            bundleId
+        );
         assertEq(uint8(phase), uint8(CrossL2Atomicity.BundlePhase.ROLLEDBACK));
     }
 
@@ -420,7 +507,8 @@ contract CrossL2AtomicityTest is Test {
         // Create single-chain bundle and execute it fully
         uint256[] memory chainIds = new uint256[](1);
         chainIds[0] = block.chainid;
-        CrossL2Atomicity.ChainType[] memory types = new CrossL2Atomicity.ChainType[](1);
+        CrossL2Atomicity.ChainType[]
+            memory types = new CrossL2Atomicity.ChainType[](1);
         address[] memory targets = new address[](1);
         targets[0] = address(target);
         bytes[] memory datas = new bytes[](1);
@@ -428,7 +516,12 @@ contract CrossL2AtomicityTest is Test {
         uint256[] memory values = new uint256[](1);
 
         bytes32 bundleId = atomicity.createAtomicBundle(
-            chainIds, types, targets, datas, values, 0
+            chainIds,
+            types,
+            targets,
+            datas,
+            values,
+            0
         );
 
         vm.startPrank(executor);
@@ -445,7 +538,10 @@ contract CrossL2AtomicityTest is Test {
 
     function test_getChainOperation() public {
         bytes32 bundleId = _createSimpleBundle();
-        CrossL2Atomicity.ChainOperation memory op = atomicity.getChainOperation(bundleId, block.chainid);
+        CrossL2Atomicity.ChainOperation memory op = atomicity.getChainOperation(
+            bundleId,
+            block.chainid
+        );
         assertEq(op.chainId, block.chainid);
         assertEq(op.target, address(target));
         assertFalse(op.prepared);
@@ -536,7 +632,8 @@ contract CrossL2AtomicityTest is Test {
         // 1. Create bundle
         uint256[] memory chainIds = new uint256[](1);
         chainIds[0] = block.chainid;
-        CrossL2Atomicity.ChainType[] memory types = new CrossL2Atomicity.ChainType[](1);
+        CrossL2Atomicity.ChainType[]
+            memory types = new CrossL2Atomicity.ChainType[](1);
         address[] memory targets = new address[](1);
         targets[0] = address(target);
         bytes[] memory datas = new bytes[](1);
@@ -544,14 +641,25 @@ contract CrossL2AtomicityTest is Test {
         uint256[] memory values = new uint256[](1);
 
         bytes32 bundleId = atomicity.createAtomicBundle(
-            chainIds, types, targets, datas, values, 0
+            chainIds,
+            types,
+            targets,
+            datas,
+            values,
+            0
         );
 
         // 2. Prepare → auto-commits
         vm.prank(executor);
-        atomicity.markChainPrepared(bundleId, block.chainid, keccak256("prepared"));
+        atomicity.markChainPrepared(
+            bundleId,
+            block.chainid,
+            keccak256("prepared")
+        );
 
-        (, CrossL2Atomicity.BundlePhase phase, , , , ) = atomicity.getBundle(bundleId);
+        (, CrossL2Atomicity.BundlePhase phase, , , , ) = atomicity.getBundle(
+            bundleId
+        );
         assertEq(uint8(phase), uint8(CrossL2Atomicity.BundlePhase.COMMITTED));
 
         // 3. Execute

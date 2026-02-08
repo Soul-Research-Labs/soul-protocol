@@ -32,7 +32,11 @@ contract MockSuperchainMessenger {
     uint256 public lastDestChainId;
     address public lastTarget;
 
-    function sendMessage(uint256 _dest, address _target, bytes calldata _msg) external {
+    function sendMessage(
+        uint256 _dest,
+        address _target,
+        bytes calldata _msg
+    ) external {
         lastDestChainId = _dest;
         lastTarget = _target;
         lastMessage = _msg;
@@ -307,7 +311,9 @@ contract DirectL2MessengerTest is Test {
                 payload
             )
         );
-        bytes32 ethSignedHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
+        bytes32 ethSignedHash = MessageHashUtils.toEthSignedMessageHash(
+            messageHash
+        );
 
         // Sign
         (uint8 v1, bytes32 r1s, bytes32 s1s) = vm.sign(pk1, ethSignedHash);
@@ -320,7 +326,12 @@ contract DirectL2MessengerTest is Test {
         sigs[2] = abi.encodePacked(r3s, s3s, v3);
 
         messenger.receiveViaRelayer(
-            messageId, srcChain, user, address(recipient), payload, sigs
+            messageId,
+            srcChain,
+            user,
+            address(recipient),
+            payload,
+            sigs
         );
 
         assertTrue(messenger.isMessageProcessed(messageId));
@@ -333,7 +344,12 @@ contract DirectL2MessengerTest is Test {
 
         vm.expectRevert(DirectL2Messenger.InsufficientConfirmations.selector);
         messenger.receiveViaRelayer(
-            keccak256("msg"), 42161, user, address(recipient), bytes("hello"), sigs
+            keccak256("msg"),
+            42161,
+            user,
+            address(recipient),
+            bytes("hello"),
+            sigs
         );
     }
 
@@ -358,9 +374,18 @@ contract DirectL2MessengerTest is Test {
         bytes memory payload = bytes("hello");
 
         bytes32 messageHash = keccak256(
-            abi.encodePacked(messageId, uint256(42161), block.chainid, user, address(recipient), payload)
+            abi.encodePacked(
+                messageId,
+                uint256(42161),
+                block.chainid,
+                user,
+                address(recipient),
+                payload
+            )
         );
-        bytes32 ethSignedHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
+        bytes32 ethSignedHash = MessageHashUtils.toEthSignedMessageHash(
+            messageHash
+        );
 
         (uint8 v1, bytes32 r1s, bytes32 s1s) = vm.sign(pk1, ethSignedHash);
         (uint8 v2, bytes32 r2s, bytes32 s2s) = vm.sign(pk2, ethSignedHash);
@@ -371,11 +396,25 @@ contract DirectL2MessengerTest is Test {
         sigs[1] = abi.encodePacked(r2s, s2s, v2);
         sigs[2] = abi.encodePacked(r3s, s3s, v3);
 
-        messenger.receiveViaRelayer(messageId, 42161, user, address(recipient), payload, sigs);
+        messenger.receiveViaRelayer(
+            messageId,
+            42161,
+            user,
+            address(recipient),
+            payload,
+            sigs
+        );
 
         // Replay should fail
         vm.expectRevert(DirectL2Messenger.MessageAlreadyProcessed.selector);
-        messenger.receiveViaRelayer(messageId, 42161, user, address(recipient), payload, sigs);
+        messenger.receiveViaRelayer(
+            messageId,
+            42161,
+            user,
+            address(recipient),
+            payload,
+            sigs
+        );
     }
 
     // ============ Receive Message Tests (Superchain) ============
@@ -385,19 +424,32 @@ contract DirectL2MessengerTest is Test {
 
         vm.prank(operator);
         messenger.receiveMessage(
-            messageId, 10, user, address(recipient), bytes("data")
+            messageId,
+            10,
+            user,
+            address(recipient),
+            bytes("data")
         );
 
         assertTrue(messenger.isMessageProcessed(messageId));
-        DirectL2Messenger.L2Message memory msg_ = messenger.getMessage(messageId);
-        assertEq(uint8(msg_.status), uint8(DirectL2Messenger.MessageStatus.EXECUTED));
+        DirectL2Messenger.L2Message memory msg_ = messenger.getMessage(
+            messageId
+        );
+        assertEq(
+            uint8(msg_.status),
+            uint8(DirectL2Messenger.MessageStatus.EXECUTED)
+        );
     }
 
     function test_receiveMessage_revertsUnauthorized() public {
         vm.prank(user);
         vm.expectRevert(DirectL2Messenger.InvalidRelayer.selector);
         messenger.receiveMessage(
-            keccak256("msg"), 10, user, address(recipient), bytes("data")
+            keccak256("msg"),
+            10,
+            user,
+            address(recipient),
+            bytes("data")
         );
     }
 
@@ -405,11 +457,23 @@ contract DirectL2MessengerTest is Test {
         bytes32 messageId = keccak256("msg_replay");
 
         vm.prank(operator);
-        messenger.receiveMessage(messageId, 10, user, address(recipient), bytes("data"));
+        messenger.receiveMessage(
+            messageId,
+            10,
+            user,
+            address(recipient),
+            bytes("data")
+        );
 
         vm.prank(operator);
         vm.expectRevert(DirectL2Messenger.MessageAlreadyProcessed.selector);
-        messenger.receiveMessage(messageId, 10, user, address(recipient), bytes("data"));
+        messenger.receiveMessage(
+            messageId,
+            10,
+            user,
+            address(recipient),
+            bytes("data")
+        );
     }
 
     // ============ Challenge Tests ============
@@ -435,9 +499,18 @@ contract DirectL2MessengerTest is Test {
         bytes memory payload = bytes("data");
 
         bytes32 messageHash = keccak256(
-            abi.encodePacked(messageId, uint256(10), block.chainid, user, address(recipient), payload)
+            abi.encodePacked(
+                messageId,
+                uint256(10),
+                block.chainid,
+                user,
+                address(recipient),
+                payload
+            )
         );
-        bytes32 ethSignedHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
+        bytes32 ethSignedHash = MessageHashUtils.toEthSignedMessageHash(
+            messageHash
+        );
 
         (uint8 v1, bytes32 r1s, bytes32 s1s) = vm.sign(pk1, ethSignedHash);
         (uint8 v2, bytes32 r2s, bytes32 s2s) = vm.sign(pk2, ethSignedHash);
@@ -448,13 +521,23 @@ contract DirectL2MessengerTest is Test {
         sigs[1] = abi.encodePacked(r2s, s2s, v2);
         sigs[2] = abi.encodePacked(r3s, s3s, v3);
 
-        messenger.receiveViaRelayer(messageId, 10, user, address(recipient), payload, sigs);
+        messenger.receiveViaRelayer(
+            messageId,
+            10,
+            user,
+            address(recipient),
+            payload,
+            sigs
+        );
 
         // Challenge
         address challenger = makeAddr("challenger");
         vm.deal(challenger, 1 ether);
         vm.prank(challenger);
-        messenger.challengeMessage{value: 0.1 ether}(messageId, keccak256("fraud"));
+        messenger.challengeMessage{value: 0.1 ether}(
+            messageId,
+            keccak256("fraud")
+        );
 
         assertEq(messenger.challengers(messageId), challenger);
         assertEq(messenger.challengeBonds(messageId), 0.1 ether);
@@ -471,7 +554,8 @@ contract DirectL2MessengerTest is Test {
         vm.prank(user);
         vm.expectRevert(DirectL2Messenger.InvalidMessage.selector);
         messenger.challengeMessage{value: 0.01 ether}(
-            keccak256("nonexistent"), keccak256("reason")
+            keccak256("nonexistent"),
+            keccak256("reason")
         );
     }
 
@@ -496,7 +580,14 @@ contract DirectL2MessengerTest is Test {
         bytes memory payload = bytes("data");
 
         bytes32 msgHash = keccak256(
-            abi.encodePacked(messageId, uint256(10), block.chainid, user, address(recipient), payload)
+            abi.encodePacked(
+                messageId,
+                uint256(10),
+                block.chainid,
+                user,
+                address(recipient),
+                payload
+            )
         );
         bytes32 ethHash = MessageHashUtils.toEthSignedMessageHash(msgHash);
 
@@ -509,7 +600,14 @@ contract DirectL2MessengerTest is Test {
         sigs[1] = abi.encodePacked(r2s, s2s, v2);
         sigs[2] = abi.encodePacked(r3s, s3s, v3);
 
-        messenger.receiveViaRelayer(messageId, 10, user, address(recipient), payload, sigs);
+        messenger.receiveViaRelayer(
+            messageId,
+            10,
+            user,
+            address(recipient),
+            payload,
+            sigs
+        );
 
         // Challenge
         address challenger = makeAddr("fraud_challenger");
@@ -526,8 +624,13 @@ contract DirectL2MessengerTest is Test {
         assertTrue(challenger.balance > challengerBalBefore);
 
         // Message should be FAILED
-        DirectL2Messenger.L2Message memory msg_ = messenger.getMessage(messageId);
-        assertEq(uint8(msg_.status), uint8(DirectL2Messenger.MessageStatus.FAILED));
+        DirectL2Messenger.L2Message memory msg_ = messenger.getMessage(
+            messageId
+        );
+        assertEq(
+            uint8(msg_.status),
+            uint8(DirectL2Messenger.MessageStatus.FAILED)
+        );
     }
 
     // ============ Route Configuration Tests ============
@@ -535,13 +638,22 @@ contract DirectL2MessengerTest is Test {
     function test_configureRoute() public {
         vm.prank(operator);
         messenger.configureRoute(
-            1, 42161,
+            1,
+            42161,
             DirectL2Messenger.MessagePath.SUPERCHAIN,
-            address(0), 5, 1 hours
+            address(0),
+            5,
+            1 hours
         );
 
-        DirectL2Messenger.RouteConfig memory route = messenger.getRoute(1, 42161);
-        assertEq(uint8(route.preferredPath), uint8(DirectL2Messenger.MessagePath.SUPERCHAIN));
+        DirectL2Messenger.RouteConfig memory route = messenger.getRoute(
+            1,
+            42161
+        );
+        assertEq(
+            uint8(route.preferredPath),
+            uint8(DirectL2Messenger.MessagePath.SUPERCHAIN)
+        );
         assertEq(route.minConfirmations, 5);
         assertEq(route.challengeWindow, 1 hours);
         assertTrue(route.active);
@@ -551,9 +663,12 @@ contract DirectL2MessengerTest is Test {
         vm.prank(operator);
         vm.expectRevert(DirectL2Messenger.InvalidDestinationChain.selector);
         messenger.configureRoute(
-            0, 42161,
+            0,
+            42161,
             DirectL2Messenger.MessagePath.FAST_RELAYER,
-            address(0), 3, 0
+            address(0),
+            3,
+            0
         );
     }
 
@@ -599,8 +714,11 @@ contract DirectL2MessengerTest is Test {
         vm.prank(user);
         vm.expectRevert();
         messenger.sendMessage(
-            DEST_CHAIN, address(recipient), bytes("hi"),
-            DirectL2Messenger.MessagePath.FAST_RELAYER, bytes32(0)
+            DEST_CHAIN,
+            address(recipient),
+            bytes("hi"),
+            DirectL2Messenger.MessagePath.FAST_RELAYER,
+            bytes32(0)
         );
 
         vm.prank(operator);
@@ -612,8 +730,11 @@ contract DirectL2MessengerTest is Test {
     function test_getMessage() public {
         vm.prank(user);
         bytes32 msgId = messenger.sendMessage{value: 0.1 ether}(
-            DEST_CHAIN, address(recipient), bytes("test"),
-            DirectL2Messenger.MessagePath.FAST_RELAYER, keccak256("nullifier")
+            DEST_CHAIN,
+            address(recipient),
+            bytes("test"),
+            DirectL2Messenger.MessagePath.FAST_RELAYER,
+            keccak256("nullifier")
         );
 
         DirectL2Messenger.L2Message memory msg_ = messenger.getMessage(msgId);

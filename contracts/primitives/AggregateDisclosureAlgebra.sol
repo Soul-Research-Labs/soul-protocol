@@ -419,10 +419,14 @@ contract AggregateDisclosureAlgebra is
         // Delegate to external verifier if configured
         /// @custom:security PLACEHOLDER — replace with real disclosure proof verifier
         if (disclosureProofVerifier != address(0)) {
-            (bool success, bytes memory result) = disclosureProofVerifier.staticcall(
-                abi.encodeWithSignature("verify(bytes)", disclosure.proof)
-            );
-            isValid = success && result.length >= 32 && abi.decode(result, (bool));
+            (bool success, bytes memory result) = disclosureProofVerifier
+                .staticcall(
+                    abi.encodeWithSignature("verify(bytes)", disclosure.proof)
+                );
+            isValid =
+                success &&
+                result.length >= 32 &&
+                abi.decode(result, (bool));
         } else {
             isValid = disclosure.proof.length >= 32;
         }
@@ -676,7 +680,9 @@ contract AggregateDisclosureAlgebra is
         _unpause();
     }
 
-    function setDisclosureProofVerifier(address verifier) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setDisclosureProofVerifier(
+        address verifier
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(verifier != address(0), "Zero address");
         disclosureProofVerifier = verifier;
     }

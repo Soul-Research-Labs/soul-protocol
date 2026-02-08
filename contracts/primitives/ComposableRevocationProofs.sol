@@ -521,18 +521,22 @@ contract ComposableRevocationProofs is
 
         // Check if credential was NOT revoked at proof time
         // Also verify the accumulator value matches the proof's recorded value
-        bool stateValid =
-            !isRevoked[proof.accumulatorId][proof.credentialHash] &&
-            proof.accumulatorValue == accumulator.currentValue;
+        bool stateValid = !isRevoked[proof.accumulatorId][
+            proof.credentialHash
+        ] && proof.accumulatorValue == accumulator.currentValue;
 
         // Delegate ZK proof verification to external verifier if configured
         /// @custom:security PLACEHOLDER — replace length check with real non-membership proof verifier
         bool proofValid;
         if (nonMembershipVerifier != address(0)) {
-            (bool success, bytes memory result) = nonMembershipVerifier.staticcall(
-                abi.encodeWithSignature("verify(bytes)", proof.proof)
-            );
-            proofValid = success && result.length >= 32 && abi.decode(result, (bool));
+            (bool success, bytes memory result) = nonMembershipVerifier
+                .staticcall(
+                    abi.encodeWithSignature("verify(bytes)", proof.proof)
+                );
+            proofValid =
+                success &&
+                result.length >= 32 &&
+                abi.decode(result, (bool));
         } else {
             proofValid = proof.proof.length >= 32;
         }
@@ -756,7 +760,9 @@ contract ComposableRevocationProofs is
         accumulators[accumulatorId].isActive = false;
     }
 
-    function setNonMembershipVerifier(address verifier) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setNonMembershipVerifier(
+        address verifier
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(verifier != address(0), "Zero address");
         nonMembershipVerifier = verifier;
     }

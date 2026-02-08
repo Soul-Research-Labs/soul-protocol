@@ -28,7 +28,11 @@ contract MockERC20 {
         return true;
     }
 
-    function transferFrom(address from, address to, uint256 amount) external returns (bool) {
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) external returns (bool) {
         require(balanceOf[from] >= amount, "insufficient");
         require(allowance[from][msg.sender] >= amount, "allowance");
         allowance[from][msg.sender] -= amount;
@@ -89,15 +93,24 @@ contract SoulAtomicSwapV2Test is Test {
     function test_createSwapETH_success() public {
         vm.prank(alice);
         bytes32 swapId = swap.createSwapETH{value: 1 ether}(
-            bob, hashLock, timeLock, commitment
+            bob,
+            hashLock,
+            timeLock,
+            commitment
         );
         assertTrue(swapId != bytes32(0));
 
         // Check swap was created
         (
-            bytes32 id, address initiator, address recipient, address tok,
-            uint256 amount, bytes32 hl, uint256 tl,
-            SoulAtomicSwapV2.SwapStatus status, bytes32 comm
+            bytes32 id,
+            address initiator,
+            address recipient,
+            address tok,
+            uint256 amount,
+            bytes32 hl,
+            uint256 tl,
+            SoulAtomicSwapV2.SwapStatus status,
+            bytes32 comm
         ) = swap.swaps(swapId);
 
         assertEq(id, swapId);
@@ -108,7 +121,7 @@ contract SoulAtomicSwapV2Test is Test {
         assertEq(uint8(status), uint8(SoulAtomicSwapV2.SwapStatus.Created));
         assertEq(comm, commitment);
         // Amount should be net of fee (0.1% = 10 bps)
-        assertEq(amount, 1 ether - (1 ether * 10 / 10000));
+        assertEq(amount, 1 ether - ((1 ether * 10) / 10000));
     }
 
     function test_createSwapETH_revertsZeroAmount() public {
@@ -121,7 +134,10 @@ contract SoulAtomicSwapV2Test is Test {
         vm.prank(alice);
         vm.expectRevert(SoulAtomicSwapV2.InvalidRecipient.selector);
         swap.createSwapETH{value: 1 ether}(
-            address(0), hashLock, timeLock, commitment
+            address(0),
+            hashLock,
+            timeLock,
+            commitment
         );
     }
 
@@ -129,7 +145,10 @@ contract SoulAtomicSwapV2Test is Test {
         vm.prank(alice);
         vm.expectRevert(SoulAtomicSwapV2.InvalidHashLock.selector);
         swap.createSwapETH{value: 1 ether}(
-            bob, bytes32(0), timeLock, commitment
+            bob,
+            bytes32(0),
+            timeLock,
+            commitment
         );
     }
 
@@ -137,16 +156,17 @@ contract SoulAtomicSwapV2Test is Test {
         vm.prank(alice);
         vm.expectRevert(SoulAtomicSwapV2.InvalidTimeLock.selector);
         swap.createSwapETH{value: 1 ether}(
-            bob, hashLock, 30 minutes, commitment
+            bob,
+            hashLock,
+            30 minutes,
+            commitment
         );
     }
 
     function test_createSwapETH_revertsTimeLockTooLong() public {
         vm.prank(alice);
         vm.expectRevert(SoulAtomicSwapV2.InvalidTimeLock.selector);
-        swap.createSwapETH{value: 1 ether}(
-            bob, hashLock, 8 days, commitment
-        );
+        swap.createSwapETH{value: 1 ether}(bob, hashLock, 8 days, commitment);
     }
 
     function test_createSwapETH_revertsDuplicateHashLock() public {
@@ -164,7 +184,12 @@ contract SoulAtomicSwapV2Test is Test {
         vm.startPrank(alice);
         token.approve(address(swap), amount);
         bytes32 swapId = swap.createSwapToken(
-            bob, address(token), amount, hashLock, timeLock, commitment
+            bob,
+            address(token),
+            amount,
+            hashLock,
+            timeLock,
+            commitment
         );
         vm.stopPrank();
 
@@ -178,7 +203,10 @@ contract SoulAtomicSwapV2Test is Test {
         // Create swap
         vm.prank(alice);
         bytes32 swapId = swap.createSwapETH{value: 1 ether}(
-            bob, hashLock, timeLock, commitment
+            bob,
+            hashLock,
+            timeLock,
+            commitment
         );
 
         // Commit
@@ -197,18 +225,23 @@ contract SoulAtomicSwapV2Test is Test {
         swap.revealClaim(swapId, secret, salt);
 
         // Bob should receive the swap amount
-        uint256 netAmount = 1 ether - (1 ether * 10 / 10000);
+        uint256 netAmount = 1 ether - ((1 ether * 10) / 10000);
         assertEq(bob.balance - bobBalBefore, netAmount);
 
         // Status should be Claimed
-        (, , , , , , , SoulAtomicSwapV2.SwapStatus status, ) = swap.swaps(swapId);
+        (, , , , , , , SoulAtomicSwapV2.SwapStatus status, ) = swap.swaps(
+            swapId
+        );
         assertEq(uint8(status), uint8(SoulAtomicSwapV2.SwapStatus.Claimed));
     }
 
     function test_revealClaim_revertsWithoutCommit() public {
         vm.prank(alice);
         bytes32 swapId = swap.createSwapETH{value: 1 ether}(
-            bob, hashLock, timeLock, commitment
+            bob,
+            hashLock,
+            timeLock,
+            commitment
         );
 
         vm.prank(bob);
@@ -219,7 +252,10 @@ contract SoulAtomicSwapV2Test is Test {
     function test_revealClaim_revertsCommitTooRecent() public {
         vm.prank(alice);
         bytes32 swapId = swap.createSwapETH{value: 1 ether}(
-            bob, hashLock, timeLock, commitment
+            bob,
+            hashLock,
+            timeLock,
+            commitment
         );
 
         bytes32 salt = keccak256("salt");
@@ -236,12 +272,17 @@ contract SoulAtomicSwapV2Test is Test {
     function test_revealClaim_revertsWrongSecret() public {
         vm.prank(alice);
         bytes32 swapId = swap.createSwapETH{value: 1 ether}(
-            bob, hashLock, timeLock, commitment
+            bob,
+            hashLock,
+            timeLock,
+            commitment
         );
 
         bytes32 salt = keccak256("salt");
         bytes32 wrongSecret = keccak256("wrong");
-        bytes32 commitHash = keccak256(abi.encodePacked(wrongSecret, salt, bob));
+        bytes32 commitHash = keccak256(
+            abi.encodePacked(wrongSecret, salt, bob)
+        );
         vm.prank(bob);
         swap.commitClaim(swapId, commitHash);
         vm.warp(block.timestamp + 3);
@@ -256,21 +297,27 @@ contract SoulAtomicSwapV2Test is Test {
     function test_legacyClaim_recipientOnly() public {
         vm.prank(alice);
         bytes32 swapId = swap.createSwapETH{value: 1 ether}(
-            bob, hashLock, timeLock, commitment
+            bob,
+            hashLock,
+            timeLock,
+            commitment
         );
 
         uint256 bobBalBefore = bob.balance;
         vm.prank(bob);
         swap.claim(swapId, secret);
 
-        uint256 netAmount = 1 ether - (1 ether * 10 / 10000);
+        uint256 netAmount = 1 ether - ((1 ether * 10) / 10000);
         assertEq(bob.balance - bobBalBefore, netAmount);
     }
 
     function test_legacyClaim_revertsNotRecipient() public {
         vm.prank(alice);
         bytes32 swapId = swap.createSwapETH{value: 1 ether}(
-            bob, hashLock, timeLock, commitment
+            bob,
+            hashLock,
+            timeLock,
+            commitment
         );
 
         vm.prank(alice); // Wrong caller
@@ -283,7 +330,10 @@ contract SoulAtomicSwapV2Test is Test {
     function test_refund_afterExpiry() public {
         vm.prank(alice);
         bytes32 swapId = swap.createSwapETH{value: 1 ether}(
-            bob, hashLock, timeLock, commitment
+            bob,
+            hashLock,
+            timeLock,
+            commitment
         );
 
         // Warp past timelock
@@ -292,17 +342,22 @@ contract SoulAtomicSwapV2Test is Test {
         uint256 aliceBalBefore = alice.balance;
         swap.refund(swapId);
 
-        uint256 netAmount = 1 ether - (1 ether * 10 / 10000);
+        uint256 netAmount = 1 ether - ((1 ether * 10) / 10000);
         assertEq(alice.balance - aliceBalBefore, netAmount);
 
-        (, , , , , , , SoulAtomicSwapV2.SwapStatus status, ) = swap.swaps(swapId);
+        (, , , , , , , SoulAtomicSwapV2.SwapStatus status, ) = swap.swaps(
+            swapId
+        );
         assertEq(uint8(status), uint8(SoulAtomicSwapV2.SwapStatus.Refunded));
     }
 
     function test_refund_revertsBeforeExpiry() public {
         vm.prank(alice);
         bytes32 swapId = swap.createSwapETH{value: 1 ether}(
-            bob, hashLock, timeLock, commitment
+            bob,
+            hashLock,
+            timeLock,
+            commitment
         );
 
         vm.expectRevert(SoulAtomicSwapV2.SwapNotExpired.selector);
@@ -312,7 +367,10 @@ contract SoulAtomicSwapV2Test is Test {
     function test_refund_revertsAlreadyClaimed() public {
         vm.prank(alice);
         bytes32 swapId = swap.createSwapETH{value: 1 ether}(
-            bob, hashLock, timeLock, commitment
+            bob,
+            hashLock,
+            timeLock,
+            commitment
         );
 
         vm.prank(bob);
@@ -328,7 +386,10 @@ contract SoulAtomicSwapV2Test is Test {
     function test_isClaimable() public {
         vm.prank(alice);
         bytes32 swapId = swap.createSwapETH{value: 1 ether}(
-            bob, hashLock, timeLock, commitment
+            bob,
+            hashLock,
+            timeLock,
+            commitment
         );
 
         assertTrue(swap.isClaimable(swapId));
@@ -338,7 +399,10 @@ contract SoulAtomicSwapV2Test is Test {
     function test_isRefundable_afterExpiry() public {
         vm.prank(alice);
         bytes32 swapId = swap.createSwapETH{value: 1 ether}(
-            bob, hashLock, timeLock, commitment
+            bob,
+            hashLock,
+            timeLock,
+            commitment
         );
 
         vm.warp(block.timestamp + timeLock + 1);
@@ -350,7 +414,10 @@ contract SoulAtomicSwapV2Test is Test {
     function test_getSwapByHashLock() public {
         vm.prank(alice);
         bytes32 swapId = swap.createSwapETH{value: 1 ether}(
-            bob, hashLock, timeLock, commitment
+            bob,
+            hashLock,
+            timeLock,
+            commitment
         );
 
         SoulAtomicSwapV2.Swap memory s = swap.getSwapByHashLock(hashLock);
@@ -394,7 +461,7 @@ contract SoulAtomicSwapV2Test is Test {
         vm.prank(alice);
         swap.createSwapETH{value: 1 ether}(bob, hashLock, timeLock, commitment);
 
-        uint256 expectedFee = 1 ether * 10 / 10000;
+        uint256 expectedFee = (1 ether * 10) / 10000;
         assertEq(swap.collectedFees(address(0)), expectedFee);
 
         // Request withdrawal
@@ -437,7 +504,10 @@ contract SoulAtomicSwapV2Test is Test {
 
         vm.prank(alice);
         bytes32 swapId = swap.createSwapETH{value: 1 ether}(
-            bob, hashLock, timeLock, commitment
+            bob,
+            hashLock,
+            timeLock,
+            commitment
         );
         assertTrue(swapId != bytes32(0));
     }
@@ -451,12 +521,17 @@ contract SoulAtomicSwapV2Test is Test {
         vm.startPrank(alice);
         token.approve(address(swap), amount);
         bytes32 swapId = swap.createSwapToken(
-            bob, address(token), amount, hashLock, timeLock, commitment
+            bob,
+            address(token),
+            amount,
+            hashLock,
+            timeLock,
+            commitment
         );
         vm.stopPrank();
 
         // Claim
-        uint256 netAmount = amount - (amount * 10 / 10000);
+        uint256 netAmount = amount - ((amount * 10) / 10000);
         uint256 bobBefore = token.balanceOf(bob);
         vm.prank(bob);
         swap.claim(swapId, secret);
@@ -470,13 +545,18 @@ contract SoulAtomicSwapV2Test is Test {
         vm.startPrank(alice);
         token.approve(address(swap), amount);
         bytes32 swapId = swap.createSwapToken(
-            bob, address(token), amount, hl2, timeLock, commitment
+            bob,
+            address(token),
+            amount,
+            hl2,
+            timeLock,
+            commitment
         );
         vm.stopPrank();
 
         vm.warp(block.timestamp + timeLock + 1);
 
-        uint256 netAmount = amount - (amount * 10 / 10000);
+        uint256 netAmount = amount - ((amount * 10) / 10000);
         uint256 aliceBefore = token.balanceOf(alice);
         swap.refund(swapId);
         assertEq(token.balanceOf(alice) - aliceBefore, netAmount);
@@ -491,10 +571,14 @@ contract SoulAtomicSwapV2Test is Test {
         vm.deal(alice, uint256(amount));
         vm.prank(alice);
         bytes32 swapId = swap.createSwapETH{value: amount}(
-            bob, hashLock, timeLock, commitment
+            bob,
+            hashLock,
+            timeLock,
+            commitment
         );
 
-        uint256 expectedNet = uint256(amount) - (uint256(amount) * 10 / 10000);
+        uint256 expectedNet = uint256(amount) -
+            ((uint256(amount) * 10) / 10000);
         (, , , , uint256 storedAmount, , , , ) = swap.swaps(swapId);
         assertEq(storedAmount, expectedNet);
     }
@@ -505,7 +589,10 @@ contract SoulAtomicSwapV2Test is Test {
         vm.deal(alice, uint256(amount));
         vm.prank(alice);
         bytes32 swapId = swap.createSwapETH{value: amount}(
-            bob, hashLock, timeLock, commitment
+            bob,
+            hashLock,
+            timeLock,
+            commitment
         );
 
         // Claim
@@ -523,13 +610,18 @@ contract SoulAtomicSwapV2Test is Test {
     function test_commitClaim_revertsAfterExpiry() public {
         vm.prank(alice);
         bytes32 swapId = swap.createSwapETH{value: 1 ether}(
-            bob, hashLock, timeLock, commitment
+            bob,
+            hashLock,
+            timeLock,
+            commitment
         );
 
         // Warp to just before expiry (within TIMESTAMP_BUFFER)
         vm.warp(block.timestamp + timeLock - 30);
 
-        bytes32 commitHash = keccak256(abi.encodePacked(secret, bytes32(0), bob));
+        bytes32 commitHash = keccak256(
+            abi.encodePacked(secret, bytes32(0), bob)
+        );
         vm.prank(bob);
         vm.expectRevert(SoulAtomicSwapV2.SwapExpired.selector);
         swap.commitClaim(swapId, commitHash);

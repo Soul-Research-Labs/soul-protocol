@@ -533,7 +533,10 @@ contract HomomorphicHiding is AccessControl, ReentrancyGuard, Pausable {
             (bool success, bytes memory result) = rangeProofVerifier.staticcall(
                 abi.encodeWithSignature("verify(bytes)", rangeProof.proof)
             );
-            isValid = success && result.length >= 32 && abi.decode(result, (bool));
+            isValid =
+                success &&
+                result.length >= 32 &&
+                abi.decode(result, (bool));
         } else {
             isValid = rangeProof.proof.length >= 32;
         }
@@ -673,7 +676,9 @@ contract HomomorphicHiding is AccessControl, ReentrancyGuard, Pausable {
         commitments[commitmentId].isActive = false;
     }
 
-    function setRangeProofVerifier(address verifier) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setRangeProofVerifier(
+        address verifier
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(verifier != address(0), "Zero address");
         rangeProofVerifier = verifier;
     }
