@@ -1,0 +1,130 @@
+{
+  "$schema": "https://docs.openzeppelin.com/defender/v2/reference/schema",
+  "version": "2.0",
+  "description": "Monitors for batch accumulation, privacy oracle, and Scroll bridge",
+  "monitors": {
+    "batch_accumulator_proof_failure": {
+      "name": "BatchAccumulator Proof Failures",
+      "description": "Detect failed proof verifications in batch processing",
+      "type": "BLOCK",
+      "network": "mainnet",
+      "addresses": [],
+      "eventConditions": [
+        {
+          "eventSignature": "BatchFailed(bytes32,string)",
+          "expression": null
+        }
+      ],
+      "alertThreshold": { "amount": 1, "windowSeconds": 1 },
+      "notificationChannels": ["soul-pagerduty", "soul-slack-critical"],
+      "riskCategory": "TECHNICAL"
+    },
+    "batch_accumulator_batch_ready": {
+      "name": "BatchAccumulator Batches Ready",
+      "description": "Track batch readiness for relayer monitoring",
+      "type": "BLOCK",
+      "network": "mainnet",
+      "addresses": [],
+      "eventConditions": [
+        {
+          "eventSignature": "BatchReady(bytes32,uint256)",
+          "expression": null
+        }
+      ],
+      "alertThreshold": { "amount": 1, "windowSeconds": 60 },
+      "notificationChannels": ["soul-slack-ops"],
+      "riskCategory": "TECHNICAL"
+    },
+    "batch_accumulator_stale_batch": {
+      "name": "Stale Batch Detection",
+      "description": "Alert if a batch sits in READY state for more than 30 minutes without processing",
+      "type": "BLOCK",
+      "network": "mainnet",
+      "addresses": [],
+      "eventConditions": [
+        {
+          "eventSignature": "BatchReady(bytes32,uint256)",
+          "expression": null
+        }
+      ],
+      "alertThreshold": { "amount": 1, "windowSeconds": 1800 },
+      "notificationChannels": ["soul-slack-ops", "soul-pagerduty"],
+      "riskCategory": "TECHNICAL"
+    },
+    "privacy_oracle_price_update": {
+      "name": "Privacy Oracle Price Updates",
+      "description": "Monitor price commitment submissions to detect anomalies",
+      "type": "BLOCK",
+      "network": "mainnet",
+      "addresses": [],
+      "eventConditions": [
+        {
+          "eventSignature": "PriceUpdated(bytes32,bytes32,uint256)",
+          "expression": null
+        }
+      ],
+      "alertThreshold": { "amount": 100, "windowSeconds": 60 },
+      "notificationChannels": ["soul-slack-ops"],
+      "riskCategory": "FINANCIAL"
+    },
+    "privacy_oracle_stale_prices": {
+      "name": "Privacy Oracle Stale Price Detection",
+      "description": "Alert when no price updates for 15 minutes (potential oracle failure)",
+      "type": "FORTA",
+      "network": "mainnet",
+      "addresses": [],
+      "eventConditions": [],
+      "alertThreshold": { "amount": 0, "windowSeconds": 900 },
+      "notificationChannels": ["soul-pagerduty", "soul-slack-critical"],
+      "riskCategory": "FINANCIAL"
+    },
+    "scroll_bridge_message_sent": {
+      "name": "Scroll Bridge Messages",
+      "description": "Track cross-chain messages sent through Scroll adapter",
+      "type": "BLOCK",
+      "network": "mainnet",
+      "addresses": [],
+      "eventConditions": [
+        {
+          "eventSignature": "MessageSent(bytes32,address,uint256)",
+          "expression": null
+        }
+      ],
+      "alertThreshold": { "amount": 50, "windowSeconds": 300 },
+      "notificationChannels": ["soul-slack-ops"],
+      "riskCategory": "TECHNICAL"
+    },
+    "scroll_bridge_relay_failure": {
+      "name": "Scroll Bridge Relay Failures",
+      "description": "Detect messages stuck in PENDING or moved to FAILED",
+      "type": "BLOCK",
+      "network": "mainnet",
+      "addresses": [],
+      "eventConditions": [
+        {
+          "eventSignature": "MessageRelayed(bytes32,address)",
+          "expression": null
+        }
+      ],
+      "alertThreshold": { "amount": 1, "windowSeconds": 1 },
+      "notificationChannels": ["soul-slack-critical"],
+      "riskCategory": "TECHNICAL"
+    },
+    "proof_verifier_change": {
+      "name": "Proof Verifier Address Change",
+      "description": "Alert when proof verifier is changed on any contract (admin action)",
+      "type": "BLOCK",
+      "network": "mainnet",
+      "addresses": [],
+      "eventConditions": [
+        {
+          "eventSignature": "ProofVerifierSet(address)",
+          "expression": null
+        }
+      ],
+      "alertThreshold": { "amount": 1, "windowSeconds": 1 },
+      "notificationChannels": ["soul-pagerduty", "soul-slack-critical", "soul-email-critical"],
+      "riskCategory": "ACCESS-CONTROL"
+    }
+  }
+}

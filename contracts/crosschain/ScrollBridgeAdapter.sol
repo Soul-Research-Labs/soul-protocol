@@ -257,8 +257,9 @@ contract ScrollBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         // On Scroll mainnet, verify via the rollup contract's finalized batch:
         // IScrollRollup(rollupContract).isBatchFinalized(batchIndex)
         // For now, status-based verification is used until Scroll SDK is integrated.
-        return messageStatus[messageHash] == MessageStatus.SENT ||
-               messageStatus[messageHash] == MessageStatus.RELAYED;
+        return
+            messageStatus[messageHash] == MessageStatus.SENT ||
+            messageStatus[messageHash] == MessageStatus.RELAYED;
     }
 
     /*//////////////////////////////////////////////////////////////

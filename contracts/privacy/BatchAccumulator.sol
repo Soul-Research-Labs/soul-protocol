@@ -670,7 +670,9 @@ contract BatchAccumulator is
         // If a proof verifier is configured, delegate to it
         if (proofVerifier != address(0)) {
             // Encode batch commitments as public inputs for the verifier
-            uint256[] memory publicInputs = new uint256[](batch.commitments.length + 1);
+            uint256[] memory publicInputs = new uint256[](
+                batch.commitments.length + 1
+            );
             publicInputs[0] = uint256(batchId);
             for (uint256 i = 0; i < batch.commitments.length; i++) {
                 publicInputs[i + 1] = uint256(batch.commitments[i]);

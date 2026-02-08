@@ -583,8 +583,12 @@ contract PrivacyOracleIntegration is ReentrancyGuard, AccessControl, Pausable {
                 );
 
                 // Recover signer using OpenZeppelin ECDSA
-                (address recovered, ECDSA.RecoverError err, ) = ECDSA.tryRecover(messageHash, signature);
-                if (err == ECDSA.RecoverError.NoError && recovered == oracleNodeList[i]) {
+                (address recovered, ECDSA.RecoverError err, ) = ECDSA
+                    .tryRecover(messageHash, signature);
+                if (
+                    err == ECDSA.RecoverError.NoError &&
+                    recovered == oracleNodeList[i]
+                ) {
                     return true;
                 }
             }

@@ -60,6 +60,7 @@ OPTIMISM_RPC_URL=https://opt-mainnet.g.alchemy.com/v2/YOUR_KEY
 SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/YOUR_KEY
 ARBITRUM_SEPOLIA_RPC_URL=https://arb-sepolia.g.alchemy.com/v2/YOUR_KEY
 BASE_SEPOLIA_RPC_URL=https://base-sepolia.g.alchemy.com/v2/YOUR_KEY
+SCROLL_SEPOLIA_RPC_URL=https://sepolia-rpc.scroll.io
 
 # Block Explorer API Keys
 ETHERSCAN_API_KEY=your_etherscan_key
@@ -163,6 +164,9 @@ npx hardhat run scripts/deploy/deploy-arbitrum-bridge.ts --network arbitrumSepol
 npx hardhat run scripts/deploy/deploy-base-bridge.ts --network baseSepolia
 npx hardhat run scripts/deploy/deploy-layerzero-bridge.ts --network sepolia
 npx hardhat run scripts/deploy/deploy-hyperlane-adapter.ts --network sepolia
+
+# Scroll Sepolia (includes adapter configuration)
+bash scripts/deploy/deploy-scroll-sepolia.sh
 ```
 
 ### Step 6: Verify Contracts
@@ -199,6 +203,9 @@ L2 deployment costs are significantly lower (1-10% of L1).
 ## Post-Deployment Verification
 
 ```bash
+# Automated deployment verification
+npx hardhat run scripts/deploy/verify-deployment.ts --network sepolia
+
 # Test deployed contracts
 npx hardhat run scripts/test-deployed.ts --network sepolia
 
@@ -222,10 +229,12 @@ Deployment addresses are saved to `deployments/`.
 | Ethereum Sepolia | 11155111 | Testnet |
 | Arbitrum Sepolia | 421614 | Testnet |
 | Base Sepolia | 84532 | Testnet |
+| Scroll Sepolia | 534351 | Testnet |
 | Ethereum Mainnet | 1 | Planned |
 | Arbitrum One | 42161 | Planned |
 | Base | 8453 | Planned |
 | Optimism | 10 | Planned |
+| Scroll | 534352 | Planned |
 
 ### Cross-Chain Configuration
 

@@ -260,6 +260,7 @@ privateTransfer().catch(console.error);
 | Sepolia | [sepoliafaucet.com](https://sepoliafaucet.com) |
 | Arbitrum Sepolia | [Alchemy Faucet](https://www.alchemy.com/faucets/arbitrum-sepolia) |
 | Base Sepolia | [Alchemy Faucet](https://www.alchemy.com/faucets/base-sepolia) |
+| Scroll Sepolia | [Scroll Faucet](https://sepolia.scroll.io/bridge) |
 
 ### Environment Variables Template
 
@@ -271,11 +272,13 @@ PRIVATE_KEY=your_private_key_here  # Never commit this!
 # L2 RPCs
 ARBITRUM_SEPOLIA_RPC_URL=https://arb-sepolia.g.alchemy.com/v2/YOUR_KEY
 BASE_SEPOLIA_RPC_URL=https://base-sepolia.g.alchemy.com/v2/YOUR_KEY
+SCROLL_SEPOLIA_RPC_URL=https://sepolia-rpc.scroll.io
 
 # Block Explorer API Keys (for contract verification)
 ETHERSCAN_API_KEY=your_key
 ARBISCAN_API_KEY=your_key
 BASESCAN_API_KEY=your_key
+SCROLLSCAN_API_KEY=your_key
 ```
 
 ---
