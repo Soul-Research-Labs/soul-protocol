@@ -1,7 +1,7 @@
 {
   "name": "@soul/sdk",
   "version": "1.0.0",
-  "description": "Soul Protocol SDK - Cross-chain privacy middleware with post-quantum cryptography for Web3",
+  "description": "Soul Protocol SDK - Cross-chain privacy middleware for Web3",
   "main": "dist/index.js",
   "module": "dist/esm/index.js",
   "types": "dist/index.d.ts",
@@ -24,30 +24,10 @@
       "require": "./dist/bridges/index.js",
       "types": "./dist/bridges/index.d.ts"
     },
-    "./pqc": {
-      "import": "./dist/esm/pqc/index.js",
-      "require": "./dist/pqc/index.js",
-      "types": "./dist/pqc/index.d.ts"
-    },
     "./react": {
       "import": "./dist/esm/react/hooks.js",
       "require": "./dist/react/hooks.js",
       "types": "./dist/react/hooks.d.ts"
-    },
-    "./zk": {
-      "import": "./dist/esm/zkSystems/index.js",
-      "require": "./dist/zkSystems/index.js",
-      "types": "./dist/zkSystems/index.d.ts"
-    },
-    "./mpc": {
-      "import": "./dist/esm/mpc/index.js",
-      "require": "./dist/mpc/index.js",
-      "types": "./dist/mpc/index.d.ts"
-    },
-    "./fhe": {
-      "import": "./dist/esm/fhe/index.js",
-      "require": "./dist/fhe/index.js",
-      "types": "./dist/fhe/index.d.ts"
     },
     "./cli": {
       "import": "./dist/esm/cli/index.js",
@@ -78,18 +58,11 @@
     "zero-knowledge",
     "bridge",
     "cross-chain",
-    "cardano",
-    "polkadot",
-    "cosmos",
     "ethereum",
     "web3",
-    "post-quantum",
-    "pqc",
-    "dilithium",
-    "kyber",
-    "sphincs",
-    "hybrid-signatures",
-    "quantum-resistant"
+    "l2",
+    "noir",
+    "stealth-addresses"
   ],
   "author": "Soul Team",
   "license": "MIT",
@@ -103,9 +76,7 @@
   },
   "dependencies": {
     "commander": "^11.0.0",
-    "ffjavascript": "^0.3.0",
     "poseidon-lite": "^0.3.0",
-    "snarkjs": "^0.7.3",
     "viem": "^2.30.0"
   },
   "devDependencies": {
@@ -113,7 +84,6 @@
     "@types/mocha": "^10.0.0",
     "@types/node": "^20.0.0",
     "@types/react": "^19.2.9",
-    "@types/snarkjs": "^0.7.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "chai": "^4.3.0",
