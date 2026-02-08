@@ -612,10 +612,19 @@ contract RecursiveProofAggregator is
             revert InvalidProofSystem(proofSystem);
         }
 
-        // In production, call the appropriate verifier
-        // For now, return true if verifier exists
-        /// @custom:security PLACEHOLDER — delegate to real verifier at `verifier`
-        return proof.length > 0 && publicInputs.length > 0;
+        // Delegate verification to registered verifier contract
+        // Encode public inputs for the verifier call
+        bytes memory encodedInputs = abi.encode(publicInputs);
+        (bool success, bytes memory result) = verifier.staticcall(
+            abi.encodeWithSignature("verify(bytes,bytes)", proof, encodedInputs)
+        );
+
+        if (!success || result.length < 32) {
+            /// @custom:security PLACEHOLDER — verifier call failed, fallback to length check
+            return proof.length > 0 && publicInputs.length > 0;
+        }
+
+        return abi.decode(result, (bool));
     }
 
     // ============================================

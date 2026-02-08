@@ -261,6 +261,9 @@ contract CrossChainPrivacyHub is
     uint256 public lastCircuitBreakerTimestamp;
     string public circuitBreakerReason;
 
+    /// @notice External verifier contracts per proof system
+    mapping(ProofSystem => address) public proofVerifiers;
+
     // =========================================================================
     // PRIVACY MODULE INTEGRATIONS
     // =========================================================================
@@ -1190,44 +1193,87 @@ contract CrossChainPrivacyHub is
     /// @custom:security PLACEHOLDER — replace with real Groth16 verifier
     function _verifyGroth16(
         PrivacyProof calldata proof
-    ) internal pure returns (bool) {
-        // In production, call Groth16 verifier precompile or contract
+    ) internal view returns (bool) {
+        address verifier = proofVerifiers[ProofSystem.GROTH16];
+        if (verifier != address(0)) {
+            return _delegateVerify(verifier, proof.proof);
+        }
+        // Fallback: length check until verifier is wired
         return proof.proof.length >= 192; // 2 G1 + 1 G2 = 64 + 64 + 128
     }
 
     /// @custom:security PLACEHOLDER — replace with real PLONK verifier
     function _verifyPLONK(
         PrivacyProof calldata proof
-    ) internal pure returns (bool) {
+    ) internal view returns (bool) {
+        address verifier = proofVerifiers[ProofSystem.PLONK];
+        if (verifier != address(0)) {
+            return _delegateVerify(verifier, proof.proof);
+        }
         return proof.proof.length >= 256;
     }
 
     /// @custom:security PLACEHOLDER — replace with real STARK verifier
     function _verifySTARK(
         PrivacyProof calldata proof
-    ) internal pure returns (bool) {
+    ) internal view returns (bool) {
+        address verifier = proofVerifiers[ProofSystem.STARK];
+        if (verifier != address(0)) {
+            return _delegateVerify(verifier, proof.proof);
+        }
         return proof.proof.length >= 512;
     }
 
     /// @custom:security PLACEHOLDER — replace with real Bulletproof verifier
     function _verifyBulletproof(
         PrivacyProof calldata proof
-    ) internal pure returns (bool) {
+    ) internal view returns (bool) {
+        address verifier = proofVerifiers[ProofSystem.BULLETPROOF];
+        if (verifier != address(0)) {
+            return _delegateVerify(verifier, proof.proof);
+        }
         return proof.proof.length >= 128;
     }
 
     /// @custom:security PLACEHOLDER — replace with real Halo2 verifier
     function _verifyHalo2(
         PrivacyProof calldata proof
-    ) internal pure returns (bool) {
+    ) internal view returns (bool) {
+        address verifier = proofVerifiers[ProofSystem.HALO2];
+        if (verifier != address(0)) {
+            return _delegateVerify(verifier, proof.proof);
+        }
         return proof.proof.length >= 256;
     }
 
     /// @custom:security PLACEHOLDER — replace with real CLSAG verifier
     function _verifyCLSAG(
         PrivacyProof calldata proof
-    ) internal pure returns (bool) {
+    ) internal view returns (bool) {
+        address verifier = proofVerifiers[ProofSystem.CLSAG];
+        if (verifier != address(0)) {
+            return _delegateVerify(verifier, proof.proof);
+        }
         return proof.proof.length >= 64;
+    }
+
+    /**
+     * @dev Delegate proof verification to an external verifier contract
+     * @param verifier The verifier contract address
+     * @param proof The proof bytes to verify
+     * @return valid Whether the proof is valid
+     */
+    function _delegateVerify(
+        address verifier,
+        bytes calldata proof
+    ) internal view returns (bool valid) {
+        (bool success, bytes memory result) = verifier.staticcall(
+            abi.encodeWithSignature("verify(bytes)", proof)
+        );
+        if (success && result.length >= 32) {
+            valid = abi.decode(result, (bool));
+        }
+        // Returns false if staticcall fails or returns unexpected data
     }
 
     function _checkAndUpdateDailyLimit(
@@ -1295,6 +1341,19 @@ contract CrossChainPrivacyHub is
         if (size < MIN_RING_SIZE || size > MAX_RING_SIZE)
             revert InvalidRingSize(size);
         defaultRingSize = size;
+    }
+
+    /**
+     * @notice Set external verifier contract for a proof system
+     * @param system The proof system to configure
+     * @param verifier The verifier contract address (implements verify(bytes,bytes) → bool)
+     */
+    function setProofVerifier(
+        ProofSystem system,
+        address verifier
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (verifier == address(0)) revert ZeroAddress();
+        proofVerifiers[system] = verifier;
     }
 
     function pause() external onlyRole(GUARDIAN_ROLE) {

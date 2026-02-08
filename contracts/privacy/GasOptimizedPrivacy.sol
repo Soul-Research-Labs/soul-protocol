@@ -445,6 +445,7 @@ contract GasOptimizedRingCT {
     error BalanceNotPreserved();
     error InvalidSignature();
     error RingSignatureVerificationNotImplemented();
+    error Unauthorized();
 
     // ═══════════════════════════════════════════════════════════════════════
     // EVENTS
@@ -466,9 +467,32 @@ contract GasOptimizedRingCT {
     // Commitment set (UTXO pool)
     mapping(bytes32 => bool) public commitmentSet;
 
+    // External ring signature verifier contract
+    address public ringSignatureVerifier;
+
+    // Contract owner for admin operations
+    address public owner;
+
     // Constants
     uint256 public constant MIN_RING_SIZE = 2;
     uint256 public constant MAX_RING_SIZE = 16;
+
+    constructor() {
+        owner = msg.sender;
+    }
+
+    modifier onlyOwner() {
+        if (msg.sender != owner) revert Unauthorized();
+        _;
+    }
+
+    /**
+     * @notice Set external ring signature verifier contract
+     * @param verifier Address implementing verify(bytes32[],bytes32[],bytes,bytes32) → bool
+     */
+    function setRingSignatureVerifier(address verifier) external onlyOwner {
+        ringSignatureVerifier = verifier;
+    }
 
     // ═══════════════════════════════════════════════════════════════════════
     // GAS-OPTIMIZED FUNCTIONS
@@ -600,14 +624,33 @@ contract GasOptimizedRingCT {
     // ═══════════════════════════════════════════════════════════════════════
 
     function _verifyRingSignature(
-        bytes32[] calldata /* ring */,
-        bytes32[] calldata /* keyImages */,
-        bytes calldata /* signature */,
-        bytes32 /* message */
-    ) internal pure {
+        bytes32[] calldata ring,
+        bytes32[] calldata keyImages,
+        bytes calldata signature,
+        bytes32 message
+    ) internal view {
+        address verifier = ringSignatureVerifier;
+        if (verifier != address(0)) {
+            // Delegate to external CLSAG/MLSAG verifier
+            (bool success, bytes memory result) = verifier.staticcall(
+                abi.encodeWithSignature(
+                    "verify(bytes32[],bytes32[],bytes,bytes32)",
+                    ring,
+                    keyImages,
+                    signature,
+                    message
+                )
+            );
+            if (!success || result.length < 32 || !abi.decode(result, (bool))) {
+                revert InvalidSignature();
+            }
+            return;
+        }
+
         // SECURITY CRITICAL: Ring signature verification is not yet implemented.
         // Reverts to prevent unsafe usage in production.
-        // TODO: Implement full CLSAG/MLSAG verification.
+        // TODO: Implement full CLSAG/MLSAG verification or set external verifier.
+        /// @custom:security PLACEHOLDER — set ringSignatureVerifier to enable
         revert RingSignatureVerificationNotImplemented();
     }
 }

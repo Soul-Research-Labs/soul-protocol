@@ -188,6 +188,9 @@ contract OptimismBridgeAdapter is
     /// @notice Accumulated bridge fees (in wei-equivalent wrappedOP)
     uint256 public accumulatedFees;
 
+    /// @notice External ZK proof verifier contract
+    address public zkProofVerifier;
+
     /*//////////////////////////////////////////////////////////////
                              CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
@@ -725,6 +728,17 @@ contract OptimismBridgeAdapter is
         _unpause();
     }
 
+    /**
+     * @notice Set external ZK proof verifier contract
+     * @param verifier Address implementing verify(bytes32,bytes32,bytes32,bytes) → bool
+     */
+    function setZKProofVerifier(
+        address verifier
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (verifier == address(0)) revert ZeroAddress();
+        zkProofVerifier = verifier;
+    }
+
     /// @notice Withdraw accumulated bridge fees
     function withdrawFees() external onlyRole(TREASURY_ROLE) {
         uint256 amount = accumulatedFees;
@@ -942,12 +956,30 @@ contract OptimismBridgeAdapter is
         bytes32 commitment,
         bytes32 nullifier,
         bytes calldata zkProof
-    ) internal pure returns (bool) {
+    ) internal view returns (bool) {
+        // Delegate to external verifier if configured
+        address verifier = zkProofVerifier;
+        if (verifier != address(0)) {
+            (bool success, bytes memory result) = verifier.staticcall(
+                abi.encodeWithSignature(
+                    "verify(bytes32,bytes32,bytes32,bytes)",
+                    depositId,
+                    commitment,
+                    nullifier,
+                    zkProof
+                )
+            );
+            if (success && result.length >= 32) {
+                return abi.decode(result, (bool));
+            }
+            return false;
+        }
+
+        // Fallback: length + binding check until verifier is wired
         // Minimum proof length for Groth16 (256 bytes) or PLONK (512 bytes)
         if (zkProof.length < 256) return false;
 
         // Verify proof binds to the deposit, commitment, and nullifier
-        // In production, this would call a dedicated verifier contract
         bytes32 proofBinding = keccak256(
             abi.encodePacked(depositId, commitment, nullifier)
         );
