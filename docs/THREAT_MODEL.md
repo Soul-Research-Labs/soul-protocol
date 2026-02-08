@@ -365,7 +365,7 @@ The following conditions should trigger immediate incident response:
 
 ### 8.3 Long-term (6-12 months)
 
-1. ⬜ Post-quantum cryptography research
+1. ⬜ Advanced cryptographic research (signature schemes, hash functions)
 2. ⬜ Decentralized governance activation
 3. ⬜ Cross-chain bridge diversity
 

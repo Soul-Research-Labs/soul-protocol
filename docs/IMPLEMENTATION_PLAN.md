@@ -13,11 +13,10 @@ This document outlines a comprehensive implementation plan to address four key i
 | Priority | Issue | Impact | Effort | Timeline |
 |----------|-------|--------|--------|----------|
 | P0 | Coverage Challenges | High | Medium | 4 weeks |
-| P1 | PQC Precompile Dependencies | High | High | 8 weeks |
-| P2 | NatSpec Documentation | Medium | Low | 3 weeks |
-| P3 | Governance Organization | Low | Low | 1 week |
+| P1 | NatSpec Documentation | Medium | Low | 3 weeks |
+| P2 | Governance Organization | Low | Low | 1 week |
 
-**Total Estimated Timeline:** 12 weeks (with parallelization)
+**Total Estimated Timeline:** 8 weeks (with parallelization)
 
 ---
 
@@ -221,207 +220,7 @@ Create `docs/COVERAGE.md`:
 
 ---
 
-## Issue 2: PQC Precompile Dependencies (P1)
-
-### Current State
-- `DilithiumVerifier.sol` uses mock mode (`useMockVerification = true`)
-- `KyberKEM.sol` uses mock mode (`useMockMode = true`)
-- `SPHINCSPlusVerifier.sol` uses mock mode
-- No EVM precompiles exist for post-quantum cryptography (as of Feb 2026)
-
-### Security Implications
-- Mock mode provides **zero cryptographic security**
-- Production deployment with mocks = critical vulnerability
-- Transition to real verification requires careful orchestration
-
-### Implementation Plan
-
-#### Phase 1: Pure Solidity PQC Libraries (Week 1-4)
-
-**1.1 Implement Dilithium in Solidity**
-```solidity
-// contracts/pqc/lib/DilithiumCore.sol
-library DilithiumCore {
-    // NTT operations for polynomial multiplication
-    function ntt(int16[] memory a) internal pure returns (int16[] memory) {
-        // Implementation based on NIST reference
-    }
-    
-    // Signature verification without precompile
-    function verifySignature(
-        bytes memory publicKey,
-        bytes memory message,
-        bytes memory signature
-    ) internal pure returns (bool) {
-        // Full Dilithium3 verification in Solidity
-        // Gas cost: ~5-10M gas (expensive but functional)
-    }
-}
-```
-
-**1.2 Implement Kyber in Solidity**
-```solidity
-// contracts/pqc/lib/KyberCore.sol
-library KyberCore {
-    function decapsulate(
-        bytes memory ciphertext,
-        bytes memory secretKey
-    ) internal pure returns (bytes32 sharedSecret) {
-        // Full Kyber768 decapsulation
-    }
-}
-```
-
-**1.3 Create Hybrid Verification Strategy**
-```solidity
-// contracts/pqc/HybridPQCVerifier.sol
-contract HybridPQCVerifier {
-    enum VerificationMode {
-        MOCK,           // Testing only
-        PURE_SOLIDITY,  // Expensive but functional
-        PRECOMPILE,     // Future: when EIP lands
-        OFFCHAIN_ZK     // ZK proof of PQC verification
-    }
-    
-    VerificationMode public mode;
-    
-    function verify(
-        bytes memory publicKey,
-        bytes memory message,
-        bytes memory signature
-    ) external returns (bool) {
-        if (mode == VerificationMode.PURE_SOLIDITY) {
-            return DilithiumCore.verifySignature(publicKey, message, signature);
-        } else if (mode == VerificationMode.OFFCHAIN_ZK) {
-            // Verify ZK proof that off-chain verification passed
-            return _verifyZKProof(publicKey, message, signature);
-        }
-        // ...
-    }
-}
-```
-
-#### Phase 2: Off-Chain ZK Verification (Week 4-6)
-
-**2.1 Create Noir Circuit for PQC Verification**
-```
-noir/pqc_verifier/src/main.nr
-```
-```rust
-// Verify Dilithium signature in ZK circuit
-fn verify_dilithium(
-    public_key: [u8; 1952],
-    message_hash: Field,
-    signature: [u8; 3293]
-) -> pub bool {
-    // Dilithium verification in Noir
-    // Generate succinct proof of verification
-}
-```
-
-**2.2 Integration Architecture**
-```
-┌──────────────────────────────────────────────────────────────┐
-│                    PQC Verification Flow                      │
-├──────────────────────────────────────────────────────────────┤
-│                                                              │
-│  1. User signs with Dilithium     ─────────────────────┐    │
-│                                                        │    │
-│  2. Off-chain prover verifies                          │    │
-│     └── Generates ZK proof of verification             │    │
-│                                                        ▼    │
-│  3. On-chain contract verifies ZK proof only      ┌────────┐│
-│     └── ~300K gas vs 10M for direct verification  │ Verify ││
-│                                                   └────────┘│
-└──────────────────────────────────────────────────────────────┘
-```
-
-**2.3 SDK Integration**
-```typescript
-// sdk/src/pqc/dilithium.ts
-export class DilithiumSigner {
-  async signAndProve(message: Uint8Array): Promise<{
-    signature: Uint8Array;
-    zkProof: Uint8Array;
-  }> {
-    const signature = await this.sign(message);
-    const zkProof = await this.generateVerificationProof(
-      this.publicKey,
-      message,
-      signature
-    );
-    return { signature, zkProof };
-  }
-}
-```
-
-#### Phase 3: Production Hardening (Week 6-8)
-
-**3.1 Mode Transition Guards**
-```solidity
-// contracts/pqc/PQCModeController.sol
-contract PQCModeController is AccessControl {
-    event ModeTransition(VerificationMode from, VerificationMode to);
-    
-    // Timelock for mode changes (72 hours)
-    uint256 public constant MODE_CHANGE_DELAY = 72 hours;
-    
-    function requestModeChange(VerificationMode newMode) external onlyRole(ADMIN_ROLE) {
-        require(newMode != VerificationMode.MOCK, "Cannot switch to mock");
-        // Queue mode change with timelock
-    }
-}
-```
-
-**3.2 Add Certora Specs for PQC Mode**
-```cvl
-// certora/specs/PQCModeSafety.spec
-rule mockModeCannotBeReEnabled {
-    env e;
-    VerificationMode modeBefore = currentMode();
-    
-    // After leaving mock mode, cannot return
-    require modeBefore != VerificationMode.MOCK;
-    
-    transitionMode(e, _);
-    
-    assert currentMode() != VerificationMode.MOCK;
-}
-```
-
-**3.3 Deployment Configuration**
-```typescript
-// scripts/deploy/pqc-config.ts
-export const PQC_DEPLOYMENT_CONFIG = {
-  testnet: {
-    mode: "MOCK",
-    warning: "DO NOT USE IN PRODUCTION",
-  },
-  staging: {
-    mode: "PURE_SOLIDITY",
-    gasLimit: 15_000_000,
-  },
-  mainnet: {
-    mode: "OFFCHAIN_ZK",
-    proverEndpoint: "https://prover.soul.network",
-    fallback: "PURE_SOLIDITY",
-  },
-};
-```
-
-### Deliverables
-- [ ] `contracts/pqc/lib/DilithiumCore.sol` - Pure Solidity implementation
-- [ ] `contracts/pqc/lib/KyberCore.sol` - Pure Solidity implementation
-- [ ] `contracts/pqc/HybridPQCVerifier.sol` - Multi-mode verifier
-- [ ] `noir/pqc_verifier/` - ZK circuit for PQC verification
-- [ ] `contracts/pqc/PQCModeController.sol` - Safe mode transitions
-- [ ] `certora/specs/PQCModeSafety.spec` - Formal verification
-- [ ] `sdk/src/pqc/` - SDK integration
-- [ ] `docs/POST_QUANTUM_DEPLOYMENT.md` - Deployment guide
-
----
-
-## Issue 3: NatSpec Documentation (P2)
+## Issue 2: NatSpec Documentation (P1)
 
 ### Current State
 - Core contracts have good documentation (e.g., `ZKBoundStateLocks.sol`)
@@ -434,8 +233,6 @@ export const PQC_DEPLOYMENT_CONFIG = {
 # Contracts with insufficient NatSpec
 contracts/crosschain/*.sol          # ~40% documented
 contracts/security/*.sol            # ~60% documented
-contracts/fhe/*.sol                 # ~50% documented
-contracts/mpc/*.sol                 # ~30% documented
 contracts/relayer/*.sol             # ~45% documented
 ```
 
@@ -593,18 +390,6 @@ contracts/security/
 └── ...
 ```
 
-**3.3 Priority 3 - FHE/MPC Contracts**
-```
-contracts/fhe/
-├── SoulFHEModule.sol               # NEEDS: Full NatSpec
-├── EncryptedERC20.sol              # NEEDS: @param, @return
-└── ...
-
-contracts/mpc/
-├── ThresholdMPC.sol                # NEEDS: Full NatSpec
-└── ...
-```
-
 ### Deliverables
 - [ ] `docs/NATSPEC_STYLE_GUIDE.md` - Documentation standards
 - [ ] Updated `.solhint.json` with NatSpec rules
@@ -612,12 +397,11 @@ contracts/mpc/
 - [ ] `.github/workflows/docs.yml` - CI pipeline
 - [ ] Full NatSpec for `contracts/crosschain/*.sol`
 - [ ] Full NatSpec for `contracts/security/*.sol`
-- [ ] Full NatSpec for `contracts/fhe/*.sol`
 - [ ] `docs/api/` - Generated API documentation
 
 ---
 
-## Issue 4: Governance Organization (P3)
+## Issue 3: Governance Organization (P2)
 
 ### Current State
 - Governance logic exists in `contracts/security/SoulMultiSigGovernance.sol`
@@ -720,9 +504,6 @@ certora/specs/TimelockSafety.spec
 Week 1-2:   ████████░░░░░░░░░░░░░░░░  Coverage Refactoring
 Week 2-3:   ░░░░████████░░░░░░░░░░░░  Coverage Solutions
 Week 3-4:   ░░░░░░░░████████░░░░░░░░  Coverage CI
-Week 1-4:   ████████████████░░░░░░░░  PQC Pure Solidity
-Week 4-6:   ░░░░░░░░░░░░░░░░████████  PQC ZK Integration
-Week 6-8:   ░░░░░░░░░░░░░░░░░░░░████  PQC Production
 Week 1:     ████░░░░░░░░░░░░░░░░░░░░  NatSpec Standards
 Week 1-2:   ████████░░░░░░░░░░░░░░░░  NatSpec Tooling
 Week 2-3:   ░░░░░░░░████████░░░░░░░░  NatSpec Writing
@@ -734,7 +515,7 @@ Week 1:     ████░░░░░░░░░░░░░░░░░░�
 | Area | Engineers | Skills Required |
 |------|-----------|-----------------|
 | Coverage | 1 Senior | Foundry, Solidity optimization |
-| PQC | 2 Senior | Cryptography, ZK circuits, Noir |
+
 | NatSpec | 1 Mid | Technical writing, Solidity |
 | Governance | 1 Mid | Solidity, OpenZeppelin |
 
@@ -743,7 +524,6 @@ Week 1:     ████░░░░░░░░░░░░░░░░░░�
 | Issue | Current | Target | Measurement |
 |-------|---------|--------|-------------|
 | Coverage | Unknown | ≥85% line, ≥80% branch | LCOV report |
-| PQC Mock | 100% mock | ≤5% mock (testnet only) | Deployment config |
 | NatSpec | ~50% | ≥95% | `check_natspec_coverage.py` |
 | Governance | Scattered | Organized | Directory structure |
 
@@ -755,7 +535,6 @@ Week 1:     ████░░░░░░░░░░░░░░░░░░�
 ```
 docs/COVERAGE.md
 docs/NATSPEC_STYLE_GUIDE.md
-docs/POST_QUANTUM_DEPLOYMENT.md
 scripts/analyze_coverage.py
 scripts/check_natspec_coverage.py
 .github/workflows/coverage.yml
@@ -764,14 +543,8 @@ contracts/internal/validators/
 contracts/internal/storage/
 contracts/internal/helpers/
 contracts/coverage/
-contracts/pqc/lib/DilithiumCore.sol
-contracts/pqc/lib/KyberCore.sol
-contracts/pqc/HybridPQCVerifier.sol
-contracts/pqc/PQCModeController.sol
 contracts/governance/
 contracts/governance/interfaces/
-noir/pqc_verifier/
-certora/specs/PQCModeSafety.spec
 ```
 
 ### Files to Move
@@ -789,7 +562,6 @@ foundry.toml                    # Coverage profile improvements
 package.json                    # New scripts
 contracts/crosschain/*.sol      # NatSpec additions
 contracts/security/*.sol        # NatSpec additions
-contracts/fhe/*.sol             # NatSpec additions
 ```
 
 ---
@@ -798,7 +570,6 @@ contracts/fhe/*.sol             # NatSpec additions
 
 | Risk | Probability | Impact | Mitigation |
 |------|-------------|--------|------------|
-| PQC Solidity too expensive | Medium | High | Use ZK off-chain verification |
 | Coverage refactoring breaks tests | Medium | Medium | Comprehensive test suite first |
 | Import changes break builds | Low | Medium | Automated find/replace + CI |
 | NatSpec slows development | Low | Low | Automate with templates |

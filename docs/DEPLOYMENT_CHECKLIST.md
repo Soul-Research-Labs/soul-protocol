@@ -22,7 +22,6 @@
 - [x] Stress tests pass (24 tests)
 - [x] Fuzz tests pass (116+ tests)
 - [x] Invariant tests pass (8 tests)
-- [x] PQC tests pass (33 tests)
 - [x] Echidna property tests pass (21 tests)
 - [x] Total: 544 tests passing
 
@@ -155,11 +154,6 @@ npx hardhat run scripts/deploy-v3.ts --network optimismSepolia
 - [ ] Atomic swap execution
 - [ ] Emergency pause/unpause
 
-### PQC Integration
-- [ ] Dilithium signature verification on-chain
-- [ ] Kyber key exchange flow
-- [ ] Hybrid signatures (EC + PQC)
-
 ### Relayer Network
 - [ ] Relayer registration
 - [ ] Proof submission
@@ -183,7 +177,7 @@ npx hardhat run scripts/deploy-v3.ts --network optimismSepolia
 
 ### Deployment Order
 1. [ ] Verifier contracts (no dependencies)
-2. [ ] PQC Registry (depends on verifiers)
+2. [ ] Verifier Registry (depends on verifiers)
 3. [ ] Core state containers
 4. [ ] Bridge contracts
 5. [ ] Governance contracts
