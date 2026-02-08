@@ -11,17 +11,34 @@ import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
  * @notice Always rejects proofs — used to test that invalid proofs fail
  */
 contract RejectingVerifier is IProofVerifier {
-    function verify(bytes calldata, uint256[] calldata) external pure returns (bool) {
+    function verify(
+        bytes calldata,
+        uint256[] calldata
+    ) external pure returns (bool) {
         return false;
     }
-    function verifyProof(bytes calldata, bytes calldata) external pure returns (bool) {
+
+    function verifyProof(
+        bytes calldata,
+        bytes calldata
+    ) external pure returns (bool) {
         return false;
     }
-    function verifySingle(bytes calldata, uint256) external pure returns (bool) {
+
+    function verifySingle(
+        bytes calldata,
+        uint256
+    ) external pure returns (bool) {
         return false;
     }
-    function getPublicInputCount() external pure returns (uint256) { return 1; }
-    function isReady() external pure returns (bool) { return true; }
+
+    function getPublicInputCount() external pure returns (uint256) {
+        return 1;
+    }
+
+    function isReady() external pure returns (bool) {
+        return true;
+    }
 }
 
 /**
@@ -29,17 +46,34 @@ contract RejectingVerifier is IProofVerifier {
  * @notice Always accepts proofs — baseline for batch processing tests
  */
 contract AcceptingVerifier is IProofVerifier {
-    function verify(bytes calldata, uint256[] calldata) external pure returns (bool) {
+    function verify(
+        bytes calldata,
+        uint256[] calldata
+    ) external pure returns (bool) {
         return true;
     }
-    function verifyProof(bytes calldata, bytes calldata) external pure returns (bool) {
+
+    function verifyProof(
+        bytes calldata,
+        bytes calldata
+    ) external pure returns (bool) {
         return true;
     }
-    function verifySingle(bytes calldata, uint256) external pure returns (bool) {
+
+    function verifySingle(
+        bytes calldata,
+        uint256
+    ) external pure returns (bool) {
         return true;
     }
-    function getPublicInputCount() external pure returns (uint256) { return 1; }
-    function isReady() external pure returns (bool) { return true; }
+
+    function getPublicInputCount() external pure returns (uint256) {
+        return 1;
+    }
+
+    function isReady() external pure returns (bool) {
+        return true;
+    }
 }
 
 /**
@@ -151,7 +185,12 @@ contract BatchAccumulatorSecurityTest is Test {
 
         // Try same nullifier with different commitment
         vm.expectRevert(BatchAccumulator.NullifierAlreadyUsed.selector);
-        accumulator.submitToBatch(keccak256("commit2"), nullifier, bytes("p"), 10);
+        accumulator.submitToBatch(
+            keccak256("commit2"),
+            nullifier,
+            bytes("p"),
+            10
+        );
     }
 
     /// @notice Attack: Commitment replay

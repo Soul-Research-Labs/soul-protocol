@@ -120,9 +120,7 @@ contract BatchAccumulatorFuzzTest is Test {
     }
 
     /// @notice Fuzz: Zero chain IDs always revert
-    function testFuzz_configureRoute_zeroChainId(
-        uint256 dstChain
-    ) public {
+    function testFuzz_configureRoute_zeroChainId(uint256 dstChain) public {
         vm.expectRevert(BatchAccumulator.InvalidChainId.selector);
         accumulator.configureRoute(0, dstChain, 8, 10 minutes);
     }
