@@ -85,22 +85,13 @@ contracts/core/
 └── ConfidentialStateContainerV3.sol # Encrypted state management
 
 contracts/governance/
-├── SoulMultiSigGovernance.sol     # Multi-signature governance
-└── SoulTimelock.sol               # Time-locked admin operations
+└── SoulUpgradeTimelock.sol        # Time-locked admin operations
 
 contracts/security/
 └── BridgeWatchtower.sol           # Decentralized watchtower network
 
-contracts/consensus/
-└── SoulPreconfirmationHandler.sol # L1 preconfirmations
-
-contracts/infrastructure/
-└── ConfidentialDataAvailability.sol # Confidential DA layer
-
-contracts/mpc/
-├── MPCGateway.sol                 # MPC operations gateway
-├── MPCCoordinator.sol             # MPC session coordination
-└── MPCKeyRegistry.sol             # Threshold key management
+contracts/core/
+└── SoulProtocolHub.sol            # Central registry hub (threshold sig support)
 ```
 
 ---

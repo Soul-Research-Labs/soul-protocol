@@ -523,8 +523,8 @@ The following contracts have been created to align Soul Protocol with Ethereum's
 #### The Merge Alignment
 | Contract | Purpose | Status |
 |----------|---------|--------|
-| [SoulPreconfirmationHandler](../contracts/consensus/SoulPreconfirmationHandler.sol) | SSF-aware preconfirmations, Orbit committee verification | ✅ Implemented |
-| [ISoulPreconfirmationHandler](../contracts/interfaces/ISoulPreconfirmationHandler.sol) | Interface | ✅ Implemented |
+| SoulPreconfirmationHandler | SSF-aware preconfirmations, Orbit committee verification | 🔄 Planned |
+| ISoulPreconfirmationHandler | Interface | 🔄 Planned |
 
 #### The Surge Alignment
 | Contract | Purpose | Status |

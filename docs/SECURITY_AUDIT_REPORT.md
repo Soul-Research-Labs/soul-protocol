@@ -48,13 +48,13 @@ This report documents the comprehensive security audit performed on the Soul Pro
 ### Phase 2 Contracts (February 2026)
 | Contract | Path | Lines | Risk Level |
 |----------|------|-------|-----------|
-| SoulMultiSigGovernance | `contracts/governance/SoulMultiSigGovernance.sol` | ~600 | High |
+| SoulUpgradeTimelock | `contracts/governance/SoulUpgradeTimelock.sol` | ~600 | High |
 | BridgeWatchtower | `contracts/security/BridgeWatchtower.sol` | ~650 | High |
-| SoulPreconfirmationHandler | `contracts/consensus/SoulPreconfirmationHandler.sol` | ~460 | Medium |
+| SoulProtocolHub | `contracts/core/SoulProtocolHub.sol` | ~1,005 | High |
 | SoulIntentResolver | `contracts/crosschain/SoulIntentResolver.sol` | ~480 | Medium |
 | SoulL2Messenger | `contracts/crosschain/SoulL2Messenger.sol` | ~520 | Medium |
-| ConfidentialDataAvailability | `contracts/infrastructure/ConfidentialDataAvailability.sol` | ~1,100 | Medium |
-| MPCGateway | `contracts/mpc/MPCGateway.sol` | ~1,080 | Medium |
+
+> **Note:** `SoulMultiSigGovernance`, `SoulPreconfirmationHandler`, `ConfidentialDataAvailability`, and `MPCGateway` were removed during Q1 2026 cleanup. MPC functionality was replaced by threshold signature support in `SoulProtocolHub`.
 
 ---
 
@@ -360,7 +360,7 @@ Cached array length, accumulated values in memory, and performed single storage 
 
 | ID | Contract | Issue | Fix |
 |----|----------|-------|-----|
-| P2-M-1 | MPCGateway | Missing zero-address validation in `addSupportedChain()` | Added `if (messenger == address(0)) revert ZeroAddress()` |
+| P2-M-1 | _(MPCGateway - removed)_ | Missing zero-address validation in `addSupportedChain()` | Superseded by threshold sig in SoulProtocolHub |
 | P2-M-2 | ConfidentialDataAvailability | Missing zero-address validation in `setVerifiers()` | Added validation for both parameters |
 | P2-M-3 | ConfidentialDataAvailability | Missing events for `setMinChallengeStake()` | Added `MinChallengeStakeUpdated` event |
 | P2-M-4 | ConfidentialDataAvailability | Missing events for `setDefaultRetentionPeriod()` | Added `DefaultRetentionPeriodUpdated` event |

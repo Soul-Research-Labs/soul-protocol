@@ -80,9 +80,9 @@ This document provides a comprehensive threat model for the Soul Protocol (Soul)
 **Affected Components**:
 - `SoulAtomicSwapV2.sol`
 - `ConfidentialStateContainerV3.sol`
-- `SoulMultiSigGovernance.sol`
+- `SoulUpgradeTimelock.sol`
 - `BridgeWatchtower.sol`
-- `SoulPreconfirmationHandler.sol`
+- `SoulProtocolHub.sol`
 - `SoulIntentResolver.sol`
 - `SoulL2Messenger.sol`
 
