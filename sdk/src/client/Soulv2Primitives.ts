@@ -545,9 +545,7 @@ export class PolicyBoundProofsClient {
 export enum BackendType {
   ZkVM = 0,
   TEE = 1,
-  MPC = 2,
-  FHE = 3,
-  Native = 4,
+  Native = 2,
 }
 
 export interface ExecutionBackend {
