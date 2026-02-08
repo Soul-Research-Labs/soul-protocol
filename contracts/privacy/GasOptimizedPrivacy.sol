@@ -539,18 +539,15 @@ contract GasOptimizedRingCT {
             balanceCheck := keccak256(ptr, offset)
         }
 
-        // Verify ring signature (simplified for gas demo)
+        // Verify ring signature
         // In production, use optimized CLSAG verification
-        if (
-            !_verifyRingSignature(
-                inputCommitments,
-                keyImages,
-                ringSignature,
-                balanceCheck
-            )
-        ) {
-            revert InvalidSignature();
-        }
+        /// @custom:security PLACEHOLDER — replace with real CLSAG/MLSAG ring signature verifier
+        _verifyRingSignature(
+            inputCommitments,
+            keyImages,
+            ringSignature,
+            balanceCheck
+        );
 
         // Mark key images as spent
         for (uint256 i = 0; i < keyImages.length; ) {
@@ -607,12 +604,10 @@ contract GasOptimizedRingCT {
         bytes32[] calldata /* keyImages */,
         bytes calldata /* signature */,
         bytes32 /* message */
-    ) internal pure returns (bool) {
-        // Simplified verification for gas demonstration
-        // In production, implement full CLSAG/MLSAG verification
-        // SECURITY CRITICAL: Verification is not yet implemented.
-        // Revert to prevent unsafe usage in production.
-        // return signature.length > 0;
+    ) internal pure {
+        // SECURITY CRITICAL: Ring signature verification is not yet implemented.
+        // Reverts to prevent unsafe usage in production.
+        // TODO: Implement full CLSAG/MLSAG verification.
         revert RingSignatureVerificationNotImplemented();
     }
 }
