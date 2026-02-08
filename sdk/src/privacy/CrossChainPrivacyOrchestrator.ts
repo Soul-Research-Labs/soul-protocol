@@ -367,6 +367,9 @@ export class CrossChainPrivacyOrchestrator {
 
     /**
      * Generate ZK proof for cross-chain transfer
+     *
+     * Uses the Noir cross_chain_proof circuit when available.
+     * Falls back to a deterministic hash-based proof for development only.
      */
     async generateCrossChainProof(params: {
         commitment: Hex;
@@ -378,8 +381,6 @@ export class CrossChainPrivacyOrchestrator {
         sourceChainId: number;
         targetChainId: number;
     }): Promise<ZKProofResult> {
-        // In production, this would call a ZK prover service
-        // For now, return a mock proof
         const publicInputs = [
             params.merkleProof.root,
             params.sourceNullifier,
@@ -388,17 +389,44 @@ export class CrossChainPrivacyOrchestrator {
             toHex(params.targetChainId, { size: 32 })
         ];
 
-        const proof = keccak256(concat([
-            params.commitment,
-            params.secret,
-            ...params.merkleProof.path.map(p => p as Hex)
-        ]));
+        // Try to use the real Noir prover
+        try {
+            const { getProver, Circuit } = await import('../zkprover/NoirProver');
+            const prover = await getProver();
+            const result = await prover.generateProof(Circuit.CrossChainProof, {
+                commitment: params.commitment,
+                amount: params.amount.toString(),
+                secret: params.secret,
+                merkle_root: params.merkleProof.root,
+                merkle_path: params.merkleProof.path,
+                source_nullifier: params.sourceNullifier,
+                target_nullifier: params.targetNullifier,
+                source_chain_id: params.sourceChainId.toString(),
+                target_chain_id: params.targetChainId.toString(),
+            });
 
-        return {
-            proof,
-            publicInputs: publicInputs as Hex[],
-            verified: true
-        };
+            return {
+                proof: result.proofHex,
+                publicInputs: publicInputs as Hex[],
+                verified: true
+            };
+        } catch (e: any) {
+            // SECURITY WARNING: Falling back to hash-based proof (dev only)
+            console.warn(`⚠️ Real proof generation failed: ${e.message}`);
+            console.warn('Using hash-based placeholder proof — NOT SAFE for production');
+
+            const proof = keccak256(concat([
+                params.commitment,
+                params.secret,
+                ...params.merkleProof.path.map(p => p as Hex)
+            ]));
+
+            return {
+                proof,
+                publicInputs: publicInputs as Hex[],
+                verified: false // Explicitly mark as unverified
+            };
+        }
     }
 
     /**
@@ -779,15 +807,36 @@ export class CrossChainPrivacyOrchestrator {
     }
 
     /**
-     * Estimate relay fee
+     * Estimate relay fee by querying the relay contract.
+     * Falls back to a heuristic if the contract call fails.
      */
     private async estimateRelayFee(sourceChainId: number, targetChainId: number): Promise<bigint> {
-        // In production, query the relay contract for actual fee
-        // Mock implementation
-        const baseFee = BigInt(1e15); // 0.001 ETH base
-        const chainMultiplier = targetChainId === 1 ? BigInt(3) : BigInt(1); // Higher for mainnet
-        return baseFee * chainMultiplier;
-    }
+        // Try to query the relay contract's estimateFee
+        try {
+            const chain = this.chains.get(sourceChainId);
+            if (chain?.config?.relayerAddress && chain.config.relayerAddress !== '0x0000000000000000000000000000000000000000') {
+                const result = await chain.publicClient.readContract({
+                    address: chain.config.relayerAddress as `0x${string}`,
+                    abi: [{
+                        name: 'estimateFee',
+                        type: 'function',
+                        stateMutability: 'view',
+                        inputs: [
+                            { name: 'targetChainId', type: 'uint256' },
+                            { name: 'dataSize', type: 'uint256' }
+                        ],
+                        outputs: [{ name: 'fee', type: 'uint256' }]
+                    }],
+                    functionName: 'estimateFee',
+                    args: [BigInt(targetChainId), 1024n]
+                });
+                return result as bigint;
+            }
+        } catch {
+            // Fall through to heuristic
+        }
+
+        // Heuristic fee estimation based on target chain\n        const baseFee = BigInt(1e15); // 0.001 ETH base\n        const chainMultiplier = targetChainId === 1 ? BigInt(3) : BigInt(1); // Higher for mainnet\n        console.warn('Using heuristic relay fee estimation — configure relay contract for accurate fees');\n        return baseFee * chainMultiplier;\n    }
 
     /**
      * Get chain configuration

@@ -222,11 +222,10 @@ export class NoirProver {
         proofHex: `0x${Buffer.from(proof).toString("hex")}` as Hex,
       };
     } catch (e: any) {
-      console.warn(
-        `Real proof generation failed (${e.message}), falling back to placeholder`
-      );
-      // Structured fallback — still clearly labeled as non-production
-      return this.generatePlaceholderProof(Circuit.StateCommitment, inputs);
+      // SECURITY: Do NOT silently fallback to placeholder proofs.
+      // Re-throw the error — callers must handle proof generation failures explicitly.
+      console.error(`Real proof generation failed: ${e.message}`);
+      throw new Error(`Proof generation failed for circuit: ${e.message}. Ensure Barretenberg and circuit artifacts are available.`);
     }
   }
 
@@ -374,8 +373,10 @@ export class NoirProver {
     }
 
     // Structural-only pass — caller is responsible for on-chain verification
-    console.warn("⚠️ Barretenberg unavailable — structural checks only");
-    return true;
+    // SECURITY: Return false — off-chain verification without a real backend is unsafe.
+    // Callers must verify proofs on-chain when Barretenberg is not available.
+    console.warn("⚠️ Barretenberg unavailable — off-chain verification disabled. Verify on-chain.");
+    return false;
   }
 
   /**

@@ -344,9 +344,21 @@ export class SoulSDK {
 
   async receivePrivateState(chainId: string, callback: StateCallback): Promise<Subscription> {
     return this.relayer.subscribe(chainId, async (packet: RelayerPacket) => {
-      // Decrypt with private key (placeholder)
-      // In production, use ECIES and AES-GCM
-      const decrypted = packet.encryptedState; // Simulated
+      // Decrypt with ECIES using receiver's private key
+      let decrypted: Buffer;
+      try {
+        const privateKeyBuf = Buffer.from(this.config.privateKey.replace(/^0x/, ''), 'hex');
+        decrypted = await this.crypto.decrypt(
+          packet.encryptedState,
+          packet.ephemeralKey,
+          packet.mac,
+          privateKeyBuf
+        );
+      } catch (e: any) {
+        console.error(`Decryption failed: ${e.message}`);
+        return; // Skip this packet — cannot decrypt
+      }
+
       const isValid = await this.prover.verifyProof(packet.proof, "stateRoot");
       if (isValid) {
         callback(decrypted);
@@ -354,4 +366,3 @@ export class SoulSDK {
     });
   }
 }
-

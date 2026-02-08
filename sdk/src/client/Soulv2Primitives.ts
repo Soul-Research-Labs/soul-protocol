@@ -1376,11 +1376,27 @@ export class Soulv2ClientFactory {
   }
 
   /**
-   * Estimate gas for a method (simplified)
+   * Estimate gas for a method.
+   * 
+   * Uses the public client's gas estimation when a contract address and ABI
+   * are available, otherwise returns a conservative default.
    */
   async estimateGas(method: string, params: any[]): Promise<bigint> {
-    // This is a placeholder since actual gas estimation depends on the contract
-    return 200000n; 
+    try {
+      // Use the public client to estimate gas via eth_estimateGas
+      const gasEstimate = await this.publicClient.estimateGas({
+        account: params[0]?.from,
+        to: params[0]?.to,
+        data: params[0]?.data,
+        value: params[0]?.value,
+      });
+      // Add 20% buffer for safety
+      return (gasEstimate * 120n) / 100n;
+    } catch {
+      // Conservative fallback if estimation fails
+      console.warn(`Gas estimation failed for ${method}, using conservative default`);
+      return 500_000n;
+    }
   }
 
   /**

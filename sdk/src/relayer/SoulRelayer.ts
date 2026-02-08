@@ -83,12 +83,38 @@ export interface RelayerStats {
 export class SoulRelayer {
     private config: RelayerConfig;
     private publicClient: ReturnType<typeof createPublicClient>;
+    private walletClient?: ReturnType<typeof createWalletClient>;
 
     constructor(config: RelayerConfig) {
         this.config = config;
         this.publicClient = createPublicClient({
             transport: http(config.rpcUrl),
         });
+
+        // Create wallet client for transaction signing when private key is provided
+        if (config.privateKey) {
+            const { privateKeyToAccount } = require('viem/accounts');
+            const account = privateKeyToAccount(config.privateKey);
+            this.walletClient = createWalletClient({
+                account,
+                transport: http(config.rpcUrl),
+            });
+        }
+    }
+
+    /**
+     * Send a write transaction. Simulates first, then executes.
+     * Requires a private key to be configured.
+     */
+    private async writeContract(params: Parameters<ReturnType<typeof createPublicClient>['simulateContract']>[0]): Promise<Hash> {
+        // Always simulate first to catch errors early
+        const { request } = await this.publicClient.simulateContract(params);
+
+        if (!this.walletClient) {
+            throw new Error('Cannot send transactions without a private key. Provide privateKey in RelayerConfig.');
+        }
+
+        return this.walletClient.writeContract(request as any);
     }
 
     /**
@@ -106,17 +132,13 @@ export class SoulRelayer {
             throw new Error(`Stake ${this.config.stake} below minimum ${minStake}`);
         }
 
-        // Registration requires a wallet client with signing capability
-        // In production, use the caller's wallet
-        const tx = await this.publicClient.simulateContract({
+        return this.writeContract({
             address: this.config.contractAddress,
             abi: RELAYER_ABI,
             functionName: 'registerRelayer',
             args: [this.config.endpoints],
             value: this.config.stake,
         });
-
-        return tx.request as unknown as Hash;
     }
 
     /**
@@ -124,12 +146,11 @@ export class SoulRelayer {
      * @returns Transaction hash
      */
     async unregister(): Promise<Hash> {
-        const tx = await this.publicClient.simulateContract({
+        return this.writeContract({
             address: this.config.contractAddress,
             abi: RELAYER_ABI,
             functionName: 'unregisterRelayer',
         });
-        return tx.request as unknown as Hash;
     }
 
     /**
