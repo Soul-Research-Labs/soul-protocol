@@ -271,6 +271,7 @@ contract CrossChainNullifierSync is AccessControl, ReentrancyGuard, Pausable {
                 keccak256("NULLIFIER_SYNC")
             )
         );
+        require(success, "Relay call failed");
 
         lastSyncTime[targetChainId] = block.timestamp;
         outboundSyncCount[targetChainId] += batchSize;
@@ -318,6 +319,7 @@ contract CrossChainNullifierSync is AccessControl, ReentrancyGuard, Pausable {
                 sourceMerkleRoot
             )
         );
+        require(success, "NullifierRegistry call failed");
 
         inboundSyncCount[sourceChainId] += nullifiers.length;
 

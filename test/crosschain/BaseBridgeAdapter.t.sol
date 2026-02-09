@@ -27,7 +27,7 @@ contract BaseBridgeAdapterTest is Test {
             address(0xCD1), // l1CrossDomainMessenger
             address(0xCD2), // l2CrossDomainMessenger
             address(0xBA5), // basePortal
-            true            // isL1
+            true // isL1
         );
         vm.startPrank(admin);
         adapter.grantRole(OPERATOR_ROLE, operator);
@@ -110,7 +110,12 @@ contract BaseBridgeAdapterTest is Test {
     function test_ReceiveProofFromL1_RevertNonRelayer() public {
         vm.prank(user);
         vm.expectRevert();
-        adapter.receiveProofFromL1(bytes32(uint256(42)), hex"abcd", hex"1234", 1);
+        adapter.receiveProofFromL1(
+            bytes32(uint256(42)),
+            hex"abcd",
+            hex"1234",
+            1
+        );
     }
 
     /*//////////////////////////////////////////////////////////////

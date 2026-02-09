@@ -610,12 +610,11 @@ contract EVMUniversalAdapter is
     ///      This fallback enforces that proofs are never silently accepted without verification.
     function _inlineVerifyProof(
         bytes calldata proof,
-        bytes32[] calldata publicInputs,
-        ProofSystem proofSystem
+        bytes32[] calldata /* _publicInputs */,
+        ProofSystem /* _proofSystem */
     ) internal pure returns (bool) {
         // Structural sanity checks
         if (proof.length < 64) revert("Proof too short");
-        if (publicInputs.length == 0) return false;
 
         // No inline verifier available — reject
         // Callers should register a dedicated verifier contract via setProofVerifier()

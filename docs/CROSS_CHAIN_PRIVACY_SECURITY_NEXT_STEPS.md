@@ -360,7 +360,7 @@ contract PrivacyInvariants is Test {
 | Certora Success Rate | 88% | 100% | Week 6 |
 | Cross-Chain Privacy Tests | 5 | 50+ | Week 8 |
 | Gas per Privacy Op | 800k | <500k | Week 10 |
-| Audit Findings (Critical) | TBD | 0 | Week 12 |
+| Audit Findings (Critical) | Pending | 0 | Week 12 |
 | Bug Bounty Response Time | N/A | <24h | Week 14 |
 
 ---

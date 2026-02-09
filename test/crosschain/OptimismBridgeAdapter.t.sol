@@ -77,8 +77,8 @@ contract OptimismBridgeAdapterTest is Test {
             address(0x1), // optimism bridge contract
             address(0x2), // wrapped OP
             address(0x3), // L1 output oracle
-            1,            // min validator signatures
-            12             // required block confirmations
+            1, // min validator signatures
+            12 // required block confirmations
         );
     }
 
@@ -122,7 +122,9 @@ contract OptimismBridgeAdapterTest is Test {
 
     function test_GetWithdrawal_NonExistent() public view {
         // Non-existent withdrawal returns default struct (no revert)
-        IOptimismBridgeAdapter.OPWithdrawal memory w = adapter.getWithdrawal(bytes32(uint256(999)));
+        IOptimismBridgeAdapter.OPWithdrawal memory w = adapter.getWithdrawal(
+            bytes32(uint256(999))
+        );
         assertEq(w.evmSender, address(0));
     }
 
@@ -135,10 +137,10 @@ contract OptimismBridgeAdapterTest is Test {
         vm.prank(user);
         vm.expectRevert();
         adapter.createEscrow{value: 1 ether}(
-            address(0xABC),                          // l2Party
-            keccak256("secret"),                      // hashlock
-            uint256(block.timestamp + 2 hours),       // finishAfter
-            uint256(block.timestamp + 25 hours)       // cancelAfter
+            address(0xABC), // l2Party
+            keccak256("secret"), // hashlock
+            uint256(block.timestamp + 2 hours), // finishAfter
+            uint256(block.timestamp + 25 hours) // cancelAfter
         );
     }
 
@@ -150,7 +152,7 @@ contract OptimismBridgeAdapterTest is Test {
             address(0xABC),
             keccak256("secret"),
             uint256(block.timestamp + 30 minutes), // too short
-            uint256(block.timestamp + 31 days)     // too long
+            uint256(block.timestamp + 31 days) // too long
         );
     }
 

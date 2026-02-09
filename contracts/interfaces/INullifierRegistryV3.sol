@@ -31,7 +31,11 @@ interface INullifierRegistryV3 {
         address registrar,
         uint64 chainId
     );
-    event NullifierBatchRegistered(bytes32[] nullifiers, uint256 startIndex, uint256 count);
+    event NullifierBatchRegistered(
+        bytes32[] nullifiers,
+        uint256 startIndex,
+        uint256 count
+    );
     event MerkleRootUpdated(
         bytes32 indexed oldRoot,
         bytes32 indexed newRoot,
@@ -84,27 +88,46 @@ interface INullifierRegistryV3 {
     //////////////////////////////////////////////////////////////*/
 
     function exists(bytes32 nullifier) external view returns (bool);
-    function batchExists(bytes32[] calldata _nullifiers) external view returns (bool[] memory);
-    function getNullifierData(bytes32 nullifier) external view returns (NullifierData memory);
+
+    function batchExists(
+        bytes32[] calldata _nullifiers
+    ) external view returns (bool[] memory);
+
+    function getNullifierData(
+        bytes32 nullifier
+    ) external view returns (NullifierData memory);
+
     function isValidRoot(bytes32 root) external view returns (bool);
+
     function verifyMerkleProof(
         bytes32 nullifier,
         uint256 index,
         bytes32[] calldata siblings,
         bytes32 root
     ) external view returns (bool);
+
     function getTreeStats()
         external
         view
-        returns (uint256 _totalNullifiers, bytes32 _merkleRoot, uint256 _rootHistorySize);
-    function getNullifierCountByChain(uint256 chainId) external view returns (uint256);
+        returns (
+            uint256 _totalNullifiers,
+            bytes32 _merkleRoot,
+            uint256 _rootHistorySize
+        );
+
+    function getNullifierCountByChain(
+        uint256 chainId
+    ) external view returns (uint256);
 
     /*//////////////////////////////////////////////////////////////
                          ADMIN FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
     function addRegistrar(address registrar) external;
+
     function removeRegistrar(address registrar) external;
+
     function pause() external;
+
     function unpause() external;
 }

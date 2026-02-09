@@ -200,7 +200,10 @@ contract UniversalShieldedPoolUpgradeable is
     event TestModeDisabled(address indexed disabledBy);
 
     /// @notice Emitted when production readiness is confirmed on-chain
-    event ProductionReadinessConfirmed(address indexed confirmedBy, address verifier);
+    event ProductionReadinessConfirmed(
+        address indexed confirmedBy,
+        address verifier
+    );
     event CircuitBreakerTriggered(uint256 withdrawalCount, uint256 threshold);
     event ContractUpgraded(
         uint256 indexed oldVersion,
@@ -774,7 +777,7 @@ contract UniversalShieldedPoolUpgradeable is
 
     /// @notice Authorize UUPS upgrade — restricted to UPGRADER_ROLE
     function _authorizeUpgrade(
-        address newImplementation
+        address /* _newImplementation */
     ) internal override onlyRole(UPGRADER_ROLE) {
         uint256 oldVersion = contractVersion;
         contractVersion = oldVersion + 1;

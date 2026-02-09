@@ -275,11 +275,12 @@ contract Soulv2OrchestratorUpgradeable is
     /// @notice Internal operation execution
     function _executeOperation(
         OperationRequest calldata request
-    ) internal view returns (bool) {
+    ) internal pure returns (bool) {
         // Validate basic request parameters
         if (request.stateCommitment == bytes32(0)) return false;
         if (request.nullifier == bytes32(0)) return false;
-        if (request.validityProof.length < 256) revert("Validity proof too short");
+        if (request.validityProof.length < 256)
+            revert("Validity proof too short");
         if (request.recipient == address(0)) return false;
 
         // In production, this would interact with all primitives

@@ -246,7 +246,10 @@ contract UniversalShieldedPool is AccessControl, ReentrancyGuard, Pausable {
     event TestModeDisabled(address indexed disabledBy);
 
     /// @notice Emitted when production readiness is confirmed on-chain
-    event ProductionReadinessConfirmed(address indexed confirmedBy, address verifier);
+    event ProductionReadinessConfirmed(
+        address indexed confirmedBy,
+        address verifier
+    );
 
     /*//////////////////////////////////////////////////////////////
                             CUSTOM ERRORS

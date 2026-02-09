@@ -371,6 +371,15 @@ The following conditions should trigger immediate incident response:
 
 ---
 
+## 8.4 Known Limitations
+
+| Component | Description | Severity | Status |
+|-----------|-------------|----------|--------|
+| Ring Signature Verifier | `GasOptimizedPrivacy.sol` ring signature verification (line ~652) uses a placeholder verifier that always reverts with `"Ring signature verification not yet implemented"`. This is a **feature gap**, not a vulnerability — no funds are at risk since the function cannot succeed. | Low | Tracked — pending Noir circuit toolchain upgrade (nargo 1.0 incompatibility with poseidon crate) |
+| Noir Circuit Compilation | All 20 Noir circuits fail to compile with nargo 1.0.0-beta.18 due to `poseidon` crate incompatibility. Existing 8 generated Solidity verifiers (created with older nargo) remain valid and functional. | Informational | Blocked on toolchain — see `noir/README.md` |
+
+---
+
 ## 9. Appendix
 
 ### 9.1 Security Tool Results

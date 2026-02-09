@@ -145,6 +145,7 @@ npx hardhat run scripts/verify-contracts.ts --network mainnet
 3. **Scheduled**: Via timelock for maintenance
 
 ### Emergency Contacts
+<!-- TEMPLATE: Replace placeholder contacts with real contacts before mainnet launch -->
 | Role | Primary | Backup |
 |------|---------|--------|
 | Security Lead | security@soul.network | +1-XXX-XXX-XXXX |

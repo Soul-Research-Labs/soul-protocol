@@ -64,7 +64,11 @@ interface IConfidentialStateContainerV3 {
         StateStatus oldStatus,
         StateStatus newStatus
     );
-    event StateBatchRegistered(bytes32[] commitments, address indexed owner, uint256 count);
+    event StateBatchRegistered(
+        bytes32[] commitments,
+        address indexed owner,
+        uint256 count
+    );
     event ProofValidityWindowUpdated(uint256 oldWindow, uint256 newWindow);
     event MaxStateSizeUpdated(uint256 oldSize, uint256 newSize);
 
@@ -109,7 +113,9 @@ interface IConfidentialStateContainerV3 {
         bytes calldata signature
     ) external;
 
-    function batchRegisterStates(BatchStateInput[] calldata stateInputs) external;
+    function batchRegisterStates(
+        BatchStateInput[] calldata stateInputs
+    ) external;
 
     function transferState(
         bytes32 oldCommitment,
@@ -126,14 +132,25 @@ interface IConfidentialStateContainerV3 {
     //////////////////////////////////////////////////////////////*/
 
     function isStateActive(bytes32 commitment) external view returns (bool);
-    function getState(bytes32 commitment) external view returns (EncryptedState memory);
-    function getOwnerCommitments(address owner) external view returns (bytes32[] memory);
+
+    function getState(
+        bytes32 commitment
+    ) external view returns (EncryptedState memory);
+
+    function getOwnerCommitments(
+        address owner
+    ) external view returns (bytes32[] memory);
+
     function getOwnerCommitmentsPaginated(
         address owner,
         uint256 offset,
         uint256 limit
     ) external view returns (bytes32[] memory commitments, uint256 total);
-    function getStateHistory(bytes32 commitment) external view returns (StateTransition[] memory);
+
+    function getStateHistory(
+        bytes32 commitment
+    ) external view returns (StateTransition[] memory);
+
     function getNonce(address account) external view returns (uint256);
 
     /*//////////////////////////////////////////////////////////////
@@ -141,11 +158,17 @@ interface IConfidentialStateContainerV3 {
     //////////////////////////////////////////////////////////////*/
 
     function setProofValidityWindow(uint256 _window) external;
+
     function setMaxStateSize(uint256 _maxSize) external;
+
     function lockState(bytes32 commitment) external;
+
     function unlockState(bytes32 commitment) external;
+
     function freezeState(bytes32 commitment) external;
+
     function pause() external;
+
     function unpause() external;
 }
 

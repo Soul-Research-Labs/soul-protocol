@@ -30,6 +30,31 @@ export interface WitnessInput {
 }
 
 /*//////////////////////////////////////////////////////////////
+                    PROVER MODE
+//////////////////////////////////////////////////////////////*/
+
+/**
+ * Prover operating mode.
+ * - `'development'` (default): Falls back to placeholder proofs when Barretenberg
+ *   is unavailable. Suitable for testing and integration development.
+ * - `'production'`: Throws if Barretenberg is unavailable or circuit artifacts
+ *   are missing. Ensures only real cryptographic proofs are generated.
+ */
+export type ProverMode = 'production' | 'development';
+
+/**
+ * Options for configuring a NoirProver instance.
+ */
+export interface ProverOptions {
+  /**
+   * Operating mode. Defaults to `'development'`.
+   * In `'production'` mode, the prover will throw instead of generating
+   * placeholder proofs when the Barretenberg backend is unavailable.
+   */
+  mode?: ProverMode;
+}
+
+/*//////////////////////////////////////////////////////////////
                     CIRCUIT DEFINITIONS
 //////////////////////////////////////////////////////////////*/
 
@@ -108,8 +133,12 @@ export class NoirProver {
   private backend?: any;
   private noir?: any;
   private circuits: Map<Circuit, CircuitArtifact> = new Map();
+  /** Operating mode — controls placeholder proof behavior */
+  public readonly mode: ProverMode;
 
-  constructor() {}
+  constructor(options?: ProverOptions) {
+    this.mode = options?.mode ?? 'development';
+  }
 
   /**
    * Initialize the prover
@@ -127,6 +156,12 @@ export class NoirProver {
       this.backend = await Barretenberg.new();
       console.log("✅ Barretenberg backend initialized");
     } catch (e) {
+      if (this.mode === 'production') {
+        throw new Error(
+          'Barretenberg backend unavailable — cannot initialize prover in production mode. ' +
+          'Install with: npm install @aztec/bb.js'
+        );
+      }
       console.warn("⚠️ Barretenberg not available, using placeholder prover");
       console.warn("   Install with: npm install @aztec/bb.js");
     }
@@ -154,6 +189,12 @@ export class NoirProver {
       this.circuits.set(circuit, artifact);
       return artifact;
     } catch (e) {
+      if (this.mode === 'production') {
+        throw new Error(
+          `Circuit ${circuit} not found — cannot load circuits in production mode. ` +
+          `Expected at: noir/${circuit}/target/${circuit}.json`
+        );
+      }
       // Return placeholder artifact
       console.warn(`⚠️ Circuit ${circuit} not found, using placeholder`);
       const placeholder: CircuitArtifact = {
@@ -183,6 +224,15 @@ export class NoirProver {
       // Use real Barretenberg prover
       return await this.generateRealProof(artifact, inputs);
     } else {
+      if (this.mode === 'production') {
+        throw new Error(
+          `Cannot generate proof for ${circuit} in production mode: ` +
+          (!this.backend
+            ? 'Barretenberg backend unavailable'
+            : 'circuit artifact has no bytecode') +
+          '. Ensure @aztec/bb.js is installed and circuits are compiled.'
+        );
+      }
       // Use placeholder prover
       return this.generatePlaceholderProof(circuit, inputs);
     }
@@ -421,19 +471,22 @@ export class NoirProver {
 let _prover: NoirProver | null = null;
 
 /**
- * Get the global prover instance
+ * Get the global prover instance.
+ * Uses `'development'` mode by default for backward compatibility.
+ * Pass `options` to create a singleton in a different mode.
  */
-export async function getProver(): Promise<NoirProver> {
+export async function getProver(options?: ProverOptions): Promise<NoirProver> {
   if (!_prover) {
-    _prover = new NoirProver();
+    _prover = new NoirProver(options);
     await _prover.initialize();
   }
   return _prover;
 }
 
 /**
- * Create a new prover instance
+ * Create a new prover instance.
+ * @param options - Prover configuration. Defaults to development mode.
  */
-export function createProver(): NoirProver {
-  return new NoirProver();
+export function createProver(options?: ProverOptions): NoirProver {
+  return new NoirProver(options);
 }

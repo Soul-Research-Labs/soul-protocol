@@ -260,11 +260,10 @@ contract SoulCrossChainRelay is AccessControl, ReentrancyGuard, Pausable {
     /**
      * @notice Called by bridge adapters when a cross-chain proof message arrives.
      *         Decodes the payload and submits to the local CrossChainProofHubV3.
-     * @param sourceChainId The source EVM chain ID
      * @param payload The encoded proof message
      */
     function receiveRelayedProof(
-        uint256 sourceChainId,
+        uint256 /* _sourceChainId */,
         bytes calldata payload
     ) external onlyRole(BRIDGE_ROLE) nonReentrant whenNotPaused {
         // Decode message type

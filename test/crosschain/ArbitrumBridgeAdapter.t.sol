@@ -124,7 +124,12 @@ contract ArbitrumBridgeAdapterTest is Test {
         vm.prank(user);
         vm.expectRevert();
         adapter.deposit{value: 1 ether}(
-            42161, user, address(0), 1 ether, 1000000, 1 gwei
+            42161,
+            user,
+            address(0),
+            1 ether,
+            1000000,
+            1 gwei
         );
     }
 

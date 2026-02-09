@@ -71,7 +71,11 @@ interface ICrossChainProofHubV3 {
         uint64 destChainId,
         address indexed relayer
     );
-    event ProofDataEmitted(bytes32 indexed proofId, bytes proof, bytes publicInputs);
+    event ProofDataEmitted(
+        bytes32 indexed proofId,
+        bytes proof,
+        bytes publicInputs
+    );
     event BatchSubmitted(
         bytes32 indexed batchId,
         bytes32 indexed merkleRoot,
@@ -81,21 +85,34 @@ interface ICrossChainProofHubV3 {
     event ProofVerified(bytes32 indexed proofId, ProofStatus status);
     event ProofFinalized(bytes32 indexed proofId);
     event ProofRejected(bytes32 indexed proofId, string reason);
-    event ChallengeCreated(bytes32 indexed proofId, address indexed challenger, string reason);
+    event ChallengeCreated(
+        bytes32 indexed proofId,
+        address indexed challenger,
+        string reason
+    );
     event ChallengeResolved(
         bytes32 indexed proofId,
         bool challengerWon,
         address indexed winner,
         uint256 reward
     );
-    event RelayerStakeDeposited(address indexed relayer, uint256 indexed amount);
-    event RelayerStakeWithdrawn(address indexed relayer, uint256 indexed amount);
+    event RelayerStakeDeposited(
+        address indexed relayer,
+        uint256 indexed amount
+    );
+    event RelayerStakeWithdrawn(
+        address indexed relayer,
+        uint256 indexed amount
+    );
     event RelayerSlashed(address indexed relayer, uint256 indexed amount);
     event ChainAdded(uint256 indexed chainId);
     event ChainRemoved(uint256 indexed chainId);
     event TrustedRemoteSet(uint256 indexed chainId, address indexed remote);
     event VerifierSet(bytes32 indexed proofType, address verifier);
-    event VerifierRegistryUpdated(address indexed oldRegistry, address indexed newRegistry);
+    event VerifierRegistryUpdated(
+        address indexed oldRegistry,
+        address indexed newRegistry
+    );
     event ChallengePeriodUpdated(uint256 oldPeriod, uint256 newPeriod);
     event MinStakesUpdated(uint256 relayerStake, uint256 challengerStake);
     event ProofSubmissionFeeUpdated(uint256 oldFee, uint256 newFee);
@@ -108,7 +125,11 @@ interface ICrossChainProofHubV3 {
     error InsufficientStake(uint256 provided, uint256 required);
     error ProofNotFound(bytes32 proofId);
     error ProofAlreadyExists(bytes32 proofId);
-    error InvalidProofStatus(bytes32 proofId, ProofStatus current, ProofStatus expected);
+    error InvalidProofStatus(
+        bytes32 proofId,
+        ProofStatus current,
+        ProofStatus expected
+    );
     error ChallengePeriodNotOver(bytes32 proofId, uint256 deadline);
     error ChallengePeriodOver(bytes32 proofId);
     error ChallengeAlreadyExists(bytes32 proofId);
@@ -135,7 +156,9 @@ interface ICrossChainProofHubV3 {
     //////////////////////////////////////////////////////////////*/
 
     function depositStake() external payable;
+
     function withdrawStake(uint256 amount) external;
+
     function withdrawRewards(uint256 amount) external;
 
     /*//////////////////////////////////////////////////////////////
@@ -168,13 +191,18 @@ interface ICrossChainProofHubV3 {
                          CHALLENGE SYSTEM
     //////////////////////////////////////////////////////////////*/
 
-    function challengeProof(bytes32 proofId, string calldata reason) external payable;
+    function challengeProof(
+        bytes32 proofId,
+        string calldata reason
+    ) external payable;
+
     function resolveChallenge(
         bytes32 proofId,
         bytes calldata proof,
         bytes calldata publicInputs,
         bytes32 proofType
     ) external;
+
     function expireChallenge(bytes32 proofId) external;
 
     /*//////////////////////////////////////////////////////////////
@@ -187,11 +215,23 @@ interface ICrossChainProofHubV3 {
                           VIEW FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    function getProof(bytes32 proofId) external view returns (ProofSubmission memory);
-    function getBatch(bytes32 batchId) external view returns (BatchSubmission memory);
-    function getChallenge(bytes32 proofId) external view returns (Challenge memory);
+    function getProof(
+        bytes32 proofId
+    ) external view returns (ProofSubmission memory);
+
+    function getBatch(
+        bytes32 batchId
+    ) external view returns (BatchSubmission memory);
+
+    function getChallenge(
+        bytes32 proofId
+    ) external view returns (Challenge memory);
+
     function isProofFinalized(bytes32 proofId) external view returns (bool);
-    function getRelayerStats(address relayer)
+
+    function getRelayerStats(
+        address relayer
+    )
         external
         view
         returns (uint256 stake, uint256 successCount, uint256 slashCount);
@@ -201,17 +241,35 @@ interface ICrossChainProofHubV3 {
     //////////////////////////////////////////////////////////////*/
 
     function confirmRoleSeparation() external;
+
     function setVerifier(bytes32 proofType, address _verifier) external;
+
     function addSupportedChain(uint256 chainId) external;
+
     function removeSupportedChain(uint256 chainId) external;
+
     function setTrustedRemote(uint256 chainId, address remote) external;
+
     function setVerifierRegistry(address _registry) external;
+
     function setChallengePeriod(uint256 _period) external;
-    function setMinStakes(uint256 _relayerStake, uint256 _challengerStake) external;
+
+    function setMinStakes(
+        uint256 _relayerStake,
+        uint256 _challengerStake
+    ) external;
+
     function setProofSubmissionFee(uint256 _fee) external;
-    function setRateLimits(uint256 _maxProofsPerHour, uint256 _maxValuePerHour) external;
+
+    function setRateLimits(
+        uint256 _maxProofsPerHour,
+        uint256 _maxValuePerHour
+    ) external;
+
     function withdrawFees(address to) external;
+
     function pause() external;
+
     function unpause() external;
 }
 

@@ -48,6 +48,14 @@ contract MockProofVerifier {
         return verificationResult;
     }
 
+    /// @notice Groth16VerifierBN254 interface
+    function verify(
+        bytes calldata /* proof */,
+        uint256[] calldata /* publicInputs */
+    ) external view returns (bool) {
+        return verificationResult;
+    }
+
     /// @notice Get verification key hash (mock)
     function getVerificationKeyHash() external pure returns (bytes32) {
         return keccak256("MOCK_VK_HASH");

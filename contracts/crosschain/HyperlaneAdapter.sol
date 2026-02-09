@@ -269,7 +269,7 @@ contract HyperlaneAdapter is ReentrancyGuard, AccessControl, Pausable {
     function quoteDispatch(
         uint32, // destinationDomain (unused)
         bytes calldata message
-    ) external view returns (uint256 fee) {
+    ) external pure returns (uint256 fee) {
         // Simplified fee calculation
         // In production, call mailbox.quoteDispatch()
         uint256 baseFee = 0.0005 ether;
@@ -494,7 +494,7 @@ contract HyperlaneAdapter is ReentrancyGuard, AccessControl, Pausable {
         bytes32 messageId,
         bytes calldata metadata,
         uint32 originDomain
-    ) internal returns (bool) {
+    ) internal view returns (bool) {
         // Decode sub-ISM verifications from metadata
         bytes[] memory subMetadata = abi.decode(metadata, (bytes[]));
 

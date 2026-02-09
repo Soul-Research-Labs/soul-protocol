@@ -88,12 +88,13 @@ contract CrossChainNullifierSyncTest is Test {
     //////////////////////////////////////////////////////////////*/
 
     function test_ConfigureSyncTarget() public {
-        CrossChainNullifierSync.SyncTarget memory target = CrossChainNullifierSync.SyncTarget({
-            nullifierRegistry: address(0x1),
-            relay: address(0x2),
-            chainId: 42161,
-            active: true
-        });
+        CrossChainNullifierSync.SyncTarget
+            memory target = CrossChainNullifierSync.SyncTarget({
+                nullifierRegistry: address(0x1),
+                relay: address(0x2),
+                chainId: 42161,
+                active: true
+            });
 
         sync.configureSyncTarget(42161, target);
         uint256[] memory chains = sync.getTargetChains();
@@ -102,12 +103,13 @@ contract CrossChainNullifierSyncTest is Test {
     }
 
     function test_ConfigureSyncTarget_RevertNonOperator() public {
-        CrossChainNullifierSync.SyncTarget memory target = CrossChainNullifierSync.SyncTarget({
-            nullifierRegistry: address(0x1),
-            relay: address(0x2),
-            chainId: 42161,
-            active: true
-        });
+        CrossChainNullifierSync.SyncTarget
+            memory target = CrossChainNullifierSync.SyncTarget({
+                nullifierRegistry: address(0x1),
+                relay: address(0x2),
+                chainId: 42161,
+                active: true
+            });
 
         vm.prank(user);
         vm.expectRevert();
@@ -119,12 +121,13 @@ contract CrossChainNullifierSyncTest is Test {
     //////////////////////////////////////////////////////////////*/
 
     function test_Flush_RevertNoPending() public {
-        CrossChainNullifierSync.SyncTarget memory target = CrossChainNullifierSync.SyncTarget({
-            nullifierRegistry: address(0x1),
-            relay: address(0x2),
-            chainId: 42161,
-            active: true
-        });
+        CrossChainNullifierSync.SyncTarget
+            memory target = CrossChainNullifierSync.SyncTarget({
+                nullifierRegistry: address(0x1),
+                relay: address(0x2),
+                chainId: 42161,
+                active: true
+            });
         sync.configureSyncTarget(42161, target);
 
         vm.prank(syncer);
@@ -170,7 +173,12 @@ contract CrossChainNullifierSyncTest is Test {
 
         vm.prank(user);
         vm.expectRevert();
-        sync.receiveNullifierBatch(42161, nullifiers, commitments, bytes32(uint256(999)));
+        sync.receiveNullifierBatch(
+            42161,
+            nullifiers,
+            commitments,
+            bytes32(uint256(999))
+        );
     }
 
     /*//////////////////////////////////////////////////////////////
