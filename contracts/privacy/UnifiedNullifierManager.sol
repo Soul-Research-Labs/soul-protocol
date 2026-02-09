@@ -312,7 +312,13 @@ contract UnifiedNullifierManager is
     // =========================================================================
 
     /**
-     * @notice Register a chain domain
+     * @notice Register a new chain domain in the Cross-Domain Nullifier Algebra (CDNA) system
+     * @dev Creates a domain-separated nullifier prefix using keccak256(NULLIFIER_DOMAIN, chainId, domainTag).
+     *      Each chain needs a unique domain tag to prevent nullifier collisions across chains.
+     * @param chainId The EVM chain ID or custom ID for non-EVM chains (e.g., 900001 for Monero)
+     * @param chainType The chain classification (EVM, UTXO, PRIVACY, etc.)
+     * @param domainTag A unique identifier tag for this chain's nullifier domain
+     * @param bridgeAdapter The bridge adapter contract address for this chain (address(0) if none)
      */
     function registerChainDomain(
         uint256 chainId,
@@ -341,7 +347,9 @@ contract UnifiedNullifierManager is
     }
 
     /**
-     * @notice Set the cross-chain verifier adapter
+     * @notice Set the cross-chain proof verifier adapter used for derivation proof validation
+     * @dev Only callable by DEFAULT_ADMIN_ROLE. Reverts on zero address.
+     * @param _verifier The address of the cross-chain verifier contract
      */
     function setCrossChainVerifier(
         address _verifier
@@ -399,7 +407,16 @@ contract UnifiedNullifierManager is
     // =========================================================================
 
     /**
-     * @notice Register a nullifier
+     * @notice Register a new nullifier with its commitment and derive a soul binding
+     * @dev Creates a NullifierRecord, derives a unified soul binding via CDNA,
+     *      and stores the reverse lookup. Only callable by BRIDGE_ROLE.
+     *      The soul binding links nullifiers across chains to the same identity.
+     * @param nullifier The unique nullifier hash (must not already exist)
+     * @param commitment The Pedersen commitment associated with this nullifier
+     * @param chainId The chain where this nullifier originates (must be registered)
+     * @param nullifierType The classification of this nullifier (UTXO, NOTE, ACCOUNT, etc.)
+     * @param expiresAt Unix timestamp when this nullifier expires (0 for no expiry)
+     * @return soulBinding The derived cross-chain soul binding hash
      */
     function registerNullifier(
         bytes32 nullifier,
@@ -473,7 +490,16 @@ contract UnifiedNullifierManager is
     // =========================================================================
 
     /**
-     * @notice Create cross-domain nullifier binding
+     * @notice Create a cross-domain nullifier binding between two chains
+     * @dev Verifies a derivation proof, derives a destination nullifier using abi.encode
+     *      (not abi.encodePacked to prevent hash collision attacks), and creates a
+     *      CrossDomainBinding record linking source and destination nullifiers.
+     * @param sourceNullifier The nullifier on the source chain (must be registered)
+     * @param sourceChainId The chain ID where the source nullifier exists
+     * @param destChainId The target chain ID for the binding
+     * @param derivationProof ZK proof validating the cross-domain derivation
+     * @return destNullifier The derived nullifier on the destination chain
+     * @return soulBinding The unified soul binding hash linking both nullifiers
      */
     function createCrossDomainBinding(
         bytes32 sourceNullifier,

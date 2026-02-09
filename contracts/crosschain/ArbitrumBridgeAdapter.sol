@@ -359,7 +359,17 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Deposit tokens to Arbitrum
+     * @notice Deposit tokens from L1 to Arbitrum L2 via the Inbox retryable ticket system
+     * @dev Calculates submission cost, applies bridge fee, and creates a retryable ticket.
+     *      Requires msg.value to cover submissionCost + (l2GasLimit * l2GasPrice) + fee.
+     *      Emits a DepositInitiated event on success.
+     * @param chainId The target Arbitrum chain ID (must be configured via addRollupConfig)
+     * @param l2Recipient The L2 address that will receive the bridged tokens
+     * @param l1Token The L1 token contract address (must be mapped via mapToken)
+     * @param amount The amount of tokens to deposit (must be within min/max deposit limits)
+     * @param l2GasLimit The gas limit for the L2 retryable ticket execution (0 uses default)
+     * @param l2GasPrice The L2 gas price for the retryable ticket
+     * @return depositId Unique identifier for tracking this deposit
      */
     function deposit(
         uint256 chainId,
@@ -594,7 +604,11 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     }
 
     /**
-     * @notice Fast exit (instant withdrawal with LP)
+     * @notice Execute instant withdrawal using liquidity provider funds (bypasses challenge period)
+     * @dev The caller must be a registered liquidity provider with sufficient balance.
+     *      Their liquidity is consumed to fund the instant exit. The original withdrawal
+     *      is marked as finalized, with the LP effectively taking over the pending withdrawal.
+     * @param withdrawalId The withdrawal to fast-exit (must be in PENDING status)
      */
     function fastExit(bytes32 withdrawalId) external nonReentrant {
         if (!fastExitEnabled) revert FastExitDisabled();
@@ -631,7 +645,9 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     }
 
     /**
-     * @notice Withdraw liquidity
+     * @notice Withdraw previously provided liquidity from the fast-exit pool
+     * @dev Sends native ETH to caller. Reverts if balance insufficient.
+     * @param amount The amount of liquidity to withdraw (in wei)
      */
     function withdrawLiquidity(uint256 amount) external nonReentrant {
         if (liquidityProviders[msg.sender] < amount)
@@ -650,7 +666,12 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Map token across L1/L2
+     * @notice Register a token mapping between L1 and L2 for cross-chain bridging
+     * @dev Only callable by OPERATOR_ROLE. Overwrites existing mapping for the same key.
+     * @param l1Token The L1 (Ethereum mainnet) token contract address
+     * @param l2Token The corresponding L2 (Arbitrum) token contract address
+     * @param chainId The Arbitrum chain ID this mapping applies to
+     * @param decimals The token's decimal precision (used for amount normalization)
      */
     function mapToken(
         address l1Token,
@@ -679,11 +700,21 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
                          CONFIGURATION
     //////////////////////////////////////////////////////////////*/
 
+    /**
+     * @notice Set the bridge fee in basis points (1 = 0.01%)
+     * @dev Maximum fee is 100 basis points (1%). Only callable by OPERATOR_ROLE.
+     * @param newFee The new bridge fee in basis points
+     */
     function setBridgeFee(uint256 newFee) external onlyRole(OPERATOR_ROLE) {
         if (newFee > 100) revert FeeTooHigh();
         bridgeFee = newFee;
     }
 
+    /**
+     * @notice Set minimum and maximum deposit amounts for bridge operations
+     * @param minAmount The minimum deposit amount (in token's smallest unit)
+     * @param maxAmount The maximum deposit amount (in token's smallest unit)
+     */
     function setDepositLimits(
         uint256 minAmount,
         uint256 maxAmount
@@ -692,10 +723,20 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         maxDepositAmount = maxAmount;
     }
 
+    /**
+     * @notice Enable or disable the fast-exit (instant withdrawal) feature
+     * @dev Only callable by GUARDIAN_ROLE. Disabling prevents new fast exits.
+     * @param enabled True to enable fast exits, false to disable
+     */
     function setFastExitEnabled(bool enabled) external onlyRole(GUARDIAN_ROLE) {
         fastExitEnabled = enabled;
     }
 
+    /**
+     * @notice Set the treasury address that receives collected bridge fees
+     * @dev Only callable by DEFAULT_ADMIN_ROLE.
+     * @param newTreasury The new treasury address
+     */
     function setTreasury(
         address newTreasury
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -718,6 +759,15 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
                            STATISTICS
     //////////////////////////////////////////////////////////////*/
 
+    /**
+     * @notice Get aggregate bridge operation statistics
+     * @return depositCount Total number of L1->L2 deposits processed
+     * @return withdrawalCount Total number of L2->L1 withdrawals claimed
+     * @return valueDeposited Total ETH value deposited to L2 (in wei)
+     * @return valueWithdrawn Total ETH value withdrawn from L2 (in wei)
+     * @return fastExits Total number of fast exits executed
+     * @return fees Total bridge fees collected (in wei)
+     */
     function getBridgeStats()
         external
         view

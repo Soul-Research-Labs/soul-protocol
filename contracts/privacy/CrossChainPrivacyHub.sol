@@ -718,7 +718,17 @@ contract CrossChainPrivacyHub is
     }
 
     /**
-     * @notice Initiate transfer with ERC20 token
+     * @notice Initiate a privacy-preserving cross-chain ERC20 token transfer
+     * @dev Pulls tokens from sender via safeTransferFrom, deducts protocol fee,
+     *      verifies privacy proof (if MEDIUM+ privacy level), generates nullifier
+     *      and commitment, then stores the transfer request for relaying.
+     * @param token The ERC20 token contract address (must not be address(0))
+     * @param destChainId The destination chain ID (must be a registered adapter)
+     * @param recipient The recipient address encoded as bytes32 (can be stealth address)
+     * @param amount The total transfer amount in token's smallest unit (fee deducted internally)
+     * @param privacyLevel The desired privacy level (BASIC, MEDIUM, HIGH, MAXIMUM)
+     * @param proof ZK privacy proof required for MEDIUM+ privacy levels
+     * @return requestId Unique identifier for tracking and completing this transfer
      */
     function initiatePrivateTransferERC20(
         address token,
@@ -813,7 +823,13 @@ contract CrossChainPrivacyHub is
     }
 
     /**
-     * @notice Relay transfer to destination chain (called by relayer)
+     * @notice Relay a pending transfer to the destination chain
+     * @dev Called by authorized relayers after the source chain transfer is initiated.
+     *      Verifies the privacy proof, binds source and destination nullifiers, and
+     *      marks the transfer as RELAYED. Must be called before transfer expiry.
+     * @param requestId The transfer request ID from initiatePrivateTransfer
+     * @param destNullifier The derived nullifier on the destination chain
+     * @param proof ZK proof validating the cross-chain relay
      */
     function relayTransfer(
         bytes32 requestId,
@@ -847,7 +863,13 @@ contract CrossChainPrivacyHub is
     }
 
     /**
-     * @notice Complete transfer on destination chain
+     * @notice Complete a relayed transfer on the destination chain and release funds
+     * @dev Verifies the nullifier hasn't been consumed (double-spend prevention),
+     *      validates the ZK proof, then sends funds to the recipient. Marks the
+     *      nullifier as consumed and the transfer as COMPLETED.
+     * @param requestId The transfer request ID (must be in RELAYED status)
+     * @param nullifier The destination nullifier to consume (must not be already spent)
+     * @param proof ZK proof validating the withdrawal claim
      */
     function completeTransfer(
         bytes32 requestId,
