@@ -68,11 +68,21 @@ remappings = [
 
 # RPC endpoints for forking (use environment variables)
 [rpc_endpoints]
+# Mainnets
 mainnet = "${MAINNET_RPC_URL}"
-sepolia = "${SEPOLIA_RPC_URL}"
 arbitrum = "${ARBITRUM_RPC_URL}"
 optimism = "${OPTIMISM_RPC_URL}"
 base = "${BASE_RPC_URL}"
+
+# Testnets
+sepolia = "${SEPOLIA_RPC_URL}"
+arbitrum_sepolia = "${ARBITRUM_SEPOLIA_RPC_URL}"
+base_sepolia = "${BASE_SEPOLIA_RPC_URL}"
+optimism_sepolia = "${OPTIMISM_SEPOLIA_RPC_URL}"
+scroll_sepolia = "${SCROLL_SEPOLIA_RPC_URL}"
+linea_sepolia = "${LINEA_SEPOLIA_RPC_URL}"
+zksync_sepolia = "${ZKSYNC_SEPOLIA_RPC_URL}"
+polygon_amoy = "${POLYGON_AMOY_RPC_URL}"
 
 # Etherscan API keys for verification
 [etherscan]
@@ -81,5 +91,11 @@ sepolia = { key = "${ETHERSCAN_API_KEY}" }
 arbitrum = { key = "${ARBISCAN_API_KEY}" }
 optimism = { key = "${OPTIMISM_API_KEY}" }
 base = { key = "${BASESCAN_API_KEY}" }
+arbitrum_sepolia = { key = "${ARBISCAN_API_KEY}", url = "https://api-sepolia.arbiscan.io/api" }
+base_sepolia = { key = "${BASESCAN_API_KEY}", url = "https://api-sepolia.basescan.org/api" }
+optimism_sepolia = { key = "${OPTIMISM_API_KEY}", url = "https://api-sepolia-optimistic.etherscan.io/api" }
+scroll_sepolia = { key = "${SCROLLSCAN_API_KEY}", url = "https://api-sepolia.scrollscan.com/api" }
+linea_sepolia = { key = "${LINEASCAN_API_KEY}", url = "https://api-sepolia.lineascan.build/api" }
+polygon_amoy = { key = "${POLYGONSCAN_API_KEY}", url = "https://api-amoy.polygonscan.com/api" }
 
 

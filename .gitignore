@@ -69,6 +69,8 @@ emv_*
 
 # Deployment
 deployments/
+!deployments/README.md
+!deployments/*.json
 .openzeppelin/
 
 # Environment variables
