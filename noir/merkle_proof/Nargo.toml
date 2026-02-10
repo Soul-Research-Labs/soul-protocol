@@ -5,4 +5,3 @@ authors = ["Soul Protocol"]
 description = "Optimized Merkle tree inclusion proof for nullifier registry using Poseidon hashing"
 
 [dependencies]
-poseidon = { tag = "v0.2.3", git = "https://github.com/noir-lang/poseidon" }

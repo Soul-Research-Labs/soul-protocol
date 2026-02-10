@@ -6,4 +6,3 @@ compiler_version = ">=0.30.0"
 description = "CLSAG-style ring signature circuit for sender anonymity"
 
 [dependencies]
-poseidon = { tag = "v0.2.3", git = "https://github.com/noir-lang/poseidon" }

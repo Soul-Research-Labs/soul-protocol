@@ -5,4 +5,3 @@ authors = ["Soul Protocol"]
 description = "State commitment using Pedersen hash for hiding property"
 
 [dependencies]
-poseidon = { tag = "v0.2.3", git = "https://github.com/noir-lang/poseidon" }

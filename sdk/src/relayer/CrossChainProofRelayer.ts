@@ -27,8 +27,8 @@ import { privateKeyToAccount } from 'viem/accounts';
  * @example
  * ```typescript
  * const relayer = new CrossChainProofRelayer({
- *   sourceChain: { rpcUrl: 'https://arb-sepolia.example.com', chainId: 421614 },
- *   destChain:   { rpcUrl: 'https://base-sepolia.example.com', chainId: 84532 },
+ *   sourceChain: { rpcUrl: 'https://arb-sepolia.g.alchemy.com/v2/KEY', chainId: 421614 },
+ *   destChain:   { rpcUrl: 'https://base-sepolia.g.alchemy.com/v2/KEY', chainId: 84532 },
  *   proofHubAddress: '0x...',
  *   relayAddress: '0x...',
  *   privateKey: '0x...',

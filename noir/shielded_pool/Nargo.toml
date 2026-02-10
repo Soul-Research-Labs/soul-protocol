@@ -6,4 +6,3 @@ compiler_version = ">=0.33.0"
 description = "ZK circuit for shielded pool deposits and withdrawals with Merkle tree membership proofs"
 
 [dependencies]
-poseidon = { tag = "v0.2.3", git = "https://github.com/noir-lang/poseidon" }

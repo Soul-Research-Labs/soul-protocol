@@ -9,7 +9,7 @@
 // 4. Commitments are properly formed
 // 5. No double-spending (nullifier uniqueness)
 
-use poseidon::poseidon::bn254;
+use std::hash::poseidon::bn254;
 
 // Maximum transfer amount (prevent overflow)
 global MAX_TRANSFER: u128 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;

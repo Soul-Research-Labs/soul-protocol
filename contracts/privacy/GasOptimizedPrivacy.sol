@@ -564,8 +564,8 @@ contract GasOptimizedRingCT {
         }
 
         // Verify ring signature
-        // In production, use optimized CLSAG verification
-        /// @custom:security PLACEHOLDER — replace with real CLSAG/MLSAG ring signature verifier
+        // Verify ring signature via external CLSAGVerifier
+        /// @custom:security Set ringSignatureVerifier to deployed CLSAGVerifier address
         _verifyRingSignature(
             inputCommitments,
             keyImages,

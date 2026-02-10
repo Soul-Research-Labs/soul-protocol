@@ -2,6 +2,19 @@
 
 This directory contains all Soul ZK circuits implemented in Noir.
 
+## Poseidon Migration (Feb 2026)
+
+All 19 circuits have been migrated from the external `poseidon` crate (`v0.2.3`)
+to the **Noir standard library** (`std::hash::poseidon::bn254`). This resolves
+the compilation failure with nargo ≥1.0.0-beta.18 caused by the deprecated
+third-party Poseidon package.
+
+**What changed:**
+- `Nargo.toml`: Removed `poseidon = { tag = "v0.2.3", git = "..." }` dependency
+- Source files: Changed `use poseidon::poseidon::bn254;` → `use std::hash::poseidon::bn254;`
+- API is identical (`bn254::hash_1`, `hash_2`, `hash_3`, `hash_4`, etc.)
+- The `aggregator` circuit was unaffected (no poseidon dependency)
+
 ## Overview
 
 [Noir](https://noir-lang.org/) is a domain-specific language for creating and verifying zero-knowledge proofs. Key advantages:

@@ -990,10 +990,12 @@ contract DirectL2Messenger is ReentrancyGuard, AccessControl, Pausable {
                               ADMIN
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Pause all messaging operations (emergency use)
     function pause() external onlyRole(OPERATOR_ROLE) {
         _pause();
     }
 
+    /// @notice Resume messaging operations after pause
     function unpause() external onlyRole(OPERATOR_ROLE) {
         _unpause();
     }
@@ -1002,16 +1004,26 @@ contract DirectL2Messenger is ReentrancyGuard, AccessControl, Pausable {
                               VIEWS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Retrieve a message by its unique identifier
+    /// @param messageId The unique hash identifying the message
+    /// @return The L2Message struct containing sender, target, data, and status
     function getMessage(
         bytes32 messageId
     ) external view returns (L2Message memory) {
         return messages[messageId];
     }
 
+    /// @notice Get relayer registration details
+    /// @param addr The relayer address to query
+    /// @return The Relayer struct (stake, active status, performance stats)
     function getRelayer(address addr) external view returns (Relayer memory) {
         return relayers[addr];
     }
 
+    /// @notice Get the route configuration between two chains
+    /// @param sourceChainId The source chain identifier
+    /// @param destChainId The destination chain identifier
+    /// @return The RouteConfig including enabled status, gas limits, and fees
     function getRoute(
         uint256 sourceChainId,
         uint256 destChainId
@@ -1019,18 +1031,26 @@ contract DirectL2Messenger is ReentrancyGuard, AccessControl, Pausable {
         return routes[sourceChainId][destChainId];
     }
 
+    /// @notice Get the number of relayer confirmations for a message
+    /// @param messageId The message to check confirmations for
+    /// @return The count of unique relayer confirmations
     function getConfirmationCount(
         bytes32 messageId
     ) external view returns (uint256) {
         return messageConfirmations[messageId].length;
     }
 
+    /// @notice Check whether a message has already been processed
+    /// @param messageId The message to check
+    /// @return True if the message has been executed on this chain
     function isMessageProcessed(
         bytes32 messageId
     ) external view returns (bool) {
         return processedMessages[messageId];
     }
 
+    /// @notice Get the total number of registered relayers
+    /// @return The count of relayers in the relayer list
     function getRelayerCount() external view returns (uint256) {
         return relayerList.length;
     }

@@ -1,4 +1,4 @@
-use poseidon::poseidon::bn254;
+use std::hash::poseidon::bn254;
 
 /// @title StateCommitmentCircuit
 /// @notice Optimized circuit for proving knowledge of state preimage

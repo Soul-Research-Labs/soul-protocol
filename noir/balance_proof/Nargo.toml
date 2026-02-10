@@ -5,4 +5,3 @@ authors = ["Soul Team"]
 description = "Balance proof circuit for deposits and withdrawals in Soul Exchange"
 
 [dependencies]
-poseidon = { tag = "v0.2.3", git = "https://github.com/noir-lang/poseidon" }

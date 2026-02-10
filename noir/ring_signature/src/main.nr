@@ -1,4 +1,4 @@
-use poseidon::poseidon::bn254;
+use std::hash::poseidon::bn254;
 
 /// @title RingSignatureCircuit
 /// @notice Implements CLSAG-style ring signatures in ZK for proving:

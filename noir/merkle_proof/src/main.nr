@@ -1,4 +1,4 @@
-use poseidon::poseidon::bn254;
+use std::hash::poseidon::bn254;
 
 /// @title MerkleProofVerifier
 /// @notice Optimized Merkle tree inclusion proof for nullifier registry

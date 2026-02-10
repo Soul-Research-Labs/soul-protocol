@@ -148,12 +148,13 @@ npx hardhat run scripts/verify-contracts.ts --network mainnet
 3. **Scheduled**: Via timelock for maintenance
 
 ### Emergency Contacts
-<!-- TEMPLATE: Replace placeholder contacts with real contacts before mainnet launch -->
+<!-- ACTION REQUIRED: Replace these with actual team contacts before mainnet launch.
+     See internal contacts sheet: notion.so/soul/emergency-contacts -->
 | Role | Primary | Backup |
 |------|---------|--------|
-| Security Lead | security@soul.network | +1-XXX-XXX-XXXX |
-| Smart Contract Lead | contracts@soul.network | - |
-| Infrastructure | infra@soul.network | - |
+| Security Lead | `REDACTED — set before launch` | `REDACTED` |
+| Smart Contract Lead | `REDACTED — set before launch` | - |
+| Infrastructure | `REDACTED — set before launch` | - |
 
 ### Runbook Location
 - [docs/INCIDENT_RESPONSE_RUNBOOK.md](./INCIDENT_RESPONSE_RUNBOOK.md)

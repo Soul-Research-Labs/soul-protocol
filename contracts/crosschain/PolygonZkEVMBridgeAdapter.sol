@@ -54,6 +54,8 @@ contract PolygonZkEVMBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         _grantRole(OPERATOR_ROLE, _admin);
     }
 
+    /// @notice Set the Soul Hub L2 contract address
+    /// @param _soulHubL2 The address of the Soul Hub on Polygon zkEVM
     function setSoulHubL2(
         address _soulHubL2
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -61,26 +63,36 @@ contract PolygonZkEVMBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         emit SoulHubL2Set(_soulHubL2);
     }
 
+    /// @notice Get the Polygon zkEVM mainnet chain ID
+    /// @return The chain ID (1101)
     function chainId() external pure returns (uint256) {
         return POLYGON_ZKEVM_MAINNET;
     }
 
+    /// @notice Get the human-readable chain name
+    /// @return The chain name string
     function chainName() external pure returns (string memory) {
         return "Polygon zkEVM";
     }
 
+    /// @notice Check whether the adapter has its bridge address configured
+    /// @return True if the bridge address is set (non-zero)
     function isConfigured() external view returns (bool) {
         return bridge != address(0);
     }
 
+    /// @notice Get the number of blocks required for finality
+    /// @return The finality block count
     function getFinalityBlocks() external pure returns (uint256) {
         return FINALITY_BLOCKS;
     }
 
+    /// @notice Pause the adapter (emergency use)
     function pause() external onlyRole(PAUSER_ROLE) {
         _pause();
     }
 
+    /// @notice Resume the adapter after a pause
     function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }

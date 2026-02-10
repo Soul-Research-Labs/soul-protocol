@@ -1,4 +1,4 @@
-use poseidon::poseidon::bn254;
+use std::hash::poseidon::bn254;
 
 /// @title PolicyBoundProofCircuit
 /// @notice Circuit for proofs cryptographically scoped by disclosure policy (PBP)

@@ -1,4 +1,4 @@
-use poseidon::poseidon::bn254;
+use std::hash::poseidon::bn254;
 
 /// @title BalanceProofCircuit
 /// @notice Balance Proof Circuit for Soul Exchange

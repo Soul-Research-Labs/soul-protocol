@@ -5,4 +5,3 @@ authors = ["Soul Protocol"]
 description = "Privacy-preserving accredited investor proof - proves financial qualification without revealing net worth"
 
 [dependencies]
-poseidon = { tag = "v0.2.3", git = "https://github.com/noir-lang/poseidon" }

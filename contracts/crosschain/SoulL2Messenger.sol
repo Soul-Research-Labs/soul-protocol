@@ -466,6 +466,7 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
     }
 
     /// @notice Withdraw fulfiller bond
+    /// @param amount The amount of bond to withdraw (in wei)
     function withdrawBond(uint256 amount) external nonReentrant {
         if (fulfillerBonds[msg.sender] < amount) revert InsufficientBond();
         fulfillerBonds[msg.sender] -= amount;
@@ -483,6 +484,8 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Set counterpart messenger for a chain
+    /// @param chainId The chain ID of the counterpart network
+    /// @param messenger The address of the messenger contract on the counterpart chain
     function setCounterpart(
         uint256 chainId,
         address messenger
@@ -492,6 +495,7 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
     }
 
     /// @notice Set proof hub address
+    /// @param _proofHub The address of the CrossChainProofHubV3 contract
     function setProofHub(address _proofHub) external onlyRole(OPERATOR_ROLE) {
         proofHub = _proofHub;
     }

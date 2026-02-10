@@ -5,4 +5,3 @@ authors = ["Soul Protocol"]
 description = "Private transfer circuit with hidden amounts, stealth addresses, and balance verification"
 
 [dependencies]
-poseidon = { tag = "v0.2.3", git = "https://github.com/noir-lang/poseidon" }

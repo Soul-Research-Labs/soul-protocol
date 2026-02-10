@@ -411,21 +411,12 @@ export class CrossChainPrivacyOrchestrator {
                 verified: true
             };
         } catch (e: any) {
-            // SECURITY WARNING: Falling back to hash-based proof (dev only)
-            console.warn(`⚠️ Real proof generation failed: ${e.message}`);
-            console.warn('Using hash-based placeholder proof — NOT SAFE for production');
-
-            const proof = keccak256(concat([
-                params.commitment,
-                params.secret,
-                ...params.merkleProof.path.map(p => p as Hex)
-            ]));
-
-            return {
-                proof,
-                publicInputs: publicInputs as Hex[],
-                verified: false // Explicitly mark as unverified
-            };
+            // SECURITY: Do NOT fall back to placeholder proofs in production.
+            // Re-throw the error so callers handle it explicitly.
+            throw new PrivacyTransferError(
+                `Proof generation failed: ${e.message}. Ensure Noir prover is configured.`,
+                TransferStage.GENERATING_PROOF
+            );
         }
     }
 
