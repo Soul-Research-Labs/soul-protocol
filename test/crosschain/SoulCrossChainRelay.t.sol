@@ -33,7 +33,7 @@ contract MockBridgeAdapter {
         called = true;
     }
 
-    receive() external payable { }
+    receive() external payable {}
 }
 
 /// @dev Mock ProofHub that records submissions
@@ -82,19 +82,23 @@ contract SoulCrossChainRelayTest is Test {
         proofHub = new MockProofHub();
         bridgeAdapter = new MockBridgeAdapter();
 
-        relay = new SoulCrossChainRelay(address(proofHub), SoulCrossChainRelay.BridgeType.LAYERZERO);
+        relay = new SoulCrossChainRelay(
+            address(proofHub),
+            SoulCrossChainRelay.BridgeType.LAYERZERO
+        );
 
         relay.grantRole(RELAYER_ROLE, relayer);
         relay.grantRole(BRIDGE_ROLE, bridgeRole);
         relay.grantRole(OPERATOR_ROLE, operatorAddr);
 
         // Configure destination chain
-        SoulCrossChainRelay.ChainConfig memory config = SoulCrossChainRelay.ChainConfig({
-            proofHub: address(proofHub),
-            bridgeAdapter: address(bridgeAdapter),
-            bridgeChainId: 30_110,
-            active: true
-        });
+        SoulCrossChainRelay.ChainConfig memory config = SoulCrossChainRelay
+            .ChainConfig({
+                proofHub: address(proofHub),
+                bridgeAdapter: address(bridgeAdapter),
+                bridgeChainId: 30_110,
+                active: true
+            });
         relay.configureChain(DEST_CHAIN, config);
     }
 
@@ -103,7 +107,10 @@ contract SoulCrossChainRelayTest is Test {
 
     function test_constructor_setsState() public view {
         assertEq(relay.proofHub(), address(proofHub));
-        assertEq(uint8(relay.bridgeType()), uint8(SoulCrossChainRelay.BridgeType.LAYERZERO));
+        assertEq(
+            uint8(relay.bridgeType()),
+            uint8(SoulCrossChainRelay.BridgeType.LAYERZERO)
+        );
     }
 
     function test_constructor_grantsRoles() public view {
@@ -114,13 +121,21 @@ contract SoulCrossChainRelayTest is Test {
 
     function test_constructor_revert_zeroProofHub() public {
         vm.expectRevert(SoulCrossChainRelay.ZeroAddress.selector);
-        new SoulCrossChainRelay(address(0), SoulCrossChainRelay.BridgeType.LAYERZERO);
+        new SoulCrossChainRelay(
+            address(0),
+            SoulCrossChainRelay.BridgeType.LAYERZERO
+        );
     }
 
     function test_constructor_hyperlaneType() public {
-        SoulCrossChainRelay r2 =
-            new SoulCrossChainRelay(address(proofHub), SoulCrossChainRelay.BridgeType.HYPERLANE);
-        assertEq(uint8(r2.bridgeType()), uint8(SoulCrossChainRelay.BridgeType.HYPERLANE));
+        SoulCrossChainRelay r2 = new SoulCrossChainRelay(
+            address(proofHub),
+            SoulCrossChainRelay.BridgeType.HYPERLANE
+        );
+        assertEq(
+            uint8(r2.bridgeType()),
+            uint8(SoulCrossChainRelay.BridgeType.HYPERLANE)
+        );
     }
 
     // ── configureChain
@@ -134,8 +149,12 @@ contract SoulCrossChainRelayTest is Test {
     }
 
     function test_configureChain_storesConfig() public view {
-        (address hub, address adapter_, uint32 bridgeChainId, bool active) =
-            relay.chainConfigs(DEST_CHAIN);
+        (
+            address hub,
+            address adapter_,
+            uint32 bridgeChainId,
+            bool active
+        ) = relay.chainConfigs(DEST_CHAIN);
         assertEq(hub, address(proofHub));
         assertEq(adapter_, address(bridgeAdapter));
         assertEq(bridgeChainId, 30_110);
@@ -143,41 +162,59 @@ contract SoulCrossChainRelayTest is Test {
     }
 
     function test_configureChain_emitsEvent() public {
-        SoulCrossChainRelay.ChainConfig memory config = SoulCrossChainRelay.ChainConfig({
-            proofHub: makeAddr("hub2"),
-            bridgeAdapter: makeAddr("adapter2"),
-            bridgeChainId: 99,
-            active: true
-        });
+        SoulCrossChainRelay.ChainConfig memory config = SoulCrossChainRelay
+            .ChainConfig({
+                proofHub: makeAddr("hub2"),
+                bridgeAdapter: makeAddr("adapter2"),
+                bridgeChainId: 99,
+                active: true
+            });
 
         vm.prank(operatorAddr);
         vm.expectEmit(true, false, false, true);
-        emit SoulCrossChainRelay.ChainConfigured(10, makeAddr("hub2"), makeAddr("adapter2"), 99);
+        emit SoulCrossChainRelay.ChainConfigured(
+            10,
+            makeAddr("hub2"),
+            makeAddr("adapter2"),
+            99
+        );
         relay.configureChain(10, config);
     }
 
     function test_configureChain_revert_zeroProofHub() public {
-        SoulCrossChainRelay.ChainConfig memory config = SoulCrossChainRelay.ChainConfig({
-            proofHub: address(0), bridgeAdapter: makeAddr("a"), bridgeChainId: 1, active: true
-        });
+        SoulCrossChainRelay.ChainConfig memory config = SoulCrossChainRelay
+            .ChainConfig({
+                proofHub: address(0),
+                bridgeAdapter: makeAddr("a"),
+                bridgeChainId: 1,
+                active: true
+            });
         vm.prank(operatorAddr);
         vm.expectRevert(SoulCrossChainRelay.InvalidProofHub.selector);
         relay.configureChain(999, config);
     }
 
     function test_configureChain_revert_zeroBridgeAdapter() public {
-        SoulCrossChainRelay.ChainConfig memory config = SoulCrossChainRelay.ChainConfig({
-            proofHub: makeAddr("h"), bridgeAdapter: address(0), bridgeChainId: 1, active: true
-        });
+        SoulCrossChainRelay.ChainConfig memory config = SoulCrossChainRelay
+            .ChainConfig({
+                proofHub: makeAddr("h"),
+                bridgeAdapter: address(0),
+                bridgeChainId: 1,
+                active: true
+            });
         vm.prank(operatorAddr);
         vm.expectRevert(SoulCrossChainRelay.InvalidBridgeAdapter.selector);
         relay.configureChain(999, config);
     }
 
     function test_configureChain_revert_notOperator() public {
-        SoulCrossChainRelay.ChainConfig memory config = SoulCrossChainRelay.ChainConfig({
-            proofHub: makeAddr("h"), bridgeAdapter: makeAddr("a"), bridgeChainId: 1, active: true
-        });
+        SoulCrossChainRelay.ChainConfig memory config = SoulCrossChainRelay
+            .ChainConfig({
+                proofHub: makeAddr("h"),
+                bridgeAdapter: makeAddr("a"),
+                bridgeChainId: 1,
+                active: true
+            });
         vm.prank(relayer);
         vm.expectRevert();
         relay.configureChain(999, config);
@@ -185,17 +222,18 @@ contract SoulCrossChainRelayTest is Test {
 
     function test_configureChain_updateExisting() public {
         // Re-configure DEST_CHAIN → should NOT add duplicate to supportedChains
-        SoulCrossChainRelay.ChainConfig memory config = SoulCrossChainRelay.ChainConfig({
-            proofHub: makeAddr("hub3"),
-            bridgeAdapter: makeAddr("adapter3"),
-            bridgeChainId: 55,
-            active: true
-        });
+        SoulCrossChainRelay.ChainConfig memory config = SoulCrossChainRelay
+            .ChainConfig({
+                proofHub: makeAddr("hub3"),
+                bridgeAdapter: makeAddr("adapter3"),
+                bridgeChainId: 55,
+                active: true
+            });
         relay.configureChain(DEST_CHAIN, config);
 
         uint256[] memory chains = relay.getSupportedChains();
         assertEq(chains.length, 1); // no duplicate push
-        (address hub,,,) = relay.chainConfigs(DEST_CHAIN);
+        (address hub, , , ) = relay.chainConfigs(DEST_CHAIN);
         assertEq(hub, makeAddr("hub3"));
     }
 
@@ -210,8 +248,13 @@ contract SoulCrossChainRelayTest is Test {
 
         vm.deal(relayer, 1 ether);
         vm.prank(relayer);
-        bytes32 messageId = relay.relayProof{ value: 0.01 ether }(
-            bytes32(uint256(1)), proof, pubInputs, commitment, uint64(DEST_CHAIN), proofType
+        bytes32 messageId = relay.relayProof{value: 0.01 ether}(
+            bytes32(uint256(1)),
+            proof,
+            pubInputs,
+            commitment,
+            uint64(DEST_CHAIN),
+            proofType
         );
 
         assertTrue(messageId != bytes32(0));
@@ -228,9 +271,20 @@ contract SoulCrossChainRelayTest is Test {
         vm.deal(relayer, 1 ether);
         vm.prank(relayer);
         vm.expectEmit(true, false, false, false);
-        emit SoulCrossChainRelay.ProofRelayed(proofId, 0, 0, commitment, bytes32(0));
-        relay.relayProof{ value: 0.01 ether }(
-            proofId, proof, pubInputs, commitment, uint64(DEST_CHAIN), bytes32(0)
+        emit SoulCrossChainRelay.ProofRelayed(
+            proofId,
+            0,
+            0,
+            commitment,
+            bytes32(0)
+        );
+        relay.relayProof{value: 0.01 ether}(
+            proofId,
+            proof,
+            pubInputs,
+            commitment,
+            uint64(DEST_CHAIN),
+            bytes32(0)
         );
     }
 
@@ -242,12 +296,19 @@ contract SoulCrossChainRelayTest is Test {
 
         vm.deal(relayer, 1 ether);
         vm.prank(relayer);
-        bytes32 messageId = relay.relayProof{ value: 0.01 ether }(
-            proofId, proof, pubInputs, commitment, uint64(DEST_CHAIN), bytes32("plonk")
+        bytes32 messageId = relay.relayProof{value: 0.01 ether}(
+            proofId,
+            proof,
+            pubInputs,
+            commitment,
+            uint64(DEST_CHAIN),
+            bytes32("plonk")
         );
 
         (
-            bytes32 storedProofId,,,
+            bytes32 storedProofId,
+            ,
+            ,
             bytes32 storedCommitment,
             uint64 srcChain,
             uint64 dstChain,
@@ -269,9 +330,19 @@ contract SoulCrossChainRelayTest is Test {
         bytes memory bigProof = new bytes(32_769);
         vm.deal(relayer, 1 ether);
         vm.prank(relayer);
-        vm.expectRevert(abi.encodeWithSelector(SoulCrossChainRelay.ProofTooLarge.selector, 32_769));
-        relay.relayProof{ value: 0.01 ether }(
-            bytes32(uint256(1)), bigProof, hex"aa", bytes32(0), uint64(DEST_CHAIN), bytes32(0)
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                SoulCrossChainRelay.ProofTooLarge.selector,
+                32_769
+            )
+        );
+        relay.relayProof{value: 0.01 ether}(
+            bytes32(uint256(1)),
+            bigProof,
+            hex"aa",
+            bytes32(0),
+            uint64(DEST_CHAIN),
+            bytes32(0)
         );
     }
 
@@ -280,19 +351,37 @@ contract SoulCrossChainRelayTest is Test {
         vm.deal(relayer, 1 ether);
         vm.prank(relayer);
         vm.expectRevert(
-            abi.encodeWithSelector(SoulCrossChainRelay.PublicInputsTooLarge.selector, 8193)
+            abi.encodeWithSelector(
+                SoulCrossChainRelay.PublicInputsTooLarge.selector,
+                8193
+            )
         );
-        relay.relayProof{ value: 0.01 ether }(
-            bytes32(uint256(1)), hex"aa", bigPub, bytes32(0), uint64(DEST_CHAIN), bytes32(0)
+        relay.relayProof{value: 0.01 ether}(
+            bytes32(uint256(1)),
+            hex"aa",
+            bigPub,
+            bytes32(0),
+            uint64(DEST_CHAIN),
+            bytes32(0)
         );
     }
 
     function test_relayProof_revert_chainNotSupported() public {
         vm.deal(relayer, 1 ether);
         vm.prank(relayer);
-        vm.expectRevert(abi.encodeWithSelector(SoulCrossChainRelay.ChainNotSupported.selector, 999));
-        relay.relayProof{ value: 0.01 ether }(
-            bytes32(uint256(1)), hex"aa", hex"bb", bytes32(0), 999, bytes32(0)
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                SoulCrossChainRelay.ChainNotSupported.selector,
+                999
+            )
+        );
+        relay.relayProof{value: 0.01 ether}(
+            bytes32(uint256(1)),
+            hex"aa",
+            hex"bb",
+            bytes32(0),
+            999,
+            bytes32(0)
         );
     }
 
@@ -300,8 +389,13 @@ contract SoulCrossChainRelayTest is Test {
         vm.deal(operatorAddr, 1 ether);
         vm.prank(operatorAddr);
         vm.expectRevert();
-        relay.relayProof{ value: 0.01 ether }(
-            bytes32(uint256(1)), hex"aa", hex"bb", bytes32(0), uint64(DEST_CHAIN), bytes32(0)
+        relay.relayProof{value: 0.01 ether}(
+            bytes32(uint256(1)),
+            hex"aa",
+            hex"bb",
+            bytes32(0),
+            uint64(DEST_CHAIN),
+            bytes32(0)
         );
     }
 
@@ -310,19 +404,34 @@ contract SoulCrossChainRelayTest is Test {
         vm.deal(relayer, 1 ether);
         vm.prank(relayer);
         vm.expectRevert();
-        relay.relayProof{ value: 0.01 ether }(
-            bytes32(uint256(1)), hex"aa", hex"bb", bytes32(0), uint64(DEST_CHAIN), bytes32(0)
+        relay.relayProof{value: 0.01 ether}(
+            bytes32(uint256(1)),
+            hex"aa",
+            hex"bb",
+            bytes32(0),
+            uint64(DEST_CHAIN),
+            bytes32(0)
         );
     }
 
     function test_relayProof_incrementsNonce() public {
         vm.deal(relayer, 10 ether);
         vm.startPrank(relayer);
-        relay.relayProof{ value: 0.01 ether }(
-            bytes32(uint256(1)), hex"aa", hex"bb", bytes32(0), uint64(DEST_CHAIN), bytes32(0)
+        relay.relayProof{value: 0.01 ether}(
+            bytes32(uint256(1)),
+            hex"aa",
+            hex"bb",
+            bytes32(0),
+            uint64(DEST_CHAIN),
+            bytes32(0)
         );
-        relay.relayProof{ value: 0.01 ether }(
-            bytes32(uint256(2)), hex"cc", hex"dd", bytes32(0), uint64(DEST_CHAIN), bytes32(0)
+        relay.relayProof{value: 0.01 ether}(
+            bytes32(uint256(2)),
+            hex"cc",
+            hex"dd",
+            bytes32(0),
+            uint64(DEST_CHAIN),
+            bytes32(0)
         );
         vm.stopPrank();
         assertEq(relay.relayNonce(), 2);
@@ -332,24 +441,32 @@ contract SoulCrossChainRelayTest is Test {
     // ──────────────────────────────────
 
     function test_relayProof_hyperlane() public {
-        SoulCrossChainRelay hypRelay =
-            new SoulCrossChainRelay(address(proofHub), SoulCrossChainRelay.BridgeType.HYPERLANE);
+        SoulCrossChainRelay hypRelay = new SoulCrossChainRelay(
+            address(proofHub),
+            SoulCrossChainRelay.BridgeType.HYPERLANE
+        );
         hypRelay.grantRole(RELAYER_ROLE, relayer);
         hypRelay.grantRole(OPERATOR_ROLE, address(this));
 
         MockBridgeAdapter hypAdapter = new MockBridgeAdapter();
-        SoulCrossChainRelay.ChainConfig memory config = SoulCrossChainRelay.ChainConfig({
-            proofHub: address(proofHub),
-            bridgeAdapter: address(hypAdapter),
-            bridgeChainId: 30_110,
-            active: true
-        });
+        SoulCrossChainRelay.ChainConfig memory config = SoulCrossChainRelay
+            .ChainConfig({
+                proofHub: address(proofHub),
+                bridgeAdapter: address(hypAdapter),
+                bridgeChainId: 30_110,
+                active: true
+            });
         hypRelay.configureChain(DEST_CHAIN, config);
 
         vm.deal(relayer, 1 ether);
         vm.prank(relayer);
-        bytes32 msgId = hypRelay.relayProof{ value: 0.01 ether }(
-            bytes32(uint256(1)), hex"aa", hex"bb", bytes32(0), uint64(DEST_CHAIN), bytes32(0)
+        bytes32 msgId = hypRelay.relayProof{value: 0.01 ether}(
+            bytes32(uint256(1)),
+            hex"aa",
+            hex"bb",
+            bytes32(0),
+            uint64(DEST_CHAIN),
+            bytes32(0)
         );
         assertTrue(msgId != bytes32(0));
         assertTrue(hypAdapter.called());
@@ -380,12 +497,23 @@ contract SoulCrossChainRelayTest is Test {
     function test_receiveRelayedProof_emitsEvent() public {
         bytes32 proofId = bytes32(uint256(42));
         bytes memory payload = abi.encode(
-            uint8(1), proofId, hex"aa", hex"bb", bytes32(uint256(77)), uint64(10), bytes32("plonk")
+            uint8(1),
+            proofId,
+            hex"aa",
+            hex"bb",
+            bytes32(uint256(77)),
+            uint64(10),
+            bytes32("plonk")
         );
 
         vm.prank(bridgeRole);
         vm.expectEmit(true, false, false, false);
-        emit SoulCrossChainRelay.ProofReceived(proofId, 10, bytes32(uint256(77)), true);
+        emit SoulCrossChainRelay.ProofReceived(
+            proofId,
+            10,
+            bytes32(uint256(77)),
+            true
+        );
         relay.receiveRelayedProof(10, payload);
     }
 
@@ -407,8 +535,15 @@ contract SoulCrossChainRelayTest is Test {
 
     function test_receiveRelayedProof_revert_alreadyProcessed() public {
         bytes32 proofId = bytes32(uint256(42));
-        bytes memory payload =
-            abi.encode(uint8(1), proofId, hex"aa", hex"bb", bytes32(0), uint64(10), bytes32(0));
+        bytes memory payload = abi.encode(
+            uint8(1),
+            proofId,
+            hex"aa",
+            hex"bb",
+            bytes32(0),
+            uint64(10),
+            bytes32(0)
+        );
 
         vm.prank(bridgeRole);
         relay.receiveRelayedProof(10, payload);
@@ -420,7 +555,13 @@ contract SoulCrossChainRelayTest is Test {
 
     function test_receiveRelayedProof_revert_notBridgeRole() public {
         bytes memory payload = abi.encode(
-            uint8(1), bytes32(0), hex"aa", hex"bb", bytes32(0), uint64(10), bytes32(0)
+            uint8(1),
+            bytes32(0),
+            hex"aa",
+            hex"bb",
+            bytes32(0),
+            uint64(10),
+            bytes32(0)
         );
         vm.prank(relayer);
         vm.expectRevert();
@@ -430,7 +571,13 @@ contract SoulCrossChainRelayTest is Test {
     function test_receiveRelayedProof_revert_whenPaused() public {
         relay.pause();
         bytes memory payload = abi.encode(
-            uint8(1), bytes32(0), hex"aa", hex"bb", bytes32(0), uint64(10), bytes32(0)
+            uint8(1),
+            bytes32(0),
+            hex"aa",
+            hex"bb",
+            bytes32(0),
+            uint64(10),
+            bytes32(0)
         );
         vm.prank(bridgeRole);
         vm.expectRevert();
@@ -502,13 +649,16 @@ contract SoulCrossChainRelayTest is Test {
     // ── Fuzz
     // ─────────────────────────────────────────────────────
 
-    function testFuzz_relayProof_differentProofIds(
-        bytes32 proofId
-    ) public {
+    function testFuzz_relayProof_differentProofIds(bytes32 proofId) public {
         vm.deal(relayer, 1 ether);
         vm.prank(relayer);
-        bytes32 msgId = relay.relayProof{ value: 0.01 ether }(
-            proofId, hex"aa", hex"bb", bytes32(0), uint64(DEST_CHAIN), bytes32(0)
+        bytes32 msgId = relay.relayProof{value: 0.01 ether}(
+            proofId,
+            hex"aa",
+            hex"bb",
+            bytes32(0),
+            uint64(DEST_CHAIN),
+            bytes32(0)
         );
         assertTrue(msgId != bytes32(0));
     }

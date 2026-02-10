@@ -74,7 +74,9 @@ contract L2ChainAdapterTest is Test {
         L2ChainAdapter.ChainConfig memory lin = adapter.getChainConfig(LINEA);
         assertEq(lin.chainId, LINEA);
 
-        L2ChainAdapter.ChainConfig memory poly = adapter.getChainConfig(POLYGON_ZKEVM);
+        L2ChainAdapter.ChainConfig memory poly = adapter.getChainConfig(
+            POLYGON_ZKEVM
+        );
         assertEq(poly.chainId, POLYGON_ZKEVM);
     }
 
@@ -85,10 +87,17 @@ contract L2ChainAdapterTest is Test {
         uint256 newChain = 12_345;
         vm.prank(admin);
         adapter.addChain(
-            newChain, "TestChain", makeAddr("bridge"), makeAddr("messenger"), 5, 500_000
+            newChain,
+            "TestChain",
+            makeAddr("bridge"),
+            makeAddr("messenger"),
+            5,
+            500_000
         );
 
-        L2ChainAdapter.ChainConfig memory config = adapter.getChainConfig(newChain);
+        L2ChainAdapter.ChainConfig memory config = adapter.getChainConfig(
+            newChain
+        );
         assertEq(config.chainId, newChain);
         assertEq(keccak256(bytes(config.name)), keccak256("TestChain"));
         assertTrue(config.enabled);
@@ -104,31 +113,66 @@ contract L2ChainAdapterTest is Test {
         vm.prank(admin);
         vm.expectEmit(true, false, false, true);
         emit L2ChainAdapter.ChainAdded(12_345, "TestChain", bridge);
-        adapter.addChain(12_345, "TestChain", bridge, makeAddr("messenger"), 1, 1_000_000);
+        adapter.addChain(
+            12_345,
+            "TestChain",
+            bridge,
+            makeAddr("messenger"),
+            1,
+            1_000_000
+        );
     }
 
     function test_addChain_revert_alreadyExists() public {
         vm.prank(admin);
         vm.expectRevert(L2ChainAdapter.ChainAlreadyExists.selector);
-        adapter.addChain(ARB, "Arb Dupe", makeAddr("b"), makeAddr("m"), 1, 1_000_000);
+        adapter.addChain(
+            ARB,
+            "Arb Dupe",
+            makeAddr("b"),
+            makeAddr("m"),
+            1,
+            1_000_000
+        );
     }
 
     function test_addChain_revert_zeroBridge() public {
         vm.prank(admin);
         vm.expectRevert(L2ChainAdapter.ZeroAddress.selector);
-        adapter.addChain(99_999, "Test", address(0), makeAddr("m"), 1, 1_000_000);
+        adapter.addChain(
+            99_999,
+            "Test",
+            address(0),
+            makeAddr("m"),
+            1,
+            1_000_000
+        );
     }
 
     function test_addChain_revert_zeroMessenger() public {
         vm.prank(admin);
         vm.expectRevert(L2ChainAdapter.ZeroAddress.selector);
-        adapter.addChain(99_999, "Test", makeAddr("b"), address(0), 1, 1_000_000);
+        adapter.addChain(
+            99_999,
+            "Test",
+            makeAddr("b"),
+            address(0),
+            1,
+            1_000_000
+        );
     }
 
     function test_addChain_revert_notAdmin() public {
         vm.prank(relayer);
         vm.expectRevert();
-        adapter.addChain(99_999, "Test", makeAddr("b"), makeAddr("m"), 1, 1_000_000);
+        adapter.addChain(
+            99_999,
+            "Test",
+            makeAddr("b"),
+            makeAddr("m"),
+            1,
+            1_000_000
+        );
     }
 
     // ── updateChain
@@ -152,7 +196,14 @@ contract L2ChainAdapterTest is Test {
     function test_updateChain_disable() public {
         // First enable
         vm.startPrank(admin);
-        adapter.updateChain(ARB, makeAddr("b"), makeAddr("m"), 1, 1_000_000, true);
+        adapter.updateChain(
+            ARB,
+            makeAddr("b"),
+            makeAddr("m"),
+            1,
+            1_000_000,
+            true
+        );
         assertTrue(adapter.getChainConfig(ARB).enabled);
 
         // Then disable (can use zero addresses now)
@@ -165,13 +216,27 @@ contract L2ChainAdapterTest is Test {
         vm.prank(admin);
         vm.expectEmit(true, false, false, true);
         emit L2ChainAdapter.ChainUpdated(ARB, true);
-        adapter.updateChain(ARB, makeAddr("b"), makeAddr("m"), 1, 1_000_000, true);
+        adapter.updateChain(
+            ARB,
+            makeAddr("b"),
+            makeAddr("m"),
+            1,
+            1_000_000,
+            true
+        );
     }
 
     function test_updateChain_revert_chainNotFound() public {
         vm.prank(admin);
         vm.expectRevert(L2ChainAdapter.ChainNotFound.selector);
-        adapter.updateChain(99_999, makeAddr("b"), makeAddr("m"), 1, 1_000_000, true);
+        adapter.updateChain(
+            99_999,
+            makeAddr("b"),
+            makeAddr("m"),
+            1,
+            1_000_000,
+            true
+        );
     }
 
     function test_updateChain_revert_enableZeroBridge() public {
@@ -189,7 +254,14 @@ contract L2ChainAdapterTest is Test {
     function test_updateChain_revert_notAdmin() public {
         vm.prank(relayer);
         vm.expectRevert();
-        adapter.updateChain(ARB, makeAddr("b"), makeAddr("m"), 1, 1_000_000, true);
+        adapter.updateChain(
+            ARB,
+            makeAddr("b"),
+            makeAddr("m"),
+            1,
+            1_000_000,
+            true
+        );
     }
 
     // ── sendMessage
@@ -197,7 +269,14 @@ contract L2ChainAdapterTest is Test {
 
     function _enableArbitrum() internal {
         vm.prank(admin);
-        adapter.updateChain(ARB, makeAddr("b"), makeAddr("m"), 1, 1_000_000, true);
+        adapter.updateChain(
+            ARB,
+            makeAddr("b"),
+            makeAddr("m"),
+            1,
+            1_000_000,
+            true
+        );
     }
 
     function test_sendMessage_success() public {
@@ -257,21 +336,26 @@ contract L2ChainAdapterTest is Test {
     // ── receiveMessage with oracle-signed proof
     // ──────────────────
 
-    function _setupOracleForChain(
-        uint256 chainId
-    ) internal {
+    function _setupOracleForChain(uint256 chainId) internal {
         vm.startPrank(admin);
         adapter.addOracle(chainId, oracleSigner);
-        adapter.updateChain(chainId, makeAddr("b"), makeAddr("m"), 1, 1_000_000, true);
+        adapter.updateChain(
+            chainId,
+            makeAddr("b"),
+            makeAddr("m"),
+            1,
+            1_000_000,
+            true
+        );
         vm.stopPrank();
     }
 
     /// @dev OZ MerkleProof._hashPair sorts before hashing
-    function _hashPair(
-        bytes32 a,
-        bytes32 b
-    ) internal pure returns (bytes32) {
-        return a < b ? keccak256(abi.encodePacked(a, b)) : keccak256(abi.encodePacked(b, a));
+    function _hashPair(bytes32 a, bytes32 b) internal pure returns (bytes32) {
+        return
+            a < b
+                ? keccak256(abi.encodePacked(a, b))
+                : keccak256(abi.encodePacked(b, a));
     }
 
     function _buildProof(
@@ -282,27 +366,38 @@ contract L2ChainAdapterTest is Test {
         bytes32 /* stateRoot (unused) */
     ) internal view returns (bytes memory) {
         // Compute message leaf
-        bytes32 messageLeaf =
-            keccak256(abi.encodePacked(sourceChain, block.chainid, messageId, keccak256(payload)));
+        bytes32 messageLeaf = keccak256(
+            abi.encodePacked(
+                sourceChain,
+                block.chainid,
+                messageId,
+                keccak256(payload)
+            )
+        );
 
         // Build a Merkle tree: leaf + sibling → root (contract requires ≥1 proof element)
         bytes32 sibling = bytes32(uint256(0xdead));
         bytes32 actualRoot = _hashPair(messageLeaf, sibling);
 
         // Sign the state root with oracle key
-        bytes32 innerHash = keccak256(abi.encodePacked(sourceChain, blockNumber, actualRoot));
-        bytes32 ethHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", innerHash));
+        bytes32 innerHash = keccak256(
+            abi.encodePacked(sourceChain, blockNumber, actualRoot)
+        );
+        bytes32 ethHash = keccak256(
+            abi.encodePacked("\x19Ethereum Signed Message:\n32", innerHash)
+        );
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(oracleKey, ethHash);
         bytes memory sig = abi.encodePacked(r, s, v);
 
         // Encode: stateRoot(32) + blockNumber(32) + merkleProofLen(2) + sibling(32) + sig(65)
-        return abi.encodePacked(
-            actualRoot,
-            bytes32(blockNumber),
-            uint16(1), // 1 merkle proof element
-            sibling,
-            sig
-        );
+        return
+            abi.encodePacked(
+                actualRoot,
+                bytes32(blockNumber),
+                uint16(1), // 1 merkle proof element
+                sibling,
+                sig
+            );
     }
 
     function test_receiveMessage_success() public {
@@ -312,12 +407,20 @@ contract L2ChainAdapterTest is Test {
         bytes memory payload = hex"aabbccdd";
         uint256 blockNum = 100;
 
-        bytes memory proof = _buildProof(ARB, messageId, payload, blockNum, bytes32(0));
+        bytes memory proof = _buildProof(
+            ARB,
+            messageId,
+            payload,
+            blockNum,
+            bytes32(0)
+        );
 
         vm.prank(relayer);
         adapter.receiveMessage(messageId, ARB, payload, proof);
 
-        L2ChainAdapter.MessageStatus status = adapter.getMessageStatus(messageId);
+        L2ChainAdapter.MessageStatus status = adapter.getMessageStatus(
+            messageId
+        );
         assertEq(uint8(status), uint8(L2ChainAdapter.MessageStatus.RELAYED));
     }
 
@@ -327,7 +430,13 @@ contract L2ChainAdapterTest is Test {
         bytes32 messageId = bytes32(uint256(77));
         bytes memory payload = hex"1122";
 
-        bytes memory proof = _buildProof(ARB, messageId, payload, 200, bytes32(0));
+        bytes memory proof = _buildProof(
+            ARB,
+            messageId,
+            payload,
+            200,
+            bytes32(0)
+        );
 
         vm.prank(relayer);
         vm.expectEmit(true, false, false, true);
@@ -340,7 +449,13 @@ contract L2ChainAdapterTest is Test {
 
         bytes32 messageId = bytes32(uint256(42));
         bytes memory payload = hex"aabb";
-        bytes memory proof = _buildProof(ARB, messageId, payload, 100, bytes32(0));
+        bytes memory proof = _buildProof(
+            ARB,
+            messageId,
+            payload,
+            100,
+            bytes32(0)
+        );
 
         vm.prank(relayer);
         adapter.receiveMessage(messageId, ARB, payload, proof);
@@ -363,7 +478,13 @@ contract L2ChainAdapterTest is Test {
         _setupOracleForChain(ARB);
 
         bytes32 messageId = bytes32(uint256(42));
-        bytes memory proof = _buildProof(ARB, messageId, hex"aa", 100, bytes32(0));
+        bytes memory proof = _buildProof(
+            ARB,
+            messageId,
+            hex"aa",
+            100,
+            bytes32(0)
+        );
 
         vm.prank(oracle);
         vm.expectRevert();
@@ -394,8 +515,9 @@ contract L2ChainAdapterTest is Test {
         uint256 blockNum = 1500; // Must be > 1000 to avoid underflow in expiry check
 
         // Compute leaf and merkle root (with 1 sibling) for known state root path
-        bytes32 messageLeaf =
-            keccak256(abi.encodePacked(ARB, block.chainid, messageId, keccak256(payload)));
+        bytes32 messageLeaf = keccak256(
+            abi.encodePacked(ARB, block.chainid, messageId, keccak256(payload))
+        );
         bytes32 sibling = bytes32(uint256(0xdead));
         bytes32 merkleRoot = _hashPair(messageLeaf, sibling);
 
@@ -405,14 +527,20 @@ contract L2ChainAdapterTest is Test {
 
         // Build proof with known state root — dummy sig OK because root is already known
         bytes memory dummySig = new bytes(65);
-        bytes memory proof =
-            abi.encodePacked(merkleRoot, bytes32(blockNum), uint16(1), sibling, dummySig);
+        bytes memory proof = abi.encodePacked(
+            merkleRoot,
+            bytes32(blockNum),
+            uint16(1),
+            sibling,
+            dummySig
+        );
 
         vm.prank(relayer);
         adapter.receiveMessage(messageId, ARB, payload, proof);
 
         assertEq(
-            uint8(adapter.getMessageStatus(messageId)), uint8(L2ChainAdapter.MessageStatus.RELAYED)
+            uint8(adapter.getMessageStatus(messageId)),
+            uint8(L2ChainAdapter.MessageStatus.RELAYED)
         );
     }
 
@@ -428,14 +556,20 @@ contract L2ChainAdapterTest is Test {
         adapter.updateStateRoot(ARB, blockNum, bytes32(uint256(999)));
 
         // Build proof with correct leaf but claim a different root
-        bytes32 messageLeaf =
-            keccak256(abi.encodePacked(ARB, block.chainid, messageId, keccak256(payload)));
+        bytes32 messageLeaf = keccak256(
+            abi.encodePacked(ARB, block.chainid, messageId, keccak256(payload))
+        );
         bytes32 sibling = bytes32(uint256(0xdead));
         bytes32 correctRoot = _hashPair(messageLeaf, sibling);
 
         bytes memory dummySig = new bytes(65);
-        bytes memory proof =
-            abi.encodePacked(correctRoot, bytes32(blockNum), uint16(1), sibling, dummySig);
+        bytes memory proof = abi.encodePacked(
+            correctRoot,
+            bytes32(blockNum),
+            uint16(1),
+            sibling,
+            dummySig
+        );
 
         vm.prank(relayer);
         vm.expectRevert(L2ChainAdapter.InvalidProof.selector);
@@ -450,7 +584,13 @@ contract L2ChainAdapterTest is Test {
 
         bytes32 messageId = bytes32(uint256(42));
         bytes memory payload = hex"aabb";
-        bytes memory proof = _buildProof(ARB, messageId, payload, 100, bytes32(0));
+        bytes memory proof = _buildProof(
+            ARB,
+            messageId,
+            payload,
+            100,
+            bytes32(0)
+        );
 
         vm.prank(relayer);
         adapter.receiveMessage(messageId, ARB, payload, proof);
@@ -469,7 +609,13 @@ contract L2ChainAdapterTest is Test {
 
         bytes32 messageId = bytes32(uint256(42));
         bytes memory payload = hex"aabb";
-        bytes memory proof = _buildProof(ARB, messageId, payload, 100, bytes32(0));
+        bytes memory proof = _buildProof(
+            ARB,
+            messageId,
+            payload,
+            100,
+            bytes32(0)
+        );
 
         vm.prank(relayer);
         adapter.receiveMessage(messageId, ARB, payload, proof);
@@ -490,7 +636,13 @@ contract L2ChainAdapterTest is Test {
         _setupOracleForChain(ARB);
 
         bytes32 messageId = bytes32(uint256(42));
-        bytes memory proof = _buildProof(ARB, messageId, hex"aa", 100, bytes32(0));
+        bytes memory proof = _buildProof(
+            ARB,
+            messageId,
+            hex"aa",
+            100,
+            bytes32(0)
+        );
         vm.prank(relayer);
         adapter.receiveMessage(messageId, ARB, hex"aa", proof);
 
@@ -630,7 +782,9 @@ contract L2ChainAdapterTest is Test {
     }
 
     function test_getChainConfig_unknown() public view {
-        L2ChainAdapter.ChainConfig memory config = adapter.getChainConfig(99_999);
+        L2ChainAdapter.ChainConfig memory config = adapter.getChainConfig(
+            99_999
+        );
         assertEq(config.chainId, 0);
     }
 
@@ -661,14 +815,19 @@ contract L2ChainAdapterTest is Test {
         uint256 blockNum = 100;
 
         // Compute message leaf and merkle root
-        bytes32 messageLeaf =
-            keccak256(abi.encodePacked(ARB, block.chainid, messageId, keccak256(payload)));
+        bytes32 messageLeaf = keccak256(
+            abi.encodePacked(ARB, block.chainid, messageId, keccak256(payload))
+        );
         bytes32 sibling = bytes32(uint256(0xdead));
         bytes32 merkleRoot = _hashPair(messageLeaf, sibling);
 
         // Sign with oracle key
-        bytes32 innerHash = keccak256(abi.encodePacked(ARB, blockNum, merkleRoot));
-        bytes32 ethHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", innerHash));
+        bytes32 innerHash = keccak256(
+            abi.encodePacked(ARB, blockNum, merkleRoot)
+        );
+        bytes32 ethHash = keccak256(
+            abi.encodePacked("\x19Ethereum Signed Message:\n32", innerHash)
+        );
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(oracleKey, ethHash);
 
         // Malleable: flip s to N - s
@@ -677,8 +836,13 @@ contract L2ChainAdapterTest is Test {
         uint8 malleableV = v == 27 ? 28 : 27;
         bytes memory malleableSig = abi.encodePacked(r, malleableS, malleableV);
 
-        bytes memory proof =
-            abi.encodePacked(merkleRoot, bytes32(blockNum), uint16(1), sibling, malleableSig);
+        bytes memory proof = abi.encodePacked(
+            merkleRoot,
+            bytes32(blockNum),
+            uint16(1),
+            sibling,
+            malleableSig
+        );
 
         // Should fail because high-s signature is rejected by _recoverSigner
         vm.prank(relayer);
@@ -689,18 +853,13 @@ contract L2ChainAdapterTest is Test {
     // ── Fuzz
     // ─────────────────────────────────────────────────────
 
-    function testFuzz_sendMessage_payloads(
-        bytes calldata payload
-    ) public {
+    function testFuzz_sendMessage_payloads(bytes calldata payload) public {
         _enableArbitrum();
         bytes32 id = adapter.sendMessage(ARB, payload);
         assertTrue(id != bytes32(0));
     }
 
-    function testFuzz_updateStateRoot(
-        uint256 blockNum,
-        bytes32 root
-    ) public {
+    function testFuzz_updateStateRoot(uint256 blockNum, bytes32 root) public {
         vm.assume(blockNum > 0);
         vm.prank(oracle);
         adapter.updateStateRoot(ARB, blockNum, root);

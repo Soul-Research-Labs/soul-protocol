@@ -38,7 +38,7 @@ contract MockZkSyncDiamond {
         }
     }
 
-    receive() external payable { }
+    receive() external payable {}
 }
 
 /// @dev Diamond that rejects calls
@@ -199,7 +199,11 @@ contract zkSyncBridgeAdapterTest is Test {
 
         vm.deal(operator, 1 ether);
         vm.prank(operator);
-        bytes32 msgHash = adapter.sendMessage{ value: 0.1 ether }(target, data, 0);
+        bytes32 msgHash = adapter.sendMessage{value: 0.1 ether}(
+            target,
+            data,
+            0
+        );
 
         assertTrue(msgHash != bytes32(0));
         assertEq(adapter.messageNonce(), 1);
@@ -213,13 +217,17 @@ contract zkSyncBridgeAdapterTest is Test {
         vm.prank(operator);
         vm.expectEmit(false, true, false, false);
         emit zkSyncBridgeAdapter.MessageSent(bytes32(0), target, 0, bytes32(0));
-        adapter.sendMessage{ value: 0.1 ether }(target, data, 0);
+        adapter.sendMessage{value: 0.1 ether}(target, data, 0);
     }
 
     function test_sendMessage_customGasLimit() public {
         vm.deal(operator, 1 ether);
         vm.prank(operator);
-        adapter.sendMessage{ value: 0.1 ether }(makeAddr("t"), hex"aa", 1_000_000);
+        adapter.sendMessage{value: 0.1 ether}(
+            makeAddr("t"),
+            hex"aa",
+            1_000_000
+        );
         assertEq(adapter.messageNonce(), 1);
     }
 
@@ -227,7 +235,7 @@ contract zkSyncBridgeAdapterTest is Test {
         vm.deal(operator, 1 ether);
         vm.prank(operator);
         vm.expectRevert("Invalid target");
-        adapter.sendMessage{ value: 0.1 ether }(address(0), hex"aa", 0);
+        adapter.sendMessage{value: 0.1 ether}(address(0), hex"aa", 0);
     }
 
     function test_sendMessage_revert_dataTooLarge() public {
@@ -235,7 +243,7 @@ contract zkSyncBridgeAdapterTest is Test {
         vm.deal(operator, 1 ether);
         vm.prank(operator);
         vm.expectRevert("Data too large");
-        adapter.sendMessage{ value: 0.1 ether }(makeAddr("t"), bigData, 0);
+        adapter.sendMessage{value: 0.1 ether}(makeAddr("t"), bigData, 0);
     }
 
     function test_sendMessage_revert_bridgeNotConfigured() public {
@@ -245,14 +253,14 @@ contract zkSyncBridgeAdapterTest is Test {
         vm.deal(operator, 1 ether);
         vm.prank(operator);
         vm.expectRevert("Mailbox call failed");
-        adapter.sendMessage{ value: 0.1 ether }(makeAddr("t"), hex"aa", 0);
+        adapter.sendMessage{value: 0.1 ether}(makeAddr("t"), hex"aa", 0);
     }
 
     function test_sendMessage_revert_notOperator() public {
         vm.deal(relayer, 1 ether);
         vm.prank(relayer);
         vm.expectRevert();
-        adapter.sendMessage{ value: 0.1 ether }(makeAddr("t"), hex"aa", 0);
+        adapter.sendMessage{value: 0.1 ether}(makeAddr("t"), hex"aa", 0);
     }
 
     function test_sendMessage_revert_whenPaused() public {
@@ -262,15 +270,15 @@ contract zkSyncBridgeAdapterTest is Test {
         vm.deal(operator, 1 ether);
         vm.prank(operator);
         vm.expectRevert();
-        adapter.sendMessage{ value: 0.1 ether }(makeAddr("t"), hex"aa", 0);
+        adapter.sendMessage{value: 0.1 ether}(makeAddr("t"), hex"aa", 0);
     }
 
     function test_sendMessage_incrementsNonce() public {
         vm.deal(operator, 10 ether);
         vm.startPrank(operator);
-        adapter.sendMessage{ value: 0.1 ether }(makeAddr("t"), hex"aa", 0);
-        adapter.sendMessage{ value: 0.1 ether }(makeAddr("t"), hex"bb", 0);
-        adapter.sendMessage{ value: 0.1 ether }(makeAddr("t"), hex"cc", 0);
+        adapter.sendMessage{value: 0.1 ether}(makeAddr("t"), hex"aa", 0);
+        adapter.sendMessage{value: 0.1 ether}(makeAddr("t"), hex"bb", 0);
+        adapter.sendMessage{value: 0.1 ether}(makeAddr("t"), hex"cc", 0);
         vm.stopPrank();
         assertEq(adapter.messageNonce(), 3);
     }
@@ -279,7 +287,11 @@ contract zkSyncBridgeAdapterTest is Test {
         address target = makeAddr("target");
         vm.deal(operator, 1 ether);
         vm.prank(operator);
-        bytes32 msgHash = adapter.sendMessage{ value: 0.1 ether }(target, hex"aabb", 0);
+        bytes32 msgHash = adapter.sendMessage{value: 0.1 ether}(
+            target,
+            hex"aabb",
+            0
+        );
 
         (
             zkSyncBridgeAdapter.MessageStatus status,
@@ -301,27 +313,44 @@ contract zkSyncBridgeAdapterTest is Test {
         address target = makeAddr("target");
         vm.deal(operator, 1 ether);
         vm.prank(operator);
-        bytes32 msgHash = adapter.sendMessage{ value: 0.1 ether }(target, hex"aabb", 0);
+        bytes32 msgHash = adapter.sendMessage{value: 0.1 ether}(
+            target,
+            hex"aabb",
+            0
+        );
 
         // Build proof
         bytes32[] memory merkle = new bytes32[](1);
         merkle[0] = bytes32(uint256(1));
-        zkSyncBridgeAdapter.L2LogProof memory proof = zkSyncBridgeAdapter.L2LogProof({
-            batchNumber: 100, messageIndex: 0, txNumberInBatch: 0, merkleProof: merkle
-        });
+        zkSyncBridgeAdapter.L2LogProof memory proof = zkSyncBridgeAdapter
+            .L2LogProof({
+                batchNumber: 100,
+                messageIndex: 0,
+                txNumberInBatch: 0,
+                merkleProof: merkle
+            });
 
         vm.prank(relayer);
         adapter.relayMessage(msgHash, hex"aabb", proof);
 
-        (zkSyncBridgeAdapter.MessageStatus status,,,) = adapter.messages(msgHash);
-        assertEq(uint8(status), uint8(zkSyncBridgeAdapter.MessageStatus.RELAYED));
+        (zkSyncBridgeAdapter.MessageStatus status, , , ) = adapter.messages(
+            msgHash
+        );
+        assertEq(
+            uint8(status),
+            uint8(zkSyncBridgeAdapter.MessageStatus.RELAYED)
+        );
     }
 
     function test_relayMessage_revert_notRelayer() public {
         bytes32[] memory merkle = new bytes32[](0);
-        zkSyncBridgeAdapter.L2LogProof memory proof = zkSyncBridgeAdapter.L2LogProof({
-            batchNumber: 1, messageIndex: 0, txNumberInBatch: 0, merkleProof: merkle
-        });
+        zkSyncBridgeAdapter.L2LogProof memory proof = zkSyncBridgeAdapter
+            .L2LogProof({
+                batchNumber: 1,
+                messageIndex: 0,
+                txNumberInBatch: 0,
+                merkleProof: merkle
+            });
 
         vm.prank(operator);
         vm.expectRevert();
@@ -330,9 +359,13 @@ contract zkSyncBridgeAdapterTest is Test {
 
     function test_relayMessage_revert_invalidState() public {
         bytes32[] memory merkle = new bytes32[](0);
-        zkSyncBridgeAdapter.L2LogProof memory proof = zkSyncBridgeAdapter.L2LogProof({
-            batchNumber: 1, messageIndex: 0, txNumberInBatch: 0, merkleProof: merkle
-        });
+        zkSyncBridgeAdapter.L2LogProof memory proof = zkSyncBridgeAdapter
+            .L2LogProof({
+                batchNumber: 1,
+                messageIndex: 0,
+                txNumberInBatch: 0,
+                merkleProof: merkle
+            });
 
         vm.prank(relayer);
         vm.expectRevert("Invalid message state");
@@ -351,13 +384,21 @@ contract zkSyncBridgeAdapterTest is Test {
         address target = makeAddr("target");
         vm.deal(operator, 1 ether);
         vm.prank(operator);
-        bytes32 msgHash = adapter.sendMessage{ value: 0.1 ether }(target, hex"aabb", 0);
+        bytes32 msgHash = adapter.sendMessage{value: 0.1 ether}(
+            target,
+            hex"aabb",
+            0
+        );
 
         bytes32[] memory merkle = new bytes32[](1);
         merkle[0] = bytes32(uint256(1));
-        zkSyncBridgeAdapter.L2LogProof memory proof = zkSyncBridgeAdapter.L2LogProof({
-            batchNumber: 100, messageIndex: 0, txNumberInBatch: 0, merkleProof: merkle
-        });
+        zkSyncBridgeAdapter.L2LogProof memory proof = zkSyncBridgeAdapter
+            .L2LogProof({
+                batchNumber: 100,
+                messageIndex: 0,
+                txNumberInBatch: 0,
+                merkleProof: merkle
+            });
         vm.prank(relayer);
         adapter.relayMessage(msgHash, hex"aabb", proof);
 
@@ -441,7 +482,7 @@ contract zkSyncBridgeAdapterTest is Test {
     function test_receiveETH() public {
         vm.deal(admin, 1 ether);
         vm.prank(admin);
-        (bool ok,) = address(adapter).call{ value: 0.5 ether }("");
+        (bool ok, ) = address(adapter).call{value: 0.5 ether}("");
         assertTrue(ok);
         assertEq(address(adapter).balance, 0.5 ether);
     }
@@ -449,13 +490,15 @@ contract zkSyncBridgeAdapterTest is Test {
     // ── Fuzz
     // ─────────────────────────────────────────────────────
 
-    function testFuzz_sendMessage_differentTargets(
-        address target
-    ) public {
+    function testFuzz_sendMessage_differentTargets(address target) public {
         vm.assume(target != address(0));
         vm.deal(operator, 10 ether);
         vm.prank(operator);
-        bytes32 hash = adapter.sendMessage{ value: 0.1 ether }(target, hex"aa", 0);
+        bytes32 hash = adapter.sendMessage{value: 0.1 ether}(
+            target,
+            hex"aa",
+            0
+        );
         assertTrue(hash != bytes32(0));
     }
 }
