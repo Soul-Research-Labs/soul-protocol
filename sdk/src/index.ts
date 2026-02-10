@@ -140,6 +140,14 @@ export {
 // Privacy (Stealth, RingCT, Nullifiers)
 export * from "./privacy";
 
+// Advanced Modules
+export * as pqc from "./pqc";
+export * as mpc from "./mpc";
+export * as fhe from "./fhe";
+export * as recursive from "./recursive";
+export * as zkSystems from "./zkSystems";
+export * as proofTranslator from "./proof-translator/ProofTranslator";
+
 export {
   // Core SDK
   SoulSDK,
