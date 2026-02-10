@@ -5,13 +5,16 @@
 ### Smart Contract Security
 
 #### ✅ Completed Checks
-- [x] All tests pass: `forge test --summary` (544 tests)
-- [x] Fuzz testing: 116+ fuzz tests with high iterations
+- [x] All tests pass: `forge test --summary` (2016 tests)
+- [x] Fuzz testing: 150+ fuzz tests with high iterations
 - [x] Invariant testing: 8 invariant tests
 - [x] Attack simulation: 44 attack vectors tested
 - [x] Echidna property tests: 21 properties verified
 - [x] Slither analysis: No critical/high findings
 - [x] Code coverage: >80% on core contracts
+- [x] Bridge adapter tests: 200 tests across 5 adapters
+- [x] Privacy contract tests: 183 tests across 3 contracts
+- [x] Certora formal specs: 50 spec files with invariants
 
 #### ✅ Internal Security Audit (February 2026)
 - [x] **44 vulnerabilities fixed** - see [SECURITY_AUDIT_REPORT.md](./SECURITY_AUDIT_REPORT.md)
@@ -194,5 +197,5 @@ forge verify-check <IMPLEMENTATION_ADDRESS> \
 
 ---
 
-*Security checklist version: 1.0.0*  
-*Last updated: January 2026*
+*Security checklist version: 1.1.0*  
+*Last updated: July 2025*
