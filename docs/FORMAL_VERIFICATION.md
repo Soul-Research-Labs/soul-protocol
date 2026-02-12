@@ -27,10 +27,9 @@ All verification jobs have been successfully submitted to the Certora cloud:
 | CrossDomainNullifierAlgebra (CDNA) | `verify_cdna.conf` | CDNA.spec | ✅ Submitted |
 | PolicyBoundProofs (PBP) | `verify_pbp.conf` | PBP.spec | ✅ Submitted |
 | ExecutionAgnosticStateCommitments (EASC) | `verify_easc.conf` | EASC.spec | ✅ Submitted |
-| HomomorphicHiding | `verify_homomorphic.conf` | HomomorphicHiding.spec | ✅ Submitted |
-| AggregateDisclosureAlgebra | `verify_ada.conf` | AggregateDisclosureAlgebra.spec | ✅ Submitted |
-| ComposableRevocationProofs | `verify_crp.conf` | ComposableRevocationProofs.spec | ✅ Submitted |
-| TEEAttestation | `verify_tee.conf` | TEEAttestation.spec | ✅ Submitted |
+| HomomorphicHiding | `verify_homomorphic.conf` | HomomorphicHiding.spec | ✅ Submitted (experimental) |
+| AggregateDisclosureAlgebra | `verify_ada.conf` | AggregateDisclosureAlgebra.spec | ✅ Submitted (experimental) |
+| ComposableRevocationProofs | `verify_crp.conf` | ComposableRevocationProofs.spec | ✅ Submitted (experimental) |
 
 ### Infrastructure Components
 

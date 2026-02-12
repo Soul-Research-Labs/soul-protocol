@@ -154,9 +154,9 @@ The following contracts are replaced with simplified stubs during coverage:
 
 | Category | Contracts |
 |----------|-----------|
-| Verifiers | `Groth16VerifierBLS12381`, `PLONKVerifier`, `FRIVerifier`, etc. |
+| Verifiers | `Groth16VerifierBN254`, `SoulUniversalVerifier`, `GasOptimizedVerifier` |
 | Core | `ZKBoundStateLocks`, `ConfidentialStateContainerV3` |
-| Privacy | `StealthAddressRegistry`, `RingConfidentialTransactions` |
+| Privacy | `StealthAddressRegistry`, `CrossChainPrivacyHub` |
 | Bridges | `CrossChainProofHubV3`, `DirectL2Messenger` |
 
 ---

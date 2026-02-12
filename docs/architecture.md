@@ -285,7 +285,7 @@ All critical contracts include:
 
 ### Cryptographic Assumptions
 
-1. **Discrete Log (DL)**: BLS12-381 curve security
+1. **Discrete Log (DL)**: BN254 curve security
 2. **Computational Diffie-Hellman (CDH)**: Key exchange security
 3. **Random Oracle Model**: Hash function security
 4. **Knowledge of Exponent (KEA)**: ZK proof soundness
@@ -352,16 +352,16 @@ function registerState(
 - **Base + CCTP**: Circle's cross-chain transfer protocol
 - **zkSync Era**: ZK rollup native integration
 
-### Phase 4: Research (Archived)
+### Phase 4: Research (Experimental)
 
-The following are in research/archive for future consideration:
-- **PLONK Verifier**: Universal trusted setup
-- **FRI Verifier**: StarkNet compatibility
-- **Ring Signatures**: Sender anonymity sets
-- **Recursive Proofs**: Proof composition via Nova IVC
-- **Post-Quantum Cryptography**: NIST PQC algorithms
+The following are in `contracts/experimental/` for future consideration:
+- **Recursive Proof Aggregation**: IVC/Nova-style proof folding
+- **CLSAG Verifier**: Compact ring signature verification
+- **Homomorphic Hiding**: Research-grade homomorphic operations
+- **Mixnet Routing**: Privacy-preserving relay selection
+- **Side-Channel Defense**: Constant-time operations, gas normalization
 
-Note: These are not in production. See `_archive/` for research implementations.
+See `contracts/experimental/README.md` for promotion criteria.
 
 ---
 

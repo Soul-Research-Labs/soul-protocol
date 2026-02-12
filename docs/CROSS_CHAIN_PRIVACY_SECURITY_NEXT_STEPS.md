@@ -25,8 +25,8 @@ This document consolidates ALL next steps for cross-chain privacy and security i
 | Testing | 95% | 450+ unit tests, fuzz tests, integration tests, attack simulations |
 | SDK | 90% | StealthAddressClient, RingCTClient, NullifierClient, PrivacyHubClient (some modules WIP) |
 | ZK Privacy Circuits | 100% | CrossDomainNullifier, PrivateTransfer, RingSignature circuits |
-| Advanced Privacy Contracts | 100% | HomomorphicBalanceVerifier, MLSAGSignatures, RecursiveProofAggregator |
-| Privacy Infrastructure | 90% | PrivateRelayerNetwork, ViewKeyRegistry (MixnetNodeRegistry planned) |
+| Advanced Privacy Contracts | Experimental | HomomorphicHiding, RecursiveProofAggregator (in `contracts/experimental/`) |
+| Privacy Infrastructure | 90% | ViewKeyRegistry (MixnetNodeRegistry, PrivateRelayerNetwork in `contracts/experimental/`) |
 
 ### ✅ New Completions (This Session)
 
@@ -34,8 +34,8 @@ This document consolidates ALL next steps for cross-chain privacy and security i
 |------|------|-------------|
 | Homomorphic Balance Verifier | `contracts/privacy/HomomorphicBalanceVerifier.sol` | Pedersen commitments with Bulletproof+ |
 | MLSAG Signatures | `contracts/privacy/MLSAGSignatures.sol` | Multi-layered ring signatures |
-| Recursive Proof Aggregator | `contracts/privacy/RecursiveProofAggregator.sol` | Nova/Groth16/PLONK aggregation |
-| Private Relayer Network | `contracts/relayer/PrivateRelayerNetwork.sol` | Stake-based privacy relayers |
+| Recursive Proof Aggregator | `contracts/experimental/privacy/RecursiveProofAggregator.sol` | Nova/Groth16/PLONK aggregation (experimental) |
+| Private Relayer Network | `contracts/experimental/privacy/PrivateRelayerNetwork.sol` | Stake-based privacy relayers (experimental) |
 | View Key Registry | `contracts/privacy/ViewKeyRegistry.sol` | Selective disclosure management |
 | Privacy Interfaces | `contracts/interfaces/IPrivacyIntegration.sol` | Unified privacy API |
 | Certora StealthPrivacy | `certora/specs/StealthAddressPrivacy.spec` | Stealth address verification |

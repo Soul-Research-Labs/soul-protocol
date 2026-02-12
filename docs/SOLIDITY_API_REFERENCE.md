@@ -390,21 +390,18 @@ function batchRegisterBridgeAdapters(...) external
 function setStealthAddressRegistry(address) external
 function setPrivateRelayerNetwork(address) external
 function setViewKeyRegistry(address) external
-function setGasNormalizer(address) external
-function setMLSAGSignatures(address) external
-function setMixnetNodeRegistry(address) external
-function setDecoyTrafficGenerator(address) external
 
 // Security modules
 function setBridgeProofValidator(address) external
 function setBridgeWatchtower(address) external
-function setSecurityOracle(address) external
 function setBridgeCircuitBreaker(address) external
 
 // Primitives
 function setZKBoundStateLocks(address) external
 function setProofCarryingContainer(address) external
 function setCrossDomainNullifierAlgebra(address) external
+function setPolicyBoundProofs(address) external
+function setMultiProver(address) external
 ```
 
 #### View Functions

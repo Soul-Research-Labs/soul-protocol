@@ -76,10 +76,9 @@
 | ExecutionAgnosticStateCommitments (EASC) | [`0x77d22cb55253fea1ccc14ffc86a22e4a5a4592c6`](https://sepolia.etherscan.io/address/0x77d22cb55253fea1ccc14ffc86a22e4a5a4592c6) | ✅ |
 | CrossDomainNullifierAlgebra (CDNA) | [`0x674d0cbfb5bf33981b1656abf6a47cff46430b0c`](https://sepolia.etherscan.io/address/0x674d0cbfb5bf33981b1656abf6a47cff46430b0c) | ✅ |
 
-#### Security & TEE
+#### Security
 | Contract | Address | Verified |
 |----------|---------|----------|
-| TEEAttestation | [`0x43fb20b97b4a363c0f98f534a078f7a0dd1dcdbb`](https://sepolia.etherscan.io/address/0x43fb20b97b4a363c0f98f534a078f7a0dd1dcdbb) | ✅ |
 | EmergencyRecovery | [`0x1995dbb199c26afd73a817aaafbccbf28f070ffc`](https://sepolia.etherscan.io/address/0x1995dbb199c26afd73a817aaafbccbf28f070ffc) | ✅ |
 
 #### ZK-Bound State Locks
@@ -88,9 +87,9 @@
 | ZKBoundStateLocks | [`0xf390ae12c9ce8f546ef7c7adaa6a1ab7768a2c78`](https://sepolia.etherscan.io/address/0xf390ae12c9ce8f546ef7c7adaa6a1ab7768a2c78) | ✅ |
 | ZKSLockIntegration | [`0x668c1a8197d59b5cf4d3802e209d3784c6f69b29`](https://sepolia.etherscan.io/address/0x668c1a8197d59b5cf4d3802e209d3784c6f69b29) | ✅ |
 
-**Total Contracts Deployed**: 17  
-**Total Contracts Verified**: 17 ✅  
-**Integration Tests Passed**: 18/18 ✅
+**Total Contracts Deployed**: 16  
+**Total Contracts Verified**: 16 ✅  
+**Integration Tests Passed**: 17/17 ✅
 
 #### Integration Test Run (January 22, 2026)
 ```
@@ -105,13 +104,12 @@
 ✅ PolicyBoundProofs - Contract accessible
 ✅ ExecutionAgnosticStateCommitments - Contract accessible
 ✅ CrossDomainNullifierAlgebra - Contract accessible
-✅ TEEAttestation - Contract accessible
 ✅ EmergencyRecovery - Contract accessible
 ✅ ZKBoundStateLocks - Read stats
 ✅ ZKBoundStateLocks - Get active locks
 ✅ ZKSLockIntegration - Contract accessible
 
-🎉 All integration tests passed!
+All integration tests passed!
 ```
 
 ### Phase 2: Arbitrum Sepolia
