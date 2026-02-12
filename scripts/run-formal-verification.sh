@@ -112,8 +112,6 @@ run_all_verifications() {
     echo "================================"
     
     security_verifications=(
-        "verify_timelock.conf:SoulTimelock"
-        "verify_tee.conf:TEEAttestation"
         "verify_security.conf:GlobalSecurityInvariants"
     )
     

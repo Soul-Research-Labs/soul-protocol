@@ -13,10 +13,8 @@ STUBS_DIR="$PROJECT_DIR/contracts/verifiers/coverage-stubs"
 # Contracts that cause stack-too-deep errors during coverage compilation
 # Maps source file to stub file
 declare -A PROBLEM_CONTRACTS=(
-    ["contracts/verifiers/Groth16VerifierBLS12381.sol"]="$STUBS_DIR/Groth16VerifierBLS12381.sol"
     ["contracts/verifiers/Groth16VerifierBN254.sol"]="$STUBS_DIR/Groth16VerifierBN254.sol"
     ["contracts/verifiers/OptimizedGroth16Verifier.sol"]="$STUBS_DIR/OptimizedGroth16Verifier.sol"
-    ["contracts/verifiers/FRIVerifier.sol"]="$STUBS_DIR/FRIVerifier.sol"
 )
 
 # Colors for output

@@ -732,6 +732,7 @@ contract SoulProtocolHub is AccessControl, Pausable {
         bytes32 verifierType
     ) external onlyRole(GUARDIAN_ROLE) {
         verifiers[verifierType].isActive = false;
+        emit ComponentDeactivated(verifierType);
     }
 
     /**
@@ -742,5 +743,6 @@ contract SoulProtocolHub is AccessControl, Pausable {
         uint256 chainId
     ) external onlyRole(GUARDIAN_ROLE) {
         bridgeAdapters[chainId].isActive = false;
+        emit ComponentDeactivated(bytes32(chainId));
     }
 }

@@ -53,9 +53,7 @@ function loadDeploymentInfo(network: string): DeployedContract[] {
   return [
     // Verifier Primitives
     { name: "MockProofVerifier", address: contracts.verifier, constructorArgs: [] },
-    { name: "Groth16VerifierBLS12381", address: contracts.groth16Verifier, constructorArgs: [] },
-    { name: "PLONKVerifier", address: contracts.plonkVerifier, constructorArgs: [] },
-    { name: "FRIVerifier", address: contracts.friVerifier, constructorArgs: [] },
+    { name: "Groth16VerifierBN254", address: contracts.groth16Verifier, constructorArgs: [] },
     
     // State Management
     { 
@@ -98,8 +96,7 @@ function loadDeploymentInfo(network: string): DeployedContract[] {
       constructorArgs: [] 
     },
     
-    // TEE & Emergency
-    { name: "TEEAttestation", address: contracts.teeAttestation, constructorArgs: [] },
+    // Emergency
     { 
       name: "EmergencyRecovery", 
       address: contracts.emergencyRecovery, 

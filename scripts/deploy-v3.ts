@@ -63,23 +63,11 @@ async function main() {
         deployed.contracts.verifier = mockVerifier.address;
         console.log("   ✅ MockProofVerifier:", deployed.contracts.verifier);
 
-        // 2. Deploy Groth16VerifierBLS12381
-        console.log("\n2️⃣  Deploying Groth16VerifierBLS12381...");
-        const groth16Verifier = await viem.deployContract("Groth16VerifierBLS12381");
+        // 2. Deploy Groth16VerifierBN254
+        console.log("\n2️⃣  Deploying Groth16VerifierBN254...");
+        const groth16Verifier = await viem.deployContract("Groth16VerifierBN254");
         deployed.contracts.groth16Verifier = groth16Verifier.address;
-        console.log("   ✅ Groth16VerifierBLS12381:", deployed.contracts.groth16Verifier);
-
-        // 3. Deploy PLONKVerifier
-        console.log("\n3️⃣  Deploying PLONKVerifier...");
-        const plonkVerifier = await viem.deployContract("PLONKVerifier");
-        deployed.contracts.plonkVerifier = plonkVerifier.address;
-        console.log("   ✅ PLONKVerifier:", deployed.contracts.plonkVerifier);
-
-        // 4. Deploy FRIVerifier
-        console.log("\n4️⃣  Deploying FRIVerifier...");
-        const friVerifier = await viem.deployContract("FRIVerifier");
-        deployed.contracts.friVerifier = friVerifier.address;
-        console.log("   ✅ FRIVerifier:", deployed.contracts.friVerifier);
+        console.log("   ✅ Groth16VerifierBN254:", deployed.contracts.groth16Verifier);
 
         // ============================================
         // PHASE 2: Core Infrastructure
@@ -151,20 +139,9 @@ async function main() {
         console.log("   ✅ CrossDomainNullifierAlgebra:", deployed.contracts.cdna);
 
         // ============================================
-        // PHASE 5: TEE Attestation
+        // PHASE 5: Security Infrastructure
         // ============================================
-        console.log("\n📦 PHASE 5: TEE Attestation\n");
-
-        // 14. Deploy TEEAttestation
-        console.log("1️⃣4️⃣ Deploying TEEAttestation...");
-        const teeAttestation = await viem.deployContract("TEEAttestation");
-        deployed.contracts.teeAttestation = teeAttestation.address;
-        console.log("   ✅ TEEAttestation:", deployed.contracts.teeAttestation);
-
-        // ============================================
-        // PHASE 6: Security Infrastructure
-        // ============================================
-        console.log("\n📦 PHASE 6: Security Infrastructure\n");
+        console.log("\n📦 PHASE 5: Security Infrastructure\n");
 
         // 15. Deploy EmergencyRecovery
         console.log("1️⃣5️⃣ Deploying EmergencyRecovery...");
