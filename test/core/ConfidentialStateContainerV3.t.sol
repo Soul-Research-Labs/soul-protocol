@@ -39,10 +39,7 @@ contract ConfidentialStateContainerV3Test is Test {
     }
 
     // ─── Helper ─────────────────────────────────────────────────
-    function _registerState(
-        bytes32 commitment,
-        bytes32 nullifier
-    ) internal {
+    function _registerState(bytes32 commitment, bytes32 nullifier) internal {
         container.registerState(
             SAMPLE_STATE,
             commitment,
@@ -109,7 +106,10 @@ contract ConfidentialStateContainerV3Test is Test {
 
         vm.expectEmit(true, true, false, true);
         emit ConfidentialStateContainerV3.StateRegistered(
-            commitment, admin, nullifier, block.timestamp
+            commitment,
+            admin,
+            nullifier,
+            block.timestamp
         );
 
         _registerState(commitment, nullifier);
@@ -121,12 +121,16 @@ contract ConfidentialStateContainerV3Test is Test {
 
         _registerState(commitment, nullifier);
 
-        ConfidentialStateContainerV3.EncryptedState memory s = container.getState(commitment);
+        ConfidentialStateContainerV3.EncryptedState memory s = container
+            .getState(commitment);
         assertEq(s.commitment, commitment);
         assertEq(s.nullifier, nullifier);
         assertEq(s.metadata, SAMPLE_METADATA);
         assertEq(s.owner, admin);
-        assertEq(uint8(s.status), uint8(ConfidentialStateContainerV3.StateStatus.Active));
+        assertEq(
+            uint8(s.status),
+            uint8(ConfidentialStateContainerV3.StateStatus.Active)
+        );
         assertEq(s.version, 1);
         assertEq(s.encryptedState, SAMPLE_STATE);
     }
@@ -171,7 +175,9 @@ contract ConfidentialStateContainerV3Test is Test {
     }
 
     function test_RegisterState_RevertEmptyState() public {
-        vm.expectRevert(ConfidentialStateContainerV3.EmptyEncryptedState.selector);
+        vm.expectRevert(
+            ConfidentialStateContainerV3.EmptyEncryptedState.selector
+        );
         container.registerState(
             "",
             keccak256("c1"),
@@ -283,12 +289,17 @@ contract ConfidentialStateContainerV3Test is Test {
 
         // Old state retired
         assertFalse(container.isStateActive(oldC));
-        ConfidentialStateContainerV3.EncryptedState memory oldState = container.getState(oldC);
-        assertEq(uint8(oldState.status), uint8(ConfidentialStateContainerV3.StateStatus.Retired));
+        ConfidentialStateContainerV3.EncryptedState memory oldState = container
+            .getState(oldC);
+        assertEq(
+            uint8(oldState.status),
+            uint8(ConfidentialStateContainerV3.StateStatus.Retired)
+        );
 
         // New state active
         assertTrue(container.isStateActive(newC));
-        ConfidentialStateContainerV3.EncryptedState memory newState = container.getState(newC);
+        ConfidentialStateContainerV3.EncryptedState memory newState = container
+            .getState(newC);
         assertEq(newState.owner, user1);
         assertEq(newState.version, 2);
 
@@ -304,11 +315,21 @@ contract ConfidentialStateContainerV3Test is Test {
         bytes32 newC = keccak256("cnew");
 
         vm.expectEmit(true, true, true, true);
-        emit ConfidentialStateContainerV3.StateTransferred(oldC, newC, user1, 2);
+        emit ConfidentialStateContainerV3.StateTransferred(
+            oldC,
+            newC,
+            user1,
+            2
+        );
 
         container.transferState(
-            oldC, SAMPLE_STATE, newC, keccak256("nn"), keccak256("sn"),
-            SAMPLE_PROOF, user1
+            oldC,
+            SAMPLE_STATE,
+            newC,
+            keccak256("nn"),
+            keccak256("sn"),
+            SAMPLE_PROOF,
+            user1
         );
     }
 
@@ -325,8 +346,13 @@ contract ConfidentialStateContainerV3Test is Test {
             )
         );
         container.transferState(
-            oldC, SAMPLE_STATE, keccak256("cn"), keccak256("nn"),
-            keccak256("sn"), SAMPLE_PROOF, user1
+            oldC,
+            SAMPLE_STATE,
+            keccak256("cn"),
+            keccak256("nn"),
+            keccak256("sn"),
+            SAMPLE_PROOF,
+            user1
         );
     }
 
@@ -336,8 +362,13 @@ contract ConfidentialStateContainerV3Test is Test {
 
         vm.expectRevert(ConfidentialStateContainerV3.ZeroAddress.selector);
         container.transferState(
-            oldC, SAMPLE_STATE, keccak256("cn"), keccak256("nn"),
-            keccak256("sn"), SAMPLE_PROOF, address(0)
+            oldC,
+            SAMPLE_STATE,
+            keccak256("cn"),
+            keccak256("nn"),
+            keccak256("sn"),
+            SAMPLE_PROOF,
+            address(0)
         );
     }
 
@@ -350,8 +381,13 @@ contract ConfidentialStateContainerV3Test is Test {
             )
         );
         container.transferState(
-            bogus, SAMPLE_STATE, keccak256("cn"), keccak256("nn"),
-            keccak256("sn"), SAMPLE_PROOF, user1
+            bogus,
+            SAMPLE_STATE,
+            keccak256("cn"),
+            keccak256("nn"),
+            keccak256("sn"),
+            SAMPLE_PROOF,
+            user1
         );
     }
 
@@ -361,12 +397,17 @@ contract ConfidentialStateContainerV3Test is Test {
 
         bytes32 newC = keccak256("cnew");
         container.transferState(
-            oldC, SAMPLE_STATE, newC, keccak256("nn"),
-            keccak256("sn"), SAMPLE_PROOF, user1
+            oldC,
+            SAMPLE_STATE,
+            newC,
+            keccak256("nn"),
+            keccak256("sn"),
+            SAMPLE_PROOF,
+            user1
         );
 
-        ConfidentialStateContainerV3.StateTransition[] memory hist =
-            container.getStateHistory(oldC);
+        ConfidentialStateContainerV3.StateTransition[] memory hist = container
+            .getStateHistory(oldC);
         assertEq(hist.length, 1);
         assertEq(hist[0].fromCommitment, oldC);
         assertEq(hist[0].toCommitment, newC);
@@ -389,8 +430,13 @@ contract ConfidentialStateContainerV3Test is Test {
             )
         );
         container.transferState(
-            oldC, SAMPLE_STATE, keccak256("cn"), keccak256("nn"),
-            keccak256("sn"), SAMPLE_PROOF, user1
+            oldC,
+            SAMPLE_STATE,
+            keccak256("cn"),
+            keccak256("nn"),
+            keccak256("sn"),
+            SAMPLE_PROOF,
+            user1
         );
     }
 
@@ -405,8 +451,12 @@ contract ConfidentialStateContainerV3Test is Test {
         vm.prank(operator);
         container.lockState(c);
 
-        ConfidentialStateContainerV3.EncryptedState memory s = container.getState(c);
-        assertEq(uint8(s.status), uint8(ConfidentialStateContainerV3.StateStatus.Locked));
+        ConfidentialStateContainerV3.EncryptedState memory s = container
+            .getState(c);
+        assertEq(
+            uint8(s.status),
+            uint8(ConfidentialStateContainerV3.StateStatus.Locked)
+        );
     }
 
     function test_UnlockState() public {
@@ -430,8 +480,12 @@ contract ConfidentialStateContainerV3Test is Test {
         vm.prank(emergency);
         container.freezeState(c);
 
-        ConfidentialStateContainerV3.EncryptedState memory s = container.getState(c);
-        assertEq(uint8(s.status), uint8(ConfidentialStateContainerV3.StateStatus.Frozen));
+        ConfidentialStateContainerV3.EncryptedState memory s = container
+            .getState(c);
+        assertEq(
+            uint8(s.status),
+            uint8(ConfidentialStateContainerV3.StateStatus.Frozen)
+        );
         assertEq(container.activeStates(), 0);
     }
 
@@ -524,20 +578,23 @@ contract ConfidentialStateContainerV3Test is Test {
         }
 
         // Page 1: offset=0, limit=2
-        (bytes32[] memory page1, uint256 total1) =
-            container.getOwnerCommitmentsPaginated(admin, 0, 2);
+        (bytes32[] memory page1, uint256 total1) = container
+            .getOwnerCommitmentsPaginated(admin, 0, 2);
         assertEq(page1.length, 2);
         assertEq(total1, 5);
 
         // Page 3: offset=4, limit=2 → only 1 remaining
-        (bytes32[] memory page3, uint256 total3) =
-            container.getOwnerCommitmentsPaginated(admin, 4, 2);
+        (bytes32[] memory page3, uint256 total3) = container
+            .getOwnerCommitmentsPaginated(admin, 4, 2);
         assertEq(page3.length, 1);
         assertEq(total3, 5);
 
         // Past end: offset=10
-        (bytes32[] memory pageEnd,) =
-            container.getOwnerCommitmentsPaginated(admin, 10, 2);
+        (bytes32[] memory pageEnd, ) = container.getOwnerCommitmentsPaginated(
+            admin,
+            10,
+            2
+        );
         assertEq(pageEnd.length, 0);
     }
 
@@ -556,8 +613,8 @@ contract ConfidentialStateContainerV3Test is Test {
     }
 
     function test_GetState_EmptyForNonexistent() public view {
-        ConfidentialStateContainerV3.EncryptedState memory s =
-            container.getState(keccak256("nope"));
+        ConfidentialStateContainerV3.EncryptedState memory s = container
+            .getState(keccak256("nope"));
         assertEq(s.owner, address(0));
     }
 
@@ -576,12 +633,15 @@ contract ConfidentialStateContainerV3Test is Test {
         assertEq(container.totalStates(), 1);
         assertEq(container.activeStates(), 1);
 
-        ConfidentialStateContainerV3.EncryptedState memory s = container.getState(commitment);
+        ConfidentialStateContainerV3.EncryptedState memory s = container
+            .getState(commitment);
         assertEq(s.owner, admin);
         assertEq(s.version, 1);
     }
 
-    function testFuzz_MultipleRegistrationsIncrementCounters(uint8 count) public {
+    function testFuzz_MultipleRegistrationsIncrementCounters(
+        uint8 count
+    ) public {
         uint256 n = bound(count, 1, 20);
         for (uint256 i = 0; i < n; i++) {
             _registerState(

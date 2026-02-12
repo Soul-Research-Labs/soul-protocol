@@ -130,7 +130,10 @@ contract SoulAtomicSwapV2 is
     );
     event SwapRefunded(bytes32 indexed swapId, address indexed initiator);
     event FeeUpdated(uint256 oldFee, uint256 newFee);
-    event FeeRecipientUpdated(address indexed oldRecipient, address indexed newRecipient);
+    event FeeRecipientUpdated(
+        address indexed oldRecipient,
+        address indexed newRecipient
+    );
 
     /// @notice Custom errors
     error InvalidRecipient();
