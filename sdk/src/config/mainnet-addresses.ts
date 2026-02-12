@@ -20,12 +20,11 @@ export const MAINNET_ADDRESSES = {
   
   // Verifiers
   groth16Verifier: '0x0000000000000000000000000000000000000000',
-  plonkVerifier: '0x0000000000000000000000000000000000000000',
-  friVerifier: '0x0000000000000000000000000000000000000000',
+  noirVerifier: '0x0000000000000000000000000000000000000000',
+  ultraHonkVerifier: '0x0000000000000000000000000000000000000000',
   
   // Security
   emergencyRecovery: '0x0000000000000000000000000000000000000000',
-  teeAttestation: '0x0000000000000000000000000000000000000000',
   
   // Governance
   timelock: '0x0000000000000000000000000000000000000000',
@@ -44,10 +43,9 @@ export const ARBITRUM_ADDRESSES = {
   executionAgnosticStateCommitments: ZERO_ADDRESS,
   crossDomainNullifierAlgebra: ZERO_ADDRESS,
   groth16Verifier: ZERO_ADDRESS,
-  plonkVerifier: ZERO_ADDRESS,
-  friVerifier: ZERO_ADDRESS,
+  noirVerifier: ZERO_ADDRESS,
+  ultraHonkVerifier: ZERO_ADDRESS,
   emergencyRecovery: ZERO_ADDRESS,
-  teeAttestation: ZERO_ADDRESS,
   timelock: ZERO_ADDRESS,
   multisig: ZERO_ADDRESS,
 };
@@ -62,10 +60,9 @@ export const BASE_ADDRESSES = {
   executionAgnosticStateCommitments: ZERO_ADDRESS,
   crossDomainNullifierAlgebra: ZERO_ADDRESS,
   groth16Verifier: ZERO_ADDRESS,
-  plonkVerifier: ZERO_ADDRESS,
-  friVerifier: ZERO_ADDRESS,
+  noirVerifier: ZERO_ADDRESS,
+  ultraHonkVerifier: ZERO_ADDRESS,
   emergencyRecovery: ZERO_ADDRESS,
-  teeAttestation: ZERO_ADDRESS,
   timelock: ZERO_ADDRESS,
   multisig: ZERO_ADDRESS,
 };
@@ -80,10 +77,9 @@ export const OPTIMISM_ADDRESSES = {
   executionAgnosticStateCommitments: ZERO_ADDRESS,
   crossDomainNullifierAlgebra: ZERO_ADDRESS,
   groth16Verifier: ZERO_ADDRESS,
-  plonkVerifier: ZERO_ADDRESS,
-  friVerifier: ZERO_ADDRESS,
+  noirVerifier: ZERO_ADDRESS,
+  ultraHonkVerifier: ZERO_ADDRESS,
   emergencyRecovery: ZERO_ADDRESS,
-  teeAttestation: ZERO_ADDRESS,
   timelock: ZERO_ADDRESS,
   multisig: ZERO_ADDRESS,
 };

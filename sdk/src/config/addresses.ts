@@ -10,8 +10,8 @@ export interface SoulContractAddresses {
   // Verifiers
   verifier: Hex;
   groth16Verifier: Hex;
-  plonkVerifier: Hex;
-  friVerifier: Hex;
+  noirVerifier: Hex;
+  ultraHonkVerifier: Hex;
   
   // Core Infrastructure
   stateContainer: Hex;
@@ -29,7 +29,6 @@ export interface SoulContractAddresses {
   cdna: Hex;
   
   // Security
-  teeAttestation: Hex;
   emergencyRecovery: Hex;
   
   // ZK-Bound State Locks
@@ -44,8 +43,8 @@ export const SEPOLIA_ADDRESSES: SoulContractAddresses = {
   // Verifiers
   verifier: "0x1f830a178020d9d9b968b9f4d13e6e4cdbc9fa57",
   groth16Verifier: "0x09cf3f57c213218446aa49d89236247fbe1d08bd",
-  plonkVerifier: "0x7c73fbd4affdd797c7dae7a1fb23bfd6ced387f2",
-  friVerifier: "0x2e9fceb9a74fba5d8edb6420b350a4edd242bb09",
+  noirVerifier: "0x0000000000000000000000000000000000000000",
+  ultraHonkVerifier: "0x0000000000000000000000000000000000000000",
   
   // Core Infrastructure
   stateContainer: "0x5d79991daabf7cd198860a55f3a1f16548687798",
@@ -63,7 +62,6 @@ export const SEPOLIA_ADDRESSES: SoulContractAddresses = {
   cdna: "0x674d0cbfb5bf33981b1656abf6a47cff46430b0c",
   
   // Security
-  teeAttestation: "0x43fb20b97b4a363c0f98f534a078f7a0dd1dcdbb",
   emergencyRecovery: "0x1995dbb199c26afd73a817aaafbccbf28f070ffc",
   
   // ZK-Bound State Locks
