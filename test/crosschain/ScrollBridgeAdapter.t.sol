@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "../../contracts/crosschain/ScrollBridgeAdapter.sol";
+import "../../contracts/experimental/adapters/ScrollBridgeAdapter.sol";
 
 /**
  * @title ScrollBridgeAdapterTest

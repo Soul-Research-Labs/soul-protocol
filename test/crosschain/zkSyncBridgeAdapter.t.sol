@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "../../contracts/crosschain/zkSyncBridgeAdapter.sol";
+import "../../contracts/experimental/adapters/zkSyncBridgeAdapter.sol";
 
 /// @dev Mock zkSync Diamond that succeeds on requestL2Transaction
 contract MockZkSyncDiamond {

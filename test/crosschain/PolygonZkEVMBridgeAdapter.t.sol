@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "../../contracts/crosschain/PolygonZkEVMBridgeAdapter.sol";
+import "../../contracts/experimental/adapters/PolygonZkEVMBridgeAdapter.sol";
 
 contract PolygonZkEVMBridgeAdapterTest is Test {
     PolygonZkEVMBridgeAdapter public adapter;

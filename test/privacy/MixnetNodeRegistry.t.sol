@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import {MixnetNodeRegistry, IMixnetNodeRegistry} from "../../contracts/privacy/MixnetNodeRegistry.sol";
+import {MixnetNodeRegistry, IMixnetNodeRegistry} from "../../contracts/experimental/privacy/MixnetNodeRegistry.sol";
 
 /**
  * @title MixnetNodeRegistryTest

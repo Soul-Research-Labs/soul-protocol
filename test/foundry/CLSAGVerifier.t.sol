@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import "../../contracts/verifiers/CLSAGVerifier.sol";
+import "../../contracts/experimental/verifiers/CLSAGVerifier.sol";
 
 /**
  * @title CLSAGVerifierTest

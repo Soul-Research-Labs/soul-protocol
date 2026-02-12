@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import "../../contracts/privacy/ConstantTimeOperations.sol";
+import "../../contracts/experimental/privacy/ConstantTimeOperations.sol";
 
 /// @dev Harness to expose internal library functions for testing
 contract ConstantTimeOpsHarness {

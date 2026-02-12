@@ -11,8 +11,8 @@ import {ConfidentialStateContainerV3} from "../../contracts/core/ConfidentialSta
 import {OptimismBridgeAdapter} from "../../contracts/crosschain/OptimismBridgeAdapter.sol";
 import {ArbitrumBridgeAdapter} from "../../contracts/crosschain/ArbitrumBridgeAdapter.sol";
 import {BaseBridgeAdapter} from "../../contracts/crosschain/BaseBridgeAdapter.sol";
-import {ScrollBridgeAdapter} from "../../contracts/crosschain/ScrollBridgeAdapter.sol";
-import {LineaBridgeAdapter} from "../../contracts/crosschain/LineaBridgeAdapter.sol";
+import {ScrollBridgeAdapter} from "../../contracts/experimental/adapters/ScrollBridgeAdapter.sol";
+import {LineaBridgeAdapter} from "../../contracts/experimental/adapters/LineaBridgeAdapter.sol";
 
 // Security
 import {BridgeCircuitBreaker} from "../../contracts/security/BridgeCircuitBreaker.sol";

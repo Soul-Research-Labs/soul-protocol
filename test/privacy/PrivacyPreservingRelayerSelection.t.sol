@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import "../../contracts/privacy/PrivacyPreservingRelayerSelection.sol";
+import "../../contracts/experimental/privacy/PrivacyPreservingRelayerSelection.sol";
 
 contract PrivacyPreservingRelayerSelectionTest is Test {
     PrivacyPreservingRelayerSelection public selector;

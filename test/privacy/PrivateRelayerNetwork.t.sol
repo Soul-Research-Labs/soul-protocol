@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-import "../../contracts/privacy/PrivateRelayerNetwork.sol";
+import "../../contracts/experimental/privacy/PrivateRelayerNetwork.sol";
 
 contract PrivateRelayerNetworkTest is Test {
     PrivateRelayerNetwork public network;

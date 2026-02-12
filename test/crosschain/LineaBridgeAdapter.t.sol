@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "../../contracts/crosschain/LineaBridgeAdapter.sol";
+import "../../contracts/experimental/adapters/LineaBridgeAdapter.sol";
 
 /// @dev Mock Linea MessageService that accepts calls
 contract MockLineaMessageService {

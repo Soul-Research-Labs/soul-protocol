@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import "../../contracts/privacy/GasNormalizer.sol";
+import "../../contracts/experimental/privacy/GasNormalizer.sol";
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract GasTarget {
