@@ -134,6 +134,9 @@ jobs:
       - name: Run gas benchmarks
         run: forge test --match-path "test/gas/*" -vvv --gas-report
 
+      - name: Check contract sizes
+        run: forge build --sizes 2>&1 | tee /tmp/sizes.txt && ! grep -E "\|\s+[0-9]{3}\.[0-9]+" /tmp/sizes.txt | grep -v "^|" || echo "⚠️ Some contracts exceed 24KB limit"
+
   noir-circuits:
     name: Noir Circuits
     runs-on: ubuntu-latest
@@ -336,6 +339,18 @@ jobs:
           - verify_crp
           - verify_adv
           - verify_timelock
+          - verify_csc
+          - verify_shielded_pool
+          - verify_privacy_router
+          - verify_relayer_fee_market
+          - verify_homomorphic_hiding
+          - verify_aggregate_disclosure
+          - verify_stealth_address
+          - verify_cross_chain_privacy
+          - verify_formal
+          - verify_advanced_privacy
+          - verify_network_invariants
+          - verify_upgradeable
     steps:
       - uses: actions/checkout@v4
         with:
