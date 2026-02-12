@@ -358,6 +358,16 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
                     L1 -> L2 DEPOSITS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Deposit parameters (reduces stack depth)
+    struct DepositParams {
+        uint256 chainId;
+        address l2Recipient;
+        address l1Token;
+        uint256 amount;
+        uint256 l2GasLimit;
+        uint256 l2GasPrice;
+    }
+
     /**
      * @notice Deposit tokens from L1 to Arbitrum L2 via the Inbox retryable ticket system
      * @dev Calculates submission cost, applies bridge fee, and creates a retryable ticket.
@@ -379,25 +389,43 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         uint256 l2GasLimit,
         uint256 l2GasPrice
     ) external payable nonReentrant whenNotPaused returns (bytes32 depositId) {
-        RollupConfig storage config = rollupConfigs[chainId];
+        DepositParams memory p = DepositParams({
+            chainId: chainId,
+            l2Recipient: l2Recipient,
+            l1Token: l1Token,
+            amount: amount,
+            l2GasLimit: l2GasLimit == 0 ? DEFAULT_L2_GAS_LIMIT : l2GasLimit,
+            l2GasPrice: l2GasPrice
+        });
+        depositId = _executeDeposit(p);
+    }
+
+    function _executeDeposit(
+        DepositParams memory p
+    ) internal returns (bytes32 depositId) {
+        RollupConfig storage config = rollupConfigs[p.chainId];
         if (!config.active) revert RollupNotConfigured();
 
-        bytes32 mappingKey = keccak256(abi.encodePacked(l1Token, chainId));
-        TokenMapping storage mapping_ = tokenMappings[mappingKey];
-        if (!mapping_.active) revert TokenNotMapped();
+        {
+            bytes32 mappingKey = keccak256(
+                abi.encodePacked(p.l1Token, p.chainId)
+            );
+            if (!tokenMappings[mappingKey].active) revert TokenNotMapped();
+        }
 
-        if (amount < minDepositAmount) revert AmountTooLow();
-        if (amount > maxDepositAmount) revert AmountTooHigh();
-
-        if (l2GasLimit == 0) l2GasLimit = DEFAULT_L2_GAS_LIMIT;
+        if (p.amount < minDepositAmount) revert AmountTooLow();
+        if (p.amount > maxDepositAmount) revert AmountTooHigh();
 
         // Calculate submission cost and fee
         uint256 submissionCost = DEFAULT_MAX_SUBMISSION_COST;
-        uint256 fee = (amount * bridgeFee) / 10000;
-        uint256 totalRequired = submissionCost +
-            (l2GasLimit * l2GasPrice) +
-            fee;
-        if (msg.value < totalRequired) revert InsufficientFee();
+        uint256 fee;
+        {
+            fee = (p.amount * bridgeFee) / 10000;
+            uint256 totalRequired = submissionCost +
+                (p.l2GasLimit * p.l2GasPrice) +
+                fee;
+            if (msg.value < totalRequired) revert InsufficientFee();
+        }
 
         uint256 ticketId = uint256(
             keccak256(
@@ -413,71 +441,106 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         depositId = keccak256(
             abi.encodePacked(
                 msg.sender,
-                l2Recipient,
-                l1Token,
-                amount,
-                chainId,
+                p.l2Recipient,
+                p.l1Token,
+                p.amount,
+                p.chainId,
                 transferNonce++,
                 block.timestamp
             )
         );
 
-        deposits[depositId] = L1ToL2Deposit({
-            depositId: depositId,
-            sender: msg.sender,
-            l2Recipient: l2Recipient,
-            l1Token: l1Token,
-            l2Token: mapping_.l2Token,
-            amount: amount,
-            maxSubmissionCost: submissionCost,
-            l2GasLimit: l2GasLimit,
-            l2GasPrice: l2GasPrice,
-            ticketId: ticketId,
-            status: TransferStatus.RETRYABLE_CREATED,
-            initiatedAt: block.timestamp,
-            executedAt: 0
-        });
+        _storeDeposit(p, depositId, submissionCost, ticketId);
 
-        userDeposits[msg.sender].push(depositId);
-
-        // Create retryable ticket
-        retryableTickets[ticketId] = RetryableTicket({
-            ticketId: ticketId,
-            from: msg.sender,
-            to: l2Recipient,
-            value: amount,
-            data: abi.encode(l1Token, amount),
-            maxSubmissionCost: submissionCost,
-            l2GasLimit: l2GasLimit,
-            l2GasPrice: l2GasPrice,
-            redeemed: false,
-            createdAt: block.timestamp
-        });
-
-        mapping_.totalDeposited += amount;
+        {
+            bytes32 mappingKey = keccak256(
+                abi.encodePacked(p.l1Token, p.chainId)
+            );
+            tokenMappings[mappingKey].totalDeposited += p.amount;
+        }
         totalDeposits++;
-        totalValueDeposited += amount;
+        totalValueDeposited += p.amount;
         totalFeesCollected += fee;
 
-        // FIX: Call Arbitrum Inbox
-        IInbox(config.inbox).createRetryableTicket{value: msg.value}(
-            l2Recipient,
-            amount,
-            submissionCost,
-            msg.sender,
-            msg.sender,
-            l2GasLimit,
-            l2GasPrice,
-            abi.encode(l1Token, amount) // Data payload
-        );
+        _callInbox(p, config.inbox, submissionCost);
 
         emit DepositInitiated(
             depositId,
             msg.sender,
-            l2Recipient,
-            amount,
+            p.l2Recipient,
+            p.amount,
             ticketId
         );
+    }
+
+    function _callInbox(
+        DepositParams memory p,
+        address inbox,
+        uint256 submissionCost
+    ) private {
+        IInbox(inbox).createRetryableTicket{value: msg.value}(
+            p.l2Recipient,
+            p.amount,
+            submissionCost,
+            msg.sender,
+            msg.sender,
+            p.l2GasLimit,
+            p.l2GasPrice,
+            abi.encode(p.l1Token, p.amount)
+        );
+    }
+
+    function _storeDeposit(
+        DepositParams memory p,
+        bytes32 depositId,
+        uint256 submissionCost,
+        uint256 ticketId
+    ) private {
+        {
+            bytes32 mappingKey = keccak256(
+                abi.encodePacked(p.l1Token, p.chainId)
+            );
+            address l2Token = tokenMappings[mappingKey].l2Token;
+
+            deposits[depositId] = L1ToL2Deposit({
+                depositId: depositId,
+                sender: msg.sender,
+                l2Recipient: p.l2Recipient,
+                l1Token: p.l1Token,
+                l2Token: l2Token,
+                amount: p.amount,
+                maxSubmissionCost: submissionCost,
+                l2GasLimit: p.l2GasLimit,
+                l2GasPrice: p.l2GasPrice,
+                ticketId: ticketId,
+                status: TransferStatus.RETRYABLE_CREATED,
+                initiatedAt: block.timestamp,
+                executedAt: 0
+            });
+        }
+
+        userDeposits[msg.sender].push(depositId);
+
+        _storeRetryableTicket(p, submissionCost, ticketId);
+    }
+
+    function _storeRetryableTicket(
+        DepositParams memory p,
+        uint256 submissionCost,
+        uint256 ticketId
+    ) private {
+        retryableTickets[ticketId] = RetryableTicket({
+            ticketId: ticketId,
+            from: msg.sender,
+            to: p.l2Recipient,
+            value: p.amount,
+            data: abi.encode(p.l1Token, p.amount),
+            maxSubmissionCost: submissionCost,
+            l2GasLimit: p.l2GasLimit,
+            l2GasPrice: p.l2GasPrice,
+            redeemed: false,
+            createdAt: block.timestamp
+        });
     }
 
     /**

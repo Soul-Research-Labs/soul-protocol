@@ -75,7 +75,6 @@ contract SoulAtomicSwapSecurityIntegration is
     error IncorrectETHAmount();
     error ETHTransferFailed();
 
-
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
@@ -301,31 +300,41 @@ contract SoulAtomicSwapSecurityIntegration is
         uint256 timeLock,
         bytes32 salt
     ) external payable nonReentrant whenNotPaused returns (bytes32 swapId) {
-        Commitment storage commitment = commitments[commitmentId];
+        // Phase 1: Validate commitment (scoped to release storage pointer)
+        {
+            Commitment storage commitment = commitments[commitmentId];
 
-        // Validate commitment
-        if (commitment.initiator == address(0)) revert CommitmentNotFound();
-        if (commitment.revealed) revert CommitmentNotFound();
-        if (block.number < commitment.readyBlock) revert CommitmentNotReady();
-        if (block.number > commitment.expiresBlock) revert CommitmentExpired();
-        if (commitment.initiator != msg.sender) revert InvalidRevealData();
+            if (commitment.initiator == address(0)) revert CommitmentNotFound();
+            if (commitment.revealed) revert CommitmentNotFound();
+            if (block.number < commitment.readyBlock)
+                revert CommitmentNotReady();
+            if (block.number > commitment.expiresBlock)
+                revert CommitmentExpired();
+            if (commitment.initiator != msg.sender) revert InvalidRevealData();
 
-        // Verify commitment hash
-        bytes32 expectedHash = keccak256(
-            abi.encodePacked(recipient, token, amount, hashLock, timeLock, salt)
-        );
-        if (commitment.commitHash != expectedHash) revert InvalidRevealData();
+            // Verify commitment hash
+            bytes32 expectedHash = keccak256(
+                abi.encodePacked(
+                    recipient,
+                    token,
+                    amount,
+                    hashLock,
+                    timeLock,
+                    salt
+                )
+            );
+            if (commitment.commitHash != expectedHash)
+                revert InvalidRevealData();
 
-        // Flash loan check
+            // Mark commitment as revealed
+            commitment.revealed = true;
+        }
+
+        // Phase 2: Security checks
         _checkFlashLoanGuard(msg.sender);
-
-        // Rate limit check
         _checkRateLimits(msg.sender, amount, token);
 
-        // Mark commitment as revealed
-        commitment.revealed = true;
-
-        // Create the swap
+        // Phase 3: Create the swap
         swapId = _createSwap(
             msg.sender,
             recipient,

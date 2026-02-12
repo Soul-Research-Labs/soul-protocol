@@ -7,10 +7,18 @@ cache_path = "forge-cache"
 solc_version = "0.8.24"
 evm_version = "cancun"
 optimizer = true
-optimizer_runs = 10000  # Increased for better runtime gas efficiency
+optimizer_runs = 10000
 via_ir = true
 fuzz = { runs = 10000, max_test_rejects = 65536 }
 invariant = { runs = 256, depth = 128, fail_on_revert = false }
+
+# Generated verifiers and OZ libs need lower optimizer_runs to avoid Yul stack depth issues
+additional_compiler_profiles = [{ name = "low-opt", via_ir = true, optimizer = true, optimizer_runs = 200 }]
+compilation_restrictions = [
+    { paths = "contracts/verifiers/generated/**", max_optimizer_runs = 200 },
+    { paths = "lib/openzeppelin-contracts/**", max_optimizer_runs = 200 },
+    { paths = "node_modules/@openzeppelin/**", max_optimizer_runs = 200 },
+]
 
 # Gas reporting for optimization tracking
 gas_reports = ["*"]
@@ -22,7 +30,7 @@ invariant = { runs = 512, depth = 256 }
 optimizer_runs = 200  # Lower for CI to speed up compilation
 
 [profile.production]
-optimizer_runs = 100000  # Maximum optimization for production
+optimizer_runs = 10000  # High optimization for production deployments
 via_ir = true
 
 [profile.halmos]
@@ -35,9 +43,10 @@ fuzz = { runs = 100000 }
 invariant = { runs = 1024, depth = 512 }
 
 [profile.coverage]
-# Forge coverage requires disabling via_ir to avoid "stack too deep" instrumentation errors.
-# Exclude complex verifier contracts that hit stack limits even without via_ir.
-via_ir = false
+# Coverage: run with `forge coverage --ir-minimum` (FOUNDRY_PROFILE=coverage).
+# forge coverage disables via_ir for source mapping accuracy; --ir-minimum re-enables it.
+# Stack-depth fixes: struct params, helper functions, internal mappings for 16+ field structs.
+via_ir = true
 optimizer = true
 optimizer_runs = 200
 no_match_contract = "UltraHonk|Groth16|PlonkVerifier|SolverLib"

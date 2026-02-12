@@ -90,6 +90,16 @@ contract ConfidentialStateContainerV3 is
         uint32 version;
     }
 
+    /// @notice Parameters for state transfer (reduces stack depth)
+    struct TransferStateParams {
+        bytes32 oldCommitment;
+        bytes32 newCommitment;
+        bytes32 newNullifier;
+        bytes32 spendingNullifier;
+        address newOwner;
+        address caller;
+    }
+
     /*//////////////////////////////////////////////////////////////
                                 STORAGE
     //////////////////////////////////////////////////////////////*/
@@ -467,14 +477,16 @@ contract ConfidentialStateContainerV3 is
         address newOwner
     ) external nonReentrant whenNotPaused {
         _transferState(
-            oldCommitment,
+            TransferStateParams({
+                oldCommitment: oldCommitment,
+                newCommitment: newCommitment,
+                newNullifier: newNullifier,
+                spendingNullifier: spendingNullifier,
+                newOwner: newOwner,
+                caller: msg.sender
+            }),
             newEncryptedState,
-            newCommitment,
-            newNullifier,
-            spendingNullifier,
-            proof,
-            newOwner,
-            msg.sender
+            proof
         );
     }
 
@@ -596,80 +608,82 @@ contract ConfidentialStateContainerV3 is
     }
 
     function _transferState(
-        bytes32 oldCommitment,
+        TransferStateParams memory p,
         bytes calldata newEncryptedState,
-        bytes32 newCommitment,
-        bytes32 newNullifier,
-        bytes32 spendingNullifier,
-        bytes calldata proof,
-        address newOwner,
-        address caller
+        bytes calldata proof
     ) internal {
-        // Phase 1: Validation (releases validation vars after block)
+        // Phase 1: Validation
         address oldOwner = _validateTransferParams(
-            oldCommitment,
+            p.oldCommitment,
             newEncryptedState,
-            newNullifier,
-            spendingNullifier,
-            newOwner,
-            caller
+            p.newNullifier,
+            p.spendingNullifier,
+            p.newOwner,
+            p.caller
         );
 
         // SECURITY: Prevent overwriting existing states
-        if (_states[newCommitment].owner != address(0))
-            revert CommitmentAlreadyExists(newCommitment);
+        if (_states[p.newCommitment].owner != address(0))
+            revert CommitmentAlreadyExists(p.newCommitment);
 
         // Consume spending nullifier AFTER validation but BEFORE proof verification
         // to prevent race conditions within the same block
-        _nullifiers[spendingNullifier] = true;
-        _nullifierToCommitment[spendingNullifier] = oldCommitment;
+        _nullifiers[p.spendingNullifier] = true;
+        _nullifierToCommitment[p.spendingNullifier] = p.oldCommitment;
 
         // Phase 2: Proof verification
         _verifyTransferProof(
-            oldCommitment,
-            newCommitment,
-            newNullifier,
-            spendingNullifier,
-            newOwner,
+            p.oldCommitment,
+            p.newCommitment,
+            p.newNullifier,
+            p.spendingNullifier,
+            p.newOwner,
             proof
         );
 
         // Phase 3: State updates
-        {
-            _recordTransitionHistory(
-                oldCommitment,
-                newCommitment,
-                oldOwner,
-                newOwner
-            );
+        _executeTransferStateUpdate(p, oldOwner, newEncryptedState);
+    }
 
-            EncryptedState storage oldState = _states[oldCommitment];
-            uint48 timestamp = uint48(block.timestamp);
-            uint32 newVersion = oldState.version + 1;
-            bytes32 oldMetadata = oldState.metadata;
+    /// @dev Executes the state update portion of a transfer (separated to reduce stack depth)
+    function _executeTransferStateUpdate(
+        TransferStateParams memory p,
+        address oldOwner,
+        bytes calldata newEncryptedState
+    ) private {
+        _recordTransitionHistory(
+            p.oldCommitment,
+            p.newCommitment,
+            oldOwner,
+            p.newOwner
+        );
 
-            oldState.status = StateStatus.Retired;
-            oldState.updatedAt = timestamp;
+        EncryptedState storage oldState = _states[p.oldCommitment];
+        uint48 timestamp = uint48(block.timestamp);
+        uint32 newVersion = oldState.version + 1;
+        bytes32 oldMetadata = oldState.metadata;
 
-            _createNewState(
-                NewStateParams({
-                    commitment: newCommitment,
-                    nullifier: newNullifier,
-                    metadata: oldMetadata,
-                    owner: newOwner,
-                    timestamp: timestamp,
-                    version: newVersion
-                }),
-                newEncryptedState
-            );
+        oldState.status = StateStatus.Retired;
+        oldState.updatedAt = timestamp;
 
-            emit StateTransferred(
-                oldCommitment,
-                newCommitment,
-                newOwner,
-                newVersion
-            );
-        }
+        _createNewState(
+            NewStateParams({
+                commitment: p.newCommitment,
+                nullifier: p.newNullifier,
+                metadata: oldMetadata,
+                owner: p.newOwner,
+                timestamp: timestamp,
+                version: newVersion
+            }),
+            newEncryptedState
+        );
+
+        emit StateTransferred(
+            p.oldCommitment,
+            p.newCommitment,
+            p.newOwner,
+            newVersion
+        );
     }
 
     /// @dev Records state transition history

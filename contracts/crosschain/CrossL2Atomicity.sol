@@ -277,11 +277,13 @@ contract CrossL2Atomicity is ReentrancyGuard, AccessControl, Pausable {
         }
 
         // Calculate total required value
-        uint256 totalRequiredValue = 0;
-        for (uint256 i = 0; i < chainCount; i++) {
-            totalRequiredValue += values[i];
+        {
+            uint256 totalRequiredValue = 0;
+            for (uint256 i = 0; i < chainCount; i++) {
+                totalRequiredValue += values[i];
+            }
+            if (msg.value < totalRequiredValue) revert InsufficientValue();
         }
-        if (msg.value < totalRequiredValue) revert InsufficientValue();
 
         bundleId = keccak256(
             abi.encodePacked(
@@ -295,16 +297,49 @@ contract CrossL2Atomicity is ReentrancyGuard, AccessControl, Pausable {
         if (_bundles[bundleId].createdAt != 0) revert BundleAlreadyExists();
 
         // Initialize bundle
-        AtomicBundle storage bundle = _bundles[bundleId];
-        bundle.bundleId = bundleId;
-        bundle.initiator = msg.sender;
-        bundle.phase = BundlePhase.CREATED;
-        bundle.createdAt = block.timestamp;
-        bundle.timeout = timeout > 0 ? timeout : DEFAULT_TIMEOUT;
-        bundle.chainCount = chainCount;
-        bundle.chainIds = chainIds;
+        {
+            AtomicBundle storage bundle = _bundles[bundleId];
+            bundle.bundleId = bundleId;
+            bundle.initiator = msg.sender;
+            bundle.phase = BundlePhase.CREATED;
+            bundle.createdAt = block.timestamp;
+            bundle.timeout = timeout > 0 ? timeout : DEFAULT_TIMEOUT;
+            bundle.chainCount = chainCount;
+            bundle.chainIds = chainIds;
+        }
 
-        // Add operations (with duplicate chainId check)
+        _populateBundleOperations(
+            bundleId,
+            chainIds,
+            chainTypes,
+            targets,
+            datas,
+            values
+        );
+
+        bundleIds.push(bundleId);
+
+        emit AtomicBundleCreated(
+            bundleId,
+            msg.sender,
+            chainIds,
+            _bundles[bundleId].timeout
+        );
+
+        return bundleId;
+    }
+
+    function _populateBundleOperations(
+        bytes32 bundleId,
+        uint256[] calldata chainIds,
+        ChainType[] calldata chainTypes,
+        address[] calldata targets,
+        bytes[] calldata datas,
+        uint256[] calldata values
+    ) private {
+        AtomicBundle storage bundle = _bundles[bundleId];
+        uint256 chainCount = chainIds.length;
+
         for (uint256 i = 0; i < chainCount; i++) {
             // Check for duplicate chainIds
             for (uint256 j = 0; j < i; j++) {
@@ -322,17 +357,6 @@ contract CrossL2Atomicity is ReentrancyGuard, AccessControl, Pausable {
                 executed: false
             });
         }
-
-        bundleIds.push(bundleId);
-
-        emit AtomicBundleCreated(
-            bundleId,
-            msg.sender,
-            chainIds,
-            bundle.timeout
-        );
-
-        return bundleId;
     }
 
     /*//////////////////////////////////////////////////////////////

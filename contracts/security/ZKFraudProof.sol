@@ -116,7 +116,9 @@ contract ZKFraudProof is AccessControl, ReentrancyGuard, Pausable {
     uint256 public constant PROVER_REWARD_PERCENTAGE = 30; // 30% of slashed
 
     // ============ State Variables ============
-    mapping(bytes32 => FraudProof) public fraudProofs;
+    /// @dev Internal to avoid auto-getter stack depth issues (16 return values).
+    /// Use getFraudProof() for external access.
+    mapping(bytes32 => FraudProof) internal fraudProofs;
     mapping(bytes32 => Batch) public batches;
     mapping(bytes32 => VerificationKey) public verificationKeys;
     mapping(address => ProverStats) public proverStats;

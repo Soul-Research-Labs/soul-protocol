@@ -131,33 +131,75 @@ contract ZKSLockIntegration {
             revert ContainerAlreadyLocked();
         }
 
-        // Get container state commitment
-        (, bytes32 stateCommitment, , , , , , , , ) = pc3.containers(
-            containerId
-        );
+        // Get container state commitment via helper to reduce stack depth
+        bytes32 stateCommitment = _getContainerStateCommitment(containerId);
 
         bytes32 actualDomainSeparator = domainSeparator != bytes32(0)
             ? domainSeparator
             : defaultDomainSeparator;
 
         // Precompute lock ID (matches ZKBoundStateLocks.createLock)
-        lockId = keccak256(
-            abi.encode(
-                stateCommitment,
-                transitionPredicateHash,
-                policyBinding,
-                actualDomainSeparator,
-                address(this),
-                block.chainid,
-                block.timestamp
-            )
+        lockId = _computeLockId(
+            stateCommitment,
+            transitionPredicateHash,
+            policyBinding,
+            actualDomainSeparator
         );
 
         // Store bindings before external call (CEI)
         containerToLock[containerId] = lockId;
         lockToContainer[lockId] = containerId;
 
-        // Create ZK-SLock using the actual function signature
+        // Create ZK-SLock and verify ID matches
+        _createAndVerifyLock(
+            lockId,
+            stateCommitment,
+            transitionPredicateHash,
+            policyBinding,
+            actualDomainSeparator,
+            unlockDeadline
+        );
+
+        emit ContainerLocked(containerId, lockId, stateCommitment);
+    }
+
+    /// @dev Helper: extract state commitment from PC³ container (reduces stack in caller)
+    function _getContainerStateCommitment(
+        bytes32 containerId
+    ) internal view returns (bytes32 stateCommitment) {
+        (, stateCommitment, , , , , , , , ) = pc3.containers(containerId);
+    }
+
+    /// @dev Helper: compute lock ID (reduces stack in caller)
+    function _computeLockId(
+        bytes32 stateCommitment,
+        bytes32 transitionPredicateHash,
+        bytes32 policyBinding,
+        bytes32 actualDomainSeparator
+    ) internal view returns (bytes32) {
+        return
+            keccak256(
+                abi.encode(
+                    stateCommitment,
+                    transitionPredicateHash,
+                    policyBinding,
+                    actualDomainSeparator,
+                    address(this),
+                    block.chainid,
+                    block.timestamp
+                )
+            );
+    }
+
+    /// @dev Helper: create lock and verify ID matches expectation
+    function _createAndVerifyLock(
+        bytes32 expectedLockId,
+        bytes32 stateCommitment,
+        bytes32 transitionPredicateHash,
+        bytes32 policyBinding,
+        bytes32 actualDomainSeparator,
+        uint64 unlockDeadline
+    ) internal {
         bytes32 createdLockId = zkSlocks.createLock(
             stateCommitment,
             transitionPredicateHash,
@@ -166,11 +208,9 @@ contract ZKSLockIntegration {
             unlockDeadline
         );
 
-        if (createdLockId != lockId) {
-            revert LockIdMismatch(lockId, createdLockId);
+        if (createdLockId != expectedLockId) {
+            revert LockIdMismatch(expectedLockId, createdLockId);
         }
-
-        emit ContainerLocked(containerId, lockId, stateCommitment);
     }
 
     /// @notice Unlocks a PC³ container with a ZK proof
@@ -235,7 +275,24 @@ contract ZKSLockIntegration {
             0 // No deadline
         );
 
-        // Generate nullifier with user-provided entropy
+        // Generate and register nullifier via helper
+        nullifier = _generateAndRegisterNullifier(
+            lockId,
+            domainId,
+            commitmentHash,
+            userEntropy
+        );
+
+        emit NullifierBound(lockId, nullifier, domainId);
+    }
+
+    /// @dev Helper: generate nullifier, register in CDNA, and store bindings
+    function _generateAndRegisterNullifier(
+        bytes32 lockId,
+        bytes32 domainId,
+        bytes32 commitmentHash,
+        bytes32 userEntropy
+    ) internal returns (bytes32 nullifier) {
         // SECURITY: Combines user entropy with msg.sender and block.number for unpredictability
         nullifier = zkSlocks.generateNullifier(
             keccak256(abi.encodePacked(userEntropy, msg.sender, block.number)),
@@ -254,8 +311,6 @@ contract ZKSLockIntegration {
         // Store bindings
         lockToNullifier[lockId] = nullifier;
         nullifierToLock[nullifier] = lockId;
-
-        emit NullifierBound(lockId, nullifier, domainId);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -299,26 +354,26 @@ contract ZKSLockIntegration {
             params.unlockDeadline
         );
 
-        // 2. Generate nullifier with user entropy
-        // SECURITY: Uses user entropy + msg.sender + block.number for unpredictability
-        nullifier = zkSlocks.generateNullifier(
-            keccak256(
-                abi.encodePacked(params.userEntropy, msg.sender, block.number)
-            ),
-            lockId,
-            domainSep
-        );
-
-        // 3. Store nullifier binding
-        lockToNullifier[lockId] = nullifier;
-        nullifierToLock[nullifier] = lockId;
-
-        // 4. Create container ID (PC³ container creation would happen externally)
-        if (params.encryptedPayload.length > 0) {
-            containerId = keccak256(abi.encode(lockId, block.number));
-            containerToLock[containerId] = lockId;
-            lockToContainer[lockId] = containerId;
+        // 2. Generate nullifier with user entropy and store bindings
+        {
+            // SECURITY: Uses user entropy + msg.sender + block.number for unpredictability
+            nullifier = zkSlocks.generateNullifier(
+                keccak256(
+                    abi.encodePacked(
+                        params.userEntropy,
+                        msg.sender,
+                        block.number
+                    )
+                ),
+                lockId,
+                domainSep
+            );
+            lockToNullifier[lockId] = nullifier;
+            nullifierToLock[nullifier] = lockId;
         }
+
+        // 3. Create container ID if payload provided
+        containerId = _maybeCreateContainer(lockId, params.encryptedPayload);
 
         emit CrossDomainLockCreated(
             lockId,
@@ -326,6 +381,18 @@ contract ZKSLockIntegration {
             bytes32(block.chainid),
             nullifier
         );
+    }
+
+    /// @dev Helper: conditionally create container binding
+    function _maybeCreateContainer(
+        bytes32 lockId,
+        bytes calldata encryptedPayload
+    ) internal returns (bytes32 containerId) {
+        if (encryptedPayload.length > 0) {
+            containerId = keccak256(abi.encode(lockId, block.number));
+            containerToLock[containerId] = lockId;
+            lockToContainer[lockId] = containerId;
+        }
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -377,22 +444,24 @@ contract ZKSLockIntegration {
             bool isLocked
         )
     {
-        (
-            ,
-            // lockId
-            bytes32 oldStateCommitment, // transitionPredicateHash // policyHash // domainSeparator // lockedBy // createdAt // unlockDeadline
-            ,
-            ,
-            ,
-            ,
-            ,
-            ,
-            bool isUnlocked
-        ) = zkSlocks.locks(lockId);
-        stateCommitment = oldStateCommitment;
+        stateCommitment = _getLockStateCommitment(lockId);
         containerId = lockToContainer[lockId];
         nullifier = lockToNullifier[lockId];
-        isLocked = !isUnlocked;
+        isLocked = !_isLockUnlocked(lockId);
+    }
+
+    /// @dev Helper: get state commitment from lock (reduces stack depth)
+    function _getLockStateCommitment(
+        bytes32 lockId
+    ) internal view returns (bytes32 stateCommitment) {
+        (, stateCommitment, , , , , , , ) = zkSlocks.locks(lockId);
+    }
+
+    /// @dev Helper: check if lock is unlocked (reduces stack depth)
+    function _isLockUnlocked(
+        bytes32 lockId
+    ) internal view returns (bool isUnlocked) {
+        (, , , , , , , , isUnlocked) = zkSlocks.locks(lockId);
     }
 
     /// @notice Check if a container is currently locked
@@ -401,9 +470,7 @@ contract ZKSLockIntegration {
     ) external view returns (bool) {
         bytes32 lockId = containerToLock[containerId];
         if (lockId == bytes32(0)) return false;
-
-        (, , , , , , , , bool isUnlocked) = zkSlocks.locks(lockId);
-        return !isUnlocked;
+        return !_isLockUnlocked(lockId);
     }
 
     /// @notice Get the lock ID for a nullifier

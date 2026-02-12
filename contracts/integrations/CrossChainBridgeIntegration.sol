@@ -408,6 +408,15 @@ contract CrossChainBridgeIntegration is
      * @param protocol Bridge protocol to use (ignored if auto-router enabled)
      * @param extraData Protocol-specific data
      */
+    /// @notice Parameters for bridge transfer (reduces stack depth)
+    struct BridgeTransferParams {
+        uint256 destChain;
+        bytes32 recipient;
+        address token;
+        uint256 amount;
+        BridgeProtocol protocol;
+    }
+
     function bridgeTransfer(
         uint256 destChain,
         bytes32 recipient,
@@ -419,63 +428,125 @@ contract CrossChainBridgeIntegration is
         if (recipient == bytes32(0)) revert InvalidRecipient();
         if (amount == 0) revert ZeroAmount();
 
-        ChainConfig storage destConfig = chainConfigs[destChain];
+        BridgeTransferParams memory p = BridgeTransferParams({
+            destChain: destChain,
+            recipient: recipient,
+            token: token,
+            amount: amount,
+            protocol: protocol
+        });
+
+        transferId = _executeBridgeTransfer(p, extraData);
+    }
+
+    function _executeBridgeTransfer(
+        BridgeTransferParams memory p,
+        bytes calldata extraData
+    ) internal returns (bytes32 transferId) {
+        ChainConfig storage destConfig = chainConfigs[p.destChain];
         if (!destConfig.isSupported) revert ChainNotSupported();
-        if (amount > destConfig.maxTransfer) revert ExceedsMaxTransfer();
+        if (p.amount > destConfig.maxTransfer) revert ExceedsMaxTransfer();
 
         // Reset daily limit if needed
         _resetDailyLimitIfNeeded(destConfig);
-        if (destConfig.dailyUsed + amount > destConfig.dailyLimit) {
+        if (destConfig.dailyUsed + p.amount > destConfig.dailyLimit) {
             revert ExceedsDailyLimit();
         }
 
         // Select protocol
         BridgeProtocol selectedProtocol = autoRouterEnabled
-            ? _selectOptimalProtocol(THIS_CHAIN_ID, destChain, amount)
-            : protocol;
+            ? _selectOptimalProtocol(THIS_CHAIN_ID, p.destChain, p.amount)
+            : p.protocol;
 
-        BridgeAdapter storage adapter = bridgeAdapters[destChain][
+        BridgeAdapter storage adapter = bridgeAdapters[p.destChain][
             selectedProtocol
         ];
         if (!adapter.isActive) revert BridgeNotAvailable();
 
-        // Calculate fees
-        uint256 bridgeFee = adapter.baseFee +
-            (amount * adapter.percentageFee) /
-            10000;
-        uint256 protocolFee = (amount * protocolFeeBps) / 10000;
-        uint256 totalFee = bridgeFee + protocolFee;
+        // Calculate and collect fees
+        uint256 totalFee;
+        {
+            uint256 bridgeFeeAmt = adapter.baseFee +
+                (p.amount * adapter.percentageFee) /
+                10000;
+            uint256 protocolFeeAmt = (p.amount * protocolFeeBps) / 10000;
+            totalFee = bridgeFeeAmt + protocolFeeAmt;
 
-        if (token == NATIVE_TOKEN) {
-            if (msg.value < amount + totalFee) revert InsufficientFee();
-        } else {
-            if (msg.value < totalFee) revert InsufficientFee();
-            IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+            if (p.token == NATIVE_TOKEN) {
+                if (msg.value < p.amount + totalFee) revert InsufficientFee();
+            } else {
+                if (msg.value < totalFee) revert InsufficientFee();
+                IERC20(p.token).safeTransferFrom(
+                    msg.sender,
+                    address(this),
+                    p.amount
+                );
+            }
+
+            if (protocolFeeAmt > 0) {
+                accruedProtocolFees += protocolFeeAmt;
+            }
         }
 
-        // Generate transfer ID (include nonce to prevent collisions)
+        transferId = _createTransferRecord(p, selectedProtocol, extraData);
+
+        // Update daily usage
+        destConfig.dailyUsed += p.amount;
+
+        // Execute bridge call
+        _executeBridgeCall(
+            adapter.adapter,
+            TransferRequest({
+                sourceChain: THIS_CHAIN_ID,
+                destChain: p.destChain,
+                sender: msg.sender,
+                recipient: p.recipient,
+                token: p.token,
+                amount: p.amount,
+                protocol: selectedProtocol,
+                extraData: extraData
+            }),
+            totalFee
+        );
+
+        emit BridgeTransferInitiated(
+            transferId,
+            THIS_CHAIN_ID,
+            p.destChain,
+            msg.sender,
+            p.recipient,
+            p.token,
+            p.amount,
+            selectedProtocol
+        );
+    }
+
+    function _createTransferRecord(
+        BridgeTransferParams memory p,
+        BridgeProtocol selectedProtocol,
+        bytes calldata extraData
+    ) private returns (bytes32 transferId) {
         transferId = keccak256(
             abi.encodePacked(
                 BRIDGE_DOMAIN,
                 THIS_CHAIN_ID,
-                destChain,
+                p.destChain,
                 msg.sender,
-                recipient,
-                token,
-                amount,
+                p.recipient,
+                p.token,
+                p.amount,
                 block.timestamp,
                 transferNonce++
             )
         );
 
-        // Create transfer record
         TransferRequest memory request = TransferRequest({
             sourceChain: THIS_CHAIN_ID,
-            destChain: destChain,
+            destChain: p.destChain,
             sender: msg.sender,
-            recipient: recipient,
-            token: token,
-            amount: amount,
+            recipient: p.recipient,
+            token: p.token,
+            amount: p.amount,
             protocol: selectedProtocol,
             extraData: extraData
         });
@@ -491,28 +562,6 @@ contract CrossChainBridgeIntegration is
         });
 
         userTransfers[msg.sender].push(transferId);
-
-        // Update daily usage
-        destConfig.dailyUsed += amount;
-
-        // Execute bridge call
-        _executeBridgeCall(adapter.adapter, request, totalFee);
-
-        // Accrue protocol fee (non-blocking to prevent griefing)
-        if (protocolFee > 0) {
-            accruedProtocolFees += protocolFee;
-        }
-
-        emit BridgeTransferInitiated(
-            transferId,
-            THIS_CHAIN_ID,
-            destChain,
-            msg.sender,
-            recipient,
-            token,
-            amount,
-            selectedProtocol
-        );
     }
 
     /**

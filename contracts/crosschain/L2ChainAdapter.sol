@@ -376,9 +376,53 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
         ) = _decodeProof(proof);
 
         // 1. Verify state root is known and matches
+        _verifyStateRoot(
+            sourceChain,
+            blockNumber,
+            claimedStateRoot,
+            oracleSignatures
+        );
+
+        // 2. Compute message leaf and verify Merkle proof
+        {
+            bytes32 messageLeaf = keccak256(
+                abi.encodePacked(
+                    sourceChain,
+                    block.chainid,
+                    messageId,
+                    keccak256(payload)
+                )
+            );
+
+            // 3. Verify Merkle proof against state root
+            if (
+                !MerkleProof.verify(merkleProof, claimedStateRoot, messageLeaf)
+            ) {
+                revert InvalidMerkleProof();
+            }
+        }
+
+        // 4. Verify block is not too old (prevent replay of ancient proofs)
+        if (
+            latestBlockNumber[sourceChain] > 0 &&
+            blockNumber + config.confirmations <
+            latestBlockNumber[sourceChain] - 1000
+        ) {
+            revert ProofExpired();
+        }
+
+        return true;
+    }
+
+    /// @dev Verifies state root validity (separated to reduce stack depth)
+    function _verifyStateRoot(
+        uint256 sourceChain,
+        uint256 blockNumber,
+        bytes32 claimedStateRoot,
+        bytes[] memory oracleSignatures
+    ) private view {
         bytes32 knownStateRoot = stateRoots[sourceChain][blockNumber];
         if (knownStateRoot == bytes32(0)) {
-            // State root not yet submitted - verify via oracle signatures
             if (
                 !_verifyStateRootWithOracles(
                     sourceChain,
@@ -392,32 +436,6 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
         } else if (knownStateRoot != claimedStateRoot) {
             revert InvalidProof();
         }
-
-        // 2. Compute message leaf for Merkle verification
-        bytes32 messageLeaf = keccak256(
-            abi.encodePacked(
-                sourceChain,
-                block.chainid,
-                messageId,
-                keccak256(payload)
-            )
-        );
-
-        // 3. Verify Merkle proof against state root
-        if (!MerkleProof.verify(merkleProof, claimedStateRoot, messageLeaf)) {
-            revert InvalidMerkleProof();
-        }
-
-        // 4. Verify block is not too old (prevent replay of ancient proofs)
-        if (
-            latestBlockNumber[sourceChain] > 0 &&
-            blockNumber + config.confirmations <
-            latestBlockNumber[sourceChain] - 1000
-        ) {
-            revert ProofExpired();
-        }
-
-        return true;
     }
 
     /**
