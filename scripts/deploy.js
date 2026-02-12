@@ -8,13 +8,13 @@ async function main() {
   // Track deployed addresses
   const deployed = {};
 
-  // 1. Deploy Groth16VerifierBLS12381V2
-  console.log("\n1. Deploying Groth16VerifierBLS12381V2...");
-  const Verifier = await ethers.getContractFactory("Groth16VerifierBLS12381V2");
+  // 1. Deploy Groth16VerifierBN254
+  console.log("\n1. Deploying Groth16VerifierBN254...");
+  const Verifier = await ethers.getContractFactory("Groth16VerifierBN254");
   const verifier = await Verifier.deploy();
   await verifier.waitForDeployment();
   deployed.verifier = await verifier.getAddress();
-  console.log("   Groth16VerifierBLS12381V2 deployed to:", deployed.verifier);
+  console.log("   Groth16VerifierBN254 deployed to:", deployed.verifier);
 
   // 2. Deploy ConfidentialStateContainerV3
   console.log("\n2. Deploying ConfidentialStateContainerV3...");
