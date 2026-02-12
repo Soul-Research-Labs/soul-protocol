@@ -51,9 +51,9 @@ contract SoulProtocolHubTest is Test {
 
     function test_Constants() public view {
         assertEq(hub.MAX_BATCH_SIZE(), 50);
-        assertEq(hub.ZKSYNC_CHAIN_ID(), 324);
-        assertEq(hub.SCROLL_CHAIN_ID(), 534352);
-        assertEq(hub.LINEA_CHAIN_ID(), 59144);
+        assertEq(hub.GROTH16_VERIFIER(), keccak256("GROTH16"));
+        assertEq(hub.NOIR_VERIFIER(), keccak256("NOIR"));
+        assertEq(hub.ULTRAHONK_VERIFIER(), keccak256("ULTRAHONK"));
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -100,8 +100,8 @@ contract SoulProtocolHubTest is Test {
     }
 
     function test_RegisterVerifierDefaultGas() public {
-        bytes32 verifierType = hub.PLONK_VERIFIER();
-        address verifier = makeAddr("plonk");
+        bytes32 verifierType = hub.NOIR_VERIFIER();
+        address verifier = makeAddr("noir");
 
         vm.prank(operator);
         hub.registerVerifier(verifierType, verifier, 0);
@@ -114,18 +114,18 @@ contract SoulProtocolHubTest is Test {
 
     function test_BatchRegisterVerifiers() public {
         bytes32 g16 = hub.GROTH16_VERIFIER();
-        bytes32 plonk = hub.PLONK_VERIFIER();
-        bytes32 fri = hub.FRI_VERIFIER();
+        bytes32 noir = hub.NOIR_VERIFIER();
+        bytes32 ultrahonk = hub.ULTRAHONK_VERIFIER();
 
         bytes32[] memory types = new bytes32[](3);
         types[0] = g16;
-        types[1] = plonk;
-        types[2] = fri;
+        types[1] = noir;
+        types[2] = ultrahonk;
 
         address[] memory addrs = new address[](3);
         addrs[0] = makeAddr("groth16");
-        addrs[1] = makeAddr("plonk");
-        addrs[2] = makeAddr("fri");
+        addrs[1] = makeAddr("noir");
+        addrs[2] = makeAddr("ultrahonk");
 
         uint256[] memory limits = new uint256[](3);
         limits[0] = 300_000;
@@ -260,22 +260,19 @@ contract SoulProtocolHubTest is Test {
     //////////////////////////////////////////////////////////////*/
 
     function test_SetPrivacyModules() public {
-        address mlsag = makeAddr("mlsag");
-        address ringCT = makeAddr("ringCT");
-        address mixnet = makeAddr("mixnet");
         address stealth = makeAddr("stealth");
+        address relayer = makeAddr("relayer");
+        address viewKey = makeAddr("viewKey");
 
         vm.startPrank(operator);
-        hub.setMLSAGSignatures(mlsag);
-        hub.setRingConfidentialTransactions(ringCT);
-        hub.setMixnetNodeRegistry(mixnet);
         hub.setStealthAddressRegistry(stealth);
+        hub.setPrivateRelayerNetwork(relayer);
+        hub.setViewKeyRegistry(viewKey);
         vm.stopPrank();
 
-        assertEq(hub.mlsagSignatures(), mlsag);
-        assertEq(hub.ringConfidentialTransactions(), ringCT);
-        assertEq(hub.mixnetNodeRegistry(), mixnet);
         assertEq(hub.stealthAddressRegistry(), stealth);
+        assertEq(hub.privateRelayerNetwork(), relayer);
+        assertEq(hub.viewKeyRegistry(), viewKey);
     }
 
     function test_RevertPrivacyModuleZeroAddress() public {
@@ -283,7 +280,7 @@ contract SoulProtocolHubTest is Test {
         vm.expectRevert(
             abi.encodeWithSelector(SoulProtocolHub.ZeroAddress.selector)
         );
-        hub.setMLSAGSignatures(address(0));
+        hub.setStealthAddressRegistry(address(0));
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -304,26 +301,6 @@ contract SoulProtocolHubTest is Test {
         assertEq(hub.bridgeProofValidator(), validator);
         assertEq(hub.bridgeWatchtower(), watchtower);
         assertEq(hub.bridgeCircuitBreaker(), breaker);
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                   THRESHOLD SIG REGISTRATION
-    //////////////////////////////////////////////////////////////*/
-
-    function test_SetThresholdSigModules() public {
-        address gateway = makeAddr("tsgGateway");
-        address sig = makeAddr("tsgSig");
-        address shamir = makeAddr("shamir");
-
-        vm.startPrank(operator);
-        hub.setThresholdSigGateway(gateway);
-        hub.setThresholdSignature(sig);
-        hub.setShamirSecretSharing(shamir);
-        vm.stopPrank();
-
-        assertEq(hub.thresholdSigGateway(), gateway);
-        assertEq(hub.thresholdSignature(), sig);
-        assertEq(hub.shamirSecretSharing(), shamir);
     }
 
     /*//////////////////////////////////////////////////////////////
