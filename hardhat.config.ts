@@ -116,22 +116,6 @@ export default defineConfig({
           evmVersion: "paris"
         }
       },
-      "contracts/verifiers/PLONKVerifier.sol": {
-        version: "0.8.20",
-        settings: {
-          optimizer: { enabled: true, runs: 1 },
-          viaIR: true,
-          evmVersion: "paris"
-        }
-      },
-      "contracts/verifiers/FRIVerifier.sol": {
-        version: "0.8.20",
-        settings: {
-          optimizer: { enabled: true, runs: 1 },
-          viaIR: true,
-          evmVersion: "paris"
-        }
-      },
       // Security module inherited by many contracts
       "contracts/security/SecurityModule.sol": {
         version: "0.8.20",
