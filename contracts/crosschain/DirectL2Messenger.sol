@@ -297,7 +297,7 @@ contract DirectL2Messenger is ReentrancyGuard, AccessControl, Pausable {
     address public astriaSequencer;
 
     /// @notice Soul Hub address for nullifier binding
-    address public soulHub;
+    address public immutable soulHub;
 
     /// @notice Challenge bonds per message
     mapping(bytes32 => uint256) public challengeBonds;

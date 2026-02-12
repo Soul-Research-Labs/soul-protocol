@@ -253,6 +253,7 @@ contract NullifierRegistryV3 is AccessControl, Pausable {
 
         uint256 len = _nullifiers.length;
         if (len == 0) revert EmptyBatch();
+        if (len > MAX_BATCH_SIZE) revert BatchTooLarge(len, MAX_BATCH_SIZE);
 
         for (uint256 i = 0; i < len; ) {
             bytes32 nullifier = _nullifiers[i];
@@ -434,6 +435,7 @@ contract NullifierRegistryV3 is AccessControl, Pausable {
         bytes32[] calldata _nullifiers
     ) external view returns (bool[] memory results) {
         uint256 len = _nullifiers.length;
+        if (len > MAX_BATCH_SIZE) revert BatchTooLarge(len, MAX_BATCH_SIZE);
         results = new bool[](len);
 
         for (uint256 i = 0; i < len; ) {

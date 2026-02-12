@@ -233,7 +233,8 @@ jobs:
         run: npx tsc --noEmit
 
       - name: SDK unit tests
-        run: node test/sdk.test.mjs || echo '⚠️ SDK tests need migration to proper framework'
+        run: node test/sdk.test.mjs
+        continue-on-error: true
 
   formal-verification:
     name: Formal Verification (Halmos)
@@ -259,7 +260,7 @@ jobs:
         run: pip3 install halmos
 
       - name: Run Halmos symbolic tests
-        run: halmos --match-path "test/formal/*" --solver-timeout-assertion 120 || echo '⚠️ Some Halmos checks timed out'
+        run: halmos --match-path "test/formal/*" --solver-timeout-assertion 120
 
   echidna:
     name: Echidna Property Testing
@@ -291,7 +292,7 @@ jobs:
           sudo mv echidna /usr/local/bin/
 
       - name: Run Echidna
-        run: echidna . --config test/fuzz/echidna.config.yaml --contract SoulInvariantTests || echo '⚠️ Echidna found violations'
+        run: echidna . --config test/fuzz/echidna.config.yaml --contract SoulInvariantTests
 
   certora:
     name: Certora Formal Verification

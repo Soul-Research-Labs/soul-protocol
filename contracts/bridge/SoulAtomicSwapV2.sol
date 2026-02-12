@@ -130,7 +130,7 @@ contract SoulAtomicSwapV2 is
     );
     event SwapRefunded(bytes32 indexed swapId, address indexed initiator);
     event FeeUpdated(uint256 oldFee, uint256 newFee);
-    event FeeRecipientUpdated(address oldRecipient, address newRecipient);
+    event FeeRecipientUpdated(address indexed oldRecipient, address indexed newRecipient);
 
     /// @notice Custom errors
     error InvalidRecipient();
@@ -529,14 +529,15 @@ contract SoulAtomicSwapV2 is
         uint256 amount = collectedFees[token];
         collectedFees[token] = 0;
 
+        // CEI: emit event before external calls
+        emit FeeWithdrawalExecuted(withdrawalId, token, amount);
+
         if (token == address(0)) {
             (bool success, ) = feeRecipient.call{value: amount}("");
             if (!success) revert FeeTransferFailed();
         } else {
             IERC20(token).safeTransfer(feeRecipient, amount);
         }
-
-        emit FeeWithdrawalExecuted(withdrawalId, token, amount);
     }
 
     /// @notice Emergency fee withdrawal (legacy, still has timelock via governance)

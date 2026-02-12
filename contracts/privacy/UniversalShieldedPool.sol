@@ -550,6 +550,7 @@ contract UniversalShieldedPool is AccessControl, ReentrancyGuard, Pausable {
     function setSanctionsOracle(
         address _oracle
     ) external onlyRole(COMPLIANCE_ROLE) {
+        if (_oracle == address(0)) revert ZeroAddress();
         sanctionsOracle = _oracle;
         emit SanctionsOracleUpdated(_oracle);
     }

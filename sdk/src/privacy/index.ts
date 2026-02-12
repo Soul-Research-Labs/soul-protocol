@@ -102,12 +102,12 @@ export const NETWORK_CONFIGS: Record<string, PrivacyHubConfig> = {
         ringCTAddress: '0x0000000000000000000000000000000000000000',
         nullifierManagerAddress: '0x0000000000000000000000000000000000000000'
     },
-    // Sepolia testnet
+    // Sepolia testnet — mapped from deployments/sepolia-11155111.json
     sepolia: {
-        hubAddress: '0x0000000000000000000000000000000000000000',
-        stealthRegistryAddress: '0x0000000000000000000000000000000000000000',
-        ringCTAddress: '0x0000000000000000000000000000000000000000',
-        nullifierManagerAddress: '0x0000000000000000000000000000000000000000'
+        hubAddress: '0x40eaa5de0c6497c8943c967b42799cb092c26adc',
+        stealthRegistryAddress: '0x52f8a660ff436c450b5190a84bc2c1a86f1032cc',
+        ringCTAddress: '0x674d0cbfb5bf33981b1656abf6a47cff46430b0c',
+        nullifierManagerAddress: '0x3e21d559f19c76a0bcec378b10dae2cc0e4c2191'
     },
     // Local development
     localhost: {
