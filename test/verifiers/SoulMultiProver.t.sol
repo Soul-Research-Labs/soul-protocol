@@ -570,10 +570,7 @@ contract SoulMultiProverTest is Test {
         assertEq(result.proofId, proofId);
     }
 
-    function testFuzz_ConsensusRequirements(
-        uint8 required,
-        uint8 minP
-    ) public {
+    function testFuzz_ConsensusRequirements(uint8 required, uint8 minP) public {
         required = uint8(bound(required, 1, 8));
         minP = uint8(bound(minP, required, 8));
 

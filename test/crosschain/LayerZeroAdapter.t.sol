@@ -94,10 +94,7 @@ contract LayerZeroAdapterTest is Test {
         adapter.setUlnConfig(ARB_EID, config);
     }
 
-    function _receiveMessage(
-        bytes32 guid,
-        bytes memory payload
-    ) internal {
+    function _receiveMessage(bytes32 guid, bytes memory payload) internal {
         bytes32 remote = adapter.trustedRemotes(ARB_EID);
         uint64 nonce = adapter.inboundNonce(ARB_EID) + 1;
         vm.prank(address(endpoint));
@@ -301,8 +298,10 @@ contract LayerZeroAdapterTest is Test {
 
         // baseFee + payloadFee + gasFee
         uint256 expected = 0.001 ether +
-            (64 * 1000 gwei) / 32 +
-            uint256(200_000) * 100 gwei;
+            (64 * 1000 gwei) /
+            32 +
+            uint256(200_000) *
+            100 gwei;
         assertEq(fee, expected);
     }
 
@@ -336,16 +335,8 @@ contract LayerZeroAdapterTest is Test {
 
         assertTrue(adapter.processedMessages(guid));
 
-        (
-            bytes32 rGuid,
-            uint32 rSrcEid,
-            ,
-            uint64 rNonce,
-            ,
-            ,
-            ,
-
-        ) = adapter.messageReceipts(guid);
+        (bytes32 rGuid, uint32 rSrcEid, , uint64 rNonce, , , , ) = adapter
+            .messageReceipts(guid);
 
         assertEq(rGuid, guid);
         assertEq(rSrcEid, ARB_EID);
@@ -580,7 +571,10 @@ contract LayerZeroAdapterTest is Test {
                           FUZZ TESTS
     //////////////////////////////////////////////////////////////*/
 
-    function testFuzz_QuoteSend(uint128 gasLimit, uint16 payloadLen) public view {
+    function testFuzz_QuoteSend(
+        uint128 gasLimit,
+        uint16 payloadLen
+    ) public view {
         gasLimit = uint128(bound(gasLimit, 1, 1_000_000));
         payloadLen = uint16(bound(payloadLen, 1, 1024));
 

@@ -199,9 +199,7 @@ contract SoulUniversalVerifierTest is Test {
     }
 
     function test_DeactivateVerifier() public {
-        verifier.deactivateVerifier(
-            SoulUniversalVerifier.ProofSystem.Groth16
-        );
+        verifier.deactivateVerifier(SoulUniversalVerifier.ProofSystem.Groth16);
 
         SoulUniversalVerifier.VerifierConfig memory config = verifier
             .getVerifier(SoulUniversalVerifier.ProofSystem.Groth16);
@@ -414,10 +412,7 @@ contract SoulUniversalVerifierTest is Test {
         publicInputsArray[0] = pi1;
         publicInputsArray[1] = pi2;
 
-        bool[] memory results = verifier.batchVerify(
-            proofs,
-            publicInputsArray
-        );
+        bool[] memory results = verifier.batchVerify(proofs, publicInputsArray);
 
         assertEq(results.length, 2);
         assertTrue(results[0]);
@@ -455,10 +450,7 @@ contract SoulUniversalVerifierTest is Test {
         publicInputsArray[0] = pi1;
         publicInputsArray[1] = pi2;
 
-        bool[] memory results = verifier.batchVerify(
-            proofs,
-            publicInputsArray
-        );
+        bool[] memory results = verifier.batchVerify(proofs, publicInputsArray);
 
         assertFalse(results[0]); // Noir fails
         assertTrue(results[1]); // SP1 passes
@@ -508,8 +500,8 @@ contract SoulUniversalVerifierTest is Test {
 
         bytes memory publicInputs = abi.encodePacked(vkey, salt);
 
-        SoulUniversalVerifier.UniversalProof memory proof = SoulUniversalVerifier
-            .UniversalProof({
+        SoulUniversalVerifier.UniversalProof
+            memory proof = SoulUniversalVerifier.UniversalProof({
                 system: SoulUniversalVerifier.ProofSystem.Noir,
                 vkeyOrCircuitHash: vkey,
                 publicInputsHash: keccak256(publicInputs),
