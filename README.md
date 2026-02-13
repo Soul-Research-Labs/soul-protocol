@@ -256,18 +256,22 @@ contracts/           # Production Solidity contracts
 ├── crosschain/      # L2 bridge adapters (Arbitrum, Optimism, Base, zkSync, Scroll, Linea, Polygon zkEVM)
 ├── privacy/         # UniversalShieldedPool, UniversalProofTranslator, Stealth addresses
 ├── compliance/      # CrossChainSanctionsOracle, KYC gating
+├── governance/      # SoulGovernor, SoulUpgradeTimelock
+├── upgradeable/     # UUPS proxy implementations (ConfidentialState, NullifierRegistry, ProofHub)
 ├── relayer/         # RelayerFeeMarket (incentivized relaying)
 ├── bridge/          # AtomicSwap, CrossChainProofHub
-├── verifiers/       # Groth16 BN254, PLONK, FRI verifiers + VerifierRegistry
+├── verifiers/       # Groth16 BN254, PLONK, FRI verifiers + VerifierRegistry + MultiProver
 ├── libraries/       # CryptoLib, PoseidonYul, GasOptimizations
 ├── interfaces/      # Contract interfaces
+├── adapters/        # External protocol adapters
+├── integrations/    # Orchestrator, advanced integration contracts
 └── security/        # Timelock, circuit breaker, rate limiter, MEV protection
 
 noir/                # Noir ZK circuits (shielded_pool, nullifiers, transfers, etc.)
 sdk/                 # TypeScript SDK (viem-based clients)
 sdk/experimental/    # Experimental modules (fhe, pqc, mpc, recursive, zkSystems)
 certora/             # Formal verification specs (CVL)
-test/                # Foundry + Hardhat tests (2298 passing)
+test/                # Foundry + Hardhat tests (2500+ passing)
 scripts/             # Deployment scripts
 ```
 
@@ -340,7 +344,7 @@ Soul provides adapters for major cross-chain messaging:
 **Hashing:** Poseidon (ZK-friendly), Keccak256 (EVM-native)  
 **Signatures:** ECDSA with signature malleability protection  
 **Privacy:** Stealth addresses, domain-separated nullifiers (CDNA)  
-**Circuits:** 12 Noir circuits (nullifiers, transfers, commitments, PC³, PBP, EASC)
+**Circuits:** 20 Noir circuits (nullifiers, transfers, commitments, PC³, PBP, EASC, ring signatures, compliance, shielded pool, balance proofs)
 
 ---
 
@@ -361,10 +365,10 @@ Soul provides adapters for major cross-chain messaging:
 
 ### Testing & Verification
 
-**2298 tests passing** across unit, integration, fuzz, and property-based testing.
+**2500+ tests passing** across unit, integration, fuzz, and property-based testing.
 
 ```bash
-forge test -vv                              # All tests (2298 passing)
+forge test -vv                              # All tests (2500+ passing)
 forge test --match-path "test/fuzz/*"        # Fuzz tests
 forge test --match-path "test/verifiers/*"   # Verifier registry + adapter tests
 forge test --match-path "test/upgradeable/*" # UUPS proxy tests

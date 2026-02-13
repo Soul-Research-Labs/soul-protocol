@@ -48,13 +48,18 @@ CIRCUITS=(
     "cross_domain_nullifier"
     "container"
     "state_transfer"
-    "proof_carrying_container"
     "policy_bound_proof"
     "aggregator"
     "compliance_proof"
     "policy"
-    "pqc_verifier"
-    "invariant_checker"
+    "balance_proof"
+    "private_transfer"
+    "swap_proof"
+    "shielded_pool"
+    "sanctions_check"
+    "accredited_investor"
+    "encrypted_transfer"
+    "ring_signature"
 )
 
 # Filter to specific circuit if provided
