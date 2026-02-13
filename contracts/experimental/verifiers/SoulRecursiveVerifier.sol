@@ -83,7 +83,6 @@ contract SoulRecursiveVerifier is Ownable, ReentrancyGuard, Pausable {
     error MaxMustBeLessThanMin();
     error MaxTooLarge();
 
-
     // ============================================
     // Events
     // ============================================
@@ -155,7 +154,6 @@ contract SoulRecursiveVerifier is Ownable, ReentrancyGuard, Pausable {
             if (usedNullifiers[nullifiers[i]]) revert NullifierAlreadyUsed();
         }
 
-
         // Compute batch ID
         batchId = keccak256(
             abi.encode(
@@ -168,12 +166,10 @@ contract SoulRecursiveVerifier is Ownable, ReentrancyGuard, Pausable {
 
         if (verifiedBatches[batchId]) revert BatchAlreadyVerified();
 
-
         // Verify the proof
         bytes32 proofHash = keccak256(abi.encode(proofData));
         bool valid = _verifyAggregatedProof(proof, proofHash, proofData);
         if (!valid) revert InvalidAggregatedProof();
-
 
         // Mark batch as verified
         verifiedBatches[batchId] = true;
@@ -229,7 +225,6 @@ contract SoulRecursiveVerifier is Ownable, ReentrancyGuard, Pausable {
     ) external nonReentrant whenNotPaused returns (bytes32 proofId) {
         if (usedNullifiers[nullifier]) revert NullifierAlreadyUsed();
 
-
         proofId = keccak256(abi.encode(nullifier, commitment, block.number));
 
         // Verify proof
@@ -240,7 +235,6 @@ contract SoulRecursiveVerifier is Ownable, ReentrancyGuard, Pausable {
             publicInputs
         );
         if (!valid) revert InvalidProof();
-
 
         // Mark nullifier as used
         usedNullifiers[nullifier] = true;

@@ -23,12 +23,12 @@ contract TestableEthereumL1Bridge is EthereumL1Bridge {
 contract EthereumL1BridgeExtendedFuzz is Test {
     TestableEthereumL1Bridge public bridge;
 
-    address public admin    = address(0xA);
-    address public relayer  = address(0xB);
+    address public admin = address(0xA);
+    address public relayer = address(0xB);
     address public operator = address(0xC);
     address public guardian = address(0xD);
-    address public user1    = address(0xF1);
-    address public user2    = address(0xF2);
+    address public user1 = address(0xF1);
+    address public user2 = address(0xF2);
 
     bytes32 internal RELAYER_ROLE;
     bytes32 internal OPERATOR_ROLE;
@@ -38,7 +38,7 @@ contract EthereumL1BridgeExtendedFuzz is Test {
         vm.prank(admin);
         bridge = new TestableEthereumL1Bridge();
 
-        RELAYER_ROLE  = bridge.RELAYER_ROLE();
+        RELAYER_ROLE = bridge.RELAYER_ROLE();
         OPERATOR_ROLE = bridge.OPERATOR_ROLE();
         GUARDIAN_ROLE = bridge.GUARDIAN_ROLE();
 
@@ -48,10 +48,10 @@ contract EthereumL1BridgeExtendedFuzz is Test {
         bridge.grantRole(GUARDIAN_ROLE, guardian);
         vm.stopPrank();
 
-        vm.deal(relayer,  100 ether);
-        vm.deal(user1,    100 ether);
-        vm.deal(user2,    100 ether);
-        vm.deal(guardian,  10 ether);
+        vm.deal(relayer, 100 ether);
+        vm.deal(user1, 100 ether);
+        vm.deal(user2, 100 ether);
+        vm.deal(guardian, 10 ether);
     }
 
     // =====================================================================
@@ -98,7 +98,12 @@ contract EthereumL1BridgeExtendedFuzz is Test {
 
     function test_setChainEnabledUnsupportedReverts() public {
         vm.prank(operator);
-        vm.expectRevert(abi.encodeWithSelector(EthereumL1Bridge.ChainNotSupported.selector, 12345));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                EthereumL1Bridge.ChainNotSupported.selector,
+                12345
+            )
+        );
         bridge.setChainEnabled(12345, true);
     }
 
@@ -116,11 +121,18 @@ contract EthereumL1BridgeExtendedFuzz is Test {
 
         uint256 prev = bridge.totalCommitments();
         vm.prank(relayer);
-        bridge.submitStateCommitment{value: 0.1 ether}(42161, stateRoot, proofRoot, blockNum);
+        bridge.submitStateCommitment{value: 0.1 ether}(
+            42161,
+            stateRoot,
+            proofRoot,
+            blockNum
+        );
         assertEq(bridge.totalCommitments(), prev + 1);
     }
 
-    function testFuzz_submitStateCommitment_insufficientBond(uint256 bondAmt) public {
+    function testFuzz_submitStateCommitment_insufficientBond(
+        uint256 bondAmt
+    ) public {
         uint256 minBond = bridge.minSubmissionBond();
         bondAmt = bound(bondAmt, 0, minBond - 1);
         vm.expectRevert(
@@ -131,41 +143,86 @@ contract EthereumL1BridgeExtendedFuzz is Test {
             )
         );
         vm.prank(relayer);
-        bridge.submitStateCommitment{value: bondAmt}(42161, bytes32(uint256(1)), bytes32(uint256(2)), 100);
+        bridge.submitStateCommitment{value: bondAmt}(
+            42161,
+            bytes32(uint256(1)),
+            bytes32(uint256(2)),
+            100
+        );
     }
 
     function test_submitStateCommitment_unsupportedChainReverts() public {
         vm.prank(relayer);
-        vm.expectRevert(abi.encodeWithSelector(EthereumL1Bridge.ChainNotSupported.selector, 12345));
-        bridge.submitStateCommitment{value: 0.1 ether}(12345, bytes32(uint256(1)), bytes32(uint256(2)), 100);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                EthereumL1Bridge.ChainNotSupported.selector,
+                12345
+            )
+        );
+        bridge.submitStateCommitment{value: 0.1 ether}(
+            12345,
+            bytes32(uint256(1)),
+            bytes32(uint256(2)),
+            100
+        );
     }
 
     function test_submitStateCommitment_noRelayerReverts() public {
         vm.prank(user1);
         vm.expectRevert();
-        bridge.submitStateCommitment{value: 0.1 ether}(42161, bytes32(uint256(1)), bytes32(uint256(2)), 100);
+        bridge.submitStateCommitment{value: 0.1 ether}(
+            42161,
+            bytes32(uint256(1)),
+            bytes32(uint256(2)),
+            100
+        );
     }
 
     function test_submitStateCommitment_disabledChainReverts() public {
         vm.prank(operator);
         bridge.setChainEnabled(42161, false);
         vm.prank(relayer);
-        vm.expectRevert(abi.encodeWithSelector(EthereumL1Bridge.ChainNotEnabled.selector, 42161));
-        bridge.submitStateCommitment{value: 0.1 ether}(42161, bytes32(uint256(1)), bytes32(uint256(2)), 100);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                EthereumL1Bridge.ChainNotEnabled.selector,
+                42161
+            )
+        );
+        bridge.submitStateCommitment{value: 0.1 ether}(
+            42161,
+            bytes32(uint256(1)),
+            bytes32(uint256(2)),
+            100
+        );
     }
 
     function test_submitStateCommitment_duplicateReverts() public {
         vm.prank(relayer);
-        bridge.submitStateCommitment{value: 0.1 ether}(42161, bytes32(uint256(1)), bytes32(uint256(2)), 100);
+        bridge.submitStateCommitment{value: 0.1 ether}(
+            42161,
+            bytes32(uint256(1)),
+            bytes32(uint256(2)),
+            100
+        );
         vm.prank(relayer);
         vm.expectRevert();
-        bridge.submitStateCommitment{value: 0.1 ether}(42161, bytes32(uint256(1)), bytes32(uint256(2)), 100);
+        bridge.submitStateCommitment{value: 0.1 ether}(
+            42161,
+            bytes32(uint256(1)),
+            bytes32(uint256(2)),
+            100
+        );
     }
 
     function test_submitStateCommitment_zkRollupInstantFinality() public {
         bytes32 stateRoot = bytes32(uint256(42));
         vm.prank(relayer);
-        bridge.submitStateCommitment{value: 0.1 ether}(324, stateRoot, bytes32(uint256(2)), 100);
+        bridge.submitStateCommitment{value: 0.1 ether}(
+            324,
+            stateRoot,
+            bytes32(uint256(2)),
+            100
+        );
         assertEq(bridge.getLatestStateRoot(324), stateRoot);
     }
 
@@ -178,17 +235,33 @@ contract EthereumL1BridgeExtendedFuzz is Test {
         bytes32 stateRoot,
         bytes32 proofRoot
     ) public {
-        vm.assume(blobHash != bytes32(0) && stateRoot != bytes32(0) && proofRoot != bytes32(0));
+        vm.assume(
+            blobHash != bytes32(0) &&
+                stateRoot != bytes32(0) &&
+                proofRoot != bytes32(0)
+        );
         bridge.setMockBlobHash(blobHash);
         vm.prank(relayer);
-        bridge.submitStateCommitmentWithBlob{value: 0.1 ether}(42161, stateRoot, proofRoot, 100, 0);
+        bridge.submitStateCommitmentWithBlob{value: 0.1 ether}(
+            42161,
+            stateRoot,
+            proofRoot,
+            100,
+            0
+        );
     }
 
     function test_submitStateCommitmentWithBlobZeroBlobReverts() public {
         bridge.setMockBlobHash(bytes32(0));
         vm.prank(relayer);
         vm.expectRevert(EthereumL1Bridge.InvalidBlobIndex.selector);
-        bridge.submitStateCommitmentWithBlob{value: 0.1 ether}(42161, bytes32(uint256(1)), bytes32(uint256(2)), 100, 0);
+        bridge.submitStateCommitmentWithBlob{value: 0.1 ether}(
+            42161,
+            bytes32(uint256(1)),
+            bytes32(uint256(2)),
+            100,
+            0
+        );
     }
 
     // =====================================================================
@@ -243,7 +316,11 @@ contract EthereumL1BridgeExtendedFuzz is Test {
         uint256 submitterBal = relayer.balance;
         vm.prank(guardian);
         bridge.resolveChallenge(cId, false);
-        assertGt(relayer.balance, submitterBal, "submitter should receive challenger bond");
+        assertGt(
+            relayer.balance,
+            submitterBal,
+            "submitter should receive challenger bond"
+        );
     }
 
     function test_resolveChallenge_nonGuardianReverts() public {
@@ -259,7 +336,12 @@ contract EthereumL1BridgeExtendedFuzz is Test {
     function test_resolveChallenge_notChallengedReverts() public {
         bytes32 cId = _submitOptimistic(42161, bytes32(uint256(1)));
         vm.prank(guardian);
-        vm.expectRevert(abi.encodeWithSelector(EthereumL1Bridge.CommitmentNotChallenged.selector, cId));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                EthereumL1Bridge.CommitmentNotChallenged.selector,
+                cId
+            )
+        );
         bridge.resolveChallenge(cId, true);
     }
 
@@ -304,14 +386,24 @@ contract EthereumL1BridgeExtendedFuzz is Test {
     }
 
     function test_depositETH_zeroCommitmentReverts() public {
-        vm.expectRevert(abi.encodeWithSelector(EthereumL1Bridge.InvalidCommitment.selector, bytes32(0)));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                EthereumL1Bridge.InvalidCommitment.selector,
+                bytes32(0)
+            )
+        );
         vm.prank(user1);
         bridge.depositETH{value: 1 ether}(42161, bytes32(0));
     }
 
     function test_depositETH_unsupportedChainReverts() public {
         vm.prank(user1);
-        vm.expectRevert(abi.encodeWithSelector(EthereumL1Bridge.ChainNotSupported.selector, 99999));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                EthereumL1Bridge.ChainNotSupported.selector,
+                99999
+            )
+        );
         bridge.depositETH{value: 1 ether}(99999, bytes32(uint256(1)));
     }
 
@@ -319,7 +411,12 @@ contract EthereumL1BridgeExtendedFuzz is Test {
         vm.prank(operator);
         bridge.setChainEnabled(42161, false);
         vm.prank(user1);
-        vm.expectRevert(abi.encodeWithSelector(EthereumL1Bridge.ChainNotEnabled.selector, 42161));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                EthereumL1Bridge.ChainNotEnabled.selector,
+                42161
+            )
+        );
         bridge.depositETH{value: 1 ether}(42161, bytes32(uint256(1)));
     }
 
@@ -335,7 +432,10 @@ contract EthereumL1BridgeExtendedFuzz is Test {
     // Section 7 — Withdrawals with Merkle Proof
     // =====================================================================
 
-    function testFuzz_initiateWithdrawal_validProof(bytes32 nullifier, uint256 amount) public {
+    function testFuzz_initiateWithdrawal_validProof(
+        bytes32 nullifier,
+        uint256 amount
+    ) public {
         vm.assume(nullifier != bytes32(0));
         amount = bound(amount, 1, 50 ether);
 
@@ -369,7 +469,12 @@ contract EthereumL1BridgeExtendedFuzz is Test {
         bridge.initiateWithdrawal(42161, amount, nullifier, proof);
 
         vm.prank(user2);
-        vm.expectRevert(abi.encodeWithSelector(EthereumL1Bridge.NullifierAlreadyUsed.selector, nullifier));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                EthereumL1Bridge.NullifierAlreadyUsed.selector,
+                nullifier
+            )
+        );
         bridge.initiateWithdrawal(42161, amount, nullifier, proof);
     }
 
@@ -404,7 +509,7 @@ contract EthereumL1BridgeExtendedFuzz is Test {
     // =====================================================================
 
     function test_finalizeAndClaim_optimistic() public {
-        (bytes32 wId,) = _setupWithdrawal(42161, 1 ether);
+        (bytes32 wId, ) = _setupWithdrawal(42161, 1 ether);
 
         // Before challenge period — cannot finalize
         vm.expectRevert();
@@ -420,13 +525,18 @@ contract EthereumL1BridgeExtendedFuzz is Test {
     }
 
     function test_claimWithdrawal_notFinalizedReverts() public {
-        (bytes32 wId,) = _setupWithdrawal(42161, 1 ether);
-        vm.expectRevert(abi.encodeWithSelector(EthereumL1Bridge.WithdrawalNotFinalized.selector, wId));
+        (bytes32 wId, ) = _setupWithdrawal(42161, 1 ether);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                EthereumL1Bridge.WithdrawalNotFinalized.selector,
+                wId
+            )
+        );
         bridge.claimWithdrawal(wId);
     }
 
     function test_claimWithdrawal_doubleClaimReverts() public {
-        (bytes32 wId,) = _setupWithdrawal(42161, 1 ether);
+        (bytes32 wId, ) = _setupWithdrawal(42161, 1 ether);
         EthereumL1Bridge.L2Config memory cfg = bridge.getL2Config(42161);
         vm.warp(block.timestamp + cfg.challengePeriod + 1);
         bridge.finalizeWithdrawal(wId);
@@ -437,7 +547,7 @@ contract EthereumL1BridgeExtendedFuzz is Test {
     }
 
     function test_finalizeAndClaim_zkRollupInstant() public {
-        (bytes32 wId,) = _setupWithdrawal(324, 1 ether);
+        (bytes32 wId, ) = _setupWithdrawal(324, 1 ether);
         // ZK rollup → already finalized
         uint256 bal = user1.balance;
         bridge.claimWithdrawal(wId);
@@ -492,12 +602,22 @@ contract EthereumL1BridgeExtendedFuzz is Test {
 
         for (uint256 i = 1; i <= 3; i++) {
             vm.prank(relayer);
-            bridge.submitStateCommitment{value: 0.1 ether}(42161, bytes32(i), bytes32(i + 100), i);
+            bridge.submitStateCommitment{value: 0.1 ether}(
+                42161,
+                bytes32(i),
+                bytes32(i + 100),
+                i
+            );
         }
 
         vm.prank(relayer);
         vm.expectRevert(EthereumL1Bridge.RateLimitExceeded.selector);
-        bridge.submitStateCommitment{value: 0.1 ether}(42161, bytes32(uint256(4)), bytes32(uint256(104)), 4);
+        bridge.submitStateCommitment{value: 0.1 ether}(
+            42161,
+            bytes32(uint256(4)),
+            bytes32(uint256(104)),
+            4
+        );
     }
 
     function test_rateLimit_resetsAfterOneHour() public {
@@ -506,12 +626,22 @@ contract EthereumL1BridgeExtendedFuzz is Test {
 
         for (uint256 i = 1; i <= 2; i++) {
             vm.prank(relayer);
-            bridge.submitStateCommitment{value: 0.1 ether}(42161, bytes32(i), bytes32(i + 100), i);
+            bridge.submitStateCommitment{value: 0.1 ether}(
+                42161,
+                bytes32(i),
+                bytes32(i + 100),
+                i
+            );
         }
 
         vm.warp(block.timestamp + 1 hours);
         vm.prank(relayer);
-        bridge.submitStateCommitment{value: 0.1 ether}(42161, bytes32(uint256(10)), bytes32(uint256(110)), 10);
+        bridge.submitStateCommitment{value: 0.1 ether}(
+            42161,
+            bytes32(uint256(10)),
+            bytes32(uint256(110)),
+            10
+        );
     }
 
     // =====================================================================
@@ -544,12 +674,17 @@ contract EthereumL1BridgeExtendedFuzz is Test {
         bridge.pause();
         vm.prank(relayer);
         vm.expectRevert();
-        bridge.submitStateCommitment{value: 0.1 ether}(42161, bytes32(uint256(1)), bytes32(uint256(2)), 100);
+        bridge.submitStateCommitment{value: 0.1 ether}(
+            42161,
+            bytes32(uint256(1)),
+            bytes32(uint256(2)),
+            100
+        );
     }
 
     function test_receiveETH() public {
         vm.prank(user1);
-        (bool ok,) = address(bridge).call{value: 1 ether}("");
+        (bool ok, ) = address(bridge).call{value: 1 ether}("");
         assertTrue(ok, "bridge accepts raw ETH");
     }
 
@@ -557,7 +692,10 @@ contract EthereumL1BridgeExtendedFuzz is Test {
     // Section 12 — Multi-depth Merkle proof fuzz
     // =====================================================================
 
-    function testFuzz_merkleProof_depth2(bytes32 nullifier, uint256 amount) public {
+    function testFuzz_merkleProof_depth2(
+        bytes32 nullifier,
+        uint256 amount
+    ) public {
         vm.assume(nullifier != bytes32(0));
         amount = bound(amount, 1, 10 ether);
 
@@ -583,28 +721,49 @@ contract EthereumL1BridgeExtendedFuzz is Test {
     // Helpers
     // =====================================================================
 
-    function _makeL2Config(uint256 chainId) internal pure returns (EthereumL1Bridge.L2Config memory) {
-        return EthereumL1Bridge.L2Config({
-            chainId: chainId,
-            name: "TestL2",
-            rollupType: EthereumL1Bridge.RollupType.OPTIMISTIC,
-            canonicalBridge: address(0x1),
-            messenger: address(0x2),
-            stateCommitmentChain: address(0x3),
-            challengePeriod: 7 days,
-            confirmationBlocks: 10,
-            enabled: true,
-            gasLimit: 200000,
-            lastSyncedBlock: 0
-        });
+    function _makeL2Config(
+        uint256 chainId
+    ) internal pure returns (EthereumL1Bridge.L2Config memory) {
+        return
+            EthereumL1Bridge.L2Config({
+                chainId: chainId,
+                name: "TestL2",
+                rollupType: EthereumL1Bridge.RollupType.OPTIMISTIC,
+                canonicalBridge: address(0x1),
+                messenger: address(0x2),
+                stateCommitmentChain: address(0x3),
+                challengePeriod: 7 days,
+                confirmationBlocks: 10,
+                enabled: true,
+                gasLimit: 200000,
+                lastSyncedBlock: 0
+            });
     }
 
-    function _submitOptimistic(uint256 chainId, bytes32 stateRoot) internal returns (bytes32) {
+    function _submitOptimistic(
+        uint256 chainId,
+        bytes32 stateRoot
+    ) internal returns (bytes32) {
         bytes32 proofRoot = keccak256(abi.encodePacked(stateRoot, "proof"));
         uint256 blockNum = 100;
         vm.prank(relayer);
-        bridge.submitStateCommitment{value: 0.1 ether}(chainId, stateRoot, proofRoot, blockNum);
-        return keccak256(abi.encodePacked(chainId, stateRoot, proofRoot, blockNum, block.timestamp, bytes32(0)));
+        bridge.submitStateCommitment{value: 0.1 ether}(
+            chainId,
+            stateRoot,
+            proofRoot,
+            blockNum
+        );
+        return
+            keccak256(
+                abi.encodePacked(
+                    chainId,
+                    stateRoot,
+                    proofRoot,
+                    blockNum,
+                    block.timestamp,
+                    bytes32(0)
+                )
+            );
     }
 
     function _finalizeStateRoot(uint256 chainId, bytes32 stateRoot) internal {
@@ -613,17 +772,36 @@ contract EthereumL1BridgeExtendedFuzz is Test {
         EthereumL1Bridge.L2Config memory cfg = bridge.getL2Config(chainId);
 
         vm.prank(relayer);
-        bridge.submitStateCommitment{value: 0.1 ether}(chainId, stateRoot, proofRoot, blockNum);
+        bridge.submitStateCommitment{value: 0.1 ether}(
+            chainId,
+            stateRoot,
+            proofRoot,
+            blockNum
+        );
 
         if (cfg.rollupType != EthereumL1Bridge.RollupType.ZK_ROLLUP) {
-            bytes32 cId = keccak256(abi.encodePacked(chainId, stateRoot, proofRoot, blockNum, block.timestamp, bytes32(0)));
+            bytes32 cId = keccak256(
+                abi.encodePacked(
+                    chainId,
+                    stateRoot,
+                    proofRoot,
+                    blockNum,
+                    block.timestamp,
+                    bytes32(0)
+                )
+            );
             vm.warp(block.timestamp + cfg.challengePeriod + 1);
             bridge.finalizeCommitment(cId);
         }
     }
 
-    function _setupWithdrawal(uint256 chainId, uint256 amount) internal returns (bytes32, bytes32) {
-        bytes32 nullifier = keccak256(abi.encodePacked("null", chainId, amount));
+    function _setupWithdrawal(
+        uint256 chainId,
+        uint256 amount
+    ) internal returns (bytes32, bytes32) {
+        bytes32 nullifier = keccak256(
+            abi.encodePacked("null", chainId, amount)
+        );
         bytes32 leaf = keccak256(abi.encodePacked(nullifier, amount));
         bytes32 sibling = keccak256("sibling");
         bytes32 root = _hashPair(leaf, sibling);
@@ -636,13 +814,16 @@ contract EthereumL1BridgeExtendedFuzz is Test {
         vm.prank(user1);
         bridge.initiateWithdrawal(chainId, amount, nullifier, proof);
 
-        bytes32 wId = keccak256(abi.encodePacked(user1, chainId, amount, nullifier, block.timestamp));
+        bytes32 wId = keccak256(
+            abi.encodePacked(user1, chainId, amount, nullifier, block.timestamp)
+        );
         return (wId, nullifier);
     }
 
     function _hashPair(bytes32 a, bytes32 b) internal pure returns (bytes32) {
-        return a < b
-            ? keccak256(abi.encodePacked(a, b))
-            : keccak256(abi.encodePacked(b, a));
+        return
+            a < b
+                ? keccak256(abi.encodePacked(a, b))
+                : keccak256(abi.encodePacked(b, a));
     }
 }

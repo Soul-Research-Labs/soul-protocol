@@ -3,7 +3,6 @@ pragma solidity ^0.8.24;
 
 error InvalidLength();
 
-
 /// @title ConstantTimeOperations
 /// @notice Library providing constant-time operations to prevent timing side-channel attacks
 /// @dev Critical for privacy-preserving operations where timing leaks could reveal secrets
