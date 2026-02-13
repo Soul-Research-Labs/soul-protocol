@@ -191,6 +191,7 @@ contract AddedSecurityOrchestrator is AccessControl, ReentrancyGuard, Pausable {
     function setRuntimeMonitor(
         address _runtimeMonitor
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_runtimeMonitor == address(0)) revert ZeroAddress();
         runtimeMonitor = _runtimeMonitor;
         emit ModuleConfigured("RuntimeSecurityMonitor", _runtimeMonitor);
     }
@@ -201,6 +202,7 @@ contract AddedSecurityOrchestrator is AccessControl, ReentrancyGuard, Pausable {
     function setEmergencyResponse(
         address _emergencyResponse
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_emergencyResponse == address(0)) revert ZeroAddress();
         emergencyResponse = _emergencyResponse;
         emit ModuleConfigured(
             "EmergencyResponseAutomation",
@@ -214,6 +216,7 @@ contract AddedSecurityOrchestrator is AccessControl, ReentrancyGuard, Pausable {
     function setZKFraudProof(
         address _zkFraudProof
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_zkFraudProof == address(0)) revert ZeroAddress();
         zkFraudProof = _zkFraudProof;
         emit ModuleConfigured("ZKFraudProof", _zkFraudProof);
     }
@@ -224,6 +227,7 @@ contract AddedSecurityOrchestrator is AccessControl, ReentrancyGuard, Pausable {
     function setThresholdSignature(
         address _thresholdSignature
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_thresholdSignature == address(0)) revert ZeroAddress();
         thresholdSignature = _thresholdSignature;
         emit ModuleConfigured("ThresholdSignature", _thresholdSignature);
     }
@@ -234,6 +238,7 @@ contract AddedSecurityOrchestrator is AccessControl, ReentrancyGuard, Pausable {
     function setCryptoAttestation(
         address _cryptoAttestation
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_cryptoAttestation == address(0)) revert ZeroAddress();
         cryptoAttestation = _cryptoAttestation;
         emit ModuleConfigured("CryptographicAttestation", _cryptoAttestation);
     }
@@ -244,6 +249,7 @@ contract AddedSecurityOrchestrator is AccessControl, ReentrancyGuard, Pausable {
     function setBugBounty(
         address _bugBounty
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_bugBounty == address(0)) revert ZeroAddress();
         bugBounty = _bugBounty;
         emit ModuleConfigured("FormalBugBounty", _bugBounty);
     }
@@ -254,6 +260,7 @@ contract AddedSecurityOrchestrator is AccessControl, ReentrancyGuard, Pausable {
     function setCircuitBreaker(
         address _circuitBreaker
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_circuitBreaker == address(0)) revert ZeroAddress();
         circuitBreaker = _circuitBreaker;
         emit ModuleConfigured("CircuitBreaker", _circuitBreaker);
     }
@@ -264,6 +271,7 @@ contract AddedSecurityOrchestrator is AccessControl, ReentrancyGuard, Pausable {
     function setRateLimiter(
         address _rateLimiter
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_rateLimiter == address(0)) revert ZeroAddress();
         rateLimiter = _rateLimiter;
         emit ModuleConfigured("RateLimiter", _rateLimiter);
     }
@@ -274,6 +282,7 @@ contract AddedSecurityOrchestrator is AccessControl, ReentrancyGuard, Pausable {
     function setMEVProtection(
         address _mevProtection
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_mevProtection == address(0)) revert ZeroAddress();
         mevProtection = _mevProtection;
         emit ModuleConfigured("MEVProtection", _mevProtection);
     }
@@ -284,6 +293,7 @@ contract AddedSecurityOrchestrator is AccessControl, ReentrancyGuard, Pausable {
     function setFlashLoanGuard(
         address _flashLoanGuard
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_flashLoanGuard == address(0)) revert ZeroAddress();
         flashLoanGuard = _flashLoanGuard;
         emit ModuleConfigured("FlashLoanGuard", _flashLoanGuard);
     }

@@ -366,7 +366,7 @@ contract HyperlaneAdapterTest is Test {
     /* ── Helper ──────────────────────────────────────── */
 
     function _getThreshold(uint32 domain) internal view returns (uint8) {
-        (uint8 threshold,) = adapter.multisigParams(domain);
+        (uint8 threshold, ) = adapter.multisigParams(domain);
         return threshold;
     }
 }
