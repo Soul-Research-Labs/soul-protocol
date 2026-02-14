@@ -213,12 +213,16 @@ library UniversalChainRegistry {
         uint256 temp = value;
         uint256 digits;
         while (temp != 0) {
-            unchecked { ++digits; }
+            unchecked {
+                ++digits;
+            }
             temp /= 10;
         }
         bytes memory buffer = new bytes(digits);
         while (value != 0) {
-            unchecked { --digits; }
+            unchecked {
+                --digits;
+            }
             buffer[digits] = bytes1(uint8(48 + (value % 10)));
             value /= 10;
         }

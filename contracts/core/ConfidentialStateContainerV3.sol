@@ -863,7 +863,11 @@ contract ConfidentialStateContainerV3 is
         state.status = StateStatus.Locked;
         state.updatedAt = uint48(block.timestamp);
 
-        emit StateStatusChanged(commitment, StateStatus.Active, StateStatus.Locked);
+        emit StateStatusChanged(
+            commitment,
+            StateStatus.Active,
+            StateStatus.Locked
+        );
     }
 
     /// @notice Unlocks a previously locked state
@@ -878,7 +882,11 @@ contract ConfidentialStateContainerV3 is
         state.status = StateStatus.Active;
         state.updatedAt = uint48(block.timestamp);
 
-        emit StateStatusChanged(commitment, StateStatus.Locked, StateStatus.Active);
+        emit StateStatusChanged(
+            commitment,
+            StateStatus.Locked,
+            StateStatus.Active
+        );
     }
 
     /// @notice Freezes a state (compliance action)

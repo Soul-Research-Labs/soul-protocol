@@ -100,7 +100,8 @@ contract NullifierRegistryV3 is AccessControl, Pausable {
 
     /// @dev DEPRECATED: pendingCrossChainNullifiers removed (was never written to)
     /// Storage slot preserved for upgrade compatibility
-    mapping(bytes32 => bytes32[]) private __deprecated_pendingCrossChainNullifiers;
+    mapping(bytes32 => bytes32[])
+        private __deprecated_pendingCrossChainNullifiers;
 
     /// @notice Chain ID for this deployment
     uint256 public immutable CHAIN_ID;

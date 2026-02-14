@@ -227,9 +227,7 @@ contract SoulAtomicSwapV2Test is Test {
         assertEq(bob.balance - bobBalBefore, netAmount);
 
         // Status should be Claimed
-        (, , , , , , SoulAtomicSwapV2.SwapStatus status, ) = swap.swaps(
-            swapId
-        );
+        (, , , , , , SoulAtomicSwapV2.SwapStatus status, ) = swap.swaps(swapId);
         assertEq(uint8(status), uint8(SoulAtomicSwapV2.SwapStatus.Claimed));
     }
 
@@ -343,9 +341,7 @@ contract SoulAtomicSwapV2Test is Test {
         uint256 netAmount = 1 ether - ((1 ether * 10) / 10000);
         assertEq(alice.balance - aliceBalBefore, netAmount);
 
-        (, , , , , , SoulAtomicSwapV2.SwapStatus status, ) = swap.swaps(
-            swapId
-        );
+        (, , , , , , SoulAtomicSwapV2.SwapStatus status, ) = swap.swaps(swapId);
         assertEq(uint8(status), uint8(SoulAtomicSwapV2.SwapStatus.Refunded));
     }
 

@@ -24,10 +24,7 @@ contract SoulConstantsTest is Test {
     }
 
     function test_announcerRole_matchesKeccak() public pure {
-        assertEq(
-            SoulConstants.ANNOUNCER_ROLE,
-            keccak256("ANNOUNCER_ROLE")
-        );
+        assertEq(SoulConstants.ANNOUNCER_ROLE, keccak256("ANNOUNCER_ROLE"));
     }
 
     function test_executorRole_matchesKeccak() public pure {

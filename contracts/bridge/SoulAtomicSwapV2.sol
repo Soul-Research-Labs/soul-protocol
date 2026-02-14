@@ -427,11 +427,7 @@ contract SoulAtomicSwapV2 is
     }
 
     /// @dev Transfer ETH or ERC20 tokens to a recipient
-    function _transferOut(
-        address token,
-        address to,
-        uint256 amount
-    ) internal {
+    function _transferOut(address token, address to, uint256 amount) internal {
         if (token == address(0)) {
             (bool success, ) = to.call{value: amount}("");
             if (!success) revert TransferFailed();

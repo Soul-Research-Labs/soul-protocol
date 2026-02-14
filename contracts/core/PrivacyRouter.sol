@@ -668,8 +668,7 @@ contract PrivacyRouter is AccessControl, ReentrancyGuard, Pausable {
                 revert ComplianceCheckFailed(user);
             {
                 bool meets = abi.decode(tResult, (bool));
-                if (!meets)
-                    revert InsufficientKYCTier(user, minimumKYCTier, 0);
+                if (!meets) revert InsufficientKYCTier(user, minimumKYCTier, 0);
             }
         }
     }

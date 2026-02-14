@@ -141,9 +141,7 @@ contract UniversalChainRegistryTest is Test {
     }
 
     function test_computeEVMChainId_matchesSha256() public view {
-        bytes32 expected = sha256(
-            abi.encodePacked("SOUL_CHAIN_", "1")
-        );
+        bytes32 expected = sha256(abi.encodePacked("SOUL_CHAIN_", "1"));
         assertEq(lib.computeEVMChainId(1), expected);
     }
 
