@@ -1014,6 +1014,7 @@ contract EthereumL1Bridge is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Get supported chain IDs
+     * @return Array of all registered L2 chain IDs
      */
     function getSupportedChainIds() external view returns (uint256[] memory) {
         return supportedChainIds;
@@ -1021,6 +1022,8 @@ contract EthereumL1Bridge is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Get L2 chain configuration
+     * @param chainId The L2 chain ID to query
+     * @return The L2Config struct for the given chain
      */
     function getL2Config(
         uint256 chainId
@@ -1030,6 +1033,8 @@ contract EthereumL1Bridge is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Check if a chain is supported
+     * @param chainId The chain ID to check
+     * @return True if the chain is configured and enabled
      */
     function isChainSupported(uint256 chainId) external view returns (bool) {
         return l2Configs[chainId].chainId != 0 && l2Configs[chainId].enabled;
@@ -1037,6 +1042,8 @@ contract EthereumL1Bridge is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Get latest state root for a chain
+     * @param chainId The L2 chain ID
+     * @return The most recently submitted state root
      */
     function getLatestStateRoot(
         uint256 chainId
@@ -1046,6 +1053,8 @@ contract EthereumL1Bridge is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Check if a nullifier has been used
+     * @param nullifier The nullifier hash to check
+     * @return True if the nullifier has already been spent
      */
     function isNullifierUsed(bytes32 nullifier) external view returns (bool) {
         return usedNullifiers[nullifier];
@@ -1057,6 +1066,7 @@ contract EthereumL1Bridge is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Set rate limit parameters
+     * @param _maxCommitmentsPerHour The maximum number of commitments allowed per hour
      */
     function setRateLimits(
         uint256 _maxCommitmentsPerHour
@@ -1066,6 +1076,7 @@ contract EthereumL1Bridge is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Set minimum submission bond
+     * @param _minBond The minimum bond amount submitters must deposit
      */
     function setMinSubmissionBond(
         uint256 _minBond
@@ -1075,6 +1086,7 @@ contract EthereumL1Bridge is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Set maximum commitments per hour
+     * @param _maxCommitments The new hourly commitment cap
      */
     function setMaxCommitmentsPerHour(
         uint256 _maxCommitments

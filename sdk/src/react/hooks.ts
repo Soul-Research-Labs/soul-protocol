@@ -163,7 +163,7 @@ export function useSoulPrivacy(config: SoulConfig): UseSoulPrivacyReturn {
         const result = await client.createLock({
           stateCommitment: params.commitment as Hex,
           predicateHash: params.asset as Hex,
-          policyHash: "0x" + "00".repeat(32) as Hex,
+          policyHash: ("0x" + "00".repeat(32)) as Hex,
           deadline: BigInt(Math.floor(Date.now() / 1000) + 3600),
         });
         return result.txHash as string;
@@ -296,9 +296,7 @@ export function useSoulProver(config: SoulConfig): UseSoulProverReturn {
         if (!cancelled) proverRef.current = prover;
       } catch (err) {
         if (!cancelled) {
-          setError(
-            err instanceof Error ? err : new Error(String(err)),
-          );
+          setError(err instanceof Error ? err : new Error(String(err)));
         }
       }
     })();

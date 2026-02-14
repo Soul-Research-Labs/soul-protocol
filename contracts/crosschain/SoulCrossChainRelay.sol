@@ -389,10 +389,15 @@ contract SoulCrossChainRelay is AccessControl, ReentrancyGuard, Pausable {
     //  View functions
     // ──────────────────────────────────────────────
 
+    /// @notice Get all chain IDs supported by this relay
+    /// @return Array of supported chain IDs
     function getSupportedChains() external view returns (uint256[] memory) {
         return supportedChains;
     }
 
+    /// @notice Check whether a chain ID is supported and active
+    /// @param chainId The chain ID to query
+    /// @return True if the chain is supported and active
     function isChainSupported(uint256 chainId) external view returns (bool) {
         return chainConfigs[chainId].active;
     }
@@ -401,14 +406,18 @@ contract SoulCrossChainRelay is AccessControl, ReentrancyGuard, Pausable {
     //  Admin
     // ──────────────────────────────────────────────
 
+    /// @notice Pause cross-chain relay operations
     function pause() external onlyRole(OPERATOR_ROLE) {
         _pause();
     }
 
+    /// @notice Unpause cross-chain relay operations
     function unpause() external onlyRole(OPERATOR_ROLE) {
         _unpause();
     }
 
+    /// @notice Update the proof hub contract address
+    /// @param _proofHub The new proof hub address (must be non-zero)
     function updateProofHub(
         address _proofHub
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {

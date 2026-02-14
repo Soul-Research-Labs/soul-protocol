@@ -1,6 +1,6 @@
 /**
  * Soul Protocol - Noir ZK Prover
- * 
+ *
  * Client-side proof generation using Noir circuits and Barretenberg.
  * Supports browser (WASM) and Node.js environments.
  */
@@ -26,7 +26,13 @@ export interface CircuitArtifact {
 }
 
 export interface WitnessInput {
-  [key: string]: string | number | bigint | boolean | WitnessInput | WitnessInput[];
+  [key: string]:
+    | string
+    | number
+    | bigint
+    | boolean
+    | WitnessInput
+    | WitnessInput[];
 }
 
 /*//////////////////////////////////////////////////////////////
@@ -40,7 +46,7 @@ export interface WitnessInput {
  * - `'production'`: Throws if Barretenberg is unavailable or circuit artifacts
  *   are missing. Ensures only real cryptographic proofs are generated.
  */
-export type ProverMode = 'production' | 'development';
+export type ProverMode = "production" | "development";
 
 /**
  * Options for configuring a NoirProver instance.
@@ -124,7 +130,7 @@ export interface BalanceProofInputs {
 
 /**
  * Noir ZK Prover for Soul Protocol
- * 
+ *
  * Uses Barretenberg (bb) for proof generation.
  * Falls back to placeholder implementation if bb is not available.
  */
@@ -137,12 +143,12 @@ export class NoirProver {
   public readonly mode: ProverMode;
 
   constructor(options?: ProverOptions) {
-    this.mode = options?.mode ?? 'development';
+    this.mode = options?.mode ?? "development";
   }
 
   /**
    * Initialize the prover
-   * 
+   *
    * In production, this loads the Barretenberg WASM backend.
    * For development, uses a placeholder that returns mock proofs.
    */
@@ -156,10 +162,10 @@ export class NoirProver {
       this.backend = await Barretenberg.new();
       console.log("✅ Barretenberg backend initialized");
     } catch (e) {
-      if (this.mode === 'production') {
+      if (this.mode === "production") {
         throw new Error(
-          'Barretenberg backend unavailable — cannot initialize prover in production mode. ' +
-          'Install with: npm install @aztec/bb.js'
+          "Barretenberg backend unavailable — cannot initialize prover in production mode. " +
+            "Install with: npm install @aztec/bb.js",
         );
       }
       console.warn("⚠️ Barretenberg not available, using placeholder prover");
@@ -181,18 +187,24 @@ export class NoirProver {
       // Try to load from noir/target directory
       const fs = await import("fs/promises");
       const path = await import("path");
-      
-      const circuitPath = path.join(process.cwd(), "noir", circuit, "target", `${circuit}.json`);
+
+      const circuitPath = path.join(
+        process.cwd(),
+        "noir",
+        circuit,
+        "target",
+        `${circuit}.json`,
+      );
       const data = await fs.readFile(circuitPath, "utf-8");
       const artifact = JSON.parse(data) as CircuitArtifact;
-      
+
       this.circuits.set(circuit, artifact);
       return artifact;
     } catch (e) {
-      if (this.mode === 'production') {
+      if (this.mode === "production") {
         throw new Error(
           `Circuit ${circuit} not found — cannot load circuits in production mode. ` +
-          `Expected at: noir/${circuit}/target/${circuit}.json`
+            `Expected at: noir/${circuit}/target/${circuit}.json`,
         );
       }
       // Return placeholder artifact
@@ -211,7 +223,7 @@ export class NoirProver {
    */
   async generateProof<T extends WitnessInput>(
     circuit: Circuit,
-    inputs: T
+    inputs: T,
   ): Promise<ProofResult> {
     if (!this.initialized) {
       await this.initialize();
@@ -224,13 +236,13 @@ export class NoirProver {
       // Use real Barretenberg prover
       return await this.generateRealProof(artifact, inputs);
     } else {
-      if (this.mode === 'production') {
+      if (this.mode === "production") {
         throw new Error(
           `Cannot generate proof for ${circuit} in production mode: ` +
-          (!this.backend
-            ? 'Barretenberg backend unavailable'
-            : 'circuit artifact has no bytecode') +
-          '. Ensure @aztec/bb.js is installed and circuits are compiled.'
+            (!this.backend
+              ? "Barretenberg backend unavailable"
+              : "circuit artifact has no bytecode") +
+            ". Ensure @aztec/bb.js is installed and circuits are compiled.",
         );
       }
       // Use placeholder prover
@@ -243,7 +255,7 @@ export class NoirProver {
    */
   private async generateRealProof(
     artifact: CircuitArtifact,
-    inputs: WitnessInput
+    inputs: WitnessInput,
   ): Promise<ProofResult> {
     if (!this.backend) {
       throw new Error("Barretenberg backend not initialized");
@@ -254,7 +266,7 @@ export class NoirProver {
       const acirBuffer = Buffer.from(artifact.bytecode, "base64");
       const [exact, witness] = await this.backend.acirCreateWitness(
         acirBuffer,
-        this.flattenInputs(inputs)
+        this.flattenInputs(inputs),
       );
 
       // 2. Generate UltraPlonk proof
@@ -263,7 +275,7 @@ export class NoirProver {
       // 3. Extract public inputs from the ABI
       const publicInputs = this.extractPublicInputsFromAbi(
         artifact.abi,
-        inputs
+        inputs,
       );
 
       return {
@@ -275,7 +287,9 @@ export class NoirProver {
       // SECURITY: Do NOT silently fallback to placeholder proofs.
       // Re-throw the error — callers must handle proof generation failures explicitly.
       console.error(`Real proof generation failed: ${e.message}`);
-      throw new Error(`Proof generation failed for circuit: ${e.message}. Ensure Barretenberg and circuit artifacts are available.`);
+      throw new Error(
+        `Proof generation failed for circuit: ${e.message}. Ensure Barretenberg and circuit artifacts are available.`,
+      );
     }
   }
 
@@ -284,7 +298,7 @@ export class NoirProver {
    */
   private flattenInputs(
     inputs: WitnessInput,
-    prefix = ""
+    prefix = "",
   ): Map<string, string> {
     const flat = new Map<string, string>();
     for (const [key, val] of Object.entries(inputs)) {
@@ -302,33 +316,30 @@ export class NoirProver {
   /**
    * Extract public inputs from the circuit ABI definition
    */
-  private extractPublicInputsFromAbi(
-    abi: any,
-    inputs: WitnessInput
-  ): string[] {
+  private extractPublicInputsFromAbi(abi: any, inputs: WitnessInput): string[] {
     if (!abi?.parameters) return [];
     const publicParams = abi.parameters.filter(
-      (p: any) => p.visibility === "public"
+      (p: any) => p.visibility === "public",
     );
     return publicParams.map((p: any) => String(inputs[p.name] ?? "0"));
   }
 
   /**
    * Generate a placeholder proof for development/testing
-   * 
+   *
    * WARNING: These proofs are NOT cryptographically valid!
    * Only use for testing against mock verifiers.
    */
   private generatePlaceholderProof(
     circuit: Circuit,
-    inputs: WitnessInput
+    inputs: WitnessInput,
   ): ProofResult {
     // Create deterministic "proof" from inputs
     const inputString = JSON.stringify(inputs, (_, v) =>
-      typeof v === "bigint" ? v.toString() : v
+      typeof v === "bigint" ? v.toString() : v,
     );
     const inputHash = keccak256(encodePacked(["string"], [inputString]));
-    
+
     // Generate mock proof bytes (256 bytes for Groth16-like)
     const proofBytes = new Uint8Array(256);
     const hashBytes = Buffer.from(inputHash.slice(2), "hex");
@@ -349,15 +360,33 @@ export class NoirProver {
   /**
    * Extract public inputs based on circuit type
    */
-  private extractPublicInputs(circuit: Circuit, inputs: WitnessInput): string[] {
+  private extractPublicInputs(
+    circuit: Circuit,
+    inputs: WitnessInput,
+  ): string[] {
     switch (circuit) {
       case Circuit.StateCommitment:
-        // Public: commitment (derived from secret + nullifier)
+        // Public: commitment (derived from secret + nullifier when available)
         const sc = inputs as unknown as StateCommitmentInputs;
-        const commitment = keccak256(
-          encodePacked(["bytes32", "bytes32"], [sc.secret, sc.nullifier])
-        );
-        return [commitment];
+        if (sc.secret && sc.nullifier) {
+          const commitment = keccak256(
+            encodePacked(["bytes32", "bytes32"], [sc.secret, sc.nullifier]),
+          );
+          return [commitment];
+        }
+        // Fallback: hash all inputs
+        return [
+          keccak256(
+            encodePacked(
+              ["string"],
+              [
+                JSON.stringify(inputs, (_, v) =>
+                  typeof v === "bigint" ? v.toString() : v,
+                ),
+              ],
+            ),
+          ),
+        ];
 
       case Circuit.Nullifier:
         // Public: nullifier hash
@@ -373,7 +402,14 @@ export class NoirProver {
       default:
         // Return hash of all inputs as single public input
         const inputHash = keccak256(
-          encodePacked(["string"], [JSON.stringify(inputs)])
+          encodePacked(
+            ["string"],
+            [
+              JSON.stringify(inputs, (_, v) =>
+                typeof v === "bigint" ? v.toString() : v,
+              ),
+            ],
+          ),
         );
         return [inputHash];
     }
@@ -381,17 +417,17 @@ export class NoirProver {
 
   /**
    * Verify a proof.
-   * 
+   *
    * When Barretenberg is available and the circuit is compiled, performs real
    * cryptographic verification. Otherwise falls back to structural checks
    * (proof length >= 256 bytes, public inputs present).
-   * 
+   *
    * NOTE: Authoritative verification always happens on-chain.
    */
   async verifyProof(
     circuit: Circuit,
     proof: ProofResult,
-    publicInputs: string[]
+    publicInputs: string[],
   ): Promise<boolean> {
     if (!this.initialized) {
       await this.initialize();
@@ -412,7 +448,7 @@ export class NoirProver {
           const acirBuffer = Buffer.from(artifact.bytecode, "base64");
           const verified = await this.backend.acirVerifyProof(
             acirBuffer,
-            Buffer.from(proof.proof)
+            Buffer.from(proof.proof),
           );
           return verified;
         } catch (e: any) {
@@ -425,43 +461,62 @@ export class NoirProver {
     // Structural-only pass — caller is responsible for on-chain verification
     // SECURITY: Return false — off-chain verification without a real backend is unsafe.
     // Callers must verify proofs on-chain when Barretenberg is not available.
-    console.warn("⚠️ Barretenberg unavailable — off-chain verification disabled. Verify on-chain.");
+    console.warn(
+      "⚠️ Barretenberg unavailable — off-chain verification disabled. Verify on-chain.",
+    );
     return false;
   }
 
   /**
    * Generate a state commitment proof
    */
-  async proveStateCommitment(inputs: StateCommitmentInputs): Promise<ProofResult> {
-    return this.generateProof(Circuit.StateCommitment, inputs as unknown as WitnessInput);
+  async proveStateCommitment(
+    inputs: StateCommitmentInputs,
+  ): Promise<ProofResult> {
+    return this.generateProof(
+      Circuit.StateCommitment,
+      inputs as unknown as WitnessInput,
+    );
   }
 
   /**
    * Generate a state transfer proof
    */
   async proveStateTransfer(inputs: StateTransferInputs): Promise<ProofResult> {
-    return this.generateProof(Circuit.StateTransfer, inputs as unknown as WitnessInput);
+    return this.generateProof(
+      Circuit.StateTransfer,
+      inputs as unknown as WitnessInput,
+    );
   }
 
   /**
    * Generate a merkle inclusion proof
    */
   async proveMerkleInclusion(inputs: MerkleProofInputs): Promise<ProofResult> {
-    return this.generateProof(Circuit.MerkleProof, inputs as unknown as WitnessInput);
+    return this.generateProof(
+      Circuit.MerkleProof,
+      inputs as unknown as WitnessInput,
+    );
   }
 
   /**
    * Generate a nullifier derivation proof
    */
   async proveNullifier(inputs: NullifierInputs): Promise<ProofResult> {
-    return this.generateProof(Circuit.Nullifier, inputs as unknown as WitnessInput);
+    return this.generateProof(
+      Circuit.Nullifier,
+      inputs as unknown as WitnessInput,
+    );
   }
 
   /**
    * Generate a balance range proof
    */
   async proveBalance(inputs: BalanceProofInputs): Promise<ProofResult> {
-    return this.generateProof(Circuit.BalanceProof, inputs as unknown as WitnessInput);
+    return this.generateProof(
+      Circuit.BalanceProof,
+      inputs as unknown as WitnessInput,
+    );
   }
 }
 

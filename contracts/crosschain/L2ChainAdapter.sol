@@ -620,6 +620,7 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Get all supported chains
+     * @return Array of supported chain IDs
      */
     function getSupportedChains() external view returns (uint256[] memory) {
         return supportedChains;
@@ -627,6 +628,8 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Get chain configuration
+     * @param chainId The chain ID to query
+     * @return The ChainConfig struct for the given chain
      */
     function getChainConfig(
         uint256 chainId
@@ -636,6 +639,8 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Check if a chain is supported and enabled
+     * @param chainId The chain ID to check
+     * @return True if the chain is supported and enabled
      */
     function isChainSupported(uint256 chainId) external view returns (bool) {
         return chainConfigs[chainId].enabled;
@@ -643,6 +648,8 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Get message status
+     * @param messageId The unique message identifier
+     * @return The current MessageStatus of the message
      */
     function getMessageStatus(
         bytes32 messageId

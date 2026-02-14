@@ -670,7 +670,8 @@ contract ProofCarryingContainer is AccessControl, ReentrancyGuard, Pausable {
     function setRealVerification(
         bool enabled
     ) external onlyRole(CONTAINER_ADMIN_ROLE) {
-        if (!enabled && verificationLocked) revert VerificationModePermanentlyLocked();
+        if (!enabled && verificationLocked)
+            revert VerificationModePermanentlyLocked();
         useRealVerification = enabled;
         emit RealVerificationToggled(enabled);
     }

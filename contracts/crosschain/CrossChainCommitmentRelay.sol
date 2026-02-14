@@ -243,6 +243,8 @@ contract CrossChainCommitmentRelay is AccessControl, ReentrancyGuard, Pausable {
                           ADMIN FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Set the shielded pool contract address
+    /// @param _pool The new shielded pool address (must be non-zero)
     function setShieldedPool(address _pool) external onlyRole(OPERATOR_ROLE) {
         if (_pool == address(0)) revert ZeroAddress();
         address old = shieldedPool;
@@ -250,6 +252,8 @@ contract CrossChainCommitmentRelay is AccessControl, ReentrancyGuard, Pausable {
         emit ShieldedPoolUpdated(old, _pool);
     }
 
+    /// @notice Set the privacy hub contract address
+    /// @param _hub The new privacy hub address (must be non-zero)
     function setPrivacyHub(address _hub) external onlyRole(OPERATOR_ROLE) {
         if (_hub == address(0)) revert ZeroAddress();
         address old = privacyHub;
@@ -257,10 +261,12 @@ contract CrossChainCommitmentRelay is AccessControl, ReentrancyGuard, Pausable {
         emit PrivacyHubUpdated(old, _hub);
     }
 
+    /// @notice Pause commitment relay operations
     function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
 
+    /// @notice Unpause commitment relay operations
     function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
@@ -269,6 +275,9 @@ contract CrossChainCommitmentRelay is AccessControl, ReentrancyGuard, Pausable {
                           VIEW FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Get the number of commitments relayed for a given chain
+    /// @param chainId The universal chain identifier
+    /// @return The total commitment count for the chain
     function getChainStats(bytes32 chainId) external view returns (uint256) {
         return chainCommitmentCounts[chainId];
     }

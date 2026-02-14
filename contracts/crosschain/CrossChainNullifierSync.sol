@@ -362,14 +362,20 @@ contract CrossChainNullifierSync is AccessControl, ReentrancyGuard, Pausable {
     //  View Functions
     // ──────────────────────────────────────────────
 
+    /// @notice Get the number of nullifiers pending synchronisation
+    /// @return The count of pending nullifiers
     function getPendingCount() external view returns (uint256) {
         return pendingNullifiers.length;
     }
 
+    /// @notice Get all target chain IDs configured for sync
+    /// @return Array of target chain IDs
     function getTargetChains() external view returns (uint256[] memory) {
         return targetChainIds;
     }
 
+    /// @notice Get the total number of sync batches sent
+    /// @return The count of historical batches
     function getBatchCount() external view returns (uint256) {
         return batchHistory.length;
     }
@@ -378,10 +384,12 @@ contract CrossChainNullifierSync is AccessControl, ReentrancyGuard, Pausable {
     //  Admin
     // ──────────────────────────────────────────────
 
+    /// @notice Pause nullifier synchronisation
     function pause() external onlyRole(OPERATOR_ROLE) {
         _pause();
     }
 
+    /// @notice Unpause nullifier synchronisation
     function unpause() external onlyRole(OPERATOR_ROLE) {
         _unpause();
     }

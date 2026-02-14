@@ -398,6 +398,9 @@ contract RelayerFeeMarket is AccessControl, ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Get the current base fee for a route
+    /// @param sourceChainId The source chain identifier
+    /// @param destChainId The destination chain identifier
+    /// @return The current base fee in fee-token units
     function getBaseFee(
         bytes32 sourceChainId,
         bytes32 destChainId
@@ -406,6 +409,11 @@ contract RelayerFeeMarket is AccessControl, ReentrancyGuard {
     }
 
     /// @notice Estimate total fee for a relay
+    /// @param sourceChainId The source chain identifier
+    /// @param destChainId The destination chain identifier
+    /// @param priorityFee Additional priority fee offered by the requester
+    /// @return totalFee The total fee (base + priority)
+    /// @return baseFee The current base fee component
     function estimateFee(
         bytes32 sourceChainId,
         bytes32 destChainId,
@@ -421,6 +429,9 @@ contract RelayerFeeMarket is AccessControl, ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Initialize fee config for a route
+    /// @param sourceChainId The source chain identifier
+    /// @param destChainId The destination chain identifier
+    /// @param initialBaseFee The starting base fee for this route
     function initializeRoute(
         bytes32 sourceChainId,
         bytes32 destChainId,
@@ -439,12 +450,14 @@ contract RelayerFeeMarket is AccessControl, ReentrancyGuard {
     }
 
     /// @notice Update protocol fee percentage
+    /// @param _bps The new protocol fee in basis points (max 1000 = 10%)
     function setProtocolFeeBps(uint256 _bps) external onlyRole(OPERATOR_ROLE) {
         require(_bps <= 1000, "Max 10%");
         protocolFeeBps = _bps;
     }
 
     /// @notice Withdraw accumulated protocol fees
+    /// @param to The recipient address for the withdrawn fees
     function withdrawProtocolFees(
         address to
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {

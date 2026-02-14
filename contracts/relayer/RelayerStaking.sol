@@ -26,7 +26,6 @@ contract RelayerStaking is AccessControl, ReentrancyGuard {
     error NoStakers();
     error InvalidSlashingPercentage();
 
-
     // Staking token (Soul token)
     IERC20 public immutable stakingToken;
 
@@ -301,6 +300,8 @@ contract RelayerStaking is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Get pending rewards for a relayer
+     * @param relayerAddress The relayer address to query
+     * @return The amount of unclaimed rewards
      */
     function pendingRewards(
         address relayerAddress
@@ -313,6 +314,7 @@ contract RelayerStaking is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Get all active relayers
+     * @return Array of active relayer addresses
      */
     function getActiveRelayers() external view returns (address[] memory) {
         return activeRelayers;
@@ -320,6 +322,7 @@ contract RelayerStaking is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Get relayer count
+     * @return The number of currently active relayers
      */
     function getActiveRelayerCount() external view returns (uint256) {
         return activeRelayers.length;
@@ -327,6 +330,8 @@ contract RelayerStaking is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Check if address is an active relayer
+     * @param relayerAddress The address to check
+     * @return True if the address is an active relayer
      */
     function isActiveRelayer(
         address relayerAddress
@@ -336,6 +341,7 @@ contract RelayerStaking is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Update minimum stake requirement
+     * @param _minStake The new minimum stake amount in wei
      */
     function setMinStake(uint256 _minStake) external onlyRole(ADMIN_ROLE) {
         minStake = _minStake;
@@ -343,6 +349,7 @@ contract RelayerStaking is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Update slashing percentage
+     * @param _slashingPercentage The new slashing percentage in basis points (max 5000 = 50%)
      */
     function setSlashingPercentage(
         uint256 _slashingPercentage
@@ -353,6 +360,7 @@ contract RelayerStaking is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Update relayer metadata
+     * @param metadata The new metadata string (e.g. endpoint URL, name)
      */
     function updateMetadata(string calldata metadata) external {
         relayers[msg.sender].metadata = metadata;

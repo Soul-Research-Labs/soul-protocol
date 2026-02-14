@@ -859,10 +859,12 @@ contract L2ProofRouter is ReentrancyGuard, AccessControl, Pausable {
                               ADMIN
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Pause proof routing operations
     function pause() external onlyRole(OPERATOR_ROLE) {
         _pause();
     }
 
+    /// @notice Unpause proof routing operations
     function unpause() external onlyRole(OPERATOR_ROLE) {
         _unpause();
     }
@@ -871,32 +873,50 @@ contract L2ProofRouter is ReentrancyGuard, AccessControl, Pausable {
                               VIEWS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Retrieve a stored proof by its identifier
+    /// @param proofId The unique proof identifier
+    /// @return The Proof struct associated with the given ID
     function getProof(bytes32 proofId) external view returns (Proof memory) {
         return proofs[proofId];
     }
 
+    /// @notice Retrieve a proof batch by its identifier
+    /// @param batchId The unique batch identifier
+    /// @return The ProofBatch struct for the given batch
     function getBatch(
         bytes32 batchId
     ) external view returns (ProofBatch memory) {
         return batches[batchId];
     }
 
+    /// @notice Get the currently active batch for a destination chain
+    /// @param destChainId The destination chain ID
+    /// @return The active batch identifier
     function getActiveBatch(
         uint256 destChainId
     ) external view returns (bytes32) {
         return activeBatch[destChainId];
     }
 
+    /// @notice Get the number of cached proofs
+    /// @return The total count of entries in the proof cache
     function getCacheSize() external view returns (uint256) {
         return cacheKeys.length;
     }
 
+    /// @notice Retrieve a cached proof by its cache key
+    /// @param cacheKey The cache key (typically a hash of proof parameters)
+    /// @return The CachedProof struct for the given key
     function getCachedProof(
         bytes32 cacheKey
     ) external view returns (CachedProof memory) {
         return proofCache[cacheKey];
     }
 
+    /// @notice Get routing metrics between two chains
+    /// @param sourceChainId The source chain ID
+    /// @param destChainId The destination chain ID
+    /// @return The RouteMetrics struct for the given route
     function getRouteMetrics(
         uint256 sourceChainId,
         uint256 destChainId

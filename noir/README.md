@@ -10,6 +10,7 @@ the compilation failure with nargo ≥1.0.0-beta.18 caused by the deprecated
 third-party Poseidon package.
 
 **What changed:**
+
 - `Nargo.toml`: Removed `poseidon = { tag = "v0.2.3", git = "..." }` dependency
 - Source files: Changed `use poseidon::poseidon::bn254;` → `use std::hash::poseidon::bn254;`
 - API is identical (`bn254::hash_1`, `hash_2`, `hash_3`, `hash_4`, etc.)
@@ -48,35 +49,35 @@ noir/
 
 ### Core Primitives
 
-| Circuit | Description | Constraints (approx) |
-|---------|-------------|---------------------|
-| `merkle_proof` | Merkle tree inclusion proof using Poseidon | ~4,800 (depth 20) |
-| `nullifier` | Nullifier derivation with Merkle membership | ~5,200 |
-| `state_commitment` | State preimage commitment verification | ~1,500 |
-| `pedersen_commitment` | Pedersen hiding commitment | ~3,000 |
+| Circuit               | Description                                 | Constraints (approx) |
+| --------------------- | ------------------------------------------- | -------------------- |
+| `merkle_proof`        | Merkle tree inclusion proof using Poseidon  | ~4,800 (depth 20)    |
+| `nullifier`           | Nullifier derivation with Merkle membership | ~5,200               |
+| `state_commitment`    | State preimage commitment verification      | ~1,500               |
+| `pedersen_commitment` | Pedersen hiding commitment                  | ~3,000               |
 
 ### Cross-Chain
 
-| Circuit | Description | Constraints (approx) |
-|---------|-------------|---------------------|
-| `cross_chain_proof` | Cross-chain proof relay and aggregation | ~5,000 |
-| `cross_domain_nullifier` | Domain-separated nullifiers (CDNA) | ~4,500 |
+| Circuit                  | Description                             | Constraints (approx) |
+| ------------------------ | --------------------------------------- | -------------------- |
+| `cross_chain_proof`      | Cross-chain proof relay and aggregation | ~5,000               |
+| `cross_domain_nullifier` | Domain-separated nullifiers (CDNA)      | ~4,500               |
 
 ### Compliance & Policy
 
-| Circuit | Description | Constraints (approx) |
-|---------|-------------|---------------------|
-| `policy` | Generic policy compliance (thresholds, membership) | ~6,000 |
-| `compliance_proof` | Privacy-preserving KYC/AML | ~8,000 |
-| `policy_bound_proof` | Policy-scoped proofs (PBP) | ~5,500 |
+| Circuit              | Description                                        | Constraints (approx) |
+| -------------------- | -------------------------------------------------- | -------------------- |
+| `policy`             | Generic policy compliance (thresholds, membership) | ~6,000               |
+| `compliance_proof`   | Privacy-preserving KYC/AML                         | ~8,000               |
+| `policy_bound_proof` | Policy-scoped proofs (PBP)                         | ~5,500               |
 
 ### Containers (PC³)
 
-| Circuit | Description | Constraints (approx) |
-|---------|-------------|---------------------|
-| `container` | Basic container validity | ~2,500 |
-| `state_transfer` | State ownership transfer | ~3,500 |
-| `proof_carrying_container` | Full PC³ with policy | ~7,000 |
+| Circuit                    | Description              | Constraints (approx) |
+| -------------------------- | ------------------------ | -------------------- |
+| `container`                | Basic container validity | ~2,500               |
+| `state_transfer`           | State ownership transfer | ~3,500               |
+| `proof_carrying_container` | Full PC³ with policy     | ~7,000               |
 
 ## Installation
 
@@ -133,42 +134,50 @@ siblings = ["0x...", "0x...", ...] # 20 sibling hashes
 ## Key Differences from Circom
 
 ### 1. Signal Declaration
+
 ```circom
 // Circom
 signal input leaf;
 signal output valid;
 ```
+
 ```rust
 // Noir
 fn main(leaf: pub Field) -> pub bool { ... }
 ```
 
 ### 2. Constraints
+
 ```circom
 // Circom - explicit constraints
 signal valid;
 valid <== IsEqual()([a, b]);
 ```
+
 ```rust
 // Noir - native boolean operations
 let valid = a == b;
 ```
 
 ### 3. Loops
+
 ```circom
 // Circom - compile-time only
 for (var i = 0; i < DEPTH; i++) { ... }
 ```
+
 ```rust
 // Noir - more flexible
 for i in 0..DEPTH { ... }
 ```
 
 ### 4. Conditional Logic
+
 ```circom
 // Circom - polynomial constraints
 signal result <== selector * a + (1 - selector) * b;
 ```
+
 ```rust
 // Noir - native if/else
 let result = if selector { a } else { b };
@@ -212,12 +221,12 @@ release is available, regenerate all verifiers with the commands above.
 
 ## Performance Comparison
 
-| Operation | Circom (constraints) | Noir (constraints) | Improvement |
-|-----------|---------------------|-------------------|-------------|
-| Poseidon(2) | ~240 | ~240 | Same |
-| Merkle Proof (depth 20) | ~4,900 | ~4,800 | ~2% |
-| State Transfer | ~3,600 | ~3,500 | ~3% |
-| Compliance Proof | ~8,500 | ~8,000 | ~6% |
+| Operation               | Circom (constraints) | Noir (constraints) | Improvement |
+| ----------------------- | -------------------- | ------------------ | ----------- |
+| Poseidon(2)             | ~240                 | ~240               | Same        |
+| Merkle Proof (depth 20) | ~4,900               | ~4,800             | ~2%         |
+| State Transfer          | ~3,600               | ~3,500             | ~3%         |
+| Compliance Proof        | ~8,500               | ~8,000             | ~6%         |
 
 ## Testing
 
@@ -233,6 +242,7 @@ nargo test
 ```
 
 Example test output:
+
 ```
 Running 3 tests
 test test_cross_chain_proof ... ok

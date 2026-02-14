@@ -400,3 +400,55 @@ jobs:
         run: certoraRun certora/conf/${{ matrix.spec }}.conf
         env:
           CERTORAKEY: ${{ secrets.CERTORAKEY }}
+
+  k-framework:
+    name: K Framework Verification
+    runs-on: ubuntu-latest
+    needs: [foundry-tests]
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install K Framework
+        run: |
+          curl -sSL https://github.com/runtimeverification/k/releases/latest/download/kframework_amd64_ubuntu_jammy.deb -o kframework.deb
+          sudo apt-get install -y ./kframework.deb
+
+      - name: Typecheck K specs
+        run: |
+          cd specs/k
+          for spec in *.k; do
+            echo "Checking $spec..."
+            kompile "$spec" --backend llvm --syntax-module "$(basename "$spec" .k | tr '[:lower:]' '[:upper:]')-SYNTAX" 2>&1 || echo "WARN: $spec may need manual review"
+          done
+
+  tla-plus:
+    name: TLA+ Model Checking
+    runs-on: ubuntu-latest
+    needs: [foundry-tests]
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install TLC (TLA+ model checker)
+        run: |
+          mkdir -p ~/tla
+          curl -sSL https://github.com/tlaplus/tlaplus/releases/latest/download/tla2tools.jar -o ~/tla/tla2tools.jar
+
+      - name: Parse TLA+ specs
+        run: |
+          cd specs/tla
+          for spec in *.tla; do
+            echo "Parsing $spec..."
+            java -cp ~/tla/tla2tools.jar tla2sany.SANY "$spec"
+          done

@@ -166,7 +166,10 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
 
     event ProofHubUpdated(address indexed oldHub, address indexed newHub);
 
-    event DecryptionVerifierUpdated(address indexed oldVerifier, address indexed newVerifier);
+    event DecryptionVerifierUpdated(
+        address indexed oldVerifier,
+        address indexed newVerifier
+    );
 
     /*//////////////////////////////////////////////////////////////
                                 ERRORS
@@ -542,7 +545,9 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
             publicInputs[0] = uint256(calldataCommitment);
             publicInputs[1] = uint256(keccak256(decryptedCalldata));
 
-            try IProofVerifier(decryptionVerifier).verify(zkProof, publicInputs) returns (bool valid) {
+            try
+                IProofVerifier(decryptionVerifier).verify(zkProof, publicInputs)
+            returns (bool valid) {
                 return valid;
             } catch {
                 return false;

@@ -1,10 +1,18 @@
 import { expect } from "chai";
 import hre from "hardhat";
-import { keccak256, toBytes, zeroHash, type Address, type Hash, type WalletClient, type GetContractReturnType } from "viem";
+import {
+  keccak256,
+  toBytes,
+  zeroHash,
+  type Address,
+  type Hash,
+  type WalletClient,
+  type GetContractReturnType,
+} from "viem";
 
 /**
  * Soul Protocol Integration Tests
- * 
+ *
  * These tests verify end-to-end flows across multiple contracts
  */
 describe("Soul Protocol Integration Tests", function () {
@@ -36,7 +44,9 @@ describe("Soul Protocol Integration Tests", function () {
     await mockVerifier.write.setVerificationResult([true]);
 
     console.log("Deploying ZKBoundStateLocks...");
-    zkSlocks = await viem.deployContract("ZKBoundStateLocks", [mockVerifier.address]);
+    zkSlocks = await viem.deployContract("ZKBoundStateLocks", [
+      mockVerifier.address,
+    ]);
 
     console.log("All contracts deployed successfully");
   });
@@ -48,22 +58,21 @@ describe("Soul Protocol Integration Tests", function () {
     const policyHash = keccak256(toBytes("default-policy"));
 
     it("should create a new lock", async function () {
-      const domainSeparator = await zkSlocks.read.generateDomainSeparator([1, 0, 0]);
+      const domainSeparator = await zkSlocks.read.generateDomainSeparator([
+        1, 0, 0,
+      ]);
       const deadline = BigInt(Math.floor(Date.now() / 1000) + ONE_HOUR);
 
       // Create lock using viem pattern
-      const hash = await zkSlocks.write.createLock([
-        commitment,
-        predicateHash,
-        policyHash,
-        domainSeparator,
-        deadline
-      ], { account: user1.account });
+      const hash = await zkSlocks.write.createLock(
+        [commitment, predicateHash, policyHash, domainSeparator, deadline],
+        { account: user1.account },
+      );
 
       // Verify lock was created
       const activeLocks = await zkSlocks.read.getActiveLockIds();
       expect(activeLocks.length).to.be.greaterThan(0);
-      
+
       lockId = activeLocks[activeLocks.length - 1];
       expect(lockId).to.not.equal(ZERO_BYTES32);
 
@@ -82,17 +91,16 @@ describe("Soul Protocol Integration Tests", function () {
     it("should prevent duplicate lock creation", async function () {
       // Same parameters at same timestamp would create same lock ID
       // This is prevented by the contract
-      const domainSeparator = await zkSlocks.read.generateDomainSeparator([1, 0, 0]);
+      const domainSeparator = await zkSlocks.read.generateDomainSeparator([
+        1, 0, 0,
+      ]);
       const deadline = BigInt(Math.floor(Date.now() / 1000) + ONE_HOUR);
 
       // Creating with same params should work (different timestamp)
-      await zkSlocks.write.createLock([
-        commitment,
-        predicateHash,
-        policyHash,
-        domainSeparator,
-        deadline
-      ], { account: user1.account });
+      await zkSlocks.write.createLock(
+        [commitment, predicateHash, policyHash, domainSeparator, deadline],
+        { account: user1.account },
+      );
     });
 
     it("should list active locks", async function () {
@@ -123,9 +131,9 @@ describe("Soul Protocol Integration Tests", function () {
     before(async function () {
       // Deploy UniversalShieldedPool in test mode (no real ZK verification)
       shieldedPool = await viem.deployContract("UniversalShieldedPool", [
-        deployer.account.address,      // admin
-        mockVerifier.address,           // withdrawal verifier
-        true,                           // testMode = true
+        deployer.account.address, // admin
+        mockVerifier.address, // withdrawal verifier
+        true, // testMode = true
       ]);
     });
 
@@ -181,7 +189,7 @@ describe("Soul Protocol Integration Tests", function () {
       it("should compute retryable ticket submission fee", async function () {
         const fee = await mockInbox.read.calculateRetryableSubmissionFee([
           256n, // dataLength
-          0n,   // baseFee (not used in mock)
+          0n, // baseFee (not used in mock)
         ]);
         // Mock returns dataLength * 10 as the fee
         expect(fee).to.be.gte(0n);
@@ -221,19 +229,24 @@ describe("Soul Protocol Integration Tests", function () {
 
       // This is a complex integration test
       console.log("Testing full privacy flow...");
-      
-      const domainSeparator = await zkSlocks.read.generateDomainSeparator([1, 0, 0]);
+
+      const domainSeparator = await zkSlocks.read.generateDomainSeparator([
+        1, 0, 0,
+      ]);
       const commitment = keccak256(toBytes("transfer-state"));
       const deadline = BigInt(Math.floor(Date.now() / 1000) + ONE_DAY);
 
       // Create lock
-      await zkSlocks.write.createLock([
-        commitment,
-        keccak256(toBytes("transfer")),
-        keccak256(toBytes("policy")),
-        domainSeparator,
-        deadline
-      ], { account: user1.account });
+      await zkSlocks.write.createLock(
+        [
+          commitment,
+          keccak256(toBytes("transfer")),
+          keccak256(toBytes("policy")),
+          domainSeparator,
+          deadline,
+        ],
+        { account: user1.account },
+      );
 
       const activeLocks = await zkSlocks.read.getActiveLockIds();
       expect(activeLocks.length).to.be.greaterThan(0);
@@ -244,16 +257,21 @@ describe("Soul Protocol Integration Tests", function () {
       // Create multiple locks in sequence (viem doesn't support true parallel writes easily)
       for (let i = 0; i < 5; i++) {
         const commitment = keccak256(toBytes(`concurrent-${i}-${Date.now()}`));
-        const domainSeparator = await zkSlocks.read.generateDomainSeparator([1, 0, 0]);
+        const domainSeparator = await zkSlocks.read.generateDomainSeparator([
+          1, 0, 0,
+        ]);
         const deadline = BigInt(Math.floor(Date.now() / 1000) + ONE_HOUR);
 
-        await zkSlocks.write.createLock([
-          commitment,
-          keccak256(toBytes("transfer")),
-          keccak256(toBytes("policy")),
-          domainSeparator,
-          deadline
-        ], { account: user1.account });
+        await zkSlocks.write.createLock(
+          [
+            commitment,
+            keccak256(toBytes("transfer")),
+            keccak256(toBytes("policy")),
+            domainSeparator,
+            deadline,
+          ],
+          { account: user1.account },
+        );
       }
 
       const activeLocks = await zkSlocks.read.getActiveLockIds();
@@ -265,17 +283,22 @@ describe("Soul Protocol Integration Tests", function () {
   describe("Gas Benchmarks", function () {
     it("should measure createLock gas usage", async function () {
       const commitment = keccak256(toBytes(`gas-bench-${Date.now()}`));
-      const domainSeparator = await zkSlocks.read.generateDomainSeparator([1, 0, 0]);
+      const domainSeparator = await zkSlocks.read.generateDomainSeparator([
+        1, 0, 0,
+      ]);
       const deadline = BigInt(Math.floor(Date.now() / 1000) + ONE_HOUR);
 
       // Create lock and check it succeeded
-      await zkSlocks.write.createLock([
-        commitment,
-        keccak256(toBytes("transfer")),
-        keccak256(toBytes("policy")),
-        domainSeparator,
-        deadline
-      ], { account: user1.account });
+      await zkSlocks.write.createLock(
+        [
+          commitment,
+          keccak256(toBytes("transfer")),
+          keccak256(toBytes("policy")),
+          domainSeparator,
+          deadline,
+        ],
+        { account: user1.account },
+      );
 
       // Verify lock was created
       const activeLocks = await zkSlocks.read.getActiveLockIds();
@@ -292,13 +315,16 @@ describe("Soul Protocol Integration Tests", function () {
 
       let reverted = false;
       try {
-        await zkSlocks.write.createLock([
-          commitment,
-          keccak256(toBytes("transfer")),
-          keccak256(toBytes("policy")),
-          invalidDomain,
-          deadline
-        ], { account: user1.account });
+        await zkSlocks.write.createLock(
+          [
+            commitment,
+            keccak256(toBytes("transfer")),
+            keccak256(toBytes("policy")),
+            invalidDomain,
+            deadline,
+          ],
+          { account: user1.account },
+        );
       } catch {
         reverted = true;
       }
@@ -308,22 +334,30 @@ describe("Soul Protocol Integration Tests", function () {
     it("should revert when contract is paused", async function () {
       // Pause the contract
       const LOCK_ADMIN_ROLE = await zkSlocks.read.LOCK_ADMIN_ROLE();
-      await zkSlocks.write.grantRole([LOCK_ADMIN_ROLE, deployer.account.address], { account: deployer.account });
+      await zkSlocks.write.grantRole(
+        [LOCK_ADMIN_ROLE, deployer.account.address],
+        { account: deployer.account },
+      );
       await zkSlocks.write.pause([], { account: deployer.account });
 
       const commitment = keccak256(toBytes("paused-test"));
-      const domainSeparator = await zkSlocks.read.generateDomainSeparator([1, 0, 0]);
+      const domainSeparator = await zkSlocks.read.generateDomainSeparator([
+        1, 0, 0,
+      ]);
       const deadline = BigInt(Math.floor(Date.now() / 1000) + ONE_HOUR);
 
       let reverted = false;
       try {
-        await zkSlocks.write.createLock([
-          commitment,
-          keccak256(toBytes("transfer")),
-          keccak256(toBytes("policy")),
-          domainSeparator,
-          deadline
-        ], { account: user1.account });
+        await zkSlocks.write.createLock(
+          [
+            commitment,
+            keccak256(toBytes("transfer")),
+            keccak256(toBytes("policy")),
+            domainSeparator,
+            deadline,
+          ],
+          { account: user1.account },
+        );
       } catch {
         reverted = true;
       }
@@ -337,9 +371,12 @@ describe("Soul Protocol Integration Tests", function () {
   describe("Access Control", function () {
     it("should enforce role-based access", async function () {
       const LOCK_ADMIN_ROLE = await zkSlocks.read.LOCK_ADMIN_ROLE();
-      
+
       // User1 should not have admin role initially
-      const hasRole = await zkSlocks.read.hasRole([LOCK_ADMIN_ROLE, user1.account.address]);
+      const hasRole = await zkSlocks.read.hasRole([
+        LOCK_ADMIN_ROLE,
+        user1.account.address,
+      ]);
       expect(hasRole).to.be.false;
 
       // Non-admin should not be able to pause

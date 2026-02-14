@@ -130,7 +130,7 @@ describe("NoirProver", () => {
       expect(valid).to.be.false;
     });
 
-    it("should accept structurally valid placeholder proofs", async () => {
+    it("should reject placeholder proofs without Barretenberg (security)", async () => {
       const result = await prover.generateProof(Circuit.StateCommitment, {
         secret: "0x" + "aa".repeat(32),
         nullifier: "0x" + "bb".repeat(32),
@@ -142,16 +142,17 @@ describe("NoirProver", () => {
         result,
         result.publicInputs,
       );
-      // Should pass structural checks (256 bytes, has public inputs)
-      expect(valid).to.be.true;
+      // SECURITY: Without Barretenberg, off-chain verification is disabled.
+      // Callers must verify proofs on-chain.
+      expect(valid).to.be.false;
     });
   });
 
   describe("convenience methods", () => {
     it("proveStateCommitment()", async () => {
       const result = await prover.proveStateCommitment({
-        secret: "0x" + "aa".repeat(32) as `0x${string}`,
-        nullifier: "0x" + "bb".repeat(32) as `0x${string}`,
+        secret: ("0x" + "aa".repeat(32)) as `0x${string}`,
+        nullifier: ("0x" + "bb".repeat(32)) as `0x${string}`,
         amount: BigInt(1000),
       });
       expect(result.proof.length).to.equal(256);
@@ -159,7 +160,7 @@ describe("NoirProver", () => {
 
     it("proveNullifier()", async () => {
       const result = await prover.proveNullifier({
-        secret: "0x" + "cc".repeat(32) as `0x${string}`,
+        secret: ("0x" + "cc".repeat(32)) as `0x${string}`,
         leafIndex: 5,
       });
       expect(result.publicInputs.length).to.be.greaterThan(0);
@@ -170,8 +171,8 @@ describe("NoirProver", () => {
         balance: BigInt(1000),
         minBalance: BigInt(0),
         maxBalance: BigInt(10000),
-        commitment: "0x" + "dd".repeat(32) as `0x${string}`,
-        secret: "0x" + "ee".repeat(32) as `0x${string}`,
+        commitment: ("0x" + "dd".repeat(32)) as `0x${string}`,
+        secret: ("0x" + "ee".repeat(32)) as `0x${string}`,
       });
       expect(result.proof.length).to.equal(256);
     });

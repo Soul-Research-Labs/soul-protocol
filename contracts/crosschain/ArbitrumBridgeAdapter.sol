@@ -810,10 +810,12 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
                            PAUSABLE
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Pause all bridge operations (emergency use)
     function pause() external onlyRole(GUARDIAN_ROLE) {
         _pause();
     }
 
+    /// @notice Unpause bridge operations
     function unpause() external onlyRole(GUARDIAN_ROLE) {
         _unpause();
     }
