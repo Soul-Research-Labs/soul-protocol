@@ -178,8 +178,6 @@ contract L2ProofRouterTest is Test {
     function test_BatchTimeout() public {
         _submitProof(L2ProofRouter.ProofType.GROTH16, DEST_CHAIN);
 
-        bytes32 batch1 = router.getActiveBatch(DEST_CHAIN);
-
         // Warp past timeout
         vm.warp(block.timestamp + 5 minutes + 1);
 

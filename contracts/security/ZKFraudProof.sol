@@ -204,6 +204,13 @@ contract ZKFraudProof is AccessControl, ReentrancyGuard, Pausable {
         address _bondManager,
         address _zkVerifier
     ) {
+        require(
+            _stateCommitmentChain != address(0),
+            "ZKFraudProof: zero stateCommitmentChain"
+        );
+        require(_bondManager != address(0), "ZKFraudProof: zero bondManager");
+        require(_zkVerifier != address(0), "ZKFraudProof: zero zkVerifier");
+
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(PROVER_ROLE, msg.sender);
         _grantRole(VERIFIER_ROLE, msg.sender);

@@ -672,7 +672,6 @@ contract CrossChainPrivacyHubTest is Test {
         bytes32 expectedStealth = keccak256(abi.encode(sharedSecret, ephPub));
 
         // Direct call
-        CrossChainPrivacyHub tempHub;
         // Can't call on uninitialized, verify logic manually
         assertTrue(expectedStealth != bytes32(0));
     }

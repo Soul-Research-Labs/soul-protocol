@@ -200,6 +200,7 @@ contract BridgeCircuitBreaker is AccessControl, Pausable {
     event RecoveryExecuted(uint256 indexed proposalId, SystemState newState);
     event MetricsRecorded(uint256 txCount, uint256 volume, uint256 timestamp);
     event ScoreUpdated(uint256 oldScore, uint256 newScore);
+    event EmergencyAction(address indexed caller, bytes32 indexed threatId);
 
     /*//////////////////////////////////////////////////////////////
                               ERRORS
@@ -484,9 +485,8 @@ contract BridgeCircuitBreaker is AccessControl, Pausable {
      * @notice Emergency pause triggered by SecurityOracle
      * @param threatId The ID of the threat that triggered the pause
      */
-    function emergencyPause(bytes32 threatId) external {
-        // Only authorized SecurityOracles can call this
-        // In production, use a registry or role
+    function emergencyPause(bytes32 threatId) external onlyRole(GUARDIAN_ROLE) {
+        emit EmergencyAction(msg.sender, threatId);
         emergencyHalt();
     }
 

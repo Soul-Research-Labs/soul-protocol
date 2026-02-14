@@ -112,12 +112,11 @@ contract MultiChainPrivacyE2E is Test {
         nullifierManagers[1].consumeNullifier(nullifier1, chains[0].domainId);
 
         // Derive cross-domain nullifier for Optimism
-        bytes32 crossDomainNull = nullifierManagers[10]
-            .deriveCrossDomainNullifier(
-                nullifier1,
-                chains[0].domainId,
-                chains[1].domainId
-            );
+        nullifierManagers[10].deriveCrossDomainNullifier(
+            nullifier1,
+            chains[0].domainId,
+            chains[1].domainId
+        );
 
         // Step 3: Generate new stealth address on Optimism
         uint256 ephKeyX2 = uint256(keccak256("eph_key_x_2"));
@@ -150,7 +149,7 @@ contract MultiChainPrivacyE2E is Test {
         uint256 ephKeyX3 = uint256(keccak256("eph_key_x_3"));
         uint256 ephKeyY3 = uint256(keccak256("eph_key_y_3"));
 
-        (address stealthAddr3, uint8 viewTag3) = stealthRegistries[42161]
+        (address stealthAddr3, ) = stealthRegistries[42161]
             .generateStealthAddress(
                 ephKeyX3,
                 ephKeyY3,

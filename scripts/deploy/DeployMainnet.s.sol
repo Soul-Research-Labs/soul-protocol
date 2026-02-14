@@ -4,12 +4,12 @@ pragma solidity ^0.8.24;
 import "forge-std/Script.sol";
 
 // Core contracts
-import {CrossChainProofHubV3} from "../contracts/bridge/CrossChainProofHubV3.sol";
-import {NullifierRegistryV3} from "../contracts/core/NullifierRegistryV3.sol";
-import {BridgeCircuitBreaker} from "../contracts/security/BridgeCircuitBreaker.sol";
-import {BridgeRateLimiter} from "../contracts/security/BridgeRateLimiter.sol";
-import {EnhancedKillSwitch} from "../contracts/security/EnhancedKillSwitch.sol";
-import {ZKFraudProof} from "../contracts/security/ZKFraudProof.sol";
+import {CrossChainProofHubV3} from "../../contracts/bridge/CrossChainProofHubV3.sol";
+import {NullifierRegistryV3} from "../../contracts/core/NullifierRegistryV3.sol";
+import {BridgeCircuitBreaker} from "../../contracts/security/BridgeCircuitBreaker.sol";
+import {BridgeRateLimiter} from "../../contracts/security/BridgeRateLimiter.sol";
+import {EnhancedKillSwitch} from "../../contracts/security/EnhancedKillSwitch.sol";
+import {ZKFraudProof} from "../../contracts/security/ZKFraudProof.sol";
 
 /**
  * @title Soul Protocol Mainnet Deployment Script
@@ -121,8 +121,15 @@ contract DeployMainnet is Script {
         console.log("EnhancedKillSwitch:", address(killSwitch));
 
         // 1f. ZKFraudProof — Fraud proof verification
-        // Note: stateCommitmentChain and bondManager should be configured post-deploy
-        zkFraudProof = new ZKFraudProof(address(0), address(0), address(0));
+        // These addresses must be set via environment variables
+        address stateCommitmentChain = vm.envAddress("STATE_COMMITMENT_CHAIN");
+        address bondManager = vm.envAddress("BOND_MANAGER");
+        address zkVerifier = vm.envAddress("ZK_VERIFIER");
+        zkFraudProof = new ZKFraudProof(
+            stateCommitmentChain,
+            bondManager,
+            zkVerifier
+        );
         console.log("ZKFraudProof:", address(zkFraudProof));
 
         // ========= 2. CONFIGURE PROOF HUB =========
@@ -190,6 +197,9 @@ contract DeployMainnet is Script {
         );
 
         // ZKFraudProof
+        zkFraudProof.renounceRole(zkFraudProof.PROVER_ROLE(), deployer);
+        zkFraudProof.renounceRole(zkFraudProof.VERIFIER_ROLE(), deployer);
+        zkFraudProof.renounceRole(zkFraudProof.OPERATOR_ROLE(), deployer);
         zkFraudProof.renounceRole(zkFraudProof.DEFAULT_ADMIN_ROLE(), deployer);
 
         vm.stopBroadcast();

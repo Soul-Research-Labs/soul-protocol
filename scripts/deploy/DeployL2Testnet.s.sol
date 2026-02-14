@@ -174,11 +174,10 @@ contract DeployL2Testnet is Script {
             adapter.grantRole(adapter.DEFAULT_ADMIN_ROLE(), admin);
             adapter.grantRole(adapter.OPERATOR_ROLE(), admin);
             adapter.grantRole(adapter.GUARDIAN_ROLE(), admin);
-            adapter.grantRole(adapter.RELAYER_ROLE(), admin);
+            adapter.grantRole(adapter.EXECUTOR_ROLE(), admin);
 
             if (admin != deployer) {
-                adapter.renounceRole(adapter.RELAYER_ROLE(), deployer);
-                adapter.renounceRole(adapter.TREASURY_ROLE(), deployer);
+                adapter.renounceRole(adapter.EXECUTOR_ROLE(), deployer);
                 adapter.renounceRole(adapter.GUARDIAN_ROLE(), deployer);
                 adapter.renounceRole(adapter.OPERATOR_ROLE(), deployer);
                 adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);

@@ -511,16 +511,8 @@ contract ZKBoundStateLocksTest is Test {
         vm.prank(user2);
         zksl.optimisticUnlock{value: 0.01 ether}(proof);
 
-        (
-            address unlocker,
-            uint64 unlockTime,
-            ,
-            bytes32 proofHash,
-            ,
-            bool disputed,
-            ,
-
-        ) = zksl.optimisticUnlocks(lockId);
+        (address unlocker, uint64 unlockTime, , , , bool disputed, , ) = zksl
+            .optimisticUnlocks(lockId);
 
         assertEq(unlocker, user2);
         assertGt(unlockTime, 0);

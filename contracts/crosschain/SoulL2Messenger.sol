@@ -159,6 +159,8 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
 
     event FulfillerRegistered(address indexed fulfiller, uint256 bond);
 
+    event ProofHubUpdated(address indexed oldHub, address indexed newHub);
+
     /*//////////////////////////////////////////////////////////////
                                 ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -502,13 +504,19 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
         if (_proofHub == address(0)) revert ZeroAddress();
         address oldHub = proofHub;
         proofHub = _proofHub;
-        emit CounterpartSet(0, _proofHub); // Reuse event; chainId=0 indicates proof hub
+        emit ProofHubUpdated(oldHub, _proofHub);
     }
 
     /*//////////////////////////////////////////////////////////////
                               INTERNALS
     //////////////////////////////////////////////////////////////*/
 
+    /**
+     * @notice Verify decryption proof
+     * @custom:security PLACEHOLDER — This is NOT real ZK verification.
+     *   It only checks that the proof bytes contain expected hashes.
+     *   Replace with a real verifier contract call before production.
+     */
     function _verifyDecryptionProof(
         bytes32 calldataCommitment,
         bytes calldata decryptedCalldata,

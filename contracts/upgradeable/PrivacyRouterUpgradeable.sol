@@ -645,6 +645,14 @@ contract PrivacyRouterUpgradeable is
     function _authorizeUpgrade(
         address newImplementation
     ) internal override onlyRole(UPGRADER_ROLE) {
+        require(
+            newImplementation != address(0),
+            "PrivacyRouter: zero implementation"
+        );
+        require(
+            newImplementation.code.length > 0,
+            "PrivacyRouter: implementation not a contract"
+        );
         uint256 oldVersion = contractVersion;
         contractVersion = oldVersion + 1;
         emit ContractUpgraded(oldVersion, contractVersion);

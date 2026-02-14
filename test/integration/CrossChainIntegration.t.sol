@@ -148,7 +148,7 @@ contract CrossChainIntegrationTest is Test {
             ,
             ,
             ,
-            DirectL2Messenger.MessagePath path,
+            ,
             DirectL2Messenger.MessageStatus status,
 
         ) = messengerArbitrum.messages(messageId);

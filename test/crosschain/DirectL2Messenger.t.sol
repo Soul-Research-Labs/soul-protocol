@@ -545,7 +545,6 @@ contract DirectL2MessengerTest is Test {
 
     function test_challengeMessage_revertsInsufficientBond() public {
         // Set up a relayed message first (using operator as shortcut)
-        bytes32 messageId = keccak256("low_bond_msg");
         // need to create via relayer for FAST_RELAYER path
         // Skip full setup, just test the bond check by inserting message directly
 

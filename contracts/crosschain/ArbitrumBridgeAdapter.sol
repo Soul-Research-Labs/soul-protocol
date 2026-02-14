@@ -637,7 +637,7 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         // a message from the expected L2 sender. This works when called within
         // the Outbox.executeTransaction() callback, OR when called by a relayer
         // with appropriate proof.
-        // For relayer-initiated claims, verify the caller has RELAYER_ROLE
+        // For relayer-initiated claims, verify the caller has OPERATOR_ROLE
         // or is the withdrawal recipient.
         if (
             msg.sender != address(outbox) &&

@@ -102,7 +102,14 @@ contract DeployL2Bridges is Script {
             address outbox = vm.envAddress("ARB_OUTBOX");
             address bridge = vm.envAddress("ARB_BRIDGE");
             address rollup = vm.envAddress("ARB_ROLLUP");
-            adapter.configureRollup(42161, inbox, outbox, bridge, rollup, 0);
+            adapter.configureRollup(
+                42161,
+                inbox,
+                outbox,
+                bridge,
+                rollup,
+                ArbitrumBridgeAdapter.RollupType(0)
+            );
             console.log("Rollup configured");
         }
 

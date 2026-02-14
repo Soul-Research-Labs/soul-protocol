@@ -146,7 +146,7 @@ contract GasNormalizerTest is Test {
         bytes memory data = abi.encodeCall(GasTarget.setVal, (42));
 
         vm.prank(caller1);
-        (bool success, bytes memory result) = normalizer.executeNormalized(
+        (bool success, ) = normalizer.executeNormalized(
             address(target),
             GasNormalizer.OperationType.TRANSFER,
             data
