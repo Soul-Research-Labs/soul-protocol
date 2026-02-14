@@ -30,7 +30,10 @@ contract CrossChainProofVerifierTest is Test {
        ══════════════════════════════════════════════════ */
 
     function test_deployment_codeNonEmpty() public view {
-        assertTrue(address(verifier).code.length > 0, "Verifier should have bytecode");
+        assertTrue(
+            address(verifier).code.length > 0,
+            "Verifier should have bytecode"
+        );
     }
 
     function test_deployment_isContract() public view {
@@ -49,9 +52,20 @@ contract CrossChainProofVerifierTest is Test {
     /// @notice Public signal >= scalar field r should cause verifyProof to return false
     function test_rejectsFieldOverflow_firstSignal() public view {
         uint256[2] memory pA = [uint256(1), uint256(2)];
-        uint256[2][2] memory pB = [[uint256(1), uint256(2)], [uint256(3), uint256(4)]];
+        uint256[2][2] memory pB = [
+            [uint256(1), uint256(2)],
+            [uint256(3), uint256(4)]
+        ];
         uint256[2] memory pC = [uint256(1), uint256(2)];
-        uint256[7] memory pubSignals = [FR, uint256(0), uint256(0), uint256(0), uint256(0), uint256(0), uint256(0)]; // FR == _r, should fail field check
+        uint256[7] memory pubSignals = [
+            FR,
+            uint256(0),
+            uint256(0),
+            uint256(0),
+            uint256(0),
+            uint256(0),
+            uint256(0)
+        ]; // FR == _r, should fail field check
 
         bool result = verifier.verifyProof(pA, pB, pC, pubSignals);
         assertFalse(result, "Should reject pubSignal >= r");
@@ -91,7 +105,14 @@ contract CrossChainProofVerifierTest is Test {
             pubSignals[i] = FR; // Exactly r — should be rejected (must be < r)
 
             bool result = verifier.verifyProof(pA, pB, pC, pubSignals);
-            assertFalse(result, string.concat("Position ", vm.toString(i), " should reject >= r"));
+            assertFalse(
+                result,
+                string.concat(
+                    "Position ",
+                    vm.toString(i),
+                    " should reject >= r"
+                )
+            );
         }
     }
 
@@ -99,7 +120,10 @@ contract CrossChainProofVerifierTest is Test {
     ///         but should still fail because the proof is garbage
     function test_maxValidFieldElement_stillFailsProof() public view {
         uint256[2] memory pA = [uint256(1), uint256(2)];
-        uint256[2][2] memory pB = [[uint256(1), uint256(2)], [uint256(3), uint256(4)]];
+        uint256[2][2] memory pB = [
+            [uint256(1), uint256(2)],
+            [uint256(3), uint256(4)]
+        ];
         uint256[2] memory pC = [uint256(1), uint256(2)];
         uint256[7] memory pubSignals;
         for (uint256 i = 0; i < 7; i++) {
@@ -108,7 +132,10 @@ contract CrossChainProofVerifierTest is Test {
 
         // Should pass field check but fail pairing check
         bool result = verifier.verifyProof(pA, pB, pC, pubSignals);
-        assertFalse(result, "Max valid field element with garbage proof should fail");
+        assertFalse(
+            result,
+            "Max valid field element with garbage proof should fail"
+        );
     }
 
     /* ══════════════════════════════════════════════════
@@ -135,8 +162,13 @@ contract CrossChainProofVerifierTest is Test {
         ];
         uint256[2] memory pC = [uint256(555555555), uint256(666666666)];
         uint256[7] memory pubSignals = [
-            uint256(1), uint256(2), uint256(3), uint256(4),
-            uint256(5), uint256(6), uint256(7)
+            uint256(1),
+            uint256(2),
+            uint256(3),
+            uint256(4),
+            uint256(5),
+            uint256(6),
+            uint256(7)
         ];
 
         bool result = verifier.verifyProof(pA, pB, pC, pubSignals);
@@ -147,16 +179,31 @@ contract CrossChainProofVerifierTest is Test {
     function test_rejectsGarbageProofZeroSignals() public view {
         uint256[2] memory pA = [uint256(1), uint256(2)]; // G1 generator
         uint256[2][2] memory pB = [
-            [uint256(10857046999023057135944570762232829481370756359578518086990519993285655852781),
-             uint256(11559732032986387107991004021392285783925812861821192530917403151452391805634)],
-            [uint256(8495653923123431417604973247489272438418190587263600148770280649306958101930),
-             uint256(4082367875863433681332203403145435568316851327593401208105741076214120093531)]
+            [
+                uint256(
+                    10857046999023057135944570762232829481370756359578518086990519993285655852781
+                ),
+                uint256(
+                    11559732032986387107991004021392285783925812861821192530917403151452391805634
+                )
+            ],
+            [
+                uint256(
+                    8495653923123431417604973247489272438418190587263600148770280649306958101930
+                ),
+                uint256(
+                    4082367875863433681332203403145435568316851327593401208105741076214120093531
+                )
+            ]
         ];
         uint256[2] memory pC = [uint256(1), uint256(2)];
         uint256[7] memory pubSignals;
 
         bool result = verifier.verifyProof(pA, pB, pC, pubSignals);
-        assertFalse(result, "Valid curve points with zero signals should fail verification");
+        assertFalse(
+            result,
+            "Valid curve points with zero signals should fail verification"
+        );
     }
 
     /* ══════════════════════════════════════════════════
@@ -199,9 +246,20 @@ contract CrossChainProofVerifierTest is Test {
     ///      high gas in the EVM simulation. We just verify it executes in bounded time.
     function test_gas_garbageProof() public view {
         uint256[2] memory pA = [uint256(1), uint256(2)];
-        uint256[2][2] memory pB = [[uint256(1), uint256(2)], [uint256(3), uint256(4)]];
+        uint256[2][2] memory pB = [
+            [uint256(1), uint256(2)],
+            [uint256(3), uint256(4)]
+        ];
         uint256[2] memory pC = [uint256(1), uint256(2)];
-        uint256[7] memory pubSignals = [uint256(1), uint256(2), uint256(3), uint256(4), uint256(5), uint256(6), uint256(7)];
+        uint256[7] memory pubSignals = [
+            uint256(1),
+            uint256(2),
+            uint256(3),
+            uint256(4),
+            uint256(5),
+            uint256(6),
+            uint256(7)
+        ];
 
         // Verify it runs without reverting — gas usage varies with EVM implementation
         bool result = verifier.verifyProof(pA, pB, pC, pubSignals);
@@ -229,7 +287,10 @@ contract CrossChainProofVerifierTest is Test {
        ══════════════════════════════════════════════════ */
 
     /// @notice Fuzz: any signal >= FR should cause rejection
-    function testFuzz_rejectsOverflowSignal(uint256 overflowSeed, uint8 positionRaw) public view {
+    function testFuzz_rejectsOverflowSignal(
+        uint256 overflowSeed,
+        uint8 positionRaw
+    ) public view {
         uint256 overflow = bound(overflowSeed, FR, type(uint256).max);
         uint8 position = positionRaw % 7;
 
@@ -245,14 +306,27 @@ contract CrossChainProofVerifierTest is Test {
 
     /// @notice Fuzz: random proof data should never verify
     function testFuzz_randomProofNeverVerifies(
-        uint256 a0, uint256 a1,
-        uint256 b00, uint256 b01, uint256 b10, uint256 b11,
-        uint256 c0, uint256 c1
+        uint256 a0,
+        uint256 a1,
+        uint256 b00,
+        uint256 b01,
+        uint256 b10,
+        uint256 b11,
+        uint256 c0,
+        uint256 c1
     ) public view {
         uint256[2] memory pA = [a0, a1];
         uint256[2][2] memory pB = [[b00, b01], [b10, b11]];
         uint256[2] memory pC = [c0, c1];
-        uint256[7] memory pubSignals = [uint256(1), uint256(2), uint256(3), uint256(4), uint256(5), uint256(6), uint256(7)];
+        uint256[7] memory pubSignals = [
+            uint256(1),
+            uint256(2),
+            uint256(3),
+            uint256(4),
+            uint256(5),
+            uint256(6),
+            uint256(7)
+        ];
 
         bool result = verifier.verifyProof(pA, pB, pC, pubSignals);
         assertFalse(result, "Random proof should not verify");
@@ -264,7 +338,11 @@ contract CrossChainProofVerifierTest is Test {
 
     /// @notice Verify the function selector matches the expected signature
     function test_functionSelector() public pure {
-        bytes4 expected = bytes4(keccak256("verifyProof(uint256[2],uint256[2][2],uint256[2],uint256[7])"));
+        bytes4 expected = bytes4(
+            keccak256(
+                "verifyProof(uint256[2],uint256[2][2],uint256[2],uint256[7])"
+            )
+        );
         bytes4 actual = CrossChainProofVerifier.verifyProof.selector;
         assertEq(actual, expected, "Function selector mismatch");
     }

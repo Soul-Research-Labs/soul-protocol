@@ -27,7 +27,10 @@ contract StateTransferVerifierTest is Test {
        ══════════════════════════════════════════════════ */
 
     function test_deployment_codeNonEmpty() public view {
-        assertTrue(address(verifier).code.length > 0, "Verifier should have bytecode");
+        assertTrue(
+            address(verifier).code.length > 0,
+            "Verifier should have bytecode"
+        );
     }
 
     /* ══════════════════════════════════════════════════
@@ -76,13 +79,23 @@ contract StateTransferVerifierTest is Test {
             pubSignals[i] = FR;
 
             bool result = verifier.verifyProof(pA, pB, pC, pubSignals);
-            assertFalse(result, string.concat("Position ", vm.toString(i), " should reject >= r"));
+            assertFalse(
+                result,
+                string.concat(
+                    "Position ",
+                    vm.toString(i),
+                    " should reject >= r"
+                )
+            );
         }
     }
 
     function test_maxValidFieldElement_stillFailsProof() public view {
         uint[2] memory pA = [uint256(1), uint256(2)];
-        uint[2][2] memory pB = [[uint256(1), uint256(2)], [uint256(3), uint256(4)]];
+        uint[2][2] memory pB = [
+            [uint256(1), uint256(2)],
+            [uint256(3), uint256(4)]
+        ];
         uint[2] memory pC = [uint256(1), uint256(2)];
         uint[7] memory pubSignals;
         for (uint256 i = 0; i < 7; i++) {
@@ -90,7 +103,10 @@ contract StateTransferVerifierTest is Test {
         }
 
         bool result = verifier.verifyProof(pA, pB, pC, pubSignals);
-        assertFalse(result, "Max valid field elements with garbage proof should fail");
+        assertFalse(
+            result,
+            "Max valid field elements with garbage proof should fail"
+        );
     }
 
     /* ══════════════════════════════════════════════════
@@ -115,8 +131,13 @@ contract StateTransferVerifierTest is Test {
         ];
         uint[2] memory pC = [uint256(333), uint256(222)];
         uint[7] memory pubSignals = [
-            uint256(10), uint256(20), uint256(30), uint256(40),
-            uint256(50), uint256(60), uint256(70)
+            uint256(10),
+            uint256(20),
+            uint256(30),
+            uint256(40),
+            uint256(50),
+            uint256(60),
+            uint256(70)
         ];
 
         bool result = verifier.verifyProof(pA, pB, pC, pubSignals);
@@ -160,9 +181,20 @@ contract StateTransferVerifierTest is Test {
 
     function test_gas_garbageProof() public view {
         uint[2] memory pA = [uint256(1), uint256(2)];
-        uint[2][2] memory pB = [[uint256(1), uint256(2)], [uint256(3), uint256(4)]];
+        uint[2][2] memory pB = [
+            [uint256(1), uint256(2)],
+            [uint256(3), uint256(4)]
+        ];
         uint[2] memory pC = [uint256(1), uint256(2)];
-        uint[7] memory pubSignals = [uint256(1), uint256(2), uint256(3), uint256(4), uint256(5), uint256(6), uint256(7)];
+        uint[7] memory pubSignals = [
+            uint256(1),
+            uint256(2),
+            uint256(3),
+            uint256(4),
+            uint256(5),
+            uint256(6),
+            uint256(7)
+        ];
 
         bool result = verifier.verifyProof(pA, pB, pC, pubSignals);
         assertFalse(result, "Garbage proof should return false");
@@ -172,7 +204,10 @@ contract StateTransferVerifierTest is Test {
               FUZZ TESTS
        ══════════════════════════════════════════════════ */
 
-    function testFuzz_rejectsOverflowSignal(uint256 overflowSeed, uint8 positionRaw) public view {
+    function testFuzz_rejectsOverflowSignal(
+        uint256 overflowSeed,
+        uint8 positionRaw
+    ) public view {
         uint256 overflow = bound(overflowSeed, FR, type(uint256).max);
         uint8 position = positionRaw % 7;
 
@@ -187,13 +222,26 @@ contract StateTransferVerifierTest is Test {
     }
 
     function testFuzz_randomProofNeverVerifies(
-        uint256 a0, uint256 a1,
-        uint256 c0, uint256 c1
+        uint256 a0,
+        uint256 a1,
+        uint256 c0,
+        uint256 c1
     ) public view {
         uint[2] memory pA = [a0, a1];
-        uint[2][2] memory pB = [[uint256(1), uint256(0)], [uint256(0), uint256(1)]];
+        uint[2][2] memory pB = [
+            [uint256(1), uint256(0)],
+            [uint256(0), uint256(1)]
+        ];
         uint[2] memory pC = [c0, c1];
-        uint[7] memory pubSignals = [uint256(1), uint256(2), uint256(3), uint256(4), uint256(5), uint256(6), uint256(7)];
+        uint[7] memory pubSignals = [
+            uint256(1),
+            uint256(2),
+            uint256(3),
+            uint256(4),
+            uint256(5),
+            uint256(6),
+            uint256(7)
+        ];
 
         bool result = verifier.verifyProof(pA, pB, pC, pubSignals);
         assertFalse(result, "Random proof should not verify");
@@ -204,7 +252,11 @@ contract StateTransferVerifierTest is Test {
        ══════════════════════════════════════════════════ */
 
     function test_functionSelector() public pure {
-        bytes4 expected = bytes4(keccak256("verifyProof(uint256[2],uint256[2][2],uint256[2],uint256[7])"));
+        bytes4 expected = bytes4(
+            keccak256(
+                "verifyProof(uint256[2],uint256[2][2],uint256[2],uint256[7])"
+            )
+        );
         bytes4 actual = StateTransferVerifier.verifyProof.selector;
         assertEq(actual, expected, "Function selector mismatch");
     }
@@ -220,14 +272,17 @@ contract StateTransferVerifierTest is Test {
     function test_distinctFromCrossChainVerifier() public {
         // Deploy the other verifier to compare bytecode
         bytes memory transferCode = address(verifier).code;
-        
+
         // Verify the contract has non-trivial bytecode
         assertGt(transferCode.length, 100, "Should have substantial bytecode");
-        
+
         // The contracts should have the same selector but different verification keys
         // (embedded in bytecode as constants). This is a sanity check that they are
         // indeed different circuits.
         bytes32 transferHash = keccak256(transferCode);
-        assertFalse(transferHash == bytes32(0), "Bytecode hash should be non-zero");
+        assertFalse(
+            transferHash == bytes32(0),
+            "Bytecode hash should be non-zero"
+        );
     }
 }

@@ -739,7 +739,6 @@ contract OptimismBridgeAdapter is
         zkProofVerifier = verifier;
     }
 
-
     /// @notice Withdraw accumulated bridge fees
     /// @dev Transfers wrappedOP fees to the treasury address. Amount is capped
     ///      at the contract's wrappedOP balance.
