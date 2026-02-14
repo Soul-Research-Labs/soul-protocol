@@ -176,13 +176,39 @@ let result = if selector { a } else { b };
 
 ## Integration with Solidity
 
-The Noir circuits generate proofs compatible with on-chain verification. Use the [noir-verifier](https://github.com/noir-lang/noir/tree/master/tooling/noir_codegen) to generate Solidity verifiers:
+The Noir circuits generate proofs compatible with on-chain verification via
+[Barretenberg](https://github.com/AztecProtocol/aztec-packages/tree/master/barretenberg) (UltraHonk backend).
+
+### Generating Solidity Verifiers
+
+> **Note:** The legacy `nargo codegen-verifier` command (Plonk) is **deprecated**.
+> Use the UltraHonk pipeline via `bb` (Barretenberg CLI) instead.
 
 ```bash
-nargo codegen-verifier
+# 1. Compile the circuit
+cd noir/<circuit>
+nargo compile
+
+# 2. Generate the verification key (UltraHonk)
+bb write_vk_ultra_honk -b target/<circuit>.json -o target/vk
+
+# 3. Generate the Solidity verifier contract
+bb contract_ultra_honk -k target/vk -o ../../contracts/verifiers/generated/<Circuit>Verifier.sol
 ```
 
-This generates a `plonk_vk.sol` that can be deployed to verify proofs on-chain.
+The helper script `scripts/generate_verifiers.sh` automates this for all circuits
+in the workspace. Run it via:
+
+```bash
+npm run noir:codegen
+```
+
+### Current status (Feb 2026)
+
+All 20 generated verifiers in `contracts/verifiers/generated/` are **stub contracts**
+that revert with `StubVerifierNotDeployed()`. This is because `bb < 3.1.0` triggers
+an `on_curve` assertion error during verifier generation. Once a compatible `bb`
+release is available, regenerate all verifiers with the commands above.
 
 ## Performance Comparison
 

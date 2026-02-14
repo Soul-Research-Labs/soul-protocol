@@ -25,7 +25,7 @@
     "slither:json": "slither . --config-file slither.config.json --json slither-report.json",
     "mythril": "myth analyze contracts/primitives/ZKBoundStateLocks.sol --execution-timeout 3600 --max-depth 50",
     "mythril:quick": "myth analyze contracts/primitives/ZKBoundStateLocks.sol --max-depth 10",
-    "echidna": "echo 'Echidna fuzzing not yet configured. Add echidna.yaml and EchidnaTests contract first.' && exit 1",
+    "echidna": "echidna . --config test/fuzz/echidna.config.yaml --contract SoulInvariantTests",
     "certora": "certoraRun certora/conf/verify.conf",
     "certora:zkslocks": "certoraRun certora/conf/verify_zkslocks.conf",
     "certora:batch-accumulator": "certoraRun certora/conf/verify_batch_accumulator.conf",

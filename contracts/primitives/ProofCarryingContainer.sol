@@ -121,6 +121,10 @@ contract ProofCarryingContainer is AccessControl, ReentrancyGuard, Pausable {
     /// @dev SECURITY: Defaults to true. Only set to false in test environments.
     bool public useRealVerification = true;
 
+    /// @notice Once locked, `setRealVerification(false)` is permanently disabled.
+    /// @dev Call `lockVerificationMode()` before going to production.
+    bool public verificationLocked;
+
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
     //////////////////////////////////////////////////////////////*/
@@ -159,11 +163,13 @@ contract ProofCarryingContainer is AccessControl, ReentrancyGuard, Pausable {
         address indexed newRegistry
     );
     event RealVerificationToggled(bool enabled);
+    event VerificationModeLocked();
 
     /*//////////////////////////////////////////////////////////////
                               CUSTOM ERRORS
     //////////////////////////////////////////////////////////////*/
 
+    error VerificationModePermanentlyLocked();
     error ContainerAlreadyExists(bytes32 containerId);
     error ContainerNotFound(bytes32 containerId);
     error NullifierAlreadyConsumed(bytes32 nullifier);
@@ -659,12 +665,22 @@ contract ProofCarryingContainer is AccessControl, ReentrancyGuard, Pausable {
     }
 
     /// @notice Enable or disable real verification mode
+    /// @dev Once `lockVerificationMode()` has been called, disabling is permanently blocked.
     /// @param enabled True to use real verifiers, false for placeholder
     function setRealVerification(
         bool enabled
     ) external onlyRole(CONTAINER_ADMIN_ROLE) {
+        if (!enabled && verificationLocked) revert VerificationModePermanentlyLocked();
         useRealVerification = enabled;
         emit RealVerificationToggled(enabled);
+    }
+
+    /// @notice Permanently prevent disabling real verification.
+    /// @dev This is a one-way operation — call before production deployment.
+    function lockVerificationMode() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        verificationLocked = true;
+        useRealVerification = true;
+        emit VerificationModeLocked();
     }
 
     /// @notice Pause contract

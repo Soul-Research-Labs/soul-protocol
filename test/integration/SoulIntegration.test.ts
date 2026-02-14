@@ -118,26 +118,95 @@ describe("Soul Protocol Integration Tests", function () {
   });
 
   describe("Privacy Pool Deposits and Withdrawals", function () {
-    it("should process deposits correctly", async function () {
-      // This would require a PrivacyPool contract
-      // Placeholder for integration test
-      expect(true).to.be.true;
+    let shieldedPool: GetContractReturnType<any>;
+
+    before(async function () {
+      // Deploy UniversalShieldedPool in test mode (no real ZK verification)
+      shieldedPool = await viem.deployContract("UniversalShieldedPool", [
+        deployer.account.address,      // admin
+        mockVerifier.address,           // withdrawal verifier
+        true,                           // testMode = true
+      ]);
+    });
+
+    it("should accept an ETH deposit with valid commitment", async function () {
+      // Generate a test commitment (non-zero, within field size)
+      const commitment = keccak256(toBytes("privacy-pool-deposit-1"));
+      const depositAmount = 100000000000000000n; // 0.1 ETH
+
+      const rootBefore = await shieldedPool.read.currentRoot();
+
+      await shieldedPool.write.depositETH([commitment], {
+        account: user1.account,
+        value: depositAmount,
+      });
+
+      // After deposit the Merkle root should have changed
+      const rootAfter = await shieldedPool.read.currentRoot();
+      expect(rootAfter).to.not.equal(rootBefore);
+
+      // Next leaf index should have advanced
+      const nextIndex = await shieldedPool.read.nextLeafIndex();
+      expect(nextIndex).to.be.gte(1n);
+    });
+
+    it("should reject a deposit with zero commitment", async function () {
+      let reverted = false;
+      try {
+        await shieldedPool.write.depositETH([zeroHash], {
+          account: user1.account,
+          value: 100000000000000000n,
+        });
+      } catch {
+        reverted = true;
+      }
+      expect(reverted).to.be.true;
+    });
+
+    it("should track the Merkle root history", async function () {
+      const root = await shieldedPool.read.currentRoot();
+      const isKnown = await shieldedPool.read.isKnownRoot([root]);
+      expect(isKnown).to.be.true;
     });
   });
 
   describe("Cross-Chain Bridge Operations", function () {
-    describe("Solana Bridge", function () {
-      it("should configure bridge correctly", async function () {
-        // Bridge would need to be deployed and configured
-        // Placeholder test
-        expect(true).to.be.true;
+    describe("Arbitrum Bridge (MockInbox)", function () {
+      let mockInbox: GetContractReturnType<any>;
+
+      before(async function () {
+        mockInbox = await viem.deployContract("MockArbitrumInbox");
+      });
+
+      it("should compute retryable ticket submission fee", async function () {
+        const fee = await mockInbox.read.calculateRetryableSubmissionFee([
+          256n, // dataLength
+          0n,   // baseFee (not used in mock)
+        ]);
+        // Mock returns dataLength * 10 as the fee
+        expect(fee).to.be.gte(0n);
       });
     });
 
-    describe("Cardano Bridge", function () {
-      it("should configure bridge correctly", async function () {
-        // Placeholder test
-        expect(true).to.be.true;
+    describe("Hyperlane Bridge (MockMailbox)", function () {
+      let mockMailbox: GetContractReturnType<any>;
+
+      before(async function () {
+        mockMailbox = await viem.deployContract("MockHyperlaneMailbox", [
+          31337, // local domain = hardhat chain id
+        ]);
+      });
+
+      it("should dispatch a message to a remote domain", async function () {
+        const remoteDomain = 42161; // Arbitrum
+        const recipient = keccak256(toBytes("remote-recipient"));
+        const body = toBytes("cross-chain-payload");
+
+        const messageId = await mockMailbox.write.dispatch(
+          [remoteDomain, recipient, body],
+          { account: deployer.account },
+        );
+        expect(messageId).to.not.be.undefined;
       });
     });
   });

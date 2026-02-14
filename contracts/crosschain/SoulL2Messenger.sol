@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {IProofVerifier} from "../interfaces/IProofVerifier.sol";
 
 /// @title SoulL2Messenger
 /// @author Soul Protocol
@@ -124,6 +125,10 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
     /// @notice L1 proof hub address
     address public proofHub;
 
+    /// @notice ZK decryption proof verifier (IProofVerifier)
+    /// @dev When set to address(0), falls back to hash-based commitment check.
+    address public decryptionVerifier;
+
     /// @notice Minimum fulfiller bond
     uint256 public minFulfillerBond = 0.05 ether;
 
@@ -161,6 +166,8 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
 
     event ProofHubUpdated(address indexed oldHub, address indexed newHub);
 
+    event DecryptionVerifierUpdated(address indexed oldVerifier, address indexed newVerifier);
+
     /*//////////////////////////////////////////////////////////////
                                 ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -178,6 +185,7 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
     error InsufficientGas();
     error InsufficientValue();
     error ZeroAddress();
+    error DecryptionVerificationFailed();
 
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
@@ -513,23 +521,35 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
 
     /**
      * @notice Verify decryption proof
-     * @custom:security PLACEHOLDER — This is NOT real ZK verification.
-     *   It only checks that the proof bytes contain expected hashes.
-     *   Replace with a real verifier contract call before production.
+     * @dev If a real IProofVerifier is set via `setDecryptionVerifier`, the proof
+     *   is forwarded to it for on-chain ZK verification. Otherwise falls back to
+     *   a hash-based commitment check (suitable for testing only).
      */
     function _verifyDecryptionProof(
         bytes32 calldataCommitment,
         bytes calldata decryptedCalldata,
         bytes calldata zkProof
-    ) internal pure returns (bool) {
+    ) internal view returns (bool) {
         // If the commitment matches the hash of decrypted data, no ZK proof needed
         if (keccak256(decryptedCalldata) == calldataCommitment) {
             return true;
         }
 
-        // For encrypted data, verify the ZK proof
-        // The proof must demonstrate knowledge of the decryption key
-        // and that decryptedCalldata is the correct plaintext
+        // --- Real ZK verification path ---
+        if (decryptionVerifier != address(0)) {
+            // Pack public inputs: [calldataCommitment, keccak256(decryptedCalldata)]
+            uint256[] memory publicInputs = new uint256[](2);
+            publicInputs[0] = uint256(calldataCommitment);
+            publicInputs[1] = uint256(keccak256(decryptedCalldata));
+
+            try IProofVerifier(decryptionVerifier).verify(zkProof, publicInputs) returns (bool valid) {
+                return valid;
+            } catch {
+                return false;
+            }
+        }
+
+        // --- Fallback: hash-based structural check (testing only) ---
         if (zkProof.length < 128) revert("ZK proof too short");
 
         // Verify proof structure: first 32 bytes must commit to the calldata hash
@@ -541,5 +561,15 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
         if (proofBinding != calldataCommitment) return false;
 
         return true;
+    }
+
+    /// @notice Set the ZK decryption proof verifier
+    /// @param _verifier The IProofVerifier address (address(0) to disable)
+    function setDecryptionVerifier(
+        address _verifier
+    ) external onlyRole(OPERATOR_ROLE) {
+        address oldVerifier = decryptionVerifier;
+        decryptionVerifier = _verifier;
+        emit DecryptionVerifierUpdated(oldVerifier, _verifier);
     }
 }

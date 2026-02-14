@@ -361,6 +361,14 @@ jobs:
           - verify_network_invariants
           - verify_upgradeable
           - verify_governor
+          - verify_crosschain
+          - verify_direct_l2_messenger
+          - verify_gas_normalizer
+          - verify_private_relayer_network
+          - verify_recursive_proof_aggregator
+          - verify_sptc
+          - verify_upgradeable_shielded_pool
+          - verify_view_key_registry
     steps:
       - uses: actions/checkout@v4
         with:
