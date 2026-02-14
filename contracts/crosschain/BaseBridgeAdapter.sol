@@ -738,14 +738,18 @@ contract BaseBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     }
 
     /**
-     * @notice Check if a proof has been relayed
+     * @notice Check if a proof has been relayed to this chain
+     * @param proofHash The hash of the proof to check
+     * @return True if the proof has been relayed and recorded
      */
     function isProofRelayed(bytes32 proofHash) external view returns (bool) {
         return relayedProofs[proofHash];
     }
 
     /**
-     * @notice Get attestation details
+     * @notice Get attestation details by ID
+     * @param attestationId The unique identifier of the attestation
+     * @return The attestation sync data including subject, schema, and timestamp
      */
     function getAttestation(
         bytes32 attestationId
@@ -754,7 +758,10 @@ contract BaseBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     }
 
     /**
-     * @notice Check if subject has a specific attestation
+     * @notice Check if a subject has a specific attestation
+     * @dev Parameters are unused in simplified implementation.
+     *      Would iterate through attestations in production.
+     * @return True if the subject holds the attestation (always false in current impl)
      */
     function hasAttestation(
         address /* subject */,
@@ -766,7 +773,12 @@ contract BaseBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     }
 
     /**
-     * @notice Get adapter statistics
+     * @notice Get adapter operational statistics
+     * @return messagesSent Total cross-domain messages sent
+     * @return messagesReceived Total cross-domain messages received
+     * @return valueBridged Total ETH value bridged in wei
+     * @return usdcBridged Total USDC value bridged
+     * @return currentNonce Current message nonce for ordering
      */
     function getStats()
         external
@@ -793,7 +805,8 @@ contract BaseBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Update L2 target address
+     * @notice Update the L2 target contract address for cross-domain messaging
+     * @param _l2Target The new L2 target contract address
      */
     function setL2Target(
         address _l2Target
@@ -804,7 +817,9 @@ contract BaseBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     }
 
     /**
-     * @notice Configure CCTP integration
+     * @notice Configure Circle CCTP (Cross-Chain Transfer Protocol) integration
+     * @param _tokenMessenger The CCTP TokenMessenger contract address
+     * @param _usdcToken The USDC token contract address on this chain
      */
     function configureCCTP(
         address _tokenMessenger,
@@ -816,7 +831,9 @@ contract BaseBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     }
 
     /**
-     * @notice Update messenger addresses
+     * @notice Update cross-domain messenger contract addresses
+     * @param _messenger The new messenger contract address
+     * @param _isL1Messenger True to set the L1 messenger, false for L2 messenger
      */
     function setMessenger(
         address _messenger,
@@ -831,14 +848,16 @@ contract BaseBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     }
 
     /**
-     * @notice Pause the adapter
+     * @notice Pause all bridge operations (emergency use)
+     * @dev Restricted to GUARDIAN_ROLE. Blocks all cross-domain messaging and transfers.
      */
     function pause() external onlyRole(GUARDIAN_ROLE) {
         _pause();
     }
 
     /**
-     * @notice Unpause the adapter
+     * @notice Resume bridge operations after a pause
+     * @dev Restricted to GUARDIAN_ROLE. Re-enables all cross-domain messaging and transfers.
      */
     function unpause() external onlyRole(GUARDIAN_ROLE) {
         _unpause();
