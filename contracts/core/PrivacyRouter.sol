@@ -629,28 +629,33 @@ contract PrivacyRouter is AccessControl, ReentrancyGuard, Pausable {
     }
 
     /// @notice Check compliance for a user (KYC + sanctions)
+    /// @dev Fail-closed: reverts if compliance oracle is unreachable
     function _checkCompliance(address user) internal view {
         if (!complianceEnabled || compliance == address(0)) return;
 
-        // Check sanctions
+        // Check sanctions — fail-closed on oracle failure
         (bool sSuccess, bytes memory sResult) = compliance.staticcall(
             abi.encodeWithSignature("sanctionedAddresses(address)", user)
         );
-        if (sSuccess && sResult.length >= 32) {
+        if (!sSuccess || sResult.length < 32)
+            revert ComplianceCheckFailed(user);
+        {
             bool sanctioned = abi.decode(sResult, (bool));
             if (sanctioned) revert SanctionedAddress(user);
         }
 
-        // Check KYC validity
+        // Check KYC validity — fail-closed on oracle failure
         (bool kSuccess, bytes memory kResult) = compliance.staticcall(
             abi.encodeWithSignature("isKYCValid(address)", user)
         );
-        if (kSuccess && kResult.length >= 32) {
+        if (!kSuccess || kResult.length < 32)
+            revert ComplianceCheckFailed(user);
+        {
             bool valid = abi.decode(kResult, (bool));
             if (!valid) revert ComplianceCheckFailed(user);
         }
 
-        // Check minimum KYC tier if required
+        // Check minimum KYC tier if required — fail-closed
         if (minimumKYCTier > 0) {
             (bool tSuccess, bytes memory tResult) = compliance.staticcall(
                 abi.encodeWithSignature(
@@ -659,9 +664,12 @@ contract PrivacyRouter is AccessControl, ReentrancyGuard, Pausable {
                     minimumKYCTier
                 )
             );
-            if (tSuccess && tResult.length >= 32) {
+            if (!tSuccess || tResult.length < 32)
+                revert ComplianceCheckFailed(user);
+            {
                 bool meets = abi.decode(tResult, (bool));
-                if (!meets) revert InsufficientKYCTier(user, minimumKYCTier, 0);
+                if (!meets)
+                    revert InsufficientKYCTier(user, minimumKYCTier, 0);
             }
         }
     }

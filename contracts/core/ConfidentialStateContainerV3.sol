@@ -852,46 +852,56 @@ contract ConfidentialStateContainerV3 is
     }
 
     /// @notice Locks a state (e.g., during dispute resolution)
+    /// @dev Only Active states can be locked
     /// @param commitment The commitment to lock
     function lockState(bytes32 commitment) external onlyRole(OPERATOR_ROLE) {
         EncryptedState storage state = _states[commitment];
         if (state.owner == address(0)) revert CommitmentNotFound(commitment);
+        if (state.status != StateStatus.Active)
+            revert StateNotActive(commitment, state.status);
 
-        StateStatus oldStatus = state.status;
         state.status = StateStatus.Locked;
         state.updatedAt = uint48(block.timestamp);
 
-        emit StateStatusChanged(commitment, oldStatus, StateStatus.Locked);
+        emit StateStatusChanged(commitment, StateStatus.Active, StateStatus.Locked);
     }
 
     /// @notice Unlocks a previously locked state
+    /// @dev Only Locked states can be unlocked
     /// @param commitment The commitment to unlock
     function unlockState(bytes32 commitment) external onlyRole(OPERATOR_ROLE) {
         EncryptedState storage state = _states[commitment];
         if (state.owner == address(0)) revert CommitmentNotFound(commitment);
+        if (state.status != StateStatus.Locked)
+            revert StateNotActive(commitment, state.status);
 
-        StateStatus oldStatus = state.status;
         state.status = StateStatus.Active;
         state.updatedAt = uint48(block.timestamp);
 
-        emit StateStatusChanged(commitment, oldStatus, StateStatus.Active);
+        emit StateStatusChanged(commitment, StateStatus.Locked, StateStatus.Active);
     }
 
     /// @notice Freezes a state (compliance action)
+    /// @dev Only Active or Locked states can be frozen; counter only decremented for Active
     /// @param commitment The commitment to freeze
     function freezeState(bytes32 commitment) external onlyRole(EMERGENCY_ROLE) {
         EncryptedState storage state = _states[commitment];
         if (state.owner == address(0)) revert CommitmentNotFound(commitment);
 
         StateStatus oldStatus = state.status;
+        if (oldStatus != StateStatus.Active && oldStatus != StateStatus.Locked)
+            revert StateNotActive(commitment, oldStatus);
+
         state.status = StateStatus.Frozen;
         state.updatedAt = uint48(block.timestamp);
 
-        // Decrement active states (lower 128 bits) with underflow protection
-        uint128 activeCount = uint128(_packedCounters);
-        if (activeCount > 0) {
-            unchecked {
-                --_packedCounters;
+        // Only decrement active counter if the state was Active
+        if (oldStatus == StateStatus.Active) {
+            uint128 activeCount = uint128(_packedCounters);
+            if (activeCount > 0) {
+                unchecked {
+                    --_packedCounters;
+                }
             }
         }
 

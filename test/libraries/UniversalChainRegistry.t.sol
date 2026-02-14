@@ -140,9 +140,9 @@ contract UniversalChainRegistryTest is Test {
         assertNotEq(eth, arb);
     }
 
-    function test_computeEVMChainId_matchesKeccak() public view {
-        bytes32 expected = keccak256(
-            abi.encodePacked("SOUL_CHAIN", uint256(1))
+    function test_computeEVMChainId_matchesSha256() public view {
+        bytes32 expected = sha256(
+            abi.encodePacked("SOUL_CHAIN_", "1")
         );
         assertEq(lib.computeEVMChainId(1), expected);
     }
@@ -173,8 +173,8 @@ contract UniversalChainRegistryTest is Test {
         );
     }
 
-    function test_computeNonEVMChainId_matchesKeccak() public view {
-        bytes32 expected = keccak256(abi.encodePacked("SOUL_CHAIN_", "SOLANA"));
+    function test_computeNonEVMChainId_matchesSha256() public view {
+        bytes32 expected = sha256(abi.encodePacked("SOUL_CHAIN_", "SOLANA"));
         assertEq(lib.computeNonEVMChainId("SOLANA"), expected);
     }
 

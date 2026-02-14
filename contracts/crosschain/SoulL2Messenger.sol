@@ -175,12 +175,14 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
     error NotFulfiller();
     error InsufficientGas();
     error InsufficientValue();
+    error ZeroAddress();
 
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
     constructor(address _proofHub) {
+        if (_proofHub == address(0)) revert ZeroAddress();
         proofHub = _proofHub;
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(OPERATOR_ROLE, msg.sender);
@@ -476,7 +478,7 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
         }
 
         (bool success, ) = payable(msg.sender).call{value: amount}("");
-        require(success, "Withdraw failed");
+        if (!success) revert ExecutionFailed();
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -497,7 +499,10 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl {
     /// @notice Set proof hub address
     /// @param _proofHub The address of the CrossChainProofHubV3 contract
     function setProofHub(address _proofHub) external onlyRole(OPERATOR_ROLE) {
+        if (_proofHub == address(0)) revert ZeroAddress();
+        address oldHub = proofHub;
         proofHub = _proofHub;
+        emit CounterpartSet(0, _proofHub); // Reuse event; chainId=0 indicates proof hub
     }
 
     /*//////////////////////////////////////////////////////////////

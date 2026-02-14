@@ -302,7 +302,7 @@ contract DirectL2MessengerTest is Test {
         bytes memory payload = bytes("hello");
 
         bytes32 messageHash = keccak256(
-            abi.encodePacked(
+            abi.encode(
                 messageId,
                 srcChain,
                 block.chainid,
@@ -374,7 +374,7 @@ contract DirectL2MessengerTest is Test {
         bytes memory payload = bytes("hello");
 
         bytes32 messageHash = keccak256(
-            abi.encodePacked(
+            abi.encode(
                 messageId,
                 uint256(42161),
                 block.chainid,
@@ -499,7 +499,7 @@ contract DirectL2MessengerTest is Test {
         bytes memory payload = bytes("data");
 
         bytes32 messageHash = keccak256(
-            abi.encodePacked(
+            abi.encode(
                 messageId,
                 uint256(10),
                 block.chainid,
@@ -580,7 +580,7 @@ contract DirectL2MessengerTest is Test {
         bytes memory payload = bytes("data");
 
         bytes32 msgHash = keccak256(
-            abi.encodePacked(
+            abi.encode(
                 messageId,
                 uint256(10),
                 block.chainid,

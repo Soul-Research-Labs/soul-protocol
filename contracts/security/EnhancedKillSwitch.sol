@@ -112,6 +112,9 @@ contract EnhancedKillSwitch is AccessControl, ReentrancyGuard, Pausable {
     /// @notice Guardian status
     mapping(address => bool) public isGuardian;
 
+    /// @notice Tracks which guardians have confirmed a recovery (keyed by requestedAt timestamp)
+    mapping(uint256 => mapping(address => bool)) public recoveryConfirmed;
+
     // ============ Structs ============
 
     struct RecoveryRequest {
@@ -212,6 +215,7 @@ contract EnhancedKillSwitch is AccessControl, ReentrancyGuard, Pausable {
     error RecoveryDelayNotPassed();
     error EscalationPending();
     error NoEscalationPending();
+    error AlreadyConfirmedRecovery();
 
     // ============ Modifiers ============
 
@@ -378,6 +382,7 @@ contract EnhancedKillSwitch is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Confirm recovery request
+     * @dev Each guardian can only confirm once per recovery request
      */
     function confirmRecovery() external onlyGuardian {
         if (
@@ -387,6 +392,11 @@ contract EnhancedKillSwitch is AccessControl, ReentrancyGuard, Pausable {
         ) {
             revert NoRecoveryPending();
         }
+
+        // Prevent duplicate confirmations from the same guardian
+        if (recoveryConfirmed[recoveryRequest.requestedAt][msg.sender])
+            revert AlreadyConfirmedRecovery();
+        recoveryConfirmed[recoveryRequest.requestedAt][msg.sender] = true;
 
         recoveryRequest.confirmations++;
     }

@@ -36,7 +36,6 @@ contract SoulAtomicSwapV2 is
     }
 
     /// @notice Represents an atomic swap
-    /// @param id Unique swap identifier
     /// @param initiator The swap initiator
     /// @param recipient The intended recipient
     /// @param token The token address (address(0) for ETH)
@@ -46,7 +45,6 @@ contract SoulAtomicSwapV2 is
     /// @param status Current swap status
     /// @param commitment Privacy commitment for stealth transfer
     struct Swap {
-        bytes32 id;
         address initiator;
         address recipient;
         address token;
@@ -280,7 +278,6 @@ contract SoulAtomicSwapV2 is
 
         // Create swap
         swaps[swapId] = Swap({
-            id: swapId,
             initiator: msg.sender,
             recipient: recipient,
             token: token,
@@ -371,12 +368,7 @@ contract SoulAtomicSwapV2 is
         swap.status = SwapStatus.Claimed;
 
         // Transfer to recipient using cached values
-        if (_token == address(0)) {
-            (bool success, ) = _recipient.call{value: _amount}("");
-            if (!success) revert TransferFailed();
-        } else {
-            IERC20(_token).safeTransfer(_recipient, _amount);
-        }
+        _transferOut(_token, _recipient, _amount);
 
         emit SwapClaimed(swapId, msg.sender, secret);
     }
@@ -408,13 +400,7 @@ contract SoulAtomicSwapV2 is
 
         swap.status = SwapStatus.Claimed;
 
-        // Transfer to recipient using cached values
-        if (_token == address(0)) {
-            (bool success, ) = _recipient.call{value: _amount}("");
-            if (!success) revert TransferFailed();
-        } else {
-            IERC20(_token).safeTransfer(_recipient, _amount);
-        }
+        _transferOut(_token, _recipient, _amount);
 
         emit SwapClaimed(swapId, msg.sender, secret);
     }
@@ -435,15 +421,23 @@ contract SoulAtomicSwapV2 is
 
         swap.status = SwapStatus.Refunded;
 
-        // Refund to initiator using cached values
-        if (_token == address(0)) {
-            (bool success, ) = _initiator.call{value: _amount}("");
-            if (!success) revert TransferFailed();
-        } else {
-            IERC20(_token).safeTransfer(_initiator, _amount);
-        }
+        _transferOut(_token, _initiator, _amount);
 
         emit SwapRefunded(swapId, _initiator);
+    }
+
+    /// @dev Transfer ETH or ERC20 tokens to a recipient
+    function _transferOut(
+        address token,
+        address to,
+        uint256 amount
+    ) internal {
+        if (token == address(0)) {
+            (bool success, ) = to.call{value: amount}("");
+            if (!success) revert TransferFailed();
+        } else {
+            IERC20(token).safeTransfer(to, amount);
+        }
     }
 
     /// @notice Gets swap details by hash lock

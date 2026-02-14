@@ -305,15 +305,14 @@ library GasOptimizations {
 
     /**
      * @notice Sum array of uint256 values with overflow check
+     * @dev Relies on Solidity 0.8+ built-in overflow protection
      */
     function safeSum(
         uint256[] memory values
     ) internal pure returns (uint256 total) {
         uint256 len = values.length;
         for (uint256 i = 0; i < len; ) {
-            uint256 newTotal = total + values[i];
-            if (newTotal < total) revert Overflow();
-            total = newTotal;
+            total += values[i]; // Solidity 0.8 reverts on overflow
             unchecked {
                 ++i;
             }
@@ -342,31 +341,27 @@ library GasOptimizations {
 
     /**
      * @notice Gas-efficient max of two uint256 values
+     * @dev Uses branchless assembly; safe for internal calls (no `return` opcode)
      */
-    function max(uint256 a, uint256 b) internal pure returns (uint256) {
+    function max(uint256 a, uint256 b) internal pure returns (uint256 result) {
         assembly {
-            if gt(a, b) {
-                mstore(0x00, a)
+            result := a
+            if gt(b, a) {
+                result := b
             }
-            if iszero(gt(a, b)) {
-                mstore(0x00, b)
-            }
-            return(0x00, 0x20)
         }
     }
 
     /**
      * @notice Gas-efficient min of two uint256 values
+     * @dev Uses branchless assembly; safe for internal calls (no `return` opcode)
      */
-    function min(uint256 a, uint256 b) internal pure returns (uint256) {
+    function min(uint256 a, uint256 b) internal pure returns (uint256 result) {
         assembly {
-            if lt(a, b) {
-                mstore(0x00, a)
+            result := a
+            if lt(b, a) {
+                result := b
             }
-            if iszero(lt(a, b)) {
-                mstore(0x00, b)
-            }
-            return(0x00, 0x20)
         }
     }
 

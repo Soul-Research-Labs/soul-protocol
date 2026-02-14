@@ -188,20 +188,40 @@ library UniversalChainRegistry {
     }
 
     /// @notice Compute universal chain ID for an EVM chain
+    /// @dev Uses sha256 to match pre-computed constants (e.g. ETHEREUM_MAINNET)
     /// @param evmChainId The EVM chain ID (e.g. 1, 42161)
     /// @return universalId The deterministic universal chain ID
     function computeEVMChainId(
         uint256 evmChainId
     ) internal pure returns (bytes32 universalId) {
-        return keccak256(abi.encodePacked("SOUL_CHAIN", evmChainId));
+        return sha256(abi.encodePacked("SOUL_CHAIN_", _uint2str(evmChainId)));
     }
 
     /// @notice Compute universal chain ID for a non-EVM chain
+    /// @dev Uses sha256 to match pre-computed constants (e.g. SOLANA)
     /// @param chainName The canonical chain name (e.g. "SOLANA", "APTOS")
     /// @return universalId The deterministic universal chain ID
     function computeNonEVMChainId(
         string memory chainName
     ) internal pure returns (bytes32 universalId) {
-        return keccak256(abi.encodePacked("SOUL_CHAIN_", chainName));
+        return sha256(abi.encodePacked("SOUL_CHAIN_", chainName));
+    }
+
+    /// @dev Convert uint256 to string for hash computation
+    function _uint2str(uint256 value) private pure returns (string memory) {
+        if (value == 0) return "0";
+        uint256 temp = value;
+        uint256 digits;
+        while (temp != 0) {
+            unchecked { ++digits; }
+            temp /= 10;
+        }
+        bytes memory buffer = new bytes(digits);
+        while (value != 0) {
+            unchecked { --digits; }
+            buffer[digits] = bytes1(uint8(48 + (value % 10)));
+            value /= 10;
+        }
+        return string(buffer);
     }
 }

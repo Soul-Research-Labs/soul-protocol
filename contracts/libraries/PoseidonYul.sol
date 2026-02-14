@@ -6,7 +6,16 @@ pragma solidity ^0.8.20;
  * @notice Hand-optimized Yul assembly implementation of the Poseidon hash (BN254)
  * @dev Specifically optimized for 2-input hashing (T=3)
  * @dev Gas Target: < 25,000 gas
- * @dev Uses Poseidon parameters from circomlib/poseidon for BN254
+ *
+ * ╔══════════════════════════════════════════════════════════════════════╗
+ * ║  WARNING — SIMPLIFIED IMPLEMENTATION                                ║
+ * ║  This uses 8 full rounds instead of the standard 8F+57P=65 rounds. ║
+ * ║  Round constants c2-c7 are cycled instead of unique per round.      ║
+ * ║  Suitable for on-chain commitment nonces and Merkle tree nodes      ║
+ * ║  where collision resistance against non-adversarial inputs suffices.║
+ * ║  NOT suitable as a standalone commitment/nullifier hash where       ║
+ * ║  algebraic attacks may apply. Use a full Poseidon for those.        ║
+ * ╚══════════════════════════════════════════════════════════════════════╝
  */
 library PoseidonYul {
     uint256 internal constant P =

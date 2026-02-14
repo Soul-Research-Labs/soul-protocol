@@ -85,6 +85,7 @@ contract StealthContractFactoryTest is Test {
     function test_deactivateRecipient() public {
         bytes32 recipientId = factory.registerRecipient(_pubKey(1), _pubKey(2));
 
+        vm.prank(admin);
         factory.deactivateRecipient(recipientId);
 
         StealthContractFactory.StealthKeys memory keys = factory
@@ -97,6 +98,7 @@ contract StealthContractFactoryTest is Test {
 
         vm.expectEmit(true, false, false, false);
         emit StealthContractFactory.RecipientDeactivated(recipientId);
+        vm.prank(admin);
         factory.deactivateRecipient(recipientId);
     }
 

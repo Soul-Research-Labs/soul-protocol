@@ -25,7 +25,7 @@ library SoulConstants {
 
     /// @dev keccak256("CHALLENGER_ROLE")
     bytes32 internal constant CHALLENGER_ROLE =
-        0x1cf8cb71e72697a4f6c3f6e3e8a7d9c0b2a3f4e5d6c7b8a9f0e1d2c3b4a5f6e7;
+        0xe752add323323eb13e36c71ee508dfd16d74e9e4c4fd78786ba97989e5e13818;
 
     /// @dev keccak256("GUARDIAN_ROLE")
     bytes32 internal constant GUARDIAN_ROLE =
@@ -33,11 +33,11 @@ library SoulConstants {
 
     /// @dev keccak256("MONITOR_ROLE")
     bytes32 internal constant MONITOR_ROLE =
-        0x92f8f4d29b7ef3eae75dca2d18fa09ff0c2f8fae437baa5b92b4eaae7e19a52a;
+        0x8227712ef8ad39d0f26f06731ef0df8665eb7ada7f41b1ee089adf3c238862a2;
 
     /// @dev keccak256("RECOVERY_ROLE")
     bytes32 internal constant RECOVERY_ROLE =
-        0xb3d5a7d2c64e4e04d3e46f26ebc3e8a9f0f2c3d4e5f6a7b8c9d0e1f2a3b4c5d6;
+        0x0acf805600123ef007091da3b3ffb39474074c656c127aa68cb0ffec232a8ff8;
 
     /// @dev keccak256("UPGRADER_ROLE")
     bytes32 internal constant UPGRADER_ROLE =
@@ -45,19 +45,19 @@ library SoulConstants {
 
     /// @dev keccak256("ANNOUNCER_ROLE")
     bytes32 internal constant ANNOUNCER_ROLE =
-        0x28bf751bc1d0e1ce1e07469dfe6d05c5c0e65f1e92e0f41bfd3cc6c120c1ec3c;
+        0x6e925cbf9b246ec609b2c956a4ec0074fde4bcbc1f65aadcebf89efbd7f60a6a;
 
     /// @dev keccak256("SEQUENCER_ROLE")
     bytes32 internal constant SEQUENCER_ROLE =
-        0x849fce1dece1cc934b40fd6265c7df1e5b7d75ab9dfc0fbb2c0fb4e4c4dec694;
+        0xac4f1890dc96c9a02330d1fa696648a38f3b282d2449c2d8e6f10507488c84c8;
 
     /// @dev keccak256("EMERGENCY_ROLE")
     bytes32 internal constant EMERGENCY_ROLE =
-        0xbf233dd2aafeb4d50879c4aa5c81e96d92f6e19cec777fe1e4cc9d80a4b1c3f0;
+        0xbf233dd2aafeb4d50879c4aa5c81e96d92f6e6945c906a58f9f2d1c1631b4b26;
 
     /// @dev keccak256("VERIFIER_ADMIN_ROLE")
     bytes32 internal constant VERIFIER_ADMIN_ROLE =
-        0x0128b67e5ff1d54f0f3a17b69e93d7c6f0f5e9d8c7b6a5f4e3d2c1b0a9f8e7d6;
+        0xb194a0b06484f8a501e0bef8877baf2a303f803540f5ddeb9d985c0cd76f3e70;
 
     /// @dev keccak256("EXECUTOR_ROLE")
     bytes32 internal constant EXECUTOR_ROLE =
@@ -73,15 +73,15 @@ library SoulConstants {
 
     /// @dev keccak256("Soul_STEALTH_ADDRESS_V1")
     bytes32 internal constant STEALTH_DOMAIN =
-        0x2a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b;
+        0xa219e6ccf48da8087a92d8762778a8ffa3ee060308b58c3817ecd1ef293e182f;
 
     /// @dev keccak256("Soul_NULLIFIER_V1")
     bytes32 internal constant NULLIFIER_DOMAIN =
-        0x3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c;
+        0xf7f782cc8fce305d843ac89c8740753ef950563552125592ec4bd78a3f817d18;
 
     /// @dev keccak256("Soul_CROSS_CHAIN_V1")
     bytes32 internal constant CROSS_CHAIN_DOMAIN =
-        0x4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d;
+        0x6614a1204bb950ebcea006429f54e5944f45260fce2c2a11144fa0e9939928f8;
 
     /*//////////////////////////////////////////////////////////////
                             PROOF TYPES
@@ -89,15 +89,15 @@ library SoulConstants {
 
     /// @dev keccak256("GROTH16_BLS12381")
     bytes32 internal constant PROOF_TYPE_GROTH16_BLS =
-        0x3a58f4c29b9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f;
+        0xde9274eb15475d7b1ada2fb3369f6493b97a5fab24247e8a7a10e15df93b9c94;
 
     /// @dev keccak256("PLONK")
     bytes32 internal constant PROOF_TYPE_PLONK =
-        0x5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f;
+        0x1ed479f945b11c8bc1baeea5959da750449aca7d7a597c510beff0a053ba9791;
 
     /// @dev keccak256("STARK")
     bytes32 internal constant PROOF_TYPE_STARK =
-        0x6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a;
+        0xd377136c2fbeb41ddcec98a939844ed750bef1d2a33d24d6f0355730a9cc7b44;
 
     /*//////////////////////////////////////////////////////////////
                              TIME CONSTANTS

@@ -303,6 +303,7 @@ contract GasOptimizedNullifierManager {
     error InvalidNullifier();
     error InvalidDomain();
     error BatchSizeExceeded();
+    error Unauthorized();
 
     // ═══════════════════════════════════════════════════════════════════════
     // EVENTS
@@ -315,6 +316,21 @@ contract GasOptimizedNullifierManager {
     );
 
     event BatchNullifiersConsumed(bytes32 indexed batchId, uint256 count);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // ACCESS CONTROL
+    // ═══════════════════════════════════════════════════════════════════════
+
+    address public owner;
+
+    modifier onlyOwner() {
+        if (msg.sender != owner) revert Unauthorized();
+        _;
+    }
+
+    constructor() {
+        owner = msg.sender;
+    }
 
     // ═══════════════════════════════════════════════════════════════════════
     // STORAGE (optimized packing)
@@ -334,7 +350,7 @@ contract GasOptimizedNullifierManager {
     // DOMAIN MANAGEMENT
     // ═══════════════════════════════════════════════════════════════════════
 
-    function registerDomain(bytes32 domain) external {
+    function registerDomain(bytes32 domain) external onlyOwner {
         registeredDomains[domain] = true;
     }
 

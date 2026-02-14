@@ -216,12 +216,12 @@ contract StealthContractFactory is
 
     /**
      * @notice Deactivate recipient registration
+     * @dev Only callable by an operator to prevent unauthorized deactivation
      */
-    function deactivateRecipient(bytes32 recipientId) external {
+    function deactivateRecipient(
+        bytes32 recipientId
+    ) external onlyRole(OPERATOR_ROLE) {
         StealthKeys storage keys = registeredRecipients[recipientId];
-
-        // Only the owner can deactivate (would verify signature in production)
-        // For now, simplified: anyone can deactivate with the recipientId
         require(keys.isActive, "Not active");
 
         keys.isActive = false;

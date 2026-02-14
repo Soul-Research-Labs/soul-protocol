@@ -357,9 +357,9 @@ contract DirectL2Messenger is ReentrancyGuard, AccessControl, Pausable {
             // Emit event so user is aware of path override
         }
 
-        // Generate message ID
+        // Generate message ID (use abi.encode for collision safety with variable-length payload)
         messageId = keccak256(
-            abi.encodePacked(
+            abi.encode(
                 currentChainId,
                 destChainId,
                 msg.sender,
@@ -600,9 +600,9 @@ contract DirectL2Messenger is ReentrancyGuard, AccessControl, Pausable {
             revert InsufficientConfirmations();
         }
 
-        // Verify signatures
+        // Verify signatures (use abi.encode for collision safety with variable-length payload)
         bytes32 messageHash = keccak256(
-            abi.encodePacked(
+            abi.encode(
                 messageId,
                 sourceChainId,
                 currentChainId,

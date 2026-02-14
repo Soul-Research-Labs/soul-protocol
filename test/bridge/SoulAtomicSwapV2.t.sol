@@ -102,7 +102,6 @@ contract SoulAtomicSwapV2Test is Test {
 
         // Check swap was created
         (
-            bytes32 id,
             address initiator,
             address recipient,
             address tok,
@@ -113,7 +112,6 @@ contract SoulAtomicSwapV2Test is Test {
             bytes32 comm
         ) = swap.swaps(swapId);
 
-        assertEq(id, swapId);
         assertEq(initiator, alice);
         assertEq(recipient, bob);
         assertEq(tok, address(0)); // ETH
@@ -229,7 +227,7 @@ contract SoulAtomicSwapV2Test is Test {
         assertEq(bob.balance - bobBalBefore, netAmount);
 
         // Status should be Claimed
-        (, , , , , , , SoulAtomicSwapV2.SwapStatus status, ) = swap.swaps(
+        (, , , , , , SoulAtomicSwapV2.SwapStatus status, ) = swap.swaps(
             swapId
         );
         assertEq(uint8(status), uint8(SoulAtomicSwapV2.SwapStatus.Claimed));
@@ -345,7 +343,7 @@ contract SoulAtomicSwapV2Test is Test {
         uint256 netAmount = 1 ether - ((1 ether * 10) / 10000);
         assertEq(alice.balance - aliceBalBefore, netAmount);
 
-        (, , , , , , , SoulAtomicSwapV2.SwapStatus status, ) = swap.swaps(
+        (, , , , , , SoulAtomicSwapV2.SwapStatus status, ) = swap.swaps(
             swapId
         );
         assertEq(uint8(status), uint8(SoulAtomicSwapV2.SwapStatus.Refunded));
@@ -421,7 +419,6 @@ contract SoulAtomicSwapV2Test is Test {
         );
 
         SoulAtomicSwapV2.Swap memory s = swap.getSwapByHashLock(hashLock);
-        assertEq(s.id, swapId);
         assertEq(s.initiator, alice);
     }
 
@@ -579,7 +576,7 @@ contract SoulAtomicSwapV2Test is Test {
 
         uint256 expectedNet = uint256(amount) -
             ((uint256(amount) * 10) / 10000);
-        (, , , , uint256 storedAmount, , , , ) = swap.swaps(swapId);
+        (, , , uint256 storedAmount, , , , ) = swap.swaps(swapId);
         assertEq(storedAmount, expectedNet);
     }
 

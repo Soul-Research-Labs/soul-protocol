@@ -23,13 +23,10 @@ contract SoulConstantsTest is Test {
         assertEq(SoulConstants.UPGRADER_ROLE, keccak256("UPGRADER_ROLE"));
     }
 
-    function test_announcerRole_isNonZero() public pure {
-        // ANNOUNCER_ROLE uses a pre-computed hash that differs from keccak256("ANNOUNCER_ROLE")
-        // but is consistent across StealthAddressRegistry and SoulConstants
-        assertTrue(SoulConstants.ANNOUNCER_ROLE != bytes32(0));
+    function test_announcerRole_matchesKeccak() public pure {
         assertEq(
             SoulConstants.ANNOUNCER_ROLE,
-            0x28bf751bc1d0e1ce1e07469dfe6d05c5c0e65f1e92e0f41bfd3cc6c120c1ec3c
+            keccak256("ANNOUNCER_ROLE")
         );
     }
 
