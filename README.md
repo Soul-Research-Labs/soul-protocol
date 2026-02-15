@@ -5,7 +5,6 @@
 [![Foundry](https://img.shields.io/badge/Built%20with-Foundry-FFDB1C.svg)](https://getfoundry.sh/)
 [![OpenZeppelin](https://img.shields.io/badge/OpenZeppelin-5.4.0-4E5EE4.svg)](https://openzeppelin.com/contracts/)
 
-
 > **Move privately between chains. No metadata. No lock-in.**
 
 Soul Protocol is zero-knowledge middleware for cross-chain confidential state transfer. It solves the privacy lock-in problem that traps users on single chains.
@@ -21,8 +20,9 @@ Privacy by itself is sufficiently compelling to differentiate a new chain from a
 As long as everything is public, it's trivial to move from one chain to another. But as soon as you make things private, that is no longer true. There is always a risk when moving in or out of a private zone that people watching the chain, mempool, or network traffic will figure out who you are.
 
 **The metadata leakage problem:** Crossing the boundary between a private chain and a public one—or even between two private chains—leaks all kinds of metadata:
+
 - **Transaction timing** (when you left vs. arrived)
-- **Transaction size** (amount correlation)  
+- **Transaction size** (amount correlation)
 - **Network patterns** (graph analysis)
 
 This makes it easier to track you. Compared to the many undifferentiated chains whose fees will be driven to zero by competition, blockchains with privacy have a much stronger network effect.
@@ -56,12 +56,12 @@ WITHOUT Soul:                            WITH Soul:
 
 ### How Soul Breaks Each Lock-In Mechanism
 
-| Lock-In Vector | Soul's Solution |
-|----------------|----------------|
+| Lock-In Vector         | Soul's Solution                                               |
+| ---------------------- | ------------------------------------------------------------- |
 | **Timing correlation** | ZK-SLocks decouple lock/unlock timing—proof generated offline |
-| **Amount correlation** | Pedersen commitments + Bulletproofs hide amounts |
-| **Address linkage** | Stealth addresses + CDNA nullifiers prevent graph analysis |
-| **Winner-take-most** | Interoperability prevents any chain from monopolizing |
+| **Amount correlation** | Pedersen commitments + Bulletproofs hide amounts              |
+| **Address linkage**    | Stealth addresses + CDNA nullifiers prevent graph analysis    |
+| **Winner-take-most**   | Interoperability prevents any chain from monopolizing         |
 
 ### The Network Effect Reversal
 
@@ -96,13 +96,13 @@ Chain A                              Chain B
 
 ### Core Capabilities
 
-| Feature | What It Does |
-|---------|--------------|
-| **Confidential State** | AES-256-GCM encrypted containers verified by ZK proofs |
-| **Cross-Chain ZK Bridge** | Transfer proofs across chains via Groth16 (BN254) |
-| **L2 Interoperability** | Arbitrum, Base, LayerZero, Hyperlane adapters |
-| **Stealth Addresses** | Unlinkable receiving addresses for privacy |
-| **Atomic Swaps** | HTLC private swaps with stealth commitments |
+| Feature                   | What It Does                                           |
+| ------------------------- | ------------------------------------------------------ |
+| **Confidential State**    | AES-256-GCM encrypted containers verified by ZK proofs |
+| **Cross-Chain ZK Bridge** | Transfer proofs across chains via Groth16 (BN254)      |
+| **L2 Interoperability**   | Arbitrum, Base, LayerZero, Hyperlane adapters          |
+| **Stealth Addresses**     | Unlinkable receiving addresses for privacy             |
+| **Atomic Swaps**          | HTLC private swaps with stealth commitments            |
 
 ---
 
@@ -138,12 +138,12 @@ container.transfer(dest)  // Moves to new chain, proof travels with it
 
 **Solution:** Backend-independent commitments that verify on any proof system:
 
-| Backend | Use Case |
-|---------|----------|
-| Groth16 (BN254) | Production EVM verification |
-| PLONK/UltraPlonk | Noir circuit proofs |
-| STARK/FRI | Recursive proof aggregation |
-| Hybrid | Combined proof translation |
+| Backend          | Use Case                    |
+| ---------------- | --------------------------- |
+| Groth16 (BN254)  | Production EVM verification |
+| PLONK/UltraPlonk | Noir circuit proofs         |
+| STARK/FRI        | Recursive proof aggregation |
+| Hybrid           | Combined proof translation  |
 
 ---
 
@@ -260,19 +260,20 @@ contracts/           # Production Solidity contracts
 ├── upgradeable/     # UUPS proxy implementations (ConfidentialState, NullifierRegistry, ProofHub)
 ├── relayer/         # RelayerFeeMarket (incentivized relaying)
 ├── bridge/          # AtomicSwap, CrossChainProofHub
-├── verifiers/       # Groth16 BN254, PLONK, FRI verifiers + VerifierRegistry + MultiProver
-├── libraries/       # CryptoLib, PoseidonYul, GasOptimizations
+├── verifiers/       # Groth16 BN254, PLONK, FRI, CLSAG ring signature verifiers + VerifierRegistry
+├── libraries/       # BN254, CryptoLib, PoseidonYul, GasOptimizations, ValidationLib
 ├── interfaces/      # Contract interfaces
 ├── adapters/        # External protocol adapters
 ├── integrations/    # Orchestrator, advanced integration contracts
 └── security/        # Timelock, circuit breaker, rate limiter, MEV protection
 
-noir/                # Noir ZK circuits (shielded_pool, nullifiers, transfers, etc.)
-sdk/                 # TypeScript SDK (viem-based clients)
+noir/                # Noir ZK circuits (20 circuits: shielded_pool, nullifiers, transfers, ring_signature, etc.)
+sdk/                 # TypeScript SDK (viem-based clients, 84 test files)
 sdk/experimental/    # Experimental modules (fhe, pqc, mpc, recursive, zkSystems)
-certora/             # Formal verification specs (CVL)
-test/                # Foundry + Hardhat tests (2500+ passing)
-scripts/             # Deployment scripts
+certora/             # Formal verification specs (54 CVL specs)
+specs/               # K Framework + TLA+ formal specifications
+test/                # Foundry + Hardhat tests (4400+ passing, 189 suites)
+scripts/             # Deployment + security scripts (storage layout checker, mutation testing)
 ```
 
 ## Quick Start
@@ -292,25 +293,27 @@ npx hardhat run scripts/deploy.js --network localhost
 
 ## Core Contracts
 
-| Contract | Purpose |
-|----------|----------|
-| `ConfidentialStateContainer` | Encrypted state with ZK verification & nullifier protection |
-| `CrossChainProofHub` | Proof aggregation & relay with gas-optimized batching |
-| `SoulAtomicSwap` | HTLC atomic swaps with stealth address support |
-| `ProofCarryingContainer` | PC³ - Self-authenticating containers with embedded proofs |
-| `ZKBoundStateLocks` | Cross-chain state locks unlocked by ZK proofs |
-| `CrossDomainNullifierAlgebra` | Domain-separated nullifiers with composability |
-| `VerifierRegistryV2` | Multi-circuit verifier registry with versioned adapters |
+| Contract                      | Purpose                                                              |
+| ----------------------------- | -------------------------------------------------------------------- |
+| `ConfidentialStateContainer`  | Encrypted state with ZK verification & nullifier protection          |
+| `CrossChainProofHub`          | Proof aggregation & relay with gas-optimized batching                |
+| `SoulAtomicSwap`              | HTLC atomic swaps with stealth address support                       |
+| `ProofCarryingContainer`      | PC³ - Self-authenticating containers with embedded proofs            |
+| `ZKBoundStateLocks`           | Cross-chain state locks unlocked by ZK proofs                        |
+| `CrossDomainNullifierAlgebra` | Domain-separated nullifiers with composability                       |
+| `VerifierRegistryV2`          | Multi-circuit verifier registry with versioned adapters              |
+| `RingSignatureVerifier`       | BN254 CLSAG ring signature verifier (precompile-optimized)           |
+| `DirectL2Messenger`           | Direct L2-to-L2 messaging with relayer bonds and chain ID validation |
 
 ### Privacy Middleware
 
-| Contract | Purpose |
-|----------|----------|
-| `PrivacyRouter` | Unified facade for deposit, withdraw, cross-chain, stealth operations |
-| `UniversalShieldedPool` | Multi-asset shielded pool with Poseidon Merkle tree (depth-32) |
-| `UniversalProofTranslator` | Translate ZK proofs between proof systems (Groth16 ↔ PLONK ↔ STARK) |
-| `CrossChainSanctionsOracle` | Multi-provider compliance screening with weighted quorum |
-| `RelayerFeeMarket` | Incentivized relay marketplace with fee estimation |
+| Contract                    | Purpose                                                               |
+| --------------------------- | --------------------------------------------------------------------- |
+| `PrivacyRouter`             | Unified facade for deposit, withdraw, cross-chain, stealth operations |
+| `UniversalShieldedPool`     | Multi-asset shielded pool with Poseidon Merkle tree (depth-32)        |
+| `UniversalProofTranslator`  | Translate ZK proofs between proof systems (Groth16 ↔ PLONK ↔ STARK)   |
+| `CrossChainSanctionsOracle` | Multi-provider compliance screening with weighted quorum              |
+| `RelayerFeeMarket`          | Incentivized relay marketplace with fee estimation                    |
 
 See [API Reference](docs/API_REFERENCE.md) for full contract documentation.
 
@@ -320,31 +323,33 @@ See [API Reference](docs/API_REFERENCE.md) for full contract documentation.
 
 Soul provides adapters for major cross-chain messaging:
 
-| Adapter | Key Features |
-|---------|--------------|
-| `ArbitrumBridgeAdapter` | Arbitrum Nitro, Retryable Tickets |
-| `OptimismBridgeAdapter` | OP Stack, L2OutputOracle verification |
-| `BaseBridgeAdapter` | OP Stack, CCTP support |
-| `zkSyncBridgeAdapter` | zkSync Era native bridge |
-| `ScrollBridgeAdapter` | Scroll L2 native messaging |
-| `LineaBridgeAdapter` | Linea L2 bridge |
-| `PolygonZkEVMBridgeAdapter` | Polygon zkEVM bridge |
-| `LayerZeroAdapter` | 120+ chains via LayerZero V2 |
-| `HyperlaneAdapter` | Modular security with ISM |
-| `DirectL2Messenger` | Direct L2-to-L2 messaging |
-| `EthereumL1Bridge` | Ethereum L1 settlement bridge |
-| `CrossChainMessageRelay` | General message relay |
+| Adapter                     | Key Features                          |
+| --------------------------- | ------------------------------------- |
+| `ArbitrumBridgeAdapter`     | Arbitrum Nitro, Retryable Tickets     |
+| `OptimismBridgeAdapter`     | OP Stack, L2OutputOracle verification |
+| `BaseBridgeAdapter`         | OP Stack, CCTP support                |
+| `zkSyncBridgeAdapter`       | zkSync Era native bridge              |
+| `ScrollBridgeAdapter`       | Scroll L2 native messaging            |
+| `LineaBridgeAdapter`        | Linea L2 bridge                       |
+| `PolygonZkEVMBridgeAdapter` | Polygon zkEVM bridge                  |
+| `LayerZeroAdapter`          | 120+ chains via LayerZero V2          |
+| `HyperlaneAdapter`          | Modular security with ISM             |
+| `DirectL2Messenger`         | Direct L2-to-L2 messaging             |
+| `EthereumL1Bridge`          | Ethereum L1 settlement bridge         |
+| `CrossChainMessageRelay`    | General message relay                 |
 
 ---
 
 ## Cryptography
 
 **Proof System:** Groth16 on BN254 (production-ready, works on all EVM chains)  
+**Ring Signatures:** CLSAG on BN254 via EVM precompiles (ecAdd, ecMul, modExp) — ~26k gas/ring member  
 **Encryption:** AES-256-GCM for confidential state containers  
 **Hashing:** Poseidon (ZK-friendly), Keccak256 (EVM-native)  
 **Signatures:** ECDSA with signature malleability protection  
 **Privacy:** Stealth addresses, domain-separated nullifiers (CDNA)  
-**Circuits:** 20 Noir circuits (nullifiers, transfers, commitments, PC³, PBP, EASC, ring signatures, compliance, shielded pool, balance proofs)
+**Circuits:** 20 Noir circuits (nullifiers, transfers, commitments, PC³, PBP, EASC, ring signatures, compliance, shielded pool, balance proofs)  
+**Curve Library:** BN254.sol — compressed points, hash-to-curve, point arithmetic via precompiles
 
 ---
 
@@ -352,36 +357,45 @@ Soul provides adapters for major cross-chain messaging:
 
 ### Security Stack
 
-| Module | Purpose |
-|--------|---------|
-| `SoulUpgradeTimelock.sol` | Time-delayed admin operations |
+| Module                     | Purpose                          |
+| -------------------------- | -------------------------------- |
+| `SoulUpgradeTimelock.sol`  | Time-delayed admin operations    |
 | `BridgeCircuitBreaker.sol` | Anomaly detection and auto-pause |
-| `BridgeRateLimiter.sol` | Volume and rate limiting |
-| `MEVProtection.sol` | Commit-reveal for MEV resistance |
-| `FlashLoanGuard.sol` | Flash loan attack prevention |
-| `EmergencyRecovery.sol` | Emergency pause and recovery |
-| `SecurityModule.sol` | Core security primitives |
-
+| `BridgeRateLimiter.sol`    | Volume and rate limiting         |
+| `MEVProtection.sol`        | Commit-reveal for MEV resistance |
+| `FlashLoanGuard.sol`       | Flash loan attack prevention     |
+| `EmergencyRecovery.sol`    | Emergency pause and recovery     |
+| `SecurityModule.sol`       | Core security primitives         |
+| `BridgeProofValidator.sol` | Cross-chain proof validation     |
+| `BridgeWatchtower.sol`     | Real-time bridge monitoring      |
+| `ZKFraudProof.sol`         | ZK-based fraud proof system      |
+| `GriefingProtection.sol`   | Anti-griefing mechanisms         |
 
 ### Testing & Verification
 
-**2500+ tests passing** across unit, integration, fuzz, and property-based testing.
+**4400+ tests passing** across 189 test suites — unit, integration, fuzz, formal, invariant, attack simulation, and stress testing.
 
 ```bash
-forge test -vv                              # All tests (2500+ passing)
-forge test --match-path "test/fuzz/*"        # Fuzz tests
-forge test --match-path "test/verifiers/*"   # Verifier registry + adapter tests
-forge test --match-path "test/upgradeable/*" # UUPS proxy tests
-npm run certora                              # Formal verification (Certora CVL)
+forge test -vv                                          # All tests (4400+ passing)
+forge test --match-path "test/fuzz/*" --fuzz-runs 10000  # Fuzz tests
+forge test --match-path "test/formal/*"                  # Halmos symbolic tests
+forge test --match-path "test/verifiers/*"               # Verifier + CLSAG tests
+forge test --match-path "test/upgradeable/*"             # UUPS proxy + storage layout tests
+forge test --match-path "test/integration/*"             # Cross-chain fork integration tests
+forge test --match-path "test/attacks/*"                 # Attack simulation tests
+npm run certora                                          # Formal verification (54 Certora CVL specs)
 ```
 
-| Tool | Purpose |
-|------|--------|
-| Foundry fuzz | Property-based fuzzing (10k+ runs per test) |
-| Certora CVL | Formal verification specs for core contracts |
-| Halmos | Symbolic execution for formal tests |
-| Echidna | Stateful property testing |
-| Gambit | Mutation testing |
+| Tool                   | Purpose                                                                |
+| ---------------------- | ---------------------------------------------------------------------- |
+| Foundry fuzz           | Property-based fuzzing (10k+ runs per test)                            |
+| Certora CVL            | 54 formal verification specs for core/privacy/bridge contracts         |
+| Halmos                 | Symbolic execution (CrossChainProofHub, ZKBoundStateLocks — 12 checks) |
+| Echidna                | Stateful property testing (6 invariant properties)                     |
+| Gambit                 | Mutation testing (8 security-critical contracts)                       |
+| K Framework            | Algebraic specification of protocol invariants                         |
+| TLA+                   | Model checking for cross-chain state machine safety                    |
+| Storage Layout Checker | Automated storage slot compatibility for UUPS upgrades                 |
 
 ## SDK
 
@@ -392,14 +406,18 @@ cd sdk && npm install && npm run build
 ### Quick Start - ZK-Bound State Locks
 
 ```typescript
-import { createWalletClient, createPublicClient, http } from 'viem';
-import { sepolia } from 'viem/chains';
-import { privateKeyToAccount } from 'viem/accounts';
-import { SoulProtocolClient, NoirProver, SEPOLIA_ADDRESSES } from '@soul/sdk';
+import { createWalletClient, createPublicClient, http } from "viem";
+import { sepolia } from "viem/chains";
+import { privateKeyToAccount } from "viem/accounts";
+import { SoulProtocolClient, NoirProver, SEPOLIA_ADDRESSES } from "@soul/sdk";
 
 // Setup clients
-const account = privateKeyToAccount('0x...');
-const walletClient = createWalletClient({ account, chain: sepolia, transport: http() });
+const account = privateKeyToAccount("0x...");
+const walletClient = createWalletClient({
+  account,
+  chain: sepolia,
+  transport: http(),
+});
 const publicClient = createPublicClient({ chain: sepolia, transport: http() });
 
 // Initialize Soul Protocol
@@ -410,14 +428,14 @@ const soul = new SoulProtocolClient({
 });
 
 // Create a ZK-bound state lock
-const stateHash = '0x' + '1234'.repeat(16);
-const zkRequirements = '0x' + 'abcd'.repeat(16);
+const stateHash = "0x" + "1234".repeat(16);
+const zkRequirements = "0x" + "abcd".repeat(16);
 const destChainId = 42161n; // Arbitrum
 
 const { lockId, txHash } = await soul.zkLocks.createStateLock(
   stateHash,
   zkRequirements,
-  destChainId
+  destChainId,
 );
 
 console.log(`Lock created: ${lockId}`);
@@ -426,66 +444,78 @@ console.log(`Lock created: ${lockId}`);
 ### Generate ZK Proofs
 
 ```typescript
-import { NoirProver } from '@soul/sdk';
+import { NoirProver } from "@soul/sdk";
 
 const prover = new NoirProver();
 
 // Generate a balance proof
-const proof = await prover.generateProof('balance_proof', {
+const proof = await prover.generateProof("balance_proof", {
   balance: 1000n,
   minRequired: 500n,
   salt: 12345n,
 });
 
 // Verify the proof
-const isValid = await prover.verifyProof('balance_proof', proof);
+const isValid = await prover.verifyProof("balance_proof", proof);
 ```
 
 ### Core API
 
-| Method | Description |
-|--------|-------------|
-| `soul.zkLocks.createStateLock()` | Create ZK-bound state lock |
-| `soul.zkLocks.unlockWithProof()` | Unlock state with ZK proof |
-| `soul.zkLocks.getLockDetails()` | Get lock state and metadata |
+| Method                               | Description                     |
+| ------------------------------------ | ------------------------------- |
+| `soul.zkLocks.createStateLock()`     | Create ZK-bound state lock      |
+| `soul.zkLocks.unlockWithProof()`     | Unlock state with ZK proof      |
+| `soul.zkLocks.getLockDetails()`      | Get lock state and metadata     |
 | `soul.nullifier.registerNullifier()` | Register cross-domain nullifier |
-| `soul.nullifier.isNullifierUsed()` | Check nullifier status |
-| `soul.proofHub.submitProof()` | Submit proof for aggregation |
-| `soul.atomicSwap.initiateSwap()` | Start atomic swap |
-| `soul.getProtocolStats()` | Get protocol statistics |
+| `soul.nullifier.isNullifierUsed()`   | Check nullifier status          |
+| `soul.proofHub.submitProof()`        | Submit proof for aggregation    |
+| `soul.atomicSwap.initiateSwap()`     | Start atomic swap               |
+| `soul.getProtocolStats()`            | Get protocol statistics         |
 
 ### Privacy Middleware SDK
 
 ```typescript
-import { 
-  PrivacyRouterClient, 
-  ShieldedPoolClient, 
-  RelayerFeeMarketClient 
-} from '@soul/sdk';
+import {
+  PrivacyRouterClient,
+  ShieldedPoolClient,
+  RelayerFeeMarketClient,
+} from "@soul/sdk";
 
 // Unified privacy router (recommended entry point)
-const router = new PrivacyRouterClient({ publicClient, walletClient, routerAddress });
-const { operationId } = await router.depositETH(commitment, parseEther('1'));
+const router = new PrivacyRouterClient({
+  publicClient,
+  walletClient,
+  routerAddress,
+});
+const { operationId } = await router.depositETH(commitment, parseEther("1"));
 await router.withdraw({ nullifierHash, recipient, root, proof });
 
 // Direct shielded pool access
-const pool = new ShieldedPoolClient({ publicClient, walletClient, poolAddress });
-const note = pool.generateDepositNote(parseEther('1'));  // { commitment, secret, nullifier }
+const pool = new ShieldedPoolClient({
+  publicClient,
+  walletClient,
+  poolAddress,
+});
+const note = pool.generateDepositNote(parseEther("1")); // { commitment, secret, nullifier }
 const stats = await pool.getPoolStats();
 
 // Relayer fee market
-const feeMarket = new RelayerFeeMarketClient({ publicClient, walletClient, feeMarketAddress });
+const feeMarket = new RelayerFeeMarketClient({
+  publicClient,
+  walletClient,
+  feeMarketAddress,
+});
 const fee = await feeMarket.estimateFee(1, 42161); // Ethereum → Arbitrum
 await feeMarket.submitRelayRequest(1, 42161, proofData, deadline, fee);
 ```
 
 ### Supported Networks
 
-| Network | Chain ID | Status |
-|---------|----------|--------|
-| Sepolia | 11155111 | ✅ Live |
-| Arbitrum Sepolia | 421614 | 🔄 Planned |
-| Base Sepolia | 84532 | 🔄 Planned |
+| Network          | Chain ID | Status     |
+| ---------------- | -------- | ---------- |
+| Sepolia          | 11155111 | ✅ Live    |
+| Arbitrum Sepolia | 421614   | 🔄 Planned |
+| Base Sepolia     | 84532    | 🔄 Planned |
 
 > **Note:** Experimental modules (`fhe`, `pqc`, `mpc`, `recursive`, `zkSystems`) have been moved to `@soul/sdk/experimental`. Import from `@soul/sdk/experimental` to use them. See [sdk/experimental/README.md](sdk/experimental/README.md) for details.
 
@@ -499,14 +529,14 @@ See [sdk/README.md](sdk/README.md) for full documentation.
 
 **Deployed:** January 22, 2026 | **Chain ID:** 11155111
 
-| Contract | Address |
-|----------|---------|
+| Contract                     | Address                                                                                                                         |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | ConfidentialStateContainerV3 | [`0x5d79991daabf7cd198860a55f3a1f16548687798`](https://sepolia.etherscan.io/address/0x5d79991daabf7cd198860a55f3a1f16548687798) |
-| CrossChainProofHubV3 | [`0x40eaa5de0c6497c8943c967b42799cb092c26adc`](https://sepolia.etherscan.io/address/0x40eaa5de0c6497c8943c967b42799cb092c26adc) |
+| CrossChainProofHubV3         | [`0x40eaa5de0c6497c8943c967b42799cb092c26adc`](https://sepolia.etherscan.io/address/0x40eaa5de0c6497c8943c967b42799cb092c26adc) |
 | ProofCarryingContainer (PC³) | [`0x52f8a660ff436c450b5190a84bc2c1a86f1032cc`](https://sepolia.etherscan.io/address/0x52f8a660ff436c450b5190a84bc2c1a86f1032cc) |
-| ZKBoundStateLocks | [`0xf390ae12c9ce8f546ef7c7adaa6a1ab7768a2c78`](https://sepolia.etherscan.io/address/0xf390ae12c9ce8f546ef7c7adaa6a1ab7768a2c78) |
-| NullifierRegistryV3 | [`0x3e21d559f19c76a0bcec378b10dae2cc0e4c2191`](https://sepolia.etherscan.io/address/0x3e21d559f19c76a0bcec378b10dae2cc0e4c2191) |
-| SoulAtomicSwapV2 | [`0xdefb9a66dc14a6d247b282555b69da7745b0ab57`](https://sepolia.etherscan.io/address/0xdefb9a66dc14a6d247b282555b69da7745b0ab57) |
+| ZKBoundStateLocks            | [`0xf390ae12c9ce8f546ef7c7adaa6a1ab7768a2c78`](https://sepolia.etherscan.io/address/0xf390ae12c9ce8f546ef7c7adaa6a1ab7768a2c78) |
+| NullifierRegistryV3          | [`0x3e21d559f19c76a0bcec378b10dae2cc0e4c2191`](https://sepolia.etherscan.io/address/0x3e21d559f19c76a0bcec378b10dae2cc0e4c2191) |
+| SoulAtomicSwapV2             | [`0xdefb9a66dc14a6d247b282555b69da7745b0ab57`](https://sepolia.etherscan.io/address/0xdefb9a66dc14a6d247b282555b69da7745b0ab57) |
 
 **Full deployment:** See [`deployments/`](deployments/)
 
@@ -532,7 +562,11 @@ npx hardhat run scripts/deploy-l2.js --network base-sepolia
 
 ## Contributing
 
-Fork → branch → `forge test && npm test` → PR. See [SECURITY.md](SECURITY.md) for disclosure policy.
+Fork → branch → `forge test && npm test` → PR.
+
+All new features need fuzz tests. Security-critical code needs Certora specs. Follow the [NatSpec Style Guide](docs/NATSPEC_STYLE_GUIDE.md) and use existing patterns from `contracts/interfaces/`.
+
+See [SECURITY.md](SECURITY.md) for disclosure policy.
 
 ---
 
