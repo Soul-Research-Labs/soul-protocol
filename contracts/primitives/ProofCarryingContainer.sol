@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
-import "../interfaces/IProofVerifier.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "../verifiers/VerifierRegistryV2.sol";
 
 /// @title ProofCarryingContainer (PC³)
@@ -24,6 +24,8 @@ import "../verifiers/VerifierRegistryV2.sol";
 /// - Policy binding ensures compliance scope
 /// - Cross-chain imports require source chain proofs
 contract ProofCarryingContainer is AccessControl, ReentrancyGuard, Pausable {
+    using SafeCast for uint256;
+
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
@@ -193,6 +195,7 @@ contract ProofCarryingContainer is AccessControl, ReentrancyGuard, Pausable {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(CONTAINER_ADMIN_ROLE, msg.sender);
         CHAIN_ID = block.chainid;
+        require(block.chainid <= type(uint64).max, "Chain ID exceeds uint64");
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -240,7 +243,7 @@ contract ProofCarryingContainer is AccessControl, ReentrancyGuard, Pausable {
         containerId = _computeContainerId(
             stateCommitment,
             nullifier,
-            uint64(CHAIN_ID)
+            CHAIN_ID.toUint64()
         );
 
         if (containers[containerId].createdAt != 0) {
@@ -266,7 +269,7 @@ contract ProofCarryingContainer is AccessControl, ReentrancyGuard, Pausable {
             nullifier: nullifier,
             proofs: proofs,
             policyHash: policyHash,
-            chainId: uint64(CHAIN_ID),
+            chainId: CHAIN_ID.toUint64(),
             createdAt: uint64(block.timestamp),
             version: 1,
             isVerified: false,
@@ -285,7 +288,7 @@ contract ProofCarryingContainer is AccessControl, ReentrancyGuard, Pausable {
             stateCommitment,
             nullifier,
             policyHash,
-            uint64(CHAIN_ID)
+            CHAIN_ID.toUint64()
         );
     }
 

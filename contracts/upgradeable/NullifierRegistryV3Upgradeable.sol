@@ -5,6 +5,7 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /// @title NullifierRegistryV3Upgradeable
 /// @author Soul Protocol
@@ -21,6 +22,8 @@ contract NullifierRegistryV3Upgradeable is
     PausableUpgradeable,
     UUPSUpgradeable
 {
+    using SafeCast for uint256;
+
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
@@ -194,6 +197,7 @@ contract NullifierRegistryV3Upgradeable is
         __UUPSUpgradeable_init();
 
         chainId = block.chainid;
+        require(block.chainid <= type(uint64).max, "Chain ID exceeds uint64");
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(REGISTRAR_ROLE, admin);
@@ -338,7 +342,7 @@ contract NullifierRegistryV3Upgradeable is
         nullifiers[nullifier] = NullifierData({
             timestamp: uint64(block.timestamp),
             blockNumber: uint64(block.number),
-            sourceChainId: uint64(sourceChainId_),
+            sourceChainId: sourceChainId_.toUint64(),
             registrar: msg.sender,
             commitment: commitment,
             index: index
@@ -357,7 +361,7 @@ contract NullifierRegistryV3Upgradeable is
             commitment,
             index,
             msg.sender,
-            uint64(sourceChainId_)
+            sourceChainId_.toUint64()
         );
     }
 
@@ -375,7 +379,7 @@ contract NullifierRegistryV3Upgradeable is
         nullifiers[nullifier] = NullifierData({
             timestamp: uint64(block.timestamp),
             blockNumber: uint64(block.number),
-            sourceChainId: uint64(chainId),
+            sourceChainId: chainId.toUint64(),
             registrar: registrar,
             commitment: commitment,
             index: index
@@ -394,7 +398,7 @@ contract NullifierRegistryV3Upgradeable is
             commitment,
             index,
             registrar,
-            uint64(chainId)
+            chainId.toUint64()
         );
     }
 

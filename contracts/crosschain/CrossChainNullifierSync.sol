@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /**
  * @title CrossChainNullifierSync
@@ -17,6 +18,8 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
  *        abi.encode(MSG_NULLIFIER_SYNC, nullifiers[], commitments[], merkleRoot, sourceChainId)
  */
 contract CrossChainNullifierSync is AccessControl, ReentrancyGuard, Pausable {
+    using SafeCast for uint256;
+
     // ──────────────────────────────────────────────
     //  Roles
     // ──────────────────────────────────────────────
@@ -246,7 +249,7 @@ contract CrossChainNullifierSync is AccessControl, ReentrancyGuard, Pausable {
             batchNullifiers,
             batchCommitments,
             currentRoot,
-            uint64(block.chainid)
+            block.chainid.toUint64()
         );
 
         // Record batch
@@ -275,7 +278,7 @@ contract CrossChainNullifierSync is AccessControl, ReentrancyGuard, Pausable {
                 payload,
                 "",
                 currentRoot,
-                uint64(targetChainId),
+                targetChainId.toUint64(),
                 keccak256("NULLIFIER_SYNC")
             )
         );

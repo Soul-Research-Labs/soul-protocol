@@ -4,8 +4,6 @@ pragma solidity ^0.8.24;
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IPrivacyRouter} from "../interfaces/IPrivacyRouter.sol";
 
 /// @notice Minimal interface for SoulProtocolHub address resolution
@@ -58,16 +56,17 @@ contract PrivacyRouter is
     Pausable,
     IPrivacyRouter
 {
-    using SafeERC20 for IERC20;
-
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
 
+    /// @dev Role for protocol operators who can update components and configuration
     bytes32 public constant OPERATOR_ROLE =
         0x97667070c54ef182b0f5858b034beac1b6f3089aa2d3188bb1e8929f4fa9b929;
+    /// @dev Role for relayers who can submit cross-chain proofs on behalf of users
     bytes32 public constant RELAYER_ROLE =
         0xe2b7fb3b832174769106daebcfd6d1970523240dda11281102db9363b83b0dc4;
+    /// @dev Role for emergency operations such as pausing the contract
     bytes32 public constant EMERGENCY_ROLE =
         0xbf233dd2aafeb4d50879c4aa5c81e96d92f6e6945c906a58f9f2d1c1631b4b26;
 
@@ -131,8 +130,11 @@ contract PrivacyRouter is
                                EVENTS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Emitted when the minimum KYC tier requirement is updated
     event MinimumKYCTierUpdated(uint8 oldTier, uint8 newTier);
+    /// @notice Emitted when ETH is withdrawn from the contract by an admin
     event ETHWithdrawn(address indexed to, uint256 amount);
+    /// @notice Emitted when component addresses are synced from a SoulProtocolHub
     event SyncedFromHub(address indexed hub);
 
     /*//////////////////////////////////////////////////////////////
@@ -414,6 +416,8 @@ contract PrivacyRouter is
     }
 
     /// @notice Check if a user passes compliance requirements
+    /// @param user The address to check compliance for
+    /// @return passes True if the user passes all compliance checks
     function checkCompliance(address user) external view returns (bool passes) {
         if (!complianceEnabled || compliance == address(0)) return true;
 
@@ -425,6 +429,8 @@ contract PrivacyRouter is
     }
 
     /// @notice Get total operations by type
+    /// @param opType The operation type to query
+    /// @return The total number of operations of the given type
     function getOperationCount(
         OperationType opType
     ) external view returns (uint256) {
@@ -432,6 +438,8 @@ contract PrivacyRouter is
     }
 
     /// @notice Get operation receipt
+    /// @param operationId The unique identifier of the operation
+    /// @return The receipt containing operation details and status
     function getReceipt(
         bytes32 operationId
     ) external view returns (OperationReceipt memory) {
@@ -443,6 +451,8 @@ contract PrivacyRouter is
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Update a protocol component address
+    /// @param name The component name (e.g. "shieldedPool", "crossChainHub")
+    /// @param addr The new address for the component
     function setComponent(
         string calldata name,
         address addr
@@ -487,6 +497,7 @@ contract PrivacyRouter is
     }
 
     /// @notice Toggle compliance enforcement
+    /// @param enabled True to enable compliance checks, false to disable
     function setComplianceEnabled(
         bool enabled
     ) external onlyRole(OPERATOR_ROLE) {
@@ -495,6 +506,7 @@ contract PrivacyRouter is
     }
 
     /// @notice Set minimum KYC tier required
+    /// @param tier The new minimum KYC tier (0 = no minimum)
     function setMinimumKYCTier(uint8 tier) external onlyRole(OPERATOR_ROLE) {
         uint8 oldTier = minimumKYCTier;
         minimumKYCTier = tier;
@@ -502,6 +514,7 @@ contract PrivacyRouter is
     }
 
     /// @notice Withdraw ETH accidentally sent to this contract
+    /// @param to The recipient address for the withdrawn ETH
     function withdrawETH(
         address payable to
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {

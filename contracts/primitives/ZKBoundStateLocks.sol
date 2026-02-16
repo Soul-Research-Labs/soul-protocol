@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {IProofVerifier} from "../interfaces/IProofVerifier.sol";
 
 /**
@@ -41,6 +42,8 @@ import {IProofVerifier} from "../interfaces/IProofVerifier.sol";
  * - Compatible with PBP policy enforcement
  */
 contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
+    using SafeCast for uint256;
+
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
@@ -585,7 +588,7 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
         optimisticUnlocks[unlockProof.lockId] = OptimisticUnlock({
             unlocker: msg.sender,
             unlockTime: uint64(block.timestamp),
-            bondAmount: uint128(msg.value),
+            bondAmount: msg.value.toUint128(),
             proofHash: keccak256(abi.encode(unlockProof)),
             finalizeAfter: uint64(block.timestamp + DISPUTE_WINDOW),
             disputed: false,

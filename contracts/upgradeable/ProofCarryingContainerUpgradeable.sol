@@ -8,6 +8,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "../interfaces/IProofVerifier.sol";
 import "../verifiers/VerifierRegistryV2.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /// @title ProofCarryingContainerUpgradeable (PC³)
 /// @author Soul Protocol - Soul v2
@@ -20,6 +21,8 @@ contract ProofCarryingContainerUpgradeable is
     PausableUpgradeable,
     UUPSUpgradeable
 {
+    using SafeCast for uint256;
+
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
@@ -242,7 +245,7 @@ contract ProofCarryingContainerUpgradeable is
         containerId = _computeContainerId(
             stateCommitment,
             nullifier,
-            uint64(block.chainid)
+            block.chainid.toUint64()
         );
 
         if (containers[containerId].createdAt != 0) {
@@ -266,7 +269,7 @@ contract ProofCarryingContainerUpgradeable is
             nullifier: nullifier,
             proofs: proofs,
             policyHash: policyHash,
-            chainId: uint64(block.chainid),
+            chainId: block.chainid.toUint64(),
             createdAt: uint64(block.timestamp),
             version: 1,
             isVerified: false,
@@ -284,7 +287,7 @@ contract ProofCarryingContainerUpgradeable is
             stateCommitment,
             nullifier,
             policyHash,
-            uint64(block.chainid)
+            block.chainid.toUint64()
         );
     }
 

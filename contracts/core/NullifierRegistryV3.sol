@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {INullifierRegistryV3} from "../interfaces/INullifierRegistryV3.sol";
 
 /// @title NullifierRegistryV3
@@ -16,6 +17,8 @@ import {INullifierRegistryV3} from "../interfaces/INullifierRegistryV3.sol";
 /// - Unchecked arithmetic in safe contexts (saves ~40 gas per operation)
 /// - Packed NullifierData struct (saves ~20k gas on writes)
 contract NullifierRegistryV3 is AccessControl, Pausable, INullifierRegistryV3 {
+    using SafeCast for uint256;
+
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
@@ -124,6 +127,7 @@ contract NullifierRegistryV3 is AccessControl, Pausable, INullifierRegistryV3 {
     /// @notice Initializes the nullifier registry
     constructor() {
         CHAIN_ID = block.chainid;
+        require(block.chainid <= type(uint64).max, "Chain ID exceeds uint64");
 
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(REGISTRAR_ROLE, msg.sender);
@@ -282,7 +286,7 @@ contract NullifierRegistryV3 is AccessControl, Pausable, INullifierRegistryV3 {
         nullifiers[nullifier] = NullifierData({
             timestamp: uint64(block.timestamp),
             blockNumber: uint64(block.number),
-            sourceChainId: uint64(sourceChainId),
+            sourceChainId: sourceChainId.toUint64(),
             registrar: msg.sender,
             commitment: commitment,
             index: index
@@ -300,7 +304,7 @@ contract NullifierRegistryV3 is AccessControl, Pausable, INullifierRegistryV3 {
             commitment,
             index,
             msg.sender,
-            uint64(sourceChainId)
+            sourceChainId.toUint64()
         );
 
         return nullifier;
@@ -351,7 +355,7 @@ contract NullifierRegistryV3 is AccessControl, Pausable, INullifierRegistryV3 {
         nullifiers[nullifier] = NullifierData({
             timestamp: uint64(block.timestamp),
             blockNumber: uint64(block.number),
-            sourceChainId: uint64(CHAIN_ID),
+            sourceChainId: CHAIN_ID.toUint64(),
             registrar: registrar,
             commitment: commitment,
             index: index
@@ -369,7 +373,7 @@ contract NullifierRegistryV3 is AccessControl, Pausable, INullifierRegistryV3 {
             commitment,
             index,
             registrar,
-            uint64(CHAIN_ID)
+            CHAIN_ID.toUint64()
         );
 
         return nullifier;

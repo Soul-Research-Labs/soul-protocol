@@ -53,13 +53,21 @@ abstract contract SecurityModule {
     /// @notice Thrown when cooldown period not elapsed
     error CooldownNotElapsed(uint256 remaining);
 
+    /// @notice Thrown when the rate limit window duration is below the minimum allowed
     error WindowTooShort();
+    /// @notice Thrown when the rate limit window duration exceeds the maximum allowed
     error WindowTooLong();
+    /// @notice Thrown when the max actions per window is set below the minimum allowed
     error MaxActionsTooLow();
+    /// @notice Thrown when the max actions per window exceeds the maximum allowed
     error MaxActionsTooHigh();
+    /// @notice Thrown when the volume threshold is set below the minimum allowed
     error ThresholdTooLow();
+    /// @notice Thrown when the cooldown period is shorter than the minimum allowed
     error CooldownTooShort(uint256 minCooldown);
+    /// @notice Thrown when the cooldown period exceeds the maximum allowed
     error CooldownTooLong(uint256 maxCooldown);
+    /// @notice Thrown when withdrawal limit parameters are invalid
     error InvalidWithdrawalLimits();
 
     /*//////////////////////////////////////////////////////////////
@@ -194,11 +202,17 @@ abstract contract SecurityModule {
                                EVENTS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Emitted when an account exceeds the rate limit for the current window
     event RateLimitTriggered(address indexed account, uint256 actionCount);
+    /// @notice Emitted when the circuit breaker is activated due to excessive volume
     event CircuitBreakerActivated(uint256 volume, uint256 threshold);
+    /// @notice Emitted when the circuit breaker is reset after the cooldown period
     event CircuitBreakerReset();
+    /// @notice Emitted when a suspected flash loan withdrawal attempt is blocked
     event FlashLoanAttemptBlocked(address indexed account);
+    /// @notice Emitted when a withdrawal is processed under enforced limits
     event WithdrawalLimitApplied(address indexed account, uint256 amount);
+    /// @notice Emitted when a security configuration parameter is updated
     event SecurityConfigUpdated(
         string parameter,
         uint256 oldValue,

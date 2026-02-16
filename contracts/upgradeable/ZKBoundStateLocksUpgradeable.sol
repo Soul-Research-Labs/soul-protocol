@@ -6,6 +6,7 @@ import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/acce
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {IProofVerifier} from "../interfaces/IProofVerifier.sol";
 
 /**
@@ -31,6 +32,8 @@ contract ZKBoundStateLocksUpgradeable is
     PausableUpgradeable,
     UUPSUpgradeable
 {
+    using SafeCast for uint256;
+
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
@@ -494,7 +497,7 @@ contract ZKBoundStateLocksUpgradeable is
         optimisticUnlocks[unlockProof.lockId] = OptimisticUnlock({
             unlocker: msg.sender,
             unlockTime: uint64(block.timestamp),
-            bondAmount: uint128(msg.value),
+            bondAmount: msg.value.toUint128(),
             proofHash: keccak256(abi.encode(unlockProof)),
             finalizeAfter: uint64(block.timestamp + DISPUTE_WINDOW),
             disputed: false,

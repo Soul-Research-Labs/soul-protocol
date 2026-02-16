@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /**
  * @title SoulCrossChainRelay
@@ -19,6 +20,8 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
  *        abi.encode(MESSAGE_TYPE, proofId, proof, publicInputs, commitment, sourceChainId)
  */
 contract SoulCrossChainRelay is AccessControl, ReentrancyGuard, Pausable {
+    using SafeCast for uint256;
+
     // ──────────────────────────────────────────────
     //  Roles
     // ──────────────────────────────────────────────
@@ -219,7 +222,7 @@ contract SoulCrossChainRelay is AccessControl, ReentrancyGuard, Pausable {
             proof,
             publicInputs,
             commitment,
-            uint64(block.chainid),
+            block.chainid.toUint64(),
             proofType
         );
 
@@ -234,7 +237,7 @@ contract SoulCrossChainRelay is AccessControl, ReentrancyGuard, Pausable {
             proof: proof,
             publicInputs: publicInputs,
             commitment: commitment,
-            sourceChainId: uint64(block.chainid),
+            sourceChainId: block.chainid.toUint64(),
             destChainId: uint64(destChainId),
             proofType: proofType,
             timestamp: block.timestamp,
@@ -246,7 +249,7 @@ contract SoulCrossChainRelay is AccessControl, ReentrancyGuard, Pausable {
 
         emit ProofRelayed(
             proofId,
-            uint64(block.chainid),
+            block.chainid.toUint64(),
             uint64(destChainId),
             commitment,
             messageId
@@ -378,7 +381,7 @@ contract SoulCrossChainRelay is AccessControl, ReentrancyGuard, Pausable {
                 publicInputs,
                 commitment,
                 sourceChainId,
-                uint64(block.chainid),
+                block.chainid.toUint64(),
                 proofType
             )
         );

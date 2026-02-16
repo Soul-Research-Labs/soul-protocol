@@ -5,7 +5,6 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import {IProofVerifier} from "../interfaces/IProofVerifier.sol";
 import {IConfidentialStateContainerV3, BatchStateInput} from "../interfaces/IConfidentialStateContainerV3.sol";
 
@@ -27,7 +26,6 @@ contract ConfidentialStateContainerV3 is
     IConfidentialStateContainerV3
 {
     using ECDSA for bytes32;
-    using MessageHashUtils for bytes32;
 
     /*//////////////////////////////////////////////////////////////
                                  ROLES
@@ -723,6 +721,7 @@ contract ConfidentialStateContainerV3 is
     function setMaxStateSize(
         uint256 _maxSize
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_maxSize <= type(uint128).max, "Size exceeds uint128");
         uint256 packed = _packedConfig;
         uint256 oldSize = uint128(packed);
         // Keep window (upper 128 bits), update maxStateSize (lower 128 bits)

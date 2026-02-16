@@ -96,22 +96,25 @@ contract SoulAtomicSwapV2 is
     /// @dev Set to 2 seconds to be compatible with fast L2 block times (Arbitrum ~0.25s)
     uint256 public constant MIN_REVEAL_DELAY = 2;
 
-    /// @notice Events
+    /// @notice Emitted when a claim commitment is submitted for a swap
     event ClaimCommitted(
         bytes32 indexed swapId,
         address indexed committer,
         bytes32 commitHash
     );
+    /// @notice Emitted when a fee withdrawal is requested and enters the timelock delay
     event FeeWithdrawalRequested(
         bytes32 indexed withdrawalId,
         address token,
         uint256 amount
     );
+    /// @notice Emitted when a fee withdrawal is executed after the timelock delay
     event FeeWithdrawalExecuted(
         bytes32 indexed withdrawalId,
         address token,
         uint256 amount
     );
+    /// @notice Emitted when a new atomic swap is created
     event SwapCreated(
         bytes32 indexed swapId,
         address indexed initiator,
@@ -121,38 +124,61 @@ contract SoulAtomicSwapV2 is
         bytes32 hashLock,
         uint256 timeLock
     );
+    /// @notice Emitted when a swap is successfully claimed with a valid secret
     event SwapClaimed(
         bytes32 indexed swapId,
         address indexed claimer,
         bytes32 secret
     );
+    /// @notice Emitted when a swap is refunded to the initiator after expiry
     event SwapRefunded(bytes32 indexed swapId, address indexed initiator);
+    /// @notice Emitted when the swap fee basis points are updated
     event FeeUpdated(uint256 oldFee, uint256 newFee);
+    /// @notice Emitted when the fee recipient address is updated
     event FeeRecipientUpdated(
         address indexed oldRecipient,
         address indexed newRecipient
     );
 
-    /// @notice Custom errors
+    /// @notice Thrown when the recipient address is invalid
     error InvalidRecipient();
+    /// @notice Thrown when the swap amount is zero or insufficient
     error InvalidAmount();
+    /// @notice Thrown when the time lock duration is out of allowed bounds
     error InvalidTimeLock();
+    /// @notice Thrown when the hash lock is zero or invalid
     error InvalidHashLock();
+    /// @notice Thrown when a swap with the given ID already exists
     error SwapAlreadyExists();
+    /// @notice Thrown when no swap exists for the given ID
     error SwapNotFound();
+    /// @notice Thrown when the swap is not in a pending state
     error SwapNotPending();
+    /// @notice Thrown when the provided secret does not match the hash lock
     error InvalidSecret();
+    /// @notice Thrown when attempting to refund a swap that has not yet expired
     error SwapNotExpired();
+    /// @notice Thrown when attempting to claim a swap that has already expired
     error SwapExpired();
+    /// @notice Thrown when the caller is not the swap initiator
     error NotInitiator();
+    /// @notice Thrown when an ETH or token transfer fails
     error TransferFailed();
+    /// @notice Thrown when a zero address is provided for a required parameter
     error ZeroAddress();
+    /// @notice Thrown when a claim reveal is attempted too soon after committing
     error CommitTooRecent();
+    /// @notice Thrown when the commit hash does not match the expected value
     error InvalidCommitHash();
+    /// @notice Thrown when a fee withdrawal is attempted before the timelock delay has passed
     error WithdrawalNotReady();
+    /// @notice Thrown when no pending withdrawal exists for the given ID
     error WithdrawalNotFound();
+    /// @notice Thrown when a direct claim is attempted instead of the required commit-reveal flow
     error UseCommitReveal();
+    /// @notice Thrown when there are no accumulated fees to withdraw
     error NoFeesToWithdraw();
+    /// @notice Thrown when the fee transfer to the recipient fails
     error FeeTransferFailed();
 
     constructor(address _feeRecipient) Ownable(msg.sender) {

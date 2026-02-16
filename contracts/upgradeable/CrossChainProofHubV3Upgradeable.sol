@@ -1003,6 +1003,7 @@ contract CrossChainProofHubV3Upgradeable is
         uint256 _period
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_period < 10 minutes) revert InvalidChallengePeriod();
+        if (_period > 30 days) revert InvalidChallengePeriod();
         uint256 oldPeriod = challengePeriod;
         challengePeriod = _period;
         emit ChallengePeriodUpdated(oldPeriod, _period);

@@ -71,32 +71,53 @@ contract DirectL2Messenger is
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Thrown when the destination chain ID is invalid or matches the current chain
     error InvalidDestinationChain();
+    /// @notice Thrown when the message payload or structure is malformed
     error InvalidMessage();
+    /// @notice Thrown when a message has already been processed on the destination chain
     error MessageAlreadyProcessed();
+    /// @notice Thrown when a message's deadline has passed and it can no longer be executed
     error MessageExpired();
+    /// @notice Thrown when the number of relayer signatures does not meet the required threshold
     error InvalidSignatureCount();
+    /// @notice Thrown when a relayer attempts to withdraw their bond before the unbonding period elapses
     error UnbondingPeriodNotComplete();
+    /// @notice Thrown when an ETH transfer to a recipient fails
     error TransferFailed();
+    /// @notice Thrown when the caller is not a registered or active relayer
     error InvalidRelayer();
+    /// @notice Thrown when the relayer bond amount is below the minimum required
     error InsufficientBond();
+    /// @notice Thrown when an action is attempted while the challenge window is still open
     error ChallengeWindowOpen();
+    /// @notice Thrown when a submitted proof fails verification
     error InvalidProof();
+    /// @notice Thrown when the requested source-destination chain route is not configured
     error UnsupportedRoute();
+    /// @notice Thrown when a relayer attempts to sign a message they have already confirmed
     error RelayerAlreadySigned();
+    /// @notice Thrown when the number of relayer confirmations is below the required threshold
     error InsufficientConfirmations();
+    /// @notice Thrown when the referenced message ID does not exist in storage
     error MessageNotFound();
+    /// @notice Thrown when a bond or fee withdrawal fails
     error WithdrawalFailed();
+    /// @notice Thrown when the low-level call to execute a message's payload reverts
     error MessageExecutionFailed();
+    /// @notice Thrown when a zero address is provided for a critical parameter
     error ZeroAddress();
+    /// @notice Thrown when the specified confirmation count is zero or exceeds the relayer set size
     error InvalidConfirmationCount();
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Emitted when a relayer successfully withdraws their bond after the unbonding period
     event RelayerBondWithdrawn(address indexed relayer, uint256 amount);
 
+    /// @notice Emitted when a cross-chain route is configured or updated between two L2 networks
     event RouteConfigured(
         uint256 indexed sourceChainId,
         uint256 indexed destChainId,
@@ -104,21 +125,27 @@ contract DirectL2Messenger is
         address adapter
     );
 
+    /// @notice Emitted when a shared sequencer's active status is updated
     event SharedSequencerUpdated(address indexed sequencer, bool active);
+    /// @notice Emitted when the required relayer confirmation count is changed
     event RequiredConfirmationsUpdated(uint256 newCount);
+    /// @notice Emitted when the challenger reward amount is updated
     event ChallengerRewardUpdated(uint256 newReward);
+    /// @notice Emitted when a message's delivery path is overridden from the requested path
     event PathOverridden(
         bytes32 indexed messageId,
         MessagePath requestedPath,
         MessagePath actualPath
     );
 
+    /// @notice Emitted when a relayed message is challenged for potential fraud
     event MessageChallenged(
         bytes32 indexed messageId,
         address challenger,
         bytes32 reason
     );
 
+    /// @notice Emitted when a challenge is resolved, indicating whether fraud was proven
     event ChallengeResolved(
         bytes32 indexed messageId,
         bool fraudProven,

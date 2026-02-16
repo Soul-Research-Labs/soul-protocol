@@ -7,7 +7,6 @@ import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 /// @title ConfidentialStateContainerV3Upgradeable
 /// @author Soul Protocol
@@ -29,7 +28,6 @@ contract ConfidentialStateContainerV3Upgradeable is
     UUPSUpgradeable
 {
     using ECDSA for bytes32;
-    using MessageHashUtils for bytes32;
 
     /*//////////////////////////////////////////////////////////////
                                  ROLES
@@ -796,6 +794,7 @@ contract ConfidentialStateContainerV3Upgradeable is
     function setMaxStateSize(
         uint256 _maxSize
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_maxSize <= type(uint128).max, "Size exceeds uint128");
         uint256 packed = _packedConfig;
         uint256 oldSize = uint128(packed);
         _packedConfig =
