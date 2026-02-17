@@ -36,6 +36,11 @@ methods {
     function finalizeCrossChainBundle(bytes32, bytes, bytes32) external;
     function pause() external;
     function unpause() external;
+
+    // FAFO Parallel Scheduling
+    function totalParallelGroups() external returns (uint256) envfree;
+    function scheduleParallelAggregation(bytes32[], uint256[]) external;
+    function finalizeParallelGroup(bytes32, bytes, bytes32) external;
 }
 
 // ============================================================================
@@ -148,4 +153,43 @@ rule verifiedRootStaysVerified(bytes32 root) {
 
     assert isRootVerified(root),
         "A verified root must remain verified";
+}
+
+// ============================================================================
+// FAFO PARALLEL SCHEDULING RULES
+// ============================================================================
+
+/**
+ * @title Total Parallel Groups Never Decreases
+ * @notice No function call should decrease totalParallelGroups
+ */
+rule totalParallelGroupsNeverDecreases() {
+    env e;
+    uint256 before = totalParallelGroups();
+
+    method f;
+    calldataarg args;
+    f(e, args);
+
+    uint256 after = totalParallelGroups();
+
+    assert after >= before,
+        "totalParallelGroups must never decrease";
+}
+
+/**
+ * @title Schedule Parallel Aggregation Increments Counter
+ * @notice scheduleParallelAggregation should increase totalParallelGroups by 1
+ */
+rule scheduleParallelIncrementsCounter(env e) {
+    uint256 before = totalParallelGroups();
+    require before < max_uint256;
+
+    bytes32[] batchIds; uint256[] chainDomains;
+    scheduleParallelAggregation(e, batchIds, chainDomains);
+
+    uint256 after = totalParallelGroups();
+
+    assert to_mathint(after) == to_mathint(before) + 1,
+        "scheduleParallelAggregation must increment totalParallelGroups by exactly 1";
 }
