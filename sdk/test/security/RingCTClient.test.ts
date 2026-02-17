@@ -22,14 +22,14 @@ describe("RingCTClient Security", () => {
 
       const bn = BigInt(toHex(bytes)) % CURVE_ORDER;
       expect(bn).to.not.equal(BigInt(0));
-      expect(bn).to.be.lessThan(CURVE_ORDER);
+      expect(bn < CURVE_ORDER).to.be.true;
     });
 
     it("should produce blinding factors within curve order", () => {
       // Any 256-bit value mod CURVE_ORDER should be in [0, CURVE_ORDER)
       const maxVal = BigInt("0x" + "ff".repeat(32));
       const reduced = maxVal % CURVE_ORDER;
-      expect(reduced).to.be.lessThan(CURVE_ORDER);
+      expect(reduced < CURVE_ORDER).to.be.true;
     });
   });
 

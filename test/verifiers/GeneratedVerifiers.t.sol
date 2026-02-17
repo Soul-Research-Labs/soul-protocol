@@ -2,19 +2,18 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-// NOTE: Each stub verifier declares its own IVerifier interface, so we can
-// only import one at a time without identifier collisions. We test them
-// via low-level calls instead.
-import "../../contracts/verifiers/generated/AccreditedInvestorVerifier.sol";
+// Import AggregatorVerifier directly (still a stub)
+import "../../contracts/verifiers/generated/AggregatorVerifier.sol";
 
 /// @title GeneratedVerifiers Smoke Tests
-/// @notice Tests for stub verifiers (revert with StubVerifierNotDeployed)
-///         and full UltraHonk verifiers (deployment only)
+/// @notice Tests for real UltraHonk verifiers (reject invalid proofs)
+///         and AggregatorVerifier (still a stub — recursive circuit)
 contract GeneratedVerifiersTest is Test {
-    AccreditedInvestorVerifier public accredited;
+    // AggregatorVerifier is the only remaining stub
+    AggregatorVerifier public aggregator;
 
-    // Deploy other stubs via create bytecode + low-level calls
-    address public aggregatorAddr;
+    // Real UltraHonk verifiers deployed via vm.getCode to avoid identifier collision
+    address public accreditedAddr;
     address public balanceAddr;
     address public complianceAddr;
     address public encryptedAddr;
@@ -24,14 +23,15 @@ contract GeneratedVerifiersTest is Test {
     address public sanctionsAddr;
     address public shieldedAddr;
     address public swapAddr;
+    address public ringSignatureAddr;
 
-    // Full UltraHonk verifiers (deployed via vm.getCode to avoid identifier collision)
+    // Previously-deployed full UltraHonk verifiers
     address public privateTransferAddr;
     address public crossDomainNullifierAddr;
 
     // verify(bytes,bytes32[]) selector
     bytes4 constant VERIFY_SEL = bytes4(keccak256("verify(bytes,bytes32[])"));
-    // StubVerifierNotDeployed() error selector
+    // StubVerifierNotDeployed() error selector (only for AggregatorVerifier)
     bytes4 constant STUB_ERROR = bytes4(keccak256("StubVerifierNotDeployed()"));
 
     function _deployContract(
@@ -45,9 +45,11 @@ contract GeneratedVerifiersTest is Test {
     }
 
     function setUp() public {
-        accredited = new AccreditedInvestorVerifier();
-        aggregatorAddr = _deployContract(
-            "AggregatorVerifier.sol:AggregatorVerifier"
+        aggregator = new AggregatorVerifier();
+
+        // Real UltraHonk verifiers (generated from VK binaries)
+        accreditedAddr = _deployContract(
+            "AccreditedInvestorVerifier.sol:AccreditedInvestorVerifier"
         );
         balanceAddr = _deployContract(
             "BalanceProofVerifier.sol:BalanceProofVerifier"
@@ -74,8 +76,11 @@ contract GeneratedVerifiersTest is Test {
             "ShieldedPoolVerifier.sol:ShieldedPoolVerifier"
         );
         swapAddr = _deployContract("SwapProofVerifier.sol:SwapProofVerifier");
+        ringSignatureAddr = _deployContract(
+            "RingSignatureVerifier.sol:RingSignatureVerifier"
+        );
 
-        // Full UltraHonk verifiers
+        // Previously-deployed full UltraHonk verifiers
         privateTransferAddr = _deployContract(
             "PrivateTransferVerifier.sol:PrivateTransferVerifier"
         );
@@ -86,154 +91,161 @@ contract GeneratedVerifiersTest is Test {
 
     /* ──── Deployment ──── */
 
-    function test_allStubsDeployable() public view {
-        assertTrue(address(accredited) != address(0));
-        assertTrue(aggregatorAddr != address(0));
-        assertTrue(balanceAddr != address(0));
-        assertTrue(complianceAddr != address(0));
-        assertTrue(encryptedAddr != address(0));
-        assertTrue(merkleAddr != address(0));
-        assertTrue(pedersenAddr != address(0));
-        assertTrue(policyBoundAddr != address(0));
-        assertTrue(sanctionsAddr != address(0));
-        assertTrue(shieldedAddr != address(0));
-        assertTrue(swapAddr != address(0));
-    }
-
-    function test_honkVerifiers_deployable() public view {
-        assertTrue(privateTransferAddr != address(0));
-        assertTrue(crossDomainNullifierAddr != address(0));
-    }
-
-    /* ──── Stub Reverts (direct import) ──── */
-
-    function test_accreditedInvestor_stubReverts() public {
-        bytes32[] memory inputs = new bytes32[](0);
-        vm.expectRevert(
-            AccreditedInvestorVerifier.StubVerifierNotDeployed.selector
+    function test_allVerifiersDeployable() public view {
+        assertTrue(address(aggregator) != address(0), "aggregator");
+        assertTrue(accreditedAddr != address(0), "accredited");
+        assertTrue(balanceAddr != address(0), "balance");
+        assertTrue(complianceAddr != address(0), "compliance");
+        assertTrue(encryptedAddr != address(0), "encrypted");
+        assertTrue(merkleAddr != address(0), "merkle");
+        assertTrue(pedersenAddr != address(0), "pedersen");
+        assertTrue(policyBoundAddr != address(0), "policyBound");
+        assertTrue(sanctionsAddr != address(0), "sanctions");
+        assertTrue(shieldedAddr != address(0), "shielded");
+        assertTrue(swapAddr != address(0), "swap");
+        assertTrue(ringSignatureAddr != address(0), "ringSignature");
+        assertTrue(privateTransferAddr != address(0), "privateTransfer");
+        assertTrue(
+            crossDomainNullifierAddr != address(0),
+            "crossDomainNullifier"
         );
-        accredited.verify("", inputs);
     }
 
-    /* ──── Stub Reverts (low-level calls) ──── */
-
-    function _callVerifyAndExpectStubRevert(address target) internal {
-        bytes memory callData = abi.encodeWithSelector(
-            VERIFY_SEL,
-            "", // proof
-            new bytes32[](0) // publicInputs
-        );
-        (bool success, bytes memory returnData) = target.call(callData);
-        assertFalse(success, "Should have reverted");
-        // Check custom error selector
-        assertGe(returnData.length, 4);
-        bytes4 errorSel;
-        assembly {
-            errorSel := mload(add(returnData, 32))
-        }
-        assertEq(errorSel, STUB_ERROR, "Wrong error selector");
-    }
+    /* ──── Stub Revert (AggregatorVerifier only — recursive circuit) ──── */
 
     function test_aggregator_stubReverts() public {
-        _callVerifyAndExpectStubRevert(aggregatorAddr);
+        bytes32[] memory inputs = new bytes32[](0);
+        vm.expectRevert(AggregatorVerifier.StubVerifierNotDeployed.selector);
+        aggregator.verify("", inputs);
     }
 
-    function test_balance_stubReverts() public {
-        _callVerifyAndExpectStubRevert(balanceAddr);
-    }
+    /* ──── Real UltraHonk verifiers: reject invalid proofs ──── */
 
-    function test_compliance_stubReverts() public {
-        _callVerifyAndExpectStubRevert(complianceAddr);
-    }
-
-    function test_encrypted_stubReverts() public {
-        _callVerifyAndExpectStubRevert(encryptedAddr);
-    }
-
-    function test_merkle_stubReverts() public {
-        _callVerifyAndExpectStubRevert(merkleAddr);
-    }
-
-    function test_pedersen_stubReverts() public {
-        _callVerifyAndExpectStubRevert(pedersenAddr);
-    }
-
-    function test_policyBound_stubReverts() public {
-        _callVerifyAndExpectStubRevert(policyBoundAddr);
-    }
-
-    function test_sanctions_stubReverts() public {
-        _callVerifyAndExpectStubRevert(sanctionsAddr);
-    }
-
-    function test_shielded_stubReverts() public {
-        _callVerifyAndExpectStubRevert(shieldedAddr);
-    }
-
-    function test_swap_stubReverts() public {
-        _callVerifyAndExpectStubRevert(swapAddr);
-    }
-
-    /* ──── Fuzz: any proof/inputs still revert ──── */
-
-    function testFuzz_stubsAlwaysRevert(bytes calldata proof) public {
-        bytes32[] memory inputs = new bytes32[](1);
-        inputs[0] = keccak256(proof);
-
-        vm.expectRevert(
-            AccreditedInvestorVerifier.StubVerifierNotDeployed.selector
-        );
-        accredited.verify(proof, inputs);
-    }
-
-    /* ──── Full UltraHonk verifiers: reject empty/invalid proofs ──── */
-
-    function test_privateTransfer_rejectsEmptyProof() public {
-        bytes32[] memory inputs = new bytes32[](32); // NUMBER_OF_PUBLIC_INPUTS = 32
-        for (uint256 i = 0; i < 32; i++) inputs[i] = bytes32(uint256(i + 1));
-
-        // Call verify — should revert or return false (proof too short)
-        (bool ok, bytes memory ret) = privateTransferAddr.call(
-            abi.encodeWithSelector(VERIFY_SEL, hex"dead", inputs)
-        );
-        // Either reverts or returns false
-        if (ok) {
-            bool verified = abi.decode(ret, (bool));
-            assertFalse(verified, "Should not verify invalid proof");
+    /// @dev Helper: call verify with invalid proof and expect revert or false
+    function _callVerifyAndExpectRejection(
+        address target,
+        uint256 numInputs
+    ) internal {
+        bytes32[] memory inputs = new bytes32[](numInputs);
+        for (uint256 i = 0; i < numInputs; i++) {
+            inputs[i] = bytes32(uint256(i + 1));
         }
-        // If !ok, it reverted which is also acceptable
-    }
-
-    function test_crossDomainNullifier_rejectsEmptyProof() public {
-        bytes32[] memory inputs = new bytes32[](26); // NUMBER_OF_PUBLIC_INPUTS = 26
-        for (uint256 i = 0; i < 26; i++) inputs[i] = bytes32(uint256(i + 1));
-
-        (bool ok, bytes memory ret) = crossDomainNullifierAddr.call(
+        // Call with a too-short proof — should revert with ProofLengthWrong or similar
+        (bool ok, bytes memory ret) = target.call(
             abi.encodeWithSelector(VERIFY_SEL, hex"dead", inputs)
         );
         if (ok) {
             bool verified = abi.decode(ret, (bool));
             assertFalse(verified, "Should not verify invalid proof");
         }
+        // If !ok, it reverted which is acceptable for invalid proofs
+    }
+
+    /// @dev Helper: call verify with wrong input count — should revert
+    function _callVerifyWrongInputCount(address target) internal {
+        bytes32[] memory inputs = new bytes32[](1); // Wrong count for all circuits
+        inputs[0] = bytes32(uint256(1));
+        (bool ok, ) = target.call(
+            abi.encodeWithSelector(VERIFY_SEL, hex"", inputs)
+        );
+        assertFalse(ok, "Should revert with wrong input count");
+    }
+
+    // --- Reject invalid proofs (each circuit) ---
+
+    function test_accredited_rejectsInvalidProof() public {
+        _callVerifyAndExpectRejection(accreditedAddr, 21);
+    }
+
+    function test_balance_rejectsInvalidProof() public {
+        _callVerifyAndExpectRejection(balanceAddr, 22);
+    }
+
+    function test_compliance_rejectsInvalidProof() public {
+        _callVerifyAndExpectRejection(complianceAddr, 32);
+    }
+
+    function test_encrypted_rejectsInvalidProof() public {
+        _callVerifyAndExpectRejection(encryptedAddr, 24);
+    }
+
+    function test_merkle_rejectsInvalidProof() public {
+        _callVerifyAndExpectRejection(merkleAddr, 19);
+    }
+
+    function test_pedersen_rejectsInvalidProof() public {
+        _callVerifyAndExpectRejection(pedersenAddr, 19);
+    }
+
+    function test_policyBound_rejectsInvalidProof() public {
+        _callVerifyAndExpectRejection(policyBoundAddr, 21);
+    }
+
+    function test_sanctions_rejectsInvalidProof() public {
+        _callVerifyAndExpectRejection(sanctionsAddr, 21);
+    }
+
+    function test_shielded_rejectsInvalidProof() public {
+        _callVerifyAndExpectRejection(shieldedAddr, 23);
+    }
+
+    function test_swap_rejectsInvalidProof() public {
+        _callVerifyAndExpectRejection(swapAddr, 27);
+    }
+
+    function test_ringSignature_rejectsInvalidProof() public {
+        _callVerifyAndExpectRejection(ringSignatureAddr, 36);
+    }
+
+    function test_privateTransfer_rejectsInvalidProof() public {
+        _callVerifyAndExpectRejection(privateTransferAddr, 32);
+    }
+
+    function test_crossDomainNullifier_rejectsInvalidProof() public {
+        _callVerifyAndExpectRejection(crossDomainNullifierAddr, 26);
+    }
+
+    // --- Reject wrong input count ---
+
+    function test_accredited_rejectsWrongInputCount() public {
+        _callVerifyWrongInputCount(accreditedAddr);
+    }
+
+    function test_balance_rejectsWrongInputCount() public {
+        _callVerifyWrongInputCount(balanceAddr);
+    }
+
+    function test_compliance_rejectsWrongInputCount() public {
+        _callVerifyWrongInputCount(complianceAddr);
+    }
+
+    function test_encrypted_rejectsWrongInputCount() public {
+        _callVerifyWrongInputCount(encryptedAddr);
+    }
+
+    function test_shielded_rejectsWrongInputCount() public {
+        _callVerifyWrongInputCount(shieldedAddr);
+    }
+
+    function test_swap_rejectsWrongInputCount() public {
+        _callVerifyWrongInputCount(swapAddr);
     }
 
     function test_privateTransfer_rejectsWrongInputCount() public {
-        bytes32[] memory inputs = new bytes32[](1); // Wrong count (expects 32)
-        inputs[0] = bytes32(uint256(1));
-
-        (bool ok, ) = privateTransferAddr.call(
-            abi.encodeWithSelector(VERIFY_SEL, hex"", inputs)
-        );
-        assertFalse(ok, "Should revert with wrong input count");
+        _callVerifyWrongInputCount(privateTransferAddr);
     }
 
     function test_crossDomainNullifier_rejectsWrongInputCount() public {
-        bytes32[] memory inputs = new bytes32[](1); // Wrong count (expects 26)
-        inputs[0] = bytes32(uint256(1));
+        _callVerifyWrongInputCount(crossDomainNullifierAddr);
+    }
 
-        (bool ok, ) = crossDomainNullifierAddr.call(
-            abi.encodeWithSelector(VERIFY_SEL, hex"", inputs)
-        );
-        assertFalse(ok, "Should revert with wrong input count");
+    /* ──── Fuzz: AggregatorVerifier stub always reverts ──── */
+
+    function testFuzz_aggregatorStubAlwaysReverts(bytes calldata proof) public {
+        bytes32[] memory inputs = new bytes32[](1);
+        inputs[0] = keccak256(proof);
+
+        vm.expectRevert(AggregatorVerifier.StubVerifierNotDeployed.selector);
+        aggregator.verify(proof, inputs);
     }
 }

@@ -360,12 +360,26 @@ export class NoirProver {
   /**
    * Extract public inputs based on circuit type
    */
+  private _hashAllInputs(inputs: WitnessInput): string[] {
+    const inputHash = keccak256(
+      encodePacked(
+        ["string"],
+        [
+          JSON.stringify(inputs, (_, v) =>
+            typeof v === "bigint" ? v.toString() : v,
+          ),
+        ],
+      ),
+    );
+    return [inputHash];
+  }
+
   private extractPublicInputs(
     circuit: Circuit,
     inputs: WitnessInput,
   ): string[] {
     switch (circuit) {
-      case Circuit.StateCommitment:
+      case Circuit.StateCommitment: {
         // Public: commitment (derived from secret + nullifier when available)
         const sc = inputs as unknown as StateCommitmentInputs;
         if (sc.secret && sc.nullifier) {
@@ -374,44 +388,29 @@ export class NoirProver {
           );
           return [commitment];
         }
-        // Fallback: hash all inputs
-        return [
-          keccak256(
-            encodePacked(
-              ["string"],
-              [
-                JSON.stringify(inputs, (_, v) =>
-                  typeof v === "bigint" ? v.toString() : v,
-                ),
-              ],
-            ),
-          ),
-        ];
+        return this._hashAllInputs(inputs);
+      }
 
-      case Circuit.Nullifier:
+      case Circuit.Nullifier: {
         // Public: nullifier hash
         const ni = inputs as unknown as NullifierInputs;
-        const nullifierHash = keccak256(ni.secret);
-        return [nullifierHash];
+        if (ni.secret) {
+          return [keccak256(ni.secret)];
+        }
+        return this._hashAllInputs(inputs);
+      }
 
-      case Circuit.MerkleProof:
+      case Circuit.MerkleProof: {
         // Public: root, leaf
         const mp = inputs as unknown as MerkleProofInputs;
-        return [mp.root, mp.leaf];
+        if (mp.root && mp.leaf) {
+          return [mp.root, mp.leaf];
+        }
+        return this._hashAllInputs(inputs);
+      }
 
       default:
-        // Return hash of all inputs as single public input
-        const inputHash = keccak256(
-          encodePacked(
-            ["string"],
-            [
-              JSON.stringify(inputs, (_, v) =>
-                typeof v === "bigint" ? v.toString() : v,
-              ),
-            ],
-          ),
-        );
-        return [inputHash];
+        return this._hashAllInputs(inputs);
     }
   }
 

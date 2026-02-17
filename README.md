@@ -9,6 +9,15 @@
 
 Soul Protocol is zero-knowledge middleware for cross-chain confidential state transfer. It solves the privacy lock-in problem that traps users on single chains.
 
+## Table of Contents
+
+- [The Problem: Privacy Lock-In](#the-problem-privacy-lock-in)
+- [Soul's Solution: Privacy Without Lock-In](#souls-solution-privacy-without-lock-in)
+- [How It Works](#how-it-works)
+- [Getting Started](#getting-started)
+- [Contributing](#contributing)
+- [License](#license)
+
 ---
 
 ## The Problem: Privacy Lock-In

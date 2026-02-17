@@ -3,23 +3,44 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Script.sol";
 
-// Core contracts
+// ── Phase 1: Security ──
 import {CrossChainProofHubV3} from "../../contracts/bridge/CrossChainProofHubV3.sol";
 import {NullifierRegistryV3} from "../../contracts/core/NullifierRegistryV3.sol";
 import {BridgeCircuitBreaker} from "../../contracts/security/BridgeCircuitBreaker.sol";
 import {BridgeRateLimiter} from "../../contracts/security/BridgeRateLimiter.sol";
 import {EnhancedKillSwitch} from "../../contracts/security/EnhancedKillSwitch.sol";
 import {ZKFraudProof} from "../../contracts/security/ZKFraudProof.sol";
+import {BridgeProofValidator} from "../../contracts/security/BridgeProofValidator.sol";
+
+// ── Phase 2: Verifiers ──
+import {VerifierRegistryV2} from "../../contracts/verifiers/VerifierRegistryV2.sol";
+import {SoulUniversalVerifier} from "../../contracts/verifiers/SoulUniversalVerifier.sol";
+import {UltraHonkAdapter} from "../../contracts/verifiers/adapters/UltraHonkAdapter.sol";
+
+// ── Phase 3: Primitives ──
+import {ZKBoundStateLocks} from "../../contracts/primitives/ZKBoundStateLocks.sol";
+import {ProofCarryingContainer} from "../../contracts/primitives/ProofCarryingContainer.sol";
+import {CrossDomainNullifierAlgebra} from "../../contracts/primitives/CrossDomainNullifierAlgebra.sol";
+import {PolicyBoundProofs} from "../../contracts/primitives/PolicyBoundProofs.sol";
+
+// ── Phase 4: Hub ──
+import {SoulProtocolHub} from "../../contracts/core/SoulProtocolHub.sol";
+
+// ── Phase 5: Governance ──
+import {SoulToken} from "../../contracts/governance/SoulToken.sol";
+import {SoulGovernor} from "../../contracts/governance/SoulGovernor.sol";
+import {SoulUpgradeTimelock} from "../../contracts/governance/SoulUpgradeTimelock.sol";
 
 /**
  * @title Soul Protocol Mainnet Deployment Script
- * @notice Deploys core contracts with production configuration
+ * @notice Full 8-phase deployment: Security → Verifiers → Primitives → Hub → Governance → Wiring → Roles → Verification
  *
  * Requirements:
  *   - DEPLOYER_PRIVATE_KEY in environment
  *   - MULTISIG_ADMIN address in environment (Gnosis Safe)
  *   - MULTISIG_GUARDIAN_1, MULTISIG_GUARDIAN_2, MULTISIG_GUARDIAN_3 addresses
- *   - Sufficient ETH for gas (~0.5 ETH estimated)
+ *   - STATE_COMMITMENT_CHAIN, BOND_MANAGER, ZK_VERIFIER for ZKFraudProof
+ *   - Sufficient ETH for gas (~2.0 ETH estimated)
  *
  * Usage:
  *   forge script scripts/deploy/DeployMainnet.s.sol \
@@ -50,22 +71,39 @@ contract DeployMainnet is Script {
     uint256 constant RATE_LIMIT_HOURLY = 1000 ether;
     uint256 constant RATE_LIMIT_DAILY = 10000 ether;
 
-    // Supported L2 chain IDs
+    // Production L2 chain IDs (Arbitrum, Optimism, Base)
     uint256 constant ARBITRUM_ONE = 42161;
     uint256 constant OPTIMISM = 10;
     uint256 constant BASE = 8453;
-    uint256 constant ZKSYNC_ERA = 324;
-    uint256 constant SCROLL = 534352;
-    uint256 constant LINEA = 59144;
-    uint256 constant POLYGON_ZKEVM = 1101;
 
-    // Deployed addresses
+    // ========= DEPLOYED CONTRACTS =========
+
+    // Phase 1: Security
     CrossChainProofHubV3 public proofHub;
     NullifierRegistryV3 public nullifierRegistry;
     BridgeCircuitBreaker public circuitBreaker;
     BridgeRateLimiter public rateLimiter;
     EnhancedKillSwitch public killSwitch;
     ZKFraudProof public zkFraudProof;
+    BridgeProofValidator public bridgeProofValidator;
+
+    // Phase 2: Verifiers
+    VerifierRegistryV2 public verifierRegistry;
+    SoulUniversalVerifier public universalVerifier;
+
+    // Phase 3: Primitives
+    ZKBoundStateLocks public zkBoundStateLocks;
+    ProofCarryingContainer public proofCarryingContainer;
+    CrossDomainNullifierAlgebra public cdna;
+    PolicyBoundProofs public policyBoundProofs;
+
+    // Phase 4: Hub
+    SoulProtocolHub public hub;
+
+    // Phase 5: Governance
+    SoulToken public soulToken;
+    SoulGovernor public governor;
+    SoulUpgradeTimelock public upgradeTimelock;
 
     function run() external {
         // ========= LOAD CONFIGURATION =========
@@ -82,37 +120,32 @@ contract DeployMainnet is Script {
         uint256 deployerPK = vm.envUint("DEPLOYER_PRIVATE_KEY");
         address deployer = vm.addr(deployerPK);
 
-        console.log("=== Soul Protocol Mainnet Deployment ===");
+        console.log("=== Soul Protocol Mainnet Deployment (Full) ===");
         console.log("Deployer:", deployer);
         console.log("Admin (multisig):", admin);
         console.log("Chain ID:", block.chainid);
 
-        // Safety check: warn on mainnet
         if (block.chainid == 1) {
             console.log("WARNING: Deploying to MAINNET");
         }
 
         vm.startBroadcast(deployerPK);
 
-        // ========= 1. DEPLOY CORE CONTRACTS =========
+        // ======== PHASE 1: SECURITY CONTRACTS ========
+        console.log("\n--- Phase 1: Security ---");
 
-        // 1a. CrossChainProofHubV3 — Main proof aggregation hub
         proofHub = new CrossChainProofHubV3();
         console.log("CrossChainProofHubV3:", address(proofHub));
 
-        // 1b. NullifierRegistryV3 — Cross-domain nullifier tracking
         nullifierRegistry = new NullifierRegistryV3();
         console.log("NullifierRegistryV3:", address(nullifierRegistry));
 
-        // 1c. BridgeCircuitBreaker — Anomaly detection
         circuitBreaker = new BridgeCircuitBreaker(admin);
         console.log("BridgeCircuitBreaker:", address(circuitBreaker));
 
-        // 1d. BridgeRateLimiter — Rate limiting
         rateLimiter = new BridgeRateLimiter(admin);
         console.log("BridgeRateLimiter:", address(rateLimiter));
 
-        // 1e. EnhancedKillSwitch — Emergency controls
         address[] memory guardians = new address[](3);
         guardians[0] = guardian1;
         guardians[1] = guardian2;
@@ -120,8 +153,6 @@ contract DeployMainnet is Script {
         killSwitch = new EnhancedKillSwitch(admin, guardians);
         console.log("EnhancedKillSwitch:", address(killSwitch));
 
-        // 1f. ZKFraudProof — Fraud proof verification
-        // These addresses must be set via environment variables
         address stateCommitmentChain = vm.envAddress("STATE_COMMITMENT_CHAIN");
         address bondManager = vm.envAddress("BOND_MANAGER");
         address zkVerifier = vm.envAddress("ZK_VERIFIER");
@@ -132,32 +163,130 @@ contract DeployMainnet is Script {
         );
         console.log("ZKFraudProof:", address(zkFraudProof));
 
-        // ========= 2. CONFIGURE PROOF HUB =========
+        bridgeProofValidator = new BridgeProofValidator();
+        console.log("BridgeProofValidator:", address(bridgeProofValidator));
 
-        // Deployer starts with DEFAULT_ADMIN_ROLE + EMERGENCY_ROLE only.
-        // Need OPERATOR_ROLE temporarily to call addSupportedChain if it requires it.
-        // addSupportedChain requires DEFAULT_ADMIN_ROLE which deployer has.
+        // ======== PHASE 2: VERIFIER INFRASTRUCTURE ========
+        console.log("\n--- Phase 2: Verifiers ---");
+
+        verifierRegistry = new VerifierRegistryV2();
+        console.log("VerifierRegistryV2:", address(verifierRegistry));
+
+        universalVerifier = new SoulUniversalVerifier(deployer);
+        console.log("SoulUniversalVerifier:", address(universalVerifier));
+
+        // ======== PHASE 3: PRIMITIVES ========
+        console.log("\n--- Phase 3: Primitives ---");
+
+        zkBoundStateLocks = new ZKBoundStateLocks();
+        console.log("ZKBoundStateLocks:", address(zkBoundStateLocks));
+
+        proofCarryingContainer = new ProofCarryingContainer();
+        console.log("ProofCarryingContainer:", address(proofCarryingContainer));
+
+        cdna = new CrossDomainNullifierAlgebra();
+        console.log("CrossDomainNullifierAlgebra:", address(cdna));
+
+        policyBoundProofs = new PolicyBoundProofs();
+        console.log("PolicyBoundProofs:", address(policyBoundProofs));
+
+        // ======== PHASE 4: HUB ========
+        console.log("\n--- Phase 4: Hub ---");
+
+        hub = new SoulProtocolHub();
+        console.log("SoulProtocolHub:", address(hub));
+
+        // ======== PHASE 5: GOVERNANCE ========
+        console.log("\n--- Phase 5: Governance ---");
+
+        soulToken = new SoulToken();
+        console.log("SoulToken:", address(soulToken));
+
+        // Timelock: admin is proposer + executor, governor will be added after
+        address[] memory proposers = new address[](1);
+        proposers[0] = admin;
+        address[] memory executors = new address[](1);
+        executors[0] = address(0); // anyone can execute once queued
+        upgradeTimelock = new SoulUpgradeTimelock(
+            1 days,
+            proposers,
+            executors,
+            admin
+        );
+        console.log("SoulUpgradeTimelock:", address(upgradeTimelock));
+
+        governor = new SoulGovernor(
+            IVotes(address(soulToken)),
+            TimelockController(payable(address(upgradeTimelock))),
+            0,
+            0,
+            0,
+            0 // defaults: 1d delay, 5d period, 100k threshold, 4% quorum
+        );
+        console.log("SoulGovernor:", address(governor));
+
+        // Grant governor proposer/executor/canceller on timelock
+        upgradeTimelock.grantRole(
+            upgradeTimelock.PROPOSER_ROLE(),
+            address(governor)
+        );
+        upgradeTimelock.grantRole(
+            upgradeTimelock.EXECUTOR_ROLE(),
+            address(governor)
+        );
+        upgradeTimelock.grantRole(
+            upgradeTimelock.CANCELLER_ROLE(),
+            address(governor)
+        );
+
+        // ======== PHASE 6: CONFIGURE PROOF HUB + WIRING ========
+        console.log("\n--- Phase 6: Configuration ---");
+
+        // Register production L2 chains
         proofHub.addSupportedChain(ARBITRUM_ONE);
         proofHub.addSupportedChain(OPTIMISM);
         proofHub.addSupportedChain(BASE);
-        proofHub.addSupportedChain(ZKSYNC_ERA);
-        proofHub.addSupportedChain(SCROLL);
-        proofHub.addSupportedChain(LINEA);
-        proofHub.addSupportedChain(POLYGON_ZKEVM);
-
-        // setRateLimits requires DEFAULT_ADMIN_ROLE
         proofHub.setRateLimits(MAX_PROOFS_PER_HOUR, MAX_VALUE_PER_HOUR);
 
-        // ========= 3. TRANSFER ALL ROLES TO MULTISIG =========
+        // Wire the Hub with all component addresses
+        hub.wireAll(
+            SoulProtocolHub.WireAllParams({
+                _verifierRegistry: address(verifierRegistry),
+                _universalVerifier: address(universalVerifier),
+                _crossChainMessageRelay: address(0), // deployed separately per L2
+                _crossChainPrivacyHub: address(0), // deployed separately per L2
+                _stealthAddressRegistry: address(0), // upgradeable, deployed separately
+                _privateRelayerNetwork: address(0), // deployed separately
+                _viewKeyRegistry: address(0), // deployed separately
+                _shieldedPool: address(0), // deployed separately
+                _nullifierManager: address(nullifierRegistry),
+                _complianceOracle: address(0), // deployed separately
+                _proofTranslator: address(0), // deployed separately
+                _privacyRouter: address(0), // deployed separately
+                _bridgeProofValidator: address(bridgeProofValidator),
+                _zkBoundStateLocks: address(zkBoundStateLocks),
+                _proofCarryingContainer: address(proofCarryingContainer),
+                _crossDomainNullifierAlgebra: address(cdna),
+                _policyBoundProofs: address(policyBoundProofs)
+            })
+        );
+        console.log("Hub wired with core components");
 
-        // ProofHub: grant all roles to multisig
+        // Set Hub governance pointers
+        hub.setTimelock(address(upgradeTimelock));
+        hub.setUpgradeTimelock(address(upgradeTimelock));
+
+        // ======== PHASE 7: TRANSFER ROLES TO MULTISIG ========
+        console.log("\n--- Phase 7: Role Transfer ---");
+
+        // ProofHub
         bytes32 adminRole = proofHub.DEFAULT_ADMIN_ROLE();
         proofHub.grantRole(adminRole, admin);
         proofHub.grantRole(proofHub.EMERGENCY_ROLE(), admin);
         proofHub.grantRole(proofHub.VERIFIER_ADMIN_ROLE(), admin);
         proofHub.grantRole(proofHub.OPERATOR_ROLE(), admin);
 
-        // NullifierRegistryV3: grant all roles to multisig
+        // NullifierRegistryV3
         nullifierRegistry.grantRole(
             nullifierRegistry.DEFAULT_ADMIN_ROLE(),
             admin
@@ -166,13 +295,28 @@ contract DeployMainnet is Script {
         nullifierRegistry.grantRole(nullifierRegistry.BRIDGE_ROLE(), admin);
         nullifierRegistry.grantRole(nullifierRegistry.EMERGENCY_ROLE(), admin);
 
-        // KillSwitch: guardians are set via constructor, admin controls escalation
+        // VerifierRegistryV2
+        verifierRegistry.grantRole(
+            verifierRegistry.DEFAULT_ADMIN_ROLE(),
+            admin
+        );
+        verifierRegistry.grantRole(
+            verifierRegistry.REGISTRY_ADMIN_ROLE(),
+            admin
+        );
+        verifierRegistry.grantRole(verifierRegistry.GUARDIAN_ROLE(), admin);
 
-        // ZKFraudProof: transfer admin
+        // SoulProtocolHub
+        hub.grantRole(hub.DEFAULT_ADMIN_ROLE(), admin);
+        hub.grantRole(hub.OPERATOR_ROLE(), admin);
+        hub.grantRole(hub.GUARDIAN_ROLE(), admin);
+        hub.grantRole(hub.UPGRADER_ROLE(), admin);
+
+        // ZKFraudProof
         zkFraudProof.grantRole(zkFraudProof.DEFAULT_ADMIN_ROLE(), admin);
 
-        // ========= 4. RENOUNCE DEPLOYER ROLES =========
-        // CRITICAL: Deployer must NOT retain any elevated privileges
+        // ======== PHASE 8: RENOUNCE DEPLOYER ROLES ========
+        console.log("\n--- Phase 8: Renounce Deployer ---");
 
         // ProofHub
         proofHub.renounceRole(proofHub.EMERGENCY_ROLE(), deployer);
@@ -196,6 +340,26 @@ contract DeployMainnet is Script {
             deployer
         );
 
+        // VerifierRegistryV2
+        verifierRegistry.renounceRole(
+            verifierRegistry.REGISTRY_ADMIN_ROLE(),
+            deployer
+        );
+        verifierRegistry.renounceRole(
+            verifierRegistry.GUARDIAN_ROLE(),
+            deployer
+        );
+        verifierRegistry.renounceRole(
+            verifierRegistry.DEFAULT_ADMIN_ROLE(),
+            deployer
+        );
+
+        // SoulProtocolHub
+        hub.renounceRole(hub.UPGRADER_ROLE(), deployer);
+        hub.renounceRole(hub.GUARDIAN_ROLE(), deployer);
+        hub.renounceRole(hub.OPERATOR_ROLE(), deployer);
+        hub.renounceRole(hub.DEFAULT_ADMIN_ROLE(), deployer);
+
         // ZKFraudProof
         zkFraudProof.renounceRole(zkFraudProof.PROVER_ROLE(), deployer);
         zkFraudProof.renounceRole(zkFraudProof.VERIFIER_ROLE(), deployer);
@@ -204,35 +368,49 @@ contract DeployMainnet is Script {
 
         vm.stopBroadcast();
 
-        // ========= 5. LOG DEPLOYMENT =========
+        // ========= LOG =========
         _logDeployment();
     }
 
     function _logDeployment() internal view {
-        console.log("\n=== Deployment Complete ===");
+        console.log("\n=== Full Deployment Complete ===");
+        console.log("\n-- Security --");
         console.log("CrossChainProofHubV3:", address(proofHub));
         console.log("NullifierRegistryV3:", address(nullifierRegistry));
         console.log("BridgeCircuitBreaker:", address(circuitBreaker));
         console.log("BridgeRateLimiter:", address(rateLimiter));
         console.log("EnhancedKillSwitch:", address(killSwitch));
         console.log("ZKFraudProof:", address(zkFraudProof));
+        console.log("BridgeProofValidator:", address(bridgeProofValidator));
+        console.log("\n-- Verifiers --");
+        console.log("VerifierRegistryV2:", address(verifierRegistry));
+        console.log("SoulUniversalVerifier:", address(universalVerifier));
+        console.log("\n-- Primitives --");
+        console.log("ZKBoundStateLocks:", address(zkBoundStateLocks));
+        console.log("ProofCarryingContainer:", address(proofCarryingContainer));
+        console.log("CrossDomainNullifierAlgebra:", address(cdna));
+        console.log("PolicyBoundProofs:", address(policyBoundProofs));
+        console.log("\n-- Hub --");
+        console.log("SoulProtocolHub:", address(hub));
+        console.log("\n-- Governance --");
+        console.log("SoulToken:", address(soulToken));
+        console.log("SoulGovernor:", address(governor));
+        console.log("SoulUpgradeTimelock:", address(upgradeTimelock));
         console.log("\nPost-deploy checklist:");
         console.log("  1. Verify all contracts on Etherscan");
-        console.log("  2. Configure ZKFraudProof external contracts");
         console.log(
-            "  3. Set up relayer/challenger roles on ProofHub (via multisig)"
+            "  2. Deploy L2 bridge adapters (DeployL2Bridges.s.sol) on Arbitrum, Optimism, Base"
         );
-        console.log("  4. Configure verifier contracts");
-        console.log("  5. Run verify-deployment.ts");
-        console.log("  6. Update SDK addresses in mainnet-addresses.ts");
+        console.log("  3. Run ConfigureCrossChain.s.sol to link L1<->L2");
+        console.log(
+            "  4. Register UltraHonk verifier adapters via multisig (batchRegisterVerifiers)"
+        );
+        console.log(
+            "  5. Wire remaining Hub components (shieldedPool, privacyRouter, etc.) via multisig"
+        );
+        console.log("  6. Run verify-deployment.ts");
         console.log(
             "  7. CRITICAL: Run ConfirmRoleSeparation.s.sol from multisig"
-        );
-        console.log(
-            "     - Calls confirmRoleSeparation() on ProofHub & ZKBoundStateLocks"
-        );
-        console.log(
-            "     - Admin must NOT hold operational roles before calling"
         );
     }
 }

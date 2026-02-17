@@ -52,8 +52,8 @@ describe("NoirProver", () => {
     it("should generate a nullifier proof", async () => {
       const result = await prover.generateProof(Circuit.Nullifier, {
         secret: "0x" + "cc".repeat(32),
-        leafIndex: 42,
-      });
+        leafIndex: 42 as unknown as string,
+      } as any);
 
       expect(result.publicInputs.length).to.be.greaterThan(0);
     });
@@ -62,8 +62,8 @@ describe("NoirProver", () => {
       const result = await prover.generateProof(Circuit.MerkleProof, {
         leaf: "0x" + "11".repeat(32),
         root: "0x" + "22".repeat(32),
-        pathElements: ["0x" + "33".repeat(32)],
-        pathIndices: [0],
+        pathElements: ["0x" + "33".repeat(32)] as any,
+        pathIndices: [0] as any,
       });
 
       expect(result.publicInputs).to.include("0x" + "22".repeat(32)); // root
@@ -104,7 +104,7 @@ describe("NoirProver", () => {
       const fakeProof: ProofResult = {
         proof: new Uint8Array(100),
         publicInputs: ["0x01"],
-        proofHex: "0x" + "00".repeat(100),
+        proofHex: ("0x" + "00".repeat(100)) as `0x${string}`,
       };
 
       const valid = await prover.verifyProof(
@@ -119,7 +119,7 @@ describe("NoirProver", () => {
       const fakeProof: ProofResult = {
         proof: new Uint8Array(256),
         publicInputs: [],
-        proofHex: "0x" + "00".repeat(256),
+        proofHex: ("0x" + "00".repeat(256)) as `0x${string}`,
       };
 
       const valid = await prover.verifyProof(

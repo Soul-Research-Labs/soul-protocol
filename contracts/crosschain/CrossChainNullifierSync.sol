@@ -8,6 +8,7 @@ import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /**
  * @title CrossChainNullifierSync
+ * @author Soul Protocol
  * @notice Handles bidirectional nullifier synchronization between chains.
  *         Outbound: batches locally-registered nullifiers and sends via bridge.
  *         Inbound: receives batches and submits to NullifierRegistryV3.

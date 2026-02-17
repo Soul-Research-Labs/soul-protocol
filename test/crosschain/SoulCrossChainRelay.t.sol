@@ -437,6 +437,34 @@ contract SoulCrossChainRelayTest is Test {
         assertEq(relay.relayNonce(), 2);
     }
 
+    // ── selfRelayProof
+    // ───────────────────────────────────────────────
+
+    function test_selfRelayProof_success() public {
+        address randomUser = makeAddr("randomUser");
+        bytes memory proof = hex"aabbccdd";
+        bytes memory pubInputs = hex"1122";
+        bytes32 commitment = bytes32(uint256(999));
+        bytes32 proofType = bytes32("halo2");
+
+        vm.deal(randomUser, 1 ether);
+        vm.prank(randomUser);
+        
+        // Should succeed WITHOUT RELAYER_ROLE
+        bytes32 messageId = relay.selfRelayProof{value: 0.01 ether}(
+            bytes32(uint256(100)),
+            proof,
+            pubInputs,
+            commitment,
+            uint64(DEST_CHAIN),
+            proofType
+        );
+
+        assertTrue(messageId != bytes32(0));
+        assertTrue(bridgeAdapter.called());
+        // Check event emission? Already covered by relayProof tests mostly, but good to know it works.
+    }
+
     // ── relayProof via Hyperlane
     // ──────────────────────────────────
 

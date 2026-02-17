@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "forge-std/Script.sol";
 import {OptimismBridgeAdapter} from "../../contracts/crosschain/OptimismBridgeAdapter.sol";
 import {ArbitrumBridgeAdapter} from "../../contracts/crosschain/ArbitrumBridgeAdapter.sol";
+import {BaseBridgeAdapter} from "../../contracts/crosschain/BaseBridgeAdapter.sol";
 
 /**
  * @title Soul Protocol L2 Bridge Deployment Script
@@ -33,6 +34,9 @@ import {ArbitrumBridgeAdapter} from "../../contracts/crosschain/ArbitrumBridgeAd
  *   # Arbitrum
  *   DEPLOY_TARGET=arbitrum forge script scripts/deploy/DeployL2Bridges.s.sol \
  *     --rpc-url $ARBITRUM_RPC --broadcast --verify -vvv
+ *   # Base
+ *   DEPLOY_TARGET=base forge script scripts/deploy/DeployL2Bridges.s.sol \
+ *     --rpc-url $BASE_RPC --broadcast --verify -vvv
  */
 contract DeployL2Bridges is Script {
     function run() external {
@@ -54,6 +58,8 @@ contract DeployL2Bridges is Script {
             _deployOptimism(admin, deployer);
         } else if (_strEq(target, "arbitrum")) {
             _deployArbitrum(admin, deployer);
+        } else if (_strEq(target, "base")) {
+            _deployBase(admin, deployer);
         } else {
             revert(string.concat("Unknown deploy target: ", target));
         }
@@ -131,6 +137,46 @@ contract DeployL2Bridges is Script {
         adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
 
         console.log("Arbitrum bridge deployed. Admin:", admin);
+    }
+
+    function _deployBase(address admin, address deployer) internal {
+        require(block.chainid == 8453, "Expected Base chainId 8453");
+
+        // Base uses OP Stack: L1CrossDomainMessenger + L2CrossDomainMessenger + BasePortal
+        address l1Messenger = vm.envOr("BASE_L1_MESSENGER", address(0));
+        address l2Messenger = vm.envOr("BASE_L2_MESSENGER", address(0));
+        address basePortal = vm.envOr("BASE_PORTAL", address(0));
+
+        BaseBridgeAdapter adapter = new BaseBridgeAdapter(
+            deployer,
+            l1Messenger,
+            l2Messenger,
+            basePortal,
+            false // isL1 = false (deploying on Base L2)
+        );
+        console.log("BaseBridgeAdapter:", address(adapter));
+
+        // Transfer roles to multisig
+        adapter.grantRole(adapter.DEFAULT_ADMIN_ROLE(), admin);
+        adapter.grantRole(adapter.OPERATOR_ROLE(), admin);
+        adapter.grantRole(adapter.GUARDIAN_ROLE(), admin);
+
+        // Grant relayer role if configured
+        address relayer = vm.envOr("RELAYER_ADDRESS", address(0));
+        if (relayer != address(0)) {
+            adapter.grantRole(adapter.RELAYER_ROLE(), relayer);
+            console.log("Relayer granted:", relayer);
+        }
+
+        // Renounce deployer roles
+        adapter.renounceRole(adapter.GUARDIAN_ROLE(), deployer);
+        adapter.renounceRole(adapter.OPERATOR_ROLE(), deployer);
+        adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
+
+        console.log("Base bridge deployed. Admin:", admin);
+        console.log(
+            "  Post-deploy: configure CCTP and attestation via multisig"
+        );
     }
 
     function _strEq(

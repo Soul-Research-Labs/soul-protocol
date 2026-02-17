@@ -8,6 +8,7 @@ import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /**
  * @title SoulCrossChainRelay
+ * @author Soul Protocol
  * @notice Bridges CrossChainProofHubV3 with LayerZero/Hyperlane adapters for
  *         real cross-chain proof relay. When a proof is finalized on the source
  *         chain, this relay encodes it and dispatches via the configured bridge.
@@ -208,6 +209,39 @@ contract SoulCrossChainRelay is AccessControl, ReentrancyGuard, Pausable {
         whenNotPaused
         returns (bytes32 messageId)
     {
+        return _relayProof(proofId, proof, publicInputs, commitment, destChainId, proofType);
+    }
+
+    /**
+     * @notice Permissionless self-relay for users.
+     *         Allows anyone to relay a proof by paying the bridge fee directly.
+     *         Bypasses RELAYER_ROLE check to prevent censorship/downtime.
+     */
+    function selfRelayProof(
+        bytes32 proofId,
+        bytes calldata proof,
+        bytes calldata publicInputs,
+        bytes32 commitment,
+        uint64 destChainId,
+        bytes32 proofType
+    )
+        external
+        payable
+        nonReentrant
+        whenNotPaused
+        returns (bytes32 messageId)
+    {
+        return _relayProof(proofId, proof, publicInputs, commitment, destChainId, proofType);
+    }
+
+    function _relayProof(
+        bytes32 proofId,
+        bytes calldata proof,
+        bytes calldata publicInputs,
+        bytes32 commitment,
+        uint64 destChainId,
+        bytes32 proofType
+    ) internal returns (bytes32 messageId) {
         // Validate sizes
         if (proof.length > MAX_PROOF_SIZE) revert ProofTooLarge(proof.length);
         if (publicInputs.length > MAX_PUBLIC_INPUTS_SIZE)

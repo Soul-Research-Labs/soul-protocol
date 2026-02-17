@@ -35,13 +35,42 @@ contract PrivacyZoneManagerFormalTest is Test {
             minDepositAmount: 0,
             maxDepositAmount: 0,
             merkleTreeDepth: 20,
-            crossZoneMigration: true
+            crossZoneMigration: true,
+            maxTotalDeposits: 0 // Unlimited by default
         });
     }
 
     // =========================================================================
     // FUZZ TESTS
     // =========================================================================
+
+    /**
+     * @notice Property: TVL Cap Enforcement
+     * @dev Create zone with cap, fuzz deposits. Exceeding cap must revert.
+     */
+    function test_TVLCapEnforcement(uint256 capAmount, uint256 depositAmount) public {
+        capAmount = bound(capAmount, 1 ether, 100 ether);
+        depositAmount = bound(depositAmount, 0.1 ether, 200 ether);
+
+        IPrivacyZoneManager.ZoneConfig memory config = _defaultConfig("CappedZone", bytes32(0));
+        config.maxTotalDeposits = capAmount;
+
+        bytes32 zoneId = pzm.createZone(config);
+        bytes32 commitment = bytes32(uint256(12345));
+
+        vm.deal(address(this), depositAmount);
+
+        if (depositAmount > capAmount) {
+            vm.expectRevert(); // ZoneDepositCapReached
+            pzm.depositToZone{value: depositAmount}(zoneId, commitment);
+        } else {
+            pzm.depositToZone{value: depositAmount}(zoneId, commitment);
+            
+            // Check TVL
+            IPrivacyZoneManager.Zone memory zone = pzm.getZone(zoneId);
+            assertEq(zone.totalValueLocked, depositAmount, "TVL should update");
+        }
+    }
 
     /**
      * @notice Property: Commitment must be < FIELD_SIZE to be deposited

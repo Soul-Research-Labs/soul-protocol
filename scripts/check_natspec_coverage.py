@@ -313,7 +313,7 @@ def print_report(contracts: List[ContractDoc], stats: dict, verbose: bool = Fals
 def main():
     parser = argparse.ArgumentParser(description='Check NatSpec documentation coverage')
     parser.add_argument('--path', default='contracts', help='Path to contracts directory')
-    parser.add_argument('--threshold', type=float, default=80.0, help='Minimum coverage threshold (%)')
+    parser.add_argument('--threshold', type=float, default=80.0, help='Minimum coverage threshold (in percent)')
     parser.add_argument('--verbose', '-v', action='store_true', help='Show detailed missing docs')
     parser.add_argument('--exclude', nargs='+', default=['mocks', 'test', 'interfaces'], 
                         help='Directories to exclude')

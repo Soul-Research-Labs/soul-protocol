@@ -46,6 +46,7 @@ interface IPrivacyZoneManager {
         uint256 maxDepositAmount;    // Maximum deposit (whale prevention)
         uint32 merkleTreeDepth;      // Commitment tree depth (default: 32)
         bool crossZoneMigration;     // Allow state migration to/from this zone
+        uint256 maxTotalDeposits;    // Maximum total deposits allowed (TVL cap)
     }
 
     /// @notice On-chain zone metadata
@@ -67,6 +68,8 @@ interface IPrivacyZoneManager {
         uint32 merkleTreeLeafCount;  // Current number of leaves
         bytes32 merkleRoot;          // Current Merkle root
         bool crossZoneMigration;     // Cross-zone migration enabled
+        uint256 maxTotalDeposits;    // Maximum total deposits allowed
+        uint256 totalValueLocked;    // Current TVL (ETH)
         address creator;             // Zone creator
         uint64 createdAt;            // Creation timestamp
     }
@@ -146,6 +149,7 @@ interface IPrivacyZoneManager {
     error ZoneDoesNotExist(bytes32 zoneId);
     error ZoneNotActive(bytes32 zoneId);
     error ZoneThroughputExceeded(bytes32 zoneId);
+    error ZoneDepositCapReached(bytes32 zoneId, uint256 current, uint256 max);
     error MigrationNotAllowed(bytes32 zoneId);
     error InvalidMigrationProof();
     error NullifierAlreadySpent(bytes32 nullifier);
@@ -173,6 +177,11 @@ interface IPrivacyZoneManager {
     /// @param zoneId Target zone
     /// @param newPolicyHash New policy hash
     function setZonePolicy(bytes32 zoneId, bytes32 newPolicyHash) external;
+
+    /// @notice Update zone deposit cap
+    /// @param zoneId Target zone
+    /// @param newCap New total deposit cap
+    function setZoneDepositCap(bytes32 zoneId, uint256 newCap) external;
 
     // ============================================
     // DEPOSITS & WITHDRAWALS
