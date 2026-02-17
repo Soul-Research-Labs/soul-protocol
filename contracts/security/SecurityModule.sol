@@ -160,6 +160,32 @@ abstract contract SecurityModule {
     /// @notice Per-account maximum daily withdrawal
     uint256 public accountMaxDailyWithdrawal = 100_000 * 1e18;
 
+    /*//////////////////////////////////////////////////////////////
+                     UPGRADEABLE INITIALIZATION HELPER
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @dev Initialize SecurityModule storage defaults. Must be called from
+     *      initialize() in any upgradeable contract that inherits SecurityModule,
+     *      because Solidity field initializers only run in the implementation
+     *      constructor — NOT through a proxy.
+     */
+    function __initSecurityModule() internal {
+        _securityFlags =
+            FLAG_RATE_LIMITING |
+            FLAG_CIRCUIT_BREAKER |
+            FLAG_FLASH_LOAN_GUARD |
+            FLAG_WITHDRAWAL_LIMITS;
+        rateLimitWindow = 1 hours;
+        maxActionsPerWindow = 50;
+        volumeThreshold = 10_000_000 * 1e18;
+        circuitBreakerCooldown = 1 hours;
+        minBlocksForWithdrawal = 1;
+        maxSingleWithdrawal = 100_000 * 1e18;
+        maxDailyWithdrawal = 1_000_000 * 1e18;
+        accountMaxDailyWithdrawal = 100_000 * 1e18;
+    }
+
     // ============ Backward-Compatible Public Getters for Packed Flags ============
 
     /// @notice Whether rate limiting is enabled

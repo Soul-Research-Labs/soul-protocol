@@ -362,6 +362,110 @@ contract CrossChainCommitmentRelayTest is Test {
     }
 
     // =========================================================================
+    // SELF-RELAY (permissionless fallback — prevents SPOF)
+    // =========================================================================
+
+    function test_SelfRelay_Success() public {
+        CrossChainCommitmentRelay.CommitmentBatch memory batch = _createBatch(
+            3
+        );
+        batch.batchRoot = keccak256(abi.encode("selfRelay"));
+
+        // Anyone can self-relay, no RELAYER_ROLE required
+        vm.prank(unauthorized);
+        relay.selfRelayCommitmentBatch(batch);
+
+        assertEq(relay.totalBatchesRelayed(), 1);
+        assertEq(relay.chainCommitmentCounts(bytes32(uint256(42161))), 3);
+        assertTrue(relay.processedBatches(batch.batchRoot));
+        assertEq(pool.insertCount(), 1);
+    }
+
+    function test_SelfRelay_DuplicateRoot_Reverts() public {
+        CrossChainCommitmentRelay.CommitmentBatch memory batch = _createBatch(
+            1
+        );
+        batch.batchRoot = keccak256(abi.encode("selfDup"));
+
+        vm.prank(unauthorized);
+        relay.selfRelayCommitmentBatch(batch);
+
+        vm.prank(unauthorized);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                CrossChainCommitmentRelay.BatchAlreadyRelayed.selector,
+                batch.batchRoot
+            )
+        );
+        relay.selfRelayCommitmentBatch(batch);
+    }
+
+    function test_SelfRelay_PauseBlocks() public {
+        vm.prank(admin);
+        relay.pause();
+
+        CrossChainCommitmentRelay.CommitmentBatch memory batch = _createBatch(
+            1
+        );
+        batch.batchRoot = keccak256(abi.encode("selfPause"));
+
+        vm.prank(unauthorized);
+        vm.expectRevert();
+        relay.selfRelayCommitmentBatch(batch);
+    }
+
+    function test_SelfRelay_ZeroPool_Reverts() public {
+        CrossChainCommitmentRelay r = new CrossChainCommitmentRelay(
+            admin,
+            address(0),
+            address(0)
+        );
+
+        CrossChainCommitmentRelay.CommitmentBatch memory batch = _createBatch(
+            1
+        );
+        batch.batchRoot = keccak256(abi.encode("selfZero"));
+
+        vm.prank(unauthorized);
+        vm.expectRevert(CrossChainCommitmentRelay.ZeroAddress.selector);
+        r.selfRelayCommitmentBatch(batch);
+    }
+
+    function test_SelfRelay_EmptyBatch_Reverts() public {
+        bytes32[] memory empty = new bytes32[](0);
+        CrossChainCommitmentRelay.CommitmentBatch
+            memory batch = CrossChainCommitmentRelay.CommitmentBatch({
+                sourceChainId: bytes32(uint256(1)),
+                commitments: empty,
+                assetIds: empty,
+                batchRoot: bytes32(uint256(99)),
+                proof: hex"",
+                sourceTreeSize: 0
+            });
+
+        vm.prank(unauthorized);
+        vm.expectRevert(CrossChainCommitmentRelay.EmptyBatch.selector);
+        relay.selfRelayCommitmentBatch(batch);
+    }
+
+    function test_SelfRelay_EmitsEvent() public {
+        CrossChainCommitmentRelay.CommitmentBatch memory batch = _createBatch(
+            2
+        );
+        batch.batchRoot = keccak256(abi.encode("selfEvent"));
+
+        vm.prank(unauthorized);
+        vm.expectEmit(true, true, true, true);
+        emit CrossChainCommitmentRelay.BatchRelayed(
+            bytes32(uint256(42161)),
+            batch.batchRoot,
+            2,
+            unauthorized
+        );
+        relay.selfRelayCommitmentBatch(batch);
+    }
+
+    // =========================================================================
     // FUZZ TESTS
     // =========================================================================
 

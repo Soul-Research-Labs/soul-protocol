@@ -332,6 +332,12 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Configure an Arbitrum rollup
+     * @param chainId The Arbitrum chain ID to configure (e.g., 42161 for Arbitrum One)
+     * @param inbox Address of the Arbitrum Inbox contract for retryable tickets
+     * @param outbox Address of the Arbitrum Outbox contract for L2-to-L1 withdrawals
+     * @param bridge Address of the Arbitrum Bridge contract
+     * @param rollup Address of the Arbitrum Rollup contract for state validation
+     * @param rollupType Type of rollup (Classic or Nitro)
      */
     function configureRollup(
         uint256 chainId,
@@ -545,6 +551,7 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Confirm deposit execution on L2
+     * @param depositId Unique identifier of the deposit to confirm
      */
     function confirmDeposit(
         bytes32 depositId
@@ -566,6 +573,15 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Register a withdrawal from L2
+     * @param l2Sender Address of the sender on Arbitrum L2
+     * @param l1Recipient Address of the recipient on L1 who will claim the withdrawal
+     * @param l2Token Address of the token on L2 being withdrawn
+     * @param amount Amount of tokens being withdrawn
+     * @param l2BlockNumber L2 block number at which the withdrawal was initiated
+     * @param l1BatchNumber L1 batch number containing the L2 block
+     * @param l2Timestamp Timestamp of the withdrawal on L2
+     * @param outputId Unique output identifier from the Arbitrum Outbox
+     * @return withdrawalId Unique identifier for tracking this withdrawal
      */
     function registerWithdrawal(
         address l2Sender,
@@ -620,6 +636,7 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Claim a withdrawal after challenge period
+     * @param withdrawalId Unique identifier of the withdrawal to claim
      */
     function claimWithdrawal(
         bytes32 withdrawalId,

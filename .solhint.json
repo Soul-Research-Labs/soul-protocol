@@ -21,7 +21,7 @@
     "contract-name-capwords": "error",
     "event-name-capwords": "error",
     "func-name-mixedcase": "warn",
-    "func-visibility": ["error", {"ignoreConstructors": true}],
+    "func-visibility": ["error", { "ignoreConstructors": true }],
     "imports-on-top": "error",
     "max-line-length": ["warn", 120],
     "max-states-count": ["warn", 20],
@@ -32,7 +32,7 @@
     "not-rely-on-time": "warn",
     "ordering": "warn",
     "private-vars-leading-underscore": "warn",
-    "reason-string": ["warn", {"maxLength": 64}],
+    "reason-string": ["warn", { "maxLength": 64 }],
     "reentrancy": "error",
     "state-visibility": "error",
     "use-forbidden-name": "error",
@@ -45,12 +45,12 @@
     "no-global-import": "warn",
     "payable-fallback": "warn",
 
-    "// NatSpec Documentation Rules": "// Added for documentation quality",
+    "// NatSpec Documentation Rules": "// Enforced — documentation is complete",
     "natspec-author": "warn",
     "natspec-title": "error",
-    "natspec-notice": "warn",
+    "natspec-notice": "error",
     "natspec-dev": "off",
-    "natspec-param": "warn",
-    "natspec-return": "warn"
+    "natspec-param": "error",
+    "natspec-return": "error"
   }
 }

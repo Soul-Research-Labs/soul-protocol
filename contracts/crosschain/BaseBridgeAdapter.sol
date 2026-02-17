@@ -670,6 +670,7 @@ contract BaseBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
      * @param stateRoot State root to sync
      * @param blockNumber Associated block number
      * @param gasLimit Gas limit for L2 execution
+     * @return messageId Unique identifier for the cross-domain state sync message
      */
     function syncStateToL2(
         bytes32 stateRoot,

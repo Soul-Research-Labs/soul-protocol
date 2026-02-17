@@ -348,6 +348,9 @@ contract CrossChainProofHubV3Upgradeable is
         maxValuePerHour = 1000 ether;
         proofSubmissionFee = 0.001 ether;
 
+        // Initialize SecurityModule defaults (field initializers don't execute through proxy)
+        __initSecurityModule();
+
         contractVersion = 1;
     }
 

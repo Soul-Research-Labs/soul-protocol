@@ -480,13 +480,13 @@ contract LineaBridgeAdapterTest is Test {
     }
 
     function test_getLastFinalizedBlock_zeroRollup() public {
-        LineaBridgeAdapter a2 = new LineaBridgeAdapter(
+        vm.expectRevert("Invalid rollup");
+        new LineaBridgeAdapter(
             address(msgService),
             tokenBridge,
             address(0),
             admin
         );
-        assertEq(a2.getLastFinalizedBlock(), 0);
     }
 
     // ── Admin: Pause / Unpause / EmergencyWithdraw

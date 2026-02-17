@@ -1,0 +1,45 @@
+repos:
+  - repo: local
+    hooks:
+      - id: forge-fmt
+        name: Forge Format
+        entry: bash -c 'forge fmt'
+        language: system
+        files: '\.sol$'
+        exclude: "(lib/|node_modules/|coverage-stubs/|contracts/verifiers/generated/)"
+
+      - id: solhint
+        name: Solhint Linter
+        entry: bash -c 'npx solhint'
+        language: system
+        files: '\.sol$'
+        args: ["--max-warnings", "0"]
+        exclude: "(lib/|node_modules/|coverage-stubs/|contracts/mocks/|test/)"
+
+      - id: typescript-check
+        name: TypeScript Check
+        entry: bash -c 'npx tsc --noEmit'
+        language: system
+        files: '\.(ts|tsx)$'
+        pass_filenames: false
+
+      - id: forge-build
+        name: Forge Build
+        entry: bash -c 'forge build --sizes 2>&1 | grep -v "^Warning"'
+        language: system
+        files: '\.sol$'
+        pass_filenames: false
+        stages: [push]
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: '(\.sol$|\.snap$)'
+      - id: end-of-file-fixer
+        exclude: '(\.sol$|\.snap$)'
+      - id: check-yaml
+      - id: check-json
+        exclude: "(cache/|artifacts/|out/)"
+      - id: check-merge-conflict
+      - id: detect-private-key

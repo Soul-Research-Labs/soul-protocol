@@ -281,7 +281,7 @@ contract BridgeRateLimiterTest is Test {
         vm.prank(operator);
         limiter.recordTVLChange(100 ether, true);
 
-        (, , , , uint256 tvl, uint256 peak) = limiter.globalStats();
+        (, , , , uint256 tvl, uint256 peak, ) = limiter.globalStats();
         assertEq(tvl, 100 ether);
         assertEq(peak, 100 ether);
     }
@@ -293,7 +293,7 @@ contract BridgeRateLimiterTest is Test {
         vm.prank(operator);
         limiter.recordTVLChange(30 ether, false);
 
-        (, , , , uint256 tvl, ) = limiter.globalStats();
+        (, , , , uint256 tvl, , ) = limiter.globalStats();
         assertEq(tvl, 70 ether);
     }
 
@@ -304,7 +304,7 @@ contract BridgeRateLimiterTest is Test {
         vm.prank(operator);
         limiter.recordTVLChange(20 ether, false); // more than TVL
 
-        (, , , , uint256 tvl, ) = limiter.globalStats();
+        (, , , , uint256 tvl, , ) = limiter.globalStats();
         assertEq(tvl, 0);
     }
 
@@ -361,7 +361,7 @@ contract BridgeRateLimiterTest is Test {
         limiter.recordTVLChange(withdraw, false);
         vm.stopPrank();
 
-        (, , , , uint256 tvl, ) = limiter.globalStats();
+        (, , , , uint256 tvl, , ) = limiter.globalStats();
         assertEq(tvl, deposit - withdraw);
     }
 }

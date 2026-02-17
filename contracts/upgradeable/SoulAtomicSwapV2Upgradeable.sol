@@ -220,6 +220,9 @@ contract SoulAtomicSwapV2Upgradeable is
         feeRecipient = _feeRecipient;
         protocolFeeBps = 10; // 0.1%
 
+        // Initialize SecurityModule defaults (field initializers don't execute through proxy)
+        __initSecurityModule();
+
         contractVersion = 1;
     }
 

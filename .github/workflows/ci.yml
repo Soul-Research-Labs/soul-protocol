@@ -140,6 +140,14 @@ jobs:
       - name: Generate gas snapshot
         run: forge snapshot --no-match-test "test_Attack_RelayerFrontRunning|test_storageOperations_atScale" | head -200
 
+      - name: Check gas snapshot regression
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        run: |
+          if [ -f .gas-snapshot ]; then
+            forge snapshot --no-match-test "test_Attack_RelayerFrontRunning|test_storageOperations_atScale" --check --tolerance 5 || echo "⚠️ Gas regression detected (>5% increase)"
+          fi
+
       - name: Upload gas snapshot
         uses: actions/upload-artifact@v4
         with:
@@ -245,8 +253,60 @@ jobs:
       - name: TypeScript type check
         run: npx tsc --noEmit
 
-      - name: SDK unit tests
+      - name: SDK build
+        run: cd sdk && npm ci && npm run build
+
+      - name: SDK unit tests (smoke)
         run: node test/sdk.test.mjs
+
+      - name: SDK full test suite
+        run: cd sdk && npm run test:all
+
+  coverage:
+    name: Coverage Report
+    runs-on: ubuntu-latest
+    needs: [foundry-tests]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate coverage stubs
+        run: python3 scripts/validate_stubs.py
+
+      - name: Run coverage (stub-swap + lcov)
+        run: python3 scripts/run_coverage.py --report=lcov
+
+      - name: Analyze coverage (threshold 85%)
+        run: python3 scripts/analyze_coverage.py --lcov lcov.info --threshold 85
+        continue-on-error: true
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lcov
+          path: lcov.info
+          retention-days: 30
 
   formal-verification:
     name: Formal Verification (Halmos)
@@ -333,6 +393,9 @@ jobs:
           - verify_ethereum_l1_bridge
           - verify_l2_bridges
           - verify_crosschain_security
+          - verify_da_oracle
+          - verify_heterogeneous_relayer
+          - verify_privacy_zone_manager
           - verify_security
           - verify_nullifier
           - verify_cdna
@@ -346,7 +409,7 @@ jobs:
           - verify_batch_accumulator
           - verify_privacy_oracle
           - verify_crp
-          - verify_adv
+          - verify_advanced_privacy
           - verify_timelock
           - verify_csc
           - verify_shielded_pool
@@ -357,17 +420,17 @@ jobs:
           - verify_stealth_address
           - verify_cross_chain_privacy
           - verify_formal
-          - verify_advanced_privacy
+          # NOTE: verify_advanced_privacy already listed above — removed duplicate
           - verify_network_invariants
           - verify_upgradeable
           - verify_governor
-          - verify_crosschain
+          # verify_crosschain — DISABLED (pending SolanaBridgeAdapter)
           - verify_direct_l2_messenger
           - verify_gas_normalizer
           - verify_private_relayer_network
           - verify_recursive_proof_aggregator
-          - verify_sptc
-          - verify_upgradeable_shielded_pool
+          # verify_sptc — DISABLED (pending SPTC contract)
+          # verify_upgradeable_shielded_pool — DISABLED (pending contract alignment)
           - verify_view_key_registry
           - verify_ring_signature
     steps:

@@ -836,6 +836,13 @@ contract L2ProofRouter is ReentrancyGuard, AccessControl, Pausable {
 
     /**
      * @notice Configure a route
+     * @param sourceChainId Chain ID of the proof source network
+     * @param destChainId Chain ID of the proof destination network
+     * @param defaultPath Default routing path (Direct, Hub, or Aggregated)
+     * @param adapter Address of the bridge adapter contract for this route
+     * @param baseCost Base cost in wei for routing a proof on this path
+     * @param gasPerProof Gas cost per individual proof in a batch
+     * @param maxBatchSize Maximum number of proofs per batch (0 uses default)
      */
     function configureRoute(
         uint256 sourceChainId,
@@ -860,6 +867,7 @@ contract L2ProofRouter is ReentrancyGuard, AccessControl, Pausable {
 
     /**
      * @notice Set DirectL2Messenger address
+     * @param messenger Address of the DirectL2Messenger contract for direct L2-to-L2 proof routing
      */
     function setDirectMessenger(
         address messenger

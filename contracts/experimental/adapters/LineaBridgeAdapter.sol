@@ -146,6 +146,8 @@ contract LineaBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     ) {
         require(_admin != address(0), "Invalid admin");
         require(_messageService != address(0), "Invalid message service");
+        require(_tokenBridge != address(0), "Invalid token bridge");
+        require(_rollup != address(0), "Invalid rollup");
 
         messageService = _messageService;
         tokenBridge = _tokenBridge;

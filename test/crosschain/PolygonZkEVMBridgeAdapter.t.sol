@@ -72,14 +72,14 @@ contract PolygonZkEVMBridgeAdapterTest is Test {
     }
 
     function test_isConfigured_zeroBridge() public {
-        PolygonZkEVMBridgeAdapter a2 = new PolygonZkEVMBridgeAdapter(
+        vm.expectRevert("Invalid bridge");
+        new PolygonZkEVMBridgeAdapter(
             address(0),
             globalExitRoot,
             polygonZkEVM,
             networkId,
             admin
         );
-        assertFalse(a2.isConfigured());
     }
 
     function test_getFinalityBlocks() public view {

@@ -380,6 +380,12 @@ contract CrossChainProofHubV3 is
         });
 
         // Register individual proofs
+        // Gas optimization: cache timestamp and challenge deadline outside loop
+        uint64 submittedAt = uint64(block.timestamp);
+        uint64 deadline = uint64(block.timestamp + challengePeriod);
+        address relayer_ = msg.sender;
+        uint256 stakePerProof = minRelayerStake / len;
+
         for (uint256 i = 0; i < len; ) {
             bytes32 proofId = keccak256(
                 abi.encodePacked(
@@ -396,11 +402,11 @@ contract CrossChainProofHubV3 is
                 commitment: _proofs[i].commitment,
                 sourceChainId: _proofs[i].sourceChainId,
                 destChainId: _proofs[i].destChainId,
-                submittedAt: uint64(block.timestamp),
-                challengeDeadline: uint64(block.timestamp + challengePeriod),
-                relayer: msg.sender,
+                submittedAt: submittedAt,
+                challengeDeadline: deadline,
+                relayer: relayer_,
                 status: ProofStatus.Pending,
-                stake: minRelayerStake / len
+                stake: stakePerProof
             });
 
             proofToBatch[proofId] = batchId;

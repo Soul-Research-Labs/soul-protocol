@@ -26,6 +26,7 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).parent
 PROJECT_DIR = SCRIPT_DIR.parent
 BACKUP_DIR = PROJECT_DIR / ".coverage-backup"
+SENTINEL = PROJECT_DIR / ".coverage-in-progress"
 
 # ── Minimal viable stub set (16 contracts) ─────────────────────────────
 # Only contracts with inline assembly, assembly-library deps,
@@ -71,7 +72,15 @@ def print_colored(msg: str, color: str = NC):
 def backup_and_stub():
     """Backup original contracts and replace with stubs."""
     print_colored("\n📦 Backing up contracts and applying stubs...", CYAN)
-    
+
+    # Crash-safety sentinel: if this file exists, contracts are in stubbed state
+    if SENTINEL.exists():
+        print_colored("\n⚠ WARNING: .coverage-in-progress sentinel found!", YELLOW)
+        print_colored("  A previous coverage run may have been interrupted.", YELLOW)
+        print_colored("  Run: python3 scripts/run_coverage.py --restore", YELLOW)
+        return 0
+
+    SENTINEL.write_text(f"Coverage run started at {__import__('datetime').datetime.now().isoformat()}\n")
     BACKUP_DIR.mkdir(parents=True, exist_ok=True)
     
     success = 0
@@ -105,6 +114,11 @@ def backup_and_stub():
 def restore_contracts():
     """Restore backed up contracts."""
     print_colored("\n🔄 Restoring original contracts...", CYAN)
+
+    # Remove crash-safety sentinel
+    if SENTINEL.exists():
+        SENTINEL.unlink()
+        print_colored("  ✓ Removed .coverage-in-progress sentinel", GREEN)
     
     if not BACKUP_DIR.exists():
         print_colored("No backup directory found.", YELLOW)

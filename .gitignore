@@ -32,6 +32,7 @@ contracts-generated/
 contracts-coverage/
 lcov.info
 .coverage-backup/
+.coverage-in-progress
 
 # Noir (ZK circuits)
 noir/target/

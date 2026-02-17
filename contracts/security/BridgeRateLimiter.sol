@@ -78,6 +78,7 @@ contract BridgeRateLimiter is AccessControl, Pausable {
         uint256 dayStart; // Timestamp of current day
         uint256 currentTVL; // Current total value locked
         uint256 peakTVL; // Historical peak TVL
+        uint256 txCount; // Global transaction count for the current hour
     }
 
     struct CircuitBreakerConfig {
@@ -238,7 +239,8 @@ contract BridgeRateLimiter is AccessControl, Pausable {
             hourStart: block.timestamp,
             dayStart: block.timestamp,
             currentTVL: 0,
-            peakTVL: 0
+            peakTVL: 0,
+            txCount: 0
         });
     }
 
@@ -337,6 +339,7 @@ contract BridgeRateLimiter is AccessControl, Pausable {
     ) external onlyRole(OPERATOR_ROLE) {
         _updateGlobalStats(amount);
         _updateUserUsage(user, amount);
+        _checkAnomaly(user, amount);
 
         // Check circuit breaker triggers
         if (circuitBreaker.autoBreakEnabled) {
@@ -427,6 +430,8 @@ contract BridgeRateLimiter is AccessControl, Pausable {
         // Atomically record after all checks pass
         _updateGlobalStats(amount);
         _updateUserUsage(user, amount);
+        
+        _checkAnomaly(user, amount);
 
         if (circuitBreaker.autoBreakEnabled) {
             _checkCircuitBreaker(amount);
@@ -738,6 +743,7 @@ contract BridgeRateLimiter is AccessControl, Pausable {
         // Reset hour if needed
         if (block.timestamp >= globalStats.hourStart + HOUR) {
             globalStats.hourlyVolume = 0;
+            globalStats.txCount = 0;
             globalStats.hourStart = block.timestamp;
         }
 
@@ -749,6 +755,7 @@ contract BridgeRateLimiter is AccessControl, Pausable {
 
         globalStats.hourlyVolume += amount;
         globalStats.dailyVolume += amount;
+        globalStats.txCount++;
     }
 
     function _updateUserUsage(address user, uint256 amount) internal {
@@ -796,31 +803,67 @@ contract BridgeRateLimiter is AccessControl, Pausable {
             : globalStats.dailyVolume;
     }
 
+    struct AnomalyDetector {
+        uint256 avgVolume;        // Rolling average
+        uint256 stdDeviation;     // Standard deviation estimate
+        uint256 anomalyThreshold; // Multiplier (e.g. 3 = 3 sigma)
+        uint256 sampleCount;      // Number of samples
+    }
+
+    mapping(address => AnomalyDetector) public anomalyDetectors;
+
+    event AnomalyDetected(address indexed user, uint256 amount, uint256 threshold);
+
+    /**
+     * @notice Check and update anomaly detection stats
+     * @dev Simplistic online Welford's algorithm or exponential moving average could differ. 
+     *      Here we use a simple EMA for gas efficiency.
+     */
+    function _checkAnomaly(address user, uint256 amount) internal {
+        AnomalyDetector storage detector = anomalyDetectors[user];
+        
+        // Initialize if first tx
+        if (detector.sampleCount == 0) {
+            detector.avgVolume = amount;
+            detector.stdDeviation = amount / 2; // Rough initial estimate
+            detector.anomalyThreshold = 3;      // Default 3 sigma
+            detector.sampleCount = 1;
+            return;
+        }
+
+        // Check for anomaly
+        uint256 threshold = detector.avgVolume + (detector.stdDeviation * detector.anomalyThreshold);
+        
+        if (amount > threshold) {
+            emit AnomalyDetected(user, amount, threshold);
+            if (circuitBreaker.autoBreakEnabled) {
+                _triggerCircuitBreaker("Anomaly detected: unusual volume");
+            }
+        }
+
+        // Update stats (Exponential Moving Average for efficiency)
+        // alpha = 0.1 (approx)
+        detector.avgVolume = (detector.avgVolume * 9 + amount) / 10;
+        
+        uint256 diff = amount > detector.avgVolume ? amount - detector.avgVolume : detector.avgVolume - amount;
+        detector.stdDeviation = (detector.stdDeviation * 9 + diff) / 10;
+        
+        detector.sampleCount++;
+    }
+
     function _checkCircuitBreaker(uint256 amount) internal {
         // Check large transfer
         if (amount >= circuitBreaker.largeTransferThreshold) {
             _triggerCircuitBreaker("Large transfer detected");
-            return;
         }
 
-        // Check velocity - track hourly transaction count
-        // Reset counter if hour has elapsed
-        if (block.timestamp >= globalStats.hourStart + HOUR) {
-            globalStats.hourStart = block.timestamp;
-            // Counter implicitly reset by checking within window
-        }
-
-        // Calculate approximate hourly tx rate based on volume patterns
-        // Velocity = (current hourly volume / average tx size) estimates tx count
         // If velocity exceeds threshold, trigger circuit breaker
         if (circuitBreaker.velocityThreshold > 0) {
             // Use a sliding window approximation
             // Average tx size = hourlyVolume / estimated_tx_count
-            // For safety, assume minimum tx of 0.01 ETH
-            uint256 minTxSize = 0.01 ether;
-            uint256 estimatedTxCount = globalStats.hourlyVolume / minTxSize;
-
-            if (estimatedTxCount >= circuitBreaker.velocityThreshold) {
+            // For safety, assume minimum tx of 0.01 ether;
+            // Use actual tx count
+            if (globalStats.txCount >= circuitBreaker.velocityThreshold) {
                 _triggerCircuitBreaker("Velocity threshold exceeded");
                 return;
             }

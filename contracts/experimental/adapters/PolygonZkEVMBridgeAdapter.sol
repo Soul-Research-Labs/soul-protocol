@@ -47,6 +47,14 @@ contract PolygonZkEVMBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         uint32 _networkId,
         address _admin
     ) {
+        require(_admin != address(0), "Invalid admin");
+        require(_bridge != address(0), "Invalid bridge");
+        require(
+            _globalExitRootManager != address(0),
+            "Invalid exit root manager"
+        );
+        require(_polygonZkEVM != address(0), "Invalid polygonZkEVM");
+
         bridge = _bridge;
         globalExitRootManager = _globalExitRootManager;
         polygonZkEVM = _polygonZkEVM;
@@ -60,6 +68,7 @@ contract PolygonZkEVMBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     function setSoulHubL2(
         address _soulHubL2
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_soulHubL2 != address(0), "Invalid address");
         soulHubL2 = _soulHubL2;
         emit SoulHubL2Set(_soulHubL2);
     }

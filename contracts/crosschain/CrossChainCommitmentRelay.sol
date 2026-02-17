@@ -243,6 +243,64 @@ contract CrossChainCommitmentRelay is AccessControl, ReentrancyGuard, Pausable {
                           ADMIN FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
+    /**
+     * @notice Permissionless self-relay for users — bypasses RELAYER_ROLE.
+     * @dev Prevents censorship and single-point-of-failure if all relayers go offline.
+     *      Mirrors SoulCrossChainRelay.selfRelayProof() pattern.
+     *      Anyone can relay a commitment batch by paying gas directly.
+     *      The shielded pool's own RELAYER_ROLE gate still applies — this contract's
+     *      address must be granted RELAYER_ROLE on the pool.
+     * @param batch The commitment batch to relay
+     */
+    function selfRelayCommitmentBatch(
+        CommitmentBatch calldata batch
+    ) external nonReentrant whenNotPaused {
+        if (shieldedPool == address(0)) revert ZeroAddress();
+        if (batch.commitments.length == 0) revert EmptyBatch();
+        if (batch.commitments.length != batch.assetIds.length)
+            revert BatchLengthMismatch();
+        if (processedBatches[batch.batchRoot])
+            revert BatchAlreadyRelayed(batch.batchRoot);
+
+        processedBatches[batch.batchRoot] = true;
+
+        // Forward to UniversalShieldedPool.insertCrossChainCommitments()
+        (bool success, bytes memory returnData) = shieldedPool.call(
+            abi.encodeWithSignature(
+                "insertCrossChainCommitments((bytes32,bytes32[],bytes32[],bytes32,bytes,uint256))",
+                batch.sourceChainId,
+                batch.commitments,
+                batch.assetIds,
+                batch.batchRoot,
+                batch.proof,
+                batch.sourceTreeSize
+            )
+        );
+
+        if (!success) {
+            if (returnData.length > 0) {
+                assembly {
+                    revert(add(returnData, 32), mload(returnData))
+                }
+            }
+            revert RelayFailed("self-relay insertCrossChainCommitments failed");
+        }
+
+        unchecked {
+            ++totalBatchesRelayed;
+            chainCommitmentCounts[batch.sourceChainId] += batch
+                .commitments
+                .length;
+        }
+
+        emit BatchRelayed(
+            batch.sourceChainId,
+            batch.batchRoot,
+            batch.commitments.length,
+            msg.sender
+        );
+    }
+
     /// @notice Set the shielded pool contract address
     /// @param _pool The new shielded pool address (must be non-zero)
     function setShieldedPool(address _pool) external onlyRole(OPERATOR_ROLE) {

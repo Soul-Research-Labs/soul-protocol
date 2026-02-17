@@ -5,6 +5,10 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 
+interface IPausable {
+    function pause() external;
+}
+
 /**
  * @title BridgeWatchtower
  * @author Soul Protocol
@@ -61,7 +65,16 @@ contract BridgeWatchtower is AccessControl, ReentrancyGuard, Pausable {
         INVALID_SIGNATURE,
         SEQUENCER_FAULT,
         BRIDGE_DELAY,
-        SUSPICIOUS_PATTERN
+        SUSPICIOUS_PATTERN,
+        LARGE_TRANSFER_ANOMALY,
+        TVL_DRAIN
+    }
+
+    enum ResponseAction {
+        NONE,
+        PAUSE_BRIDGE,
+        TRIGGER_CIRCUIT_BREAKER,
+        EMERGENCY_SHUTDOWN
     }
 
     enum ReportStatus {
@@ -143,6 +156,10 @@ contract BridgeWatchtower is AccessControl, ReentrancyGuard, Pausable {
     /*//////////////////////////////////////////////////////////////
                               STATE
     //////////////////////////////////////////////////////////////*/
+    
+    mapping(ReportType => ResponseAction) public reportActions;
+    address public bridgeContract;
+    address public rateLimiterContract;
 
     /// @notice Watchtower registry
     mapping(address => Watchtower) public watchtowers;
@@ -649,6 +666,10 @@ contract BridgeWatchtower is AccessControl, ReentrancyGuard, Pausable {
         if (report.confirmations >= required) {
             report.status = ReportStatus.CONFIRMED;
             watchtowers[report.reporter].correctReports++;
+            
+            // Execute automated action
+            _executeAction(report.reportType);
+
             emit ReportFinalized(
                 reportId,
                 ReportStatus.CONFIRMED,
@@ -735,6 +756,33 @@ contract BridgeWatchtower is AccessControl, ReentrancyGuard, Pausable {
     /**
      * @notice Receive ETH for reward pool
      */
+    function _executeAction(ReportType reportType) internal {
+        ResponseAction action = reportActions[reportType];
+        
+        if (action == ResponseAction.PAUSE_BRIDGE) {
+            if (bridgeContract != address(0)) {
+                try IPausable(bridgeContract).pause() {} catch {}
+            }
+        } else if (action == ResponseAction.TRIGGER_CIRCUIT_BREAKER) {
+            if (rateLimiterContract != address(0)) {
+                // Assuming RateLimiter has triggerCircuitBreaker(string)
+                (bool success,) = rateLimiterContract.call(
+                    abi.encodeWithSignature("triggerCircuitBreaker(string)", "Watchtower Alert")
+                );
+            }
+        }
+    }
+
+    // Configuration
+    function setReportAction(ReportType reportType, ResponseAction action) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        reportActions[reportType] = action;
+    }
+
+    function setTargetContracts(address _bridge, address _rateLimiter) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        bridgeContract = _bridge;
+        rateLimiterContract = _rateLimiter;
+    }
+
     receive() external payable {
         rewardPool += msg.value;
     }

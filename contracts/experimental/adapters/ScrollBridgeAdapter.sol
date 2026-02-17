@@ -111,6 +111,11 @@ contract ScrollBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         address _rollupContract,
         address _admin
     ) {
+        require(_admin != address(0), "Invalid admin");
+        require(_scrollMessenger != address(0), "Invalid scroll messenger");
+        require(_gatewayRouter != address(0), "Invalid gateway router");
+        require(_rollupContract != address(0), "Invalid rollup contract");
+
         scrollMessenger = _scrollMessenger;
         gatewayRouter = _gatewayRouter;
         rollupContract = _rollupContract;
@@ -134,6 +139,10 @@ contract ScrollBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         address _gatewayRouter,
         address _rollupContract
     ) external onlyRole(OPERATOR_ROLE) {
+        require(_scrollMessenger != address(0), "Invalid scroll messenger");
+        require(_gatewayRouter != address(0), "Invalid gateway router");
+        require(_rollupContract != address(0), "Invalid rollup contract");
+
         scrollMessenger = _scrollMessenger;
         gatewayRouter = _gatewayRouter;
         rollupContract = _rollupContract;
@@ -151,6 +160,7 @@ contract ScrollBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     function setSoulHubL2(
         address _soulHubL2
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_soulHubL2 != address(0), "Invalid address");
         soulHubL2 = _soulHubL2;
         emit SoulHubL2Set(_soulHubL2);
     }
@@ -210,7 +220,7 @@ contract ScrollBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     function sendMessage(
         address target,
         bytes calldata data,
-        uint256 /* gasLimit */
+        uint256 gasLimit
     )
         external
         payable
@@ -222,23 +232,28 @@ contract ScrollBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         require(target != address(0), "Invalid target");
         require(scrollMessenger != address(0), "Bridge not configured");
 
+        uint256 l2Gas = gasLimit > 0 ? gasLimit : DEFAULT_L2_GAS_LIMIT;
         uint256 nonce = messageNonce++;
         bytes32 messageHash = keccak256(
             abi.encode(target, data, nonce, block.timestamp)
         );
 
         messageStatus[messageHash] = MessageStatus.SENT;
-        emit MessageSent(messageHash, target, nonce);
 
-        // Forward message through ScrollMessenger
-        // IScrollMessenger(scrollMessenger).sendMessage{value: msg.value}(
-        //     target,
-        //     msg.value,
-        //     data,
-        //     gasLimit
-        // );
-        // NOTE: Uncomment above when deploying to Scroll mainnet/testnet.
-        // In non-Scroll environments, the hash-and-emit pattern enables testing.
+        // Forward message through ScrollMessenger (L1ScrollMessenger / L2ScrollMessenger)
+        bytes memory messengerCall = abi.encodeWithSignature(
+            "sendMessage(address,uint256,bytes,uint256)",
+            target,
+            msg.value,
+            data,
+            l2Gas
+        );
+        (bool success, ) = scrollMessenger.call{value: msg.value}(
+            messengerCall
+        );
+        require(success, "Scroll messenger call failed");
+
+        emit MessageSent(messageHash, target, nonce);
         return messageHash;
     }
 

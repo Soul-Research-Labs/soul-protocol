@@ -212,6 +212,12 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Add a new L2 chain configuration
+     * @param chainId The chain ID of the new L2 network to register
+     * @param name Human-readable name of the chain (e.g., "Arbitrum One")
+     * @param bridge Address of the canonical bridge contract on the chain
+     * @param messenger Address of the cross-chain messenger contract
+     * @param confirmations Number of block confirmations required for finality
+     * @param gasLimit Default gas limit for cross-chain messages to this chain
      */
     function addChain(
         uint256 chainId,
@@ -240,6 +246,12 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Update chain configuration
+     * @param chainId The chain ID of the L2 network to update
+     * @param bridge New bridge contract address
+     * @param messenger New messenger contract address
+     * @param confirmations New finality confirmation count
+     * @param gasLimit New default gas limit for messages
+     * @param enabled Whether the chain should be enabled for messaging
      */
     function updateChain(
         uint256 chainId,
@@ -267,6 +279,9 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Send a message to another chain
+     * @param targetChain The chain ID of the destination network
+     * @param payload ABI-encoded message payload to deliver
+     * @return messageId Unique identifier for tracking the cross-chain message
      */
     function sendMessage(
         uint256 targetChain,
@@ -303,6 +318,10 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Receive a message from another chain
+     * @param messageId Unique identifier of the incoming message
+     * @param sourceChain Chain ID of the network the message originated from
+     * @param payload ABI-encoded message payload
+     * @param proof Cryptographic proof of message validity (Merkle proof + oracle signatures)
      */
     function receiveMessage(
         bytes32 messageId,
@@ -330,6 +349,7 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Confirm message delivery
+     * @param messageId Unique identifier of the relayed message to confirm
      */
     function confirmMessage(bytes32 messageId) external onlyRole(RELAYER_ROLE) {
         if (messages[messageId].status != MessageStatus.RELAYED)

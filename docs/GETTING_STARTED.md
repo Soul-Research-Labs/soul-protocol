@@ -20,21 +20,22 @@
 
 ## Prerequisites
 
-| Requirement | Minimum Version | Check Command |
-|-------------|-----------------|---------------|
-| Node.js | 20.0+ | `node --version` |
-| npm | 10.0+ | `npm --version` |
-| Git | 2.40+ | `git --version` |
-| Foundry | Latest | `forge --version` |
+| Requirement | Minimum Version | Check Command     |
+| ----------- | --------------- | ----------------- |
+| Node.js     | 20.0+           | `node --version`  |
+| npm         | 10.0+           | `npm --version`   |
+| Git         | 2.40+           | `git --version`   |
+| Foundry     | Latest          | `forge --version` |
 
 **Optional (for ZK circuit development):**
 
-| Requirement | Version | Check Command |
-|-------------|---------|---------------|
-| Noir (nargo) | 1.0.0-beta.18+ | `nargo --version` |
-| Barretenberg (bb) | 0.82+ | `bb --version` |
+| Requirement       | Version        | Check Command     |
+| ----------------- | -------------- | ----------------- |
+| Noir (nargo)      | 1.0.0-beta.18+ | `nargo --version` |
+| Barretenberg (bb) | 0.82+          | `bb --version`    |
 
 **Network Access:**
+
 - RPC endpoint (Alchemy, Infura, or local Anvil)
 - Testnet ETH for Sepolia (see [faucets](#testnet-faucets))
 
@@ -58,6 +59,16 @@ forge build
 
 # Hardhat (secondary)
 npx hardhat compile
+
+# Or use Makefile (recommended)
+make build        # forge build + hardhat compile
+make test         # Run all Foundry tests
+make coverage     # Coverage summary
+make coverage-ci  # Full LCOV coverage with threshold enforcement
+make gas          # Gas snapshot
+make security     # Slither + Aderyn static analysis
+make sdk-build    # Build TypeScript SDK
+make sdk-test     # Run SDK tests
 ```
 
 ### Noir Circuits (Optional)
@@ -93,13 +104,13 @@ npx hardhat compile --quiet && echo "Hardhat OK"
 ### 1. Initialize the Client
 
 ```typescript
-import { createSoulClient } from '@soul/sdk';
+import { createSoulClient } from "@soul/sdk";
 
 // Create client (uses viem under the hood)
 const client = createSoulClient({
-  rpcUrl: 'https://eth-sepolia.g.alchemy.com/v2/YOUR_KEY',
-  chainId: 11155111,  // Sepolia
-  privateKey: '0x...',  // Optional: for signing transactions
+  rpcUrl: "https://eth-sepolia.g.alchemy.com/v2/YOUR_KEY",
+  chainId: 11155111, // Sepolia
+  privateKey: "0x...", // Optional: for signing transactions
 });
 ```
 
@@ -108,35 +119,35 @@ const client = createSoulClient({
 ```typescript
 // Create a lock that can only be unlocked with a valid ZK proof
 const lockTx = await client.createLock({
-  commitment: '0x...',       // Pedersen commitment
-  nullifierHash: '0x...',    // Hash of the nullifier
+  commitment: "0x...", // Pedersen commitment
+  nullifierHash: "0x...", // Hash of the nullifier
   amount: 1000000000000000000n, // 1 ETH
   destinationChainId: 42161, // Arbitrum
   expiresAt: Math.floor(Date.now() / 1000) + 3600, // 1 hour
 });
 
-console.log('Lock created:', lockTx);
+console.log("Lock created:", lockTx);
 ```
 
 ### 3. Unlock with a ZK Proof
 
 ```typescript
 // Generate proof off-chain using NoirProver
-import { NoirProver } from '@soul/sdk';
+import { NoirProver } from "@soul/sdk";
 
 const prover = new NoirProver();
-const proof = await prover.generateProof('state_transfer', {
-  secret: '0x...',
-  nullifier: '0x...',
-  commitment: '0x...',
+const proof = await prover.generateProof("state_transfer", {
+  secret: "0x...",
+  nullifier: "0x...",
+  commitment: "0x...",
 });
 
 // Submit proof on-chain to unlock
 const unlockTx = await client.unlockWithProof({
   lockId: lockTx.lockId,
   proof: proof.proof,
-  nullifier: '0x...',
-  newStateCommitment: '0x...',
+  nullifier: "0x...",
+  newStateCommitment: "0x...",
 });
 ```
 
@@ -164,19 +175,20 @@ const unlockTx = await client.unlockWithProof({
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-| Primitive | Contract | Purpose |
-|-----------|----------|---------|
-| **ZK-SLocks** | `ZKBoundStateLocks` | Lock state, unlock with ZK proof for cross-chain atomic ops |
-| **PC³** | `ProofCarryingContainer` | Self-authenticating containers for portable proofs between chains |
-| **CDNA** | `CrossDomainNullifierAlgebra` | Cross-domain nullifier tracking to prevent double-spending |
-| **PBP** | `PolicyBoundProofs` | Policy-bound proofs for compliant privacy (KYC/AML) |
-| **EASC** | `ExecutionAgnosticStateCommitments` | Backend-agnostic state commitments for multi-backend verification |
+| Primitive     | Contract                            | Purpose                                                           |
+| ------------- | ----------------------------------- | ----------------------------------------------------------------- |
+| **ZK-SLocks** | `ZKBoundStateLocks`                 | Lock state, unlock with ZK proof for cross-chain atomic ops       |
+| **PC³**       | `ProofCarryingContainer`            | Self-authenticating containers for portable proofs between chains |
+| **CDNA**      | `CrossDomainNullifierAlgebra`       | Cross-domain nullifier tracking to prevent double-spending        |
+| **PBP**       | `PolicyBoundProofs`                 | Policy-bound proofs for compliant privacy (KYC/AML)               |
+| **EASC**      | `ExecutionAgnosticStateCommitments` | Backend-agnostic state commitments for multi-backend verification |
 
 ### ZK Backend: Noir + UltraHonk
 
 Soul uses **Noir** circuits compiled to **UltraHonk** proofs (no trusted setup required). Generated Solidity verifiers are deployed on-chain and integrated via `UltraHonkAdapter.sol`.
 
 Available circuits (in `noir/circuits/`):
+
 - `nullifier` — Nullifier derivation proof
 - `state_transfer` — Cross-chain state transfer
 - `container` — Proof-carrying container verification
@@ -191,7 +203,7 @@ Available circuits (in `noir/circuits/`):
 ## Complete Example: Private Cross-Chain Transfer
 
 ```typescript
-import { createSoulClient, NoirProver, BridgeFactory } from '@soul/sdk';
+import { createSoulClient, NoirProver, BridgeFactory } from "@soul/sdk";
 
 async function privateTransfer() {
   // 1. Create clients for source and destination chains
@@ -211,7 +223,7 @@ async function privateTransfer() {
 
   // 3. Generate ZK proof off-chain
   const prover = new NoirProver();
-  const proof = await prover.generateProof('state_transfer', {
+  const proof = await prover.generateProof("state_transfer", {
     secret,
     nullifier,
     oldCommitment: commitmentHash,
@@ -233,7 +245,7 @@ async function privateTransfer() {
     newStateCommitment: newCommitmentHash,
   });
 
-  console.log('Transfer complete:', result);
+  console.log("Transfer complete:", result);
 }
 
 privateTransfer().catch(console.error);
@@ -245,22 +257,22 @@ privateTransfer().catch(console.error);
 
 ### Common Issues
 
-| Error | Cause | Solution |
-|-------|-------|----------|
-| `INSUFFICIENT_FUNDS` | Not enough ETH for gas | Fund your wallet with testnet ETH |
-| `INVALID_PROOF` | Proof doesn't verify | Check circuit inputs match public inputs |
-| `NULLIFIER_ALREADY_USED` | Double-spend attempt | Generate fresh nullifier |
-| `LOCK_EXPIRED` | Unlock deadline passed | Increase deadline or act faster |
-| `NETWORK_ERROR` | RPC connection failed | Check RPC URL, try different provider |
+| Error                    | Cause                  | Solution                                 |
+| ------------------------ | ---------------------- | ---------------------------------------- |
+| `INSUFFICIENT_FUNDS`     | Not enough ETH for gas | Fund your wallet with testnet ETH        |
+| `INVALID_PROOF`          | Proof doesn't verify   | Check circuit inputs match public inputs |
+| `NULLIFIER_ALREADY_USED` | Double-spend attempt   | Generate fresh nullifier                 |
+| `LOCK_EXPIRED`           | Unlock deadline passed | Increase deadline or act faster          |
+| `NETWORK_ERROR`          | RPC connection failed  | Check RPC URL, try different provider    |
 
 ### Testnet Faucets
 
-| Network | Faucet URL |
-|---------|------------|
-| Sepolia | [sepoliafaucet.com](https://sepoliafaucet.com) |
+| Network          | Faucet URL                                                         |
+| ---------------- | ------------------------------------------------------------------ |
+| Sepolia          | [sepoliafaucet.com](https://sepoliafaucet.com)                     |
 | Arbitrum Sepolia | [Alchemy Faucet](https://www.alchemy.com/faucets/arbitrum-sepolia) |
-| Base Sepolia | [Alchemy Faucet](https://www.alchemy.com/faucets/base-sepolia) |
-| Scroll Sepolia | [Scroll Faucet](https://sepolia.scroll.io/bridge) |
+| Base Sepolia     | [Alchemy Faucet](https://www.alchemy.com/faucets/base-sepolia)     |
+| Scroll Sepolia   | [Scroll Faucet](https://sepolia.scroll.io/bridge)                  |
 
 ### Environment Variables Template
 
@@ -285,13 +297,13 @@ SCROLLSCAN_API_KEY=your_key
 
 ## Next Steps
 
-| Resource | Description |
-|----------|-------------|
+| Resource                                      | Description                                 |
+| --------------------------------------------- | ------------------------------------------- |
 | **[Integration Guide](INTEGRATION_GUIDE.md)** | Deep-dive into SDK usage with v2 primitives |
-| **[API Reference](API_REFERENCE.md)** | Complete function documentation |
-| **[Architecture](architecture.md)** | System design and components |
-| **[Deployment Guide](DEPLOYMENT.md)** | Testnet and mainnet deployment |
+| **[API Reference](API_REFERENCE.md)**         | Complete function documentation             |
+| **[Architecture](architecture.md)**           | System design and components                |
+| **[Deployment Guide](DEPLOYMENT.md)**         | Testnet and mainnet deployment              |
 
 ---
 
-*Built by [Soul Research Labs](https://github.com/soul-research-labs)*
+_Built by [Soul Research Labs](https://github.com/soul-research-labs)_

@@ -797,6 +797,8 @@ contract CrossChainMessageRelay is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Get message details
+     * @param messageId Unique identifier of the message to retrieve
+     * @return CrossChainMessage struct with full message details
      */
     function getMessage(
         bytes32 messageId
@@ -806,6 +808,8 @@ contract CrossChainMessageRelay is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Get message execution result
+     * @param messageId Unique identifier of the executed message
+     * @return ExecutionResult struct with status, gas used, and error data
      */
     function getExecutionResult(
         bytes32 messageId
@@ -815,6 +819,9 @@ contract CrossChainMessageRelay is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Check if a remote is trusted
+     * @param chainId Chain ID of the remote network
+     * @param remote Address of the remote contract to check
+     * @return True if the address is a trusted remote for the given chain
      */
     function isTrustedRemote(
         uint256 chainId,
@@ -825,6 +832,15 @@ contract CrossChainMessageRelay is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Compute message ID
+     * @param sourceChainId Chain ID where the message originates
+     * @param targetChainId Chain ID where the message is delivered
+     * @param sender Address of the message sender on the source chain
+     * @param target Address of the message target on the destination chain
+     * @param value ETH value attached to the message
+     * @param data Encoded message payload
+     * @param nonce Sender nonce for replay protection
+     * @param timestamp Block timestamp when the message was created
+     * @return Deterministic message ID derived from all parameters
      */
     function computeMessageId(
         uint256 sourceChainId,
@@ -853,6 +869,8 @@ contract CrossChainMessageRelay is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Get batch details
+     * @param batchId Unique identifier of the message batch
+     * @return MessageBatch struct with batch metadata and message list
      */
     function getBatch(
         bytes32 batchId

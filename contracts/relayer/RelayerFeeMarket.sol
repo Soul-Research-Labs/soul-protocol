@@ -265,6 +265,7 @@ contract RelayerFeeMarket is AccessControl, ReentrancyGuard, IRelayerFeeMarket {
     }
 
     /// @notice Cancel a pending relay request (requester only)
+    /// @param requestId Unique identifier of the relay request to cancel
     function cancelRelayRequest(bytes32 requestId) external nonReentrant {
         RelayRequest storage request = requests[requestId];
         if (request.requester != msg.sender) revert NotRequester();
@@ -279,6 +280,7 @@ contract RelayerFeeMarket is AccessControl, ReentrancyGuard, IRelayerFeeMarket {
     }
 
     /// @notice Expire a stale request (anyone can call)
+    /// @param requestId Unique identifier of the relay request to expire
     function expireRequest(bytes32 requestId) external nonReentrant {
         RelayRequest storage request = requests[requestId];
         if (request.requester == address(0)) revert RequestNotFound();

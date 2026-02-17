@@ -282,16 +282,29 @@ contract zkSyncBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         require(!processedL2Txs[record.txHash], "Already processed");
 
         // Verify the L2 log inclusion proof against the zkSync Diamond
-        bytes memory verifyCall = abi.encodeWithSignature(
-            "proveL2LogInclusion(uint256,uint256,tuple(uint8,bool,uint16,address,bytes32,bytes32),bytes32[])",
+        // Uses proveL2LogInclusion(uint256 _batchNumber, uint256 _index,
+        //   L2Log memory _log, bytes32[] calldata _proof)
+        // We use abi.encodeWithSelector with the function selector directly
+        // because abi.encodeWithSignature cannot encode struct (tuple) types.
+        bytes4 selector = bytes4(
+            keccak256(
+                "proveL2LogInclusion(uint256,uint256,(uint8,bool,uint16,address,bytes32,bytes32),bytes32[])"
+            )
+        );
+        bytes memory verifyCall = abi.encodeWithSelector(
+            selector,
             proof.batchNumber,
             proof.messageIndex,
             data,
             proof.merkleProof
         );
 
-        (bool verified, ) = zkSyncDiamond.staticcall(verifyCall);
-        require(verified, "L2 log proof invalid");
+        (bool success, bytes memory result) = zkSyncDiamond.staticcall(
+            verifyCall
+        );
+        require(success && result.length >= 32, "L2 log proof invalid");
+        bool verified = abi.decode(result, (bool));
+        require(verified, "L2 log proof rejected");
 
         processedL2Txs[record.txHash] = true;
         record.status = MessageStatus.RELAYED;

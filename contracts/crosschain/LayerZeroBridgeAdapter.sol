@@ -650,6 +650,10 @@ contract LayerZeroBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     /**
      * @notice Receive a message from a remote chain (lzReceive)
      * @dev Called by LayerZero endpoint or relayer
+     * @param srcEid Source endpoint ID of the originating chain
+     * @param sender Peer address on the source chain (bytes32 for cross-VM compatibility)
+     * @param guid Globally unique identifier assigned by LayerZero
+     * @param message Encoded message payload from the source chain
      */
     function lzReceive(
         uint32 srcEid,

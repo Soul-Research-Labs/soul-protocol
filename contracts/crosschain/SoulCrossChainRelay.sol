@@ -306,6 +306,12 @@ contract SoulCrossChainRelay is AccessControl, ReentrancyGuard, Pausable {
     ) external onlyRole(BRIDGE_ROLE) nonReentrant whenNotPaused {
         // Decode message type
         uint8 msgType = abi.decode(payload, (uint8));
+        
+        if (msgType == MSG_BATCH_RELAY) {
+            _processBatch(payload);
+            return;
+        }
+
         if (msgType != MSG_PROOF_RELAY) revert InvalidMessage();
 
         (
@@ -444,6 +450,91 @@ contract SoulCrossChainRelay is AccessControl, ReentrancyGuard, Pausable {
     /// @notice Unpause cross-chain relay operations
     function unpause() external onlyRole(OPERATOR_ROLE) {
         _unpause();
+    }
+
+
+    // ──────────────────────────────────────────────
+    //  Batch Relay
+    // ──────────────────────────────────────────────
+
+    uint8 public constant MSG_BATCH_RELAY = 4;
+
+    /**
+     * @notice Relay a batch of proofs to a destination chain.
+     * @param destChainId Destination EVM chain ID
+     * @param payloads Array of encoded proof payloads
+     * @return messageId Unique message identifier for the batch
+     */
+    function relayBatch(
+        uint64 destChainId,
+        bytes[] calldata payloads
+    )
+        external
+        payable
+        nonReentrant
+        whenNotPaused
+        returns (bytes32 messageId)
+    {
+        ChainConfig storage config = chainConfigs[destChainId];
+        if (!config.active) revert ChainNotSupported(destChainId);
+
+        // Encode batch payload
+        bytes memory batchPayload = abi.encode(
+            MSG_BATCH_RELAY,
+            payloads,
+            block.chainid.toUint64()
+        );
+
+        messageId = keccak256(
+            abi.encodePacked("BATCH", block.chainid, destChainId, relayNonce++)
+        );
+
+        _sendViaBridge(config, batchPayload);
+
+        emit ProofRelayed(
+            bytes32(0), // No single proof ID
+            block.chainid.toUint64(),
+            destChainId,
+            bytes32(0), // No single commitment
+            messageId
+        );
+    }
+
+    /**
+     * @dev Process batch message in receiveRelayedProof
+     */
+    function _processBatch(bytes calldata payload) internal returns (bool) {
+        (
+            ,
+            bytes[] memory payloads,
+            uint64 srcChainId
+        ) = abi.decode(payload, (uint8, bytes[], uint64));
+
+        for (uint256 i = 0; i < payloads.length; i++) {
+            (
+                ,
+                bytes32 proofId,
+                bytes memory proof,
+                bytes memory publicInputs,
+                bytes32 commitment,
+                ,
+                bytes32 proofType
+            ) = abi.decode(
+                payloads[i],
+                (uint8, bytes32, bytes, bytes, bytes32, uint64, bytes32)
+            );
+
+            // Deduplicate individual messages inside batch?
+            // Yes, reusing processedMessages check
+            bytes32 msgId = keccak256(
+                abi.encodePacked(proofId, srcChainId, block.chainid)
+            );
+            if (!processedMessages[msgId]) {
+                processedMessages[msgId] = true;
+                _submitToProofHub(proof, publicInputs, commitment, srcChainId, proofType);
+            }
+        }
+        return true;
     }
 
     /// @notice Update the proof hub contract address
