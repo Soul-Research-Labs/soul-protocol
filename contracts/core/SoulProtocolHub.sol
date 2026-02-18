@@ -511,6 +511,7 @@ contract SoulProtocolHub is AccessControl, Pausable {
 
     /**
      * @notice Set Shielded Pool
+     * @param _module Address of the shielded pool contract
      */
     function setShieldedPool(address _module) external onlyRole(OPERATOR_ROLE) {
         if (_module == address(0)) revert ZeroAddress();
@@ -520,6 +521,7 @@ contract SoulProtocolHub is AccessControl, Pausable {
 
     /**
      * @notice Set Nullifier Manager
+     * @param _module Address of the nullifier manager contract
      */
     function setNullifierManager(
         address _module
@@ -531,6 +533,7 @@ contract SoulProtocolHub is AccessControl, Pausable {
 
     /**
      * @notice Set Compliance Oracle
+     * @param _module Address of the compliance oracle contract
      */
     function setComplianceOracle(
         address _module
@@ -542,6 +545,7 @@ contract SoulProtocolHub is AccessControl, Pausable {
 
     /**
      * @notice Set Proof Translator
+     * @param _module Address of the proof translator contract
      */
     function setProofTranslator(
         address _module
@@ -553,6 +557,7 @@ contract SoulProtocolHub is AccessControl, Pausable {
 
     /**
      * @notice Set Privacy Router
+     * @param _module Address of the privacy router contract
      */
     function setPrivacyRouter(
         address _module
@@ -568,6 +573,7 @@ contract SoulProtocolHub is AccessControl, Pausable {
 
     /**
      * @notice Set Bridge Proof Validator
+     * @param _module Address of the bridge proof validator contract
      */
     function setBridgeProofValidator(
         address _module
@@ -579,6 +585,7 @@ contract SoulProtocolHub is AccessControl, Pausable {
 
     /**
      * @notice Set Bridge Watchtower
+     * @param _module Address of the bridge watchtower contract
      */
     function setBridgeWatchtower(
         address _module
@@ -590,6 +597,7 @@ contract SoulProtocolHub is AccessControl, Pausable {
 
     /**
      * @notice Set Bridge Circuit Breaker
+     * @param _module Address of the bridge circuit breaker contract
      */
     function setBridgeCircuitBreaker(
         address _module
@@ -605,6 +613,7 @@ contract SoulProtocolHub is AccessControl, Pausable {
 
     /**
      * @notice Set ZK-Bound State Locks
+     * @param _module Address of the ZK-bound state locks contract
      */
     function setZKBoundStateLocks(
         address _module
@@ -621,6 +630,7 @@ contract SoulProtocolHub is AccessControl, Pausable {
 
     /**
      * @notice Set Proof-Carrying Container
+     * @param _module Address of the proof-carrying container contract
      */
     function setProofCarryingContainer(
         address _module
@@ -637,6 +647,7 @@ contract SoulProtocolHub is AccessControl, Pausable {
 
     /**
      * @notice Set Cross-Domain Nullifier Algebra
+     * @param _module Address of the CDNA contract
      */
     function setCrossDomainNullifierAlgebra(
         address _module
@@ -653,6 +664,7 @@ contract SoulProtocolHub is AccessControl, Pausable {
 
     /**
      * @notice Set Policy Bound Proofs
+     * @param _module Address of the policy bound proofs contract
      */
     function setPolicyBoundProofs(
         address _module
@@ -673,6 +685,7 @@ contract SoulProtocolHub is AccessControl, Pausable {
 
     /**
      * @notice Set Timelock
+     * @param _module Address of the timelock contract
      */
     function setTimelock(
         address _module
@@ -689,6 +702,7 @@ contract SoulProtocolHub is AccessControl, Pausable {
 
     /**
      * @notice Set Upgrade Timelock
+     * @param _module Address of the upgrade timelock contract
      */
     function setUpgradeTimelock(
         address _module
@@ -790,6 +804,12 @@ contract SoulProtocolHub is AccessControl, Pausable {
         address _policyBoundProofs;
     }
 
+    /**
+     * @notice Wire all core protocol components in a single transaction
+     * @dev Reduces deployment setup from 20+ calls to 1. Zero-address fields are
+     *      skipped (existing value preserved), allowing partial wiring updates.
+     * @param p Struct containing all component addresses to wire
+     */
     function wireAll(
         WireAllParams calldata p
     ) external onlyRole(OPERATOR_ROLE) {
@@ -889,14 +909,14 @@ contract SoulProtocolHub is AccessControl, Pausable {
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Emergency pause
+     * @notice Emergency pause — halts all operations
      */
     function pause() external onlyRole(GUARDIAN_ROLE) {
         _pause();
     }
 
     /**
-     * @notice Unpause
+     * @notice Unpause — resumes normal operations
      */
     function unpause() external onlyRole(OPERATOR_ROLE) {
         _unpause();

@@ -189,26 +189,31 @@ abstract contract SecurityModule {
     // ============ Backward-Compatible Public Getters for Packed Flags ============
 
     /// @notice Whether rate limiting is enabled
+    /// @return True if rate limiting is active
     function rateLimitingEnabled() public view returns (bool) {
         return (_securityFlags & FLAG_RATE_LIMITING) != 0;
     }
 
     /// @notice Whether circuit breaker is enabled
+    /// @return True if circuit breaker is active
     function circuitBreakerEnabled() public view returns (bool) {
         return (_securityFlags & FLAG_CIRCUIT_BREAKER) != 0;
     }
 
     /// @notice Whether circuit breaker is currently tripped
+    /// @return True if circuit breaker has been triggered
     function circuitBreakerTripped() public view returns (bool) {
         return (_securityFlags & FLAG_CIRCUIT_TRIPPED) != 0;
     }
 
     /// @notice Whether flash loan guard is enabled
+    /// @return True if flash loan guard is active
     function flashLoanGuardEnabled() public view returns (bool) {
         return (_securityFlags & FLAG_FLASH_LOAN_GUARD) != 0;
     }
 
     /// @notice Whether withdrawal limits are enabled
+    /// @return True if withdrawal limits are active
     function withdrawalLimitsEnabled() public view returns (bool) {
         return (_securityFlags & FLAG_WITHDRAWAL_LIMITS) != 0;
     }

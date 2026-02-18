@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -103,6 +103,8 @@ contract ZKBoundStateLocksUpgradeable is
     error DomainAlreadyExists(bytes32 domainSeparator);
     /// @notice Thrown when the lock ID resolves to an empty/uninitialized lock struct
     error InvalidLock(bytes32 lockId);
+    /// @notice Thrown when a zero-address is provided for admin or critical parameter
+    error ZeroAddress();
     /// @notice Thrown when active lock count reaches MAX_ACTIVE_LOCKS
     error TooManyActiveLocks();
 
@@ -317,6 +319,9 @@ contract ZKBoundStateLocksUpgradeable is
         address admin,
         address _proofVerifier
     ) external initializer {
+        if (admin == address(0)) revert ZeroAddress();
+        if (_proofVerifier == address(0)) revert ZeroAddress();
+
         __AccessControl_init();
         __ReentrancyGuard_init();
         __Pausable_init();

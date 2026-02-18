@@ -137,6 +137,7 @@ contract Soulv2OrchestratorUpgradeable is
     error PrimitiveNotActive(bytes32 primitiveId);
     error InvalidOperation();
     error OperationFailed(string reason);
+    error ZeroAddress();
 
     /*//////////////////////////////////////////////////////////////
                            PRIMITIVE IDs
@@ -164,6 +165,12 @@ contract Soulv2OrchestratorUpgradeable is
         address _easc,
         address _cdna
     ) public initializer {
+        if (admin == address(0)) revert ZeroAddress();
+        if (_pc3 == address(0)) revert ZeroAddress();
+        if (_pbp == address(0)) revert ZeroAddress();
+        if (_easc == address(0)) revert ZeroAddress();
+        if (_cdna == address(0)) revert ZeroAddress();
+
         __AccessControl_init();
         __ReentrancyGuard_init();
         __Pausable_init();

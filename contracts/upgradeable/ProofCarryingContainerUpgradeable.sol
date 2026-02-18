@@ -172,6 +172,7 @@ contract ProofCarryingContainerUpgradeable is
     error InvalidContainerData();
     error PayloadTooLarge(uint256 size, uint256 max);
     error ProofTooSmall(uint256 size, uint256 min);
+    error ZeroAddress();
 
     /*//////////////////////////////////////////////////////////////
                              INITIALIZER
@@ -185,6 +186,8 @@ contract ProofCarryingContainerUpgradeable is
     /// @notice Initialize the contract (replaces constructor)
     /// @param admin The initial admin address
     function initialize(address admin) public initializer {
+        if (admin == address(0)) revert ZeroAddress();
+
         __AccessControl_init();
         __ReentrancyGuard_init();
         __Pausable_init();

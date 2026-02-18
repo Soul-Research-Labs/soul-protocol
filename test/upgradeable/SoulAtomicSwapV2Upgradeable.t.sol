@@ -24,8 +24,11 @@ contract SoulAtomicSwapV2UpgradeableTest is Test {
         swap = SoulAtomicSwapV2Upgradeable(payable(address(proxy)));
     }
 
-    function test_InitializerSetsOwner() public view {
-        assertEq(swap.owner(), owner);
+    function test_InitializerSetsAdmin() public view {
+        assertTrue(swap.hasRole(swap.DEFAULT_ADMIN_ROLE(), owner));
+        assertTrue(swap.hasRole(swap.UPGRADER_ROLE(), owner));
+        assertTrue(swap.hasRole(swap.OPERATOR_ROLE(), owner));
+        assertTrue(swap.hasRole(swap.EMERGENCY_ROLE(), owner));
     }
 
     function test_InitializerSetsFeeRecipient() public view {
@@ -78,7 +81,7 @@ contract SoulAtomicSwapV2UpgradeableTest is Test {
         assertTrue(swapId != bytes32(0));
     }
 
-    function test_OnlyOwnerCanSetFee() public {
+    function test_OnlyOperatorCanSetFee() public {
         address attacker = address(0xDEAD);
         vm.prank(attacker);
         vm.expectRevert();

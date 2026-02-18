@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
@@ -17,11 +17,11 @@ import {SecurityModule} from "../security/SecurityModule.sol";
  * @dev Atomic cross-chain swaps with HTLC, privacy features, and security hardening.
  *
  * UPGRADE NOTES:
- * - Ownable replaced with OwnableUpgradeable
- * - Constructor replaced with `initialize(address owner_, address _feeRecipient)`
+ * - AccessControlUpgradeable used for role-based permissioning
+ * - Constructor replaced with `initialize(address admin, address _feeRecipient)`
  * - All OZ base contracts replaced with upgradeable variants
  * - SecurityModule retained as-is (abstract, no constructor)
- * - UUPS upgrade restricted to contract owner
+ * - UUPS upgrade restricted to UPGRADER_ROLE
  * - Storage gap (`__gap[50]`) reserved for future upgrades
  * - `contractVersion` tracks upgrade count
  *
@@ -35,12 +35,19 @@ import {SecurityModule} from "../security/SecurityModule.sol";
  */
 contract SoulAtomicSwapV2Upgradeable is
     Initializable,
-    OwnableUpgradeable,
+    AccessControlUpgradeable,
     ReentrancyGuardUpgradeable,
     PausableUpgradeable,
     UUPSUpgradeable,
     SecurityModule
 {
+    /// @notice Role for upgrade authorization
+    bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
+    /// @notice Role for operational admin functions (fees, config)
+    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
+    /// @notice Role for emergency actions (pause/unpause, circuit breaker reset)
+    bytes32 public constant EMERGENCY_ROLE = keccak256("EMERGENCY_ROLE");
+
     using SafeERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////
@@ -202,20 +209,25 @@ contract SoulAtomicSwapV2Upgradeable is
 
     /**
      * @notice Initialize the upgradeable SoulAtomicSwapV2
-     * @param owner_ Owner address for Ownable and admin capabilities
+     * @param admin Admin address granted all roles
      * @param _feeRecipient Fee recipient address
      */
     function initialize(
-        address owner_,
+        address admin,
         address _feeRecipient
     ) external initializer {
-        if (owner_ == address(0)) revert ZeroAddress();
+        if (admin == address(0)) revert ZeroAddress();
         if (_feeRecipient == address(0)) revert ZeroAddress();
 
-        __Ownable_init(owner_);
+        __AccessControl_init();
         __ReentrancyGuard_init();
         __Pausable_init();
         __UUPSUpgradeable_init();
+
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(UPGRADER_ROLE, admin);
+        _grantRole(OPERATOR_ROLE, admin);
+        _grantRole(EMERGENCY_ROLE, admin);
 
         feeRecipient = _feeRecipient;
         protocolFeeBps = 10; // 0.1%
@@ -527,7 +539,9 @@ contract SoulAtomicSwapV2Upgradeable is
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Updates the protocol fee
-    function setProtocolFee(uint256 newFeeBps) external onlyOwner {
+    function setProtocolFee(
+        uint256 newFeeBps
+    ) external onlyRole(OPERATOR_ROLE) {
         if (newFeeBps > MAX_FEE_BPS) revert InvalidAmount();
         uint256 oldFee = protocolFeeBps;
         protocolFeeBps = newFeeBps;
@@ -535,7 +549,9 @@ contract SoulAtomicSwapV2Upgradeable is
     }
 
     /// @notice Updates the fee recipient
-    function setFeeRecipient(address newRecipient) external onlyOwner {
+    function setFeeRecipient(
+        address newRecipient
+    ) external onlyRole(OPERATOR_ROLE) {
         if (newRecipient == address(0)) revert ZeroAddress();
         address oldRecipient = feeRecipient;
         feeRecipient = newRecipient;
@@ -545,7 +561,7 @@ contract SoulAtomicSwapV2Upgradeable is
     /// @notice Request fee withdrawal (starts timelock)
     function requestFeeWithdrawal(
         address token
-    ) external onlyOwner returns (bytes32 withdrawalId) {
+    ) external onlyRole(OPERATOR_ROLE) returns (bytes32 withdrawalId) {
         uint256 amount = collectedFees[token];
         if (amount == 0) revert NoFeesToWithdraw();
 
@@ -561,7 +577,7 @@ contract SoulAtomicSwapV2Upgradeable is
     function executeFeeWithdrawal(
         address token,
         bytes32 withdrawalId
-    ) external onlyOwner {
+    ) external onlyRole(OPERATOR_ROLE) {
         uint256 requestTime = pendingFeeWithdrawals[withdrawalId];
         if (requestTime == 0) revert WithdrawalNotFound();
         if (block.timestamp < requestTime + FEE_WITHDRAWAL_DELAY)
@@ -584,7 +600,7 @@ contract SoulAtomicSwapV2Upgradeable is
 
     /// @notice Emergency fee withdrawal (legacy)
     /// @dev Deprecated: Use requestFeeWithdrawal + executeFeeWithdrawal
-    function withdrawFees(address token) external onlyOwner {
+    function withdrawFees(address token) external onlyRole(OPERATOR_ROLE) {
         bytes32 withdrawalId = keccak256(
             abi.encodePacked(token, collectedFees[token], block.timestamp)
         );
@@ -593,12 +609,12 @@ contract SoulAtomicSwapV2Upgradeable is
     }
 
     /// @notice Pause the contract
-    function pause() external onlyOwner {
+    function pause() external onlyRole(EMERGENCY_ROLE) {
         _pause();
     }
 
     /// @notice Unpause the contract
-    function unpause() external onlyOwner {
+    function unpause() external onlyRole(EMERGENCY_ROLE) {
         _unpause();
     }
 
@@ -610,7 +626,7 @@ contract SoulAtomicSwapV2Upgradeable is
     function setRateLimitConfig(
         uint256 window,
         uint256 maxActions
-    ) external onlyOwner {
+    ) external onlyRole(OPERATOR_ROLE) {
         _setRateLimitConfig(window, maxActions);
     }
 
@@ -618,7 +634,7 @@ contract SoulAtomicSwapV2Upgradeable is
     function setCircuitBreakerConfig(
         uint256 threshold,
         uint256 cooldown
-    ) external onlyOwner {
+    ) external onlyRole(OPERATOR_ROLE) {
         _setCircuitBreakerConfig(threshold, cooldown);
     }
 
@@ -628,7 +644,7 @@ contract SoulAtomicSwapV2Upgradeable is
         bool circuitBreakers,
         bool flashLoanGuard,
         bool withdrawalLimits
-    ) external onlyOwner {
+    ) external onlyRole(OPERATOR_ROLE) {
         _setSecurityFeatures(
             rateLimiting,
             circuitBreakers,
@@ -638,7 +654,7 @@ contract SoulAtomicSwapV2Upgradeable is
     }
 
     /// @notice Emergency reset circuit breaker
-    function resetCircuitBreaker() external onlyOwner {
+    function resetCircuitBreaker() external onlyRole(EMERGENCY_ROLE) {
         _resetCircuitBreaker();
     }
 
@@ -647,12 +663,12 @@ contract SoulAtomicSwapV2Upgradeable is
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @dev Authorize UUPS upgrade — restricted to contract owner
+     * @dev Authorize UUPS upgrade — restricted to UPGRADER_ROLE
      * @param newImplementation Address of the new implementation contract
      */
     function _authorizeUpgrade(
         address newImplementation
-    ) internal override onlyOwner {
+    ) internal override onlyRole(UPGRADER_ROLE) {
         contractVersion++;
     }
 

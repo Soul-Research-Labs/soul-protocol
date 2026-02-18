@@ -237,6 +237,7 @@ contract ConfidentialStateContainerV3Upgradeable is
     /// @param admin The initial admin address
     /// @param _verifier Address of the proof verifier contract
     function initialize(address admin, address _verifier) public initializer {
+        if (admin == address(0)) revert ZeroAddress();
         if (_verifier == address(0)) revert ZeroAddress();
 
         __AccessControl_init();

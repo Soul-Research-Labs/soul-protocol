@@ -1,17 +1,18 @@
 /**
  * @deprecated Use `SoulProtocolClient` from `./SoulProtocolClient` instead.
- * This client is retained for backward compatibility and will be removed in v2.0.
+ * This client is retained for backward compatibility and will be removed in v3.0.
  * SoulProtocolClient provides a superset of SoulClient functionality including
  * ZK locks, cross-chain transfers, and Noir prover integration.
+ * @internal Not exported from the main SDK entry point. Import directly only if needed.
  */
-import { 
-    PublicClient, 
-    WalletClient, 
-    Hex,
-    Address,
-    Hash,
-    encodeFunctionData,
-    decodeFunctionResult,
+import {
+  PublicClient,
+  WalletClient,
+  Hex,
+  Address,
+  Hash,
+  encodeFunctionData,
+  decodeFunctionResult,
 } from "viem";
 
 export interface SoulClientOptions {
@@ -103,8 +104,8 @@ export class SoulClient {
     const proofHub = this._requireAddress("proofHub");
 
     const hash = await this.walletClient!.writeContract({
-            chain: this.walletClient!.chain ?? null,
-            account: this.walletClient!.account!,
+      chain: this.walletClient!.chain ?? null,
+      account: this.walletClient!.account!,
       address: proofHub as Address,
       abi: PROOF_HUB_ABI,
       functionName: "submitProof",
@@ -134,8 +135,8 @@ export class SoulClient {
     const proofHub = this._requireAddress("proofHub");
 
     const hash = await this.walletClient!.writeContract({
-            chain: this.walletClient!.chain ?? null,
-            account: this.walletClient!.account!,
+      chain: this.walletClient!.chain ?? null,
+      account: this.walletClient!.account!,
       address: proofHub as Address,
       abi: [
         {
@@ -208,4 +209,3 @@ export class SoulClient {
     return addr;
   }
 }
-

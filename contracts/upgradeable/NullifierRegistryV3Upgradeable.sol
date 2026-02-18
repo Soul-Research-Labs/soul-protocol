@@ -179,6 +179,7 @@ contract NullifierRegistryV3Upgradeable is
     error ZeroNullifier();
     error RootNotInHistory(bytes32 root);
     error InvalidChainId();
+    error ZeroAddress();
 
     /*//////////////////////////////////////////////////////////////
                              INITIALIZER
@@ -192,6 +193,8 @@ contract NullifierRegistryV3Upgradeable is
     /// @notice Initialize the contract (replaces constructor)
     /// @param admin The initial admin address
     function initialize(address admin) public initializer {
+        if (admin == address(0)) revert ZeroAddress();
+
         __AccessControl_init();
         __Pausable_init();
         __UUPSUpgradeable_init();
