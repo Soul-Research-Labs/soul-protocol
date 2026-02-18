@@ -777,14 +777,14 @@ contract BridgeWatchtower is AccessControl, ReentrancyGuard, Pausable {
             }
         } else if (action == ResponseAction.TRIGGER_CIRCUIT_BREAKER) {
             if (rateLimiterContract != address(0)) {
-                // Non-fatal: best-effort circuit breaker trigger
-                try IPausable(rateLimiterContract).pause() {} catch {
-                    // Fallback to low-level call for triggerCircuitBreaker(string)
-                    (bool success, ) = rateLimiterContract.call(
-                        abi.encodeWithSignature("triggerCircuitBreaker(string)", "Watchtower Alert")
-                    );
-                    // success intentionally unchecked — action is best-effort
-                }
+                // Best-effort: call triggerCircuitBreaker with reason string
+                // slither-disable-next-line low-level-calls
+                (bool success, ) = rateLimiterContract.call(
+                    abi.encodeWithSignature("triggerCircuitBreaker(string)", "Watchtower Alert")
+                );
+                // success intentionally unused — action is best-effort, matching
+                // the try/catch pattern used for PAUSE_BRIDGE above
+                (success);
             }
         }
     }
