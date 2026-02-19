@@ -22,7 +22,7 @@ clean:
 	rm -f lcov.info .gas-snapshot
 
 # ─── Coverage ─────────────────────────────────────
-.PHONY: coverage coverage-lcov coverage-analyze coverage-ci coverage-restore
+.PHONY: coverage coverage-lcov coverage-analyze coverage-ci coverage-restore coverage-forge
 
 ## Run coverage with summary output (uses stub-swap)
 coverage:
@@ -44,6 +44,10 @@ coverage-ci:
 ## Emergency restore after interrupted coverage run
 coverage-restore:
 	$(PYTHON) scripts/run_coverage.py --restore
+
+## Direct Foundry coverage (memory-safe assembly required, ~30 min)
+coverage-forge:
+	FOUNDRY_PROFILE=coverage $(FORGE) coverage --ir-minimum --report summary
 
 # ─── Validate stubs match production ABIs ─────────
 .PHONY: validate-stubs

@@ -21,6 +21,9 @@ import {BridgeRateLimiter} from "../../contracts/security/BridgeRateLimiter.sol"
 // Privacy
 import {StealthAddressRegistry} from "../../contracts/privacy/StealthAddressRegistry.sol";
 
+// Proxy for upgradeable contracts
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+
 /**
  * @title Soul Protocol L2 Testnet Deployment Script
  * @notice Unified Foundry script for deploying to L2 testnets
@@ -78,7 +81,14 @@ contract DeployL2Testnet is Script {
     address public bridgeAdapter;
 
     function run() external {
-        uint256 deployerPK = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        // Accept private key with or without 0x prefix
+        uint256 deployerPK = vm.envOr("DEPLOYER_PRIVATE_KEY", uint256(0));
+        if (deployerPK == 0) {
+            // Try reading as string and parsing with 0x prefix
+            string memory pkStr = vm.envString("DEPLOYER_PRIVATE_KEY");
+            deployerPK = vm.parseUint(string.concat("0x", pkStr));
+        }
+        require(deployerPK != 0, "DEPLOYER_PRIVATE_KEY not set or invalid");
         address deployer = vm.addr(deployerPK);
         // On testnets, admin can be the deployer for simplicity
         address admin = vm.envOr("TESTNET_ADMIN", deployer);
@@ -246,29 +256,39 @@ contract DeployL2Testnet is Script {
     // ========= PRIVACY CONTRACTS =========
 
     function _deployPrivacyContracts(address admin) internal {
-        stealthRegistry = new StealthAddressRegistry();
-        console.log("StealthAddressRegistry:", address(stealthRegistry));
+        // StealthAddressRegistry is upgradeable — deploy implementation + initialize
+        // For testnet, we deploy without a proxy and call initialize directly
+        StealthAddressRegistry impl = new StealthAddressRegistry();
 
-        // Grant admin role
-        stealthRegistry.grantRole(stealthRegistry.DEFAULT_ADMIN_ROLE(), admin);
+        // Deploy behind an ERC1967 proxy so initialize() can be called
+        bytes memory initData = abi.encodeCall(
+            StealthAddressRegistry.initialize,
+            (admin)
+        );
+        address proxy = address(new ERC1967Proxy(address(impl), initData));
+        stealthRegistry = StealthAddressRegistry(proxy);
+
+        console.log(
+            "StealthAddressRegistry (proxy):",
+            address(stealthRegistry)
+        );
+        console.log("StealthAddressRegistry (impl):", address(impl));
     }
 
     // ========= CROSS-CHAIN CONFIG =========
 
     function _configureCrossChain() internal {
-        // Register L1 Sepolia as a peer chain
-        nullifierRegistry.grantRole(
-            nullifierRegistry.REGISTRAR_ROLE(),
-            address(this)
-        );
+        // NullifierRegistryV3 constructor already grants REGISTRAR_ROLE to deployer (msg.sender)
+        // so we can register domains directly without additional role grants.
 
         // Register other testnet chain IDs for cross-chain nullifier sync
-        uint256[5] memory peerChains = [
+        uint256[6] memory peerChains = [
             L1_SEPOLIA,
             ARBITRUM_SEPOLIA,
             BASE_SEPOLIA,
             OPTIMISM_SEPOLIA,
-            SCROLL_SEPOLIA
+            SCROLL_SEPOLIA,
+            LINEA_SEPOLIA
         ];
 
         for (uint256 i; i < peerChains.length; i++) {

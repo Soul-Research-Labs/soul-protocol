@@ -133,7 +133,7 @@ contract RingSignatureVerifier is IRingSignatureVerifier {
         // ═══════════════════════════════════════════════════════════════
 
         uint256 c0;
-        assembly {
+        assembly ("memory-safe") {
             c0 := calldataload(signature.offset)
         }
         // c_0 must be a valid scalar (< group order)
@@ -156,27 +156,43 @@ contract RingSignatureVerifier is IRingSignatureVerifier {
         for (uint256 i; i < ringSize; ) {
             // Read response scalar s_i from signature
             uint256 s_i;
-            assembly {
+            assembly ("memory-safe") {
                 s_i := calldataload(add(signature.offset, add(32, mul(i, 32))))
             }
             // Response must be a valid scalar
             if (s_i >= BN254.N) return false;
 
-            // Decompress ring member public key P_i
-            (uint256 pkX, uint256 pkY) = BN254.decompress(ring[i]);
+            // Scope block to limit stack pressure during EC operations
+            uint256 Lx;
+            uint256 Ly;
+            uint256 Rx;
+            uint256 Ry;
+            {
+                // Decompress ring member public key P_i
+                (uint256 pkX, uint256 pkY) = BN254.decompress(ring[i]);
 
-            // L_i = s_i · G + c_i · P_i
-            (uint256 sGx, uint256 sGy) = BN254.mul(BN254.G_X, BN254.G_Y, s_i);
-            (uint256 cPx, uint256 cPy) = BN254.mul(pkX, pkY, challenge);
-            (uint256 Lx, uint256 Ly) = BN254.add(sGx, sGy, cPx, cPy);
+                // L_i = s_i · G + c_i · P_i
+                (uint256 sGx, uint256 sGy) = BN254.mul(
+                    BN254.G_X,
+                    BN254.G_Y,
+                    s_i
+                );
+                (uint256 cPx, uint256 cPy) = BN254.mul(pkX, pkY, challenge);
+                (Lx, Ly) = BN254.add(sGx, sGy, cPx, cPy);
+            }
+            {
+                // H_p(P_i) — hash ring member to curve point
+                (uint256 hpX, uint256 hpY) = BN254.hashToPoint(ring[i]);
 
-            // H_p(P_i) — hash ring member to curve point
-            (uint256 hpX, uint256 hpY) = BN254.hashToPoint(ring[i]);
-
-            // R_i = s_i · H_p(P_i) + c_i · I
-            (uint256 sHx, uint256 sHy) = BN254.mul(hpX, hpY, s_i);
-            (uint256 cIx, uint256 cIy) = BN254.mul(keyImgX, keyImgY, challenge);
-            (uint256 Rx, uint256 Ry) = BN254.add(sHx, sHy, cIx, cIy);
+                // R_i = s_i · H_p(P_i) + c_i · I
+                (uint256 sHx, uint256 sHy) = BN254.mul(hpX, hpY, s_i);
+                (uint256 cIx, uint256 cIy) = BN254.mul(
+                    keyImgX,
+                    keyImgY,
+                    challenge
+                );
+                (Rx, Ry) = BN254.add(sHx, sHy, cIx, cIy);
+            }
 
             // c_{i+1} = H(domain, message, L_i, R_i) mod n
             challenge =

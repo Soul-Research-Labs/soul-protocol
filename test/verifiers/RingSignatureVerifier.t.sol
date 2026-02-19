@@ -132,21 +132,28 @@ contract RingSignatureVerifierTest is Test {
                 ) %
                 BN254.N;
 
-            // L_i = s_i * G + c_i * P_i
-            (uint256 pkX, uint256 pkY) = BN254.decompress(ring[i]);
-            (uint256 sGx, uint256 sGy) = BN254.mul(
-                BN254.G_X,
-                BN254.G_Y,
-                responses[i]
-            );
-            (uint256 cPx, uint256 cPy) = BN254.mul(pkX, pkY, challenges[i]);
-            (uint256 Lx, uint256 Ly) = BN254.add(sGx, sGy, cPx, cPy);
-
-            // R_i = s_i * H_p(P_i) + c_i * I
-            (uint256 hX, uint256 hY) = BN254.hashToPoint(ring[i]);
-            (uint256 sHx, uint256 sHy) = BN254.mul(hX, hY, responses[i]);
-            (uint256 cIx, uint256 cIy) = BN254.mul(kIx, kIy, challenges[i]);
-            (uint256 Rx, uint256 Ry) = BN254.add(sHx, sHy, cIx, cIy);
+            uint256 Lx;
+            uint256 Ly;
+            uint256 Rx;
+            uint256 Ry;
+            {
+                // L_i = s_i * G + c_i * P_i
+                (uint256 pkX, uint256 pkY) = BN254.decompress(ring[i]);
+                (uint256 sGx, uint256 sGy) = BN254.mul(
+                    BN254.G_X,
+                    BN254.G_Y,
+                    responses[i]
+                );
+                (uint256 cPx, uint256 cPy) = BN254.mul(pkX, pkY, challenges[i]);
+                (Lx, Ly) = BN254.add(sGx, sGy, cPx, cPy);
+            }
+            {
+                // R_i = s_i * H_p(P_i) + c_i * I
+                (uint256 hX, uint256 hY) = BN254.hashToPoint(ring[i]);
+                (uint256 sHx, uint256 sHy) = BN254.mul(hX, hY, responses[i]);
+                (uint256 cIx, uint256 cIy) = BN254.mul(kIx, kIy, challenges[i]);
+                (Rx, Ry) = BN254.add(sHx, sHy, cIx, cIy);
+            }
 
             challenges[ni] =
                 uint256(
@@ -162,13 +169,13 @@ contract RingSignatureVerifierTest is Test {
         // Pack signature: challenges[0] || responses[0] || ... || responses[n-1]
         sig = new bytes(32 * (1 + ringSize));
         bytes32 c0Bytes = bytes32(challenges[0]);
-        assembly {
+        assembly ("memory-safe") {
             mstore(add(sig, 32), c0Bytes)
         }
         for (uint256 i; i < ringSize; i++) {
             bytes32 si = bytes32(responses[i]);
             uint256 offset = 64 + i * 32; // skip length (32) + c0 (32)
-            assembly {
+            assembly ("memory-safe") {
                 mstore(add(sig, offset), si)
             }
         }

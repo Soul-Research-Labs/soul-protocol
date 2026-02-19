@@ -74,7 +74,7 @@ library BN254 {
         uint256[4] memory input = [x1, y1, x2, y2];
         uint256[2] memory result;
         bool success;
-        assembly {
+        assembly ("memory-safe") {
             success := staticcall(gas(), 0x06, input, 128, result, 64)
         }
         if (!success) revert PrecompileFailed();
@@ -97,7 +97,7 @@ library BN254 {
         uint256[3] memory input = [x, y, s];
         uint256[2] memory result;
         bool success;
-        assembly {
+        assembly ("memory-safe") {
             success := staticcall(gas(), 0x07, input, 96, result, 64)
         }
         if (!success) revert PrecompileFailed();
@@ -237,7 +237,7 @@ library BN254 {
 
         bytes memory output = new bytes(32);
         bool success;
-        assembly {
+        assembly ("memory-safe") {
             success := staticcall(
                 gas(),
                 0x05,
