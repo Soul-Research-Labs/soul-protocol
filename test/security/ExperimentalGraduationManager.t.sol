@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
 import {ExperimentalFeatureRegistry} from "../../contracts/security/ExperimentalFeatureRegistry.sol";
-import {ExperimentalGraduationManager, IExperimentalFeatureRegistry} from "../../contracts/security/ExperimentalGraduationManager.sol";
+import {ExperimentalGraduationManager} from "../../contracts/security/ExperimentalGraduationManager.sol";
 
 /// @dev Shared base with setUp and helpers — split into multiple contracts to avoid Yul stack-too-deep
 abstract contract GraduationTestBase is Test {

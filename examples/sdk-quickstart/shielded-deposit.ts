@@ -31,13 +31,15 @@ async function main() {
 
   // 1. Create the shielded pool client
   const pool = createShieldedPoolClient({
-    publicClient,
-    walletClient,
+    publicClient: publicClient as any,
+    walletClient: walletClient as any,
     poolAddress: SHIELDED_POOL,
   });
 
   // 2. Generate a deposit note (commitment + nullifier + secret)
-  const note = pool.generateDepositNote();
+  //    generateDepositNote(amount, asset?) returns { commitment, secret, nullifier, amount, asset }
+  const depositAmount = parseEther("0.01");
+  const note = pool.generateDepositNote(depositAmount);
   console.log("Deposit note generated:");
   console.log("  commitment:", note.commitment);
   console.log("  nullifier: ", note.nullifier);
@@ -47,20 +49,20 @@ async function main() {
   );
 
   // 3. Deposit 0.01 ETH into the pool
-  const depositAmount = parseEther("0.01");
   console.log(`Depositing ${depositAmount} wei...`);
-  const txHash = await pool.depositETH(note.commitment, depositAmount);
+  const { leafIndex, txHash } = await pool.depositETH(
+    note.commitment,
+    depositAmount,
+  );
   console.log("Deposit tx:", txHash);
+  console.log("Leaf index:", leafIndex);
 
   // 4. Read pool stats
   const stats = await pool.getPoolStats();
   console.log("\nPool stats after deposit:");
   console.log("  total deposits:", stats.totalDeposits.toString());
   console.log("  total withdrawals:", stats.totalWithdrawals.toString());
-
-  // 5. Verify our commitment is in the tree
-  const nextLeaf = await pool.getNextLeafIndex();
-  console.log("  next leaf index:", nextLeaf.toString());
+  console.log("  next leaf index:", stats.nextLeafIndex.toString());
 }
 
 main().catch(console.error);

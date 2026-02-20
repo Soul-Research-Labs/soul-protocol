@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import "../crosschain/IBridgeAdapter.sol";
 
 /**
  * @title MultiBridgeRouter
@@ -620,12 +621,19 @@ contract MultiBridgeRouter is AccessControl, ReentrancyGuard, Pausable {
 
     function _callBridge(
         address adapter,
-        uint256 chainId,
+        uint256 /* chainId */,
         bytes calldata message
     ) external {
-        // This would call the actual bridge adapter
-        // For now, just a placeholder
         require(msg.sender == address(this), "Internal only");
+        // Delegate to the registered IBridgeAdapter implementation.
+        // The adapter is responsible for encoding the chainId into its own
+        // protocol-specific messaging (LayerZero eid, Hyperlane domain, etc.).
+        // Refund any excess bridge fees back to this contract.
+        IBridgeAdapter(adapter).bridgeMessage(
+            adapter, // targetAddress — adapter on destination chain
+            message,
+            address(this) // refundAddress
+        );
     }
 
     function _tryFallbacks(

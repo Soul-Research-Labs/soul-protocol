@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import {Test} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
 import {RingSignatureVerifier} from "../../contracts/verifiers/RingSignatureVerifier.sol";
-import {IRingSignatureVerifier} from "../../contracts/interfaces/IRingSignatureVerifier.sol";
+// IRingSignatureVerifier unused — types referenced via RingSignatureVerifier directly
 import {BN254} from "../../contracts/libraries/BN254.sol";
 
 /**

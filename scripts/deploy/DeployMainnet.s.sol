@@ -276,6 +276,10 @@ contract DeployMainnet is Script {
         hub.setTimelock(address(upgradeTimelock));
         hub.setUpgradeTimelock(address(upgradeTimelock));
 
+        // Lock PCC verification to production mode (one-way, irreversible)
+        proofCarryingContainer.lockVerificationMode();
+        console.log("PCC verification mode locked (production)");
+
         // ======== PHASE 7: TRANSFER ROLES TO MULTISIG ========
         console.log("\n--- Phase 7: Role Transfer ---");
 

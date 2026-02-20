@@ -39,6 +39,7 @@
 
 - [ ] Call `confirmRoleSeparation()` on ZKBoundStateLocks
 - [ ] Call `confirmRoleSeparation()` on CrossChainProofHubV3
+- [ ] Call `lockVerificationMode()` on ProofCarryingContainer (one-way, irreversible)
 - [ ] Verify admin roles distributed to separate addresses
 - [ ] Configure timelocks for all admin operations
 - [ ] Set up monitoring for critical events

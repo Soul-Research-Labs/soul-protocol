@@ -11,40 +11,41 @@ import {
   CrossChainPrivacyOrchestrator,
   type OrchestratorConfig,
   type ChainConfig,
+  type RelayerType,
 } from "../../sdk/src/privacy/CrossChainPrivacyOrchestrator";
 
 // --- Configuration -----------------------------------------------------------
 const config: OrchestratorConfig = {
-  chains: new Map<number, ChainConfig>([
-    [
-      11155111, // Sepolia
-      {
-        chainId: 11155111,
-        rpcUrl: process.env.SEPOLIA_RPC_URL ?? "https://rpc.sepolia.org",
-        shieldedPoolAddress: process.env.SEPOLIA_POOL as `0x${string}`,
-        nullifierRegistryAddress: process.env
-          .SEPOLIA_NULLIFIER as `0x${string}`,
-        proofHubAddress: process.env.SEPOLIA_PROOFHUB as `0x${string}`,
-      },
-    ],
-    [
-      421614, // Arbitrum Sepolia
-      {
-        chainId: 421614,
-        rpcUrl:
-          process.env.ARB_SEPOLIA_RPC_URL ??
-          "https://sepolia-rollup.arbitrum.io/rpc",
-        shieldedPoolAddress: process.env.ARB_POOL as `0x${string}`,
-        nullifierRegistryAddress: process.env.ARB_NULLIFIER as `0x${string}`,
-        proofHubAddress: process.env.ARB_PROOFHUB as `0x${string}`,
-      },
-    ],
-  ]),
+  // chains is a Record<number, ChainConfig> (not a Map)
+  chains: {
+    11155111: {
+      chainId: 11155111,
+      name: "Sepolia",
+      rpcUrl: process.env.SEPOLIA_RPC_URL ?? "https://rpc.sepolia.org",
+      privacyHub: process.env.SEPOLIA_PRIVACY_HUB as `0x${string}`,
+      nullifierRegistry: process.env.SEPOLIA_NULLIFIER as `0x${string}`,
+      stealthRegistry: process.env.SEPOLIA_STEALTH as `0x${string}`,
+    },
+    421614: {
+      chainId: 421614,
+      name: "Arbitrum Sepolia",
+      rpcUrl:
+        process.env.ARB_SEPOLIA_RPC_URL ??
+        "https://sepolia-rollup.arbitrum.io/rpc",
+      privacyHub: process.env.ARB_PRIVACY_HUB as `0x${string}`,
+      nullifierRegistry: process.env.ARB_NULLIFIER as `0x${string}`,
+      stealthRegistry: process.env.ARB_STEALTH as `0x${string}`,
+    },
+  },
+  privateKey: process.env.PRIVATE_KEY as `0x${string}`,
+  relayerType: "layerzero" as RelayerType,
   proverUrl: process.env.PROVER_URL ?? "http://localhost:3001",
   relayerUrl: process.env.RELAYER_URL ?? "http://localhost:3002",
 };
 
 async function main() {
+  if (!config.privateKey) throw new Error("Set PRIVATE_KEY env var");
+
   const orchestrator = new CrossChainPrivacyOrchestrator(config);
 
   // 1. Generate cryptographic material
@@ -61,7 +62,8 @@ async function main() {
   );
   console.log("Commitment:", commitment);
 
-  const nullifier = orchestrator.deriveNullifier(secret, commitment);
+  // deriveNullifier takes a single object param: { secret, commitment }
+  const nullifier = orchestrator.deriveNullifier({ secret, commitment });
   console.log("Nullifier: ", nullifier);
 
   // 2. Generate ZK proof (requires a running prover server)
