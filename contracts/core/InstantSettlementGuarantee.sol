@@ -134,7 +134,9 @@ contract InstantSettlementGuarantee is
         address _intentLayer
     ) external onlyRole(OPERATOR_ROLE) {
         if (_intentLayer == address(0)) revert ZeroAddress();
+        address oldIntentLayer = address(intentLayer);
         intentLayer = IIntentSettlementLayer(_intentLayer);
+        emit IntentLayerUpdated(oldIntentLayer, _intentLayer);
     }
 
     /// @notice Update the collateral ratio
@@ -156,6 +158,7 @@ contract InstantSettlementGuarantee is
         bytes32 intentId
     ) external onlyRole(SETTLEMENT_ROLE) {
         intentFinalized[intentId] = true;
+        emit IntentFinalized(intentId);
     }
 
     /// @notice Withdraw from insurance pool (governance only)
@@ -170,6 +173,7 @@ contract InstantSettlementGuarantee is
             revert InvalidAmount();
         insurancePoolBalance -= amount;
         _safeTransferETH(to, amount);
+        emit InsuranceWithdrawn(to, amount, insurancePoolBalance);
     }
 
     /*//////////////////////////////////////////////////////////////

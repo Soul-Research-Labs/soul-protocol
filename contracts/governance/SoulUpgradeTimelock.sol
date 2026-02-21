@@ -99,6 +99,12 @@ contract SoulUpgradeTimelock is TimelockController {
     /// @notice Minimum required signatures for operations
     uint256 public minSignatures = 2;
 
+    /// @notice Pending minimum signatures change (two-step pattern)
+    uint256 public pendingMinSignatures;
+
+    /// @notice Timestamp when pending min signatures change can be confirmed
+    uint256 public minSignaturesEffectiveAt;
+
     /// @notice Collected signatures per operation
     mapping(bytes32 => mapping(address => bool)) public signatures;
     mapping(bytes32 => uint256) public signatureCount;
@@ -130,6 +136,12 @@ contract SoulUpgradeTimelock is TimelockController {
     event EmergencyModeDisabled(address indexed by);
     event UpgradeFrozen(address indexed target, bool frozen);
     event MinSignaturesUpdated(uint256 oldMin, uint256 newMin);
+    event MinSignaturesChangeProposed(
+        uint256 currentMin,
+        uint256 newMin,
+        uint256 effectiveAt
+    );
+    event MinSignaturesChangeCancelled(uint256 cancelledValue);
 
     /*//////////////////////////////////////////////////////////////
                               ERRORS
@@ -143,6 +155,8 @@ contract SoulUpgradeTimelock is TimelockController {
     error EmergencyOnly();
     error NotInEmergencyMode();
     error MinSignaturesTooLow();
+    error NoPendingMinSignaturesChange();
+    error MinSignaturesChangeNotReady(uint256 readyAt);
 
     /*//////////////////////////////////////////////////////////////
                             CONSTRUCTOR
@@ -416,16 +430,64 @@ contract SoulUpgradeTimelock is TimelockController {
     }
 
     /**
-     * @notice Update minimum required signatures
+     * @notice Propose a change to minimum required signatures
+     * @dev Increases take effect immediately (more secure). Reductions require
+     *      a STANDARD_DELAY (48h) waiting period to prevent instant weakening
+     *      of multi-sig protection.
      * @param newMin New minimum signatures required
      */
-    function setMinSignatures(
+    function proposeMinSignatures(
         uint256 newMin
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (newMin == 0) revert MinSignaturesTooLow();
+
+        // Increases are safe — they only make things more secure
+        if (newMin >= minSignatures) {
+            uint256 oldMin = minSignatures;
+            minSignatures = newMin;
+            emit MinSignaturesUpdated(oldMin, newMin);
+            return;
+        }
+
+        // Reductions require a delay to prevent instant weakening
+        pendingMinSignatures = newMin;
+        minSignaturesEffectiveAt = block.timestamp + STANDARD_DELAY;
+
+        emit MinSignaturesChangeProposed(
+            minSignatures,
+            newMin,
+            minSignaturesEffectiveAt
+        );
+    }
+
+    /**
+     * @notice Confirm a pending min signatures reduction after the delay
+     */
+    function confirmMinSignatures() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (pendingMinSignatures == 0) revert NoPendingMinSignaturesChange();
+        if (block.timestamp < minSignaturesEffectiveAt) {
+            revert MinSignaturesChangeNotReady(minSignaturesEffectiveAt);
+        }
+
         uint256 oldMin = minSignatures;
-        minSignatures = newMin;
-        emit MinSignaturesUpdated(oldMin, newMin);
+        minSignatures = pendingMinSignatures;
+        pendingMinSignatures = 0;
+        minSignaturesEffectiveAt = 0;
+
+        emit MinSignaturesUpdated(oldMin, minSignatures);
+    }
+
+    /**
+     * @notice Cancel a pending min signatures change
+     */
+    function cancelMinSignaturesChange() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (pendingMinSignatures == 0) revert NoPendingMinSignaturesChange();
+
+        uint256 cancelled = pendingMinSignatures;
+        pendingMinSignatures = 0;
+        minSignaturesEffectiveAt = 0;
+
+        emit MinSignaturesChangeCancelled(cancelled);
     }
 
     /*//////////////////////////////////////////////////////////////

@@ -213,6 +213,12 @@ interface ISoulUpgradeTimelock {
     /// @notice Freezes or unfreezes upgrades for a target contract
     function setUpgradeFrozen(address target, bool frozen) external;
 
-    /// @notice Updates the minimum required signatures
-    function setMinSignatures(uint256 newMin) external;
+    /// @notice Proposes a change to minimum required signatures (increases instant, reductions delayed)
+    function proposeMinSignatures(uint256 newMin) external;
+
+    /// @notice Confirms a pending min signatures reduction after delay
+    function confirmMinSignatures() external;
+
+    /// @notice Cancels a pending min signatures change
+    function cancelMinSignaturesChange() external;
 }

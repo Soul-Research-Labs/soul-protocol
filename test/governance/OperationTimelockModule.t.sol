@@ -558,15 +558,108 @@ contract OperationTimelockModuleTest is Test {
                          TIER DELAY UPDATES
     //////////////////////////////////////////////////////////////*/
 
-    function test_UpdateTierDelay() public {
+    function test_UpdateTierDelay_Increase_Instant() public {
         vm.prank(admin);
         timelock.updateTierDelay(
             OperationTimelockModule.DelayTier.LOW,
             12 hours
         );
+        // Increase takes effect immediately
         assertEq(
             timelock.tierDelays(OperationTimelockModule.DelayTier.LOW),
             12 hours
+        );
+    }
+
+    function test_UpdateTierDelay_Reduction_Delayed() public {
+        // Reduce LOW from 6h to 4h — should NOT take effect immediately
+        vm.prank(admin);
+        timelock.updateTierDelay(
+            OperationTimelockModule.DelayTier.LOW,
+            4 hours
+        );
+        // Still 6 hours
+        assertEq(
+            timelock.tierDelays(OperationTimelockModule.DelayTier.LOW),
+            6 hours
+        );
+        // Pending is 4 hours
+        assertEq(
+            timelock.pendingTierDelays(OperationTimelockModule.DelayTier.LOW),
+            4 hours
+        );
+    }
+
+    function test_ConfirmTierDelay_AfterWait() public {
+        // Propose reduction LOW from 6h to 4h
+        vm.prank(admin);
+        timelock.updateTierDelay(
+            OperationTimelockModule.DelayTier.LOW,
+            4 hours
+        );
+
+        // Wait for current tier delay (6 hours)
+        vm.warp(block.timestamp + 6 hours + 1);
+
+        vm.prank(admin);
+        timelock.confirmTierDelay(OperationTimelockModule.DelayTier.LOW);
+        assertEq(
+            timelock.tierDelays(OperationTimelockModule.DelayTier.LOW),
+            4 hours
+        );
+    }
+
+    function test_RevertConfirmTierDelay_TooEarly() public {
+        vm.prank(admin);
+        timelock.updateTierDelay(
+            OperationTimelockModule.DelayTier.LOW,
+            4 hours
+        );
+
+        vm.prank(admin);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                OperationTimelockModule.TierDelayChangeNotReady.selector,
+                OperationTimelockModule.DelayTier.LOW,
+                uint48(block.timestamp + 6 hours)
+            )
+        );
+        timelock.confirmTierDelay(OperationTimelockModule.DelayTier.LOW);
+    }
+
+    function test_CancelTierDelayChange() public {
+        vm.prank(admin);
+        timelock.updateTierDelay(
+            OperationTimelockModule.DelayTier.LOW,
+            4 hours
+        );
+
+        vm.prank(admin);
+        timelock.cancelTierDelayChange(OperationTimelockModule.DelayTier.LOW);
+        assertEq(
+            timelock.pendingTierDelays(OperationTimelockModule.DelayTier.LOW),
+            0
+        );
+        // Original stays unchanged
+        assertEq(
+            timelock.tierDelays(OperationTimelockModule.DelayTier.LOW),
+            6 hours
+        );
+    }
+
+    function test_UpdateTierDelay_RevertBelowMinimum() public {
+        vm.prank(admin);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                OperationTimelockModule.DelayBelowMinimum.selector,
+                OperationTimelockModule.DelayTier.LOW,
+                uint48(1 hours),
+                uint48(3 hours)
+            )
+        );
+        timelock.updateTierDelay(
+            OperationTimelockModule.DelayTier.LOW,
+            1 hours
         );
     }
 

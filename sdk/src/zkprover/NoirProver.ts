@@ -26,9 +26,14 @@ export interface ProofResult {
   isPlaceholder: boolean;
 }
 
+export interface CircuitAbi {
+  parameters?: Array<{ name: string; visibility: string; type: unknown }>;
+  return_type?: unknown;
+}
+
 export interface CircuitArtifact {
   bytecode: string;
-  abi: any;
+  abi: CircuitAbi;
 }
 
 export interface WitnessInput {
@@ -251,8 +256,9 @@ export interface PrivateTransferInputs {
  */
 export class NoirProver {
   private initialized: boolean = false;
-  private backend?: any;
-  private noir?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private backend?: Record<string, (...args: any[]) => Promise<any>>;
+  private noir?: { execute: (...args: unknown[]) => Promise<unknown> };
   private circuits: Map<Circuit, CircuitArtifact> = new Map();
   /** Operating mode — controls placeholder proof behavior */
   public readonly mode: ProverMode;
@@ -292,7 +298,10 @@ export class NoirProver {
       // Try to load Barretenberg
       // @ts-ignore - Dynamic import
       const { Barretenberg, Fr } = await import("@aztec/bb.js");
-      this.backend = await Barretenberg.new();
+      this.backend = (await Barretenberg.new()) as unknown as Record<
+        string,
+        (...args: unknown[]) => Promise<unknown>
+      >;
       console.log("✅ Barretenberg backend initialized");
     } catch (e) {
       if (this.mode === "production") {
@@ -417,12 +426,13 @@ export class NoirProver {
         proofHex: `0x${Buffer.from(proof).toString("hex")}` as Hex,
         isPlaceholder: false,
       };
-    } catch (e: any) {
+    } catch (e: unknown) {
       // SECURITY: Do NOT silently fallback to placeholder proofs.
       // Re-throw the error — callers must handle proof generation failures explicitly.
-      console.error(`Real proof generation failed: ${e.message}`);
+      const errMsg = e instanceof Error ? e.message : String(e);
+      console.error(`Real proof generation failed: ${errMsg}`);
       throw new Error(
-        `Proof generation failed for circuit: ${e.message}. Ensure Barretenberg and circuit artifacts are available.`,
+        `Proof generation failed for circuit: ${errMsg}. Ensure Barretenberg and circuit artifacts are available.`,
       );
     }
   }
@@ -450,12 +460,15 @@ export class NoirProver {
   /**
    * Extract public inputs from the circuit ABI definition
    */
-  private extractPublicInputsFromAbi(abi: any, inputs: WitnessInput): string[] {
+  private extractPublicInputsFromAbi(
+    abi: CircuitAbi,
+    inputs: WitnessInput,
+  ): string[] {
     if (!abi?.parameters) return [];
     const publicParams = abi.parameters.filter(
-      (p: any) => p.visibility === "public",
+      (p) => p.visibility === "public",
     );
-    return publicParams.map((p: any) => String(inputs[p.name] ?? "0"));
+    return publicParams.map((p) => String(inputs[p.name] ?? "0"));
   }
 
   /**
@@ -585,8 +598,9 @@ export class NoirProver {
             Buffer.from(proof.proof),
           );
           return verified;
-        } catch (e: any) {
-          console.warn(`Real verification failed: ${e.message}`);
+        } catch (e: unknown) {
+          const errMsg = e instanceof Error ? e.message : String(e);
+          console.warn(`Real verification failed: ${errMsg}`);
           return false;
         }
       }

@@ -33,6 +33,15 @@ contract SoulUpgradeTimelockTest is Test {
         timelock = new SoulUpgradeTimelock(1, proposers, executors, admin);
     }
 
+    /// @dev Helper: reduce minSignatures to 1 using the two-step pattern
+    function _reduceMinSignaturesTo1() internal {
+        vm.prank(admin);
+        timelock.proposeMinSignatures(1);
+        vm.warp(block.timestamp + 48 hours + 1);
+        vm.prank(admin);
+        timelock.confirmMinSignatures();
+    }
+
     // ───────────────────────── Constants ─────────────────────────
 
     function test_Constants() public view {
@@ -319,12 +328,11 @@ contract SoulUpgradeTimelockTest is Test {
     }
 
     function test_RevertExecuteExitWindowNotEnded() public {
-        vm.prank(admin);
-        timelock.proposeUpgrade(target, upgradeData, salt, "Exit window test");
+        // First reduce min signatures before proposing upgrade
+        _reduceMinSignaturesTo1();
 
         vm.prank(admin);
-        // Lower minSignatures to 1 to isolate exit window check
-        timelock.setMinSignatures(1);
+        timelock.proposeUpgrade(target, upgradeData, salt, "Exit window test");
 
         // Warp to just before exit window ends (exitWindowEnds = now + 48h - 24h = now + 24h)
         // Go to 23 hours — still within exit window
@@ -336,6 +344,9 @@ contract SoulUpgradeTimelockTest is Test {
     }
 
     function test_EmergencyUpgradeBypassesExitWindow() public {
+        // First reduce min signatures
+        _reduceMinSignaturesTo1();
+
         vm.prank(admin);
         timelock.enableEmergencyMode();
 
@@ -346,10 +357,6 @@ contract SoulUpgradeTimelockTest is Test {
             salt,
             "No exit window"
         );
-
-        // Lower minSignatures to 1
-        vm.prank(admin);
-        timelock.setMinSignatures(1);
 
         // Warp just past emergency delay (6h)
         vm.warp(block.timestamp + 6 hours + 1);
@@ -418,27 +425,99 @@ contract SoulUpgradeTimelockTest is Test {
         timelock.setUpgradeFrozen(target, true);
     }
 
-    // ───────────────── Min Signatures ──────────────────
+    // ───────────────── Min Signatures (Two-Step) ──────────────────
 
-    function test_SetMinSignatures() public {
+    function test_ProposeMinSignatures_Increase_Instant() public {
         vm.prank(admin);
         vm.expectEmit(false, false, false, true);
         emit SoulUpgradeTimelock.MinSignaturesUpdated(2, 3);
-        timelock.setMinSignatures(3);
+        timelock.proposeMinSignatures(3);
+
+        // Increase takes effect immediately
+        assertEq(timelock.minSignatures(), 3);
+    }
+
+    function test_ProposeMinSignatures_Reduction_Delayed() public {
+        // First increase to 5
+        vm.prank(admin);
+        timelock.proposeMinSignatures(5);
+        assertEq(timelock.minSignatures(), 5);
+
+        // Now propose a reduction to 3 — should NOT take effect immediately
+        vm.prank(admin);
+        timelock.proposeMinSignatures(3);
+        assertEq(timelock.minSignatures(), 5); // Still 5
+        assertEq(timelock.pendingMinSignatures(), 3);
+    }
+
+    function test_ConfirmMinSignatures_AfterDelay() public {
+        // Increase to 5, then propose reduction to 3
+        vm.prank(admin);
+        timelock.proposeMinSignatures(5);
+        vm.prank(admin);
+        timelock.proposeMinSignatures(3);
+
+        // Wait for STANDARD_DELAY (48 hours)
+        vm.warp(block.timestamp + 48 hours + 1);
+
+        vm.prank(admin);
+        vm.expectEmit(false, false, false, true);
+        emit SoulUpgradeTimelock.MinSignaturesUpdated(5, 3);
+        timelock.confirmMinSignatures();
 
         assertEq(timelock.minSignatures(), 3);
+        assertEq(timelock.pendingMinSignatures(), 0);
+    }
+
+    function test_RevertConfirmMinSignatures_TooEarly() public {
+        vm.prank(admin);
+        timelock.proposeMinSignatures(5);
+        vm.prank(admin);
+        timelock.proposeMinSignatures(3);
+
+        vm.prank(admin);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                SoulUpgradeTimelock.MinSignaturesChangeNotReady.selector,
+                block.timestamp + 48 hours
+            )
+        );
+        timelock.confirmMinSignatures();
+    }
+
+    function test_CancelMinSignaturesChange() public {
+        vm.prank(admin);
+        timelock.proposeMinSignatures(5);
+        vm.prank(admin);
+        timelock.proposeMinSignatures(3);
+
+        vm.prank(admin);
+        vm.expectEmit(false, false, false, true);
+        emit SoulUpgradeTimelock.MinSignaturesChangeCancelled(3);
+        timelock.cancelMinSignaturesChange();
+
+        assertEq(timelock.pendingMinSignatures(), 0);
+        assertEq(timelock.minSignatures(), 5); // Unchanged
+    }
+
+    function test_RevertConfirmWhenNoPending() public {
+        vm.prank(admin);
+        vm.expectRevert(
+            SoulUpgradeTimelock.NoPendingMinSignaturesChange.selector
+        );
+        timelock.confirmMinSignatures();
     }
 
     function test_RevertMinSignaturesZero() public {
         vm.prank(admin);
         vm.expectRevert(SoulUpgradeTimelock.MinSignaturesTooLow.selector);
-        timelock.setMinSignatures(0);
+        timelock.proposeMinSignatures(0);
     }
 
-    function test_RevertSetMinSignaturesByNonAdmin() public {
+    function test_RevertProposeMinSignaturesByNonAdmin() public {
         vm.prank(nonAuthorized);
         vm.expectRevert();
-        timelock.setMinSignatures(5);
+        timelock.proposeMinSignatures(5);
     }
 
     // ───────────────── View Functions ──────────────────
@@ -561,14 +640,13 @@ contract SoulUpgradeTimelockTest is Test {
     }
 
     function test_FullEmergencyUpgradeLifecycle() public {
+        // Reduce min signatures first using two-step
+        _reduceMinSignaturesTo1();
+
         // Enable emergency mode
         vm.prank(admin);
         timelock.enableEmergencyMode();
         assertTrue(timelock.emergencyMode());
-
-        // Lower to 1 sig for emergency
-        vm.prank(admin);
-        timelock.setMinSignatures(1);
 
         // Propose emergency upgrade
         vm.prank(admin);
@@ -599,11 +677,19 @@ contract SoulUpgradeTimelockTest is Test {
         if (newMin == 0) {
             vm.prank(admin);
             vm.expectRevert(SoulUpgradeTimelock.MinSignaturesTooLow.selector);
-            timelock.setMinSignatures(newMin);
-        } else {
+            timelock.proposeMinSignatures(newMin);
+        } else if (newMin >= 2) {
+            // Increase is instant
             vm.prank(admin);
-            timelock.setMinSignatures(newMin);
+            timelock.proposeMinSignatures(newMin);
             assertEq(timelock.minSignatures(), newMin);
+        } else {
+            // Reduction requires delay
+            vm.prank(admin);
+            timelock.proposeMinSignatures(newMin);
+            // Should be pending, not yet applied
+            assertEq(timelock.pendingMinSignatures(), newMin);
+            assertEq(timelock.minSignatures(), 2); // Still 2
         }
     }
 

@@ -202,6 +202,30 @@ export {
 // Moved to sdk/experimental/: fhe, pqc, mpc, recursive, zkSystems
 export * as proofTranslator from "./proof-translator/ProofTranslator";
 
+// Bridge SDK Client
+export {
+  MultiBridgeRouterClient,
+  BridgeType,
+  BridgeStatus as MultiBridgeStatus,
+} from "./bridge/MultiBridgeRouterClient";
+export type {
+  BridgeConfig as MultiBridgeConfig,
+  RouteMessageResult,
+  BridgeHealthSummary,
+  ThresholdsConfig,
+} from "./bridge/MultiBridgeRouterClient";
+
+// ZK-Bound State Locks SDK Client
+export { ZKBoundStateLocksClient } from "./primitives/ZKBoundStateLocksClient";
+export type {
+  ZKSLock,
+  UnlockProofParams,
+  UnlockReceipt as ZKSUnlockReceipt,
+  LockStats,
+  CreateLockResult,
+  DomainParams,
+} from "./primitives/ZKBoundStateLocksClient";
+
 export {
   // Core SDK
   SoulSDK,

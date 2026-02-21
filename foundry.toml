@@ -23,11 +23,27 @@ fs_permissions = [
 ]
 
 # Generated verifiers and OZ libs need lower optimizer_runs to avoid Yul stack depth issues
-additional_compiler_profiles = [{ name = "low-opt", via_ir = true, optimizer = true, optimizer_runs = 200 }]
+additional_compiler_profiles = [
+    { name = "low-opt", via_ir = true, optimizer = true, optimizer_runs = 200 },
+    { name = "min-opt", via_ir = true, optimizer = true, optimizer_runs = 1 },
+]
 compilation_restrictions = [
     { paths = "contracts/verifiers/generated/**", max_optimizer_runs = 200 },
     { paths = "lib/openzeppelin-contracts/**", max_optimizer_runs = 200 },
     { paths = "lib/openzeppelin-contracts-upgradeable/**", max_optimizer_runs = 200 },
+    # Sync with Hardhat per-contract overrides (runs: 1) — complex contracts that
+    # cause YulException at higher optimizer runs
+    { paths = "contracts/bridge/CrossChainProofHubV3.sol", max_optimizer_runs = 1 },
+    { paths = "contracts/core/ConfidentialStateContainerV3.sol", max_optimizer_runs = 1 },
+    { paths = "contracts/core/NullifierRegistryV3.sol", max_optimizer_runs = 1 },
+    { paths = "contracts/primitives/ZKBoundStateLocks.sol", max_optimizer_runs = 1 },
+    { paths = "contracts/verifiers/Groth16VerifierBN254.sol", max_optimizer_runs = 1 },
+    { paths = "contracts/security/SecurityModule.sol", max_optimizer_runs = 1 },
+    { paths = "contracts/privacy/CrossChainPrivacyHub.sol", max_optimizer_runs = 1 },
+    { paths = "contracts/privacy/UnifiedNullifierManager.sol", max_optimizer_runs = 1 },
+    { paths = "contracts/upgradeable/UniversalShieldedPoolUpgradeable.sol", max_optimizer_runs = 1 },
+    { paths = "contracts/upgradeable/PrivacyRouterUpgradeable.sol", max_optimizer_runs = 1 },
+    { paths = "contracts/crosschain/CrossChainCommitmentRelay.sol", max_optimizer_runs = 200 },
 ]
 
 # Gas reporting for optimization tracking

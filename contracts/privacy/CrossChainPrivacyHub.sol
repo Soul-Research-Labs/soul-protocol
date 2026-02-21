@@ -344,6 +344,18 @@ contract CrossChainPrivacyHub is
 
     event ComplianceHookFailed(bytes32 indexed requestId, string reason);
 
+    event ProtocolFeeUpdated(uint256 oldFeeBps, uint256 newFeeBps);
+    event FeeRecipientUpdated(
+        address indexed oldRecipient,
+        address indexed newRecipient
+    );
+    event DefaultRingSizeUpdated(uint256 oldSize, uint256 newSize);
+    event ProofVerifierUpdated(
+        ProofSystem indexed system,
+        address indexed oldVerifier,
+        address indexed newVerifier
+    );
+
     // =========================================================================
     // ERRORS
     // =========================================================================
@@ -1336,20 +1348,26 @@ contract CrossChainPrivacyHub is
         uint256 feeBps
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (feeBps > MAX_FEE_BPS) revert FeeTooHigh();
+        uint256 oldFeeBps = protocolFeeBps;
         protocolFeeBps = feeBps;
+        emit ProtocolFeeUpdated(oldFeeBps, feeBps);
     }
 
     function setFeeRecipient(
         address recipient
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (recipient == address(0)) revert ZeroAddress();
+        address oldRecipient = feeRecipient;
         feeRecipient = recipient;
+        emit FeeRecipientUpdated(oldRecipient, recipient);
     }
 
     function setDefaultRingSize(uint256 size) external onlyRole(OPERATOR_ROLE) {
         if (size < MIN_RING_SIZE || size > MAX_RING_SIZE)
             revert InvalidRingSize(size);
+        uint256 oldSize = defaultRingSize;
         defaultRingSize = size;
+        emit DefaultRingSizeUpdated(oldSize, size);
     }
 
     /**
@@ -1362,7 +1380,9 @@ contract CrossChainPrivacyHub is
         address verifier
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (verifier == address(0)) revert ZeroAddress();
+        address oldVerifier = proofVerifiers[system];
         proofVerifiers[system] = verifier;
+        emit ProofVerifierUpdated(system, oldVerifier, verifier);
     }
 
     function pause() external onlyRole(GUARDIAN_ROLE) {

@@ -154,6 +154,15 @@ contract OperationTimelockModule is AccessControl, ReentrancyGuard {
     /// @notice Total operations cancelled
     uint256 public totalCancelled;
 
+    /// @notice Pending tier delay reductions (two-step pattern)
+    mapping(DelayTier => uint48) public pendingTierDelays;
+
+    /// @notice When pending tier delay changes become effective
+    mapping(DelayTier => uint48) public tierDelayEffectiveAt;
+
+    /// @notice Minimum allowed delays per tier (security floor)
+    mapping(DelayTier => uint48) public minTierDelays;
+
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
     //////////////////////////////////////////////////////////////*/
@@ -206,6 +215,13 @@ contract OperationTimelockModule is AccessControl, ReentrancyGuard {
     );
 
     event TierDelayUpdated(DelayTier tier, uint48 oldDelay, uint48 newDelay);
+    event TierDelayReductionProposed(
+        DelayTier tier,
+        uint48 currentDelay,
+        uint48 newDelay,
+        uint48 effectiveAt
+    );
+    event TierDelayReductionCancelled(DelayTier tier, uint48 cancelledDelay);
 
     /*//////////////////////////////////////////////////////////////
                                 ERRORS
@@ -224,6 +240,9 @@ contract OperationTimelockModule is AccessControl, ReentrancyGuard {
     error InsufficientApprovals(uint8 current, uint8 required);
     error EmergencyBypassAlreadyExecuted(bytes32 operationId);
     error InvalidDelay(uint48 delay);
+    error DelayBelowMinimum(DelayTier tier, uint48 delay, uint48 minimum);
+    error NoPendingTierDelayChange(DelayTier tier);
+    error TierDelayChangeNotReady(DelayTier tier, uint48 readyAt);
     error ExecutionFailed(bytes32 operationId);
 
     /*//////////////////////////////////////////////////////////////
@@ -250,6 +269,12 @@ contract OperationTimelockModule is AccessControl, ReentrancyGuard {
         tierDelays[DelayTier.MEDIUM] = 24 hours;
         tierDelays[DelayTier.HIGH] = 48 hours;
         tierDelays[DelayTier.CRITICAL] = 72 hours;
+
+        // Set minimum floors (50% of defaults — cannot go below these)
+        minTierDelays[DelayTier.LOW] = 3 hours;
+        minTierDelays[DelayTier.MEDIUM] = 12 hours;
+        minTierDelays[DelayTier.HIGH] = 24 hours;
+        minTierDelays[DelayTier.CRITICAL] = 36 hours;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -611,6 +636,9 @@ contract OperationTimelockModule is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Update delay for a tier
+     * @dev Increases take effect immediately (more secure). Reductions use a
+     *      two-step pattern: propose → wait current tier delay → confirm.
+     *      All changes are bounded by minimum floors.
      * @param tier The tier to update
      * @param newDelay New delay in seconds
      */
@@ -620,11 +648,65 @@ contract OperationTimelockModule is AccessControl, ReentrancyGuard {
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (newDelay == 0) revert InvalidDelay(newDelay);
         if (newDelay > 30 days) revert InvalidDelay(newDelay);
+        if (newDelay < minTierDelays[tier]) {
+            revert DelayBelowMinimum(tier, newDelay, minTierDelays[tier]);
+        }
 
         uint48 oldDelay = tierDelays[tier];
-        tierDelays[tier] = newDelay;
 
-        emit TierDelayUpdated(tier, oldDelay, newDelay);
+        // Increases are safe — they only make things more secure
+        if (newDelay >= oldDelay) {
+            tierDelays[tier] = newDelay;
+            emit TierDelayUpdated(tier, oldDelay, newDelay);
+            return;
+        }
+
+        // Reductions require a delay equal to the CURRENT tier delay
+        pendingTierDelays[tier] = newDelay;
+        tierDelayEffectiveAt[tier] = uint48(block.timestamp) + oldDelay;
+
+        emit TierDelayReductionProposed(
+            tier,
+            oldDelay,
+            newDelay,
+            tierDelayEffectiveAt[tier]
+        );
+    }
+
+    /**
+     * @notice Confirm a pending tier delay reduction after the waiting period
+     * @param tier The tier to confirm
+     */
+    function confirmTierDelay(
+        DelayTier tier
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (pendingTierDelays[tier] == 0) revert NoPendingTierDelayChange(tier);
+        if (uint48(block.timestamp) < tierDelayEffectiveAt[tier]) {
+            revert TierDelayChangeNotReady(tier, tierDelayEffectiveAt[tier]);
+        }
+
+        uint48 oldDelay = tierDelays[tier];
+        tierDelays[tier] = pendingTierDelays[tier];
+        pendingTierDelays[tier] = 0;
+        tierDelayEffectiveAt[tier] = 0;
+
+        emit TierDelayUpdated(tier, oldDelay, tierDelays[tier]);
+    }
+
+    /**
+     * @notice Cancel a pending tier delay reduction
+     * @param tier The tier to cancel
+     */
+    function cancelTierDelayChange(
+        DelayTier tier
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (pendingTierDelays[tier] == 0) revert NoPendingTierDelayChange(tier);
+
+        uint48 cancelled = pendingTierDelays[tier];
+        pendingTierDelays[tier] = 0;
+        tierDelayEffectiveAt[tier] = 0;
+
+        emit TierDelayReductionCancelled(tier, cancelled);
     }
 
     /*//////////////////////////////////////////////////////////////

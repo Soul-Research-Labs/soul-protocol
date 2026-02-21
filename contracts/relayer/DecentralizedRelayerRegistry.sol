@@ -30,6 +30,11 @@ contract DecentralizedRelayerRegistry is AccessControl, ReentrancyGuard {
     event UnstakeInitiated(address indexed relayer, uint256 unlockTime);
     event StakeWithdrawn(address indexed relayer, uint256 amount);
     event RewardsClaimed(address indexed relayer, uint256 amount);
+    event RewardAdded(
+        address indexed relayer,
+        address indexed funder,
+        uint256 amount
+    );
     event RelayerSlashed(
         address indexed relayer,
         uint256 amount,
@@ -138,6 +143,7 @@ contract DecentralizedRelayerRegistry is AccessControl, ReentrancyGuard {
         require(relayers[_relayer].isRegistered, "Not registered");
 
         relayers[_relayer].rewards += _amount;
+        emit RewardAdded(_relayer, msg.sender, _amount);
     }
 
     /**

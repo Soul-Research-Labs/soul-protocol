@@ -156,6 +156,19 @@ contract MultiBridgeRouter is AccessControl, ReentrancyGuard, Pausable {
         BridgeType fallbackBridge
     );
     event HealthCheckFailed(BridgeType indexed bridgeType, uint256 failureRate);
+    event SupportedChainAdded(
+        BridgeType indexed bridgeType,
+        uint256 indexed chainId
+    );
+    event BridgeSuccessRecorded(
+        BridgeType indexed bridgeType,
+        uint256 newSuccessCount
+    );
+    event ThresholdsUpdated(
+        uint256 highValueThreshold,
+        uint256 mediumValueThreshold,
+        uint256 multiVerificationThreshold
+    );
 
     /*//////////////////////////////////////////////////////////////
                                 ERRORS
@@ -356,6 +369,7 @@ contract MultiBridgeRouter is AccessControl, ReentrancyGuard, Pausable {
         uint256 chainId
     ) external onlyRole(BRIDGE_ADMIN) {
         supportedChains[bridgeType][chainId] = true;
+        emit SupportedChainAdded(bridgeType, chainId);
     }
 
     /**
@@ -366,6 +380,10 @@ contract MultiBridgeRouter is AccessControl, ReentrancyGuard, Pausable {
         BridgeType bridgeType
     ) external onlyRole(OPERATOR_ROLE) {
         bridges[bridgeType].successCount++;
+        emit BridgeSuccessRecorded(
+            bridgeType,
+            bridges[bridgeType].successCount
+        );
     }
 
     /**
@@ -397,6 +415,11 @@ contract MultiBridgeRouter is AccessControl, ReentrancyGuard, Pausable {
         highValueThreshold = _highValueThreshold;
         mediumValueThreshold = _mediumValueThreshold;
         multiVerificationThreshold = _multiVerificationThreshold;
+        emit ThresholdsUpdated(
+            _highValueThreshold,
+            _mediumValueThreshold,
+            _multiVerificationThreshold
+        );
     }
 
     /*//////////////////////////////////////////////////////////////

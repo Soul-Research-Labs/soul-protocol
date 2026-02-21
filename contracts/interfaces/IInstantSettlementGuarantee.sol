@@ -70,6 +70,17 @@ interface IInstantSettlementGuarantee {
 
     event InsurancePoolDeposit(uint256 amount);
 
+    event IntentLayerUpdated(
+        address indexed oldIntentLayer,
+        address indexed newIntentLayer
+    );
+    event IntentFinalized(bytes32 indexed intentId);
+    event InsuranceWithdrawn(
+        address indexed to,
+        uint256 amount,
+        uint256 remainingBalance
+    );
+
     /*//////////////////////////////////////////////////////////////
                             CUSTOM ERRORS
     //////////////////////////////////////////////////////////////*/

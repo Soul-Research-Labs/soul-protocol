@@ -15,6 +15,7 @@ import {
   zeroAddress,
   stringToBytes,
 } from "viem";
+import { ViemContract, DecodedEventArgs } from "../types/contracts";
 import {
   StealthAddressClient,
   StealthMetaAddress,
@@ -270,7 +271,7 @@ const PRIVACY_HUB_ABI = [
 ] as const;
 
 export class PrivacyHubClient {
-  private hubContract: any;
+  private hubContract: ViemContract;
   private stealthClient: StealthAddressClient;
   private ringCTClient: RingCTClient;
   private nullifierClient: NullifierClient;
@@ -291,7 +292,7 @@ export class PrivacyHubClient {
       address: config.hubAddress as Hex,
       abi: PRIVACY_HUB_ABI,
       client: { public: publicClient, wallet: walletClient },
-    });
+    }) as unknown as ViemContract;
 
     this.stealthClient = new StealthAddressClient(
       config.stealthRegistryAddress as Hex,
@@ -373,16 +374,18 @@ export class PrivacyHubClient {
     let transferId: Hex = zeroHash;
     for (const log of receipt.logs) {
       try {
-        const { eventName, args } = decodeEventLog({
+        const decoded = decodeEventLog({
           abi: PRIVACY_HUB_ABI,
           data: log.data,
           topics: log.topics,
-        }) as any;
+        });
+        const { eventName, args } = decoded;
+        const eventArgs = (args ?? {}) as unknown as DecodedEventArgs;
         if (
           eventName === "PrivateTransferInitiated" &&
-          (args as any).commitment === (commitment.commitment as Hex)
+          eventArgs.commitment === (commitment.commitment as Hex)
         ) {
-          transferId = (args as any).transferId;
+          transferId = eventArgs.transferId as Hex;
           break;
         }
       } catch {
@@ -607,7 +610,7 @@ export class PrivacyHubClient {
     try {
       const details = (await this.hubContract.read.getTransferDetails([
         transferId,
-      ])) as any;
+      ])) as Record<string, unknown>;
 
       return {
         transferId,
@@ -622,11 +625,11 @@ export class PrivacyHubClient {
           name: "",
         },
         commitment: {
-          commitment: details.commitment,
+          commitment: details.commitment as Hex,
           amount: 0n, // Hidden
           blindingFactor: zeroHash,
         },
-        nullifier: details.nullifier,
+        nullifier: details.nullifier as Hex,
         stealthAddress: zeroAddress,
         status: details.status as TransferStatus,
         timestamp: Number(details.timestamp),
@@ -719,12 +722,13 @@ export class PrivacyHubClient {
       eventName: "PrivateTransferInitiated",
       onLogs: (logs) => {
         for (const log of logs) {
-          const { args } = log as any;
+          const args = (log as unknown as { args: Record<string, unknown> })
+            .args;
           callback(
-            args.transferId,
+            args.transferId as Hex,
             Number(args.sourceChain),
             Number(args.targetChain),
-            args.commitment,
+            args.commitment as Hex,
           );
         }
       },
@@ -739,8 +743,9 @@ export class PrivacyHubClient {
       eventName: "PrivateTransferCompleted",
       onLogs: (logs) => {
         for (const log of logs) {
-          const { args } = log as any;
-          callback(args.transferId);
+          const args = (log as unknown as { args: Record<string, unknown> })
+            .args;
+          callback(args.transferId as Hex);
         }
       },
     });
@@ -756,8 +761,9 @@ export class PrivacyHubClient {
       eventName: "PrivateTransferFailed",
       onLogs: (logs) => {
         for (const log of logs) {
-          const { args } = log as any;
-          callback(args.transferId, args.reason);
+          const args = (log as unknown as { args: Record<string, unknown> })
+            .args;
+          callback(args.transferId as Hex, args.reason as string);
         }
       },
     });
