@@ -45,6 +45,10 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl, ISoulL2Messenger {
     bytes32 public constant FULFILLER_ROLE = keccak256("FULFILLER_ROLE");
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
 
+    /// @dev L1SLOAD precompile address (RIP-7728)
+    address private constant L1SLOAD_PRECOMPILE =
+        0x0000000000000000000000000000000000000101;
+
     /*//////////////////////////////////////////////////////////////
                                  TYPES
     //////////////////////////////////////////////////////////////*/
@@ -134,6 +138,8 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl, ISoulL2Messenger {
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Initialize the Soul L2 messenger
+    /// @param _proofHub Address of the CrossChainProofHubV3 contract
     constructor(address _proofHub) {
         if (_proofHub == address(0)) revert ZeroAddress();
         proofHub = _proofHub;
@@ -373,9 +379,6 @@ contract SoulL2Messenger is ReentrancyGuard, AccessControl, ISoulL2Messenger {
         address l1Contract,
         bytes32 slot
     ) external view returns (bytes32 value) {
-        // L1SLOAD precompile address (when available)
-        address L1SLOAD_PRECOMPILE = 0x0000000000000000000000000000000000000101;
-
         // Check if precompile exists
         uint256 size;
         assembly {

@@ -214,10 +214,22 @@ npm run noir:codegen
 
 ### Current status (Feb 2026)
 
-All 20 generated verifiers in `contracts/verifiers/generated/` are **stub contracts**
-that revert with `StubVerifierNotDeployed()`. This is because `bb < 3.1.0` triggers
-an `on_curve` assertion error during verifier generation. Once a compatible `bb`
-release is available, regenerate all verifiers with the commands above.
+20 of 21 generated verifiers in `contracts/verifiers/generated/` are **real UltraHonk
+verifier contracts**, produced by the `scripts/generate_verifiers_from_vk.py` workaround
+that parses binary verification-key files directly (bypassing the `bb contract` command
+which has an `on_curve` assertion error in `bb < 3.1.0`).
+
+The **only remaining stub** is `AggregatorVerifier.sol`, which reverts with
+`StubVerifierNotDeployed()`. The aggregator circuit's larger VK (recursive 4-proof
+batch) is incompatible with the current Python workaround. To unblock it, either:
+
+1. Extend `generate_verifiers_from_vk.py` to handle the aggregator's recursive VK
+   layout, or
+2. Upgrade to `bb >= 3.1.0` when available and regenerate via:
+   ```bash
+   bb write_vk_ultra_honk -b target/aggregator.json -o target/vk
+   bb contract_ultra_honk -k target/vk -o ../../contracts/verifiers/generated/AggregatorVerifier.sol
+   ```
 
 ## Performance Comparison
 

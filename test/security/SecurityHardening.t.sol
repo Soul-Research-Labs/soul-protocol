@@ -186,14 +186,16 @@ contract SecurityHardeningTest is Test {
 
         rateLimiter.recordTransfer(anomalousUser, 100 ether);
 
+        // SECURITY FIX H-7: anomaly detection now blacklists the offending user
+        // instead of triggering the global circuit breaker (prevents DoS)
         assertTrue(
-            rateLimiter.isCircuitBreakerActive(),
-            "Circuit breaker should be active due to anomaly"
+            rateLimiter.blacklisted(anomalousUser),
+            "Anomalous user should be blacklisted"
         );
-
-        (bool triggered, , string memory reason, ) = rateLimiter
-            .breakerStatus();
-        assertEq(reason, "Anomaly detected: unusual volume");
+        assertFalse(
+            rateLimiter.isCircuitBreakerActive(),
+            "Circuit breaker should NOT be triggered (user isolation, not global pause)"
+        );
     }
 
     /// @notice Test Watchtower Automated Action

@@ -1,6 +1,6 @@
 # Soul Protocol - Coverage Tracking
 
-> **Last Updated:** February 2026  
+> **Last Updated:** July 2026  
 > **Coverage Tool:** Forge + Python Stub System
 
 ---
@@ -46,29 +46,29 @@ Forge coverage fails on this project with **"stack too deep"** errors due to:
 
 ### Security Contracts (Target: 90%)
 
-| Contract               | Fuzz Runs | Attack Tests | Status                |
-| ---------------------- | --------- | ------------ | --------------------- |
-| `SecurityModule`       | 10,000    | ✅           | 🟢 Tested             |
-| `BridgeCircuitBreaker` | 10,000    | ✅           | 🟢 Tested             |
-| `FlashLoanGuard`       | 10,000    | ✅           | 🟢 Tested             |
-| `BatchAccumulator`     | 10,000    | —            | 🟡 Needs attack tests |
+| Contract               | Fuzz Runs | Attack Tests                                     | Status    |
+| ---------------------- | --------- | ------------------------------------------------ | --------- |
+| `SecurityModule`       | 10,000    | ✅                                               | 🟢 Tested |
+| `BridgeCircuitBreaker` | 10,000    | ✅                                               | 🟢 Tested |
+| `FlashLoanGuard`       | 10,000    | ✅                                               | 🟢 Tested |
+| `BatchAccumulator`     | 10,000    | ✅ (`test/attacks/BatchAccumulatorAttack.t.sol`) | 🟢 Tested |
 
 ### Bridge Adapters (Target: 85%)
 
-| Contract                 | Integration Tests | Status                    |
-| ------------------------ | ----------------- | ------------------------- |
-| `ArbitrumBridgeAdapter`  | ✅                | 🟢                        |
-| `OptimismBridgeAdapter`  | ✅                | 🟢                        |
-| `ScrollBridgeAdapter`    | —                 | 🟡 Needs integration test |
-| `LayerZeroBridgeAdapter` | ✅                | 🟢                        |
+| Contract                 | Integration Tests                                        | Status    |
+| ------------------------ | -------------------------------------------------------- | --------- |
+| `ArbitrumBridgeAdapter`  | ✅                                                       | 🟢        |
+| `OptimismBridgeAdapter`  | ✅                                                       | 🟢        |
+| `ScrollBridgeAdapter`    | ✅ (`test/crosschain/ScrollBridgeAdapterExtended.t.sol`) | 🟢 Tested |
+| `LayerZeroBridgeAdapter` | ✅                                                       | 🟢        |
 
 ### SDK (Target: 80%)
 
-| Module           | Test Status | Status         |
-| ---------------- | ----------- | -------------- |
-| `NoirProver`     | —           | 🔴 Needs tests |
-| `SoulClient`     | —           | 🔴 Needs tests |
-| `SoulPrivacySDK` | —           | 🔴 Needs tests |
+| Module           | Test Status                                                       | Status        |
+| ---------------- | ----------------------------------------------------------------- | ------------- |
+| `NoirProver`     | ✅ (`sdk/test/NoirProver.test.ts`, `NoirProver.advanced.test.ts`) | 🟢 Tested     |
+| `SoulClient`     | ✅ (`sdk/test/SoulClient.test.ts`, `SoulProtocolClient.test.ts`)  | 🟢 Tested     |
+| `SoulPrivacySDK` | — (deprecated, use `SoulProtocolClient`)                          | ⚪ Deprecated |
 
 ---
 
@@ -108,17 +108,23 @@ forge test --match-path 'test/invariant/*' --fuzz-runs 1000 --fuzz-depth 100
 ### 3. Formal Verification (Certora)
 
 ```bash
-# Run all Certora specs
-npm run certora:full
+# Compile-check all Certora specs (current default)
+make certora-check
+
+# Run full verification against Certora prover (requires CERTORAKEY)
+make certora-verify
 ```
 
-**Specs:** 54 CVL specifications covering:
+> **Note:** The `certora-check` target only validates compilation (`--compilation_steps_only`).
+> Use `certora-verify` for full prover runs. Requires a valid `CERTORAKEY` environment variable.
+
+**Specs:** 57 CVL specifications covering:
 
 - ZK-SLocks properties
 - Nullifier uniqueness
 - State transition validity
 - Access control
-- Bridge security
+- Bridge security (including `MultiBridgeRouter.spec`)
 - Ring signature verification
 - Stealth address privacy
 - Cross-chain proof hub integrity
@@ -224,7 +230,7 @@ Results uploaded to Codecov (when available).
 
 ### Total Test Count
 
-> **4,426 tests** across **189 test suites** — 0 failures as of February 2026.
+> **5,600+ tests** across **200+ test suites** — 0 failures as of July 2026.
 
 ---
 

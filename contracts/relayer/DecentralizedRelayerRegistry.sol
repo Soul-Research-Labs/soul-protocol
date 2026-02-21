@@ -30,8 +30,14 @@ contract DecentralizedRelayerRegistry is AccessControl, ReentrancyGuard {
     event UnstakeInitiated(address indexed relayer, uint256 unlockTime);
     event StakeWithdrawn(address indexed relayer, uint256 amount);
     event RewardsClaimed(address indexed relayer, uint256 amount);
-    event RelayerSlashed(address indexed relayer, uint256 amount, address recipient);
+    event RelayerSlashed(
+        address indexed relayer,
+        uint256 amount,
+        address recipient
+    );
 
+    /// @notice Deploy the registry and grant admin roles
+    /// @param _admin Address receiving DEFAULT_ADMIN_ROLE, GOVERNANCE_ROLE, and SLASHER_ROLE
     constructor(address _admin) {
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(GOVERNANCE_ROLE, _admin);
@@ -73,11 +79,11 @@ contract DecentralizedRelayerRegistry is AccessControl, ReentrancyGuard {
         require(relayers[msg.sender].unlockTime == 0, "Already unbonding");
 
         relayers[msg.sender].unlockTime = block.timestamp + UNBONDING_PERIOD;
-        
-        // Remove from active list? 
+
+        // Remove from active list?
         // For efficiency, we might just mark them inactive in a separate mapping or filter off-chain.
         // Here we keep them in struct but they are functionally inactive for selection if check unlockTime.
-        
+
         emit UnstakeInitiated(msg.sender, relayers[msg.sender].unlockTime);
     }
 
@@ -88,7 +94,7 @@ contract DecentralizedRelayerRegistry is AccessControl, ReentrancyGuard {
         RelayerInfo storage info = relayers[msg.sender];
         require(info.unlockTime > 0, "Not unbonding");
         require(block.timestamp >= info.unlockTime, "Still locked");
-        
+
         uint256 amount = info.stake;
         info.stake = 0;
         info.isRegistered = false;
@@ -106,12 +112,16 @@ contract DecentralizedRelayerRegistry is AccessControl, ReentrancyGuard {
      * @param _amount Amount to slash
      * @param _recipient Address to receive slashed funds (e.g., insurance fund or reporter)
      */
-    function slash(address _relayer, uint256 _amount, address _recipient) external onlyRole(SLASHER_ROLE) nonReentrant {
+    function slash(
+        address _relayer,
+        uint256 _amount,
+        address _recipient
+    ) external onlyRole(SLASHER_ROLE) nonReentrant {
         RelayerInfo storage info = relayers[_relayer];
         require(info.stake >= _amount, "Insufficient stake");
 
         info.stake -= _amount;
-        
+
         (bool success, ) = _recipient.call{value: _amount}("");
         require(success, "Transfer failed");
 
@@ -126,7 +136,7 @@ contract DecentralizedRelayerRegistry is AccessControl, ReentrancyGuard {
         // Assuming protocol sends ETH to fund rewards.
         require(msg.value == _amount, "Value mismatch");
         require(relayers[_relayer].isRegistered, "Not registered");
-        
+
         relayers[_relayer].rewards += _amount;
     }
 

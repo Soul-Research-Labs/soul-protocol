@@ -103,6 +103,8 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
     event MessageReceived(bytes32 indexed messageId, uint256 sourceChain);
     event MessageConfirmed(bytes32 indexed messageId);
 
+    /// @notice Initializes the adapter with default L2 chain configurations
+    /// @param admin Address to receive admin and default admin roles
     constructor(address admin) {
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(ADMIN_ROLE, admin);

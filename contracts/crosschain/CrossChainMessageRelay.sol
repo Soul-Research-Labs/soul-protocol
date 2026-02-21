@@ -255,6 +255,7 @@ contract CrossChainMessageRelay is AccessControl, ReentrancyGuard, Pausable {
                              CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Initializes the relay and grants admin, operator, and guardian roles to the deployer
     constructor() {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(OPERATOR_ROLE, msg.sender);

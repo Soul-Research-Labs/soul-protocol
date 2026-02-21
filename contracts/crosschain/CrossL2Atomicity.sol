@@ -231,6 +231,8 @@ contract CrossL2Atomicity is ReentrancyGuard, AccessControl, Pausable {
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Initializes the atomic coordinator with the current chain ID and admin roles
+    /// @param _admin Address to receive all administrative roles
     constructor(address _admin) {
         currentChainId = block.chainid;
 

@@ -491,11 +491,9 @@ contract LiquidityAwareRouter is AccessControl, ReentrancyGuard, Pausable {
 
         t.status = TransferStatus.REFUNDED;
 
-        // Full refund including protocol fee
-        uint256 refundAmount = t.amount + t.fee + t.protocolFee;
-        if (t.protocolFee <= accumulatedFees) {
-            accumulatedFees -= t.protocolFee;
-        }
+        // SECURITY FIX H-10: Do not refund protocol fee to prevent draining
+        // contract balance if fees were already withdrawn by admin.
+        uint256 refundAmount = t.amount + t.fee;
 
         if (refundAmount > 0) {
             (bool ok, ) = t.user.call{value: refundAmount}("");

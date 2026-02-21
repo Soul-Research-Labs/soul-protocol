@@ -13,7 +13,7 @@ contract MessageBatcher is AccessControl, ReentrancyGuard {
     bytes32 public constant KEEPER_ROLE = keccak256("KEEPER_ROLE");
 
     SoulCrossChainRelay public relay;
-    
+
     struct QueuedMessage {
         bytes payload;
         uint256 value;
@@ -21,13 +21,20 @@ contract MessageBatcher is AccessControl, ReentrancyGuard {
 
     // specific destination -> queue
     mapping(uint64 => QueuedMessage[]) public queues;
-    
+
     // Config
     uint256 public maxBatchSize = 10;
-    
-    event MessageQueued(uint64 indexed destChainId, uint256 index);
-    event BatchSent(uint64 indexed destChainId, uint256 count, bytes32 messageId);
 
+    event MessageQueued(uint64 indexed destChainId, uint256 index);
+    event BatchSent(
+        uint64 indexed destChainId,
+        uint256 count,
+        bytes32 messageId
+    );
+
+    /// @notice Initializes the batcher with a relay contract and admin
+    /// @param _relay Address of the SoulCrossChainRelay contract
+    /// @param _admin Address to receive the default admin role
     constructor(address _relay, address _admin) {
         relay = SoulCrossChainRelay(_relay);
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
@@ -53,7 +60,7 @@ contract MessageBatcher is AccessControl, ReentrancyGuard {
         // But here Batcher constructs it?
         // SoulCrossChainRelay._processBatch decodes:
         // (uint8 msgType, bytes32 proofId, ...)
-        
+
         bytes memory payload = abi.encode(
             relay.MSG_PROOF_RELAY(),
             proofId,
@@ -64,13 +71,12 @@ contract MessageBatcher is AccessControl, ReentrancyGuard {
             proofType
         );
 
-        queues[destChainId].push(QueuedMessage({
-            payload: payload,
-            value: msg.value
-        }));
+        queues[destChainId].push(
+            QueuedMessage({payload: payload, value: msg.value})
+        );
 
         emit MessageQueued(destChainId, queues[destChainId].length - 1);
-        
+
         // Auto-send if full
         if (queues[destChainId].length >= maxBatchSize) {
             _sendBatch(destChainId);
@@ -102,21 +108,40 @@ contract MessageBatcher is AccessControl, ReentrancyGuard {
         delete queues[destChainId];
 
         // Call relayBatch - we need to send value
-        bytes32 msgId = relay.relayBatch{value: totalValue}(destChainId, payloads);
-        
+        bytes32 msgId = relay.relayBatch{value: totalValue}(
+            destChainId,
+            payloads
+        );
+
         emit BatchSent(destChainId, count, msgId);
     }
-    
-    function setMaxBatchSize(uint256 _size) external onlyRole(DEFAULT_ADMIN_ROLE) {
+
+    /// @notice Update the maximum number of messages per batch
+    /// @param _size New maximum batch size
+    function setMaxBatchSize(
+        uint256 _size
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         maxBatchSize = _size;
     }
 
-    function rescueFunds(address token, uint256 amount) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    /// @notice Rescue stuck tokens or ETH from the contract
+    /// @param token Token address (address(0) for native ETH)
+    /// @param amount Amount to rescue
+    function rescueFunds(
+        address token,
+        uint256 amount
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (token == address(0)) {
             (bool success, ) = msg.sender.call{value: amount}("");
             require(success, "Transfer failed");
         } else {
-            (bool success, ) = token.call(abi.encodeWithSignature("transfer(address,uint256)", msg.sender, amount));
+            (bool success, ) = token.call(
+                abi.encodeWithSignature(
+                    "transfer(address,uint256)",
+                    msg.sender,
+                    amount
+                )
+            );
             require(success, "Transfer failed");
         }
     }

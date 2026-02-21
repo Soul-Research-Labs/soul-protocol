@@ -185,6 +185,8 @@ contract RelayerSLAEnforcer is AccessControl, ReentrancyGuard {
                            CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Deploy the SLA enforcer with default terms and grant admin roles
+    /// @param admin Address receiving DEFAULT_ADMIN_ROLE, REPORTER_ROLE, and SLASHER_ROLE
     constructor(address admin) {
         if (admin == address(0)) revert ZeroAddress();
 

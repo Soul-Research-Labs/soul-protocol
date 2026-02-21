@@ -156,7 +156,7 @@ contract BridgeWatchtower is AccessControl, ReentrancyGuard, Pausable {
     /*//////////////////////////////////////////////////////////////
                               STATE
     //////////////////////////////////////////////////////////////*/
-    
+
     mapping(ReportType => ResponseAction) public reportActions;
     address public bridgeContract;
     address public rateLimiterContract;
@@ -652,8 +652,11 @@ contract BridgeWatchtower is AccessControl, ReentrancyGuard, Pausable {
             return !attestation.rejected;
         }
 
+        // SECURITY FIX H-8: Prevent truncation down to 0 or 1 for small active sets
         uint256 required = (activeWatchtowers.length *
-            CONFIRMATION_THRESHOLD_BPS) / BPS;
+            CONFIRMATION_THRESHOLD_BPS +
+            BPS -
+            1) / BPS;
         return attestation.attestationCount >= required;
     }
 
@@ -661,7 +664,10 @@ contract BridgeWatchtower is AccessControl, ReentrancyGuard, Pausable {
      * @notice Get required confirmations
      */
     function getRequiredConfirmations() external view returns (uint256) {
-        return (activeWatchtowers.length * CONFIRMATION_THRESHOLD_BPS) / BPS;
+        // SECURITY FIX H-8: Prevent truncation
+        return
+            (activeWatchtowers.length * CONFIRMATION_THRESHOLD_BPS + BPS - 1) /
+            BPS;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -671,14 +677,17 @@ contract BridgeWatchtower is AccessControl, ReentrancyGuard, Pausable {
     function _checkReportFinalization(bytes32 reportId) internal {
         AnomalyReport storage report = reports[reportId];
 
+        // SECURITY FIX H-8: Prevent truncation
         uint256 required = (activeWatchtowers.length *
-            CONFIRMATION_THRESHOLD_BPS) / BPS;
+            CONFIRMATION_THRESHOLD_BPS +
+            BPS -
+            1) / BPS;
 
         // Check if enough votes to finalize
         if (report.confirmations >= required) {
             report.status = ReportStatus.CONFIRMED;
             watchtowers[report.reporter].correctReports++;
-            
+
             // Execute automated action
             _executeAction(report.reportType);
 
@@ -704,8 +713,11 @@ contract BridgeWatchtower is AccessControl, ReentrancyGuard, Pausable {
 
     function _checkProofFinalization(bytes32 proofHash) internal {
         ProofAttestation storage attestation = proofAttestations[proofHash];
+        // SECURITY FIX H-8: Prevent truncation
         uint256 required = (activeWatchtowers.length *
-            CONFIRMATION_THRESHOLD_BPS) / BPS;
+            CONFIRMATION_THRESHOLD_BPS +
+            BPS -
+            1) / BPS;
 
         if (attestation.attestationCount >= required) {
             attestation.finalized = true;
@@ -770,7 +782,7 @@ contract BridgeWatchtower is AccessControl, ReentrancyGuard, Pausable {
      */
     function _executeAction(ReportType reportType) internal {
         ResponseAction action = reportActions[reportType];
-        
+
         if (action == ResponseAction.PAUSE_BRIDGE) {
             if (bridgeContract != address(0)) {
                 try IPausable(bridgeContract).pause() {} catch {}
@@ -780,7 +792,10 @@ contract BridgeWatchtower is AccessControl, ReentrancyGuard, Pausable {
                 // Best-effort: call triggerCircuitBreaker with reason string
                 // slither-disable-next-line low-level-calls
                 (bool success, ) = rateLimiterContract.call(
-                    abi.encodeWithSignature("triggerCircuitBreaker(string)", "Watchtower Alert")
+                    abi.encodeWithSignature(
+                        "triggerCircuitBreaker(string)",
+                        "Watchtower Alert"
+                    )
                 );
                 // success intentionally unused — action is best-effort, matching
                 // the try/catch pattern used for PAUSE_BRIDGE above
@@ -790,12 +805,19 @@ contract BridgeWatchtower is AccessControl, ReentrancyGuard, Pausable {
     }
 
     // Configuration
-    function setReportAction(ReportType reportType, ResponseAction action) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setReportAction(
+        ReportType reportType,
+        ResponseAction action
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         reportActions[reportType] = action;
     }
 
-    function setTargetContracts(address _bridge, address _rateLimiter) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_bridge == address(0) || _rateLimiter == address(0)) revert ZeroAddress();
+    function setTargetContracts(
+        address _bridge,
+        address _rateLimiter
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_bridge == address(0) || _rateLimiter == address(0))
+            revert ZeroAddress();
         bridgeContract = _bridge;
         rateLimiterContract = _rateLimiter;
     }

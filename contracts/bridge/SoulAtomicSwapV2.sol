@@ -85,6 +85,7 @@ contract SoulAtomicSwapV2 is
 
     /// @notice Pending fee withdrawals for timelock
     mapping(bytes32 => uint256) public pendingFeeWithdrawals;
+    mapping(bytes32 => uint256) public pendingFeeAmounts;
 
     /// @notice Fee withdrawal timelock delay
     uint256 public constant FEE_WITHDRAWAL_DELAY = 2 days;
@@ -527,6 +528,7 @@ contract SoulAtomicSwapV2 is
             abi.encodePacked(token, amount, block.timestamp)
         );
         pendingFeeWithdrawals[withdrawalId] = block.timestamp;
+        pendingFeeAmounts[withdrawalId] = amount;
 
         emit FeeWithdrawalRequested(withdrawalId, token, amount);
     }
@@ -543,10 +545,13 @@ contract SoulAtomicSwapV2 is
         if (block.timestamp < requestTime + FEE_WITHDRAWAL_DELAY)
             revert WithdrawalNotReady();
 
-        delete pendingFeeWithdrawals[withdrawalId];
+        uint256 amount = pendingFeeAmounts[withdrawalId];
 
-        uint256 amount = collectedFees[token];
-        collectedFees[token] = 0;
+        delete pendingFeeWithdrawals[withdrawalId];
+        delete pendingFeeAmounts[withdrawalId];
+
+        if (collectedFees[token] < amount) revert InvalidAmount();
+        collectedFees[token] -= amount;
 
         // CEI: emit event before external calls
         emit FeeWithdrawalExecuted(withdrawalId, token, amount);
@@ -564,11 +569,13 @@ contract SoulAtomicSwapV2 is
     /// @dev Deprecated: Use requestFeeWithdrawal + executeFeeWithdrawal
     function withdrawFees(address token) external onlyOwner {
         // For backwards compatibility, initiate a withdrawal request
+        uint256 amount = collectedFees[token];
         bytes32 withdrawalId = keccak256(
-            abi.encodePacked(token, collectedFees[token], block.timestamp)
+            abi.encodePacked(token, amount, block.timestamp)
         );
         pendingFeeWithdrawals[withdrawalId] = block.timestamp;
-        emit FeeWithdrawalRequested(withdrawalId, token, collectedFees[token]);
+        pendingFeeAmounts[withdrawalId] = amount;
+        emit FeeWithdrawalRequested(withdrawalId, token, amount);
     }
 
     /// @notice Pause the contract

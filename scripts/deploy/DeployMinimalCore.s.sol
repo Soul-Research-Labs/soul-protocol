@@ -33,7 +33,9 @@ contract DeployMinimalCore is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         // 1. Deploy Security Layer (needed as proofHub for relay)
-        OptimisticBridgeVerifier verifier = new OptimisticBridgeVerifier(deployer);
+        OptimisticBridgeVerifier verifier = new OptimisticBridgeVerifier(
+            deployer
+        );
         BridgeRateLimiter limiter = new BridgeRateLimiter(deployer);
         BridgeWatchtower watchtower = new BridgeWatchtower(deployer);
 
@@ -48,8 +50,13 @@ contract DeployMinimalCore is Script {
         );
 
         // 3. Deploy Enhancements
-        DecentralizedRelayerRegistry registry = new DecentralizedRelayerRegistry(deployer);
-        BridgeFraudProof fraudProof = new BridgeFraudProof(address(verifier), deployer);
+        DecentralizedRelayerRegistry registry = new DecentralizedRelayerRegistry(
+                deployer
+            );
+        BridgeFraudProof fraudProof = new BridgeFraudProof(
+            address(verifier),
+            deployer
+        );
 
         // 4. Configuration / Wiring
         verifier.grantRole(verifier.RESOLVER_ROLE(), address(fraudProof));
@@ -72,5 +79,10 @@ contract DeployMinimalCore is Script {
         console.log("  1. Verify contracts on BaseScan");
         console.log("  2. Fund relayer addresses with testnet ETH");
         console.log("  3. Configure cross-chain peer chains");
+        console.log("");
+        console.log("SECURITY REMINDER:");
+        console.log("  If deploying ProofCarryingContainer separately, call");
+        console.log("  lockVerificationMode() via multisig to permanently");
+        console.log("  enable real ZK proof verification (irreversible).");
     }
 }

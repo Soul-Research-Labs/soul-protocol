@@ -174,6 +174,10 @@ contract LayerZeroAdapter is ReentrancyGuard, AccessControl, Pausable {
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Initializes the adapter with a LayerZero endpoint and local EID
+    /// @param _lzEndpoint Address of the LayerZero V2 Endpoint contract
+    /// @param _localEid This chain's LayerZero endpoint ID
+    /// @param _admin Address to receive operator and guardian roles
     constructor(address _lzEndpoint, uint32 _localEid, address _admin) {
         if (_lzEndpoint == address(0)) revert InvalidEndpoint();
 

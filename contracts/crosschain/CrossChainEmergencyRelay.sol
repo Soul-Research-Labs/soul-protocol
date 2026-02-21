@@ -157,6 +157,8 @@ contract CrossChainEmergencyRelay is AccessControl, ReentrancyGuard, Pausable {
                            CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Initializes the emergency relay with admin roles and default heartbeat
+    /// @param _admin Address to receive all administrative and operational roles
     constructor(address _admin) {
         if (_admin == address(0)) revert ZeroAddress();
 

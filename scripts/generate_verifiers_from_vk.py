@@ -17,14 +17,22 @@ from pathlib import Path
 # BN254 curve prime (Fq)
 BN254_FQ = 21888242871839275222246405745257275088696311157297823662689037894645226208583
 
-# VK binary format: 3 header fields (32B each) + 28 G1points (128B each)
+# VK binary format: 3 header fields (32B each) + G1 points (128B each)
 HEADER_SIZE = 96  # 3 × 32 bytes
 G1_SIZE = 128     # 4 × 32 bytes (x_lo, x_hi, y_lo, y_hi in 136-bit limbs)
-NUM_POINTS = 28
-EXPECTED_VK_SIZE = HEADER_SIZE + NUM_POINTS * G1_SIZE  # 3680 bytes
+
+# Standard UltraHonk VK: 28 G1 points = 3680 bytes
+STANDARD_NUM_POINTS = 28
+STANDARD_VK_SIZE = HEADER_SIZE + STANDARD_NUM_POINTS * G1_SIZE  # 3680 bytes
+
+# Recursive/Aggregator UltraHonk VK: 32 G1 points = 4192 bytes
+# Recursive circuits add 4 extra IPA accumulator commitments:
+#   ipaClaimRemainder, ipaClaimQuotient, ipaClaimS0, ipaClaimS1
+RECURSIVE_NUM_POINTS = 32
+RECURSIVE_VK_SIZE = HEADER_SIZE + RECURSIVE_NUM_POINTS * G1_SIZE  # 4192 bytes
 
 # Binary serialization order of G1 commitments (from barretenberg ultra_flavor.hpp)
-BINARY_POINT_NAMES = [
+BINARY_POINT_NAMES_STANDARD = [
     "qm", "qc", "ql", "qr", "qo", "q4",
     "qLookup", "qArith", "qDeltaRange", "qElliptic", "qMemory", "qNnf",
     "qPoseidon2External", "qPoseidon2Internal",
@@ -34,8 +42,13 @@ BINARY_POINT_NAMES = [
     "lagrangeFirst", "lagrangeLast",
 ]
 
+# Recursive circuits have 4 extra IPA accumulator points
+BINARY_POINT_NAMES_RECURSIVE = BINARY_POINT_NAMES_STANDARD + [
+    "ipaClaimRemainder", "ipaClaimQuotient", "ipaClaimS0", "ipaClaimS1",
+]
+
 # Solidity field order in loadVerificationKey() (must match Honk.VerificationKey struct)
-SOL_FIELD_ORDER = [
+SOL_FIELD_ORDER_STANDARD = [
     "ql", "qr", "qo", "q4", "qm", "qc",
     "qLookup", "qArith", "qDeltaRange", "qElliptic", "qMemory", "qNnf",
     "qPoseidon2External", "qPoseidon2Internal",
@@ -44,6 +57,13 @@ SOL_FIELD_ORDER = [
     "id1", "id2", "id3", "id4",
     "lagrangeFirst", "lagrangeLast",
 ]
+
+SOL_FIELD_ORDER_RECURSIVE = SOL_FIELD_ORDER_STANDARD + [
+    "ipaClaimRemainder", "ipaClaimQuotient", "ipaClaimS0", "ipaClaimS1",
+]
+
+# Circuits known to use recursive verification (variable-size VK)
+RECURSIVE_CIRCUITS = {"aggregator"}
 
 # Circuits that need verifier generation (currently stubs)
 STUB_CIRCUITS = [
@@ -97,13 +117,42 @@ def verify_on_curve(x: int, y: int) -> bool:
     return lhs == rhs
 
 
-def parse_vk(vk_path: str) -> dict:
-    """Parse a binary VK file into structured data."""
+def parse_vk(vk_path: str, circuit_name: str = "") -> dict:
+    """Parse a binary VK file into structured data.
+    
+    Supports both standard (28-point) and recursive (32-point) VK formats.
+    Recursive circuits like the aggregator have 4 extra IPA accumulator commitments.
+    """
     with open(vk_path, "rb") as f:
         data = f.read()
 
-    if len(data) != EXPECTED_VK_SIZE:
-        raise ValueError(f"VK file size {len(data)} != expected {EXPECTED_VK_SIZE}")
+    is_recursive = circuit_name in RECURSIVE_CIRCUITS
+
+    if is_recursive:
+        expected = RECURSIVE_VK_SIZE
+        point_names = BINARY_POINT_NAMES_RECURSIVE
+        num_points = RECURSIVE_NUM_POINTS
+    else:
+        expected = STANDARD_VK_SIZE
+        point_names = BINARY_POINT_NAMES_STANDARD
+        num_points = STANDARD_NUM_POINTS
+
+    # Auto-detect format if size doesn't match expected
+    if len(data) == RECURSIVE_VK_SIZE and not is_recursive:
+        print(f"  NOTE: VK file is {len(data)} bytes — auto-detected as recursive format")
+        point_names = BINARY_POINT_NAMES_RECURSIVE
+        num_points = RECURSIVE_NUM_POINTS
+        is_recursive = True
+    elif len(data) == STANDARD_VK_SIZE and is_recursive:
+        print(f"  NOTE: VK file is {len(data)} bytes — using standard format for recursive circuit")
+        point_names = BINARY_POINT_NAMES_STANDARD
+        num_points = STANDARD_NUM_POINTS
+        is_recursive = False
+    elif len(data) != expected:
+        raise ValueError(
+            f"VK file size {len(data)} != expected {expected} "
+            f"(standard={STANDARD_VK_SIZE}, recursive={RECURSIVE_VK_SIZE})"
+        )
 
     log_n = read_uint256(data, 0)
     num_public_inputs = read_uint256(data, 32)
@@ -112,7 +161,7 @@ def parse_vk(vk_path: str) -> dict:
     n = 1 << log_n
 
     points = {}
-    for i, name in enumerate(BINARY_POINT_NAMES):
+    for i, name in enumerate(point_names):
         x, y = read_g1_point(data, i)
         if not verify_on_curve(x, y):
             raise ValueError(f"Point {name} is not on BN254 curve! x=0x{x:064x}, y=0x{y:064x}")
@@ -123,6 +172,7 @@ def parse_vk(vk_path: str) -> dict:
         "log_n": log_n,
         "num_public_inputs": num_public_inputs,
         "points": points,
+        "is_recursive": is_recursive,
     }
 
 
@@ -150,12 +200,17 @@ def generate_vk_library(circuit_name: str, vk_data: dict, vk_hash: str) -> str:
     log_n = vk_data["log_n"]
     num_pi = vk_data["num_public_inputs"]
     points = vk_data["points"]
+    is_recursive = vk_data.get("is_recursive", False)
+
+    sol_field_order = SOL_FIELD_ORDER_RECURSIVE if is_recursive else SOL_FIELD_ORDER_STANDARD
 
     lines = []
     lines.append(f"uint256 constant N = {n};")
     lines.append(f"uint256 constant LOG_N = {log_n};")
     lines.append(f"uint256 constant NUMBER_OF_PUBLIC_INPUTS = {num_pi};")
     lines.append(f"uint256 constant VK_HASH = {vk_hash};")
+    if is_recursive:
+        lines.append("uint256 constant IS_RECURSIVE = 1;")
 
     lines.append("library HonkVerificationKey {")
     lines.append("    function loadVerificationKey() internal pure returns (Honk.VerificationKey memory) {")
@@ -166,7 +221,7 @@ def generate_vk_library(circuit_name: str, vk_data: dict, vk_hash: str) -> str:
 
     # Emit points in Solidity field order
     point_lines = []
-    for name in SOL_FIELD_ORDER:
+    for name in sol_field_order:
         x, y = points[name]
         point_lines.append(format_point(name, x, y))
 
@@ -254,14 +309,21 @@ def main():
         vk_hash_file = vk_dir / "vk_hash"
 
         if not vk_file.exists():
-            print(f"SKIP: {circuit_name} — no VK file at {vk_file}")
+            is_recursive = circuit_name in RECURSIVE_CIRCUITS
+            hint = (
+                " (recursive circuit — compile with `nargo compile` then "
+                "`bb write_vk_ultra_honk -b target/aggregator.json -o target/aggregator_vk/vk`)"
+                if is_recursive
+                else ""
+            )
+            print(f"SKIP: {circuit_name} — no VK file at {vk_file}{hint}")
             fail_count += 1
             continue
 
         print(f"\nProcessing: {circuit_name}")
 
         try:
-            vk_data = parse_vk(str(vk_file))
+            vk_data = parse_vk(str(vk_file), circuit_name)
             print(f"  N={vk_data['n']}, LOG_N={vk_data['log_n']}, PUBLIC_INPUTS={vk_data['num_public_inputs']}")
 
             if vk_hash_file.exists():

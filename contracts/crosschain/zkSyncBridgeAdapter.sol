@@ -175,18 +175,26 @@ contract zkSyncBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
                         BRIDGE INTERFACE
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Get the zkSync Era mainnet chain ID
+    /// @return The chain ID (324)
     function chainId() external pure returns (uint256) {
         return ZKSYNC_CHAIN_ID;
     }
 
+    /// @notice Get the human-readable chain name
+    /// @return The chain name string
     function chainName() external pure returns (string memory) {
         return "zkSync Era";
     }
 
+    /// @notice Check whether the adapter is fully configured
+    /// @return True if both zkSyncDiamond and soulHubL2 are set
     function isConfigured() external view returns (bool) {
         return zkSyncDiamond != address(0) && soulHubL2 != address(0);
     }
 
+    /// @notice Get the number of blocks required for finality
+    /// @return The finality block count
     function getFinalityBlocks() external pure returns (uint256) {
         return FINALITY_BLOCKS;
     }
@@ -357,10 +365,12 @@ contract zkSyncBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
                         ADMIN FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Pause the adapter (emergency use)
     function pause() external onlyRole(PAUSER_ROLE) {
         _pause();
     }
 
+    /// @notice Resume the adapter after a pause
     function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }

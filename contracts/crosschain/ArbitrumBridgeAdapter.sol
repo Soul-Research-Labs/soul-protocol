@@ -582,6 +582,7 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
      * @param l2Timestamp Timestamp of the withdrawal on L2
      * @param outputId Unique output identifier from the Arbitrum Outbox
      * @return withdrawalId Unique identifier for tracking this withdrawal
+     * @dev The last parameter (chainId) is reserved for multi-rollup support
      */
     function registerWithdrawal(
         address l2Sender,
@@ -637,6 +638,8 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     /**
      * @notice Claim a withdrawal after challenge period
      * @param withdrawalId Unique identifier of the withdrawal to claim
+     * @dev The proof (bytes32[]) and index (uint256) parameters are reserved for
+     *      Outbox merkle verification but currently unnamed in the signature
      */
     function claimWithdrawal(
         bytes32 withdrawalId,

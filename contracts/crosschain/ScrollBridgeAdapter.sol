@@ -105,6 +105,11 @@ contract ScrollBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
                             CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Initializes the Scroll bridge adapter with required infrastructure addresses
+    /// @param _scrollMessenger Address of the Scroll Messenger contract
+    /// @param _gatewayRouter Address of the Scroll Gateway Router
+    /// @param _rollupContract Address of the Scroll Rollup contract
+    /// @param _admin Address to receive admin and operator roles
     constructor(
         address _scrollMessenger,
         address _gatewayRouter,
@@ -282,10 +287,12 @@ contract ScrollBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
                         ADMIN FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Pause all bridge operations
     function pause() external onlyRole(PAUSER_ROLE) {
         _pause();
     }
 
+    /// @notice Unpause bridge operations
     function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }

@@ -827,13 +827,11 @@ contract DirectL2Messenger is
             (bool success, ) = challenger.call{value: totalReward}("");
             if (!success) revert TransferFailed();
         } else {
-            // Challenge failed: message is valid, return bond to challenger
-            msg_.status = MessageStatus.EXECUTED;
+            // Challenge failed: message is valid, it can now be executed
+            msg_.status = MessageStatus.RELAYED;
 
-            // SECURITY FIX H-6: Return challenger bond on failed challenge
-            // Honest challengers shouldn't be penalized for good-faith attempts
-            (bool bondSuccess, ) = challenger.call{value: bond}("");
-            if (!bondSuccess) revert TransferFailed();
+            // FIX: Removed bond refund to prevent costless DoS.
+            // The bond is forfeited to the protocol to disincentivize spam challenges.
         }
 
         emit ChallengeResolved(

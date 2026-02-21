@@ -563,6 +563,7 @@ contract LayerZeroBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
      * @param receiver Receiver address on destination (bytes32)
      * @param message Encoded message payload
      * @param options Message options (gas, value, etc.)
+     * @return guid Globally unique identifier assigned to this message
      */
     function lzSend(
         uint32 dstEid,

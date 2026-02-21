@@ -694,9 +694,14 @@ contract BatchAccumulatorTest is Test {
             TARGET_CHAIN
         );
 
+        // H-12: invalid proof sets FAILED status instead of reverting
         vm.prank(relayer);
-        vm.expectRevert(BatchAccumulator.InvalidProof.selector);
         acc2.processBatch(batchId, abi.encodePacked(bytes32(uint256(1))));
+
+        (, , BatchAccumulator.BatchStatus status, , ) = acc2.getBatchInfo(
+            batchId
+        );
+        assertEq(uint8(status), uint8(BatchAccumulator.BatchStatus.FAILED));
     }
 
     function test_processBatch_emitsBatchCompleted() public {

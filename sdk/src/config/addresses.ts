@@ -50,6 +50,15 @@ export interface SoulContractAddresses {
   // Relayer
   relayerFeeMarket?: Hex;
   relayerStaking?: Hex;
+  decentralizedRelayerRegistry?: Hex;
+
+  // L2 Cross-Chain Infrastructure
+  privacyZoneManager?: Hex;
+  soulCrossChainRelay?: Hex;
+  optimisticBridgeVerifier?: Hex;
+  bridgeRateLimiter?: Hex;
+  bridgeWatchtower?: Hex;
+  bridgeFraudProof?: Hex;
 
   // Governance
   governor?: Hex;
@@ -96,9 +105,18 @@ export const SEPOLIA_ADDRESSES: SoulContractAddresses = {
 export const ARBITRUM_SEPOLIA_ADDRESSES: Partial<SoulContractAddresses> = {};
 
 /**
- * Base Sepolia - Not yet deployed
+ * Base Sepolia - Deployed July 22, 2026
+ * L2 cross-chain & relayer infrastructure
  */
-export const BASE_SEPOLIA_ADDRESSES: Partial<SoulContractAddresses> = {};
+export const BASE_SEPOLIA_ADDRESSES: Partial<SoulContractAddresses> = {
+  privacyZoneManager: "0xDFBEe5bB4d4943715D4f8539cbad0a18aA75b602",
+  soulCrossChainRelay: "0x65CDCdA5ba98bB0d784c3a69C826cb3B59C20251",
+  optimisticBridgeVerifier: "0xBA63a3F3C5568eC6447FBe1b852a613743419D9f",
+  bridgeRateLimiter: "0x23824cDbD8Ca773c5DA0202f8f41083F81aF1135",
+  bridgeWatchtower: "0x3E556432Ea021046ad4BE22cB94f713f98f4B76E",
+  decentralizedRelayerRegistry: "0x2472BDB087590e4F4F4bE1243ec9533828eC0D9d",
+  bridgeFraudProof: "0x583E650c0385FEd1E427dF68fa91b2d8E56Df20f",
+};
 
 /**
  * Optimism Sepolia - Not yet deployed
@@ -129,8 +147,9 @@ export function getAddresses(
       return SEPOLIA_ADDRESSES;
     case 31337: // Localhost (Hardhat/Anvil)
       return LOCALHOST_ADDRESSES;
-    case 421614: // Arbitrum Sepolia
     case 84532: // Base Sepolia
+      return BASE_SEPOLIA_ADDRESSES;
+    case 421614: // Arbitrum Sepolia
     case 11155420: // Optimism Sepolia
       return null; // Not yet deployed
     default:
@@ -138,5 +157,5 @@ export function getAddresses(
   }
 }
 
-export const SUPPORTED_CHAIN_IDS = [11155111, 31337] as const;
+export const SUPPORTED_CHAIN_IDS = [11155111, 84532, 31337] as const;
 export type SupportedChainId = (typeof SUPPORTED_CHAIN_IDS)[number];

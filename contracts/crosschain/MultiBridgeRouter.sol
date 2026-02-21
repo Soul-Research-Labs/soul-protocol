@@ -40,6 +40,9 @@ contract MultiBridgeRouter is AccessControl, ReentrancyGuard {
     event MessageExecuted(bytes32 indexed messageId, address target);
     event AdapterSendFailed(address indexed adapter, string reason);
 
+    /// @notice Initializes the router with N-of-M confirmation threshold
+    /// @param _admin Address to receive admin roles
+    /// @param _requiredConfirmations Minimum bridge confirmations required (N)
     constructor(address _admin, uint256 _requiredConfirmations) {
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(ADMIN_ROLE, _admin);

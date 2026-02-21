@@ -128,9 +128,13 @@ contract BatchAccumulatorSecurityTest is Test {
         RejectingVerifier rejector = new RejectingVerifier();
         accumulator.setProofVerifier(address(rejector));
 
+        // H-12: invalid proof sets FAILED status instead of reverting
         vm.prank(relayer);
-        vm.expectRevert(BatchAccumulator.InvalidProof.selector);
         accumulator.processBatch(batchId, bytes(""));
+
+        (, , BatchAccumulator.BatchStatus status2, , ) = accumulator
+            .getBatchInfo(batchId);
+        assertEq(uint8(status2), uint8(BatchAccumulator.BatchStatus.FAILED));
     }
 
     /// @notice Attack: Reject short proof when no verifier configured
@@ -167,9 +171,12 @@ contract BatchAccumulatorSecurityTest is Test {
             keccak256(abi.encodePacked(block.chainid, uint256(10)))
         );
 
+        // H-12: invalid proof sets FAILED status instead of reverting
         vm.prank(relayer);
-        vm.expectRevert(BatchAccumulator.InvalidProof.selector);
-        acc2.processBatch(bid, bytes(new bytes(100))); // short proof
+        acc2.processBatch(bid, bytes(new bytes(100)));
+
+        (, , BatchAccumulator.BatchStatus status, , ) = acc2.getBatchInfo(bid);
+        assertEq(uint8(status), uint8(BatchAccumulator.BatchStatus.FAILED));
     }
 
     /*//////////////////////////////////////////////////////////////

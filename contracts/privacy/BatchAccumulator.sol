@@ -439,9 +439,12 @@ contract BatchAccumulator is
         // Verify aggregate proof
         bool valid = _verifyAggregateProof(batchId, aggregateProof);
         if (!valid) {
+            // SECURITY FIX H-12: Prevent perpetual block on failed proofs.
+            // Do not revert so that the FAILED state is persisted and the
+            // batch can be retried or handled later, and the route unblocked.
             batch.status = BatchStatus.FAILED;
             emit BatchFailed(batchId, "INVALID_PROOF");
-            revert InvalidProof();
+            return;
         }
 
         // Mark all transactions as processed

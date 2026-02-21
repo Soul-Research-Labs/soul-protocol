@@ -261,9 +261,8 @@ contract BridgeWatchtowerTest is Test {
     }
 
     function test_ReportFinalization_Confirmed() public {
-        // With 3 watchtowers, threshold = 3 * 6666 / 10000 = 1 (rounds down)
-        // Reporter auto-confirms, so 1 confirmation = finalized immediately
-        // Let's use 4 watchtowers: threshold = 4 * 6666 / 10000 = 2
+        // With 4 watchtowers, ceiling threshold = (4 * 6666 + 9999) / 10000 = 3
+        // Reporter auto-confirms (1), need 2 more votes to reach threshold of 3
         _registerWatchtowers(4);
         vm.prank(wt1);
         bytes32 reportId = watchtower.submitReport(
@@ -271,8 +270,10 @@ contract BridgeWatchtowerTest is Test {
             keccak256("bad_proof"),
             hex"dead"
         );
-        // wt1 auto-confirmed (1 confirmation), need 2 more to reach threshold of 2
+        // wt1 auto-confirmed (1), wt2 confirms (2), wt3 confirms (3) = threshold met
         vm.prank(wt2);
+        watchtower.voteOnReport(reportId, true);
+        vm.prank(wt3);
         watchtower.voteOnReport(reportId, true);
         BridgeWatchtower.AnomalyReport memory report = watchtower.getReport(
             reportId
@@ -291,10 +292,12 @@ contract BridgeWatchtowerTest is Test {
             keccak256("maybe_bad"),
             hex"0001"
         );
-        // Need 2 rejections (threshold for 4 watchtowers)
+        // Need 3 rejections (ceiling threshold for 4 watchtowers)
         vm.prank(wt2);
         watchtower.voteOnReport(reportId, false);
         vm.prank(wt3);
+        watchtower.voteOnReport(reportId, false);
+        vm.prank(wt4);
         watchtower.voteOnReport(reportId, false);
         BridgeWatchtower.AnomalyReport memory report = watchtower.getReport(
             reportId
@@ -317,10 +320,12 @@ contract BridgeWatchtowerTest is Test {
             keccak256("false_alarm"),
             hex"0002"
         );
-        // Reject it
+        // Reject it — need 3 rejections (ceiling threshold for 4 watchtowers)
         vm.prank(wt2);
         watchtower.voteOnReport(reportId, false);
         vm.prank(wt3);
+        watchtower.voteOnReport(reportId, false);
+        vm.prank(wt4);
         watchtower.voteOnReport(reportId, false);
 
         BridgeWatchtower.Watchtower memory infoAfter = watchtower
@@ -481,8 +486,8 @@ contract BridgeWatchtowerTest is Test {
     function test_GetRequiredConfirmations() public {
         _registerWatchtowers(4);
         uint256 required = watchtower.getRequiredConfirmations();
-        // 4 * 6666 / 10000 = 2
-        assertEq(required, 2);
+        // Ceiling: (4 * 6666 + 9999) / 10000 = 3
+        assertEq(required, 3);
     }
 
     function test_Constants() public view {

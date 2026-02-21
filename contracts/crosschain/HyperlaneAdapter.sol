@@ -188,6 +188,10 @@ contract HyperlaneAdapter is ReentrancyGuard, AccessControl, Pausable {
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Initializes the adapter with a Hyperlane Mailbox and local domain
+    /// @param _mailbox Address of the Hyperlane Mailbox contract
+    /// @param _localDomain Local Hyperlane domain ID for this chain
+    /// @param _admin Address to receive operator and guardian roles
     constructor(address _mailbox, uint32 _localDomain, address _admin) {
         if (_mailbox == address(0)) revert InvalidMailbox();
 

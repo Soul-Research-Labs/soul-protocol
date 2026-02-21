@@ -599,7 +599,7 @@ contract MultiBridgeRouter is AccessControl, ReentrancyGuard, Pausable {
         BridgeType bridgeType,
         uint256 chainId,
         bytes calldata message,
-        bytes32 messageHash
+        bytes32 /* messageHash */
     ) internal returns (bool success) {
         BridgeConfig storage bridge = bridges[bridgeType];
 
@@ -611,7 +611,14 @@ contract MultiBridgeRouter is AccessControl, ReentrancyGuard, Pausable {
         try this._callBridge(bridge.adapter, chainId, message) {
             bridge.successCount++;
             return true;
-        } catch {
+        } catch (bytes memory returnData) {
+            // SECURITY FIX H-9: Prevent OOG padding attacks
+            // If the return data is empty, it was likely an Out-Of-Gas error
+            // induced maliciously by the caller. Revert instead of degrading.
+            if (returnData.length == 0) {
+                revert("OOG or low-level error");
+            }
+
             bridge.failureCount++;
             bridge.lastFailureTime = block.timestamp;
             _checkBridgeHealth(bridgeType);

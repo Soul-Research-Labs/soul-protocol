@@ -284,6 +284,7 @@ contract EthereumL1Bridge is AccessControl, ReentrancyGuard, Pausable {
                              CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Initializes the bridge with default roles and pre-configured L2 chains
     constructor() {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(OPERATOR_ROLE, msg.sender);

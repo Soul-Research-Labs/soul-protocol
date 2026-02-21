@@ -195,6 +195,7 @@ contract OptimismBridgeAdapter is
                              CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Initialize the Optimism bridge adapter
     /// @param _admin Admin address granted all roles
     constructor(address _admin) {
         if (_admin == address(0)) revert ZeroAddress();

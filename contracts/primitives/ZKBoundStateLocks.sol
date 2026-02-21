@@ -630,12 +630,23 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
         }
 
         ZKSLock storage lock = locks[lockId];
+        if (lock.isUnlocked) revert LockAlreadyUnlocked(lockId);
+
+        // Cache before deletion
+        address unlocker = optimistic.unlocker;
+        uint256 bondAmount = optimistic.bondAmount;
+        bytes32 newStateCommitment = optimistic.newStateCommitment;
+        bytes32 nullifier = optimistic.nullifier;
+
+        // SECURITY FIX: Delete the optimistic unlock BEFORE external calls to prevent re-entrancy
+        // and prevent multiple finalizations from draining the contract
+        delete optimisticUnlocks[lockId];
 
         // Execute unlock
         _executeUnlock(
             lockId,
-            optimistic.newStateCommitment,
-            optimistic.nullifier,
+            newStateCommitment,
+            nullifier,
             lock.domainSeparator
         );
 
@@ -643,12 +654,10 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
         // SECURITY: transfer() only forwards 2300 gas which fails for:
         // - Smart contract wallets with receive() logic
         // - After EIP-1884 gas cost changes
-        (bool success, ) = payable(optimistic.unlocker).call{
-            value: optimistic.bondAmount
-        }("");
+        (bool success, ) = payable(unlocker).call{value: bondAmount}("");
         if (!success) revert ETHTransferFailed();
 
-        emit OptimisticUnlockFinalized(lockId, optimistic.unlocker);
+        emit OptimisticUnlockFinalized(lockId, unlocker);
     }
 
     /**

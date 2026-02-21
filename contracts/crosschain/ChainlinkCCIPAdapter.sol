@@ -38,23 +38,28 @@ contract ChainlinkCCIPAdapter is IBridgeAdapter, Ownable {
 
     event MessageSent(bytes32 indexed messageId, uint256 fees);
 
+    /// @notice Initializes the adapter with a Chainlink CCIP router and destination selector
+    /// @param _router Address of the Chainlink CCIP Router contract
+    /// @param _selector CCIP chain selector for the destination chain
     constructor(address _router, uint64 _selector) Ownable(msg.sender) {
         i_router = IRouterClient(_router);
         destinationChainSelector = _selector;
     }
 
+    /// @inheritdoc IBridgeAdapter
     function bridgeMessage(
         address targetAddress,
         bytes calldata payload,
         address /*refundAddress*/
     ) external payable override returns (bytes32 messageId) {
-        IRouterClient.EVM2AnyMessage memory evmMessage = IRouterClient.EVM2AnyMessage({
-            receiver: abi.encode(targetAddress),
-            data: payload,
-            tokenAmounts: new address[](0),
-            feeToken: address(0), // Pay in native
-            extraArgs: "" // Default args
-        });
+        IRouterClient.EVM2AnyMessage memory evmMessage = IRouterClient
+            .EVM2AnyMessage({
+                receiver: abi.encode(targetAddress),
+                data: payload,
+                tokenAmounts: new address[](0),
+                feeToken: address(0), // Pay in native
+                extraArgs: "" // Default args
+            });
 
         // Get fee
         uint256 fee = i_router.getFee(destinationChainSelector, evmMessage);
@@ -66,7 +71,7 @@ contract ChainlinkCCIPAdapter is IBridgeAdapter, Ownable {
         );
 
         emit MessageSent(messageId, fee);
-        
+
         // Refund excess?
         uint256 excess = msg.value - fee;
         if (excess > 0) {
@@ -75,26 +80,30 @@ contract ChainlinkCCIPAdapter is IBridgeAdapter, Ownable {
         }
     }
 
+    /// @inheritdoc IBridgeAdapter
     function estimateFee(
         address targetAddress,
         bytes calldata payload
     ) external view override returns (uint256 nativeFee) {
-        IRouterClient.EVM2AnyMessage memory evmMessage = IRouterClient.EVM2AnyMessage({
-            receiver: abi.encode(targetAddress),
-            data: payload,
-            tokenAmounts: new address[](0),
-            feeToken: address(0),
-            extraArgs: ""
-        });
+        IRouterClient.EVM2AnyMessage memory evmMessage = IRouterClient
+            .EVM2AnyMessage({
+                receiver: abi.encode(targetAddress),
+                data: payload,
+                tokenAmounts: new address[](0),
+                feeToken: address(0),
+                extraArgs: ""
+            });
 
         return i_router.getFee(destinationChainSelector, evmMessage);
     }
-    
-    // Manual verification check mock
-    function isMessageverified(bytes32 messageId) external view override returns (bool) {
+
+    /// @inheritdoc IBridgeAdapter
+    function isMessageverified(
+        bytes32 messageId
+    ) external view override returns (bool) {
         return verifiedMessages[messageId];
     }
-    
+
     // Callback?
     // In real CCIP, the router calls ccipReceive on the receiver contract.
     // This adapter sends messages. Receiving is handled by the Soul architecture separately?

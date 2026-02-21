@@ -18,6 +18,12 @@ export interface ProofResult {
   publicInputs: string[];
   /** Hex-encoded proof for contract calls */
   proofHex: Hex;
+  /**
+   * Whether this proof is a placeholder (not cryptographically valid).
+   * Placeholder proofs are only generated in `'development'` mode and
+   * will always fail on-chain verification.
+   */
+  isPlaceholder: boolean;
 }
 
 export interface CircuitArtifact {
@@ -143,7 +149,25 @@ export class NoirProver {
   public readonly mode: ProverMode;
 
   constructor(options?: ProverOptions) {
-    this.mode = options?.mode ?? "development";
+    this.mode = options?.mode ?? NoirProver.detectMode();
+  }
+
+  /**
+   * Detect the appropriate prover mode from the environment.
+   * Returns `'production'` when `NODE_ENV === 'production'`, otherwise `'development'`.
+   */
+  private static detectMode(): ProverMode {
+    try {
+      if (
+        typeof process !== "undefined" &&
+        process.env?.NODE_ENV === "production"
+      ) {
+        return "production";
+      }
+    } catch {
+      // process may not exist in browser environments
+    }
+    return "development";
   }
 
   /**
@@ -282,6 +306,7 @@ export class NoirProver {
         proof: new Uint8Array(proof),
         publicInputs,
         proofHex: `0x${Buffer.from(proof).toString("hex")}` as Hex,
+        isPlaceholder: false,
       };
     } catch (e: any) {
       // SECURITY: Do NOT silently fallback to placeholder proofs.
@@ -354,6 +379,7 @@ export class NoirProver {
       proof: proofBytes,
       publicInputs,
       proofHex: `0x${Buffer.from(proofBytes).toString("hex")}` as Hex,
+      isPlaceholder: true,
     };
   }
 
@@ -526,8 +552,8 @@ let _prover: NoirProver | null = null;
 
 /**
  * Get the global prover instance.
- * Uses `'development'` mode by default for backward compatibility.
- * Pass `options` to create a singleton in a different mode.
+ * Auto-detects mode from `NODE_ENV` (production when `NODE_ENV === 'production'`).
+ * Pass `options` to override the detected mode.
  */
 export async function getProver(options?: ProverOptions): Promise<NoirProver> {
   if (!_prover) {

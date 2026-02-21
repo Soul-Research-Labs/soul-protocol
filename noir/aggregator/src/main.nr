@@ -23,6 +23,16 @@ global MAX_BATCH_SIZE: u32 = 4;
 /// Number of public inputs per sub-proof (state_transfer format)
 global PUB_INPUTS_PER_PROOF: u32 = 7;
 
+/// UltraHonk recursive proof length (PROOF_LENGTH_WITHOUT_PUB_INPUTS + pairing points)
+/// Ref: bb_proof_verification library from Barretenberg team
+global HONK_PROOF_SIZE: u32 = 457;
+
+/// UltraHonk verification key length in fields
+global HONK_VK_SIZE: u32 = 115;
+
+/// UltraHonk proof type identifier (non-ZK)
+global PROOF_TYPE_HONK: u32 = 0;
+
 /// Simple Poseidon-like hash for committing to a set of fields
 /// Uses repeated hashing since we can't import poseidon in the recursive context
 fn commit_fields(fields: [Field; 7]) -> Field {
@@ -40,26 +50,26 @@ fn main(
     batch_id: pub Field,             // Unique batch identifier
 
     // -- Proof 0 --
-    vk_0: [Field; 115],
-    proof_0: [Field; 100],
+    vk_0: [Field; HONK_VK_SIZE],
+    proof_0: [Field; HONK_PROOF_SIZE],
     pub_inputs_0: [Field; 7],
     key_hash_0: Field,
 
     // -- Proof 1 --
-    vk_1: [Field; 115],
-    proof_1: [Field; 100],
+    vk_1: [Field; HONK_VK_SIZE],
+    proof_1: [Field; HONK_PROOF_SIZE],
     pub_inputs_1: [Field; 7],
     key_hash_1: Field,
 
     // -- Proof 2 --
-    vk_2: [Field; 115],
-    proof_2: [Field; 100],
+    vk_2: [Field; HONK_VK_SIZE],
+    proof_2: [Field; HONK_PROOF_SIZE],
     pub_inputs_2: [Field; 7],
     key_hash_2: Field,
 
     // -- Proof 3 --
-    vk_3: [Field; 115],
-    proof_3: [Field; 100],
+    vk_3: [Field; HONK_VK_SIZE],
+    proof_3: [Field; HONK_PROOF_SIZE],
     pub_inputs_3: [Field; 7],
     key_hash_3: Field,
 
@@ -71,21 +81,21 @@ fn main(
     assert(batch_size as u32 <= MAX_BATCH_SIZE);
 
     // -- Always verify proof 0 (batch_size >= 1) --
-    verify_proof_with_type(vk_0, proof_0, pub_inputs_0, key_hash_0, 0);
+    verify_proof_with_type(vk_0, proof_0, pub_inputs_0, key_hash_0, PROOF_TYPE_HONK);
 
     // -- Conditionally verify proof 1 --
     if batch_size as u32 >= 2 {
-        verify_proof_with_type(vk_1, proof_1, pub_inputs_1, key_hash_1, 0);
+        verify_proof_with_type(vk_1, proof_1, pub_inputs_1, key_hash_1, PROOF_TYPE_HONK);
     }
 
     // -- Conditionally verify proof 2 --
     if batch_size as u32 >= 3 {
-        verify_proof_with_type(vk_2, proof_2, pub_inputs_2, key_hash_2, 0);
+        verify_proof_with_type(vk_2, proof_2, pub_inputs_2, key_hash_2, PROOF_TYPE_HONK);
     }
 
     // -- Conditionally verify proof 3 --
     if batch_size as u32 >= 4 {
-        verify_proof_with_type(vk_3, proof_3, pub_inputs_3, key_hash_3, 0);
+        verify_proof_with_type(vk_3, proof_3, pub_inputs_3, key_hash_3, PROOF_TYPE_HONK);
     }
 
     // Return the aggregation object for chaining

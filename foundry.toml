@@ -1,7 +1,13 @@
 [profile.default]
+remappings = [
+    "@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/",
+    "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
+    "forge-std/=lib/forge-std/src/",
+    "halmos-cheatcodes/=lib/openzeppelin-contracts/lib/halmos-cheatcodes/src/",
+]
 src = "contracts"
 out = "out"
-libs = ["node_modules", "lib"]
+libs = ["lib"]
 test = "test"
 cache_path = "forge-cache"
 solc_version = "0.8.24"
@@ -21,7 +27,7 @@ additional_compiler_profiles = [{ name = "low-opt", via_ir = true, optimizer = t
 compilation_restrictions = [
     { paths = "contracts/verifiers/generated/**", max_optimizer_runs = 200 },
     { paths = "lib/openzeppelin-contracts/**", max_optimizer_runs = 200 },
-    { paths = "node_modules/@openzeppelin/**", max_optimizer_runs = 200 },
+    { paths = "lib/openzeppelin-contracts-upgradeable/**", max_optimizer_runs = 200 },
 ]
 
 # Gas reporting for optimization tracking
@@ -72,12 +78,6 @@ out = "docs/foundry"
 title = "Soul Protocol - Cross-Chain ZK Privacy Middleware"
 repository = "https://github.com/Soul-Research-Labs/SOUL"
 
-# Remappings for OpenZeppelin and other dependencies
-remappings = [
-    "@openzeppelin/=node_modules/@openzeppelin/",
-    "forge-std/=lib/forge-std/src/",
-    "halmos-cheatcodes/=lib/openzeppelin-contracts/lib/halmos-cheatcodes/src/",
-]
 
 # RPC endpoints for forking (use environment variables)
 [rpc_endpoints]

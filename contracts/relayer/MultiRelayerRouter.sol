@@ -358,10 +358,12 @@ contract MultiRelayerRouter is
                          ADMIN FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Pause all relay operations (admin only)
     function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
 
+    /// @notice Unpause relay operations (admin only)
     function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }

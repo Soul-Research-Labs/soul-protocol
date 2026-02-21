@@ -95,6 +95,9 @@ contract DataAvailabilityOracle is
     /// @notice Attestation tracking: commitmentId => attestor => attested
     mapping(bytes32 => mapping(address => bool)) public attestations;
 
+    /// @notice SECURITY FIX C-3: Track list of attestors per commitment for slashing
+    mapping(bytes32 => address[]) public commitmentAttestors;
+
     /// @notice Challenge records
     mapping(bytes32 => Challenge) internal _challenges;
 
@@ -132,14 +135,11 @@ contract DataAvailabilityOracle is
         uint256 dataSize,
         string calldata storageURI,
         uint64 ttlSeconds
-    )
-        external
-        whenNotPaused
-        returns (bytes32 commitmentId)
-    {
+    ) external whenNotPaused returns (bytes32 commitmentId) {
         if (payloadHash == bytes32(0)) revert InvalidPayloadHash();
         if (bytes(storageURI).length == 0) revert InvalidStorageURI();
-        if (dataSize == 0 || dataSize > MAX_PAYLOAD_SIZE) revert InvalidPayloadHash();
+        if (dataSize == 0 || dataSize > MAX_PAYLOAD_SIZE)
+            revert InvalidPayloadHash();
 
         uint64 ttl = ttlSeconds > 0 ? ttlSeconds : DEFAULT_TTL;
 
@@ -181,24 +181,28 @@ contract DataAvailabilityOracle is
     }
 
     /// @inheritdoc IDataAvailabilityOracle
-    function attestAvailability(bytes32 commitmentId)
-        external
-        whenNotPaused
-    {
+    function attestAvailability(bytes32 commitmentId) external whenNotPaused {
         DACommitment storage commitment = _commitments[commitmentId];
-        if (commitment.submittedAt == 0) revert CommitmentDoesNotExist(commitmentId);
-        if (commitment.status != CommitmentStatus.Pending && commitment.status != CommitmentStatus.Attested) {
+        if (commitment.submittedAt == 0)
+            revert CommitmentDoesNotExist(commitmentId);
+        if (
+            commitment.status != CommitmentStatus.Pending &&
+            commitment.status != CommitmentStatus.Attested
+        ) {
             revert CommitmentNotPending(commitmentId);
         }
-        if (block.timestamp > commitment.expiresAt) revert CommitmentExpired(commitmentId);
+        if (block.timestamp > commitment.expiresAt)
+            revert CommitmentExpired(commitmentId);
 
         // Verify attestor is registered and active
         Attestor storage attestor = _attestors[msg.sender];
         if (!attestor.active) revert NotActiveAttestor(msg.sender);
-        if (attestations[commitmentId][msg.sender]) revert AlreadyAttested(commitmentId, msg.sender);
+        if (attestations[commitmentId][msg.sender])
+            revert AlreadyAttested(commitmentId, msg.sender);
 
         // Record attestation
         attestations[commitmentId][msg.sender] = true;
+        commitmentAttestors[commitmentId].push(msg.sender); // SECURITY FIX C-3: Track for slashing
 
         unchecked {
             ++commitment.attestationCount;
@@ -210,7 +214,11 @@ contract DataAvailabilityOracle is
             commitment.status = CommitmentStatus.Attested;
         }
 
-        emit AvailabilityAttested(commitmentId, msg.sender, commitment.attestationCount);
+        emit AvailabilityAttested(
+            commitmentId,
+            msg.sender,
+            commitment.attestationCount
+        );
     }
 
     // ============================================
@@ -218,7 +226,9 @@ contract DataAvailabilityOracle is
     // ============================================
 
     /// @inheritdoc IDataAvailabilityOracle
-    function challengeAvailability(bytes32 commitmentId)
+    function challengeAvailability(
+        bytes32 commitmentId
+    )
         external
         payable
         nonReentrant
@@ -230,7 +240,8 @@ contract DataAvailabilityOracle is
         }
 
         DACommitment storage commitment = _commitments[commitmentId];
-        if (commitment.submittedAt == 0) revert CommitmentDoesNotExist(commitmentId);
+        if (commitment.submittedAt == 0)
+            revert CommitmentDoesNotExist(commitmentId);
         if (commitment.status == CommitmentStatus.Unavailable) {
             revert CommitmentNotPending(commitmentId);
         }
@@ -251,7 +262,8 @@ contract DataAvailabilityOracle is
             challenger: msg.sender,
             challengerBond: msg.value,
             raisedAt: uint64(block.timestamp),
-            responseDeadline: uint64(block.timestamp) + CHALLENGE_RESPONSE_PERIOD,
+            responseDeadline: uint64(block.timestamp) +
+                CHALLENGE_RESPONSE_PERIOD,
             resolved: false,
             challengerWon: false
         });
@@ -266,10 +278,10 @@ contract DataAvailabilityOracle is
     }
 
     /// @inheritdoc IDataAvailabilityOracle
-    function resolveChallenge(bytes32 challengeId, bytes calldata retrievalProof)
-        external
-        nonReentrant
-    {
+    function resolveChallenge(
+        bytes32 challengeId,
+        bytes calldata retrievalProof
+    ) external nonReentrant {
         Challenge storage challenge = _challenges[challengeId];
         if (challenge.raisedAt == 0) revert ChallengeDoesNotExist(challengeId);
         if (challenge.resolved) revert ChallengeAlreadyResolved(challengeId);
@@ -305,10 +317,9 @@ contract DataAvailabilityOracle is
     }
 
     /// @inheritdoc IDataAvailabilityOracle
-    function finalizeExpiredChallenge(bytes32 challengeId)
-        external
-        nonReentrant
-    {
+    function finalizeExpiredChallenge(
+        bytes32 challengeId
+    ) external nonReentrant {
         Challenge storage challenge = _challenges[challengeId];
         if (challenge.raisedAt == 0) revert ChallengeDoesNotExist(challengeId);
         if (challenge.resolved) revert ChallengeAlreadyResolved(challengeId);
@@ -324,11 +335,15 @@ contract DataAvailabilityOracle is
         commitment.status = CommitmentStatus.Unavailable;
 
         // Return challenger bond + slash attestors
-        uint256 totalSlashed = _slashCommitmentAttestors(challenge.commitmentId);
+        uint256 totalSlashed = _slashCommitmentAttestors(
+            challenge.commitmentId
+        );
         uint256 challengerReward = challenge.challengerBond + totalSlashed;
 
         // Transfer reward to challenger
-        (bool success, ) = challenge.challenger.call{value: challengerReward}("");
+        (bool success, ) = challenge.challenger.call{value: challengerReward}(
+            ""
+        );
         require(success, "Transfer failed");
 
         emit ChallengeResolved(challengeId, true, totalSlashed);
@@ -339,11 +354,7 @@ contract DataAvailabilityOracle is
     // ============================================
 
     /// @inheritdoc IDataAvailabilityOracle
-    function registerAttestor()
-        external
-        payable
-        nonReentrant
-    {
+    function registerAttestor() external payable nonReentrant {
         if (msg.value < MIN_ATTESTOR_STAKE) {
             revert InsufficientStake(msg.value, MIN_ATTESTOR_STAKE);
         }
@@ -370,10 +381,7 @@ contract DataAvailabilityOracle is
     }
 
     /// @inheritdoc IDataAvailabilityOracle
-    function exitAttestor()
-        external
-        nonReentrant
-    {
+    function exitAttestor() external nonReentrant {
         Attestor storage attestor = _attestors[msg.sender];
         if (!attestor.active) revert NotActiveAttestor(msg.sender);
 
@@ -396,7 +404,9 @@ contract DataAvailabilityOracle is
     // ============================================
 
     /// @inheritdoc IDataAvailabilityOracle
-    function getCommitment(bytes32 commitmentId) external view returns (DACommitment memory) {
+    function getCommitment(
+        bytes32 commitmentId
+    ) external view returns (DACommitment memory) {
         return _commitments[commitmentId];
     }
 
@@ -406,14 +416,20 @@ contract DataAvailabilityOracle is
     }
 
     /// @inheritdoc IDataAvailabilityOracle
-    function getChallenge(bytes32 challengeId) external view returns (Challenge memory) {
+    function getChallenge(
+        bytes32 challengeId
+    ) external view returns (Challenge memory) {
         return _challenges[challengeId];
     }
 
     /// @inheritdoc IDataAvailabilityOracle
-    function isDataAvailable(bytes32 commitmentId) external view returns (bool) {
+    function isDataAvailable(
+        bytes32 commitmentId
+    ) external view returns (bool) {
         DACommitment storage c = _commitments[commitmentId];
-        return c.status == CommitmentStatus.Attested || c.status == CommitmentStatus.Verified;
+        return
+            c.status == CommitmentStatus.Attested ||
+            c.status == CommitmentStatus.Verified;
     }
 
     /// @inheritdoc IDataAvailabilityOracle
@@ -431,7 +447,9 @@ contract DataAvailabilityOracle is
     // ============================================
 
     /// @notice Withdraw accumulated protocol fees
-    function withdrawProtocolFees(address to) external onlyRole(DA_ADMIN_ROLE) nonReentrant {
+    function withdrawProtocolFees(
+        address to
+    ) external onlyRole(DA_ADMIN_ROLE) nonReentrant {
         require(to != address(0), "Zero address");
         uint256 amount = protocolFees;
         protocolFees = 0;
@@ -474,16 +492,28 @@ contract DataAvailabilityOracle is
     }
 
     /// @dev Slash all attestors who attested a commitment that was proven unavailable
-    function _slashCommitmentAttestors(bytes32 /* commitmentId */) internal pure returns (uint256 totalSlashed) {
-        // In a full implementation, we would iterate over attestors for this commitment
-        // and slash their stakes. For now, this is a simplified version.
-        // The mapping attestations[commitmentId][attestor] tracks who attested.
-        //
-        // Production implementation would:
-        // 1. Maintain an array of attestors per commitment
-        // 2. Slash SLASH_PERCENTAGE of each attestor's stake
-        // 3. Distribute slashed funds to challenger
-        totalSlashed = 0;
+    function _slashCommitmentAttestors(
+        bytes32 commitmentId
+    ) internal returns (uint256 totalSlashed) {
+        // SECURITY FIX C-3: Implement actual slashing to prevent costless attacks
+        address[] memory attestorList = commitmentAttestors[commitmentId];
+        for (uint256 i = 0; i < attestorList.length; i++) {
+            address attestorAddr = attestorList[i];
+            Attestor storage attestor = _attestors[attestorAddr];
+
+            if (attestor.active && attestor.stake > 0) {
+                uint256 slashAmount = (attestor.stake * SLASH_PERCENTAGE) / 100;
+                attestor.stake -= slashAmount;
+                attestor.failedAttestations++;
+                totalSlashed += slashAmount;
+
+                // If stake drops below minimum, deactivate
+                if (attestor.stake < MIN_ATTESTOR_STAKE) {
+                    attestor.active = false;
+                    totalAttestors--;
+                }
+            }
+        }
     }
 
     /// @dev Accept ETH for bonds and stakes

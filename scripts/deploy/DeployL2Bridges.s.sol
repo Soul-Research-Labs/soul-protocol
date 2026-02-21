@@ -5,6 +5,8 @@ import "forge-std/Script.sol";
 import {OptimismBridgeAdapter} from "../../contracts/crosschain/OptimismBridgeAdapter.sol";
 import {ArbitrumBridgeAdapter} from "../../contracts/crosschain/ArbitrumBridgeAdapter.sol";
 import {BaseBridgeAdapter} from "../../contracts/crosschain/BaseBridgeAdapter.sol";
+import {ScrollBridgeAdapter} from "../../contracts/crosschain/ScrollBridgeAdapter.sol";
+import {LineaBridgeAdapter} from "../../contracts/crosschain/LineaBridgeAdapter.sol";
 
 /**
  * @title Soul Protocol L2 Bridge Deployment Script
@@ -26,6 +28,16 @@ import {BaseBridgeAdapter} from "../../contracts/crosschain/BaseBridgeAdapter.so
  *   ARB_BRIDGE              - Arbitrum Bridge
  *   ARB_ROLLUP              - Arbitrum Rollup
  *
+ * For Scroll:
+ *   SCROLL_MESSENGER        - L1/L2 Scroll Messenger
+ *   SCROLL_GATEWAY_ROUTER   - Scroll Gateway Router
+ *   SCROLL_ROLLUP           - Scroll Rollup contract
+ *
+ * For Linea:
+ *   LINEA_MESSAGE_SERVICE   - Linea Message Service
+ *   LINEA_TOKEN_BRIDGE      - Linea Token Bridge
+ *   LINEA_ROLLUP            - Linea Rollup contract
+ *
  * Usage:
  *   # Optimism
  *   DEPLOY_TARGET=optimism forge script scripts/deploy/DeployL2Bridges.s.sol \
@@ -37,6 +49,14 @@ import {BaseBridgeAdapter} from "../../contracts/crosschain/BaseBridgeAdapter.so
  *   # Base
  *   DEPLOY_TARGET=base forge script scripts/deploy/DeployL2Bridges.s.sol \
  *     --rpc-url $BASE_RPC --broadcast --verify -vvv
+ *
+ *   # Scroll
+ *   DEPLOY_TARGET=scroll forge script scripts/deploy/DeployL2Bridges.s.sol \
+ *     --rpc-url $SCROLL_RPC --broadcast --verify -vvv
+ *
+ *   # Linea
+ *   DEPLOY_TARGET=linea forge script scripts/deploy/DeployL2Bridges.s.sol \
+ *     --rpc-url $LINEA_RPC --broadcast --verify -vvv
  */
 contract DeployL2Bridges is Script {
     function run() external {
@@ -60,6 +80,10 @@ contract DeployL2Bridges is Script {
             _deployArbitrum(admin, deployer);
         } else if (_strEq(target, "base")) {
             _deployBase(admin, deployer);
+        } else if (_strEq(target, "scroll")) {
+            _deployScroll(admin, deployer);
+        } else if (_strEq(target, "linea")) {
+            _deployLinea(admin, deployer);
         } else {
             revert(string.concat("Unknown deploy target: ", target));
         }
@@ -176,6 +200,82 @@ contract DeployL2Bridges is Script {
         console.log("Base bridge deployed. Admin:", admin);
         console.log(
             "  Post-deploy: configure CCTP and attestation via multisig"
+        );
+    }
+
+    function _deployScroll(address admin, address deployer) internal {
+        require(block.chainid == 534352, "Expected Scroll chainId 534352");
+
+        address scrollMessenger = vm.envAddress("SCROLL_MESSENGER");
+        address gatewayRouter = vm.envAddress("SCROLL_GATEWAY_ROUTER");
+        address rollupContract = vm.envAddress("SCROLL_ROLLUP");
+
+        ScrollBridgeAdapter adapter = new ScrollBridgeAdapter(
+            scrollMessenger,
+            gatewayRouter,
+            rollupContract,
+            deployer
+        );
+        console.log("ScrollBridgeAdapter:", address(adapter));
+
+        // Transfer roles to multisig
+        adapter.grantRole(adapter.DEFAULT_ADMIN_ROLE(), admin);
+        adapter.grantRole(adapter.OPERATOR_ROLE(), admin);
+        adapter.grantRole(adapter.GUARDIAN_ROLE(), admin);
+
+        // Grant relayer role if configured
+        address relayer = vm.envOr("RELAYER_ADDRESS", address(0));
+        if (relayer != address(0)) {
+            adapter.grantRole(adapter.RELAYER_ROLE(), relayer);
+            console.log("Relayer granted:", relayer);
+        }
+
+        // Renounce deployer roles
+        adapter.renounceRole(adapter.GUARDIAN_ROLE(), deployer);
+        adapter.renounceRole(adapter.OPERATOR_ROLE(), deployer);
+        adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
+
+        console.log("Scroll bridge deployed. Admin:", admin);
+        console.log(
+            "  Post-deploy: configure soulHubL2 and proof registry via multisig"
+        );
+    }
+
+    function _deployLinea(address admin, address deployer) internal {
+        require(block.chainid == 59144, "Expected Linea chainId 59144");
+
+        address messageService = vm.envAddress("LINEA_MESSAGE_SERVICE");
+        address tokenBridge = vm.envAddress("LINEA_TOKEN_BRIDGE");
+        address rollup = vm.envAddress("LINEA_ROLLUP");
+
+        LineaBridgeAdapter adapter = new LineaBridgeAdapter(
+            messageService,
+            tokenBridge,
+            rollup,
+            deployer
+        );
+        console.log("LineaBridgeAdapter:", address(adapter));
+
+        // Transfer roles to multisig
+        adapter.grantRole(adapter.DEFAULT_ADMIN_ROLE(), admin);
+        adapter.grantRole(adapter.OPERATOR_ROLE(), admin);
+        adapter.grantRole(adapter.GUARDIAN_ROLE(), admin);
+
+        // Grant relayer role if configured
+        address relayer = vm.envOr("RELAYER_ADDRESS", address(0));
+        if (relayer != address(0)) {
+            adapter.grantRole(adapter.RELAYER_ROLE(), relayer);
+            console.log("Relayer granted:", relayer);
+        }
+
+        // Renounce deployer roles
+        adapter.renounceRole(adapter.GUARDIAN_ROLE(), deployer);
+        adapter.renounceRole(adapter.OPERATOR_ROLE(), deployer);
+        adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
+
+        console.log("Linea bridge deployed. Admin:", admin);
+        console.log(
+            "  Post-deploy: configure proof relay and anchoring via multisig"
         );
     }
 

@@ -345,11 +345,10 @@ contract CrossChainProofHubV3 is
 
         uint256 totalFee = proofSubmissionFee * len;
         if (msg.value < totalFee) revert InsufficientFee(msg.value, totalFee);
-        if (relayerStakes[msg.sender] < minRelayerStake)
-            revert InsufficientStake(
-                relayerStakes[msg.sender],
-                minRelayerStake
-            );
+        // SECURITY FIX: Require stake for EACH proof in the batch
+        uint256 requiredStake = minRelayerStake * len;
+        if (relayerStakes[msg.sender] < requiredStake)
+            revert InsufficientStake(relayerStakes[msg.sender], requiredStake);
 
         // FIX: Enforce rate limits for batch
         _checkRateLimit(len);
@@ -376,7 +375,7 @@ contract CrossChainProofHubV3 is
             challengeDeadline: uint64(block.timestamp + challengePeriod),
             relayer: msg.sender,
             status: ProofStatus.Pending,
-            totalStake: minRelayerStake
+            totalStake: requiredStake
         });
 
         // Register individual proofs
@@ -384,7 +383,7 @@ contract CrossChainProofHubV3 is
         uint64 submittedAt = uint64(block.timestamp);
         uint64 deadline = uint64(block.timestamp + challengePeriod);
         address relayer_ = msg.sender;
-        uint256 stakePerProof = minRelayerStake / len;
+        uint256 stakePerProof = minRelayerStake;
 
         for (uint256 i = 0; i < len; ) {
             bytes32 proofId = keccak256(
@@ -395,6 +394,11 @@ contract CrossChainProofHubV3 is
                     _proofs[i].destChainId
                 )
             );
+
+            // SECURITY FIX: Prevent batch proof overwrites
+            if (proofs[proofId].relayer != address(0)) {
+                revert ProofAlreadyExists(proofId);
+            }
 
             proofs[proofId] = ProofSubmission({
                 proofHash: _proofs[i].proofHash,

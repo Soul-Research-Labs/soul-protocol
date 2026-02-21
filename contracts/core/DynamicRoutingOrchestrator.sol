@@ -87,6 +87,105 @@ contract DynamicRoutingOrchestrator is
     /// @dev We use integer math: newEMA = (alpha * value + (BPS - alpha) * oldEMA) / BPS
     uint16 public constant EMA_ALPHA_BPS = 952; // ~2/21 ≈ 9.52%
 
+    /// @notice Default estimated settlement/latency time for new pools and bridges (seconds)
+    uint48 public constant DEFAULT_SETTLEMENT_TIME = 60;
+
+    /// @notice Default success probability for bridges with no history (50%)
+    uint16 public constant DEFAULT_SUCCESS_BPS = 5000;
+
+    /// @notice Source chain contribution divisor (25% of source chain time/fee)
+    uint8 public constant SOURCE_CHAIN_WEIGHT_DIVISOR = 4;
+
+    /// @notice Liquidity impact threshold triggering high settlement penalty (>50%)
+    uint16 public constant HIGH_LIQUIDITY_IMPACT_BPS = 5000;
+
+    /// @notice Liquidity impact threshold triggering medium settlement penalty (>20%)
+    uint16 public constant MED_LIQUIDITY_IMPACT_BPS = 2000;
+
+    /// @notice High-impact time multiplier numerator (150/100 = +50%)
+    uint16 public constant HIGH_IMPACT_TIME_NUMERATOR = 150;
+
+    /// @notice Medium-impact time multiplier numerator (125/100 = +25%)
+    uint16 public constant MED_IMPACT_TIME_NUMERATOR = 125;
+
+    /// @notice Percentage base denominator for time multipliers
+    uint16 public constant PERCENT_BASE = 100;
+
+    /// @notice Confidence: sample threshold for high confidence
+    uint256 public constant CONFIDENCE_HIGH_THRESHOLD = 1000;
+
+    /// @notice Confidence: sample threshold for medium confidence
+    uint256 public constant CONFIDENCE_MED_THRESHOLD = 100;
+
+    /// @notice Confidence: sample threshold for low confidence
+    uint256 public constant CONFIDENCE_LOW_THRESHOLD = 10;
+
+    /// @notice Confidence score: high (90%)
+    uint16 public constant CONFIDENCE_HIGH_BPS = 9000;
+
+    /// @notice Confidence score: medium (70%)
+    uint16 public constant CONFIDENCE_MED_BPS = 7000;
+
+    /// @notice Confidence score: low (50%)
+    uint16 public constant CONFIDENCE_LOW_BPS = 5000;
+
+    /// @notice Confidence score: very low (20%)
+    uint16 public constant CONFIDENCE_VERY_LOW_BPS = 2000;
+
+    /// @notice Bridge latency tier: excellent (≤30s)
+    uint48 public constant LATENCY_EXCELLENT = 30;
+
+    /// @notice Bridge latency tier: good (≤60s)
+    uint48 public constant LATENCY_GOOD = 60;
+
+    /// @notice Bridge latency tier: moderate (≤120s)
+    uint48 public constant LATENCY_MODERATE = 120;
+
+    /// @notice Bridge latency tier: slow (≤300s)
+    uint48 public constant LATENCY_SLOW = 300;
+
+    /// @notice Route latency tier: very slow (≤600s)
+    uint48 public constant LATENCY_VERY_SLOW = 600;
+
+    /// @notice Recency penalty window: very recent failure
+    uint256 public constant RECENT_FAILURE_WINDOW = 1 hours;
+
+    /// @notice Recency penalty window: moderately recent failure
+    uint256 public constant MODERATE_FAILURE_WINDOW = 6 hours;
+
+    /// @notice Recency penalty for very recent failure (−20%)
+    uint16 public constant RECENT_FAILURE_PENALTY_BPS = 2000;
+
+    /// @notice Recency penalty for moderately recent failure (−5%)
+    uint16 public constant MODERATE_FAILURE_PENALTY_BPS = 500;
+
+    /// @notice INSTANT/FAST urgency: speed weight
+    uint16 public constant FAST_SPEED_WEIGHT = 4000;
+
+    /// @notice INSTANT/FAST urgency: reliability weight
+    uint16 public constant FAST_RELIABILITY_WEIGHT = 3000;
+
+    /// @notice INSTANT/FAST urgency: security weight
+    uint16 public constant FAST_SECURITY_WEIGHT = 3000;
+
+    /// @notice ECONOMY urgency: reliability weight
+    uint16 public constant ECONOMY_RELIABILITY_WEIGHT = 4000;
+
+    /// @notice ECONOMY urgency: security weight
+    uint16 public constant ECONOMY_SECURITY_WEIGHT = 4000;
+
+    /// @notice ECONOMY urgency: speed weight
+    uint16 public constant ECONOMY_SPEED_WEIGHT = 2000;
+
+    /// @notice STANDARD urgency: reliability weight
+    uint16 public constant STANDARD_RELIABILITY_WEIGHT = 3500;
+
+    /// @notice STANDARD urgency: speed weight
+    uint16 public constant STANDARD_SPEED_WEIGHT = 3000;
+
+    /// @notice STANDARD urgency: security weight
+    uint16 public constant STANDARD_SECURITY_WEIGHT = 3500;
+
     /*//////////////////////////////////////////////////////////////
                                 STORAGE
     //////////////////////////////////////////////////////////////*/
@@ -168,7 +267,7 @@ contract DynamicRoutingOrchestrator is
             availableLiquidity: totalLiquidity,
             totalLiquidity: totalLiquidity,
             utilizationBps: 0,
-            avgSettlementTime: 60, // Default 60s estimate
+            avgSettlementTime: DEFAULT_SETTLEMENT_TIME,
             currentFee: initialFee < MIN_BASE_FEE ? MIN_BASE_FEE : initialFee,
             lastUpdated: uint48(block.timestamp),
             status: PoolStatus.ACTIVE
@@ -264,7 +363,7 @@ contract DynamicRoutingOrchestrator is
             totalTransfers: 0,
             successfulTransfers: 0,
             totalValueRouted: 0,
-            avgLatency: 60, // Default 60s
+            avgLatency: DEFAULT_SETTLEMENT_TIME,
             securityScoreBps: securityScoreBps,
             lastFailure: 0,
             isActive: true
@@ -534,18 +633,26 @@ contract DynamicRoutingOrchestrator is
         if (destPool.availableLiquidity > 0 && amount > 0) {
             uint256 liquidityRatio = (amount * BPS) /
                 destPool.availableLiquidity;
-            if (liquidityRatio > 5000) {
+            if (liquidityRatio > HIGH_LIQUIDITY_IMPACT_BPS) {
                 // >50% of liquidity: add 50% time
-                baseTime = uint48((uint256(baseTime) * 150) / 100);
-            } else if (liquidityRatio > 2000) {
+                baseTime = uint48(
+                    (uint256(baseTime) * HIGH_IMPACT_TIME_NUMERATOR) /
+                        PERCENT_BASE
+                );
+            } else if (liquidityRatio > MED_LIQUIDITY_IMPACT_BPS) {
                 // >20% of liquidity: add 25% time
-                baseTime = uint48((uint256(baseTime) * 125) / 100);
+                baseTime = uint48(
+                    (uint256(baseTime) * MED_IMPACT_TIME_NUMERATOR) /
+                        PERCENT_BASE
+                );
             }
         }
 
         // Adjust for source chain (add source pool settlement time if available)
         if (poolExists[sourceChainId]) {
-            baseTime += _pools[sourceChainId].avgSettlementTime / 4; // 25% of source time
+            baseTime +=
+                _pools[sourceChainId].avgSettlementTime /
+                SOURCE_CHAIN_WEIGHT_DIVISOR;
         }
 
         estimatedTime = baseTime;
@@ -557,14 +664,14 @@ contract DynamicRoutingOrchestrator is
             totalSamples += _bridgeMetrics[destBridges[i]].totalTransfers;
         }
 
-        if (totalSamples > 1000) {
-            confidence = 9000; // High confidence: >1000 samples
-        } else if (totalSamples > 100) {
-            confidence = 7000; // Medium confidence
-        } else if (totalSamples > 10) {
-            confidence = 5000; // Low confidence
+        if (totalSamples > CONFIDENCE_HIGH_THRESHOLD) {
+            confidence = CONFIDENCE_HIGH_BPS;
+        } else if (totalSamples > CONFIDENCE_MED_THRESHOLD) {
+            confidence = CONFIDENCE_MED_BPS;
+        } else if (totalSamples > CONFIDENCE_LOW_THRESHOLD) {
+            confidence = CONFIDENCE_LOW_BPS;
         } else {
-            confidence = 2000; // Very low confidence
+            confidence = CONFIDENCE_VERY_LOW_BPS;
         }
 
         // Reduce confidence if oracle data is stale
@@ -635,7 +742,9 @@ contract DynamicRoutingOrchestrator is
 
         // Add source fee if applicable
         if (poolExists[sourceChainId]) {
-            fee += _pools[sourceChainId].currentFee / 4; // 25% of source fee
+            fee +=
+                _pools[sourceChainId].currentFee /
+                SOURCE_CHAIN_WEIGHT_DIVISOR;
         }
     }
 
@@ -771,7 +880,7 @@ contract DynamicRoutingOrchestrator is
                 (bm.successfulTransfers * BPS) / bm.totalTransfers
             );
         } else {
-            route.successProbabilityBps = 5000; // 50% default for new bridges
+            route.successProbabilityBps = DEFAULT_SUCCESS_BPS;
         }
 
         // Composite score
@@ -883,10 +992,10 @@ contract DynamicRoutingOrchestrator is
 
         uint16 prob1 = bm1.totalTransfers > 0
             ? uint16((bm1.successfulTransfers * BPS) / bm1.totalTransfers)
-            : 5000;
+            : DEFAULT_SUCCESS_BPS;
         uint16 prob2 = bm2.totalTransfers > 0
             ? uint16((bm2.successfulTransfers * BPS) / bm2.totalTransfers)
-            : 5000;
+            : DEFAULT_SUCCESS_BPS;
 
         route.successProbabilityBps = uint16(
             (uint256(prob1) * uint256(prob2)) / BPS
@@ -953,32 +1062,36 @@ contract DynamicRoutingOrchestrator is
                 (bm.successfulTransfers * BPS) / bm.totalTransfers
             );
         } else {
-            reliabilityScore = 5000;
+            reliabilityScore = DEFAULT_SUCCESS_BPS;
         }
 
         uint16 speedScore;
-        if (bm.avgLatency <= 30) {
-            speedScore = 10000;
-        } else if (bm.avgLatency <= 60) {
+        if (bm.avgLatency <= LATENCY_EXCELLENT) {
+            speedScore = BPS;
+        } else if (bm.avgLatency <= LATENCY_GOOD) {
             speedScore = 8000;
-        } else if (bm.avgLatency <= 120) {
+        } else if (bm.avgLatency <= LATENCY_MODERATE) {
             speedScore = 6000;
-        } else if (bm.avgLatency <= 300) {
+        } else if (bm.avgLatency <= LATENCY_SLOW) {
             speedScore = 4000;
         } else {
-            speedScore = 2000;
+            speedScore = CONFIDENCE_VERY_LOW_BPS;
         }
 
         uint16 secScore = bm.securityScoreBps;
 
         // Recency penalty: reduce score if recent failure
         uint16 recencyPenalty = 0;
-        if (bm.lastFailure > 0 && block.timestamp - bm.lastFailure < 1 hours) {
-            recencyPenalty = 2000; // -20% for very recent failure
-        } else if (
-            bm.lastFailure > 0 && block.timestamp - bm.lastFailure < 6 hours
+        if (
+            bm.lastFailure > 0 &&
+            block.timestamp - bm.lastFailure < RECENT_FAILURE_WINDOW
         ) {
-            recencyPenalty = 500; // -5% for moderately recent failure
+            recencyPenalty = RECENT_FAILURE_PENALTY_BPS;
+        } else if (
+            bm.lastFailure > 0 &&
+            block.timestamp - bm.lastFailure < MODERATE_FAILURE_WINDOW
+        ) {
+            recencyPenalty = MODERATE_FAILURE_PENALTY_BPS;
         }
 
         // Weighted based on urgency
@@ -987,31 +1100,31 @@ contract DynamicRoutingOrchestrator is
             // Speed-weighted
             score = uint16(
                 (uint256(speedScore) *
-                    4000 +
+                    FAST_SPEED_WEIGHT +
                     uint256(reliabilityScore) *
-                    3000 +
+                    FAST_RELIABILITY_WEIGHT +
                     uint256(secScore) *
-                    3000) / BPS
+                    FAST_SECURITY_WEIGHT) / BPS
             );
         } else if (urgency == Urgency.ECONOMY) {
             // Security/reliability-weighted (cheapest reliable path)
             score = uint16(
                 (uint256(reliabilityScore) *
-                    4000 +
+                    ECONOMY_RELIABILITY_WEIGHT +
                     uint256(secScore) *
-                    4000 +
+                    ECONOMY_SECURITY_WEIGHT +
                     uint256(speedScore) *
-                    2000) / BPS
+                    ECONOMY_SPEED_WEIGHT) / BPS
             );
         } else {
             // Standard: balanced
             score = uint16(
                 (uint256(reliabilityScore) *
-                    3500 +
+                    STANDARD_RELIABILITY_WEIGHT +
                     uint256(speedScore) *
-                    3000 +
+                    STANDARD_SPEED_WEIGHT +
                     uint256(secScore) *
-                    3500) / BPS
+                    STANDARD_SECURITY_WEIGHT) / BPS
             );
         }
 
@@ -1031,7 +1144,7 @@ contract DynamicRoutingOrchestrator is
         // Normalize cost to 0-10000 scale (inverse: lower cost = higher score)
         uint16 costScore;
         if (route.totalCost <= MIN_BASE_FEE) {
-            costScore = 10000;
+            costScore = BPS;
         } else if (route.totalCost >= MAX_BASE_FEE) {
             costScore = 0;
         } else {
@@ -1040,15 +1153,15 @@ contract DynamicRoutingOrchestrator is
 
         // Normalize speed (inverse: lower time = higher score)
         uint16 speedScore;
-        if (route.estimatedTime <= 30) {
-            speedScore = 10000;
-        } else if (route.estimatedTime <= 60) {
+        if (route.estimatedTime <= LATENCY_EXCELLENT) {
+            speedScore = BPS;
+        } else if (route.estimatedTime <= LATENCY_GOOD) {
             speedScore = 8500;
-        } else if (route.estimatedTime <= 120) {
+        } else if (route.estimatedTime <= LATENCY_MODERATE) {
             speedScore = 7000;
-        } else if (route.estimatedTime <= 300) {
+        } else if (route.estimatedTime <= LATENCY_SLOW) {
             speedScore = 5000;
-        } else if (route.estimatedTime <= 600) {
+        } else if (route.estimatedTime <= LATENCY_VERY_SLOW) {
             speedScore = 3000;
         } else {
             speedScore = 1000;

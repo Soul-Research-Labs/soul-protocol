@@ -144,5 +144,23 @@ export const NETWORK_CONFIGS: Record<string, PrivacyHubConfig> = {
   },
 };
 
+/**
+ * Get the network configuration for a given network name.
+ * Validates all addresses are non-zero before returning.
+ * @param network - Network name (e.g., "sepolia", "mainnet")
+ * @throws If the network is unknown or any address is the zero address
+ */
+export function getNetworkConfig(network: string): PrivacyHubConfig {
+  const config = NETWORK_CONFIGS[network];
+  if (!config) {
+    throw new Error(
+      `Soul SDK: Unknown network "${network}". ` +
+        `Available: ${Object.keys(NETWORK_CONFIGS).join(", ")}`,
+    );
+  }
+  verifyAddressesConfigured(config, network);
+  return config;
+}
+
 // Version
 export const VERSION = "1.0.0";

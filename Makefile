@@ -85,12 +85,24 @@ noir-test:
 	cd noir && nargo test --workspace
 
 # ─── Certora ──────────────────────────────────────
-.PHONY: certora-check
+.PHONY: certora-check certora-verify
 
+## Compile-check all Certora specs (no prover run)
 certora-check:
 	@for conf in certora/conf/*.conf; do \
-		echo "=== Checking $$conf ==="; \
+		echo "=== Compile-checking $$conf ==="; \
 		certoraRun "$$conf" --compilation_steps_only || true; \
+	done
+
+## Run full Certora prover verification (requires CERTORAKEY)
+certora-verify:
+	@if [ -z "$$CERTORAKEY" ]; then \
+		echo "ERROR: CERTORAKEY not set. Export your Certora API key first."; \
+		exit 1; \
+	fi
+	@for conf in certora/conf/*.conf; do \
+		echo "=== Verifying $$conf ==="; \
+		certoraRun "$$conf" || true; \
 	done
 
 # ─── SDK ──────────────────────────────────────────

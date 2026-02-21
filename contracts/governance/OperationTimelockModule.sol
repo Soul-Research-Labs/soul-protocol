@@ -224,6 +224,7 @@ contract OperationTimelockModule is AccessControl, ReentrancyGuard {
     error InsufficientApprovals(uint8 current, uint8 required);
     error EmergencyBypassAlreadyExecuted(bytes32 operationId);
     error InvalidDelay(uint48 delay);
+    error ExecutionFailed(bytes32 operationId);
 
     /*//////////////////////////////////////////////////////////////
                              CONSTRUCTOR
@@ -338,15 +339,16 @@ contract OperationTimelockModule is AccessControl, ReentrancyGuard {
             revert OperationExpired(operationId);
         }
 
+        // Execute the call first, then commit state (CEI pattern)
+        // solhint-disable-next-line avoid-low-level-calls
+        (success, ) = op.target.call{value: op.value}(op.callData);
+        if (!success) revert ExecutionFailed(operationId);
+
         op.status = OperationStatus.EXECUTED;
         op.executedAt = uint48(block.timestamp);
         unchecked {
             ++totalExecuted;
         }
-
-        // Execute the call
-        // solhint-disable-next-line avoid-low-level-calls
-        (success, ) = op.target.call{value: op.value}(op.callData);
 
         emit OperationExecuted(operationId, msg.sender, success);
     }
@@ -587,15 +589,17 @@ contract OperationTimelockModule is AccessControl, ReentrancyGuard {
             );
         }
 
+        // Execute the call first, then commit state
+        // solhint-disable-next-line avoid-low-level-calls
+        (success, ) = op.target.call{value: op.value}(op.callData);
+        if (!success) revert ExecutionFailed(operationId);
+
         bypass.executed = true;
         op.status = OperationStatus.EXECUTED;
         op.executedAt = uint48(block.timestamp);
         unchecked {
             ++totalExecuted;
         }
-
-        // solhint-disable-next-line avoid-low-level-calls
-        (success, ) = op.target.call{value: op.value}(op.callData);
 
         emit EmergencyBypassExecuted(operationId, msg.sender);
         emit OperationExecuted(operationId, msg.sender, success);

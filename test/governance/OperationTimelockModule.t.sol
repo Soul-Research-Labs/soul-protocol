@@ -279,7 +279,7 @@ contract OperationTimelockModuleTest is Test {
         assertEq(address(target).balance, 0.5 ether);
     }
 
-    function test_ExecuteOperation_FailedCallStillMarksExecuted() public {
+    function test_ExecuteOperation_RevertsOnFailedCall() public {
         bytes memory callData = abi.encodeWithSelector(
             MockTarget.alwaysReverts.selector
         );
@@ -296,15 +296,21 @@ contract OperationTimelockModuleTest is Test {
         vm.warp(block.timestamp + 6 hours + 1);
 
         vm.prank(executor);
-        bool success = timelock.executeOperation(opId);
-        assertFalse(success);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                OperationTimelockModule.ExecutionFailed.selector,
+                opId
+            )
+        );
+        timelock.executeOperation(opId);
 
+        // Operation stays QUEUED so it can be retried or cancelled
         OperationTimelockModule.Operation memory op = timelock.getOperation(
             opId
         );
         assertEq(
             uint8(op.status),
-            uint8(OperationTimelockModule.OperationStatus.EXECUTED)
+            uint8(OperationTimelockModule.OperationStatus.QUEUED)
         );
     }
 

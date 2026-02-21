@@ -62,10 +62,13 @@ contract HeterogeneousRelayerRegistry is
     // ROLES
     // ============================================
 
-    bytes32 public constant REGISTRY_ADMIN_ROLE = keccak256("REGISTRY_ADMIN_ROLE");
-    bytes32 public constant TASK_ASSIGNER_ROLE = keccak256("TASK_ASSIGNER_ROLE");
+    bytes32 public constant REGISTRY_ADMIN_ROLE =
+        keccak256("REGISTRY_ADMIN_ROLE");
+    bytes32 public constant TASK_ASSIGNER_ROLE =
+        keccak256("TASK_ASSIGNER_ROLE");
     bytes32 public constant SLASHER_ROLE = keccak256("SLASHER_ROLE");
-    bytes32 public constant PERFORMANCE_REPORTER_ROLE = keccak256("PERFORMANCE_REPORTER_ROLE");
+    bytes32 public constant PERFORMANCE_REPORTER_ROLE =
+        keccak256("PERFORMANCE_REPORTER_ROLE");
 
     // ============================================
     // CONSTANTS
@@ -123,6 +126,8 @@ contract HeterogeneousRelayerRegistry is
     // CONSTRUCTOR
     // ============================================
 
+    /// @notice Initialize the registry with an admin who receives all management roles
+    /// @param _admin Address to grant admin, task assigner, slasher, and performance reporter roles
     constructor(address _admin) {
         require(_admin != address(0), "Zero address");
 
@@ -145,7 +150,11 @@ contract HeterogeneousRelayerRegistry is
         if (msg.value < PROOF_GENERATOR_MIN_STAKE) {
             revert InsufficientStake(msg.value, PROOF_GENERATOR_MIN_STAKE);
         }
-        _registerRelayer(RelayerRole.ProofGenerator, supportedChainIds, capabilityHash);
+        _registerRelayer(
+            RelayerRole.ProofGenerator,
+            supportedChainIds,
+            capabilityHash
+        );
     }
 
     /// @inheritdoc IHeterogeneousRelayerRegistry
@@ -155,7 +164,11 @@ contract HeterogeneousRelayerRegistry is
         if (msg.value < LIGHT_RELAYER_MIN_STAKE) {
             revert InsufficientStake(msg.value, LIGHT_RELAYER_MIN_STAKE);
         }
-        _registerRelayer(RelayerRole.LightRelayer, supportedChainIds, bytes32(0));
+        _registerRelayer(
+            RelayerRole.LightRelayer,
+            supportedChainIds,
+            bytes32(0)
+        );
     }
 
     /// @inheritdoc IHeterogeneousRelayerRegistry
@@ -184,7 +197,8 @@ contract HeterogeneousRelayerRegistry is
                 revert CooldownNotExpired();
             }
 
-            uint256 stakeToReturn = relayer.stake + unclaimedRewards[msg.sender];
+            uint256 stakeToReturn = relayer.stake +
+                unclaimedRewards[msg.sender];
             relayer.stake = 0;
             unclaimedRewards[msg.sender] = 0;
 
@@ -212,13 +226,7 @@ contract HeterogeneousRelayerRegistry is
         uint256 sourceChainId,
         uint256 destChainId,
         uint64 deadline
-    )
-        external
-        payable
-        nonReentrant
-        whenNotPaused
-        returns (bytes32 taskId)
-    {
+    ) external payable nonReentrant whenNotPaused returns (bytes32 taskId) {
         if (deadline < uint64(block.timestamp) + MIN_TASK_DEADLINE) {
             deadline = uint64(block.timestamp) + MIN_TASK_DEADLINE;
         }
@@ -258,14 +266,15 @@ contract HeterogeneousRelayerRegistry is
     }
 
     /// @inheritdoc IHeterogeneousRelayerRegistry
-    function completeTask(bytes32 taskId, bytes calldata /* result */)
-        external
-        nonReentrant
-    {
+    function completeTask(
+        bytes32 taskId,
+        bytes calldata /* result */
+    ) external nonReentrant {
         Task storage task = _tasks[taskId];
         if (task.assignedAt == 0) revert TaskDoesNotExist(taskId);
         if (task.completed || task.failed) revert TaskAlreadyCompleted(taskId);
-        if (task.assignedTo != msg.sender) revert TaskNotAssignedToSender(taskId);
+        if (task.assignedTo != msg.sender)
+            revert TaskNotAssignedToSender(taskId);
         if (block.timestamp > task.deadline) revert TaskDeadlinePassed(taskId);
 
         task.completed = true;
@@ -289,9 +298,10 @@ contract HeterogeneousRelayerRegistry is
     }
 
     /// @inheritdoc IHeterogeneousRelayerRegistry
-    function reportTaskFailure(bytes32 taskId, string calldata reason)
-        external
-    {
+    function reportTaskFailure(
+        bytes32 taskId,
+        string calldata reason
+    ) external {
         Task storage task = _tasks[taskId];
         if (task.assignedAt == 0) revert TaskDoesNotExist(taskId);
         if (task.completed || task.failed) revert TaskAlreadyCompleted(taskId);
@@ -322,10 +332,7 @@ contract HeterogeneousRelayerRegistry is
     function reportPerformance(
         address relayerAddr,
         PerformanceMetrics calldata metrics
-    )
-        external
-        onlyRole(PERFORMANCE_REPORTER_ROLE)
-    {
+    ) external onlyRole(PERFORMANCE_REPORTER_ROLE) {
         Relayer storage relayer = _relayers[relayerAddr];
         if (relayer.registeredAt == 0) revert RelayerNotRegistered(relayerAddr);
 
@@ -347,11 +354,7 @@ contract HeterogeneousRelayerRegistry is
         address relayerAddr,
         uint256 amount,
         string calldata reason
-    )
-        external
-        onlyRole(SLASHER_ROLE)
-        nonReentrant
-    {
+    ) external onlyRole(SLASHER_ROLE) nonReentrant {
         Relayer storage relayer = _relayers[relayerAddr];
         if (relayer.registeredAt == 0) revert RelayerNotRegistered(relayerAddr);
 
@@ -390,13 +393,16 @@ contract HeterogeneousRelayerRegistry is
     }
 
     /// @inheritdoc IHeterogeneousRelayerRegistry
-    function getRelayersByRole(RelayerRole role) external view returns (address[] memory) {
+    function getRelayersByRole(
+        RelayerRole role
+    ) external view returns (address[] memory) {
         return _relayersByRole[role];
     }
 
     /// @inheritdoc IHeterogeneousRelayerRegistry
     function getMinStake(RelayerRole role) external pure returns (uint256) {
-        if (role == RelayerRole.ProofGenerator) return PROOF_GENERATOR_MIN_STAKE;
+        if (role == RelayerRole.ProofGenerator)
+            return PROOF_GENERATOR_MIN_STAKE;
         if (role == RelayerRole.LightRelayer) return LIGHT_RELAYER_MIN_STAKE;
         if (role == RelayerRole.Watchtower) return WATCHTOWER_MIN_STAKE;
         return 0;
@@ -412,7 +418,9 @@ contract HeterogeneousRelayerRegistry is
     // ============================================
 
     /// @notice Withdraw slashed funds
-    function withdrawSlashedFunds(address to) external onlyRole(REGISTRY_ADMIN_ROLE) nonReentrant {
+    function withdrawSlashedFunds(
+        address to
+    ) external onlyRole(REGISTRY_ADMIN_ROLE) nonReentrant {
         require(to != address(0), "Zero address");
         uint256 amount = slashedFunds;
         slashedFunds = 0;
@@ -421,14 +429,23 @@ contract HeterogeneousRelayerRegistry is
     }
 
     /// @notice Reinstate a suspended relayer
-    function reinstateRelayer(address relayerAddr) external onlyRole(REGISTRY_ADMIN_ROLE) {
+    function reinstateRelayer(
+        address relayerAddr
+    ) external onlyRole(REGISTRY_ADMIN_ROLE) {
         Relayer storage relayer = _relayers[relayerAddr];
         if (relayer.registeredAt == 0) revert RelayerNotRegistered(relayerAddr);
         relayer.status = RelayerStatus.Active;
     }
 
-    function pause() external onlyRole(REGISTRY_ADMIN_ROLE) { _pause(); }
-    function unpause() external onlyRole(REGISTRY_ADMIN_ROLE) { _unpause(); }
+    /// @notice Pause the registry, disabling registration and task assignment
+    function pause() external onlyRole(REGISTRY_ADMIN_ROLE) {
+        _pause();
+    }
+
+    /// @notice Unpause the registry, re-enabling registration and task assignment
+    function unpause() external onlyRole(REGISTRY_ADMIN_ROLE) {
+        _unpause();
+    }
 
     // ============================================
     // INTERNAL
@@ -475,7 +492,10 @@ contract HeterogeneousRelayerRegistry is
         uint256 destChainId
     ) internal view returns (address) {
         RelayerRole requiredRole;
-        if (taskType == TaskType.ProofGeneration || taskType == TaskType.ProofAggregation) {
+        if (
+            taskType == TaskType.ProofGeneration ||
+            taskType == TaskType.ProofAggregation
+        ) {
             requiredRole = RelayerRole.ProofGenerator;
         } else if (taskType == TaskType.ProofRelay) {
             requiredRole = RelayerRole.LightRelayer;
@@ -488,15 +508,16 @@ contract HeterogeneousRelayerRegistry is
         uint256 bestScore = 0;
 
         uint256 len = candidates.length;
-        for (uint256 i = 0; i < len;) {
+        for (uint256 i = 0; i < len; ) {
             Relayer storage candidate = _relayers[candidates[i]];
 
             if (candidate.status == RelayerStatus.Active) {
                 // Check chain support (for relay tasks)
                 bool supportsChains = true;
                 if (taskType == TaskType.ProofRelay) {
-                    supportsChains = _supportsChain(candidate, sourceChainId) &&
-                                    _supportsChain(candidate, destChainId);
+                    supportsChains =
+                        _supportsChain(candidate, sourceChainId) &&
+                        _supportsChain(candidate, destChainId);
                 }
 
                 if (supportsChains && candidate.reputationScore > bestScore) {
@@ -505,20 +526,27 @@ contract HeterogeneousRelayerRegistry is
                 }
             }
 
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
 
         return bestCandidate;
     }
 
     /// @dev Check if a relayer supports a specific chain
-    function _supportsChain(Relayer storage relayer, uint256 chainId) internal view returns (bool) {
+    function _supportsChain(
+        Relayer storage relayer,
+        uint256 chainId
+    ) internal view returns (bool) {
         uint256 len = relayer.supportedChainIds.length;
         if (len == 0) return true; // No restriction = supports all
 
-        for (uint256 i = 0; i < len;) {
+        for (uint256 i = 0; i < len; ) {
             if (relayer.supportedChainIds[i] == chainId) return true;
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
         return false;
     }
@@ -551,29 +579,45 @@ contract HeterogeneousRelayerRegistry is
     }
 
     /// @dev Calculate reputation from performance metrics
-    function _calculateReputation(PerformanceMetrics calldata metrics) internal pure returns (uint256) {
+    function _calculateReputation(
+        PerformanceMetrics calldata metrics
+    ) internal pure returns (uint256) {
         // Weighted score: 40% success rate + 30% uptime + 30% latency score
-        uint256 latencyScore = metrics.avgLatencyMs < 1000 ? MAX_REPUTATION :
-                               metrics.avgLatencyMs < 5000 ? 7000 :
-                               metrics.avgLatencyMs < 10000 ? 4000 : 1000;
+        uint256 latencyScore = metrics.avgLatencyMs < 1000
+            ? MAX_REPUTATION
+            : metrics.avgLatencyMs < 5000
+            ? 7000
+            : metrics.avgLatencyMs < 10000
+            ? 4000
+            : 1000;
 
-        uint256 score = (metrics.successRate * 40 + metrics.uptimePercentage * 30 + latencyScore * 30) / 100;
+        uint256 score = (metrics.successRate *
+            40 +
+            metrics.uptimePercentage *
+            30 +
+            latencyScore *
+            30) / 100;
 
         if (score > MAX_REPUTATION) score = MAX_REPUTATION;
         return score;
     }
 
     /// @dev Remove a relayer from its role array
-    function _removeFromRoleArray(RelayerRole role, address relayerAddr) internal {
+    function _removeFromRoleArray(
+        RelayerRole role,
+        address relayerAddr
+    ) internal {
         address[] storage arr = _relayersByRole[role];
         uint256 len = arr.length;
-        for (uint256 i = 0; i < len;) {
+        for (uint256 i = 0; i < len; ) {
             if (arr[i] == relayerAddr) {
                 arr[i] = arr[len - 1];
                 arr.pop();
                 return;
             }
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
     }
 
