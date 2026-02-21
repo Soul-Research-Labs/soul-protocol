@@ -8,6 +8,8 @@ import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol
 import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {SelectiveDisclosureManager} from "../compliance/SelectiveDisclosureManager.sol";
+import {ComplianceReportingModule} from "../compliance/ComplianceReportingModule.sol";
 
 /**
  * @title CrossChainPrivacyHub
@@ -250,6 +252,20 @@ contract CrossChainPrivacyHub is
     mapping(ProofSystem => address) public proofVerifiers;
 
     // =========================================================================
+    // COMPLIANCE INTEGRATION (Tachyon Learning #2 & #7)
+    // =========================================================================
+
+    /// @notice Optional selective disclosure manager for privacy-preserving compliance
+    /// @dev Non-reverting try/catch pattern — compliance failures never block transfers
+    SelectiveDisclosureManager public disclosureManager;
+
+    /// @notice Optional compliance reporting module for aggregate reporting
+    ComplianceReportingModule public complianceReporting;
+
+    /// @dev Gap for future compliance storage upgrades
+    uint256[48] private __complianceGap;
+
+    // =========================================================================
     // EVENTS
     // =========================================================================
 
@@ -316,6 +332,18 @@ contract CrossChainPrivacyHub is
 
     event CircuitBreakerReset(address indexed resetBy, uint256 timestamp);
 
+    event DisclosureManagerUpdated(
+        address indexed oldManager,
+        address indexed newManager
+    );
+
+    event ComplianceReportingUpdated(
+        address indexed oldModule,
+        address indexed newModule
+    );
+
+    event ComplianceHookFailed(bytes32 indexed requestId, string reason);
+
     // =========================================================================
     // ERRORS
     // =========================================================================
@@ -343,6 +371,36 @@ contract CrossChainPrivacyHub is
     error FeeTransferFailed();
     error RefundFailed();
     error FeeTooHigh();
+
+    // =========================================================================
+    // COMPLIANCE SETTERS
+    // =========================================================================
+
+    /**
+     * @notice Set the optional SelectiveDisclosureManager for privacy-preserving compliance
+     * @dev Setting to address(0) disables disclosure hooks without affecting transfers
+     * @param _manager Address of the SelectiveDisclosureManager (or address(0) to disable)
+     */
+    function setDisclosureManager(
+        address _manager
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        address old = address(disclosureManager);
+        disclosureManager = SelectiveDisclosureManager(_manager);
+        emit DisclosureManagerUpdated(old, _manager);
+    }
+
+    /**
+     * @notice Set the optional ComplianceReportingModule for aggregate reporting
+     * @dev Setting to address(0) disables reporting hooks without affecting transfers
+     * @param _module Address of the ComplianceReportingModule (or address(0) to disable)
+     */
+    function setComplianceReporting(
+        address _module
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        address old = address(complianceReporting);
+        complianceReporting = ComplianceReportingModule(_module);
+        emit ComplianceReportingUpdated(old, _module);
+    }
 
     // =========================================================================
     // MODIFIERS
@@ -569,6 +627,14 @@ contract CrossChainPrivacyHub is
             privacyLevel
         );
 
+        // Compliance hook: register with disclosure manager (non-reverting)
+        _registerWithDisclosureManager(
+            requestId,
+            commitment,
+            msg.sender,
+            privacyLevel
+        );
+
         return requestId;
     }
 
@@ -674,6 +740,14 @@ contract CrossChainPrivacyHub is
             privacyLevel
         );
 
+        // Compliance hook: register with disclosure manager (non-reverting)
+        _registerWithDisclosureManager(
+            requestId,
+            commitment,
+            msg.sender,
+            privacyLevel
+        );
+
         return requestId;
     }
 
@@ -769,6 +843,14 @@ contract CrossChainPrivacyHub is
             nullifier,
             transfer.sourceChainId,
             transfer.destChainId
+        );
+
+        // Compliance hook: register completion with disclosure manager (non-reverting)
+        _registerWithDisclosureManager(
+            requestId,
+            transfer.commitment,
+            transfer.sender,
+            transfer.privacyLevel
         );
     }
 
@@ -1023,6 +1105,48 @@ contract CrossChainPrivacyHub is
     // =========================================================================
     // INTERNAL FUNCTIONS
     // =========================================================================
+
+    /**
+     * @dev Register a transfer with the SelectiveDisclosureManager if configured.
+     *      Uses non-reverting try/catch so compliance failures never block transfers.
+     *      Follows the ConfidentialStateContainerV3 pattern.
+     * @param requestId The transfer request ID (used as txId for disclosure)
+     * @param commitment The transfer commitment
+     * @param owner The transfer initiator
+     * @param privacyLevel The privacy level of the transfer
+     */
+    function _registerWithDisclosureManager(
+        bytes32 requestId,
+        bytes32 commitment,
+        address owner,
+        PrivacyLevel privacyLevel
+    ) internal {
+        SelectiveDisclosureManager dm = disclosureManager;
+        if (address(dm) == address(0)) return;
+
+        // Map CrossChainPrivacyHub PrivacyLevel → SelectiveDisclosureManager DisclosureLevel
+        // NONE/BASIC → PUBLIC, MEDIUM → AUDITOR, HIGH → REGULATOR, MAXIMUM → COUNTERPARTY
+        SelectiveDisclosureManager.DisclosureLevel level;
+        if (privacyLevel == PrivacyLevel.MAXIMUM) {
+            level = SelectiveDisclosureManager.DisclosureLevel.COUNTERPARTY;
+        } else if (privacyLevel == PrivacyLevel.HIGH) {
+            level = SelectiveDisclosureManager.DisclosureLevel.REGULATOR;
+        } else if (privacyLevel == PrivacyLevel.MEDIUM) {
+            level = SelectiveDisclosureManager.DisclosureLevel.AUDITOR;
+        } else {
+            level = SelectiveDisclosureManager.DisclosureLevel.PUBLIC;
+        }
+
+        // Non-reverting: compliance failure must not block transfer
+        try dm.registerTransactionFor(requestId, commitment, owner, level) {
+            // Successfully registered
+        } catch {
+            emit ComplianceHookFailed(
+                requestId,
+                "disclosure_registration_failed"
+            );
+        }
+    }
 
     function _generateNullifier(
         bytes32 requestId,

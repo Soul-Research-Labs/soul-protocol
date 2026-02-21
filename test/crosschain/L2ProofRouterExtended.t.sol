@@ -128,10 +128,7 @@ contract L2ProofRouterExtendedTest is Test {
         );
 
         // Submit a proof to create a batch
-        _submitProof(
-            L2ProofRouter.ProofType.GROTH16,
-            DEST_CHAIN
-        );
+        _submitProof(L2ProofRouter.ProofType.GROTH16, DEST_CHAIN);
         bytes32 batchId = router.getActiveBatch(DEST_CHAIN);
         assertTrue(batchId != bytes32(0), "Batch should exist");
 

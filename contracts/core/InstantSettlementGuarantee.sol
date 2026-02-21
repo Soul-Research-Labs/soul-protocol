@@ -369,17 +369,24 @@ contract InstantSettlementGuarantee is
                         INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Check if an intent has been finalized
+    /// @dev Check if an intent has been finalized (status == FINALIZED)
     function _isIntentFinalized(bytes32 intentId) internal view returns (bool) {
         // First check manual override
         if (intentFinalized[intentId]) return true;
 
         // Then check IntentSettlementLayer if configured
         if (address(intentLayer) != address(0)) {
-            try intentLayer.canFinalize(intentId) returns (bool result) {
+            // Use isFinalized() which checks actual FINALIZED status,
+            // not canFinalize() which only checks eligibility.
+            try intentLayer.isFinalized(intentId) returns (bool result) {
                 return result;
             } catch {
-                return false;
+                // Fallback to canFinalize for backwards compatibility
+                try intentLayer.canFinalize(intentId) returns (bool result) {
+                    return result;
+                } catch {
+                    return false;
+                }
             }
         }
 

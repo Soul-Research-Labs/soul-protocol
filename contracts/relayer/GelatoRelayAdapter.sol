@@ -77,7 +77,9 @@ contract GelatoRelayAdapter is IRelayerAdapter, Ownable {
      *      Gelato's fee oracle for dynamic pricing based on gas costs.
      * @return fee The estimated relay fee in wei
      */
-    function getFee(uint256 /* gasLimit */) external pure override returns (uint256) {
+    function getFee(
+        uint256 /* gasLimit */
+    ) external pure override returns (uint256) {
         return 0.001 ether;
     }
 }

@@ -246,19 +246,19 @@ contract InstantRelayerRewards is AccessControl, ReentrancyGuard {
         // Determine speed tier and multiplier
         (SpeedTier tier, uint256 multiplier) = _getSpeedTier(responseTime);
 
-        // Calculate reward: baseReward * multiplier / BPS (capped at deposit)
-        uint256 tieredReward = (deposit.baseReward * multiplier) / BPS;
-
-        // Cap tiered reward at the deposited amount
-        if (tieredReward > deposit.baseReward) {
-            tieredReward = deposit.baseReward;
-        }
+        // Calculate tiered reward:
+        // The deposit (baseReward) funds the maximum possible payout (ULTRA_FAST = 1.5x).
+        // For slower tiers, reward < deposit → surplus refunded to requester.
+        // Formula: reward = deposit * multiplier / MULTIPLIER_ULTRA_FAST
+        // This ensures ULTRA_FAST gets full deposit, FAST gets 83.3%, NORMAL 66.7%, SLOW 60%.
+        uint256 tieredReward = (deposit.baseReward * multiplier) /
+            MULTIPLIER_ULTRA_FAST;
 
         // Protocol cut from the tiered reward
         uint256 protocolCut = (tieredReward * PROTOCOL_FEE_BPS) / BPS;
         uint256 relayerPayout = tieredReward - protocolCut;
 
-        // Any surplus after tiered reward (for SLOW tier, reward < base)
+        // Surplus returned to requester (slower tiers don't use full deposit)
         uint256 surplus = deposit.baseReward - tieredReward;
 
         protocolFees += protocolCut;
@@ -337,8 +337,8 @@ contract InstantRelayerRewards is AccessControl, ReentrancyGuard {
         return _getSpeedTier(responseTime);
     }
 
-    /// @notice Calculate the expected reward for a given base and response time
-    /// @param baseReward Base reward amount
+    /// @notice Calculate the expected reward for a given deposit and response time
+    /// @param baseReward Deposit amount (funds max possible payout)
     /// @param responseTime Expected response time in seconds
     /// @return reward The calculated reward after tier and protocol fee
     function calculateReward(
@@ -346,8 +346,7 @@ contract InstantRelayerRewards is AccessControl, ReentrancyGuard {
         uint256 responseTime
     ) external pure returns (uint256 reward) {
         (, uint256 multiplier) = _getSpeedTier(responseTime);
-        uint256 tiered = (baseReward * multiplier) / BPS;
-        if (tiered > baseReward) tiered = baseReward;
+        uint256 tiered = (baseReward * multiplier) / MULTIPLIER_ULTRA_FAST;
         uint256 protocolCut = (tiered * PROTOCOL_FEE_BPS) / BPS;
         return tiered - protocolCut;
     }

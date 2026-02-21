@@ -18,13 +18,17 @@ export * as ScrollBridge from "./scroll";
 export * as ZkSyncBridge from "./zksync";
 
 import {
-    type PublicClient,
-    type WalletClient,
-    type Address,
-    type Hash,
-    getAddress,
+  type PublicClient,
+  type WalletClient,
+  type Address,
+  type Hash,
+  getAddress,
 } from "viem";
-import { ARB_ONE_CHAIN_ID, ARBITRUM_BRIDGE_ADAPTER_ABI, estimateDepositCost } from "./arbitrum";
+import {
+  ARB_ONE_CHAIN_ID,
+  ARBITRUM_BRIDGE_ADAPTER_ABI,
+  estimateDepositCost,
+} from "./arbitrum";
 import { BASE_BRIDGE_ADAPTER_ABI } from "./base";
 import { OPTIMISM_BRIDGE_ABI } from "./optimism";
 import { SCROLL_BRIDGE_ADAPTER_ABI } from "./scroll";
@@ -35,16 +39,16 @@ import { ETHEREUM_L1_BRIDGE_ABI } from "./ethereum";
 
 /** Maps chain names to their chain-specific bridge ABIs */
 const CHAIN_ABI_MAP: Record<string, readonly any[]> = {
-  "arbitrum": ARBITRUM_BRIDGE_ADAPTER_ABI,
+  arbitrum: ARBITRUM_BRIDGE_ADAPTER_ABI,
   "arbitrum-one": ARBITRUM_BRIDGE_ADAPTER_ABI,
-  "base": BASE_BRIDGE_ADAPTER_ABI,
-  "optimism": OPTIMISM_BRIDGE_ABI,
-  "scroll": SCROLL_BRIDGE_ADAPTER_ABI,
-  "linea": LINEA_BRIDGE_ADAPTER_ABI,
-  "zksync": ZKSYNC_BRIDGE_ADAPTER_ABI,
+  base: BASE_BRIDGE_ADAPTER_ABI,
+  optimism: OPTIMISM_BRIDGE_ABI,
+  scroll: SCROLL_BRIDGE_ADAPTER_ABI,
+  linea: LINEA_BRIDGE_ADAPTER_ABI,
+  zksync: ZKSYNC_BRIDGE_ADAPTER_ABI,
   "zksync-era": ZKSYNC_BRIDGE_ADAPTER_ABI,
   "polygon-zkevm": POLYGON_ZKEVM_BRIDGE_ADAPTER_ABI,
-  "ethereum": ETHEREUM_L1_BRIDGE_ABI,
+  ethereum: ETHEREUM_L1_BRIDGE_ABI,
 };
 
 // ============================================
@@ -74,7 +78,13 @@ export interface BridgeFees {
 }
 
 export interface BridgeStatus {
-  state: "pending" | "relaying" | "confirming" | "completed" | "failed" | "refunded";
+  state:
+    | "pending"
+    | "relaying"
+    | "confirming"
+    | "completed"
+    | "failed"
+    | "refunded";
   sourceChainId: number;
   targetChainId: number;
   sourceTx?: string;
@@ -105,16 +115,24 @@ export abstract class BaseBridgeAdapter {
   constructor(
     public readonly config: BridgeAdapterConfig,
     publicClient: PublicClient,
-    walletClient?: WalletClient
+    walletClient?: WalletClient,
   ) {
     this.publicClient = publicClient;
     this.walletClient = walletClient;
   }
 
-  abstract bridgeTransfer(params: BridgeTransferParams): Promise<BridgeTransferResult>;
-  abstract completeBridge(transferId: string, proof: Uint8Array): Promise<string>;
+  abstract bridgeTransfer(
+    params: BridgeTransferParams,
+  ): Promise<BridgeTransferResult>;
+  abstract completeBridge(
+    transferId: string,
+    proof: Uint8Array,
+  ): Promise<string>;
   abstract getStatus(transferId: string): Promise<BridgeStatus>;
-  abstract estimateFees(amount: bigint, targetChainId: number): Promise<BridgeFees>;
+  abstract estimateFees(
+    amount: bigint,
+    targetChainId: number,
+  ): Promise<BridgeFees>;
 
   validateAmount(amount: bigint): void {
     if (amount < this.config.minAmount) {
@@ -243,7 +261,9 @@ export class L2BridgeAdapter extends BaseBridgeAdapter {
     this.abi = abi;
   }
 
-  async bridgeTransfer(params: BridgeTransferParams): Promise<BridgeTransferResult> {
+  async bridgeTransfer(
+    params: BridgeTransferParams,
+  ): Promise<BridgeTransferResult> {
     this.validateAmount(params.amount);
 
     if (!this.walletClient?.account) {
@@ -345,7 +365,10 @@ export class L2BridgeAdapter extends BaseBridgeAdapter {
     };
   }
 
-  async estimateFees(amount: bigint, _targetChainId: number): Promise<BridgeFees> {
+  async estimateFees(
+    amount: bigint,
+    _targetChainId: number,
+  ): Promise<BridgeFees> {
     const { fee, gasEstimate } = estimateDepositCost(amount);
     return {
       protocolFee: fee,
@@ -371,7 +394,7 @@ export class BridgeFactory {
     if (!config) {
       throw new Error(
         `Unsupported chain "${chain}". ` +
-        `Available chains: ${Object.keys(CHAIN_CONFIGS).join(", ")}`
+          `Available chains: ${Object.keys(CHAIN_CONFIGS).join(", ")}`,
       );
     }
 
@@ -380,7 +403,7 @@ export class BridgeFactory {
     if (!bridgeAddress) {
       throw new Error(
         `No bridge address configured for "${chain}". ` +
-        `Set addresses.${addrKey} or addresses.bridge in your config.`
+          `Set addresses.${addrKey} or addresses.bridge in your config.`,
       );
     }
 

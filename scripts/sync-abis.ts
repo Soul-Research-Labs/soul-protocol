@@ -55,7 +55,7 @@ const CONTRACTS: Record<string, string> = {
   BaseBridgeAdapter: "BaseBridgeAdapter",
   ScrollBridgeAdapter: "ScrollBridgeAdapter",
   LineaBridgeAdapter: "LineaBridgeAdapter",
-  "zkSyncBridgeAdapter": "ZkSyncBridgeAdapter",
+  zkSyncBridgeAdapter: "ZkSyncBridgeAdapter",
   PolygonZkEVMBridgeAdapter: "PolygonZkEVMBridgeAdapter",
 
   // Relayer
@@ -86,9 +86,7 @@ function main() {
 
   // Check that Foundry `out/` directory exists
   if (!fs.existsSync(OUT_DIR)) {
-    console.error(
-      `ERROR: ${OUT_DIR} not found. Run 'forge build' first.`
-    );
+    console.error(`ERROR: ${OUT_DIR} not found. Run 'forge build' first.`);
     process.exit(1);
   }
 
@@ -100,11 +98,13 @@ function main() {
     const artifactPath = path.join(
       OUT_DIR,
       `${contractName}.sol`,
-      `${contractName}.json`
+      `${contractName}.json`,
     );
 
     if (!fs.existsSync(artifactPath)) {
-      console.warn(`  SKIP: ${contractName} — artifact not found at ${artifactPath}`);
+      console.warn(
+        `  SKIP: ${contractName} — artifact not found at ${artifactPath}`,
+      );
       skipped++;
       continue;
     }
@@ -132,7 +132,9 @@ function main() {
 
       const outPath = path.join(ABI_DIR, `${outputName}.ts`);
       fs.writeFileSync(outPath, tsContent, "utf-8");
-      console.log(`  OK: ${contractName} → sdk/src/abis/${outputName}.ts (${abi.length} entries)`);
+      console.log(
+        `  OK: ${contractName} → sdk/src/abis/${outputName}.ts (${abi.length} entries)`,
+      );
       synced++;
     } catch (err: any) {
       errors.push(`${contractName}: ${err.message}`);
@@ -145,10 +147,16 @@ function main() {
     ``,
   ];
   for (const outputName of Object.values(CONTRACTS)) {
-    indexLines.push(`export { ${outputName.replace(/[^a-zA-Z0-9_]/g, "_")}_ABI } from "./${outputName}";`);
+    indexLines.push(
+      `export { ${outputName.replace(/[^a-zA-Z0-9_]/g, "_")}_ABI } from "./${outputName}";`,
+    );
   }
   indexLines.push(``);
-  fs.writeFileSync(path.join(ABI_DIR, "index.ts"), indexLines.join("\n"), "utf-8");
+  fs.writeFileSync(
+    path.join(ABI_DIR, "index.ts"),
+    indexLines.join("\n"),
+    "utf-8",
+  );
 
   console.log(`\nABI sync complete: ${synced} synced, ${skipped} skipped`);
   if (errors.length > 0) {

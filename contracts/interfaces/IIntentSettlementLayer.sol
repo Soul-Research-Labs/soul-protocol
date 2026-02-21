@@ -188,4 +188,7 @@ interface IIntentSettlementLayer {
 
     /// @notice Check if an intent can be finalized
     function canFinalize(bytes32 intentId) external view returns (bool);
+
+    /// @notice Check if an intent has been finalized (status == FINALIZED)
+    function isFinalized(bytes32 intentId) external view returns (bool);
 }

@@ -514,6 +514,11 @@ contract IntentSettlementLayer is
             block.timestamp >= intent.fulfilledAt + CHALLENGE_PERIOD;
     }
 
+    /// @inheritdoc IIntentSettlementLayer
+    function isFinalized(bytes32 intentId) external view returns (bool) {
+        return _intents[intentId].status == IntentStatus.FINALIZED;
+    }
+
     /// @notice Get the number of active solvers
     function activeSolverCount() external view returns (uint256) {
         return activeSolvers.length;

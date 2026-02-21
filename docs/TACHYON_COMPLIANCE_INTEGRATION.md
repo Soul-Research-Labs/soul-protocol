@@ -221,8 +221,13 @@ never compromising the cryptographic foundation.
 1. Programmable viewing permissions (SelectiveDisclosureManager)
 2. Configurable privacy levels (ConfigurablePrivacyLevels)
 3. Enterprise compliance reporting (ComplianceReportingModule)
+4. Intent-based architecture with solver networks (IntentSettlementLayer) — **NEW**
+5. Instant settlement guarantees with solver-backed bonds (InstantSettlementGuarantee + InstantRelayerRewards) — **NEW**
+6. Dynamic routing orchestration (DynamicRoutingOrchestrator) — **NEW**
+7. Privacy ↔ Compliance bridge (CrossChainPrivacyHub compliance hooks) — **NEW**
 
-**Future considerations** (not yet implemented): 4. Intent-based architecture with solver networks 5. Instant settlement guarantees with solver-backed bonds 6. Dynamic routing orchestration
+All 7 Tachyon learnings are now implemented, wired into SoulProtocolHub (22 components),
+and covered by integration tests, invariant/fuzz tests, and SDK clients.
 
 ---
 

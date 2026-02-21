@@ -160,6 +160,44 @@ export {
   type RelayerConfig as SoulRelayerConfig,
 } from "./relayer/SoulRelayer";
 
+// Intent Settlement (Tachyon-derived)
+export {
+  IntentSettlementClient,
+  createIntentSettlementClient,
+  IntentStatus,
+  GuaranteeStatus,
+  type IntentSettlementConfig,
+  type Intent,
+  type Solver,
+  type Guarantee,
+} from "./client/IntentSettlementClient";
+
+// Compliance & Selective Disclosure
+export {
+  ComplianceClient,
+  createComplianceClient,
+  DisclosureLevel,
+  FieldType,
+  ReportType,
+  ReportStatus,
+  PrivacyLevel,
+  type ComplianceClientConfig,
+  type PrivateTransaction,
+} from "./client/ComplianceClient";
+
+// Dynamic Routing
+export {
+  DynamicRoutingClient,
+  createDynamicRoutingClient,
+  Urgency,
+  PoolStatus,
+  type DynamicRoutingConfig,
+  type LiquidityPool,
+  type Route,
+  type RouteRequest,
+  type BridgeMetrics,
+} from "./client/DynamicRoutingClient";
+
 // Advanced Modules (experimental — import from @soul/sdk/experimental instead)
 // Moved to sdk/experimental/: fhe, pqc, mpc, recursive, zkSystems
 export * as proofTranslator from "./proof-translator/ProofTranslator";

@@ -18,6 +18,11 @@ contract MockProofVerifier is IProofVerifier {
         verificationResult = result;
     }
 
+    /// @notice Single-arg verify used by CrossChainPrivacyHub._delegateVerify
+    function verify(bytes calldata /* proof */) external view returns (bool) {
+        return verificationResult;
+    }
+
     /// @inheritdoc IProofVerifier
     function verifyProof(
         bytes calldata /* proof */,

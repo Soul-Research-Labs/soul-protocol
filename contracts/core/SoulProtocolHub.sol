@@ -167,6 +167,17 @@ contract SoulProtocolHub is AccessControl, Pausable, ReentrancyGuard {
     address public crossDomainNullifierAlgebra;
     address public policyBoundProofs;
 
+    // ============ Intent & Settlement (Tachyon-inspired) ============
+
+    /// @notice Intent-based settlement layer
+    address public intentSettlementLayer;
+
+    /// @notice Instant settlement guarantee (solver bonds)
+    address public instantSettlementGuarantee;
+
+    /// @notice Dynamic routing orchestrator
+    address public dynamicRoutingOrchestrator;
+
     // ============ Governance ============
 
     /// @notice Governance addresses
@@ -808,6 +819,9 @@ contract SoulProtocolHub is AccessControl, Pausable, ReentrancyGuard {
         address _policyBoundProofs;
         address _multiProver;
         address _bridgeWatchtower;
+        address _intentSettlementLayer;
+        address _instantSettlementGuarantee;
+        address _dynamicRoutingOrchestrator;
     }
 
     /**
@@ -1027,6 +1041,42 @@ contract SoulProtocolHub is AccessControl, Pausable, ReentrancyGuard {
                 ++updated;
             }
         }
+        if (p._intentSettlementLayer != address(0)) {
+            intentSettlementLayer = p._intentSettlementLayer;
+            emit ComponentRegistered(
+                keccak256("intentSettlementLayer"),
+                ComponentCategory.CORE,
+                p._intentSettlementLayer,
+                1
+            );
+            unchecked {
+                ++updated;
+            }
+        }
+        if (p._instantSettlementGuarantee != address(0)) {
+            instantSettlementGuarantee = p._instantSettlementGuarantee;
+            emit ComponentRegistered(
+                keccak256("instantSettlementGuarantee"),
+                ComponentCategory.CORE,
+                p._instantSettlementGuarantee,
+                1
+            );
+            unchecked {
+                ++updated;
+            }
+        }
+        if (p._dynamicRoutingOrchestrator != address(0)) {
+            dynamicRoutingOrchestrator = p._dynamicRoutingOrchestrator;
+            emit ComponentRegistered(
+                keccak256("dynamicRoutingOrchestrator"),
+                ComponentCategory.INFRASTRUCTURE,
+                p._dynamicRoutingOrchestrator,
+                1
+            );
+            unchecked {
+                ++updated;
+            }
+        }
 
         emit ProtocolWired(msg.sender, updated);
     }
@@ -1050,8 +1100,8 @@ contract SoulProtocolHub is AccessControl, Pausable, ReentrancyGuard {
         view
         returns (string[] memory names, address[] memory addresses)
     {
-        names = new string[](19);
-        addresses = new address[](19);
+        names = new string[](22);
+        addresses = new address[](22);
         names[0] = "verifierRegistry";
         addresses[0] = verifierRegistry;
         names[1] = "universalVerifier";
@@ -1090,6 +1140,12 @@ contract SoulProtocolHub is AccessControl, Pausable, ReentrancyGuard {
         addresses[17] = multiProver;
         names[18] = "bridgeWatchtower";
         addresses[18] = bridgeWatchtower;
+        names[19] = "intentSettlementLayer";
+        addresses[19] = intentSettlementLayer;
+        names[20] = "instantSettlementGuarantee";
+        addresses[20] = instantSettlementGuarantee;
+        names[21] = "dynamicRoutingOrchestrator";
+        addresses[21] = dynamicRoutingOrchestrator;
     }
 
     /*//////////////////////////////////////////////////////////////

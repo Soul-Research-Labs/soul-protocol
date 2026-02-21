@@ -90,7 +90,10 @@ contract WireRemainingComponents is Script {
                 _crossDomainNullifierAlgebra: address(0), // already set
                 _policyBoundProofs: address(0), // already set
                 _multiProver: address(0), // set separately if needed
-                _bridgeWatchtower: address(0) // set separately if needed
+                _bridgeWatchtower: address(0), // set separately if needed
+                _intentSettlementLayer: address(0),
+                _instantSettlementGuarantee: address(0),
+                _dynamicRoutingOrchestrator: address(0)
             })
         );
 

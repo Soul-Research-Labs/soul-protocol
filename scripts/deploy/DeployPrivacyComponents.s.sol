@@ -51,8 +51,14 @@ contract DeployPrivacyComponents is Script {
 
         address guardian = _envAddressOr("GUARDIAN", deployer);
         address feeRecipient = _envAddressOr("FEE_RECIPIENT", deployer);
-        address withdrawalVerifier = _envAddressOr("WITHDRAWAL_VERIFIER", address(0));
-        address proofVerifier = _envAddressOr("PROOF_VERIFIER", withdrawalVerifier);
+        address withdrawalVerifier = _envAddressOr(
+            "WITHDRAWAL_VERIFIER",
+            address(0)
+        );
+        address proofVerifier = _envAddressOr(
+            "PROOF_VERIFIER",
+            withdrawalVerifier
+        );
         bool testMode = _envBoolOr("TEST_MODE", false);
 
         console.log("========================================");
@@ -81,7 +87,9 @@ contract DeployPrivacyComponents is Script {
                 deployer
             )
         );
-        StealthAddressRegistry stealth = StealthAddressRegistry(address(stealthProxy));
+        StealthAddressRegistry stealth = StealthAddressRegistry(
+            address(stealthProxy)
+        );
         console.log("StealthAddressRegistry:", address(stealth));
 
         // ViewKeyRegistry (UUPS proxy)
@@ -101,7 +109,10 @@ contract DeployPrivacyComponents is Script {
         console.log("DA Oracle:             ", address(daOracle));
 
         // PrivacyZoneManager
-        PrivacyZoneManager zoneManager = new PrivacyZoneManager(deployer, testMode);
+        PrivacyZoneManager zoneManager = new PrivacyZoneManager(
+            deployer,
+            testMode
+        );
         console.log("PrivacyZoneManager:    ", address(zoneManager));
 
         // ─── Phase 2: Shielded Pool ────────────────────────────────
@@ -129,7 +140,9 @@ contract DeployPrivacyComponents is Script {
                 feeRecipient
             )
         );
-        CrossChainPrivacyHub privacyHub = CrossChainPrivacyHub(payable(address(hubProxy)));
+        CrossChainPrivacyHub privacyHub = CrossChainPrivacyHub(
+            payable(address(hubProxy))
+        );
         console.log("CrossChainPrivacyHub:  ", address(privacyHub));
 
         // ─── Phase 4: Batch Accumulator ────────────────────────────
@@ -150,7 +163,9 @@ contract DeployPrivacyComponents is Script {
             BatchAccumulator batch = BatchAccumulator(address(batchProxy));
             console.log("BatchAccumulator:      ", address(batch));
         } else {
-            console.log("BatchAccumulator:       SKIPPED (no PROOF_VERIFIER set)");
+            console.log(
+                "BatchAccumulator:       SKIPPED (no PROOF_VERIFIER set)"
+            );
         }
 
         // ─── Phase 5: Cross-contract Wiring ────────────────────────
@@ -178,10 +193,14 @@ contract DeployPrivacyComponents is Script {
         console.log("CrossChainPrivacyHub:  ", address(privacyHub));
         console.log("");
         console.log("POST-DEPLOY REQUIRED:");
-        console.log("  1. Wire these into SoulProtocolHub via wireAll() or individual setters");
+        console.log(
+            "  1. Wire these into SoulProtocolHub via wireAll() or individual setters"
+        );
         console.log("  2. Register bridge adapters on CrossChainPrivacyHub");
         console.log("  3. Set derivation verifier on StealthAddressRegistry");
-        console.log("  4. Grant ATTESTOR_ROLE on DataAvailabilityOracle to attestors");
+        console.log(
+            "  4. Grant ATTESTOR_ROLE on DataAvailabilityOracle to attestors"
+        );
         console.log("  5. Configure privacy zones via PrivacyZoneManager");
     }
 

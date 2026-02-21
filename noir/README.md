@@ -81,34 +81,34 @@ noir/
 
 ### Containers (PC³)
 
-| Circuit                    | Description              | Constraints (approx) |
-| -------------------------- | ------------------------ | -------------------- |
-| `container`                | Basic container validity | ~2,500               |
-| `state_transfer`           | State ownership transfer | ~3,500               |
+| Circuit          | Description              | Constraints (approx) |
+| ---------------- | ------------------------ | -------------------- |
+| `container`      | Basic container validity | ~2,500               |
+| `state_transfer` | State ownership transfer | ~3,500               |
 
 ### Privacy & Transfers
 
-| Circuit              | Description                      | Constraints (approx) |
-| -------------------- | -------------------------------- | -------------------- |
-| `balance_proof`      | Balance range proof              | ~3,200               |
-| `swap_proof`         | Atomic swap proof                | ~4,000               |
-| `shielded_pool`      | Shielded pool deposit/withdraw   | ~6,500               |
-| `encrypted_transfer` | Encrypted transfer proof         | ~5,800               |
-| `private_transfer`   | Private transfer proof           | ~5,500               |
-| `ring_signature`     | Ring signature proof (CLSAG)     | ~7,500               |
+| Circuit              | Description                    | Constraints (approx) |
+| -------------------- | ------------------------------ | -------------------- |
+| `balance_proof`      | Balance range proof            | ~3,200               |
+| `swap_proof`         | Atomic swap proof              | ~4,000               |
+| `shielded_pool`      | Shielded pool deposit/withdraw | ~6,500               |
+| `encrypted_transfer` | Encrypted transfer proof       | ~5,800               |
+| `private_transfer`   | Private transfer proof         | ~5,500               |
+| `ring_signature`     | Ring signature proof (CLSAG)   | ~7,500               |
 
 ### Compliance Extensions
 
-| Circuit               | Description                        | Constraints (approx) |
-| --------------------- | ---------------------------------- | -------------------- |
-| `sanctions_check`     | OFAC/sanctions compliance check    | ~4,000               |
-| `accredited_investor` | Accredited investor verification   | ~3,800               |
+| Circuit               | Description                      | Constraints (approx) |
+| --------------------- | -------------------------------- | -------------------- |
+| `sanctions_check`     | OFAC/sanctions compliance check  | ~4,000               |
+| `accredited_investor` | Accredited investor verification | ~3,800               |
 
 ### Aggregation
 
-| Circuit      | Description                          | Constraints (approx) |
-| ------------ | ------------------------------------ | -------------------- |
-| `aggregator` | Recursive 4-proof batch aggregation  | ~45,000              |
+| Circuit      | Description                         | Constraints (approx) |
+| ------------ | ----------------------------------- | -------------------- |
+| `aggregator` | Recursive 4-proof batch aggregation | ~45,000              |
 
 ## Installation
 

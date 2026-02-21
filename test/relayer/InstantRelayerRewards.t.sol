@@ -127,8 +127,11 @@ contract InstantRelayerRewardsTest is Test {
         vm.prank(admin);
         rewards.completeRelayWithReward(RELAY_ID_1);
 
-        // Fast: min(1 ether * 1.25, 1 ether) = 1 ether (capped)
-        uint256 expectedReward = (1 ether * 9500) / 10000;
+        // Fast: 1 ether * 12500 / 15000, minus 5% protocol fee
+        uint256 deposit = 1 ether;
+        uint256 tiered = (deposit * 12500) / 15000;
+        uint256 protocolCut = (tiered * 500) / 10000;
+        uint256 expectedReward = tiered - protocolCut;
         assertEq(relayer1.balance, balBefore + expectedReward);
 
         InstantRelayerRewards.RelayerStats memory stats = rewards
@@ -147,8 +150,11 @@ contract InstantRelayerRewardsTest is Test {
         vm.prank(admin);
         rewards.completeRelayWithReward(RELAY_ID_1);
 
-        // Normal: min(1 ether * 1.0, 1 ether) = 1 ether
-        uint256 expectedReward = (1 ether * 9500) / 10000;
+        // Normal: 1 ether * 10000 / 15000, minus 5% protocol fee
+        uint256 deposit = 1 ether;
+        uint256 tiered = (deposit * 10000) / 15000;
+        uint256 protocolCut = (tiered * 500) / 10000;
+        uint256 expectedReward = tiered - protocolCut;
         assertEq(relayer1.balance, balBefore + expectedReward);
 
         InstantRelayerRewards.RelayerStats memory stats = rewards
@@ -167,9 +173,10 @@ contract InstantRelayerRewardsTest is Test {
         vm.prank(admin);
         rewards.completeRelayWithReward(RELAY_ID_1);
 
-        // Slow: 1 ether * 0.9 = 0.9 ether
-        // After 5% protocol fee: 0.9 * 0.95 = 0.855 ether
-        uint256 tiered = (1 ether * 9000) / 10000; // 0.9 ether
+        // Slow: 1 ether * 9000 / 15000 = 0.6 ether
+        // After 5% protocol fee: 0.6 * 0.95 = 0.57 ether
+        uint256 deposit = 1 ether;
+        uint256 tiered = (deposit * 9000) / 15000;
         uint256 protocolCut = (tiered * 500) / 10000;
         uint256 expectedReward = tiered - protocolCut;
         assertEq(relayer1.balance, balBefore + expectedReward);
@@ -314,14 +321,20 @@ contract InstantRelayerRewardsTest is Test {
 
     function test_CalculateReward_Normal() public view {
         uint256 reward = rewards.calculateReward(1 ether, 120);
-        // Normal: 1 ether * 1.0 = 1 ether, minus 5% protocol = 0.95 ether
-        assertEq(reward, 0.95 ether);
+        // Normal: 1 ether * 10000 / 15000, minus 5% protocol fee
+        uint256 deposit = 1 ether;
+        uint256 tiered = (deposit * 10000) / 15000;
+        uint256 protocolCut = (tiered * 500) / 10000;
+        assertEq(reward, tiered - protocolCut);
     }
 
     function test_CalculateReward_Slow() public view {
         uint256 reward = rewards.calculateReward(1 ether, 600);
-        // Slow: 1 ether * 0.9 = 0.9 ether, minus 5% = 0.855 ether
-        assertEq(reward, 0.855 ether);
+        // Slow: 1 ether * 9000 / 15000, minus 5% protocol fee
+        uint256 deposit = 1 ether;
+        uint256 tiered = (deposit * 9000) / 15000;
+        uint256 protocolCut = (tiered * 500) / 10000;
+        assertEq(reward, tiered - protocolCut);
     }
 
     // ──────────────────────────────────────────────────────────

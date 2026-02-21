@@ -269,7 +269,10 @@ contract DeployMainnet is Script {
                 _crossDomainNullifierAlgebra: address(cdna),
                 _policyBoundProofs: address(policyBoundProofs),
                 _multiProver: address(0), // deployed separately
-                _bridgeWatchtower: address(0) // deployed separately
+                _bridgeWatchtower: address(0), // deployed separately
+                _intentSettlementLayer: address(0),
+                _instantSettlementGuarantee: address(0),
+                _dynamicRoutingOrchestrator: address(0)
             })
         );
         console.log("Hub wired with core components");

@@ -60,7 +60,10 @@ contract SoulProtocolHubWiringTest is Test {
                 _crossDomainNullifierAlgebra: CDNA,
                 _policyBoundProofs: PBP,
                 _multiProver: address(0),
-                _bridgeWatchtower: address(0)
+                _bridgeWatchtower: address(0),
+                _intentSettlementLayer: address(0),
+                _instantSettlementGuarantee: address(0),
+                _dynamicRoutingOrchestrator: address(0)
             })
         );
 
@@ -106,7 +109,10 @@ contract SoulProtocolHubWiringTest is Test {
                 _crossDomainNullifierAlgebra: CDNA,
                 _policyBoundProofs: address(0),
                 _multiProver: address(0),
-                _bridgeWatchtower: address(0)
+                _bridgeWatchtower: address(0),
+                _intentSettlementLayer: address(0),
+                _instantSettlementGuarantee: address(0),
+                _dynamicRoutingOrchestrator: address(0)
             })
         );
 
@@ -139,7 +145,10 @@ contract SoulProtocolHubWiringTest is Test {
                 _crossDomainNullifierAlgebra: address(0),
                 _policyBoundProofs: address(0),
                 _multiProver: address(0),
-                _bridgeWatchtower: address(0)
+                _bridgeWatchtower: address(0),
+                _intentSettlementLayer: address(0),
+                _instantSettlementGuarantee: address(0),
+                _dynamicRoutingOrchestrator: address(0)
             })
         );
 
@@ -171,14 +180,17 @@ contract SoulProtocolHubWiringTest is Test {
                 _crossDomainNullifierAlgebra: CDNA,
                 _policyBoundProofs: PBP,
                 _multiProver: address(0),
-                _bridgeWatchtower: address(0)
+                _bridgeWatchtower: address(0),
+                _intentSettlementLayer: address(0),
+                _instantSettlementGuarantee: address(0),
+                _dynamicRoutingOrchestrator: address(0)
             })
         );
 
         (string[] memory names, address[] memory addrs) = hub
             .getComponentStatus();
-        assertEq(names.length, 19);
-        assertEq(addrs.length, 19);
+        assertEq(names.length, 22);
+        assertEq(addrs.length, 22);
 
         // Spot check a few
         assertEq(addrs[0], VERIFIER_REG); // verifierRegistry
@@ -211,7 +223,10 @@ contract SoulProtocolHubWiringTest is Test {
                 _crossDomainNullifierAlgebra: address(0),
                 _policyBoundProofs: address(0),
                 _multiProver: address(0),
-                _bridgeWatchtower: address(0)
+                _bridgeWatchtower: address(0),
+                _intentSettlementLayer: address(0),
+                _instantSettlementGuarantee: address(0),
+                _dynamicRoutingOrchestrator: address(0)
             })
         );
     }
