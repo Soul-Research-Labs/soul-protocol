@@ -408,7 +408,7 @@ export class RingCTClient {
     );
 
     // Submit transaction
-    const hash = await this.contract.write.submitRingTransaction([
+    const hash = await this.contract.write!.submitRingTransaction([
       inputs.map((i) => i.commitment as Hex),
       outputs.map((o) => o.commitment as Hex),
       fee,

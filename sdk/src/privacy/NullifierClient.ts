@@ -276,7 +276,7 @@ export class NullifierClient {
     if (!this.walletClient) throw new Error("Wallet client required");
 
     const domainTagHash = keccak256(stringToBytes(domain.domainTag));
-    const hash = await this.contract.write.registerDomain([
+    const hash = await this.contract.write!.registerDomain([
       BigInt(domain.chainId),
       domainTagHash,
     ]);
@@ -289,7 +289,7 @@ export class NullifierClient {
   async registerNullifier(nullifier: Hex, domainChainId: number): Promise<Hex> {
     if (!this.walletClient) throw new Error("Wallet client required");
 
-    const hash = await this.contract.write.registerNullifier([
+    const hash = await this.contract.write!.registerNullifier([
       nullifier,
       BigInt(domainChainId),
     ]);

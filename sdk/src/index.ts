@@ -160,6 +160,22 @@ export {
   type RelayerConfig as SoulRelayerConfig,
 } from "./relayer/SoulRelayer";
 
+// Decentralized Relayer Registry SDK Client
+export {
+  DecentralizedRelayerRegistryClient,
+  type RelayerInfo,
+  type RegistryConfig as RelayerRegistryConfig,
+} from "./relayer/DecentralizedRelayerRegistryClient";
+
+// Security — Enhanced Kill Switch SDK Client
+export {
+  EnhancedKillSwitchClient,
+  EmergencyLevel,
+  ActionType,
+  type ProtocolState as KillSwitchProtocolState,
+  type EmergencyIncident,
+} from "./security/EnhancedKillSwitchClient";
+
 // Intent Settlement (Tachyon-derived)
 export {
   IntentSettlementClient,

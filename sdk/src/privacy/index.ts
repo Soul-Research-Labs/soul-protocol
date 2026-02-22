@@ -55,6 +55,14 @@ export {
   type CrossDomainNullifier,
 } from "./NullifierClient";
 
+// NullifierRegistryV3 client (on-chain nullifier tree + cross-chain receive)
+export {
+  NullifierRegistryV3Client,
+  type NullifierData,
+  type TreeStats,
+  type RegistryConfig as NullifierRegistryConfig,
+} from "./NullifierRegistryV3Client";
+
 // Privacy Hub exports
 export {
   PrivacyHubClient,

@@ -33,17 +33,26 @@ contract BridgeFraudProof is AccessControl {
         bytes calldata fraudEvidence
     ) external {
         // 1. Verify that the original proof matches the pending transfer
-        OptimisticBridgeVerifier.PendingTransfer memory transfer = optimisticVerifier.getTransfer(transferId);
-        require(transfer.status == OptimisticBridgeVerifier.TransferStatus.CHALLENGED, "Not challenged");
-        require(keccak256(originalProof) == transfer.proofHash, "Original proof mismatch");
+        OptimisticBridgeVerifier.PendingTransfer
+            memory transfer = optimisticVerifier.getTransfer(transferId);
+        require(
+            transfer.status ==
+                OptimisticBridgeVerifier.TransferStatus.CHALLENGED,
+            "Not challenged"
+        );
+        require(
+            keccak256(originalProof) == transfer.proofHash,
+            "Original proof mismatch"
+        );
 
         // 2. Mock verification of fraud evidence
         // In production, this would verify the ZK proof or state transition logic.
         // For this implementation, we assume if evidence is non-empty and starts with "FRAUD", it's valid.
         bool isFraudulent = _verifyEvidence(originalProof, fraudEvidence);
-        
+
         require(isFraudulent, "Fraud not proven");
 
+        emit FraudProofSubmitted(transferId, msg.sender);
         emit FraudVerified(transferId);
 
         // 3. Resolve the challenge via the Verifier
@@ -55,7 +64,7 @@ contract BridgeFraudProof is AccessControl {
      * @dev Mock verification logic
      */
     function _verifyEvidence(
-        bytes calldata /*originalProof*/, 
+        bytes calldata /*originalProof*/,
         bytes calldata evidence
     ) internal pure returns (bool) {
         if (evidence.length < 5) return false;

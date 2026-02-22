@@ -193,7 +193,7 @@ export class StealthAddressClient {
       viewingPubKey,
     );
 
-    const hash = await this.contract.write.registerMetaAddress([
+    const hash = await this.contract.write!.registerMetaAddress([
       stealthId,
       spendingPubKey,
       viewingPubKey,
@@ -264,7 +264,7 @@ export class StealthAddressClient {
     if (!this.walletClient)
       throw new Error("Wallet client required for announcement");
 
-    const hash = await this.contract.write.announcePayment([
+    const hash = await this.contract.write!.announcePayment([
       stealthAddress,
       ephemeralPubKey,
       metadata,
