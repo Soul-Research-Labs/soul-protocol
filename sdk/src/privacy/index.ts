@@ -24,6 +24,17 @@ export {
   type RegistryStats,
 } from "./StealthAddressRegistryClient";
 
+// BatchAccumulator client (timing correlation resistance)
+export {
+  BatchAccumulatorClient,
+  BatchStatus,
+  type BatchInfo,
+  type ActiveBatchInfo,
+  type TransactionInfo,
+  type AccumulatorStats,
+  type AccumulatorConstants,
+} from "./BatchAccumulatorClient";
+
 // RingCT exports
 export {
   RingCTClient,

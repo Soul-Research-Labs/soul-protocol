@@ -40,7 +40,13 @@ contract DecentralizedRelayerRegistryTest is Test {
         assertEq(unlockTime, block.timestamp + 7 days);
         
         // Try withdraw too early
-        vm.expectRevert("Still locked");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                DecentralizedRelayerRegistry.StillLocked.selector,
+                unlockTime,
+                block.timestamp
+            )
+        );
         registry.withdrawStake();
         
         // Wait

@@ -28,7 +28,7 @@ methods {
     function batchRegisterNullifiers(bytes32[], bytes32[]) external returns (uint256);
     
     // Verification functions
-    function isRootValid(bytes32) external returns (bool);
+    function isValidRoot(bytes32) external returns (bool);
 }
 
 // ============================================================================
