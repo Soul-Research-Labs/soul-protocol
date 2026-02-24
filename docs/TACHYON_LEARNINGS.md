@@ -718,11 +718,14 @@ All 7 Tachyon learnings are now implemented in Soul Protocol:
 
 ### Hub Wiring
 
-SoulProtocolHub expanded from 19 → 22 components:
+SoulProtocolHub expanded from 19 → 25 components:
 
 - Slot 20: `IntentSettlementLayer` (CORE)
 - Slot 21: `InstantSettlementGuarantee` (CORE)
 - Slot 22: `DynamicRoutingOrchestrator` (INFRASTRUCTURE)
+- Slot 23: `BridgeCircuitBreaker` (SECURITY)
+- Slot 24: `SoulTimelock` (GOVERNANCE)
+- Slot 25: `SoulUpgradeTimelock` (GOVERNANCE)
 
 ### Privacy ↔ Compliance Integration
 

@@ -543,7 +543,7 @@ import {
   CrossChainPrivacyHub,
   StealthAddressRegistry,
   PrivacyLevel,
-} from "@soulprotocol/sdk";
+} from "@soul/sdk";
 
 // Initialize
 const privacyHub = new CrossChainPrivacyHub(provider);
@@ -592,7 +592,7 @@ await privacyHub.completeTransfer(transferId, zkProof, nullifierPreimage);
 
 ```typescript
 // RESEARCH REFERENCE - Not yet implemented
-import { RingConfidentialTransactions } from "@soulprotocol/sdk";
+import { RingConfidentialTransactions } from "@soul/sdk";
 
 const ringCT = new RingConfidentialTransactions(provider);
 

@@ -14,7 +14,7 @@
  *   - Bridge health monitoring with auto-degradation
  */
 
-using MultiBridgeRouter as router;
+using SimpleMultiBridgeRouter as router;
 
 methods {
     // ── Constants & Config ──

@@ -115,7 +115,7 @@ function registerState(...) external nonReentrant whenNotPaused {
 
 **Mitigations**:
 
-- ✅ Solidity 0.8.22 with built-in overflow checks
+- ✅ Solidity 0.8.24 with built-in overflow checks
 - ✅ LLVM-safe bit operations in ZK-SLocks
 - ✅ Explicit bounds checking on array indices
 

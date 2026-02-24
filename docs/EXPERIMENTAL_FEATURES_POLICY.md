@@ -1,12 +1,15 @@
 # Experimental Features Policy
 
 ## Overview
+
 Soul Protocol includes experimental cryptographic features (FHE, PQC, MPC) that are not yet production-ready. This document outlines how to manage these features safely.
 
 ## Feature Classification
 
 ### Production (Green)
+
 ✅ **Ready for mainnet with real value**
+
 - Groth16 verification (BN254)
 - Poseidon hashing
 - ECDSA signatures
@@ -16,7 +19,9 @@ Soul Protocol includes experimental cryptographic features (FHE, PQC, MPC) that 
 **Criteria**: Audited, formally verified, battle-tested
 
 ### Beta (Yellow)
+
 ⚠️ **Testnet only, limited value**
+
 - Ring signatures (CLSAG)
 - Stealth addresses
 - Cross-chain bridges (some)
@@ -25,7 +30,9 @@ Soul Protocol includes experimental cryptographic features (FHE, PQC, MPC) that 
 **Criteria**: Extensive testing, security review, testnet deployment
 
 ### Experimental (Red)
+
 🔴 **Research/prototype, no real value**
+
 - FHE operations (SoulFHEModule, EncryptedERC20)
 - Post-quantum crypto (Dilithium, Kyber, SPHINCS+)
 - MPC threshold signatures
@@ -52,21 +59,21 @@ Experimental Track (Testnet)
 ### 2. Feature Flags
 
 ```solidity
-// contracts/core/ExperimentalFeatureRegistry.sol
+// contracts/security/ExperimentalFeatureRegistry.sol
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
 contract ExperimentalFeatureRegistry is AccessControl {
     bytes32 public constant FEATURE_ADMIN = keccak256("FEATURE_ADMIN");
-    
+
     enum FeatureStatus {
         DISABLED,
         EXPERIMENTAL,  // Testnet only
         BETA,          // Limited mainnet
         PRODUCTION     // Full mainnet
     }
-    
+
     struct Feature {
         string name;
         FeatureStatus status;
@@ -75,19 +82,19 @@ contract ExperimentalFeatureRegistry is AccessControl {
         bool requiresWarning;
         string documentationUrl;
     }
-    
+
     mapping(bytes32 => Feature) public features;
-    
+
     // Feature identifiers
     bytes32 public constant FHE_OPERATIONS = keccak256("FHE_OPERATIONS");
     bytes32 public constant PQC_SIGNATURES = keccak256("PQC_SIGNATURES");
     bytes32 public constant MPC_THRESHOLD = keccak256("MPC_THRESHOLD");
     bytes32 public constant SERAPHIM_PRIVACY = keccak256("SERAPHIM_PRIVACY");
-    
+
     constructor() {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(FEATURE_ADMIN, msg.sender);
-        
+
         // Initialize experimental features as DISABLED
         _registerFeature(
             FHE_OPERATIONS,
@@ -98,7 +105,7 @@ contract ExperimentalFeatureRegistry is AccessControl {
             true,
             "https://docs.soul.xyz/experimental/fhe"
         );
-        
+
         _registerFeature(
             PQC_SIGNATURES,
             "Post-Quantum Signatures",
@@ -109,7 +116,7 @@ contract ExperimentalFeatureRegistry is AccessControl {
             "https://docs.soul.xyz/experimental/pqc"
         );
     }
-    
+
     function _registerFeature(
         bytes32 featureId,
         string memory name,
@@ -128,25 +135,25 @@ contract ExperimentalFeatureRegistry is AccessControl {
             documentationUrl: documentationUrl
         });
     }
-    
+
     function isFeatureEnabled(bytes32 featureId) external view returns (bool) {
         return features[featureId].status != FeatureStatus.DISABLED;
     }
-    
+
     function requireFeatureEnabled(bytes32 featureId) external view {
         require(
             features[featureId].status != FeatureStatus.DISABLED,
             "Feature is disabled"
         );
     }
-    
+
     function requireProductionReady(bytes32 featureId) external view {
         require(
             features[featureId].status == FeatureStatus.PRODUCTION,
             "Feature not production-ready"
         );
     }
-    
+
     function updateFeatureStatus(
         bytes32 featureId,
         FeatureStatus newStatus
@@ -154,7 +161,7 @@ contract ExperimentalFeatureRegistry is AccessControl {
         features[featureId].status = newStatus;
         emit FeatureStatusUpdated(featureId, newStatus);
     }
-    
+
     event FeatureStatusUpdated(bytes32 indexed featureId, FeatureStatus status);
 }
 ```
@@ -167,9 +174,9 @@ contract ExperimentalFeatureRegistry is AccessControl {
 // contracts/security/ExperimentalRiskLimiter.sol
 contract ExperimentalRiskLimiter {
     ExperimentalFeatureRegistry public registry;
-    
+
     mapping(bytes32 => uint256) public totalValueLocked;
-    
+
     modifier withinRiskLimit(bytes32 featureId, uint256 amount) {
         Feature memory feature = registry.features(featureId);
         require(
@@ -179,10 +186,10 @@ contract ExperimentalRiskLimiter {
         _;
         totalValueLocked[featureId] += amount;
     }
-    
-    function lockWithFHE(uint256 amount) 
-        external 
-        withinRiskLimit(registry.FHE_OPERATIONS(), amount) 
+
+    function lockWithFHE(uint256 amount)
+        external
+        withinRiskLimit(registry.FHE_OPERATIONS(), amount)
     {
         // FHE operation with risk limit
     }
@@ -227,6 +234,7 @@ docs/
 ### Experimental → Beta
 
 **Requirements**:
+
 - [ ] Security review completed
 - [ ] Extensive testing (>1000 test cases)
 - [ ] Testnet deployment (>3 months)
@@ -235,6 +243,7 @@ docs/
 - [ ] Community feedback positive
 
 **Process**:
+
 1. Submit graduation proposal
 2. Security committee review
 3. Community vote
@@ -243,6 +252,7 @@ docs/
 ### Beta → Production
 
 **Requirements**:
+
 - [ ] Full security audit by 2+ firms
 - [ ] Formal verification complete
 - [ ] Bug bounty program (>6 months)
@@ -252,6 +262,7 @@ docs/
 - [ ] Governance approval
 
 **Process**:
+
 1. Audit reports published
 2. Governance proposal
 3. Timelock period (7 days)
@@ -265,18 +276,21 @@ docs/
 **Status**: 🔴 Experimental
 
 **Contracts**:
+
 - `SoulFHEModule.sol`
 - `EncryptedERC20.sol`
 - `EncryptedVoting.sol`
 - `FHEGateway.sol`
 
 **Issues**:
+
 - Gas costs extremely high (>10M gas per operation)
 - Limited FHE library support on EVM
 - Not audited
 - Unproven in production
 
-**Recommendation**: 
+**Recommendation**:
+
 - Keep disabled on mainnet
 - Continue research on testnet
 - Consider L2 deployment for lower gas
@@ -289,18 +303,21 @@ docs/
 **Status**: 🔴 Experimental
 
 **Contracts**:
+
 - `DilithiumVerifier.sol`
 - `KyberKEM.sol`
 - `SPHINCSPlusVerifier.sol`
 - `PQCRegistry.sol`
 
 **Issues**:
+
 - Large signature sizes (2-4KB)
 - High verification gas costs (>5M gas)
 - NIST standards recently finalized (2024)
 - Limited production usage
 
 **Recommendation**:
+
 - Keep disabled on mainnet
 - Monitor quantum computing threats
 - Prepare for future activation
@@ -313,16 +330,19 @@ docs/
 **Status**: 🔴 Experimental
 
 **Contracts**:
+
 - `SoulThresholdSignature.sol`
 - `SoulMPCComplianceModule.sol`
 
 **Issues**:
+
 - Complex coordination requirements
 - Network latency sensitive
 - Not fully implemented
 - Requires off-chain infrastructure
 
 **Recommendation**:
+
 - Keep disabled on mainnet
 - Focus on threshold signatures first
 - Partner with MPC providers (Lit Protocol, Fireblocks)
@@ -335,17 +355,20 @@ docs/
 **Status**: 🔴 Experimental
 
 **Contracts**:
+
 - `SeraphisFullProtocol.sol`
 - `TriptychSignatures.sol`
 - `TriptychPlusSignatures.sol`
 
 **Issues**:
+
 - Novel cryptography (not battle-tested)
 - High complexity
 - Limited tooling
 - Unaudited
 
 **Recommendation**:
+
 - Research phase only
 - Extensive testing required
 - Consider simpler alternatives (CLSAG)
@@ -358,6 +381,7 @@ docs/
 ### Monitoring
 
 Track experimental feature usage:
+
 - Transaction count
 - Value locked
 - Error rates
@@ -376,6 +400,7 @@ If issues found in experimental features:
 ### Bug Bounty
 
 Separate bug bounty tiers:
+
 - **Production**: Up to $1M
 - **Beta**: Up to $100K
 - **Experimental**: Up to $10K
@@ -385,6 +410,7 @@ Separate bug bounty tiers:
 ### User-Facing
 
 **In UI**:
+
 ```
 ⚠️ EXPERIMENTAL FEATURE
 This feature is not production-ready and has not been audited.
@@ -394,6 +420,7 @@ Risk of total loss of funds.
 ```
 
 **In Documentation**:
+
 ```markdown
 # ⚠️ EXPERIMENTAL: FHE Operations
 
@@ -409,6 +436,7 @@ This feature is experimental and should not be used with real value...
 ### Developer-Facing
 
 **In Code**:
+
 ```solidity
 /// @custom:security-contact security@soul.xyz
 /// @custom:experimental This contract is EXPERIMENTAL and NOT AUDITED
@@ -432,6 +460,7 @@ If experimental feature fails to graduate:
 ## Success Criteria
 
 An experimental feature is successful if:
+
 - [ ] Graduates to beta within 18 months
 - [ ] Achieves >100 active users on testnet
 - [ ] No critical security issues found

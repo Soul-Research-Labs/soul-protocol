@@ -226,7 +226,7 @@ never compromising the cryptographic foundation.
 6. Dynamic routing orchestration (DynamicRoutingOrchestrator) — **NEW**
 7. Privacy ↔ Compliance bridge (CrossChainPrivacyHub compliance hooks) — **NEW**
 
-All 7 Tachyon learnings are now implemented, wired into SoulProtocolHub (22 components),
+All 7 Tachyon learnings are now implemented, wired into SoulProtocolHub (25 components),
 and covered by integration tests, invariant/fuzz tests, and SDK clients.
 
 ---

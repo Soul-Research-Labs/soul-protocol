@@ -451,7 +451,6 @@ Cached array length, accumulated values in memory, and performed single storage 
 
 The security fixes have been verified to compile successfully with:
 
-- Solidity 0.8.20 (EVM target: paris)
 - Solidity 0.8.24 (EVM target: cancun)
 
 Test execution requires Foundry installation. All Solidity test contracts compile without errors.

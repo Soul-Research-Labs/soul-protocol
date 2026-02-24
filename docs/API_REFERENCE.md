@@ -41,11 +41,11 @@ npm install @soul/sdk
 ## Quick Start
 
 ```typescript
-import { SoulClient, SoulClientConfig } from '@soul/sdk';
+import { SoulClient, SoulClientConfig } from "@soul/sdk";
 
 const config: SoulClientConfig = {
-  network: 'mainnet',
-  rpcUrl: 'https://eth-mainnet.alchemyapi.io/v2/YOUR_KEY',
+  network: "mainnet",
+  rpcUrl: "https://eth-mainnet.alchemyapi.io/v2/YOUR_KEY",
 };
 
 const client = new SoulClient(config);
@@ -66,6 +66,7 @@ new SoulClient(config: SoulClientConfig)
 ```
 
 **Parameters:**
+
 - `config` - Configuration object
 
 **Config Options:**
@@ -131,29 +132,32 @@ async createContainer(params: CreateContainerParams): Promise<ContainerResult>
 ```
 
 **Parameters:**
+
 ```typescript
 interface CreateContainerParams {
-  proof: Uint8Array;           // ZK proof bytes
-  publicInputs: string[];      // Public inputs array
+  proof: Uint8Array; // ZK proof bytes
+  publicInputs: string[]; // Public inputs array
   metadata?: ContainerMetadata; // Optional metadata
 }
 ```
 
 **Returns:**
+
 ```typescript
 interface ContainerResult {
-  containerId: string;         // Container identifier (bytes32)
-  txHash: string;              // Transaction hash
-  blockNumber: number;         // Block number
-  gasUsed: bigint;             // Gas consumed
+  containerId: string; // Container identifier (bytes32)
+  txHash: string; // Transaction hash
+  blockNumber: number; // Block number
+  gasUsed: bigint; // Gas consumed
 }
 ```
 
 **Example:**
+
 ```typescript
 const result = await client.getPC3().createContainer({
   proof: proofBytes,
-  publicInputs: ['0x123...', '0x456...'],
+  publicInputs: ["0x123...", "0x456..."],
   metadata: {
     sourceChain: 1,
     targetChain: 42161,
@@ -180,6 +184,7 @@ async getContainer(containerId: string): Promise<Container>
 ```
 
 **Returns:**
+
 ```typescript
 interface Container {
   id: string;
@@ -212,10 +217,11 @@ async registerPolicy(params: RegisterPolicyParams): Promise<PolicyResult>
 ```
 
 **Parameters:**
+
 ```typescript
 interface RegisterPolicyParams {
-  policyHash: string;          // Policy commitment hash
-  verifierAddress: string;     // Policy verifier contract
+  policyHash: string; // Policy commitment hash
+  verifierAddress: string; // Policy verifier contract
   constraints?: PolicyConstraints;
 }
 ```
@@ -244,12 +250,13 @@ async commitState(params: StateCommitParams): Promise<CommitmentResult>
 ```
 
 **Parameters:**
+
 ```typescript
 interface StateCommitParams {
-  stateRoot: string;           // State Merkle root
-  blockHeight: number;         // Source block height
-  chainId: number;             // Source chain ID
-  proof?: Uint8Array;          // Optional inclusion proof
+  stateRoot: string; // State Merkle root
+  blockHeight: number; // Source block height
+  chainId: number; // Source chain ID
+  proof?: Uint8Array; // Optional inclusion proof
 }
 ```
 
@@ -277,11 +284,12 @@ async registerNullifier(params: NullifierParams): Promise<TransactionResult>
 ```
 
 **Parameters:**
+
 ```typescript
 interface NullifierParams {
-  nullifier: string;           // Nullifier hash
-  domain: string;              // Domain identifier
-  proof: Uint8Array;           // Validity proof
+  nullifier: string; // Nullifier hash
+  domain: string; // Domain identifier
+  proof: Uint8Array; // Validity proof
 }
 ```
 
@@ -311,6 +319,7 @@ async executePrivacyOperation(
 ```
 
 **Parameters:**
+
 ```typescript
 interface PrivacyOperationParams {
   operationType: OperationType;
@@ -340,8 +349,8 @@ Generate a ZK proof using the Soul circuit.
 ```typescript
 async function generateProof(
   circuit: CircuitType,
-  inputs: CircuitInputs
-): Promise<ProofOutput>
+  inputs: CircuitInputs,
+): Promise<ProofOutput>;
 ```
 
 ### verifyProof()
@@ -352,8 +361,8 @@ Verify a proof locally.
 async function verifyProof(
   proof: Uint8Array,
   publicInputs: string[],
-  verificationKey: VerificationKey
-): Promise<boolean>
+  verificationKey: VerificationKey,
+): Promise<boolean>;
 ```
 
 ### hashToField()
@@ -361,7 +370,7 @@ async function verifyProof(
 Hash arbitrary data to a field element.
 
 ```typescript
-function hashToField(data: Uint8Array): string
+function hashToField(data: Uint8Array): string;
 ```
 
 ### computeNullifier()
@@ -369,10 +378,7 @@ function hashToField(data: Uint8Array): string
 Compute a nullifier from secret and commitment.
 
 ```typescript
-function computeNullifier(
-  secret: Uint8Array,
-  commitment: string
-): string
+function computeNullifier(secret: Uint8Array, commitment: string): string;
 ```
 
 ---
@@ -383,16 +389,16 @@ function computeNullifier(
 
 ```typescript
 // Subscribe to container events
-client.getPC3().on('ContainerCreated', (event) => {
+client.getPC3().on("ContainerCreated", (event) => {
   console.log(`Container ${event.containerId} created by ${event.creator}`);
 });
 
-client.getPC3().on('ContainerConsumed', (event) => {
+client.getPC3().on("ContainerConsumed", (event) => {
   console.log(`Container ${event.containerId} consumed by ${event.consumer}`);
 });
 
 // Unsubscribe
-client.getPC3().off('ContainerCreated', handler);
+client.getPC3().off("ContainerCreated", handler);
 ```
 
 ### Event Types
@@ -461,16 +467,16 @@ try {
 
 ### Error Codes
 
-| Code | Name | Description |
-|------|------|-------------|
-| 1001 | PROOF_INVALID | The provided proof is invalid |
-| 1002 | CONTAINER_NOT_FOUND | Container does not exist |
+| Code | Name                       | Description                    |
+| ---- | -------------------------- | ------------------------------ |
+| 1001 | PROOF_INVALID              | The provided proof is invalid  |
+| 1002 | CONTAINER_NOT_FOUND        | Container does not exist       |
 | 1003 | CONTAINER_ALREADY_CONSUMED | Container was already consumed |
-| 1004 | NULLIFIER_ALREADY_USED | Nullifier was already spent |
-| 1005 | POLICY_NOT_FOUND | Policy does not exist |
-| 1006 | UNAUTHORIZED | Caller not authorized |
-| 1007 | INSUFFICIENT_GAS | Transaction ran out of gas |
-| 1008 | NETWORK_ERROR | Network connection failed |
+| 1004 | NULLIFIER_ALREADY_USED     | Nullifier was already spent    |
+| 1005 | POLICY_NOT_FOUND           | Policy does not exist          |
+| 1006 | UNAUTHORIZED               | Caller not authorized          |
+| 1007 | INSUFFICIENT_GAS           | Transaction ran out of gas     |
+| 1008 | NETWORK_ERROR              | Network connection failed      |
 
 ---
 
@@ -488,7 +494,7 @@ import type {
   Nullifier,
   OperationType,
   TransactionResult,
-} from '@soulprotocol/sdk';
+} from "@soul/sdk";
 ```
 
 ---
@@ -517,7 +523,7 @@ try {
   const result = await client.getPC3().createContainer(params);
 } catch (error) {
   // Handle gracefully
-  logger.error('Container creation failed', error);
+  logger.error("Container creation failed", error);
   throw error;
 }
 ```
@@ -526,7 +532,7 @@ try {
 
 ```typescript
 // Estimate gas before sending
-const gasEstimate = await client.estimateGas('createContainer', params);
+const gasEstimate = await client.estimateGas("createContainer", params);
 console.log(`Estimated gas: ${gasEstimate}`);
 ```
 
@@ -534,7 +540,7 @@ console.log(`Estimated gas: ${gasEstimate}`);
 
 ```typescript
 // Generate proofs off-chain
-const proof = await generateProof('container', inputs);
+const proof = await generateProof("container", inputs);
 
 // Then submit on-chain
 const result = await client.getPC3().createContainer({
@@ -550,15 +556,17 @@ const result = await client.getPC3().createContainer({
 ### From v1 to v2
 
 1. Update import paths:
+
 ```typescript
 // v1
-import { SoulClient } from 'soul-sdk';
+import { SoulClient } from "soul-sdk";
 
 // v2
-import { SoulClient } from '@soul/sdk';
+import { SoulClient } from "@soul/sdk";
 ```
 
 2. Update method signatures:
+
 ```typescript
 // v1
 await client.createContainer(proof, inputs);
@@ -568,12 +576,13 @@ await client.getPC3().createContainer({ proof, publicInputs: inputs });
 ```
 
 3. Update event listeners:
+
 ```typescript
 // v1
-client.on('container', handler);
+client.on("container", handler);
 
 // v2
-client.getPC3().on('ContainerCreated', handler);
+client.getPC3().on("ContainerCreated", handler);
 ```
 
 ---
