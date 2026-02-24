@@ -10,7 +10,10 @@
 ## Table of Contents
 
 - [Overview](#overview)
+- [Soul Is Proof Middleware, Not a Bridge](#soul-is-proof-middleware-not-a-bridge)
+- [Token Flow Models](#token-flow-models)
 - [Core Design Principles](#core-design-principles)
+- [Terminology Guide](#terminology-guide)
 - [System Components](#system-components)
   - [Confidential State Layer](#1-confidential-state-layer)
   - [Proof Translation Layer](#2-proof-translation-layer)
@@ -29,6 +32,106 @@
 
 The Soul Protocol (Soul) is designed as a modular middleware protocol that enables private cross-chain state transfers and ZK proof verification. This document describes the technical architecture, component interactions, and security model.
 
+> **Key insight:** Soul Protocol transfers **proofs**, not tokens. It is ZK proof middleware, not a bridge.
+
+---
+
+## Soul Is Proof Middleware, Not a Bridge
+
+Soul Protocol does **not** move tokens between chains. It moves **verified cryptographic claims** (ZK proofs) about token ownership across chains. The distinction is critical:
+
+| Aspect            | Traditional Bridge              | Soul Protocol                                     |
+| ----------------- | ------------------------------- | ------------------------------------------------- |
+| **Moves**         | Tokens (lock/mint or burn/mint) | ZK proofs of state                                |
+| **Creates**       | Wrapped/synthetic tokens        | Nothing — no new tokens                           |
+| **Manages pools** | Yes — liquidity on each chain   | No — observes bridge capacity for routing         |
+| **Token source**  | Its own reserves or minting     | External bridges, solver capital, or atomic swaps |
+| **Value prop**    | Cross-chain token transfer      | **Privacy** for cross-chain state transitions     |
+
+### What Soul Actually Does
+
+1. **Proves** state on Chain A (e.g., "I deposited 10 USDC into ShieldedPool")
+2. **Carries** that ZK proof to Chain B via `ProofCarryingContainer` + `MultiBridgeRouter`
+3. **Verifies** the proof on Chain B via `CrossChainProofHubV3`
+4. **Unlocks** pre-existing state on Chain B via `ZKBoundStateLocks` or `ShieldedPool`
+
+The actual token movement is handled by **external infrastructure** (bridges, solvers, or pre-funded pools).
+
+---
+
+## Token Flow Models
+
+Soul supports three models for how tokens reach the destination chain. In all models, Soul's privacy guarantees are identical — ZK proofs, nullifiers, and stealth addresses work the same regardless of token flow.
+
+### Model A: Bridge-Wrapped Privacy
+
+Soul wraps an existing bridge (Hyperlane, LayerZero, etc.) with a privacy layer:
+
+```
+Chain A: User deposits USDC → ShieldedPool (commitment stored)
+         Soul generates ZK proof of deposit
+         MultiBridgeRouter selects bridge adapter
+         Actual bridge moves tokens: Chain A → Chain B
+Chain B: Bridge delivers USDC → ShieldedPool on Chain B
+         User withdraws privately using nullifier + ZK proof
+```
+
+**Token source:** The underlying bridge (Hyperlane, LayerZero, Wormhole, etc.)
+**Soul's role:** Privacy layer wrapping the bridge. `MultiBridgeRouter` + `IBridgeAdapter` pattern.
+
+### Model B: Solver/Intent Model
+
+Competitive solvers front their own capital:
+
+```
+Chain A: User deposits USDC → ShieldedPool + submits Intent
+         IntentSettlementLayer escrows solver's service fee
+Solver:  Already has USDC on Chain B (their own capital)
+         Generates ZK proof of state transition
+         Submits proof to CrossChainProofHubV3 on Chain B
+Chain B: Proof verified → ShieldedPool unlocks USDC to user
+Chain A: After challenge period, solver claims service fee
+         Solver separately rebalances their capital (outside Soul)
+```
+
+**Token source:** Solver's own capital on destination chain.
+**Soul's role:** Proof service marketplace. `IntentSettlementLayer` + `InstantSettlementGuarantee`.
+
+### Model C: Pre-Funded Pools
+
+Protocol or third-party operators pre-fund ShieldedPools on each chain:
+
+```
+Operator: Pre-funds ShieldedPool on Chain A and Chain B
+User:     Deposits on Chain A → receives commitment
+          ZK proof carried to Chain B
+          Withdraws from pre-funded pool on Chain B
+Operator: Periodically rebalances pools across chains (using bridges)
+```
+
+**Token source:** Pre-funded reserves managed by pool operators.
+**Soul's role:** Shielded pool management + cross-chain proof verification.
+
+### Summary
+
+Soul Protocol does NOT:
+
+- Create, mint, or burn tokens
+- Manage token liquidity pools
+- Hold or custody user funds beyond ShieldedPool deposits
+- Replace bridges — it wraps them with privacy
+
+Soul Protocol DOES:
+
+- Generate and verify ZK proofs of state transitions
+- Route proof delivery through optimal bridge adapters
+- Maintain nullifier registries to prevent double-spending
+- Provide stealth address privacy for recipients
+- Coordinate solver networks for proof generation
+- Offer configurable privacy levels for compliance
+
+---
+
 ## Core Design Principles
 
 1. **Privacy-First**: All state transfers are encrypted; only commitments are on-chain
@@ -36,6 +139,23 @@ The Soul Protocol (Soul) is designed as a modular middleware protocol that enabl
 3. **Chain Agnostic**: Work across EVM chains (Arbitrum, Base, Optimism, zkSync, Scroll, Linea)
 4. **Decentralized**: No single point of failure or trust
 5. **Composable**: Modular design for easy integration
+
+---
+
+## Terminology Guide
+
+The codebase uses certain terms that map to proof middleware concepts:
+
+| Codebase Term                | Proof Middleware Meaning                                                                                                                                   |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BridgeCapacity` (struct)    | Oracle-observed throughput capacity of a bridge adapter on a given chain. Soul does NOT manage this capacity — it queries it for routing decisions.        |
+| `DynamicRoutingOrchestrator` | Routes **proof relay requests** through optimal bridge adapters based on observed bridge capacity, latency, and success rates.                             |
+| `LiquidityAwareRouter`       | Routes proof-carrying transfers through the `DynamicRoutingOrchestrator`, tracking per-pair relay metrics.                                                 |
+| `IntentSettlementLayer`      | Proof service marketplace where solvers compete to generate and deliver ZK proofs for user intents. "Settlement" = proof verification, not token delivery. |
+| `InstantSettlementGuarantee` | Guarantor bonds ETH to guarantee proof delivery within a time window. If proof delivery fails, beneficiary claims from the bond.                           |
+| `InstantRelayerRewards`      | Speed-tiered incentives for relayers who deliver proofs quickly.                                                                                           |
+| `Transfer` (in router)       | A proof relay operation, not a token transfer. The `amount` field refers to the service fee, not tokens being moved.                                       |
+| `registerPool`               | Registers oracle-observed bridge adapter capacity for a chain — does NOT create a liquidity pool.                                                          |
 
 ---
 

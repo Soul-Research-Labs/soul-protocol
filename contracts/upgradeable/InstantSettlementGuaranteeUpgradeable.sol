@@ -12,7 +12,7 @@ import {IIntentSettlementLayer} from "../interfaces/IIntentSettlementLayer.sol";
  * @title InstantSettlementGuaranteeUpgradeable
  * @author Soul Protocol
  * @notice UUPS-upgradeable version of InstantSettlementGuarantee for proxy deployments
- * @dev Solver-backed over-collateralized bonds for instant user settlement.
+ * @dev Bonded guarantees for ZK proof delivery. See InstantSettlementGuarantee for full docs.
  *
  * UPGRADE NOTES:
  * - Constructor replaced with `initialize(address admin, address _intentLayer)`

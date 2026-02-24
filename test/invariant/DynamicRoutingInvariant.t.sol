@@ -62,10 +62,10 @@ contract RoutingHandler is Test {
         if (registeredChains.length == 0) return;
 
         uint256 chainId = registeredChains[chainSeed % registeredChains.length];
-        uint256 newLiquidity = bound(liquiditySeed, 0, 20000 ether);
+        uint256 newCapacity = bound(liquiditySeed, 0, 20000 ether);
 
         vm.prank(oracle);
-        try orchestrator.updateLiquidity(chainId, newLiquidity) {} catch {}
+        try orchestrator.updateLiquidity(chainId, newCapacity) {} catch {}
     }
 
     // ── Bridge Management ────────────────────────────────────
@@ -170,7 +170,7 @@ contract DynamicRoutingInvariant is StdInvariant, Test {
         uint256 len = handler.ghostPoolCount();
         for (uint256 i; i < len && i < 10; i++) {
             try handler.registeredChains(i) returns (uint256 chainId) {
-                IDynamicRoutingOrchestrator.LiquidityPool
+                IDynamicRoutingOrchestrator.BridgeCapacity
                     memory pool = orchestrator.getPool(chainId);
                 if (
                     pool.status != IDynamicRoutingOrchestrator.PoolStatus.ACTIVE
@@ -187,7 +187,7 @@ contract DynamicRoutingInvariant is StdInvariant, Test {
         uint256 len = handler.ghostPoolCount();
         for (uint256 i; i < len && i < 10; i++) {
             try handler.registeredChains(i) returns (uint256 chainId) {
-                IDynamicRoutingOrchestrator.LiquidityPool
+                IDynamicRoutingOrchestrator.BridgeCapacity
                     memory pool = orchestrator.getPool(chainId);
                 if (
                     pool.status != IDynamicRoutingOrchestrator.PoolStatus.ACTIVE

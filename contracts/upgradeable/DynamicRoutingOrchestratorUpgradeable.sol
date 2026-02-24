@@ -14,8 +14,8 @@ import {RouteOptimizer} from "../libraries/RouteOptimizer.sol";
  * @title DynamicRoutingOrchestratorUpgradeable
  * @author Soul Protocol
  * @notice UUPS-upgradeable version of DynamicRoutingOrchestrator for proxy deployments
- * @dev Dynamic cross-chain routing with real-time liquidity awareness and multi-factor optimization.
- *      Implements Tachyon Learning #4: Real-Time Settlement Orchestration.
+ * @dev Routes ZK proof relay requests through optimal bridge adapters.
+ *      Soul is proof middleware — BridgeCapacity data is oracle-observed, not managed.
  *
  * UPGRADE NOTES:
  * - AccessControlUpgradeable used for role-based permissioning
@@ -26,17 +26,17 @@ import {RouteOptimizer} from "../libraries/RouteOptimizer.sol";
  * - `contractVersion` tracks upgrade count
  *
  *      Core capabilities:
- *      - Real-time liquidity pool tracking per chain with oracle updates
+ *      - Oracle-observed bridge capacity tracking per chain
  *      - Multi-factor route scoring: cost, speed, reliability, security, privacy
  *      - Multi-hop routing through intermediate chains when direct path is suboptimal
- *      - EIP-1559-style dynamic fee adjustment based on pool utilization
+ *      - EIP-1559-style dynamic fee adjustment based on bridge utilization
  *      - Settlement time prediction using exponential moving average
  *      - Bridge health integration via security scores and failure tracking
  *
  *      Role separation:
- *      - ORACLE_ROLE: Updates liquidity data (off-chain oracles)
+ *      - ORACLE_ROLE: Updates bridge capacity data (off-chain oracles)
  *      - ROUTER_ROLE: Records bridge outcomes (authorized routers)
- *      - BRIDGE_ADMIN_ROLE: Registers/manages bridges and pools
+ *      - BRIDGE_ADMIN_ROLE: Registers/manages bridges and capacity configs
  *      - DEFAULT_ADMIN_ROLE: Emergency controls
  *      - UPGRADER_ROLE: Authorizes UUPS upgrades
  *
@@ -210,7 +210,7 @@ contract DynamicRoutingOrchestratorUpgradeable is
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Liquidity pools indexed by chain ID
-    mapping(uint256 => LiquidityPool) internal _pools;
+    mapping(uint256 => BridgeCapacity) internal _pools;
 
     /// @notice Whether a chain has a registered pool
     mapping(uint256 => bool) public poolExists;
@@ -302,16 +302,16 @@ contract DynamicRoutingOrchestratorUpgradeable is
     /// @inheritdoc IDynamicRoutingOrchestrator
     function registerPool(
         uint256 chainId,
-        uint256 totalLiquidity,
+        uint256 totalCapacity,
         uint256 initialFee
     ) external onlyRole(BRIDGE_ADMIN_ROLE) whenNotPaused {
         if (chainId == 0) revert InvalidChainId();
         if (poolExists[chainId]) revert PoolAlreadyRegistered(chainId);
 
-        _pools[chainId] = LiquidityPool({
+        _pools[chainId] = BridgeCapacity({
             chainId: chainId,
-            availableLiquidity: totalLiquidity,
-            totalLiquidity: totalLiquidity,
+            availableCapacity: totalCapacity,
+            totalCapacity: totalCapacity,
             utilizationBps: 0,
             avgSettlementTime: DEFAULT_SETTLEMENT_TIME,
             currentFee: initialFee < MIN_BASE_FEE ? MIN_BASE_FEE : initialFee,
@@ -322,20 +322,20 @@ contract DynamicRoutingOrchestratorUpgradeable is
         poolExists[chainId] = true;
         _registeredChains.push(chainId);
 
-        emit PoolRegistered(chainId, totalLiquidity, initialFee);
+        emit PoolRegistered(chainId, totalCapacity, initialFee);
     }
 
     /// @inheritdoc IDynamicRoutingOrchestrator
     function updateLiquidity(
         uint256 chainId,
-        uint256 newAvailableLiquidity
+        uint256 newAvailableCapacity
     ) external onlyRole(ORACLE_ROLE) whenNotPaused {
         if (!poolExists[chainId]) revert PoolNotFound(chainId);
 
-        LiquidityPool storage pool = _pools[chainId];
-        uint256 oldLiquidity = pool.availableLiquidity;
+        BridgeCapacity storage pool = _pools[chainId];
+        uint256 oldCapacity = pool.availableCapacity;
 
-        pool.availableLiquidity = newAvailableLiquidity;
+        pool.availableCapacity = newAvailableCapacity;
         pool.utilizationBps = _calculateUtilization(pool);
         pool.lastUpdated = uint48(block.timestamp);
 
@@ -344,8 +344,8 @@ contract DynamicRoutingOrchestratorUpgradeable is
 
         emit LiquidityUpdated(
             chainId,
-            oldLiquidity,
-            newAvailableLiquidity,
+            oldCapacity,
+            newAvailableCapacity,
             pool.utilizationBps
         );
     }
@@ -353,25 +353,25 @@ contract DynamicRoutingOrchestratorUpgradeable is
     /// @inheritdoc IDynamicRoutingOrchestrator
     function batchUpdateLiquidity(
         uint256[] calldata chainIds,
-        uint256[] calldata newLiquidities
+        uint256[] calldata newCapacities
     ) external onlyRole(ORACLE_ROLE) whenNotPaused {
-        require(chainIds.length == newLiquidities.length, "Length mismatch");
+        require(chainIds.length == newCapacities.length, "Length mismatch");
 
         for (uint256 i = 0; i < chainIds.length; ++i) {
             if (!poolExists[chainIds[i]]) revert PoolNotFound(chainIds[i]);
 
-            LiquidityPool storage pool = _pools[chainIds[i]];
-            uint256 oldLiquidity = pool.availableLiquidity;
+            BridgeCapacity storage pool = _pools[chainIds[i]];
+            uint256 oldCapacity = pool.availableCapacity;
 
-            pool.availableLiquidity = newLiquidities[i];
+            pool.availableCapacity = newCapacities[i];
             pool.utilizationBps = _calculateUtilization(pool);
             pool.lastUpdated = uint48(block.timestamp);
             _adjustFee(pool);
 
             emit LiquidityUpdated(
                 chainIds[i],
-                oldLiquidity,
-                newLiquidities[i],
+                oldCapacity,
+                newCapacities[i],
                 pool.utilizationBps
             );
         }
@@ -384,7 +384,7 @@ contract DynamicRoutingOrchestratorUpgradeable is
     ) external onlyRole(BRIDGE_ADMIN_ROLE) {
         if (!poolExists[chainId]) revert PoolNotFound(chainId);
 
-        LiquidityPool storage pool = _pools[chainId];
+        BridgeCapacity storage pool = _pools[chainId];
         PoolStatus oldStatus = pool.status;
         pool.status = newStatus;
 
@@ -636,7 +636,7 @@ contract DynamicRoutingOrchestratorUpgradeable is
         // Update settlement time EMA for destination pool
         uint256 destChain = route.chainPath[route.chainPath.length - 1];
         if (poolExists[destChain]) {
-            LiquidityPool storage pool = _pools[destChain];
+            BridgeCapacity storage pool = _pools[destChain];
             pool.avgSettlementTime = uint48(
                 (uint256(EMA_ALPHA_BPS) *
                     uint256(actualTime) +
@@ -672,13 +672,13 @@ contract DynamicRoutingOrchestratorUpgradeable is
     ) external view override returns (uint48 estimatedTime, uint16 confidence) {
         if (!poolExists[destChainId]) revert PoolNotFound(destChainId);
 
-        LiquidityPool storage destPool = _pools[destChainId];
+        BridgeCapacity storage destPool = _pools[destChainId];
         uint48 baseTime = destPool.avgSettlementTime;
 
         // Adjust for amount relative to liquidity (large transfers take longer)
-        if (destPool.availableLiquidity > 0 && amount > 0) {
+        if (destPool.availableCapacity > 0 && amount > 0) {
             uint256 liquidityRatio = (amount * BPS) /
-                destPool.availableLiquidity;
+                destPool.availableCapacity;
             if (liquidityRatio > HIGH_LIQUIDITY_IMPACT_BPS) {
                 // >50% of liquidity: add 50% time
                 baseTime = uint48(
@@ -735,7 +735,7 @@ contract DynamicRoutingOrchestratorUpgradeable is
     /// @inheritdoc IDynamicRoutingOrchestrator
     function getPool(
         uint256 chainId
-    ) external view override returns (LiquidityPool memory pool) {
+    ) external view override returns (BridgeCapacity memory pool) {
         if (!poolExists[chainId]) revert PoolNotFound(chainId);
         return _pools[chainId];
     }
@@ -776,12 +776,12 @@ contract DynamicRoutingOrchestratorUpgradeable is
     ) external view override returns (uint256 fee) {
         if (!poolExists[destChainId]) revert PoolNotFound(destChainId);
 
-        LiquidityPool storage destPool = _pools[destChainId];
+        BridgeCapacity storage destPool = _pools[destChainId];
         fee = destPool.currentFee;
 
         // Surcharge for large amounts relative to liquidity
-        if (destPool.availableLiquidity > 0 && amount > 0) {
-            uint256 impact = (amount * BPS) / destPool.availableLiquidity;
+        if (destPool.availableCapacity > 0 && amount > 0) {
+            uint256 impact = (amount * BPS) / destPool.availableCapacity;
             // Add impact premium: fee * (1 + impact/10000)
             fee = fee + (fee * impact) / BPS;
         }
@@ -857,7 +857,7 @@ contract DynamicRoutingOrchestratorUpgradeable is
         if (!poolExists[request.destChainId])
             revert PoolNotFound(request.destChainId);
 
-        LiquidityPool storage destPool = _pools[request.destChainId];
+        BridgeCapacity storage destPool = _pools[request.destChainId];
         if (
             destPool.status != PoolStatus.ACTIVE &&
             destPool.status != PoolStatus.DEGRADED
@@ -909,10 +909,10 @@ contract DynamicRoutingOrchestratorUpgradeable is
 
         if (bestBridge == address(0)) return route;
 
-        LiquidityPool storage destPool = _pools[request.destChainId];
+        BridgeCapacity storage destPool = _pools[request.destChainId];
 
         // Check liquidity
-        if (destPool.availableLiquidity < request.amount) {
+        if (destPool.availableCapacity < request.amount) {
             return route; // Insufficient liquidity
         }
 
@@ -1015,13 +1015,13 @@ contract DynamicRoutingOrchestratorUpgradeable is
 
         if (bridge1 == address(0) || bridge2 == address(0)) return route;
 
-        LiquidityPool storage hopPool = _pools[intermediateChain];
-        LiquidityPool storage destPool = _pools[request.destChainId];
+        BridgeCapacity storage hopPool = _pools[intermediateChain];
+        BridgeCapacity storage destPool = _pools[request.destChainId];
 
         // Check liquidity on both hops
         if (
-            hopPool.availableLiquidity < request.amount ||
-            destPool.availableLiquidity < request.amount
+            hopPool.availableCapacity < request.amount ||
+            destPool.availableCapacity < request.amount
         ) {
             return route;
         }
@@ -1260,12 +1260,12 @@ contract DynamicRoutingOrchestratorUpgradeable is
         uint256 destChain,
         uint256 amount
     ) internal view returns (uint256 cost) {
-        LiquidityPool storage pool = _pools[destChain];
+        BridgeCapacity storage pool = _pools[destChain];
         cost = pool.currentFee;
 
         // Liquidity impact premium
-        if (pool.availableLiquidity > 0 && amount > 0) {
-            uint256 impact = (amount * BPS) / pool.availableLiquidity;
+        if (pool.availableCapacity > 0 && amount > 0) {
+            uint256 impact = (amount * BPS) / pool.availableCapacity;
             cost = cost + (cost * impact) / BPS;
         }
     }
@@ -1274,19 +1274,19 @@ contract DynamicRoutingOrchestratorUpgradeable is
      * @dev Calculate utilization ratio in bps
      */
     function _calculateUtilization(
-        LiquidityPool storage pool
+        BridgeCapacity storage pool
     ) internal view returns (uint16) {
-        if (pool.totalLiquidity == 0) return 0;
-        if (pool.availableLiquidity >= pool.totalLiquidity) return 0;
-        uint256 used = pool.totalLiquidity - pool.availableLiquidity;
-        uint256 utilBps = (used * BPS) / pool.totalLiquidity;
+        if (pool.totalCapacity == 0) return 0;
+        if (pool.availableCapacity >= pool.totalCapacity) return 0;
+        uint256 used = pool.totalCapacity - pool.availableCapacity;
+        uint256 utilBps = (used * BPS) / pool.totalCapacity;
         return utilBps > BPS ? uint16(BPS) : uint16(utilBps);
     }
 
     /**
      * @dev Adjust fee based on utilization (EIP-1559 style)
      */
-    function _adjustFee(LiquidityPool storage pool) internal {
+    function _adjustFee(BridgeCapacity storage pool) internal {
         uint256 oldFee = pool.currentFee;
         uint256 newFee;
 

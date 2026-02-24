@@ -441,12 +441,12 @@ contract IntentSettlementE2E is Test {
         router.registerPool(DEST_CHAIN, 500 ether, 0.02 ether);
         vm.stopPrank();
 
-        IDynamicRoutingOrchestrator.LiquidityPool memory pool = router.getPool(
+        IDynamicRoutingOrchestrator.BridgeCapacity memory pool = router.getPool(
             SOURCE_CHAIN
         );
         assertEq(pool.chainId, SOURCE_CHAIN);
-        assertEq(pool.totalLiquidity, 1000 ether);
-        assertEq(pool.availableLiquidity, 1000 ether);
+        assertEq(pool.totalCapacity, 1000 ether);
+        assertEq(pool.availableCapacity, 1000 ether);
         assertEq(
             uint256(pool.status),
             uint256(IDynamicRoutingOrchestrator.PoolStatus.ACTIVE)
@@ -462,10 +462,10 @@ contract IntentSettlementE2E is Test {
         vm.prank(oracle);
         router.updateLiquidity(SOURCE_CHAIN, 800 ether);
 
-        IDynamicRoutingOrchestrator.LiquidityPool memory pool = router.getPool(
+        IDynamicRoutingOrchestrator.BridgeCapacity memory pool = router.getPool(
             SOURCE_CHAIN
         );
-        assertEq(pool.availableLiquidity, 800 ether);
+        assertEq(pool.availableCapacity, 800 ether);
         // Utilization = (1000 - 800) / 1000 = 20% = 2000 bps
         assertEq(pool.utilizationBps, 2000);
     }

@@ -319,11 +319,11 @@ export class NullifierAlreadySpentError extends PrivacyTransferError {
 
 export class InsufficientLiquidityError extends PrivacyTransferError {
   constructor(
-    public readonly availableLiquidity: bigint,
-    public readonly requiredLiquidity: bigint,
+    public readonly availableCapacity: bigint,
+    public readonly requiredCapacity: bigint,
   ) {
     super(
-      `Insufficient liquidity: available ${availableLiquidity}, required ${requiredLiquidity}`,
+      `Insufficient bridge capacity: available ${availableCapacity}, required ${requiredCapacity}`,
       TransferStage.CLAIMING,
     );
     this.name = "InsufficientLiquidityError";

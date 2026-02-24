@@ -14,11 +14,12 @@ import {RouteOptimizer} from "../libraries/RouteOptimizer.sol";
  * @title LiquidityAwareRouterUpgradeable
  * @author Soul Protocol
  * @notice UUPS-upgradeable version of LiquidityAwareRouter for proxy deployments
- * @dev Liquidity-aware cross-chain router that executes routes from DynamicRoutingOrchestrator.
+ * @dev Proof-routing frontend that executes routes from DynamicRoutingOrchestrator.
+ *      Soul is proof middleware — transfers tracked here are proof relay ops, not token moves.
  *      Composes with DynamicRoutingOrchestrator for route selection and adds:
  *      - Quote-and-execute pattern: get route → commit → execute within validity window
- *      - Adaptive fee calculation with liquidity impact premium
- *      - Transfer tracking with volume and fee accounting per chain pair
+ *      - Adaptive fee calculation with capacity impact premium
+ *      - Proof relay tracking with volume and fee accounting per chain pair
  *      - Fallback routing on primary bridge failure
  *      - Rate limiting integration (per-user, per-pair cooldowns)
  *      - Bridge adapter fee estimation pass-through

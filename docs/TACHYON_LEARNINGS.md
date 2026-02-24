@@ -6,6 +6,28 @@ Tachyon offers several innovative approaches that Soul Protocol can adopt while 
 
 ---
 
+## ⚠️ Critical Context: Soul Is Proof Middleware, Not a Bridge
+
+Before reading the learnings below, understand the key distinction:
+
+**Soul Protocol transfers ZK proofs, not tokens.** It is cross-chain privacy middleware. The Tachyon-inspired contracts adapt Tachyon's concepts to this proof-centric model:
+
+| Tachyon Concept                   | Soul Adaptation                                         | Key Difference                   |
+| --------------------------------- | ------------------------------------------------------- | -------------------------------- |
+| Solvers move tokens               | Solvers generate & deliver ZK proofs                    | No token movement in Soul        |
+| Liquidity pools                   | `BridgeCapacity` (oracle-observed bridge metadata)      | Soul doesn't manage pools        |
+| Instant settlement of funds       | Bonded guarantee that proof will land                   | Guarantee covers proof delivery  |
+| Dynamic routing of liquidity      | Routing of proof relay requests through bridge adapters | Routes proofs, not value         |
+| Solver rewards for token delivery | Relayer rewards for proof relay speed                   | Incentivizes fast proof delivery |
+
+**Where do the tokens come from?** Soul supports three models (see [architecture.md](architecture.md#token-flow-models)):
+
+1. **Bridge-Wrapped Privacy** — existing bridges move tokens, Soul adds privacy layer
+2. **Solver/Intent Model** — solvers use their own capital, claim service fees
+3. **Pre-Funded Pools** — operators pre-fund ShieldedPools and rebalance externally
+
+---
+
 ## 🎯 Key Learnings
 
 ### 1. ⚡ Intent-Based Architecture (Solver Networks)
@@ -230,9 +252,9 @@ contract InstantRelayerRewards {
 ```solidity
 // New contract: DynamicRoutingOrchestrator.sol
 contract DynamicRoutingOrchestrator {
-    struct LiquidityPool {
+    struct BridgeCapacity {
         uint256 chainId;
-        uint256 availableLiquidity;
+        uint256 availableCapacity;
         uint256 utilizationRate;
         uint256 avgSettlementTime;
         uint256 currentFee;
@@ -246,7 +268,7 @@ contract DynamicRoutingOrchestrator {
     }
 
     // Real-time liquidity tracking
-    mapping(uint256 => LiquidityPool) public liquidityPools;
+    mapping(uint256 => BridgeCapacity) public liquidityPools;
 
     // Find optimal route based on current conditions
     function findOptimalRoute(
@@ -268,12 +290,12 @@ contract DynamicRoutingOrchestrator {
     // Update liquidity in real-time
     function updateLiquidity(
         uint256 chainId,
-        uint256 newLiquidity
+        uint256 newCapacity
     ) external onlyRole(ORACLE_ROLE) {
-        liquidityPools[chainId].availableLiquidity = newLiquidity;
+        liquidityPools[chainId].availableCapacity = newCapacity;
         liquidityPools[chainId].utilizationRate = _calculateUtilization(chainId);
 
-        emit LiquidityUpdated(chainId, newLiquidity);
+        emit LiquidityUpdated(chainId, newCapacity);
     }
 
     // Predictive routing based on historical data

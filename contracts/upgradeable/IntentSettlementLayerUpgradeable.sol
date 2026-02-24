@@ -13,7 +13,8 @@ import {IIntentSettlementLayer} from "../interfaces/IIntentSettlementLayer.sol";
  * @title IntentSettlementLayerUpgradeable
  * @author Soul Protocol
  * @notice UUPS-upgradeable version of IntentSettlementLayer for proxy deployments
- * @dev Intent-based cross-chain settlement with competitive solver networks.
+ * @dev Proof service marketplace — solvers compete to deliver ZK proofs.
+ *      Soul is proof middleware, NOT a bridge. See IntentSettlementLayer for full docs.
  *
  * UPGRADE NOTES:
  * - Constructor replaced with `initialize(address admin, address _intentVerifier)`

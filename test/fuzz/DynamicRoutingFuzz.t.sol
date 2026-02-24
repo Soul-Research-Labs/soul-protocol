@@ -48,11 +48,11 @@ contract DynamicRoutingFuzz is Test {
             "Pool should exist after registration"
         );
 
-        IDynamicRoutingOrchestrator.LiquidityPool memory pool = orchestrator
+        IDynamicRoutingOrchestrator.BridgeCapacity memory pool = orchestrator
             .getPool(chainId);
         assertEq(pool.chainId, chainId);
-        assertEq(pool.availableLiquidity, liquidity);
-        assertEq(pool.totalLiquidity, liquidity);
+        assertEq(pool.availableCapacity, liquidity);
+        assertEq(pool.totalCapacity, liquidity);
         assertEq(pool.utilizationBps, 0);
         assertEq(
             uint8(pool.status),
@@ -104,10 +104,10 @@ contract DynamicRoutingFuzz is Test {
     /// @notice Fuzz liquidity updates — utilization should stay within [0, BPS]
     function testFuzz_updateLiquidity(
         uint256 initialLiquidity,
-        uint256 newLiquidity
+        uint256 newCapacity
     ) public {
         initialLiquidity = bound(initialLiquidity, 1 ether, 10_000 ether);
-        newLiquidity = bound(newLiquidity, 0, 20_000 ether);
+        newCapacity = bound(newCapacity, 0, 20_000 ether);
 
         uint256 chainId = 42;
 
@@ -115,11 +115,11 @@ contract DynamicRoutingFuzz is Test {
         orchestrator.registerPool(chainId, initialLiquidity, 0.01 ether);
 
         vm.prank(oracle);
-        orchestrator.updateLiquidity(chainId, newLiquidity);
+        orchestrator.updateLiquidity(chainId, newCapacity);
 
-        IDynamicRoutingOrchestrator.LiquidityPool memory pool = orchestrator
+        IDynamicRoutingOrchestrator.BridgeCapacity memory pool = orchestrator
             .getPool(chainId);
-        assertEq(pool.availableLiquidity, newLiquidity);
+        assertEq(pool.availableCapacity, newCapacity);
         assertLe(
             pool.utilizationBps,
             10_000,
@@ -152,10 +152,10 @@ contract DynamicRoutingFuzz is Test {
     /// @notice Fuzz: dynamic fee stays within [MIN_BASE_FEE, MAX_BASE_FEE] after updates
     function testFuzz_feeBounds_afterLiquidityUpdate(
         uint256 initialLiquidity,
-        uint256 newLiquidity
+        uint256 newCapacity
     ) public {
         initialLiquidity = bound(initialLiquidity, 1 ether, 10_000 ether);
-        newLiquidity = bound(newLiquidity, 0, 20_000 ether);
+        newCapacity = bound(newCapacity, 0, 20_000 ether);
 
         uint256 chainId = 7;
 
@@ -163,9 +163,9 @@ contract DynamicRoutingFuzz is Test {
         orchestrator.registerPool(chainId, initialLiquidity, 0.01 ether);
 
         vm.prank(oracle);
-        orchestrator.updateLiquidity(chainId, newLiquidity);
+        orchestrator.updateLiquidity(chainId, newCapacity);
 
-        IDynamicRoutingOrchestrator.LiquidityPool memory pool = orchestrator
+        IDynamicRoutingOrchestrator.BridgeCapacity memory pool = orchestrator
             .getPool(chainId);
         assertGe(
             pool.currentFee,
@@ -338,7 +338,7 @@ contract DynamicRoutingFuzz is Test {
         vm.prank(bridgeAdmin);
         orchestrator.setPoolStatus(chainId, newStatus);
 
-        IDynamicRoutingOrchestrator.LiquidityPool memory pool = orchestrator
+        IDynamicRoutingOrchestrator.BridgeCapacity memory pool = orchestrator
             .getPool(chainId);
         assertEq(uint8(pool.status), statusRaw);
     }

@@ -10,17 +10,19 @@ import {IIntentSettlementLayer} from "../interfaces/IIntentSettlementLayer.sol";
 /**
  * @title IntentSettlementLayer
  * @author Soul Protocol
- * @notice Intent-based cross-chain settlement with competitive solver networks
- * @dev Users submit intents (desired cross-chain outcomes), solvers compete to
- *      fulfill them by generating ZK proofs. Integrates with CrossChainProofHubV3
- *      for proof verification and ConfigurablePrivacyLevels for policy binding.
+ * @notice Proof service marketplace — solvers compete to generate and deliver ZK proofs
+ * @dev Soul Protocol is proof middleware, NOT a bridge. This contract does NOT move tokens.
+ *      Users submit intents describing desired cross-chain state transitions.
+ *      Solvers compete to fulfill intents by generating valid ZK proofs.
+ *      The user escrows a service fee (maxFee) — NOT the transfer amount.
+ *      Actual token movement happens externally (via bridges, solver capital, or pre-funded pools).
  *
- * LIFECYCLE:
- *   User submits intent (escrows maxFee) →
+ * LIFECYCLE (proof-centric):
+ *   User submits intent (escrows service fee) →
  *   Solver claims intent →
- *   Solver fulfills with ZK proof →
- *   Challenge period (inherited from ProofHub) →
- *   Finalization (solver paid, user state committed)
+ *   Solver generates ZK proof and submits to CrossChainProofHubV3 →
+ *   Challenge period (proof can be disputed) →
+ *   Finalization (solver receives service fee, user's state committed on dest chain)
  *
  * SECURITY:
  * - All state-changing externals are nonReentrant

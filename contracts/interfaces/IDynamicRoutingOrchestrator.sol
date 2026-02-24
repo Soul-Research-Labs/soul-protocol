@@ -4,11 +4,13 @@ pragma solidity ^0.8.24;
 /**
  * @title IDynamicRoutingOrchestrator
  * @author Soul Protocol
- * @notice Interface for dynamic cross-chain routing with real-time liquidity awareness
- * @dev Implements Tachyon Learning #4: Real-Time Settlement Orchestration.
- *      Orchestrates optimal route selection across L2 networks by combining
- *      liquidity data, bridge health scores, fee markets, and historical performance.
- *      Supports multi-hop routing through intermediate chains for cost/speed optimization.
+ * @notice Interface for dynamic cross-chain proof routing with bridge capacity awareness
+ * @dev Routes ZK proof relay requests through optimal bridge adapters.
+ *      Soul Protocol is proof middleware — it does NOT manage liquidity pools.
+ *      BridgeCapacity data is oracle-provided metadata about external bridge adapters.
+ *      The orchestrator uses this data to select the best route for proof delivery,
+ *      optimizing for cost, latency, and success probability.
+ *      Supports multi-hop routing through intermediate chains.
  */
 interface IDynamicRoutingOrchestrator {
     /*//////////////////////////////////////////////////////////////
@@ -23,7 +25,7 @@ interface IDynamicRoutingOrchestrator {
         INSTANT // Fastest possible, cost secondary
     }
 
-    /// @notice Health status of a liquidity pool
+    /// @notice Health status of a bridge adapter's capacity on a given chain
     enum PoolStatus {
         ACTIVE, // Normal operation
         DEGRADED, // Reduced capacity or elevated error rate
@@ -44,11 +46,13 @@ interface IDynamicRoutingOrchestrator {
                                 STRUCTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Liquidity pool data for a specific chain pair
-    struct LiquidityPool {
+    /// @notice Oracle-observed bridge adapter capacity for a specific chain.
+    ///         Soul does NOT manage these pools — this is observed metadata from
+    ///         external bridge adapters used to make routing decisions.
+    struct BridgeCapacity {
         uint256 chainId; // Target chain ID
-        uint256 availableLiquidity; // Current available liquidity (wei)
-        uint256 totalLiquidity; // Total pool capacity (wei)
+        uint256 availableCapacity; // Current available bridge throughput capacity (wei-equivalent)
+        uint256 totalCapacity; // Total bridge adapter capacity (wei-equivalent)
         uint16 utilizationBps; // Current utilization (0-10000 bps)
         uint48 avgSettlementTime; // Avg settlement time (seconds)
         uint256 currentFee; // Current base fee (wei)
@@ -100,7 +104,7 @@ interface IDynamicRoutingOrchestrator {
 
     event PoolRegistered(
         uint256 indexed chainId,
-        uint256 totalLiquidity,
+        uint256 totalCapacity,
         uint256 initialFee
     );
 
@@ -112,8 +116,8 @@ interface IDynamicRoutingOrchestrator {
 
     event LiquidityUpdated(
         uint256 indexed chainId,
-        uint256 oldLiquidity,
-        uint256 newLiquidity,
+        uint256 oldCapacity,
+        uint256 newCapacity,
         uint16 utilizationBps
     );
 
@@ -237,33 +241,33 @@ interface IDynamicRoutingOrchestrator {
     /**
      * @notice Register a new liquidity pool for a chain
      * @param chainId The chain ID
-     * @param totalLiquidity Initial total liquidity
+     * @param totalCapacity Initial total liquidity
      * @param initialFee Initial base fee
      */
     function registerPool(
         uint256 chainId,
-        uint256 totalLiquidity,
+        uint256 totalCapacity,
         uint256 initialFee
     ) external;
 
     /**
      * @notice Update liquidity for a chain (oracle role)
      * @param chainId The chain to update
-     * @param newAvailableLiquidity Updated available liquidity
+     * @param newAvailableCapacity Updated available liquidity
      */
     function updateLiquidity(
         uint256 chainId,
-        uint256 newAvailableLiquidity
+        uint256 newAvailableCapacity
     ) external;
 
     /**
      * @notice Batch update liquidity for multiple chains
      * @param chainIds Array of chain IDs
-     * @param newLiquidities Array of new available liquidities
+     * @param newCapacities Array of new available liquidities
      */
     function batchUpdateLiquidity(
         uint256[] calldata chainIds,
-        uint256[] calldata newLiquidities
+        uint256[] calldata newCapacities
     ) external;
 
     /**
@@ -314,7 +318,7 @@ interface IDynamicRoutingOrchestrator {
      */
     function getPool(
         uint256 chainId
-    ) external view returns (LiquidityPool memory pool);
+    ) external view returns (BridgeCapacity memory pool);
 
     /**
      * @notice Get bridge metrics

@@ -11,18 +11,23 @@ import {RouteOptimizer} from "../libraries/RouteOptimizer.sol";
 /**
  * @title LiquidityAwareRouter
  * @author Soul Protocol
- * @notice Liquidity-aware cross-chain router that executes routes from DynamicRoutingOrchestrator
- * @dev Composes with DynamicRoutingOrchestrator for route selection and adds:
+ * @notice Proof-routing frontend that executes routes from DynamicRoutingOrchestrator
+ * @dev Routes ZK proof relay requests through optimal bridge adapters.
+ *      Soul Protocol is proof middleware — the "transfers" tracked here are
+ *      proof relay operations, not token transfers. The `amount` field
+ *      represents the service fee for the proof relay, not tokens being moved.
+ *
+ *      Composes with DynamicRoutingOrchestrator for route selection and adds:
  *      - Quote-and-execute pattern: get route → commit → execute within validity window
- *      - Adaptive fee calculation with liquidity impact premium
- *      - Transfer tracking with volume and fee accounting per chain pair
+ *      - Adaptive fee calculation with capacity impact premium
+ *      - Proof relay tracking with volume and fee accounting per chain pair
  *      - Fallback routing on primary bridge failure
  *      - Rate limiting integration (per-user, per-pair cooldowns)
  *      - Bridge adapter fee estimation pass-through
  *
  *      Lifecycle:
  *      1. User calls `quoteTransfer()` → gets Route from orchestrator
- *      2. User calls `commitRoute()` with routeId → locks funds, confirms execution
+ *      2. User calls `commitRoute()` with routeId → locks fee, confirms execution
  *      3. Router calls `beginExecution()` → triggers bridge adapter(s)
  *      4. On completion, `settleTransfer()` finalizes and records metrics
  *

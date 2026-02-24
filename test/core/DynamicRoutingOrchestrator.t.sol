@@ -127,11 +127,11 @@ contract DynamicRoutingOrchestratorTest is Test {
     //////////////////////////////////////////////////////////////*/
 
     function test_RegisterPool_Success() public view {
-        IDynamicRoutingOrchestrator.LiquidityPool memory pool = orchestrator
+        IDynamicRoutingOrchestrator.BridgeCapacity memory pool = orchestrator
             .getPool(CHAIN_ETH);
         assertEq(pool.chainId, CHAIN_ETH);
-        assertEq(pool.availableLiquidity, TOTAL_LIQUIDITY);
-        assertEq(pool.totalLiquidity, TOTAL_LIQUIDITY);
+        assertEq(pool.availableCapacity, TOTAL_LIQUIDITY);
+        assertEq(pool.totalCapacity, TOTAL_LIQUIDITY);
         assertEq(pool.utilizationBps, 0);
         assertEq(pool.currentFee, INITIAL_FEE);
         assertTrue(
@@ -141,7 +141,7 @@ contract DynamicRoutingOrchestratorTest is Test {
 
     function test_RegisterPool_MinFeeEnforced() public view {
         // CHAIN_BASE was registered with 0.005 ether which is above MIN_BASE_FEE
-        IDynamicRoutingOrchestrator.LiquidityPool memory pool = orchestrator
+        IDynamicRoutingOrchestrator.BridgeCapacity memory pool = orchestrator
             .getPool(CHAIN_BASE);
         assertEq(pool.currentFee, 0.005 ether);
     }
@@ -176,7 +176,7 @@ contract DynamicRoutingOrchestratorTest is Test {
             IDynamicRoutingOrchestrator.PoolStatus.PAUSED
         );
 
-        IDynamicRoutingOrchestrator.LiquidityPool memory pool = orchestrator
+        IDynamicRoutingOrchestrator.BridgeCapacity memory pool = orchestrator
             .getPool(CHAIN_ETH);
         assertTrue(
             pool.status == IDynamicRoutingOrchestrator.PoolStatus.PAUSED
@@ -220,9 +220,9 @@ contract DynamicRoutingOrchestratorTest is Test {
         vm.prank(oracle);
         orchestrator.updateLiquidity(CHAIN_ETH, 800 ether);
 
-        IDynamicRoutingOrchestrator.LiquidityPool memory pool = orchestrator
+        IDynamicRoutingOrchestrator.BridgeCapacity memory pool = orchestrator
             .getPool(CHAIN_ETH);
-        assertEq(pool.availableLiquidity, 800 ether);
+        assertEq(pool.availableCapacity, 800 ether);
         // 200/1000 = 20% utilization = 2000 bps
         assertEq(pool.utilizationBps, 2000);
     }
@@ -245,7 +245,7 @@ contract DynamicRoutingOrchestratorTest is Test {
         vm.prank(oracle);
         orchestrator.updateLiquidity(CHAIN_ETH, 300 ether); // 70% util
 
-        IDynamicRoutingOrchestrator.LiquidityPool memory pool = orchestrator
+        IDynamicRoutingOrchestrator.BridgeCapacity memory pool = orchestrator
             .getPool(CHAIN_ETH);
         // Fee should have increased from INITIAL_FEE
         assertTrue(pool.currentFee > INITIAL_FEE);
@@ -295,8 +295,8 @@ contract DynamicRoutingOrchestratorTest is Test {
         vm.prank(oracle);
         orchestrator.batchUpdateLiquidity(chainIds, liquidities);
 
-        assertEq(orchestrator.getPool(CHAIN_ETH).availableLiquidity, 800 ether);
-        assertEq(orchestrator.getPool(CHAIN_ARB).availableLiquidity, 700 ether);
+        assertEq(orchestrator.getPool(CHAIN_ETH).availableCapacity, 800 ether);
+        assertEq(orchestrator.getPool(CHAIN_ARB).availableCapacity, 700 ether);
     }
 
     function test_BatchUpdateLiquidity_RevertLengthMismatch() public {
@@ -921,7 +921,7 @@ contract DynamicRoutingOrchestratorTest is Test {
         vm.prank(oracle);
         orchestrator.updateLiquidity(CHAIN_ETH, available);
 
-        IDynamicRoutingOrchestrator.LiquidityPool memory pool = orchestrator
+        IDynamicRoutingOrchestrator.BridgeCapacity memory pool = orchestrator
             .getPool(CHAIN_ETH);
         assertTrue(pool.utilizationBps <= 10000);
     }
@@ -934,7 +934,7 @@ contract DynamicRoutingOrchestratorTest is Test {
         vm.prank(oracle);
         orchestrator.updateLiquidity(CHAIN_ETH, available);
 
-        IDynamicRoutingOrchestrator.LiquidityPool memory pool = orchestrator
+        IDynamicRoutingOrchestrator.BridgeCapacity memory pool = orchestrator
             .getPool(CHAIN_ETH);
         assertTrue(pool.currentFee >= orchestrator.MIN_BASE_FEE());
         assertTrue(pool.currentFee <= orchestrator.MAX_BASE_FEE());

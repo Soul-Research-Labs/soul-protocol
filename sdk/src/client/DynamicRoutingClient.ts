@@ -32,8 +32,8 @@ export enum PoolStatus {
 
 export interface LiquidityPool {
   chainId: bigint;
-  availableLiquidity: bigint;
-  totalLiquidity: bigint;
+  availableCapacity: bigint;
+  totalCapacity: bigint;
   utilizationBps: number;
   avgSettlementTime: number;
   currentFee: bigint;
@@ -156,8 +156,8 @@ const ROUTER_ABI = [
         type: "tuple",
         components: [
           { name: "chainId", type: "uint256" },
-          { name: "availableLiquidity", type: "uint256" },
-          { name: "totalLiquidity", type: "uint256" },
+          { name: "availableCapacity", type: "uint256" },
+          { name: "totalCapacity", type: "uint256" },
           { name: "utilizationBps", type: "uint16" },
           { name: "avgSettlementTime", type: "uint48" },
           { name: "currentFee", type: "uint256" },

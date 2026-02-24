@@ -73,7 +73,7 @@ describe("CrossChainPrivacyOrchestrator – Error Classes", () => {
   describe("InsufficientLiquidityError", () => {
     it("should include available and required liquidity", () => {
       const err = new InsufficientLiquidityError(100n, 1000n);
-      expect(err.availableLiquidity).to.equal(100n);
+      expect(err.availableCapacity).to.equal(100n);
       expect(err.requiredLiquidity).to.equal(1000n);
       expect(err.message).to.include("100");
       expect(err.message).to.include("1000");

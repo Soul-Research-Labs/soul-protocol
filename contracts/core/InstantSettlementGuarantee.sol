@@ -9,19 +9,24 @@ import {IIntentSettlementLayer} from "../interfaces/IIntentSettlementLayer.sol";
 /**
  * @title InstantSettlementGuarantee
  * @author Soul Protocol
- * @notice Solver-backed over-collateralized bonds for instant user settlement
- * @dev Solvers post 110%+ collateral so users get instant access to funds while
- *      the actual cross-chain transfer settles in the background. On successful
- *      settlement, the solver gets their bond back plus a fee. On failure, the
- *      user claims from the bond, and the surplus goes to the insurance pool.
+ * @notice Bonded guarantees for ZK proof delivery — guarantors bond ETH that the proof lands
+ * @dev Soul Protocol is proof middleware. This contract guarantees PROOF DELIVERY, not token
+ *      delivery. A guarantor (typically a solver) posts an over-collateralized bond promising
+ *      that a ZK proof will be verified on the destination chain within a time window.
+ *
+ *      - If proof is delivered (intent finalized): bond returned + fee earned
+ *      - If proof delivery fails: beneficiary claims compensation from the bond
+ *
+ *      The `amount` field represents the guaranteed compensation on failure, NOT tokens
+ *      being transferred. The `bond` is 110%+ collateral covering that compensation.
  *
  * LIFECYCLE:
- *   Solver posts guarantee (110% bond) →
- *   User gets instant access (off-chain, tracked on-chain) →
- *   Underlying transfer finalizes →
- *   Solver settles guarantee (bond returned + fee) →
- *   OR: transfer fails + guarantee expires →
- *   User claims from bond, remainder → insurance pool
+ *   Guarantor posts bond (110% of guaranteed amount) →
+ *   User gets instant UX (proof guaranteed to land) →
+ *   Underlying intent finalized (proof verified on dest chain) →
+ *   Guarantor settles (bond returned + fee) →
+ *   OR: proof delivery fails + guarantee expires →
+ *   Beneficiary claims from bond, remainder → insurance pool
  *
  * SECURITY:
  * - All state-changing externals are nonReentrant

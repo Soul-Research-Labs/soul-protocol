@@ -4,9 +4,12 @@ pragma solidity ^0.8.24;
 /**
  * @title IIntentSettlementLayer
  * @author Soul Protocol
- * @notice Interface for intent-based cross-chain settlement with competitive solver networks
- * @dev Users submit intents (desired outcomes), solvers compete to fulfill them with ZK proofs.
- *      Inspired by Tachyon's solver architecture, adapted for Soul's ZK-first privacy model.
+ * @notice Interface for the proof service marketplace — solver networks deliver ZK proofs
+ * @dev Soul Protocol is proof middleware, NOT a bridge. This contract coordinates
+ *      proof generation and delivery, not token transfers.
+ *      Users submit intents (desired state transitions). Solvers compete to fulfill them
+ *      by generating valid ZK proofs. The user escrows a service fee, not a transfer amount.
+ *      Actual token movement is external to this contract (via bridges, solver capital, etc.).
  */
 interface IIntentSettlementLayer {
     /*//////////////////////////////////////////////////////////////
@@ -28,15 +31,15 @@ interface IIntentSettlementLayer {
                                 STRUCTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice A user's cross-chain intent
+    /// @notice A user's cross-chain proof delivery request
     struct Intent {
         address user;
         uint256 sourceChainId;
         uint256 destChainId;
         bytes32 sourceCommitment; // Source state commitment
-        bytes32 desiredStateHash; // Hash of desired outcome
-        uint256 maxFee; // Maximum fee user will pay (in wei)
-        uint256 deadline; // Absolute deadline
+        bytes32 desiredStateHash; // Hash of desired outcome state
+        uint256 maxFee; // Maximum service fee (in wei) — NOT the transfer amount
+        uint256 deadline; // Absolute deadline for proof delivery
         bytes32 policyHash; // Compliance policy binding
         IntentStatus status;
         address solver; // Assigned solver (0 if unclaimed)
@@ -123,13 +126,13 @@ interface IIntentSettlementLayer {
                            USER FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Submit a cross-chain intent
+    /// @notice Submit a cross-chain proof delivery request
     /// @param sourceChainId Source chain ID
     /// @param destChainId Destination chain ID
     /// @param sourceCommitment The current state commitment on source chain
     /// @param desiredStateHash Hash of the desired outcome state
-    /// @param maxFee Maximum fee willing to pay
-    /// @param deadline Absolute deadline for fulfillment
+    /// @param maxFee Maximum service fee willing to pay (NOT the transfer amount)
+    /// @param deadline Absolute deadline for proof delivery
     /// @param policyHash Compliance policy binding (bytes32(0) for none)
     /// @return intentId The unique intent identifier
     function submitIntent(

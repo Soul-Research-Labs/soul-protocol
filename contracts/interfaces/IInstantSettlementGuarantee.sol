@@ -4,9 +4,11 @@ pragma solidity ^0.8.24;
 /**
  * @title IInstantSettlementGuarantee
  * @author Soul Protocol
- * @notice Interface for solver-backed instant settlement guarantees
- * @dev Solvers post over-collateralized bonds so users get instant access to funds
- *      while the actual cross-chain transfer settles in the background.
+ * @notice Interface for bonded proof delivery guarantees
+ * @dev Guarantors bond ETH to guarantee that a ZK proof will be verified on the
+ *      destination chain within a time window. Soul is proof middleware — the guarantee
+ *      covers proof delivery, not token delivery. If proof delivery fails, the beneficiary
+ *      claims compensation from the bond.
  */
 interface IInstantSettlementGuarantee {
     /*//////////////////////////////////////////////////////////////
@@ -26,12 +28,12 @@ interface IInstantSettlementGuarantee {
                                 STRUCTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice A solver-backed settlement guarantee
+    /// @notice A bonded proof delivery guarantee
     struct Guarantee {
         bytes32 intentId; // Linked intent
         address guarantor; // Solver providing the guarantee
-        address beneficiary; // User receiving instant settlement
-        uint256 amount; // Guaranteed amount
+        address beneficiary; // User receiving proof delivery guarantee
+        uint256 amount; // Compensation amount if proof delivery fails
         uint256 bond; // Posted collateral (>= amount * collateralRatio / 10000)
         uint48 createdAt;
         uint48 expiresAt; // Absolute expiry
