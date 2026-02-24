@@ -5,6 +5,8 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {IMixnetNodeRegistry} from "../interfaces/IMixnetNodeRegistry.sol";
+import {ExperimentalFeatureGated} from "../ExperimentalFeatureGated.sol";
+import {ExperimentalFeatureRegistry} from "../../security/ExperimentalFeatureRegistry.sol";
 
 /**
  * @title MixnetNodeRegistry
@@ -23,7 +25,8 @@ contract MixnetNodeRegistry is
     IMixnetNodeRegistry,
     AccessControl,
     ReentrancyGuard,
-    Pausable
+    Pausable,
+    ExperimentalFeatureGated
 {
     /*//////////////////////////////////////////////////////////////
                                  ROLES
@@ -139,11 +142,17 @@ contract MixnetNodeRegistry is
                              CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    constructor(address admin) {
+    constructor(address admin, address _featureRegistry) {
         if (admin == address(0)) revert ZeroAddress();
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(OPERATOR_ROLE, admin);
         _grantRole(SLASHER_ROLE, admin);
+
+        // Wire to ExperimentalFeatureRegistry
+        _setFeatureRegistry(
+            _featureRegistry,
+            ExperimentalFeatureRegistry(_featureRegistry).MIXNET_NODE_REGISTRY()
+        );
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -155,7 +164,14 @@ contract MixnetNodeRegistry is
         bytes32 publicKey,
         bytes calldata encryptionKey,
         uint16 layer
-    ) external payable override nonReentrant whenNotPaused {
+    )
+        external
+        payable
+        override
+        nonReentrant
+        whenNotPaused
+        onlyIfFeatureEnabled
+    {
         if (publicKey == bytes32(0)) revert InvalidPublicKey();
         if (layer >= MAX_LAYERS) revert InvalidLayer(layer);
         if (msg.value < MIN_STAKE)

@@ -36,9 +36,9 @@ CONFIGS=(
     "verify_zkslocks.conf"
     "verify_batch_accumulator.conf"
     "verify_privacy_oracle.conf"
-    "verify_homomorphic.conf"
+    "verify_homomorphic_hiding.conf"
     "verify_atomicswap.conf"
-    "verify_controlplane.conf"
+    "verify_network_invariants.conf"
 )
 
 # Function to run a single verification

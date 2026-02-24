@@ -171,10 +171,10 @@ run_all_verifications() {
     echo "================================"
     
     advanced_verifications=(
-        "verify_homomorphic.conf:HomomorphicHiding"
-        "verify_ada.conf:AggregateDisclosureAlgebra"
+        "verify_homomorphic_hiding.conf:HomomorphicHiding"
+        "verify_aggregate_disclosure.conf:AggregateDisclosureAlgebra"
         "verify_crp.conf:ComposableRevocationProofs"
-        "verify_mixnet.conf:MixnetNodeRegistry"
+        "verify_gas_normalizer.conf:GasNormalizer"
     )
     
     for v in "${advanced_verifications[@]}"; do

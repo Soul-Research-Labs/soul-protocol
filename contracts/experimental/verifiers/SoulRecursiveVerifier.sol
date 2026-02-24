@@ -4,6 +4,8 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import {ExperimentalFeatureGated} from "../ExperimentalFeatureGated.sol";
+import {ExperimentalFeatureRegistry} from "../../security/ExperimentalFeatureRegistry.sol";
 
 /**
  * @title SoulRecursiveVerifier
@@ -11,7 +13,12 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
  * @dev Supports both single proofs (backward compatible) and aggregated proofs
  * @custom:experimental This contract is research-tier and NOT production-ready. See contracts/experimental/README.md for promotion criteria.
  */
-contract SoulRecursiveVerifier is Ownable, ReentrancyGuard, Pausable {
+contract SoulRecursiveVerifier is
+    Ownable,
+    ReentrancyGuard,
+    Pausable,
+    ExperimentalFeatureGated
+{
     // ============================================
     // Types
     // ============================================
@@ -115,10 +122,17 @@ contract SoulRecursiveVerifier is Ownable, ReentrancyGuard, Pausable {
 
     constructor(
         address _aggregatedVerifier,
-        address _singleVerifier
+        address _singleVerifier,
+        address _featureRegistry
     ) Ownable(msg.sender) {
         aggregatedVerifier = _aggregatedVerifier;
         singleVerifier = _singleVerifier;
+
+        // Wire to ExperimentalFeatureRegistry
+        _setFeatureRegistry(
+            _featureRegistry,
+            ExperimentalFeatureRegistry(_featureRegistry).RECURSIVE_VERIFIER()
+        );
     }
 
     // ============================================

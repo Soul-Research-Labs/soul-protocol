@@ -41,19 +41,19 @@ contract MockTarget {
 }
 
 contract MultiBridgeRouterTest is Test {
-    MultiBridgeRouter public router;
+    SimpleMultiBridgeRouter public router;
     MockBridgeAdapter public adapter1;
     MockBridgeAdapter public adapter2;
     MockBridgeAdapter public adapter3;
     MockTarget public target;
 
     function setUp() public {
-        router = new MultiBridgeRouter(address(this), 2); // 2 confirmations required
-        
+        router = new SimpleMultiBridgeRouter(address(this), 2); // 2 confirmations required
+
         adapter1 = new MockBridgeAdapter();
         adapter2 = new MockBridgeAdapter();
         adapter3 = new MockBridgeAdapter();
-        
+
         target = new MockTarget();
 
         // Register adapters
@@ -63,29 +63,43 @@ contract MultiBridgeRouterTest is Test {
     }
 
     function test_sendMultiBridgeMessage_IncrementsNonce() public {
-        bytes memory payload = abi.encode(address(target), abi.encodeWithSignature("execute(bytes)", hex"1234"));
-        
+        bytes memory payload = abi.encode(
+            address(target),
+            abi.encodeWithSignature("execute(bytes)", hex"1234")
+        );
+
         uint256 nonceBefore = router.nonce();
-        router.sendMultiBridgeMessage{value: 0}(address(target), payload, address(this));
+        router.sendMultiBridgeMessage{value: 0}(
+            address(target),
+            payload,
+            address(this)
+        );
         uint256 nonceAfter = router.nonce();
-        
+
         assertEq(nonceAfter, nonceBefore + 1);
     }
 
     function test_receiveConfirmation_Execute() public {
         bytes memory data = hex"1234";
-        bytes memory payload = abi.encode(address(target), abi.encodeWithSignature("execute(bytes)", data));
-        
+        bytes memory payload = abi.encode(
+            address(target),
+            abi.encodeWithSignature("execute(bytes)", data)
+        );
+
         // 1. Send message to get ID
-        bytes32 messageId = router.sendMultiBridgeMessage(address(target), payload, address(this));
-        
+        bytes32 messageId = router.sendMultiBridgeMessage(
+            address(target),
+            payload,
+            address(this)
+        );
+
         // 2. Construct wrapped payload for receiving side
         bytes memory wrappedPayload = abi.encode(messageId, payload);
-        
+
         // 3. Adapter 1 confirms
         vm.prank(address(adapter1));
         router.receiveBridgeMessage(wrappedPayload);
-        
+
         (uint256 confirmations, bool executed) = router.messages(messageId);
         assertEq(confirmations, 1);
         assertFalse(executed);
@@ -94,7 +108,7 @@ contract MultiBridgeRouterTest is Test {
         // 4. Adapter 2 confirms (Trigger execution)
         vm.prank(address(adapter2));
         router.receiveBridgeMessage(wrappedPayload);
-        
+
         (confirmations, executed) = router.messages(messageId);
         assertEq(confirmations, 2);
         assertTrue(executed);
@@ -103,23 +117,37 @@ contract MultiBridgeRouterTest is Test {
     }
 
     function test_receiveConfirmation_ReplayProtection() public {
-        bytes memory payload = abi.encode(address(target), abi.encodeWithSignature("execute(bytes)", hex""));
-        bytes32 messageId = router.sendMultiBridgeMessage(address(target), payload, address(this));
+        bytes memory payload = abi.encode(
+            address(target),
+            abi.encodeWithSignature("execute(bytes)", hex"")
+        );
+        bytes32 messageId = router.sendMultiBridgeMessage(
+            address(target),
+            payload,
+            address(this)
+        );
         bytes memory wrappedPayload = abi.encode(messageId, payload);
 
         vm.startPrank(address(adapter1));
         router.receiveBridgeMessage(wrappedPayload);
-        
+
         // Try confirming again
         vm.expectRevert("Already confirmed");
         router.receiveBridgeMessage(wrappedPayload);
         vm.stopPrank();
     }
-    
+
     function test_ExecutionFailure_Reverts() public {
         // Prepare payload calling revertFunc
-        bytes memory payload = abi.encode(address(target), abi.encodeWithSignature("revertFunc()"));
-        bytes32 messageId = router.sendMultiBridgeMessage(address(target), payload, address(this));
+        bytes memory payload = abi.encode(
+            address(target),
+            abi.encodeWithSignature("revertFunc()")
+        );
+        bytes32 messageId = router.sendMultiBridgeMessage(
+            address(target),
+            payload,
+            address(this)
+        );
         bytes memory wrappedPayload = abi.encode(messageId, payload);
 
         vm.prank(address(adapter1));

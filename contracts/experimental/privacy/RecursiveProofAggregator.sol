@@ -5,6 +5,8 @@ import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/acce
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {ExperimentalFeatureGated} from "../ExperimentalFeatureGated.sol";
+import {ExperimentalFeatureRegistry} from "../../security/ExperimentalFeatureRegistry.sol";
 
 /**
  * @title RecursiveProofAggregator
@@ -41,7 +43,8 @@ contract RecursiveProofAggregator is
     AccessControlUpgradeable,
     ReentrancyGuardUpgradeable,
     PausableUpgradeable,
-    UUPSUpgradeable
+    UUPSUpgradeable,
+    ExperimentalFeatureGated
 {
     // ============================================
     // ROLES
@@ -184,13 +187,13 @@ contract RecursiveProofAggregator is
     ///      simultaneously. This is analogous to FAFO's read/write set analysis
     ///      but applied to cross-chain proof domains instead of transaction state.
     struct ParallelGroup {
-        bytes32 groupId;            // Unique group identifier
-        bytes32[] batchIds;         // Batches in this group (non-conflicting)
-        uint256[] chainDomains;     // Chain domains covered (for conflict detection)
-        uint64 scheduledAt;         // Scheduling timestamp
-        uint64 finalizedAt;         // Finalization timestamp (0 if pending)
-        uint256 totalProofs;        // Total proofs across all batches
-        bool finalized;             // Whether all batches in group are aggregated
+        bytes32 groupId; // Unique group identifier
+        bytes32[] batchIds; // Batches in this group (non-conflicting)
+        uint256[] chainDomains; // Chain domains covered (for conflict detection)
+        uint64 scheduledAt; // Scheduling timestamp
+        uint64 finalizedAt; // Finalization timestamp (0 if pending)
+        uint256 totalProofs; // Total proofs across all batches
+        bool finalized; // Whether all batches in group are aggregated
     }
 
     // ============================================
@@ -303,10 +306,7 @@ contract RecursiveProofAggregator is
         uint256 totalProofs
     );
 
-    event ParallelGroupFinalized(
-        bytes32 indexed groupId,
-        uint256 batchCount
-    );
+    event ParallelGroupFinalized(bytes32 indexed groupId, uint256 batchCount);
 
     // ============================================
     // INITIALIZER
@@ -321,7 +321,10 @@ contract RecursiveProofAggregator is
      * @notice Initialize the aggregator
      * @param admin Admin address
      */
-    function initialize(address admin) external initializer {
+    function initialize(
+        address admin,
+        address _featureRegistry
+    ) external initializer {
         if (admin == address(0)) revert ZeroAddress();
 
         __AccessControl_init();
@@ -334,6 +337,15 @@ contract RecursiveProofAggregator is
         _grantRole(VERIFIER_ROLE, admin);
         _grantRole(UPGRADER_ROLE, admin);
         _grantRole(EMERGENCY_ROLE, admin);
+
+        // Wire to ExperimentalFeatureRegistry
+        if (_featureRegistry != address(0)) {
+            _setFeatureRegistry(
+                _featureRegistry,
+                ExperimentalFeatureRegistry(_featureRegistry)
+                    .RECURSIVE_PROOF_AGGREGATION()
+            );
+        }
     }
 
     // ============================================
@@ -650,10 +662,14 @@ contract RecursiveProofAggregator is
         uint256 totalProofsInGroup = 0;
         uint256[] memory chainDomains = new uint256[](batchIds.length);
 
-        for (uint256 i = 0; i < batchIds.length;) {
+        for (uint256 i = 0; i < batchIds.length; ) {
             AggregationBatch storage batch = _batches[batchIds[i]];
-            if (batch.batchId == bytes32(0)) revert BatchDoesNotExist(batchIds[i]);
-            if (batch.state != BatchState.OPEN && batch.state != BatchState.AGGREGATING) {
+            if (batch.batchId == bytes32(0))
+                revert BatchDoesNotExist(batchIds[i]);
+            if (
+                batch.state != BatchState.OPEN &&
+                batch.state != BatchState.AGGREGATING
+            ) {
                 revert BatchNotOpen(batchIds[i]);
             }
 
@@ -665,7 +681,9 @@ contract RecursiveProofAggregator is
                 chainDomains[i] = proofSubmissions[batch.proofIds[0]].chainId;
             }
 
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
 
         // Generate group ID
@@ -690,16 +708,21 @@ contract RecursiveProofAggregator is
         });
 
         // Map batches to group and start aggregation
-        for (uint256 i = 0; i < batchIds.length;) {
+        for (uint256 i = 0; i < batchIds.length; ) {
             batchToGroup[batchIds[i]] = groupId;
 
             // Auto-start aggregation for batches that meet minimum size
             AggregationBatch storage batch = _batches[batchIds[i]];
-            if (batch.state == BatchState.OPEN && batch.proofIds.length >= MIN_BATCH_SIZE) {
+            if (
+                batch.state == BatchState.OPEN &&
+                batch.proofIds.length >= MIN_BATCH_SIZE
+            ) {
                 batch.state = BatchState.AGGREGATING;
             }
 
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
 
         unchecked {
@@ -715,27 +738,27 @@ contract RecursiveProofAggregator is
      */
     function finalizeParallelGroup(
         bytes32 groupId
-    )
-        external
-        onlyRole(AGGREGATOR_ROLE)
-        nonReentrant
-        whenNotPaused
-    {
+    ) external onlyRole(AGGREGATOR_ROLE) nonReentrant whenNotPaused {
         ParallelGroup storage group = _parallelGroups[groupId];
         if (group.scheduledAt == 0) revert ParallelGroupDoesNotExist(groupId);
         if (group.finalized) revert ParallelGroupAlreadyFinalized(groupId);
 
         // Verify all batches in the group are aggregated
-        for (uint256 i = 0; i < group.batchIds.length;) {
+        for (uint256 i = 0; i < group.batchIds.length; ) {
             AggregationBatch storage batch = _batches[group.batchIds[i]];
-            if (batch.state != BatchState.VERIFIED && batch.state != BatchState.FINALIZED) {
+            if (
+                batch.state != BatchState.VERIFIED &&
+                batch.state != BatchState.FINALIZED
+            ) {
                 revert BatchNotOpen(group.batchIds[i]);
             }
             if (batch.state == BatchState.VERIFIED) {
                 batch.state = BatchState.FINALIZED;
                 emit BatchFinalized(batch.batchId);
             }
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
 
         group.finalized = true;
@@ -760,15 +783,19 @@ contract RecursiveProofAggregator is
         if (a.batchId == bytes32(0) || b.batchId == bytes32(0)) return false;
 
         // Compare chain domains of all proofs in each batch
-        for (uint256 i = 0; i < a.proofIds.length;) {
+        for (uint256 i = 0; i < a.proofIds.length; ) {
             uint256 chainA = proofSubmissions[a.proofIds[i]].chainId;
-            for (uint256 j = 0; j < b.proofIds.length;) {
+            for (uint256 j = 0; j < b.proofIds.length; ) {
                 if (chainA == proofSubmissions[b.proofIds[j]].chainId) {
                     return true; // Conflict: shared chain domain
                 }
-                unchecked { ++j; }
+                unchecked {
+                    ++j;
+                }
             }
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
 
         return false;
@@ -913,4 +940,7 @@ contract RecursiveProofAggregator is
     function _authorizeUpgrade(
         address newImplementation
     ) internal override onlyRole(UPGRADER_ROLE) {}
+
+    /// @dev Reserved storage gap for future upgrades
+    uint256[50] private __gap;
 }

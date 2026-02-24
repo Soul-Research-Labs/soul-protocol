@@ -8,7 +8,7 @@ This document describes the formal verification setup for the Soul Protocol Soul
 
 All verification jobs have been successfully submitted to the Certora cloud.
 
-> **Status (February 2026):** All 56 CVL specs across 57 configurations are submitted and queued. Results will be updated as Certora Prover returns. Local Foundry symbolic tests (Halmos) and fuzz tests (10,001+ runs) complement online verification. See `certora/specs/` for full CVL source. Foundry: 4,864 tests passing (222 suites), SDK: 569 tests passing.
+> **Status (February 2026):** 64 CVL specs across 62 configurations. Results updated as Certora Prover returns. Local Foundry symbolic tests (Halmos) and fuzz tests (10,000+ runs) complement online verification. See `certora/specs/` for full CVL source. Foundry: 5,600+ tests passing (220+ suites), SDK: 569 tests passing.
 
 ### Core Contracts
 
@@ -22,27 +22,27 @@ All verification jobs have been successfully submitted to the Certora cloud.
 
 ### Novel Primitives
 
-| Primitive                                | Config                    | Spec                            | Status                      |
-| ---------------------------------------- | ------------------------- | ------------------------------- | --------------------------- |
-| ZKBoundStateLocks                        | `verify_zkslocks.conf`    | ZKBoundStateLocks.spec          | ✅ Submitted                |
-| ProofCarryingContainer (PC3)             | `verify_pc3.conf`         | PC3.spec                        | ✅ Submitted                |
-| CrossDomainNullifierAlgebra (CDNA)       | `verify_cdna.conf`        | CDNA.spec                       | ✅ Submitted                |
-| PolicyBoundProofs (PBP)                  | `verify_pbp.conf`         | PBP.spec                        | ✅ Submitted                |
-| ExecutionAgnosticStateCommitments (EASC) | `verify_easc.conf`        | EASC.spec                       | ✅ Submitted                |
-| HomomorphicHiding                        | `verify_homomorphic.conf` | HomomorphicHiding.spec          | ✅ Submitted (experimental) |
-| AggregateDisclosureAlgebra               | `verify_ada.conf`         | AggregateDisclosureAlgebra.spec | ✅ Submitted (experimental) |
-| ComposableRevocationProofs               | `verify_crp.conf`         | ComposableRevocationProofs.spec | ✅ Submitted (experimental) |
+| Primitive                                | Config                             | Spec                            | Status                      |
+| ---------------------------------------- | ---------------------------------- | ------------------------------- | --------------------------- |
+| ZKBoundStateLocks                        | `verify_zkslocks.conf`             | ZKBoundStateLocks.spec          | ✅ Submitted                |
+| ProofCarryingContainer (PC3)             | `verify_pc3.conf`                  | PC3.spec                        | ✅ Submitted                |
+| CrossDomainNullifierAlgebra (CDNA)       | `verify_cdna.conf`                 | CDNA.spec                       | ✅ Submitted                |
+| PolicyBoundProofs (PBP)                  | `verify_pbp.conf`                  | PBP.spec                        | ✅ Submitted                |
+| ExecutionAgnosticStateCommitments (EASC) | `verify_easc.conf`                 | EASC.spec                       | ✅ Submitted                |
+| HomomorphicHiding                        | `verify_homomorphic_hiding.conf`   | HomomorphicHiding.spec          | ✅ Submitted (experimental) |
+| AggregateDisclosureAlgebra               | `verify_aggregate_disclosure.conf` | AggregateDisclosureAlgebra.spec | ✅ Submitted (experimental) |
+| ComposableRevocationProofs               | `verify_crp.conf`                  | ComposableRevocationProofs.spec | ✅ Submitted (experimental) |
 
 ### Infrastructure Components
 
-| Component                                     | Config                     | Status       |
-| --------------------------------------------- | -------------------------- | ------------ |
-| SPTC (Semantic Proof Translation Certificate) | `verify_sptc.conf`         | ✅ Submitted |
-| SoulControlPlane                              | `verify_controlplane.conf` | ✅ Submitted |
-| JAM (Joinable Confidential Computation)       | `verify_jam.conf`          | ✅ Submitted |
-| MRP (Mixnet Receipt Proofs)                   | `verify_mrp.conf`          | ✅ Submitted |
-| AnonymousDeliveryVerifier                     | `verify_adv.conf`          | ✅ Submitted |
-| NetworkWideInvariants                         | `verify_network.conf`      | ✅ Submitted |
+| Component                                     | Config                                   | Status       |
+| --------------------------------------------- | ---------------------------------------- | ------------ |
+| SPTC (Semantic Proof Translation Certificate) | `verify_sptc.conf`                       | ✅ Submitted |
+| NetworkWideInvariants                         | `verify_network_invariants.conf`         | ✅ Submitted |
+| GasNormalizer                                 | `verify_gas_normalizer.conf`             | ✅ Submitted |
+| PrivateRelayerNetwork                         | `verify_private_relayer_network.conf`    | ✅ Submitted |
+| RecursiveProofAggregator                      | `verify_recursive_proof_aggregator.conf` | ✅ Submitted |
+| RingSignature                                 | `verify_ring_signature.conf`             | ✅ Submitted |
 
 ### Bridge Adapters (per-chain)
 
@@ -241,28 +241,15 @@ All verification jobs have been successfully submitted to the Certora cloud.
 
 ## Harness Contracts
 
-Due to Solidity stack depth limitations with complex structs, simplified harness contracts were created:
-
-1. **SPTCHarness** (`contracts/harness/SPTCHarness.sol`)
-   - Simplified certificate structure
-   - Core issuance and revocation logic
-   - Stake requirements
-
-2. **SoulControlPlaneHarness** (`contracts/harness/SoulControlPlaneHarness.sol`)
-   - Simplified 5-stage message lifecycle
-   - Core state transitions
-   - Nullifier tracking
-
-3. **JAMHarness** (`contracts/harness/JAMHarness.sol`)
-   - Simplified computation lifecycle
-   - Accumulation and finalization logic
-   - Threshold enforcement
+Due to Solidity stack depth limitations with complex structs, simplified harness contracts may be created
+under `test/harness/` as needed for Certora verification. Currently, harness contracts are generated
+automatically by the Certora prover when needed, so no manual harness files are maintained.
 
 ## Solidity Configuration
 
-- **Compiler**: solc 0.8.22 (via solc-select)
-- **via-ir**: Enabled where needed for complex contracts
-- **Optimizer**: Standard settings
+- **Compiler**: solc 0.8.24 (via solc-select)
+- **via-ir**: Enabled globally (foundry.toml `via_ir = true`)
+- **Optimizer**: 10,000 runs (11 contracts pinned to max_optimizer_runs=1 for stack-depth)
 
 ## Running Verifications
 

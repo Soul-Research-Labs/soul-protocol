@@ -192,8 +192,8 @@ contract SoulProtocolHubWiringTest is Test {
 
         (string[] memory names, address[] memory addrs) = hub
             .getComponentStatus();
-        assertEq(names.length, 22);
-        assertEq(addrs.length, 22);
+        assertEq(names.length, 25);
+        assertEq(addrs.length, 25);
 
         // Spot check a few
         assertEq(addrs[0], VERIFIER_REG); // verifierRegistry

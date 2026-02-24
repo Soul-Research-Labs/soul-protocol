@@ -15,11 +15,11 @@
   "exclude_dependencies": true,
   "filter_paths": "node_modules,lib,test,echidna,.certora_internal,forge-std,contracts/test,contracts/mocks,contracts/harness,contracts/testing,contracts/verifiers/generated",
   "solc_remaps": [
-    "@openzeppelin/=node_modules/@openzeppelin/",
+    "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
+    "@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/",
     "forge-std/=lib/forge-std/src/"
   ],
   "solc": "solc",
-  "solc_args": "--via-ir --optimize --optimize-runs 10000",
   "compile_force_framework": "foundry",
   "show_ignored_findings": false,
   "fail_on": "high",

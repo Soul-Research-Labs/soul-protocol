@@ -334,7 +334,7 @@ contract SoulAtomicSwapV2 is
     function commitClaim(
         bytes32 swapId,
         bytes32 commitHash
-    ) external whenNotPaused {
+    ) external nonReentrant whenNotPaused {
         Swap storage swap = swaps[swapId];
         if (swap.status != SwapStatus.Created) revert SwapNotPending();
         // Use timestamp buffer to protect against miner manipulation
@@ -539,7 +539,7 @@ contract SoulAtomicSwapV2 is
     function executeFeeWithdrawal(
         address token,
         bytes32 withdrawalId
-    ) external onlyOwner {
+    ) external nonReentrant onlyOwner {
         uint256 requestTime = pendingFeeWithdrawals[withdrawalId];
         if (requestTime == 0) revert WithdrawalNotFound();
         if (block.timestamp < requestTime + FEE_WITHDRAWAL_DELAY)

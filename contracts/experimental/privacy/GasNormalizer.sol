@@ -5,6 +5,8 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import {ExperimentalFeatureGated} from "../ExperimentalFeatureGated.sol";
+import {ExperimentalFeatureRegistry} from "../../security/ExperimentalFeatureRegistry.sol";
 
 /**
  * @title GasNormalizer
@@ -48,7 +50,8 @@ contract GasNormalizer is
     Initializable,
     UUPSUpgradeable,
     AccessControlUpgradeable,
-    ReentrancyGuardUpgradeable
+    ReentrancyGuardUpgradeable,
+    ExperimentalFeatureGated
 {
     // =========================================================================
     // ROLES
@@ -179,7 +182,10 @@ contract GasNormalizer is
         _disableInitializers();
     }
 
-    function initialize(address admin) external initializer {
+    function initialize(
+        address admin,
+        address _featureRegistry
+    ) external initializer {
         if (admin == address(0)) revert ZeroAddress();
 
         __AccessControl_init();
@@ -196,6 +202,15 @@ contract GasNormalizer is
         _burnEntropy = keccak256(
             abi.encodePacked(block.timestamp, admin, block.prevrandao)
         );
+
+        // Wire to ExperimentalFeatureRegistry
+        if (_featureRegistry != address(0)) {
+            _setFeatureRegistry(
+                _featureRegistry,
+                ExperimentalFeatureRegistry(_featureRegistry)
+                    .GAS_NORMALIZATION()
+            );
+        }
     }
 
     // =========================================================================
@@ -576,4 +591,7 @@ contract GasNormalizer is
     function _authorizeUpgrade(
         address newImplementation
     ) internal override onlyRole(UPGRADER_ROLE) {}
+
+    /// @dev Reserved storage gap for future upgrades
+    uint256[50] private __gap;
 }

@@ -19,16 +19,16 @@ Forge coverage fails on this project with **"stack too deep"** errors due to:
 
 ## Test Suite Summary
 
-| Category      | Files                        | Tests | Command                                          |
-| ------------- | ---------------------------- | ----- | ------------------------------------------------ |
-| Foundry Unit  | `test/foundry/*.t.sol`       | 56    | `forge test --match-path 'test/foundry/*'`       |
-| Fuzz          | `test/fuzz/*.t.sol`          | 19    | `forge test --match-path 'test/fuzz/*'`          |
-| Invariant     | `test/invariant/*.t.sol`     | 5     | `forge test --match-path 'test/invariant/*'`     |
-| Attack        | `test/attack/*.t.sol`        | 6     | `forge test --match-path 'test/attack/*'`        |
-| Security      | `test/security/*.t.sol`      | 8     | `forge test --match-path 'test/security/*'`      |
-| Gas Benchmark | `test/gas-benchmark/*.t.sol` | 2     | `forge test --match-path 'test/gas-benchmark/*'` |
-| Integration   | `test/integration/*.t.sol`   | 6     | `forge test --match-path 'test/integration/*'`   |
-| Stress        | `test/stress/*.t.sol`        | 3     | `forge test --match-path 'test/stress/*'`        |
+| Category      | Files                      | Tests | Command                                        |
+| ------------- | -------------------------- | ----- | ---------------------------------------------- |
+| Foundry Unit  | `test/foundry/*.t.sol`     | 56    | `forge test --match-path 'test/foundry/*'`     |
+| Fuzz          | `test/fuzz/*.t.sol`        | 19    | `forge test --match-path 'test/fuzz/*'`        |
+| Invariant     | `test/invariant/*.t.sol`   | 5     | `forge test --match-path 'test/invariant/*'`   |
+| Attack        | `test/attacks/*.t.sol`     | 7     | `forge test --match-path 'test/attacks/*'`     |
+| Security      | `test/security/*.t.sol`    | 31    | `forge test --match-path 'test/security/*'`    |
+| Gas Benchmark | `test/gas/*.t.sol`         | 3     | `forge test --match-path 'test/gas/*'`         |
+| Integration   | `test/integration/*.t.sol` | 6     | `forge test --match-path 'test/integration/*'` |
+| Stress        | `test/stress/*.t.sol`      | 3     | `forge test --match-path 'test/stress/*'`      |
 
 ---
 

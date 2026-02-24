@@ -1020,8 +1020,8 @@ contract SoulProtocolHub is
         view
         returns (string[] memory names, address[] memory addresses)
     {
-        names = new string[](22);
-        addresses = new address[](22);
+        names = new string[](25);
+        addresses = new address[](25);
         names[0] = "verifierRegistry";
         addresses[0] = verifierRegistry;
         names[1] = "universalVerifier";
@@ -1066,6 +1066,12 @@ contract SoulProtocolHub is
         addresses[20] = instantSettlementGuarantee;
         names[21] = "dynamicRoutingOrchestrator";
         addresses[21] = dynamicRoutingOrchestrator;
+        names[22] = "bridgeCircuitBreaker";
+        addresses[22] = bridgeCircuitBreaker;
+        names[23] = "timelock";
+        addresses[23] = timelock;
+        names[24] = "upgradeTimelock";
+        addresses[24] = upgradeTimelock;
     }
 
     /*//////////////////////////////////////////////////////////////

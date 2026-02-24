@@ -54,7 +54,7 @@
     "security:monthly": "npm run security:deep && npm run security:mutation && npm run certora:full",
     "precommit:install": "pip install pre-commit && pre-commit install",
     "gas:report": "forge test --gas-report",
-    "gas:snapshot": "forge snapshot",
+    "gas:snapshot:full": "forge snapshot",
     "gas:verifiers": "forge test --match-contract VerifierGasBenchmark --gas-report -vvv",
     "noir:install": "./scripts/install_noir.sh",
     "noir:compile": "cd noir && nargo compile --workspace",

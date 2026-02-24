@@ -3,13 +3,19 @@ pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {ExperimentalFeatureGated} from "../ExperimentalFeatureGated.sol";
+import {ExperimentalFeatureRegistry} from "../../security/ExperimentalFeatureRegistry.sol";
 
 /// @title PrivacyPreservingRelayerSelection
 /// @notice Enables privacy-preserving selection of relayers for transaction submission
 /// @dev Uses commitment schemes and VRF for unbiased, private relayer selection
 /// @custom:experimental This contract is research-tier and NOT production-ready. See contracts/experimental/README.md for promotion criteria.
 /// @custom:security-contact security@soulprotocol.io
-contract PrivacyPreservingRelayerSelection is AccessControl, ReentrancyGuard {
+contract PrivacyPreservingRelayerSelection is
+    AccessControl,
+    ReentrancyGuard,
+    ExperimentalFeatureGated
+{
     // =========================================================================
     // CONSTANTS
     // =========================================================================
@@ -153,9 +159,16 @@ contract PrivacyPreservingRelayerSelection is AccessControl, ReentrancyGuard {
     // CONSTRUCTOR
     // =========================================================================
 
-    constructor(bytes32 _vrfPublicKey) {
+    constructor(bytes32 _vrfPublicKey, address _featureRegistry) {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         vrfPublicKey = _vrfPublicKey;
+
+        // Wire to ExperimentalFeatureRegistry
+        _setFeatureRegistry(
+            _featureRegistry,
+            ExperimentalFeatureRegistry(_featureRegistry)
+                .PRIVACY_PRESERVING_RELAYER_SELECTION()
+        );
     }
 
     // =========================================================================

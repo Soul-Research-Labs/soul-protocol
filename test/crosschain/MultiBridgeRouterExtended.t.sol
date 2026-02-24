@@ -56,12 +56,12 @@ contract SucceedingBridgeAdapter is IBridgeAdapter {
 
 /// @dev Reentrant adapter that tries to call receiveBridgeMessage during confirmation
 contract ReentrantAdapter is IBridgeAdapter {
-    MultiBridgeRouter public router;
+    SimpleMultiBridgeRouter public router;
     bytes public storedPayload;
     bool public shouldReenter;
 
     constructor(address _router) {
-        router = MultiBridgeRouter(_router);
+        router = SimpleMultiBridgeRouter(_router);
     }
 
     function setPayload(bytes memory p) external {
@@ -113,11 +113,11 @@ contract ETHReceiver {
 
 /**
  * @title MultiBridgeRouterExtended
- * @notice Extended test coverage for MultiBridgeRouter: failover gaps, access control,
+ * @notice Extended test coverage for SimpleMultiBridgeRouter: failover gaps, access control,
  *         edge cases, and configuration management.
  */
 contract MultiBridgeRouterExtended is Test {
-    MultiBridgeRouter public router;
+    SimpleMultiBridgeRouter public router;
     SucceedingBridgeAdapter public adapter1;
     SucceedingBridgeAdapter public adapter2;
     SucceedingBridgeAdapter public adapter3;
@@ -129,7 +129,7 @@ contract MultiBridgeRouterExtended is Test {
         admin = address(this);
         attacker = makeAddr("attacker");
 
-        router = new MultiBridgeRouter(admin, 2);
+        router = new SimpleMultiBridgeRouter(admin, 2);
 
         adapter1 = new SucceedingBridgeAdapter();
         adapter2 = new SucceedingBridgeAdapter();
@@ -147,7 +147,7 @@ contract MultiBridgeRouterExtended is Test {
 
     function test_failover_singleAdapterFailureDoesNotKillSend() public {
         // Deploy a new router with a failing adapter mixed in
-        MultiBridgeRouter router2 = new MultiBridgeRouter(admin, 2);
+        SimpleMultiBridgeRouter router2 = new SimpleMultiBridgeRouter(admin, 2);
         SucceedingBridgeAdapter good1 = new SucceedingBridgeAdapter();
         FailingBridgeAdapter bad = new FailingBridgeAdapter();
         SucceedingBridgeAdapter good2 = new SucceedingBridgeAdapter();
@@ -175,7 +175,7 @@ contract MultiBridgeRouterExtended is Test {
     }
 
     function test_failover_allAdaptersFailing() public {
-        MultiBridgeRouter router2 = new MultiBridgeRouter(admin, 1);
+        SimpleMultiBridgeRouter router2 = new SimpleMultiBridgeRouter(admin, 1);
         FailingBridgeAdapter bad1 = new FailingBridgeAdapter();
         FailingBridgeAdapter bad2 = new FailingBridgeAdapter();
 
@@ -252,7 +252,7 @@ contract MultiBridgeRouterExtended is Test {
     // ====================================================================
 
     function test_sendWithZeroAdapters_reverts() public {
-        MultiBridgeRouter emptyRouter = new MultiBridgeRouter(admin, 1);
+        SimpleMultiBridgeRouter emptyRouter = new SimpleMultiBridgeRouter(admin, 1);
         // No adapters added
 
         bytes memory payload = abi.encode(

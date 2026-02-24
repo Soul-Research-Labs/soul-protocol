@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import "../../contracts/governance/SoulUpgradeTimelock.sol";
+import {ISoulUpgradeTimelock} from "../../contracts/interfaces/ISoulUpgradeTimelock.sol";
 
 /// @title SoulUpgradeTimelockTest
 /// @notice Comprehensive unit tests for SoulUpgradeTimelock
@@ -95,7 +96,7 @@ contract SoulUpgradeTimelockTest is Test {
         assertEq(timelock.getProposalCount(), 1);
         assertEq(timelock.proposalIds(0), opId);
 
-        SoulUpgradeTimelock.UpgradeProposal memory p = timelock.getProposal(
+        ISoulUpgradeTimelock.UpgradeProposal memory p = timelock.getProposal(
             opId
         );
         assertEq(p.target, target);
@@ -112,7 +113,7 @@ contract SoulUpgradeTimelockTest is Test {
     function test_ProposeStandardUpgradeEmitsEvents() public {
         vm.prank(admin);
         vm.expectEmit(false, true, false, true);
-        emit SoulUpgradeTimelock.UpgradeProposed(
+        emit ISoulUpgradeTimelock.UpgradeProposed(
             bytes32(0), // we don't know opId yet
             target,
             "ev-test",
@@ -133,7 +134,7 @@ contract SoulUpgradeTimelockTest is Test {
             "Critical fix"
         );
 
-        SoulUpgradeTimelock.UpgradeProposal memory p = timelock.getProposal(
+        ISoulUpgradeTimelock.UpgradeProposal memory p = timelock.getProposal(
             opId
         );
         assertEq(p.executableAt, block.timestamp + 72 hours);
@@ -157,7 +158,7 @@ contract SoulUpgradeTimelockTest is Test {
             "Emergency fix"
         );
 
-        SoulUpgradeTimelock.UpgradeProposal memory p = timelock.getProposal(
+        ISoulUpgradeTimelock.UpgradeProposal memory p = timelock.getProposal(
             opId
         );
         assertEq(p.executableAt, block.timestamp + 6 hours);
@@ -168,7 +169,7 @@ contract SoulUpgradeTimelockTest is Test {
 
     function test_RevertEmergencyUpgradeWithoutEmergencyMode() public {
         vm.prank(admin);
-        vm.expectRevert(SoulUpgradeTimelock.NotInEmergencyMode.selector);
+        vm.expectRevert(ISoulUpgradeTimelock.NotInEmergencyMode.selector);
         timelock.proposeEmergencyUpgrade(
             target,
             upgradeData,
@@ -196,7 +197,7 @@ contract SoulUpgradeTimelockTest is Test {
         vm.prank(admin);
         vm.expectRevert(
             abi.encodeWithSelector(
-                SoulUpgradeTimelock.UpgradesFrozen.selector,
+                ISoulUpgradeTimelock.UpgradesFrozen.selector,
                 target
             )
         );
@@ -210,7 +211,7 @@ contract SoulUpgradeTimelockTest is Test {
         vm.prank(admin);
         vm.expectRevert(
             abi.encodeWithSelector(
-                SoulUpgradeTimelock.UpgradesFrozen.selector,
+                ISoulUpgradeTimelock.UpgradesFrozen.selector,
                 target
             )
         );
@@ -227,7 +228,7 @@ contract SoulUpgradeTimelockTest is Test {
         vm.prank(admin);
         vm.expectRevert(
             abi.encodeWithSelector(
-                SoulUpgradeTimelock.UpgradesFrozen.selector,
+                ISoulUpgradeTimelock.UpgradesFrozen.selector,
                 target
             )
         );
@@ -264,7 +265,7 @@ contract SoulUpgradeTimelockTest is Test {
 
         // Admin already signed during proposal
         vm.prank(admin);
-        vm.expectRevert(SoulUpgradeTimelock.AlreadySigned.selector);
+        vm.expectRevert(ISoulUpgradeTimelock.AlreadySigned.selector);
         timelock.signUpgrade(opId);
     }
 
@@ -319,7 +320,7 @@ contract SoulUpgradeTimelockTest is Test {
         vm.prank(admin);
         vm.expectRevert(
             abi.encodeWithSelector(
-                SoulUpgradeTimelock.InsufficientSignatures.selector,
+                ISoulUpgradeTimelock.InsufficientSignatures.selector,
                 1,
                 2
             )
@@ -370,7 +371,7 @@ contract SoulUpgradeTimelockTest is Test {
     function test_EnableEmergencyMode() public {
         vm.prank(admin);
         vm.expectEmit(true, false, false, false);
-        emit SoulUpgradeTimelock.EmergencyModeEnabled(admin);
+        emit ISoulUpgradeTimelock.EmergencyModeEnabled(admin);
         timelock.enableEmergencyMode();
 
         assertTrue(timelock.emergencyMode());
@@ -382,7 +383,7 @@ contract SoulUpgradeTimelockTest is Test {
 
         vm.prank(admin);
         vm.expectEmit(true, false, false, false);
-        emit SoulUpgradeTimelock.EmergencyModeDisabled(admin);
+        emit ISoulUpgradeTimelock.EmergencyModeDisabled(admin);
         timelock.disableEmergencyMode();
 
         assertFalse(timelock.emergencyMode());
@@ -409,7 +410,7 @@ contract SoulUpgradeTimelockTest is Test {
     function test_SetUpgradeFrozen() public {
         vm.prank(admin);
         vm.expectEmit(true, false, false, true);
-        emit SoulUpgradeTimelock.UpgradeFrozen(target, true);
+        emit ISoulUpgradeTimelock.UpgradeFrozen(target, true);
         timelock.setUpgradeFrozen(target, true);
 
         assertTrue(timelock.upgradeFrozen(target));
@@ -430,7 +431,7 @@ contract SoulUpgradeTimelockTest is Test {
     function test_ProposeMinSignatures_Increase_Instant() public {
         vm.prank(admin);
         vm.expectEmit(false, false, false, true);
-        emit SoulUpgradeTimelock.MinSignaturesUpdated(2, 3);
+        emit ISoulUpgradeTimelock.MinSignaturesUpdated(2, 3);
         timelock.proposeMinSignatures(3);
 
         // Increase takes effect immediately
@@ -462,7 +463,7 @@ contract SoulUpgradeTimelockTest is Test {
 
         vm.prank(admin);
         vm.expectEmit(false, false, false, true);
-        emit SoulUpgradeTimelock.MinSignaturesUpdated(5, 3);
+        emit ISoulUpgradeTimelock.MinSignaturesUpdated(5, 3);
         timelock.confirmMinSignatures();
 
         assertEq(timelock.minSignatures(), 3);
@@ -510,7 +511,7 @@ contract SoulUpgradeTimelockTest is Test {
 
     function test_RevertMinSignaturesZero() public {
         vm.prank(admin);
-        vm.expectRevert(SoulUpgradeTimelock.MinSignaturesTooLow.selector);
+        vm.expectRevert(ISoulUpgradeTimelock.MinSignaturesTooLow.selector);
         timelock.proposeMinSignatures(0);
     }
 
@@ -676,7 +677,7 @@ contract SoulUpgradeTimelockTest is Test {
     function testFuzz_MinSignaturesAlwaysPositive(uint256 newMin) public {
         if (newMin == 0) {
             vm.prank(admin);
-            vm.expectRevert(SoulUpgradeTimelock.MinSignaturesTooLow.selector);
+            vm.expectRevert(ISoulUpgradeTimelock.MinSignaturesTooLow.selector);
             timelock.proposeMinSignatures(newMin);
         } else if (newMin >= 2) {
             // Increase is instant

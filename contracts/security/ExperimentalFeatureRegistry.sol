@@ -54,13 +54,28 @@ contract ExperimentalFeatureRegistry is AccessControl {
                                 STORAGE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Feature identifiers
+    /// @notice Feature identifiers - legacy (phantom contracts removed)
     bytes32 public constant FHE_OPERATIONS = keccak256("FHE_OPERATIONS");
     bytes32 public constant PQC_SIGNATURES = keccak256("PQC_SIGNATURES");
     bytes32 public constant MPC_THRESHOLD = keccak256("MPC_THRESHOLD");
     bytes32 public constant SERAPHIM_PRIVACY = keccak256("SERAPHIM_PRIVACY");
     bytes32 public constant TRIPTYCH_SIGNATURES =
         keccak256("TRIPTYCH_SIGNATURES");
+
+    /// @notice Feature identifiers - active experimental contracts
+    bytes32 public constant RECURSIVE_PROOF_AGGREGATION =
+        keccak256("RECURSIVE_PROOF_AGGREGATION");
+    bytes32 public constant MIXNET_NODE_REGISTRY =
+        keccak256("MIXNET_NODE_REGISTRY");
+    bytes32 public constant PRIVATE_RELAYER_NETWORK =
+        keccak256("PRIVATE_RELAYER_NETWORK");
+    bytes32 public constant PRIVACY_PRESERVING_RELAYER_SELECTION =
+        keccak256("PRIVACY_PRESERVING_RELAYER_SELECTION");
+    bytes32 public constant GAS_NORMALIZATION = keccak256("GAS_NORMALIZATION");
+    bytes32 public constant RECURSIVE_VERIFIER =
+        keccak256("RECURSIVE_VERIFIER");
+    bytes32 public constant CLSAG_VERIFICATION =
+        keccak256("CLSAG_VERIFICATION");
 
     /// @notice Feature registry
     mapping(bytes32 => Feature) public features;
@@ -174,6 +189,77 @@ contract ExperimentalFeatureRegistry is AccessControl {
             0.1 ether,
             true,
             "https://docs.soul.xyz/experimental/triptych"
+        );
+
+        // Register active experimental contracts
+        _registerFeature(
+            RECURSIVE_PROOF_AGGREGATION,
+            "Recursive Proof Aggregation (IVC/Nova)",
+            FeatureStatus.EXPERIMENTAL,
+            address(0),
+            10 ether,
+            true,
+            "https://docs.soul.xyz/experimental/recursive-proofs"
+        );
+
+        _registerFeature(
+            MIXNET_NODE_REGISTRY,
+            "Mixnet Node Registry",
+            FeatureStatus.EXPERIMENTAL,
+            address(0),
+            5 ether,
+            true,
+            "https://docs.soul.xyz/experimental/mixnet"
+        );
+
+        _registerFeature(
+            PRIVATE_RELAYER_NETWORK,
+            "Private Relayer Network",
+            FeatureStatus.EXPERIMENTAL,
+            address(0),
+            5 ether,
+            true,
+            "https://docs.soul.xyz/experimental/private-relayer"
+        );
+
+        _registerFeature(
+            PRIVACY_PRESERVING_RELAYER_SELECTION,
+            "Privacy-Preserving Relayer Selection",
+            FeatureStatus.EXPERIMENTAL,
+            address(0),
+            5 ether,
+            true,
+            "https://docs.soul.xyz/experimental/relayer-selection"
+        );
+
+        _registerFeature(
+            GAS_NORMALIZATION,
+            "Gas Normalization (Anti-Fingerprinting)",
+            FeatureStatus.EXPERIMENTAL,
+            address(0),
+            1 ether,
+            true,
+            "https://docs.soul.xyz/experimental/gas-normalizer"
+        );
+
+        _registerFeature(
+            RECURSIVE_VERIFIER,
+            "Recursive Proof Verifier",
+            FeatureStatus.EXPERIMENTAL,
+            address(0),
+            10 ether,
+            true,
+            "https://docs.soul.xyz/experimental/recursive-verifier"
+        );
+
+        _registerFeature(
+            CLSAG_VERIFICATION,
+            "CLSAG Ring Signature Verification",
+            FeatureStatus.EXPERIMENTAL,
+            address(0),
+            5 ether,
+            true,
+            "https://docs.soul.xyz/experimental/clsag"
         );
     }
 

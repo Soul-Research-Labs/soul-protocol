@@ -402,12 +402,7 @@ contract CrossChainProofHubV3 is
         }
 
         batchId = keccak256(
-            abi.encodePacked(
-                merkleRoot,
-                msg.sender,
-                block.timestamp,
-                totalBatches
-            )
+            abi.encode(merkleRoot, msg.sender, block.timestamp, totalBatches)
         );
 
         batches[batchId] = BatchSubmission({
@@ -430,7 +425,7 @@ contract CrossChainProofHubV3 is
 
         for (uint256 i = 0; i < len; ) {
             bytes32 proofId = keccak256(
-                abi.encodePacked(
+                abi.encode(
                     _proofs[i].proofHash,
                     _proofs[i].commitment,
                     _proofs[i].sourceChainId,
@@ -785,7 +780,7 @@ contract CrossChainProofHubV3 is
         bytes32 publicInputsHash = keccak256(publicInputs);
 
         proofId = keccak256(
-            abi.encodePacked(proofHash, commitment, sourceChainId, destChainId)
+            abi.encode(proofHash, commitment, sourceChainId, destChainId)
         );
 
         if (proofs[proofId].relayer != address(0))

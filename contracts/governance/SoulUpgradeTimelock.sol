@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/governance/TimelockController.sol";
+import {ISoulUpgradeTimelock} from "../interfaces/ISoulUpgradeTimelock.sol";
 
 /**
  * @title SoulUpgradeTimelock
@@ -36,7 +37,7 @@ import "@openzeppelin/contracts/governance/TimelockController.sol";
  * │                                                                        │
  * └────────────────────────────────────────────────────────────────────────┘
  */
-contract SoulUpgradeTimelock is TimelockController {
+contract SoulUpgradeTimelock is TimelockController, ISoulUpgradeTimelock {
     /*//////////////////////////////////////////////////////////////
                               CONSTANTS
     //////////////////////////////////////////////////////////////*/
@@ -67,18 +68,7 @@ contract SoulUpgradeTimelock is TimelockController {
                               STRUCTS
     //////////////////////////////////////////////////////////////*/
 
-    struct UpgradeProposal {
-        bytes32 operationId;
-        address target;
-        bytes data;
-        uint256 proposedAt;
-        uint256 scheduledAt;
-        uint256 executableAt;
-        bool isEmergency;
-        bool isCritical;
-        string description;
-        uint256 exitWindowEnds;
-    }
+    // Struct inherited from ISoulUpgradeTimelock
 
     /*//////////////////////////////////////////////////////////////
                               STATE
@@ -113,29 +103,11 @@ contract SoulUpgradeTimelock is TimelockController {
                               EVENTS
     //////////////////////////////////////////////////////////////*/
 
-    event UpgradeProposed(
-        bytes32 indexed operationId,
-        address indexed target,
-        string description,
-        uint256 executableAt,
-        bool isEmergency
-    );
+    // Events inherited from ISoulUpgradeTimelock:
+    // UpgradeProposed, UpgradeSigned, ExitWindowStarted,
+    // EmergencyModeEnabled, EmergencyModeDisabled, UpgradeFrozen,
+    // MinSignaturesUpdated
 
-    event UpgradeSigned(
-        bytes32 indexed operationId,
-        address indexed signer,
-        uint256 signatureCount
-    );
-
-    event ExitWindowStarted(
-        bytes32 indexed operationId,
-        uint256 exitWindowEnds
-    );
-
-    event EmergencyModeEnabled(address indexed by);
-    event EmergencyModeDisabled(address indexed by);
-    event UpgradeFrozen(address indexed target, bool frozen);
-    event MinSignaturesUpdated(uint256 oldMin, uint256 newMin);
     event MinSignaturesChangeProposed(
         uint256 currentMin,
         uint256 newMin,
@@ -147,14 +119,11 @@ contract SoulUpgradeTimelock is TimelockController {
                               ERRORS
     //////////////////////////////////////////////////////////////*/
 
-    error UpgradesFrozen(address target);
-    error InsufficientSignatures(uint256 current, uint256 required);
-    error AlreadySigned();
-    error ExitWindowNotEnded(uint256 remaining);
-    error InvalidDelay();
-    error EmergencyOnly();
-    error NotInEmergencyMode();
-    error MinSignaturesTooLow();
+    // Errors inherited from ISoulUpgradeTimelock:
+    // UpgradesFrozen, InsufficientSignatures, AlreadySigned,
+    // ExitWindowNotEnded, InvalidDelay, EmergencyOnly,
+    // NotInEmergencyMode, MinSignaturesTooLow
+
     error NoPendingMinSignaturesChange();
     error MinSignaturesChangeNotReady(uint256 readyAt);
 

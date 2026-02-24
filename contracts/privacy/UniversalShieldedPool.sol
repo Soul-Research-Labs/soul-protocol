@@ -186,6 +186,9 @@ contract UniversalShieldedPool is
         address verifier
     );
 
+    /// @notice Emitted when an asset is deactivated (no new deposits)
+    event AssetDeactivated(bytes32 indexed assetId);
+
     /*//////////////////////////////////////////////////////////////
                             CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
@@ -479,6 +482,7 @@ contract UniversalShieldedPool is
     /// @notice Deactivate an asset (no new deposits)
     function deactivateAsset(bytes32 assetId) external onlyRole(OPERATOR_ROLE) {
         assets[assetId].active = false;
+        emit AssetDeactivated(assetId);
     }
 
     /// @notice Emergency pause

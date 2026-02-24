@@ -50,7 +50,7 @@ contract ExperimentalFeatureRegistryTest is Test {
 
     function test_constructor_registersDefaultFeatures() public view {
         bytes32[] memory ids = registry.getAllFeatureIds();
-        assertEq(ids.length, 5, "Should have 5 pre-registered features");
+        assertEq(ids.length, 12, "Should have 12 pre-registered features");
     }
 
     function test_constructor_defaultFeaturesAreDisabled() public view {
@@ -452,7 +452,7 @@ contract ExperimentalFeatureRegistryTest is Test {
 
     function test_getAllFeatureIds_returnsCorrectCount() public view {
         bytes32[] memory ids = registry.getAllFeatureIds();
-        assertEq(ids.length, 5);
+        assertEq(ids.length, 12);
     }
 
     function test_getRemainingCapacity() public {
@@ -470,9 +470,7 @@ contract ExperimentalFeatureRegistryTest is Test {
 
         if (maxVal >= lockAmount) {
             registry.lockValue(fheId, lockAmount);
-            uint256 remaining = registry.getRemainingCapacity(
-                fheId
-            );
+            uint256 remaining = registry.getRemainingCapacity(fheId);
             assertEq(remaining, maxVal - lockAmount);
         }
         vm.stopPrank();

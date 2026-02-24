@@ -1,11 +1,13 @@
 # Complexity Management Strategy
 
 ## Overview
+
 Soul Protocol manages complexity through modular architecture, clear boundaries, and progressive feature adoption.
 
 ## Module Classification
 
 ### Core (Production-Ready)
+
 - ConfidentialStateContainerV3
 - NullifierRegistryV3
 - ZKBoundStateLocks
@@ -16,6 +18,7 @@ Soul Protocol manages complexity through modular architecture, clear boundaries,
 **Maintenance**: Critical path, full test coverage required
 
 ### Stable (Battle-Tested)
+
 - Bridge Adapters (Arbitrum, Optimism, Base, zkSync)
 - Privacy Router
 - Universal Shielded Pool
@@ -25,48 +28,63 @@ Soul Protocol manages complexity through modular architecture, clear boundaries,
 **Maintenance**: Regular updates, monitoring required
 
 ### Experimental (Research Phase)
-- FHE modules (SoulFHEModule, EncryptedERC20)
-- PQC implementations (Dilithium, Kyber, SPHINCS+)
-- MPC modules (Threshold signatures)
-- Advanced privacy (Seraphim, Triptych)
 
-**Status**: Research/prototype, not production-ready
-**Maintenance**: Optional, can be disabled
+- Recursive Proof Aggregation (IVC/Nova folding)
+- Mixnet Node Registry (onion-routed relay)
+- Private Relayer Network (commit-reveal MEV protection)
+- Gas Normalizer (anti-fingerprinting)
+- CLSAG Ring Signature Verifier
+- Recursive Proof Verifier
+
+**Status**: Research/prototype, gated by `ExperimentalFeatureRegistry`
+**Maintenance**: Optional, disabled by default in registry
 
 ## Complexity Reduction Strategies
 
 ### 1. Feature Flags
+
 ```solidity
-// contracts/core/FeatureRegistry.sol
-contract FeatureRegistry {
-    mapping(bytes32 => bool) public features;
-    
-    modifier whenFeatureEnabled(bytes32 feature) {
-        require(features[feature], "Feature disabled");
-        _;
+// contracts/security/ExperimentalFeatureRegistry.sol
+contract ExperimentalFeatureRegistry is AccessControl {
+    enum FeatureStatus { DISABLED, EXPERIMENTAL, BETA, PRODUCTION }
+    mapping(bytes32 => Feature) public features;
+
+    function isFeatureEnabled(bytes32 featureId) external view returns (bool) {
+        return features[featureId].status != FeatureStatus.DISABLED;
+    }
+
+    function requireFeatureEnabled(bytes32 featureId) external view {
+        if (features[featureId].status == FeatureStatus.DISABLED) {
+            revert FeatureDisabled(featureId);
+        }
     }
 }
 ```
 
 ### 2. Minimal Core Deployment
+
 Deploy only essential contracts for initial launch:
+
 - Core: ConfidentialStateContainer, NullifierRegistry
 - Primitives: ZKBoundStateLocks, PC³
 - Bridges: 2-3 major L2s (Arbitrum, Optimism, Base)
 - Security: Circuit breaker, rate limiter, timelock
 
 ### 3. Progressive Feature Adoption
+
 **Phase 1 (Launch)**: Core + 3 bridges
 **Phase 2 (Q2)**: Add LayerZero, Hyperlane
 **Phase 3 (Q3)**: Privacy enhancements (stealth, ring CT)
 **Phase 4 (Q4)**: Experimental features (FHE, PQC) - opt-in only
 
 ### 4. Contract Size Limits
+
 - Core contracts: < 24KB (EIP-170 limit)
 - Use libraries for shared logic
 - Split large contracts into modules
 
 ### 5. Dependency Management
+
 ```
 Core (no external deps)
   ↓
@@ -80,12 +98,14 @@ Experimental (isolated, optional)
 ## Monitoring & Metrics
 
 ### Complexity Metrics
+
 - Cyclomatic complexity: < 10 per function
 - Contract size: < 20KB (leave 4KB buffer)
 - Function count: < 30 per contract
 - Inheritance depth: < 4 levels
 
 ### Tools
+
 ```bash
 # Analyze complexity
 npm run analyze:complexity
@@ -100,6 +120,7 @@ forge build --sizes
 ## Documentation Requirements
 
 ### For Each Module
+
 1. Purpose & scope
 2. Dependencies
 3. Security assumptions
@@ -107,7 +128,9 @@ forge build --sizes
 5. Maintenance requirements
 
 ### Architecture Decision Records (ADRs)
+
 Document major design decisions in `docs/adr/`:
+
 - ADR-001: Why Groth16 over PLONK
 - ADR-002: Cross-chain nullifier design
 - ADR-003: Relayer incentive mechanism
@@ -116,6 +139,7 @@ Document major design decisions in `docs/adr/`:
 ## Deprecation Policy
 
 ### Marking Deprecated Features
+
 ```solidity
 /// @custom:deprecated This contract is deprecated. Use V3 instead.
 /// @custom:migration-guide docs/migrations/v2-to-v3.md
@@ -123,6 +147,7 @@ contract ConfidentialStateContainerV2 { ... }
 ```
 
 ### Deprecation Timeline
+
 1. **Announcement**: 3 months notice
 2. **Warning Period**: 3 months with deprecation warnings
 3. **Removal**: After 6 months total
@@ -139,12 +164,14 @@ If complexity becomes unmanageable:
 ## Review Process
 
 ### Quarterly Complexity Review
+
 - Identify unused/underutilized features
 - Measure actual vs. planned usage
 - Deprecate low-value, high-complexity features
 - Update documentation
 
 ### New Feature Checklist
+
 - [ ] Justification document
 - [ ] Complexity impact analysis
 - [ ] Integration test coverage

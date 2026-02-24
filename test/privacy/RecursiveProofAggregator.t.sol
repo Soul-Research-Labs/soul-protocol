@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "forge-std/Test.sol";
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "../../contracts/experimental/privacy/RecursiveProofAggregator.sol";
+import {ExperimentalFeatureRegistry} from "../../contracts/security/ExperimentalFeatureRegistry.sol";
 
 contract RecursiveProofAggregatorTest is Test {
     RecursiveProofAggregator public aggregator;
@@ -15,12 +16,16 @@ contract RecursiveProofAggregatorTest is Test {
     address public emergencyRole = makeAddr("emergency");
 
     function setUp() public {
+        ExperimentalFeatureRegistry efr = new ExperimentalFeatureRegistry(
+            admin
+        );
         impl = new RecursiveProofAggregator();
         ERC1967Proxy proxy = new ERC1967Proxy(
             address(impl),
             abi.encodeWithSelector(
                 RecursiveProofAggregator.initialize.selector,
-                admin
+                admin,
+                address(efr)
             )
         );
         aggregator = RecursiveProofAggregator(address(proxy));
@@ -43,7 +48,7 @@ contract RecursiveProofAggregatorTest is Test {
 
     function test_initialize_revert_doubleInit() public {
         vm.expectRevert();
-        aggregator.initialize(admin);
+        aggregator.initialize(admin, address(0));
     }
 
     // ─── Proof Submission ───────────────────────────────────

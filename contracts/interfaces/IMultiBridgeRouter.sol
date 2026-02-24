@@ -100,6 +100,7 @@ interface IMultiBridgeRouter {
                                 ERRORS
     //////////////////////////////////////////////////////////////*/
 
+    error ZeroAddress();
     error BridgeNotConfigured(BridgeType bridgeType);
     error BridgeNotActive(BridgeType bridgeType);
     error NoBridgeAvailable(uint256 chainId);

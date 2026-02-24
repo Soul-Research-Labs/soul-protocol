@@ -66,29 +66,24 @@ SPECIFIC_CONFIG=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --mrp)
+        --network)
             RUN_ALL=false
-            SPECIFIC_CONFIG="certora/conf/verify_mrp.conf"
+            SPECIFIC_CONFIG="certora/conf/verify_network_invariants.conf"
             shift
             ;;
-        --jam)
+        --homomorphic)
             RUN_ALL=false
-            SPECIFIC_CONFIG="certora/conf/verify_jam.conf"
+            SPECIFIC_CONFIG="certora/conf/verify_homomorphic_hiding.conf"
             shift
             ;;
-        --controlplane)
+        --aggregate-disclosure)
             RUN_ALL=false
-            SPECIFIC_CONFIG="certora/conf/verify_controlplane.conf"
+            SPECIFIC_CONFIG="certora/conf/verify_aggregate_disclosure.conf"
             shift
             ;;
         --sptc)
             RUN_ALL=false
             SPECIFIC_CONFIG="certora/conf/verify_sptc.conf"
-            shift
-            ;;
-        --network)
-            RUN_ALL=false
-            SPECIFIC_CONFIG="certora/conf/verify_network.conf"
             shift
             ;;
         --core)
@@ -100,13 +95,12 @@ while [[ $# -gt 0 ]]; do
             echo "Usage: $0 [OPTIONS]"
             echo ""
             echo "Options:"
-            echo "  --mrp          Run Mixnet Receipt Proofs verification only"
-            echo "  --jam          Run JAM (Joinable Confidential Computation) verification only"
-            echo "  --controlplane Run SoulControlPlane verification only"
-            echo "  --sptc         Run SPTC verification only"
-            echo "  --network      Run network-wide invariants verification only"
-            echo "  --core         Run core Soul verification only"
-            echo "  --help         Show this help message"
+            echo "  --network              Run network-wide invariants verification only"
+            echo "  --homomorphic          Run HomomorphicHiding verification only"
+            echo "  --aggregate-disclosure  Run AggregateDisclosureAlgebra verification only"
+            echo "  --sptc                 Run SPTC verification only"
+            echo "  --core                 Run core Soul verification only"
+            echo "  --help                 Show this help message"
             echo ""
             echo "Without options, runs all verification jobs."
             exit 0
@@ -130,20 +124,17 @@ if [ "$RUN_ALL" = true ]; then
     # 1. Core Soul Verification
     run_verification "certora/conf/verify.conf" "Core Soul Contracts"
     
-    # 2. MRP - Mixnet Receipt Proofs
-    run_verification "certora/conf/verify_mrp.conf" "Mixnet Receipt Proofs (MRP)"
-    
-    # 3. JAM - Joinable Confidential Computation
-    run_verification "certora/conf/verify_jam.conf" "Joinable Confidential Computation (JAM)"
-    
-    # 4. Control Plane - 5-Stage Lifecycle
-    run_verification "certora/conf/verify_controlplane.conf" "Soul Control Plane"
-    
-    # 5. SPTC - Semantic Proof Translation
+    # 2. SPTC - Semantic Proof Translation
     run_verification "certora/conf/verify_sptc.conf" "Semantic Proof Translation Certificate (SPTC)"
     
-    # 6. Network-Wide Invariants
-    run_verification "certora/conf/verify_network.conf" "Network-Wide Cross-Contract Invariants"
+    # 3. Network-Wide Invariants
+    run_verification "certora/conf/verify_network_invariants.conf" "Network-Wide Cross-Contract Invariants"
+    
+    # 4. HomomorphicHiding (experimental)
+    run_verification "certora/conf/verify_homomorphic_hiding.conf" "HomomorphicHiding (experimental)"
+    
+    # 5. AggregateDisclosureAlgebra (experimental)
+    run_verification "certora/conf/verify_aggregate_disclosure.conf" "AggregateDisclosureAlgebra (experimental)"
     
 else
     run_verification "$SPECIFIC_CONFIG" "Specific Verification"

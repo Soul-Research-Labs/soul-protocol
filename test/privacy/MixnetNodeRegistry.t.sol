@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import {MixnetNodeRegistry, IMixnetNodeRegistry} from "../../contracts/experimental/privacy/MixnetNodeRegistry.sol";
+import {ExperimentalFeatureRegistry} from "../../contracts/security/ExperimentalFeatureRegistry.sol";
 
 /**
  * @title MixnetNodeRegistryTest
@@ -20,7 +21,10 @@ contract MixnetNodeRegistryTest is Test {
     bytes constant ENC_KEY = hex"deadbeef";
 
     function setUp() public {
-        registry = new MixnetNodeRegistry(admin);
+        ExperimentalFeatureRegistry efr = new ExperimentalFeatureRegistry(
+            address(this)
+        );
+        registry = new MixnetNodeRegistry(admin, address(efr));
         bytes32 slasherRole = keccak256("SLASHER_ROLE");
         vm.prank(admin);
         registry.grantRole(slasherRole, slasher);

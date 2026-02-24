@@ -569,7 +569,7 @@ contract IntentSettlementE2E is Test {
         // Verify components are wired
         (string[] memory names, address[] memory addrs) = hub
             .getComponentStatus();
-        assertEq(names.length, 22, "should have 22 components");
+        assertEq(names.length, 25, "should have 25 components");
 
         // Check the 3 new components are set
         bool foundIntent;

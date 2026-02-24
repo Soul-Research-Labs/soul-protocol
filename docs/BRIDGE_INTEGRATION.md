@@ -45,7 +45,7 @@ interface IBridgeAdapter {
 ### Initiating a Bridge Transfer
 
 ```typescript
-import { SoulBridge, ChainId } from "@soulprotocol/sdk";
+import { SoulBridge, ChainId } from "@soul/sdk";
 
 const bridge = new SoulBridge(provider);
 
@@ -77,7 +77,7 @@ const completed = await bridge.completeBridge(transferId, proof);
 ### Arbitrum
 
 ```typescript
-import { SoulBridge, ChainId } from "@soulprotocol/sdk";
+import { SoulBridge, ChainId } from "@soul/sdk";
 
 const bridge = new SoulBridge(provider);
 
@@ -100,7 +100,7 @@ if (status === "pending_retry") {
 ### LayerZero
 
 ```typescript
-import { LayerZeroAdapter } from "@soulprotocol/sdk/bridges";
+import { LayerZeroAdapter } from "@soul/sdk/bridges";
 
 const lzBridge = new LayerZeroAdapter({
   sourceRpc: "https://eth-mainnet...",
@@ -122,7 +122,7 @@ const transfer = await lzBridge.send({
 ### Direct L2-to-L2
 
 ```typescript
-import { DirectL2Messenger } from "@soulprotocol/sdk/bridges";
+import { DirectL2Messenger } from "@soul/sdk/bridges";
 
 const messenger = new DirectL2Messenger({
   sourceRpc: process.env.ARBITRUM_RPC,
@@ -155,7 +155,7 @@ The following chains are planned for future releases:
 ## Error Handling
 
 ```typescript
-import { SoulBridgeError, ErrorCodes } from "@soulprotocol/sdk";
+import { SoulBridgeError, ErrorCodes } from "@soul/sdk";
 
 try {
   await bridge.transfer(params);

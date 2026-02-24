@@ -67,15 +67,31 @@ library ConstantTimeOperations {
             let aPtr := add(a, 32)
             let bPtr := add(b, 32)
 
-            // Process 32 bytes at a time
+            // Process full 32-byte words
+            let fullWords := div(length, 32)
             for {
                 let i := 0
-            } lt(i, length) {
-                i := add(i, 32)
+            } lt(i, fullWords) {
+                i := add(i, 1)
             } {
-                let aWord := mload(add(aPtr, i))
-                let bWord := mload(add(bPtr, i))
+                let offset := mul(i, 32)
+                let aWord := mload(add(aPtr, offset))
+                let bWord := mload(add(bPtr, offset))
                 diff := or(diff, xor(aWord, bWord))
+            }
+
+            // Handle remaining bytes (< 32) with proper masking
+            let remaining := mod(length, 32)
+            if remaining {
+                let offset := mul(fullWords, 32)
+                let aWord := mload(add(aPtr, offset))
+                let bWord := mload(add(bPtr, offset))
+                // Mask to only compare the remaining bytes (left-aligned in word)
+                let mask := shl(
+                    mul(sub(32, remaining), 8),
+                    sub(shl(mul(remaining, 8), 1), 1)
+                )
+                diff := or(diff, and(xor(aWord, bWord), mask))
             }
 
             result := iszero(diff)

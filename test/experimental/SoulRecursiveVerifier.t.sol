@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import "../../contracts/experimental/verifiers/SoulRecursiveVerifier.sol";
+import {ExperimentalFeatureRegistry} from "../../contracts/security/ExperimentalFeatureRegistry.sol";
 
 /// @dev Mock aggregated verifier
 contract MockAggVerifier {
@@ -57,8 +58,16 @@ contract SoulRecursiveVerifierTest is Test {
         aggV = new MockAggVerifier(true);
         singleV = new MockSingleVerifier(true);
 
-        vm.prank(owner);
-        rv = new SoulRecursiveVerifier(address(aggV), address(singleV));
+        vm.startPrank(owner);
+        ExperimentalFeatureRegistry efr = new ExperimentalFeatureRegistry(
+            owner
+        );
+        rv = new SoulRecursiveVerifier(
+            address(aggV),
+            address(singleV),
+            address(efr)
+        );
+        vm.stopPrank();
     }
 
     // ──────── Deployment ────────

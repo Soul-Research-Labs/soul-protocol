@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import "../../contracts/experimental/privacy/PrivacyPreservingRelayerSelection.sol";
+import {ExperimentalFeatureRegistry} from "../../contracts/security/ExperimentalFeatureRegistry.sol";
 
 contract PrivacyPreservingRelayerSelectionTest is Test {
     PrivacyPreservingRelayerSelection public selector;
@@ -14,7 +15,13 @@ contract PrivacyPreservingRelayerSelectionTest is Test {
     address public oracle = makeAddr("oracle");
 
     function setUp() public {
-        selector = new PrivacyPreservingRelayerSelection(VRF_PUB_KEY);
+        ExperimentalFeatureRegistry efr = new ExperimentalFeatureRegistry(
+            address(this)
+        );
+        selector = new PrivacyPreservingRelayerSelection(
+            VRF_PUB_KEY,
+            address(efr)
+        );
 
         // Grant oracle role
         selector.grantRole(selector.ORACLE_ROLE(), oracle);

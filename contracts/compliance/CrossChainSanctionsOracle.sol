@@ -31,7 +31,7 @@ contract CrossChainSanctionsOracle is
 
     /// @dev keccak256("PROVIDER_ROLE")
     bytes32 public constant PROVIDER_ROLE =
-        0x524f4c455f50524f564944455200000000000000000000000000000000000000;
+        0x18d9ff454de989bd126b06bd404b47ede75f9e65543e94e8d212f89d7dcbb87c;
 
     /// @dev keccak256("OPERATOR_ROLE")
     bytes32 public constant OPERATOR_ROLE =

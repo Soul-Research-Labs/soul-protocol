@@ -135,7 +135,7 @@ contract MultiBridgeRouter is
         returns (bytes32 messageHash)
     {
         messageHash = keccak256(
-            abi.encodePacked(message, block.timestamp, msg.sender)
+            abi.encode(message, block.timestamp, msg.sender)
         );
 
         // Determine routing strategy
@@ -246,6 +246,7 @@ contract MultiBridgeRouter is
         uint256 securityScore,
         uint256 maxValuePerTx
     ) external onlyRole(BRIDGE_ADMIN) {
+        if (adapter == address(0)) revert ZeroAddress();
         if (securityScore > 100) revert InvalidSecurityScore(securityScore);
 
         bridges[bridgeType] = BridgeConfig({

@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "forge-std/Test.sol";
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "../../contracts/experimental/privacy/PrivateRelayerNetwork.sol";
+import {ExperimentalFeatureRegistry} from "../../contracts/security/ExperimentalFeatureRegistry.sol";
 
 contract PrivateRelayerNetworkTest is Test {
     PrivateRelayerNetwork public network;
@@ -20,6 +21,9 @@ contract PrivateRelayerNetworkTest is Test {
     uint256 public constant PROTOCOL_FEE_BPS = 500; // 5%
 
     function setUp() public {
+        ExperimentalFeatureRegistry efr = new ExperimentalFeatureRegistry(
+            admin
+        );
         impl = new PrivateRelayerNetwork();
         ERC1967Proxy proxy = new ERC1967Proxy(
             address(impl),
@@ -27,7 +31,8 @@ contract PrivateRelayerNetworkTest is Test {
                 PrivateRelayerNetwork.initialize.selector,
                 admin,
                 feeRecipient,
-                PROTOCOL_FEE_BPS
+                PROTOCOL_FEE_BPS,
+                address(efr)
             )
         );
         network = PrivateRelayerNetwork(payable(address(proxy)));
@@ -55,7 +60,7 @@ contract PrivateRelayerNetworkTest is Test {
 
     function test_initialize_revert_doubleInit() public {
         vm.expectRevert();
-        network.initialize(admin, feeRecipient, PROTOCOL_FEE_BPS);
+        network.initialize(admin, feeRecipient, PROTOCOL_FEE_BPS, address(0));
     }
 
     // ─── Registration ───────────────────────────────────────

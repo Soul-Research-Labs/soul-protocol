@@ -51,6 +51,9 @@ gas_reports = ["*"]
 gas_reports_ignore = ["test/*", "mocks/*"]
 
 [profile.ci]
+# NOTE: compilation_restrictions are inherited from the default profile.
+# The 11 contracts with max_optimizer_runs = 1 will still compile at runs = 1 
+# even when the CI profile sets optimizer_runs = 200.
 fuzz = { runs = 50000 }
 invariant = { runs = 512, depth = 256 }
 optimizer_runs = 200  # Lower for CI to speed up compilation

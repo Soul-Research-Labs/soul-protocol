@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import "../../contracts/experimental/privacy/GasNormalizer.sol";
+import {ExperimentalFeatureRegistry} from "../../contracts/security/ExperimentalFeatureRegistry.sol";
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract GasTarget {
@@ -33,10 +34,13 @@ contract GasNormalizerTest is Test {
 
     function setUp() public {
         // Deploy UUPS proxy
+        ExperimentalFeatureRegistry efr = new ExperimentalFeatureRegistry(
+            admin
+        );
         GasNormalizer impl = new GasNormalizer();
         bytes memory initData = abi.encodeCall(
             GasNormalizer.initialize,
-            (admin)
+            (admin, address(efr))
         );
         ERC1967Proxy proxy = new ERC1967Proxy(address(impl), initData);
         normalizer = GasNormalizer(address(proxy));
@@ -54,7 +58,7 @@ contract GasNormalizerTest is Test {
 
     function test_initialize_revert_doubleInit() public {
         vm.expectRevert();
-        normalizer.initialize(admin);
+        normalizer.initialize(admin, address(0));
     }
 
     // ======== Gas Profile Management ========
