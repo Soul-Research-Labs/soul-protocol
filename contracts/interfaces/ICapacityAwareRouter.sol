@@ -61,10 +61,7 @@ interface ICapacityAwareRouter {
         uint256 fee
     );
 
-    event RelayExecuting(
-        bytes32 indexed relayId,
-        address indexed executor
-    );
+    event RelayExecuting(bytes32 indexed relayId, address indexed executor);
 
     event RelayCompleted(
         bytes32 indexed relayId,

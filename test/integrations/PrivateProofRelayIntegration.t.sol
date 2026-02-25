@@ -301,7 +301,9 @@ contract PrivateProofRelayIntegrationTest is Test {
 
         vm.deal(user1, 1 ether);
         vm.prank(user1);
-        vm.expectRevert(PrivateProofRelayIntegration.InvalidCommitment.selector);
+        vm.expectRevert(
+            PrivateProofRelayIntegration.InvalidCommitment.selector
+        );
         relay.initiatePrivateRelay{value: 0.1 ether}(msg_);
     }
 
@@ -345,7 +347,9 @@ contract PrivateProofRelayIntegrationTest is Test {
 
         vm.deal(user1, 1 ether);
         vm.prank(user1);
-        vm.expectRevert(PrivateProofRelayIntegration.ChainNotSupported.selector);
+        vm.expectRevert(
+            PrivateProofRelayIntegration.ChainNotSupported.selector
+        );
         relay.initiatePrivateRelay{value: 0.1 ether}(msg_);
     }
 
@@ -359,7 +363,9 @@ contract PrivateProofRelayIntegrationTest is Test {
 
         // Same nullifier again
         vm.prank(user1);
-        vm.expectRevert(PrivateProofRelayIntegration.NullifierAlreadyUsed.selector);
+        vm.expectRevert(
+            PrivateProofRelayIntegration.NullifierAlreadyUsed.selector
+        );
         relay.initiatePrivateRelay{value: 0.1 ether}(msg_);
     }
 
@@ -439,7 +445,9 @@ contract PrivateProofRelayIntegrationTest is Test {
             });
 
         vm.prank(user1); // Not authorized
-        vm.expectRevert(PrivateProofRelayIntegration.UnauthorizedRelayer.selector);
+        vm.expectRevert(
+            PrivateProofRelayIntegration.UnauthorizedRelayer.selector
+        );
         relay.completePrivateRelay(msg_, hex"aabb", hex"ccdd");
     }
 
@@ -475,7 +483,9 @@ contract PrivateProofRelayIntegrationTest is Test {
 
         // Same nullifier again
         vm.prank(relayer);
-        vm.expectRevert(PrivateProofRelayIntegration.NullifierAlreadyUsed.selector);
+        vm.expectRevert(
+            PrivateProofRelayIntegration.NullifierAlreadyUsed.selector
+        );
         relay.completePrivateRelay(msg_, hex"aabb", hex"ccdd");
     }
 
@@ -506,9 +516,7 @@ contract PrivateProofRelayIntegrationTest is Test {
     //////////////////////////////////////////////////////////////*/
 
     function test_VerifyCrossChainNullifier_Unused() public view {
-        assertTrue(
-            relay.verifyCrossChainNullifier(NULLIFIER_HASH, DEST_CHAIN)
-        );
+        assertTrue(relay.verifyCrossChainNullifier(NULLIFIER_HASH, DEST_CHAIN));
     }
 
     function test_VerifyCrossChainNullifier_Used() public {
@@ -681,13 +689,7 @@ contract PrivateProofRelayIntegrationTest is Test {
             chainId != THIS_CHAIN && chainId != DEST_CHAIN && chainId != 0
         );
         vm.prank(operator);
-        relay.setChainConfig(
-            chainId,
-            address(adapter),
-            6,
-            50 ether,
-            500 ether
-        );
+        relay.setChainConfig(chainId, address(adapter), 6, 50 ether, 500 ether);
         assertTrue(relay.isChainSupported(chainId));
     }
 

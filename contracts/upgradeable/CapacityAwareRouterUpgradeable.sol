@@ -172,10 +172,7 @@ contract CapacityAwareRouterUpgradeable is
         uint256 fee
     );
 
-    event RelayExecuting(
-        bytes32 indexed relayId,
-        address indexed executor
-    );
+    event RelayExecuting(bytes32 indexed relayId, address indexed executor);
 
     event RelayCompleted(
         bytes32 indexed relayId,
@@ -354,12 +351,7 @@ contract CapacityAwareRouterUpgradeable is
         // Generate relay ID
         _relayNonce++;
         relayId = keccak256(
-            abi.encodePacked(
-                msg.sender,
-                routeId,
-                _relayNonce,
-                block.timestamp
-            )
+            abi.encodePacked(msg.sender, routeId, _relayNonce, block.timestamp)
         );
 
         uint256 sourceChain = route.chainPath[0];
@@ -411,11 +403,7 @@ contract CapacityAwareRouterUpgradeable is
         RelayOperation storage t = relayOps[relayId];
         if (t.user == address(0)) revert RelayNotFound(relayId);
         if (t.status != RelayStatus.COMMITTED) {
-            revert InvalidRelayStatus(
-                relayId,
-                t.status,
-                RelayStatus.COMMITTED
-            );
+            revert InvalidRelayStatus(relayId, t.status, RelayStatus.COMMITTED);
         }
 
         t.status = RelayStatus.EXECUTING;
@@ -435,11 +423,7 @@ contract CapacityAwareRouterUpgradeable is
         RelayOperation storage t = relayOps[relayId];
         if (t.user == address(0)) revert RelayNotFound(relayId);
         if (t.status != RelayStatus.EXECUTING) {
-            revert InvalidRelayStatus(
-                relayId,
-                t.status,
-                RelayStatus.EXECUTING
-            );
+            revert InvalidRelayStatus(relayId, t.status, RelayStatus.EXECUTING);
         }
 
         t.status = RelayStatus.COMPLETED;
@@ -489,11 +473,7 @@ contract CapacityAwareRouterUpgradeable is
         RelayOperation storage t = relayOps[relayId];
         if (t.user == address(0)) revert RelayNotFound(relayId);
         if (t.status != RelayStatus.EXECUTING) {
-            revert InvalidRelayStatus(
-                relayId,
-                t.status,
-                RelayStatus.EXECUTING
-            );
+            revert InvalidRelayStatus(relayId, t.status, RelayStatus.EXECUTING);
         }
 
         t.status = RelayStatus.FAILED;
@@ -534,11 +514,7 @@ contract CapacityAwareRouterUpgradeable is
             t.status != RelayStatus.COMMITTED &&
             t.status != RelayStatus.EXECUTING
         ) {
-            revert InvalidRelayStatus(
-                relayId,
-                t.status,
-                RelayStatus.COMMITTED
-            );
+            revert InvalidRelayStatus(relayId, t.status, RelayStatus.COMMITTED);
         }
         if (block.timestamp < t.committedAt + relayTimeout) {
             revert RelayNotTimedOut(relayId);

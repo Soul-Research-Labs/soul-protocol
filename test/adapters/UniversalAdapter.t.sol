@@ -529,10 +529,7 @@ contract EVMUniversalAdapterTest is Test {
         adapter.receiveEncryptedState(transfer2);
     }
 
-    function testFuzz_relayIdUniqueness(
-        uint256 nonce1,
-        uint256 nonce2
-    ) public {
+    function testFuzz_relayIdUniqueness(uint256 nonce1, uint256 nonce2) public {
         vm.assume(nonce1 != nonce2);
 
         bytes32 destChainId = UniversalChainRegistry.SOLANA;
