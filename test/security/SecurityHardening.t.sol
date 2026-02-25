@@ -77,7 +77,7 @@ contract SecurityHardeningTest is Test {
         );
 
         OptimisticBridgeVerifier.PendingTransfer memory t = verifier
-            .getTransfer(transferId);
+            .getVerification(transferId);
         assertEq(
             uint(t.status),
             uint(OptimisticBridgeVerifier.TransferStatus.CHALLENGED)
@@ -88,7 +88,7 @@ contract SecurityHardeningTest is Test {
         // resolveChallenge(transferId, proof, challengerWon)
         verifier.resolveChallenge(transferId, proof, true);
 
-        t = verifier.getTransfer(transferId);
+        t = verifier.getVerification(transferId);
         assertEq(
             uint(t.status),
             uint(OptimisticBridgeVerifier.TransferStatus.REJECTED)
@@ -116,7 +116,7 @@ contract SecurityHardeningTest is Test {
         verifier.finalizeTransfer(transferId);
 
         OptimisticBridgeVerifier.PendingTransfer memory t = verifier
-            .getTransfer(transferId);
+            .getVerification(transferId);
         assertEq(
             uint(t.status),
             uint(OptimisticBridgeVerifier.TransferStatus.FINALIZED)

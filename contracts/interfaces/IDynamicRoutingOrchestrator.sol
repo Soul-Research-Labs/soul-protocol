@@ -54,7 +54,7 @@ interface IDynamicRoutingOrchestrator {
         uint256 availableCapacity; // Current available bridge throughput capacity (wei-equivalent)
         uint256 totalCapacity; // Total bridge adapter capacity (wei-equivalent)
         uint16 utilizationBps; // Current utilization (0-10000 bps)
-        uint48 avgSettlementTime; // Avg settlement time (seconds)
+        uint48 avgCompletionTime; // Avg completion time (seconds)
         uint256 currentFee; // Current base fee (wei)
         uint48 lastUpdated; // Last oracle update timestamp
         PoolStatus status; // Pool health status
@@ -66,7 +66,7 @@ interface IDynamicRoutingOrchestrator {
         uint256[] chainPath; // Ordered chain IDs [source, ..hops.., dest]
         address[] bridgeAdapters; // Bridge adapter per hop
         uint256 totalCost; // Total estimated cost (wei)
-        uint48 estimatedTime; // Estimated total settlement time (seconds)
+        uint48 estimatedTime; // Estimated total completion time (seconds)
         uint16 successProbabilityBps; // Success probability (0-10000 bps)
         uint16 routeScoreBps; // Composite score (0-10000 bps)
         uint48 calculatedAt; // Timestamp of calculation
@@ -78,7 +78,7 @@ interface IDynamicRoutingOrchestrator {
     struct RouteRequest {
         uint256 sourceChainId; // Source chain
         uint256 destChainId; // Destination chain
-        uint256 amount; // Transfer amount (wei)
+        uint256 amount; // Relay amount (wei)
         Urgency urgency; // Speed/cost preference
         uint256 maxCost; // Maximum acceptable cost (wei, 0 = no limit)
         uint48 maxTime; // Maximum acceptable time (seconds, 0 = no limit)
@@ -89,8 +89,8 @@ interface IDynamicRoutingOrchestrator {
     /// @notice Bridge performance metrics tracked by the orchestrator
     struct BridgeMetrics {
         address adapter; // Bridge adapter address
-        uint256 totalTransfers; // Total transfers processed
-        uint256 successfulTransfers; // Successful completions
+        uint256 totalRelays; // Total relays processed
+        uint256 successfulRelays; // Successful completions
         uint256 totalValueRouted; // Cumulative value routed (wei)
         uint48 avgLatency; // Average latency (seconds)
         uint16 securityScoreBps; // Security score (0-10000 bps)
@@ -150,7 +150,7 @@ interface IDynamicRoutingOrchestrator {
 
     event BridgeMetricsUpdated(
         address indexed adapter,
-        uint256 totalTransfers,
+        uint256 totalRelays,
         uint48 avgLatency
     );
 
@@ -192,7 +192,7 @@ interface IDynamicRoutingOrchestrator {
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Find the optimal route for a cross-chain transfer
+     * @notice Find the optimal route for a cross-chain relay
      * @param request Route request parameters
      * @return route The optimal calculated route
      */
@@ -221,14 +221,14 @@ interface IDynamicRoutingOrchestrator {
     ) external payable returns (bytes32 executionId);
 
     /**
-     * @notice Predict settlement time for a transfer
+     * @notice Predict completion time for a transfer
      * @param sourceChainId Source chain
      * @param destChainId Destination chain
-     * @param amount Transfer amount
+     * @param amount Relay amount
      * @return estimatedTime Predicted time in seconds
      * @return confidence Confidence level (0-10000 bps)
      */
-    function predictSettlementTime(
+    function predictCompletionTime(
         uint256 sourceChainId,
         uint256 destChainId,
         uint256 amount
@@ -294,11 +294,11 @@ interface IDynamicRoutingOrchestrator {
     ) external;
 
     /**
-     * @notice Record bridge transfer outcome for metrics
+     * @notice Record bridge relay outcome for metrics
      * @param adapter Bridge adapter address
-     * @param success Whether transfer succeeded
+     * @param success Whether relay succeeded
      * @param latency Actual latency in seconds
-     * @param value Transfer value
+     * @param value Relay value
      */
     function recordBridgeOutcome(
         address adapter,
@@ -349,7 +349,7 @@ interface IDynamicRoutingOrchestrator {
      * @notice Get the current fee for a chain pair
      * @param sourceChainId Source chain
      * @param destChainId Destination chain
-     * @param amount Transfer amount
+     * @param amount Relay amount
      * @return fee Estimated fee in wei
      */
     function estimateFee(

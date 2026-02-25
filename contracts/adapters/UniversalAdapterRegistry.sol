@@ -92,8 +92,8 @@ contract UniversalAdapterRegistry is AccessControl, ReentrancyGuard, Pausable {
         bytes32 sourceChainId;
         bytes32 destChainId;
         bool active;
-        uint256 totalTransfers;
-        uint256 lastTransferAt;
+        uint256 totalRelays;
+        uint256 lastRelayAt;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -296,8 +296,8 @@ contract UniversalAdapterRegistry is AccessControl, ReentrancyGuard, Pausable {
             sourceChainId: sourceChainId,
             destChainId: destChainId,
             active: true,
-            totalTransfers: 0,
-            lastTransferAt: 0
+            totalRelays: 0,
+            lastRelayAt: 0
         });
 
         unchecked {
@@ -321,8 +321,8 @@ contract UniversalAdapterRegistry is AccessControl, ReentrancyGuard, Pausable {
                 sourceChainId: chainA,
                 destChainId: chainB,
                 active: true,
-                totalTransfers: 0,
-                lastTransferAt: 0
+                totalRelays: 0,
+                lastRelayAt: 0
             });
             unchecked {
                 ++totalActiveRoutes;
@@ -335,8 +335,8 @@ contract UniversalAdapterRegistry is AccessControl, ReentrancyGuard, Pausable {
                 sourceChainId: chainB,
                 destChainId: chainA,
                 active: true,
-                totalTransfers: 0,
-                lastTransferAt: 0
+                totalRelays: 0,
+                lastRelayAt: 0
             });
             unchecked {
                 ++totalActiveRoutes;
@@ -410,8 +410,8 @@ contract UniversalAdapterRegistry is AccessControl, ReentrancyGuard, Pausable {
             revert RouteNotActive(sourceChainId, destChainId);
         }
 
-        routes[sourceChainId][destChainId].totalTransfers += 1;
-        routes[sourceChainId][destChainId].lastTransferAt = block.timestamp;
+        routes[sourceChainId][destChainId].totalRelays += 1;
+        routes[sourceChainId][destChainId].lastRelayAt = block.timestamp;
 
         // Update adapter stats
         if (evmAdapters[sourceChainId].adapterContract != address(0)) {
@@ -490,9 +490,9 @@ contract UniversalAdapterRegistry is AccessControl, ReentrancyGuard, Pausable {
     function getRouteStats(
         bytes32 sourceChainId,
         bytes32 destChainId
-    ) external view returns (uint256 totalTransfers, uint256 lastTransferAt) {
+    ) external view returns (uint256 totalRelays, uint256 lastRelayAt) {
         CrossChainRoute storage route = routes[sourceChainId][destChainId];
-        return (route.totalTransfers, route.lastTransferAt);
+        return (route.totalRelays, route.lastRelayAt);
     }
 
     /*//////////////////////////////////////////////////////////////

@@ -35,7 +35,7 @@ export interface BridgeCapacity {
   availableCapacity: bigint;
   totalCapacity: bigint;
   utilizationBps: number;
-  avgSettlementTime: number;
+  avgCompletionTime: number;
   currentFee: bigint;
   lastUpdated: number;
   status: PoolStatus;
@@ -67,8 +67,8 @@ export interface RouteRequest {
 
 export interface BridgeMetrics {
   adapter: Address;
-  totalTransfers: bigint;
-  successfulTransfers: bigint;
+  totalRelays: bigint;
+  successfulRelays: bigint;
   totalValueRouted: bigint;
   avgLatency: number;
   securityScoreBps: number;
@@ -132,7 +132,7 @@ const ROUTER_ABI = [
     outputs: [{ name: "", type: "uint256" }],
   },
   {
-    name: "predictSettlementTime",
+    name: "predictCompletionTime",
     type: "function",
     stateMutability: "view",
     inputs: [
@@ -159,7 +159,7 @@ const ROUTER_ABI = [
           { name: "availableCapacity", type: "uint256" },
           { name: "totalCapacity", type: "uint256" },
           { name: "utilizationBps", type: "uint16" },
-          { name: "avgSettlementTime", type: "uint48" },
+          { name: "avgCompletionTime", type: "uint48" },
           { name: "currentFee", type: "uint256" },
           { name: "lastUpdated", type: "uint48" },
           { name: "status", type: "uint8" },
@@ -178,8 +178,8 @@ const ROUTER_ABI = [
         type: "tuple",
         components: [
           { name: "adapter", type: "address" },
-          { name: "totalTransfers", type: "uint256" },
-          { name: "successfulTransfers", type: "uint256" },
+          { name: "totalRelays", type: "uint256" },
+          { name: "successfulRelays", type: "uint256" },
           { name: "totalValueRouted", type: "uint256" },
           { name: "avgLatency", type: "uint48" },
           { name: "securityScoreBps", type: "uint16" },
@@ -269,7 +269,7 @@ export class DynamicRoutingClient {
     });
   }
 
-  async predictSettlementTime(
+  async predictCompletionTime(
     sourceChainId: bigint,
     destChainId: bigint,
     amount: bigint,
@@ -277,7 +277,7 @@ export class DynamicRoutingClient {
     const [time, confidenceBps] = await this.publicClient.readContract({
       address: this.routerAddress,
       abi: ROUTER_ABI,
-      functionName: "predictSettlementTime",
+      functionName: "predictCompletionTime",
       args: [sourceChainId, destChainId, amount],
     });
     return { time: Number(time), confidenceBps: Number(confidenceBps) };
@@ -325,7 +325,7 @@ export class DynamicRoutingClient {
   // ==========================================================================
 
   /**
-   * Get a complete route recommendation with fee estimate and settlement time prediction.
+   * Get a complete route recommendation with fee estimate and completion time prediction.
    */
   async getRouteRecommendation(request: RouteRequest): Promise<{
     route: Route;
@@ -339,7 +339,7 @@ export class DynamicRoutingClient {
         request.destChainId,
         request.amount,
       ),
-      this.predictSettlementTime(
+      this.predictCompletionTime(
         request.sourceChainId,
         request.destChainId,
         request.amount,

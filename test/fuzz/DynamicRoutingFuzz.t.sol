@@ -203,10 +203,10 @@ contract DynamicRoutingFuzz is Test {
 
         IDynamicRoutingOrchestrator.BridgeMetrics memory metrics = orchestrator
             .getBridgeMetrics(bridge);
-        assertEq(metrics.totalTransfers, 1);
-        assertEq(metrics.successfulTransfers, 1);
+        assertEq(metrics.totalRelays, 1);
+        assertEq(metrics.successfulRelays, 1);
         assertEq(metrics.totalValueRouted, value);
-        assertLe(metrics.successfulTransfers, metrics.totalTransfers);
+        assertLe(metrics.successfulRelays, metrics.totalRelays);
     }
 
     /// @notice Fuzz bridge failure reports — lastFailure should update on failure
@@ -227,8 +227,8 @@ contract DynamicRoutingFuzz is Test {
 
         IDynamicRoutingOrchestrator.BridgeMetrics memory metrics = orchestrator
             .getBridgeMetrics(bridge);
-        assertEq(metrics.totalTransfers, failCount);
-        assertEq(metrics.successfulTransfers, 0);
+        assertEq(metrics.totalRelays, failCount);
+        assertEq(metrics.successfulRelays, 0);
         assertGt(
             metrics.lastFailure,
             0,
@@ -264,11 +264,11 @@ contract DynamicRoutingFuzz is Test {
         IDynamicRoutingOrchestrator.BridgeMetrics memory metrics = orchestrator
             .getBridgeMetrics(bridge);
         assertEq(
-            metrics.totalTransfers,
+            metrics.totalRelays,
             uint256(successes) + uint256(failures)
         );
-        assertEq(metrics.successfulTransfers, successes);
-        assertLe(metrics.successfulTransfers, metrics.totalTransfers);
+        assertEq(metrics.successfulRelays, successes);
+        assertLe(metrics.successfulRelays, metrics.totalRelays);
     }
 
     /// @notice Fuzz: recording outcome for unregistered bridge should revert

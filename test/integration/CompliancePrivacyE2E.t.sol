@@ -262,12 +262,12 @@ contract CompliancePrivacyE2E is Test {
         );
 
         // Transfer should be in PENDING status (not reverted)
-        CrossChainPrivacyHub.TransferRequest memory transfer = _getTransfer(
+        CrossChainPrivacyHub.RelayRequest memory transfer = _getRelayRequest(
             requestId
         );
         assertEq(
             uint256(transfer.status),
-            uint256(CrossChainPrivacyHub.TransferStatus.PENDING)
+            uint256(CrossChainPrivacyHub.RequestStatus.PENDING)
         );
     }
 
@@ -291,12 +291,12 @@ contract CompliancePrivacyE2E is Test {
             })
         );
 
-        CrossChainPrivacyHub.TransferRequest memory transfer = _getTransfer(
+        CrossChainPrivacyHub.RelayRequest memory transfer = _getRelayRequest(
             requestId
         );
         assertEq(
             uint256(transfer.status),
-            uint256(CrossChainPrivacyHub.TransferStatus.PENDING)
+            uint256(CrossChainPrivacyHub.RequestStatus.PENDING)
         );
     }
 
@@ -446,9 +446,9 @@ contract CompliancePrivacyE2E is Test {
     // HELPERS
     // =========================================================================
 
-    function _getTransfer(
+    function _getRelayRequest(
         bytes32 requestId
-    ) internal view returns (CrossChainPrivacyHub.TransferRequest memory) {
+    ) internal view returns (CrossChainPrivacyHub.RelayRequest memory) {
         (
             bytes32 id,
             address sender,
@@ -463,11 +463,11 @@ contract CompliancePrivacyE2E is Test {
             bytes32 nullifier,
             uint64 timestamp,
             uint64 expiry,
-            CrossChainPrivacyHub.TransferStatus status
-        ) = privacyHub.transfers(requestId);
+            CrossChainPrivacyHub.RequestStatus status
+        ) = privacyHub.relayRequests(requestId);
 
         return
-            CrossChainPrivacyHub.TransferRequest({
+            CrossChainPrivacyHub.RelayRequest({
                 requestId: id,
                 sender: sender,
                 recipient: recipient,

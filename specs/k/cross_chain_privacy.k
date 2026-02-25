@@ -100,7 +100,7 @@ module CROSS-CHAIN-PRIVACY-SYNTAX
         Bytes          // zkProof
     )
 
-    syntax TransferStatus ::= "PENDING" | "RELAYED" | "COMPLETED" | "FAILED" | "REFUNDED"
+    syntax RequestStatus ::= "PENDING" | "RELAYED" | "COMPLETED" | "FAILED" | "REFUNDED"
 
     // =========================================================================
     // OPERATIONS

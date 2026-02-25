@@ -311,7 +311,7 @@ contract CrossChainBridgeIntegrationTest is Test {
 
         assertTrue(transferId != bytes32(0));
         CrossChainBridgeIntegration.TransferRecord memory record = bridge
-            .getTransfer(transferId);
+            .getRelayRecord(transferId);
         assertEq(
             uint8(record.status),
             uint8(CrossChainBridgeIntegration.TransferStatus.PENDING)
@@ -547,7 +547,7 @@ contract CrossChainBridgeIntegrationTest is Test {
 
         uint256 userBalBefore = user.balance;
         vm.prank(relayerAddr);
-        bridge.completeTransfer(transferId, recipient, NATIVE, amount, proof);
+        bridge.completeRelay(transferId, recipient, NATIVE, amount, proof);
 
         assertEq(user.balance - userBalBefore, amount);
     }
@@ -579,13 +579,13 @@ contract CrossChainBridgeIntegrationTest is Test {
         bytes memory proof = abi.encodePacked(r, s, v);
 
         vm.prank(relayerAddr);
-        bridge.completeTransfer(transferId, recipient, NATIVE, amount, proof);
+        bridge.completeRelay(transferId, recipient, NATIVE, amount, proof);
 
         vm.prank(relayerAddr);
         vm.expectRevert(
             CrossChainBridgeIntegration.MessageAlreadyProcessed.selector
         );
-        bridge.completeTransfer(transferId, recipient, NATIVE, amount, proof);
+        bridge.completeRelay(transferId, recipient, NATIVE, amount, proof);
     }
 
     function test_CompleteTransfer_RevertInvalidProof() public {
@@ -613,7 +613,7 @@ contract CrossChainBridgeIntegrationTest is Test {
 
         vm.prank(relayer);
         vm.expectRevert(CrossChainBridgeIntegration.InvalidProof.selector);
-        bridge.completeTransfer(transferId, recipient, NATIVE, 1 ether, proof);
+        bridge.completeRelay(transferId, recipient, NATIVE, 1 ether, proof);
     }
 
     // ============= Quote =============

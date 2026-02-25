@@ -33,7 +33,7 @@ export const FEE_DENOMINATOR = 10_000n;
 
 export type RollupType = 'ARB_ONE' | 'ARB_NOVA';
 
-export type TransferStatus = 'PENDING' | 'RETRYABLE_CREATED' | 'EXECUTED' | 'CHALLENGED' | 'FINALIZED' | 'FAILED';
+export type MessageStatus = 'PENDING' | 'RETRYABLE_CREATED' | 'EXECUTED' | 'CHALLENGED' | 'FINALIZED' | 'FAILED';
 
 export interface RollupConfig {
   chainId: number;
@@ -55,7 +55,7 @@ export interface L1ToL2Deposit {
   maxSubmissionCost: bigint;
   l2GasLimit: bigint;
   l2GasPrice: bigint;
-  status: TransferStatus;
+  status: MessageStatus;
   chainId: number;
   initiatedAt: number;
   completedAt: number;
@@ -72,7 +72,7 @@ export interface L2ToL1Withdrawal {
   l1BatchNumber: bigint;
   l2Timestamp: bigint;
   outputId: Hash;
-  status: TransferStatus;
+  status: MessageStatus;
   initiatedAt: number;
   claimableAt: number;
 }

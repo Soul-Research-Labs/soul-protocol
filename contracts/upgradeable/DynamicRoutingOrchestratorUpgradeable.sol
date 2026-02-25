@@ -30,7 +30,7 @@ import {RouteOptimizer} from "../libraries/RouteOptimizer.sol";
  *      - Multi-factor route scoring: cost, speed, reliability, security, privacy
  *      - Multi-hop routing through intermediate chains when direct path is suboptimal
  *      - EIP-1559-style dynamic fee adjustment based on bridge utilization
- *      - Settlement time prediction using exponential moving average
+ *      - Completion time prediction using exponential moving average
  *      - Bridge health integration via security scores and failure tracking
  *
  *      Role separation:
@@ -106,8 +106,8 @@ contract DynamicRoutingOrchestratorUpgradeable is
     /// @dev We use integer math: newEMA = (alpha * value + (BPS - alpha) * oldEMA) / BPS
     uint16 public constant EMA_ALPHA_BPS = 952; // ~2/21 ≈ 9.52%
 
-    /// @notice Default estimated settlement/latency time for new pools and bridges (seconds)
-    uint48 public constant DEFAULT_SETTLEMENT_TIME = 60;
+    /// @notice Default estimated completion/latency time for new pools and bridges (seconds)
+    uint48 public constant DEFAULT_COMPLETION_TIME = 60;
 
     /// @notice Default success probability for bridges with no history (50%)
     uint16 public constant DEFAULT_SUCCESS_BPS = 5000;
@@ -115,10 +115,10 @@ contract DynamicRoutingOrchestratorUpgradeable is
     /// @notice Source chain contribution divisor (25% of source chain time/fee)
     uint8 public constant SOURCE_CHAIN_WEIGHT_DIVISOR = 4;
 
-    /// @notice Capacity impact threshold triggering high settlement penalty (>50%)
+    /// @notice Capacity impact threshold triggering high completion penalty (>50%)
     uint16 public constant HIGH_CAPACITY_IMPACT_BPS = 5000;
 
-    /// @notice Capacity impact threshold triggering medium settlement penalty (>20%)
+    /// @notice Capacity impact threshold triggering medium completion penalty (>20%)
     uint16 public constant MED_CAPACITY_IMPACT_BPS = 2000;
 
     /// @notice High-impact time multiplier numerator (150/100 = +50%)
@@ -313,7 +313,7 @@ contract DynamicRoutingOrchestratorUpgradeable is
             availableCapacity: totalCapacity,
             totalCapacity: totalCapacity,
             utilizationBps: 0,
-            avgSettlementTime: DEFAULT_SETTLEMENT_TIME,
+            avgCompletionTime: DEFAULT_COMPLETION_TIME,
             currentFee: initialFee < MIN_BASE_FEE ? MIN_BASE_FEE : initialFee,
             lastUpdated: uint48(block.timestamp),
             status: PoolStatus.ACTIVE
@@ -406,10 +406,10 @@ contract DynamicRoutingOrchestratorUpgradeable is
 
         _bridgeMetrics[adapter] = BridgeMetrics({
             adapter: adapter,
-            totalTransfers: 0,
-            successfulTransfers: 0,
+            totalRelays: 0,
+            successfulRelays: 0,
             totalValueRouted: 0,
-            avgLatency: DEFAULT_SETTLEMENT_TIME,
+            avgLatency: DEFAULT_COMPLETION_TIME,
             securityScoreBps: securityScoreBps,
             lastFailure: 0,
             isActive: true
@@ -435,11 +435,11 @@ contract DynamicRoutingOrchestratorUpgradeable is
         if (!bridgeRegistered[adapter]) revert BridgeNotRegistered(adapter);
 
         BridgeMetrics storage metrics = _bridgeMetrics[adapter];
-        metrics.totalTransfers += 1;
+        metrics.totalRelays += 1;
         metrics.totalValueRouted += value;
 
         if (success) {
-            metrics.successfulTransfers += 1;
+            metrics.successfulRelays += 1;
             // Update avg latency with EMA
             metrics.avgLatency = uint48(
                 (uint256(EMA_ALPHA_BPS) *
@@ -453,7 +453,7 @@ contract DynamicRoutingOrchestratorUpgradeable is
 
         emit BridgeMetricsUpdated(
             adapter,
-            metrics.totalTransfers,
+            metrics.totalRelays,
             metrics.avgLatency
         );
     }
@@ -621,7 +621,7 @@ contract DynamicRoutingOrchestratorUpgradeable is
     /**
      * @notice Mark a route as completed (called by authorized router)
      * @param routeId The route that completed
-     * @param actualTime Actual settlement time
+     * @param actualTime Actual completion time
      * @param actualCost Actual cost
      */
     function completeRoute(
@@ -633,15 +633,15 @@ contract DynamicRoutingOrchestratorUpgradeable is
         if (route.chainPath.length == 0) revert RouteNotFound(routeId);
         route.status = RouteStatus.COMPLETED;
 
-        // Update settlement time EMA for destination pool
+        // Update completion time EMA for destination pool
         uint256 destChain = route.chainPath[route.chainPath.length - 1];
         if (poolExists[destChain]) {
             BridgeCapacity storage pool = _pools[destChain];
-            pool.avgSettlementTime = uint48(
+            pool.avgCompletionTime = uint48(
                 (uint256(EMA_ALPHA_BPS) *
                     uint256(actualTime) +
                     uint256(BPS - EMA_ALPHA_BPS) *
-                    uint256(pool.avgSettlementTime)) / BPS
+                    uint256(pool.avgCompletionTime)) / BPS
             );
         }
 
@@ -665,7 +665,7 @@ contract DynamicRoutingOrchestratorUpgradeable is
     }
 
     /// @inheritdoc IDynamicRoutingOrchestrator
-    function predictSettlementTime(
+    function predictCompletionTime(
         uint256 sourceChainId,
         uint256 destChainId,
         uint256 amount
@@ -673,9 +673,9 @@ contract DynamicRoutingOrchestratorUpgradeable is
         if (!poolExists[destChainId]) revert PoolNotFound(destChainId);
 
         BridgeCapacity storage destPool = _pools[destChainId];
-        uint48 baseTime = destPool.avgSettlementTime;
+        uint48 baseTime = destPool.avgCompletionTime;
 
-        // Adjust for amount relative to capacity (large transfers take longer)
+        // Adjust for amount relative to capacity (large relays take longer)
         if (destPool.availableCapacity > 0 && amount > 0) {
             uint256 capacityRatio = (amount * BPS) /
                 destPool.availableCapacity;
@@ -694,10 +694,10 @@ contract DynamicRoutingOrchestratorUpgradeable is
             }
         }
 
-        // Adjust for source chain (add source pool settlement time if available)
+        // Adjust for source chain (add source pool completion time if available)
         if (poolExists[sourceChainId]) {
             baseTime +=
-                _pools[sourceChainId].avgSettlementTime /
+                _pools[sourceChainId].avgCompletionTime /
                 SOURCE_CHAIN_WEIGHT_DIVISOR;
         }
 
@@ -707,7 +707,7 @@ contract DynamicRoutingOrchestratorUpgradeable is
         address[] storage destBridges = _chainBridges[destChainId];
         uint256 totalSamples = 0;
         for (uint256 i = 0; i < destBridges.length; ++i) {
-            totalSamples += _bridgeMetrics[destBridges[i]].totalTransfers;
+            totalSamples += _bridgeMetrics[destBridges[i]].totalRelays;
         }
 
         if (totalSamples > CONFIDENCE_HIGH_THRESHOLD) {
@@ -931,13 +931,13 @@ contract DynamicRoutingOrchestratorUpgradeable is
         );
 
         // Estimated time
-        route.estimatedTime = destPool.avgSettlementTime;
+        route.estimatedTime = destPool.avgCompletionTime;
 
         // Success probability from bridge metrics
         BridgeMetrics storage bm = _bridgeMetrics[bestBridge];
-        if (bm.totalTransfers > 0) {
+        if (bm.totalRelays > 0) {
             route.successProbabilityBps = uint16(
-                (bm.successfulTransfers * BPS) / bm.totalTransfers
+                (bm.successfulRelays * BPS) / bm.totalRelays
             );
         } else {
             route.successProbabilityBps = DEFAULT_SUCCESS_BPS;
@@ -1043,18 +1043,18 @@ contract DynamicRoutingOrchestratorUpgradeable is
 
         // Time: sum of both hops
         route.estimatedTime =
-            hopPool.avgSettlementTime +
-            destPool.avgSettlementTime;
+            hopPool.avgCompletionTime +
+            destPool.avgCompletionTime;
 
         // Success probability: product of both hops
         BridgeMetrics storage bm1 = _bridgeMetrics[bridge1];
         BridgeMetrics storage bm2 = _bridgeMetrics[bridge2];
 
-        uint16 prob1 = bm1.totalTransfers > 0
-            ? uint16((bm1.successfulTransfers * BPS) / bm1.totalTransfers)
+        uint16 prob1 = bm1.totalRelays > 0
+            ? uint16((bm1.successfulRelays * BPS) / bm1.totalRelays)
             : DEFAULT_SUCCESS_BPS;
-        uint16 prob2 = bm2.totalTransfers > 0
-            ? uint16((bm2.successfulTransfers * BPS) / bm2.totalTransfers)
+        uint16 prob2 = bm2.totalRelays > 0
+            ? uint16((bm2.successfulRelays * BPS) / bm2.totalRelays)
             : DEFAULT_SUCCESS_BPS;
 
         route.successProbabilityBps = uint16(
@@ -1117,9 +1117,9 @@ contract DynamicRoutingOrchestratorUpgradeable is
         Urgency urgency
     ) internal view returns (uint16) {
         uint16 reliabilityScore;
-        if (bm.totalTransfers > 0) {
+        if (bm.totalRelays > 0) {
             reliabilityScore = uint16(
-                (bm.successfulTransfers * BPS) / bm.totalTransfers
+                (bm.successfulRelays * BPS) / bm.totalRelays
             );
         } else {
             reliabilityScore = DEFAULT_SUCCESS_BPS;

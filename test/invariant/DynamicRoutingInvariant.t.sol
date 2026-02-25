@@ -207,7 +207,7 @@ contract DynamicRoutingInvariant is StdInvariant, Test {
             try handler.registeredBridges(i) returns (address bridge) {
                 IDynamicRoutingOrchestrator.BridgeMetrics
                     memory metrics = orchestrator.getBridgeMetrics(bridge);
-                assert(metrics.successfulTransfers <= metrics.totalTransfers);
+                assert(metrics.successfulRelays <= metrics.totalRelays);
             } catch {
                 break;
             }

@@ -28,7 +28,7 @@ export const FEE_DENOMINATOR = 10_000n;
                               TYPES
 //////////////////////////////////////////////////////////////*/
 
-export type TransferStatus = 'PENDING' | 'SENT' | 'RELAYED' | 'FAILED';
+export type MessageStatus = 'PENDING' | 'SENT' | 'RELAYED' | 'FAILED';
 
 export interface ScrollConfig {
   chainId: number;
@@ -46,7 +46,7 @@ export interface L1ToL2Message {
   nonce: bigint;
   data: Hex;
   gasLimit: bigint;
-  status: TransferStatus;
+  status: MessageStatus;
   initiatedAt: number;
 }
 
@@ -58,7 +58,7 @@ export interface L2ToL1Message {
   nonce: bigint;
   batchIndex: bigint;
   merkleProof: Hash[];
-  status: TransferStatus;
+  status: MessageStatus;
   initiatedAt: number;
   claimedAt: number;
 }

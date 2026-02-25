@@ -2,7 +2,7 @@ import { expect } from "chai";
 import { zeroHash, zeroAddress, type Hex } from "viem";
 import {
   PrivacyHubClient,
-  TransferStatus,
+  RequestStatus,
   type PrivacyHubConfig,
   type TransferParams,
 } from "../src/privacy/PrivacyHubClient";
@@ -105,31 +105,31 @@ function makeClient(opts?: {
 
 describe("PrivacyHubClient", () => {
   // ==================================================================
-  // TransferStatus Enum
+  // RequestStatus Enum
   // ==================================================================
-  describe("TransferStatus enum", () => {
+  describe("RequestStatus enum", () => {
     it("should define NONE=0", () => {
-      expect(TransferStatus.NONE).to.equal(0);
+      expect(RequestStatus.NONE).to.equal(0);
     });
 
     it("should define PENDING=1", () => {
-      expect(TransferStatus.PENDING).to.equal(1);
+      expect(RequestStatus.PENDING).to.equal(1);
     });
 
     it("should define RELAYED=2", () => {
-      expect(TransferStatus.RELAYED).to.equal(2);
+      expect(RequestStatus.RELAYED).to.equal(2);
     });
 
     it("should define COMPLETED=3", () => {
-      expect(TransferStatus.COMPLETED).to.equal(3);
+      expect(RequestStatus.COMPLETED).to.equal(3);
     });
 
     it("should define FAILED=4", () => {
-      expect(TransferStatus.FAILED).to.equal(4);
+      expect(RequestStatus.FAILED).to.equal(4);
     });
 
     it("should define REFUNDED=5", () => {
-      expect(TransferStatus.REFUNDED).to.equal(5);
+      expect(RequestStatus.REFUNDED).to.equal(5);
     });
   });
 
@@ -158,35 +158,35 @@ describe("PrivacyHubClient", () => {
   // ==================================================================
   // Transfer Status Operations (read)
   // ==================================================================
-  describe("getTransferStatus", () => {
+  describe("getRequestStatus", () => {
     it("should return PENDING for a pending transfer", async () => {
       const client = makeClient({
         hubReadStubs: {
-          getTransferStatus: async () => TransferStatus.PENDING,
+          getRequestStatus: async () => RequestStatus.PENDING,
         },
       });
-      const status = await client.getTransferStatus(MOCK_TRANSFER_ID);
-      expect(status).to.equal(TransferStatus.PENDING);
+      const status = await client.getRequestStatus(MOCK_TRANSFER_ID);
+      expect(status).to.equal(RequestStatus.PENDING);
     });
 
     it("should return COMPLETED for a completed transfer", async () => {
       const client = makeClient({
         hubReadStubs: {
-          getTransferStatus: async () => TransferStatus.COMPLETED,
+          getRequestStatus: async () => RequestStatus.COMPLETED,
         },
       });
-      const status = await client.getTransferStatus(MOCK_TRANSFER_ID);
-      expect(status).to.equal(TransferStatus.COMPLETED);
+      const status = await client.getRequestStatus(MOCK_TRANSFER_ID);
+      expect(status).to.equal(RequestStatus.COMPLETED);
     });
 
     it("should return NONE for unknown transfer", async () => {
       const client = makeClient({
         hubReadStubs: {
-          getTransferStatus: async () => TransferStatus.NONE,
+          getRequestStatus: async () => RequestStatus.NONE,
         },
       });
-      const status = await client.getTransferStatus(zeroHash);
-      expect(status).to.equal(TransferStatus.NONE);
+      const status = await client.getRequestStatus(zeroHash);
+      expect(status).to.equal(RequestStatus.NONE);
     });
   });
 
@@ -207,10 +207,10 @@ describe("PrivacyHubClient", () => {
       });
       const details = await client.getTransferDetails(MOCK_TRANSFER_ID);
       expect(details).to.not.be.null;
-      expect(details!.transferId).to.equal(MOCK_TRANSFER_ID);
+      expect(details!.requestId).to.equal(MOCK_TRANSFER_ID);
       expect(details!.sourceDomain.chainId).to.equal(11155111);
       expect(details!.targetDomain.chainId).to.equal(84532);
-      expect(details!.status).to.equal(TransferStatus.PENDING);
+      expect(details!.status).to.equal(RequestStatus.PENDING);
       expect(details!.timestamp).to.equal(1700000000);
     });
 
@@ -289,30 +289,30 @@ describe("PrivacyHubClient", () => {
   // Write Operations — wallet-required guards
   // ==================================================================
   describe("wallet-required guards", () => {
-    it("relayTransfer should throw without wallet", async () => {
+    it("relayProof should throw without wallet", async () => {
       const client = makeClient();
       try {
-        await client.relayTransfer(MOCK_TRANSFER_ID, "0xdeadbeef");
+        await client.relayProof(MOCK_TRANSFER_ID, "0xdeadbeef");
         expect.fail("should have thrown");
       } catch (err: any) {
         expect(err.message).to.include("Wallet client required");
       }
     });
 
-    it("completeTransfer should throw without wallet", async () => {
+    it("completeRelay should throw without wallet", async () => {
       const client = makeClient();
       try {
-        await client.completeTransfer(MOCK_TRANSFER_ID, "0xdeadbeef");
+        await client.completeRelay(MOCK_TRANSFER_ID, "0xdeadbeef");
         expect.fail("should have thrown");
       } catch (err: any) {
         expect(err.message).to.include("Wallet client required");
       }
     });
 
-    it("refundTransfer should throw without wallet", async () => {
+    it("refundRelay should throw without wallet", async () => {
       const client = makeClient();
       try {
-        await client.refundTransfer(MOCK_TRANSFER_ID);
+        await client.refundRelay(MOCK_TRANSFER_ID);
         expect.fail("should have thrown");
       } catch (err: any) {
         expect(err.message).to.include("Wallet client required");
@@ -323,7 +323,7 @@ describe("PrivacyHubClient", () => {
   // ==================================================================
   // Write Operations — with wallet
   // ==================================================================
-  describe("relayTransfer", () => {
+  describe("relayProof", () => {
     it("should return tx hash on success", async () => {
       const client = makeClient({
         withWallet: true,
@@ -331,12 +331,12 @@ describe("PrivacyHubClient", () => {
           relayPrivateTransfer: async () => MOCK_TX_HASH,
         },
       });
-      const hash = await client.relayTransfer(MOCK_TRANSFER_ID, "0xproof");
+      const hash = await client.relayProof(MOCK_TRANSFER_ID, "0xproof");
       expect(hash).to.equal(MOCK_TX_HASH);
     });
   });
 
-  describe("completeTransfer", () => {
+  describe("completeRelay", () => {
     it("should return tx hash on success", async () => {
       const client = makeClient({
         withWallet: true,
@@ -344,20 +344,20 @@ describe("PrivacyHubClient", () => {
           completePrivateTransfer: async () => MOCK_TX_HASH,
         },
       });
-      const hash = await client.completeTransfer(MOCK_TRANSFER_ID, "0xproof");
+      const hash = await client.completeRelay(MOCK_TRANSFER_ID, "0xproof");
       expect(hash).to.equal(MOCK_TX_HASH);
     });
   });
 
-  describe("refundTransfer", () => {
+  describe("refundRelay", () => {
     it("should return tx hash on success", async () => {
       const client = makeClient({
         withWallet: true,
         hubWriteStubs: {
-          refundTransfer: async () => MOCK_TX_HASH,
+          refundRelay: async () => MOCK_TX_HASH,
         },
       });
-      const hash = await client.refundTransfer(MOCK_TRANSFER_ID);
+      const hash = await client.refundRelay(MOCK_TRANSFER_ID);
       expect(hash).to.equal(MOCK_TX_HASH);
     });
   });

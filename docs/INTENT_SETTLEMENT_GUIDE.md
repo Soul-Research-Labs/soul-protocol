@@ -141,7 +141,7 @@ function findOptimalRoute(
 function estimateFee(uint256 sourceChain, uint256 destChain, uint256 amount)
     external view returns (uint256);
 
-function predictSettlementTime(uint256 sourceChain, uint256 destChain, uint256 amount)
+function predictCompletionTime(uint256 sourceChain, uint256 destChain, uint256 amount)
     external view returns (uint256);
 ```
 

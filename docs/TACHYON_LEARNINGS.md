@@ -224,7 +224,7 @@ contract InstantRelayerRewards {
 
 - Better capital efficiency for relayers
 - Lower fees due to competition
-- Faster settlement times
+- Faster completion times
 - More relayers attracted to network
 
 ---
@@ -252,7 +252,7 @@ contract DynamicRoutingOrchestrator {
         uint256 chainId;
         uint256 availableCapacity;
         uint256 utilizationRate;
-        uint256 avgSettlementTime;
+        uint256 avgCompletionTime;
         uint256 currentFee;
     }
 
@@ -295,7 +295,7 @@ contract DynamicRoutingOrchestrator {
     }
 
     // Predictive routing based on historical data
-    function predictSettlementTime(
+    function predictCompletionTime(
         uint256 sourceChain,
         uint256 destChain,
         uint256 amount
@@ -411,7 +411,7 @@ contract ConfigurablePrivacyLevels {
 // New contract: InstantSettlementGuarantee.sol
 contract InstantSettlementGuarantee {
     struct Guarantee {
-        bytes32 transferId;
+        bytes32 relayId;
         address guarantor;  // Solver providing guarantee
         uint256 amount;
         uint256 bond;
@@ -423,13 +423,13 @@ contract InstantSettlementGuarantee {
 
     // Guarantor provides bonded proof delivery guarantee
     function provideGuarantee(
-        bytes32 transferId,
+        bytes32 relayId,
         uint256 amount
     ) external payable {
         require(msg.value >= amount * 110 / 100, "Insufficient bond");  // 110% collateral
 
-        guarantees[transferId] = Guarantee({
-            transferId: transferId,
+        guarantees[relayId] = Guarantee({
+            relayId: relayId,
             guarantor: msg.sender,
             amount: amount,
             bond: msg.value,
@@ -438,14 +438,14 @@ contract InstantSettlementGuarantee {
         });
 
         // User gets instant access to funds
-        emit InstantSettlement(transferId, amount, msg.sender);
+        emit InstantSettlement(relayId, amount, msg.sender);
     }
 
     // If transfer succeeds, guarantor gets bond back + fee
-    function claimSuccessfulGuarantee(bytes32 transferId) external {
-        Guarantee storage guarantee = guarantees[transferId];
+    function claimSuccessfulGuarantee(bytes32 relayId) external {
+        Guarantee storage guarantee = guarantees[relayId];
         require(guarantee.guarantor == msg.sender, "Not guarantor");
-        require(_isTransferFinalized(transferId), "Not finalized");
+        require(_isTransferFinalized(relayId), "Not finalized");
 
         uint256 reward = guarantee.bond + (guarantee.amount * 5 / 1000);  // 0.5% fee
         guarantee.claimed = true;
@@ -454,13 +454,13 @@ contract InstantSettlementGuarantee {
     }
 
     // If transfer fails, user keeps guarantee, guarantor loses bond
-    function claimFailedGuarantee(bytes32 transferId) external {
-        Guarantee storage guarantee = guarantees[transferId];
+    function claimFailedGuarantee(bytes32 relayId) external {
+        Guarantee storage guarantee = guarantees[relayId];
         require(block.timestamp > guarantee.expiresAt, "Not expired");
-        require(!_isTransferFinalized(transferId), "Transfer succeeded");
+        require(!_isTransferFinalized(relayId), "Transfer succeeded");
 
         // User gets guaranteed amount
-        payable(_getTransferRecipient(transferId)).transfer(guarantee.amount);
+        payable(_getTransferRecipient(relayId)).transfer(guarantee.amount);
 
         // Remaining bond goes to insurance pool
         uint256 remaining = guarantee.bond - guarantee.amount;
@@ -750,8 +750,8 @@ SoulProtocolHub expanded from 19 → 25 components:
 CrossChainPrivacyHub now has compliance hooks:
 
 - `setDisclosureManager()` / `setComplianceReporting()` — admin setters
-- `initiatePrivateTransfer()` auto-registers with SelectiveDisclosureManager (non-reverting)
-- `completeTransfer()` auto-submits to ComplianceReportingModule (non-reverting)
+- `initiatePrivateRelay()` auto-registers with SelectiveDisclosureManager (non-reverting)
+- `completeRelay()` auto-submits to ComplianceReportingModule (non-reverting)
 - Privacy level mapping: MAXIMUM→COUNTERPARTY, HIGH→REGULATOR, MEDIUM→AUDITOR, NONE/BASIC→PUBLIC
 
 ### Test Coverage

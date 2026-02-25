@@ -148,7 +148,7 @@ contract EVMUniversalAdapterTest is Test {
     }
 
     /*//////////////////////////////////////////////////////////////
-                     ENCRYPTED STATE TRANSFER TESTS
+                     ENCRYPTED STATE RELAY TESTS
     //////////////////////////////////////////////////////////////*/
 
     function test_sendEncryptedState() public {
@@ -529,7 +529,7 @@ contract EVMUniversalAdapterTest is Test {
         adapter.receiveEncryptedState(transfer2);
     }
 
-    function testFuzz_transferIdUniqueness(
+    function testFuzz_relayIdUniqueness(
         uint256 nonce1,
         uint256 nonce2
     ) public {
@@ -561,7 +561,7 @@ contract EVMUniversalAdapterTest is Test {
         );
         vm.stopPrank();
 
-        assertTrue(id1 != id2, "Transfer IDs should be unique");
+        assertTrue(id1 != id2, "Relay IDs should be unique");
     }
 }
 
@@ -884,13 +884,13 @@ contract UniversalAdapterRegistryTest is Test {
             keccak256("proof_1")
         );
 
-        (uint256 totalTransfers, uint256 lastTransfer) = registry.getRouteStats(
+        (uint256 totalRelays, uint256 lastRelayAt_) = registry.getRouteStats(
             UniversalChainRegistry.ARBITRUM_ONE,
             UniversalChainRegistry.SOLANA
         );
 
-        assertEq(totalTransfers, 1);
-        assertTrue(lastTransfer > 0);
+        assertEq(totalRelays, 1);
+        assertTrue(lastRelayAt_ > 0);
         vm.stopPrank();
     }
 }

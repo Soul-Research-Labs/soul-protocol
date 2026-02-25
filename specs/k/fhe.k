@@ -560,10 +560,10 @@ module FHE-BRIDGE-SECURITY
         encAmount: Handle,
         sender: Address,
         recipient: Address,
-        status: TransferStatus
+        status: RequestStatus
     )
 
-    syntax TransferStatus ::= "PENDING_TRANSFER"
+    syntax RequestStatus ::= "PENDING_TRANSFER"
                             | "LOCKED"
                             | "RELAYED"
                             | "COMPLETED"

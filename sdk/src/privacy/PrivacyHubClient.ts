@@ -36,7 +36,7 @@ import {
 } from "./NullifierClient";
 
 // Transfer status enum
-export enum TransferStatus {
+export enum RequestStatus {
   NONE = 0,
   PENDING = 1,
   RELAYED = 2,
@@ -47,13 +47,13 @@ export enum TransferStatus {
 
 // Private transfer structure
 export interface PrivateTransfer {
-  transferId: Hex;
+  requestId: Hex;
   sourceDomain: ChainDomain;
   targetDomain: ChainDomain;
   commitment: PedersenCommitment;
   nullifier: Hex;
   stealthAddress: Hex;
-  status: TransferStatus;
+  status: RequestStatus;
   timestamp: number;
 }
 
@@ -113,14 +113,14 @@ const PRIVACY_HUB_ABI = [
       { name: "nullifier", type: "bytes32" },
       { name: "proof", type: "bytes" },
     ],
-    outputs: [{ name: "transferId", type: "bytes32" }],
+    outputs: [{ name: "requestId", type: "bytes32" }],
   },
   {
     name: "relayPrivateTransfer",
     type: "function",
     stateMutability: "external",
     inputs: [
-      { name: "transferId", type: "bytes32" },
+      { name: "requestId", type: "bytes32" },
       { name: "relayProof", type: "bytes" },
     ],
   },
@@ -129,28 +129,28 @@ const PRIVACY_HUB_ABI = [
     type: "function",
     stateMutability: "external",
     inputs: [
-      { name: "transferId", type: "bytes32" },
+      { name: "requestId", type: "bytes32" },
       { name: "completionProof", type: "bytes" },
     ],
   },
   {
-    name: "refundTransfer",
+    name: "refundRelay",
     type: "function",
     stateMutability: "external",
-    inputs: [{ name: "transferId", type: "bytes32" }],
+    inputs: [{ name: "requestId", type: "bytes32" }],
   },
   {
-    name: "getTransferStatus",
+    name: "getRequestStatus",
     type: "function",
     stateMutability: "view",
-    inputs: [{ name: "transferId", type: "bytes32" }],
+    inputs: [{ name: "requestId", type: "bytes32" }],
     outputs: [{ type: "uint8" }],
   },
   {
     name: "getTransferDetails",
     type: "function",
     stateMutability: "view",
-    inputs: [{ name: "transferId", type: "bytes32" }],
+    inputs: [{ name: "requestId", type: "bytes32" }],
     outputs: [
       {
         type: "tuple",
@@ -191,7 +191,7 @@ const PRIVACY_HUB_ABI = [
     name: "PrivateTransferInitiated",
     type: "event",
     inputs: [
-      { name: "transferId", type: "bytes32", indexed: true },
+      { name: "requestId", type: "bytes32", indexed: true },
       { name: "sourceChain", type: "uint256" },
       { name: "targetChain", type: "uint256" },
       { name: "commitment", type: "bytes32" },
@@ -201,27 +201,27 @@ const PRIVACY_HUB_ABI = [
     name: "PrivateTransferRelayed",
     type: "event",
     inputs: [
-      { name: "transferId", type: "bytes32", indexed: true },
+      { name: "requestId", type: "bytes32", indexed: true },
       { name: "relayer", type: "address" },
     ],
   },
   {
     name: "PrivateTransferCompleted",
     type: "event",
-    inputs: [{ name: "transferId", type: "bytes32", indexed: true }],
+    inputs: [{ name: "requestId", type: "bytes32", indexed: true }],
   },
   {
     name: "PrivateTransferFailed",
     type: "event",
     inputs: [
-      { name: "transferId", type: "bytes32", indexed: true },
+      { name: "requestId", type: "bytes32", indexed: true },
       { name: "reason", type: "string" },
     ],
   },
   {
     name: "PrivateTransferRefunded",
     type: "event",
-    inputs: [{ name: "transferId", type: "bytes32", indexed: true }],
+    inputs: [{ name: "requestId", type: "bytes32", indexed: true }],
   },
   // Compliance hooks (added in Tachyon integration)
   {
@@ -318,7 +318,7 @@ export class PrivacyHubClient {
   // =========================================================================
 
   async privateTransfer(params: TransferParams): Promise<{
-    transferId: Hex;
+    requestId: Hex;
     stealthAddress: StealthAddressResult;
     commitment: PedersenCommitment;
     nullifier: Hex;
@@ -371,7 +371,7 @@ export class PrivacyHubClient {
     const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
 
     // Extract transfer ID from event
-    let transferId: Hex = zeroHash;
+    let requestId: Hex = zeroHash;
     for (const log of receipt.logs) {
       try {
         const decoded = decodeEventLog({
@@ -385,7 +385,7 @@ export class PrivacyHubClient {
           eventName === "PrivateTransferInitiated" &&
           eventArgs.commitment === (commitment.commitment as Hex)
         ) {
-          transferId = eventArgs.transferId as Hex;
+          requestId = eventArgs.requestId as Hex;
           break;
         }
       } catch {
@@ -393,8 +393,8 @@ export class PrivacyHubClient {
       }
     }
 
-    if (transferId === zeroHash) {
-      transferId = keccak256(
+    if (requestId === zeroHash) {
+      requestId = keccak256(
         concat([receipt.transactionHash, toHex(0, { size: 32 })]),
       );
     }
@@ -402,7 +402,7 @@ export class PrivacyHubClient {
     // 6. Announce stealth payment
     const extraData = encodeAbiParameters(
       parseAbiParameters("bytes32, uint256"),
-      [transferId, BigInt(params.targetChainId)],
+      [requestId, BigInt(params.targetChainId)],
     );
     await this.stealthClient.announcePayment(
       stealthResult.stealthAddress,
@@ -411,7 +411,7 @@ export class PrivacyHubClient {
     );
 
     return {
-      transferId,
+      requestId,
       stealthAddress: stealthResult,
       commitment,
       nullifier,
@@ -597,23 +597,23 @@ export class PrivacyHubClient {
   /**
    * Get transfer status
    */
-  async getTransferStatus(transferId: Hex): Promise<TransferStatus> {
-    return (await this.hubContract.read.getTransferStatus([
-      transferId,
-    ])) as TransferStatus;
+  async getRequestStatus(requestId: Hex): Promise<TransferStatus> {
+    return (await this.hubContract.read.getRequestStatus([
+      requestId,
+    ])) as RequestStatus;
   }
 
   /**
    * Get full transfer details
    */
-  async getTransferDetails(transferId: Hex): Promise<PrivateTransfer | null> {
+  async getTransferDetails(requestId: Hex): Promise<PrivateTransfer | null> {
     try {
       const details = (await this.hubContract.read.getTransferDetails([
-        transferId,
+        requestId,
       ])) as Record<string, unknown>;
 
       return {
-        transferId,
+        requestId,
         sourceDomain: {
           chainId: Number(details.sourceChain),
           domainTag: "",
@@ -631,7 +631,7 @@ export class PrivacyHubClient {
         },
         nullifier: details.nullifier as Hex,
         stealthAddress: zeroAddress,
-        status: details.status as TransferStatus,
+        status: details.status as RequestStatus,
         timestamp: Number(details.timestamp),
       };
     } catch {
@@ -642,11 +642,11 @@ export class PrivacyHubClient {
   /**
    * Relay a pending transfer
    */
-  async relayTransfer(transferId: Hex, relayProof: Hex): Promise<Hex> {
+  async relayProof(requestId: Hex, relayProof: Hex): Promise<Hex> {
     if (!this.walletClient) throw new Error("Wallet client required");
 
     const hash = await this.hubContract.write.relayPrivateTransfer([
-      transferId,
+      requestId,
       relayProof,
     ]);
     return hash;
@@ -655,11 +655,11 @@ export class PrivacyHubClient {
   /**
    * Complete a relayed transfer
    */
-  async completeTransfer(transferId: Hex, completionProof: Hex): Promise<Hex> {
+  async completeRelay(requestId: Hex, completionProof: Hex): Promise<Hex> {
     if (!this.walletClient) throw new Error("Wallet client required");
 
     const hash = await this.hubContract.write.completePrivateTransfer([
-      transferId,
+      requestId,
       completionProof,
     ]);
     return hash;
@@ -668,10 +668,10 @@ export class PrivacyHubClient {
   /**
    * Refund a failed transfer
    */
-  async refundTransfer(transferId: Hex): Promise<Hex> {
+  async refundRelay(requestId: Hex): Promise<Hex> {
     if (!this.walletClient) throw new Error("Wallet client required");
 
-    const hash = await this.hubContract.write.refundTransfer([transferId]);
+    const hash = await this.hubContract.write.refundRelay([requestId]);
     return hash;
   }
 
@@ -710,7 +710,7 @@ export class PrivacyHubClient {
    */
   onTransferInitiated(
     callback: (
-      transferId: Hex,
+      requestId: Hex,
       sourceChain: number,
       targetChain: number,
       commitment: Hex,
@@ -725,7 +725,7 @@ export class PrivacyHubClient {
           const args = (log as unknown as { args: Record<string, unknown> })
             .args;
           callback(
-            args.transferId as Hex,
+            args.requestId as Hex,
             Number(args.sourceChain),
             Number(args.targetChain),
             args.commitment as Hex,
@@ -736,7 +736,7 @@ export class PrivacyHubClient {
     return unwatch;
   }
 
-  onTransferCompleted(callback: (transferId: Hex) => void): () => void {
+  onTransferCompleted(callback: (requestId: Hex) => void): () => void {
     const unwatch = this.publicClient.watchContractEvent({
       address: this.hubContract.address,
       abi: PRIVACY_HUB_ABI,
@@ -745,7 +745,7 @@ export class PrivacyHubClient {
         for (const log of logs) {
           const args = (log as unknown as { args: Record<string, unknown> })
             .args;
-          callback(args.transferId as Hex);
+          callback(args.requestId as Hex);
         }
       },
     });
@@ -753,7 +753,7 @@ export class PrivacyHubClient {
   }
 
   onTransferFailed(
-    callback: (transferId: Hex, reason: string) => void,
+    callback: (requestId: Hex, reason: string) => void,
   ): () => void {
     const unwatch = this.publicClient.watchContractEvent({
       address: this.hubContract.address,
@@ -763,7 +763,7 @@ export class PrivacyHubClient {
         for (const log of logs) {
           const args = (log as unknown as { args: Record<string, unknown> })
             .args;
-          callback(args.transferId as Hex, args.reason as string);
+          callback(args.requestId as Hex, args.reason as string);
         }
       },
     });

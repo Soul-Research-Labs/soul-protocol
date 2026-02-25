@@ -129,17 +129,17 @@ The flagship primitive for cross-chain state transfers.
 ```solidity
 interface ICrossChainPrivacyHub {
     // Initiate private transfer
-    function initiatePrivateTransfer(
+    function initiatePrivateRelay(
         uint256 destChainId,
         bytes calldata recipientPubKey,
         PrivacyLevel privacyLevel,
         bytes calldata proof,
         bytes calldata metadata
-    ) external payable returns (bytes32 transferId);
+    ) external payable returns (bytes32 relayId);
 
     // Complete transfer on destination
-    function completeTransfer(
-        bytes32 transferId,
+    function completeRelay(
+        bytes32 relayId,
         bytes calldata proof,
         bytes calldata nullifierPreimage
     ) external returns (bool);
@@ -566,7 +566,7 @@ const { stealthAddress, ephemeralPubKey } =
   );
 
 // 3. Sender initiates private transfer
-const transferId = await privacyHub.initiatePrivateTransfer(
+const relayId = await privacyHub.initiatePrivateRelay(
   destChainId,
   stealthAddress,
   PrivacyLevel.HIGH,
@@ -583,7 +583,7 @@ const ownedAddresses = await stealthRegistry.batchScan(
 );
 
 // 5. Recipient completes transfer
-await privacyHub.completeTransfer(transferId, zkProof, nullifierPreimage);
+await privacyHub.completeRelay(relayId, zkProof, nullifierPreimage);
 ```
 
 ### RingCT Integration (Research Reference)

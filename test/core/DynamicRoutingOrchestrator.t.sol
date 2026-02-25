@@ -322,7 +322,7 @@ contract DynamicRoutingOrchestratorTest is Test {
         assertEq(bm.adapter, bridge1);
         assertEq(bm.securityScoreBps, 8000);
         assertTrue(bm.isActive);
-        assertTrue(bm.totalTransfers > 0); // setUp recorded outcomes
+        assertTrue(bm.totalRelays > 0); // setUp recorded outcomes
     }
 
     function test_RegisterBridge_SupportedChains() public view {
@@ -363,7 +363,7 @@ contract DynamicRoutingOrchestratorTest is Test {
 
         IDynamicRoutingOrchestrator.BridgeMetrics memory bm = orchestrator
             .getBridgeMetrics(bridge1);
-        assertTrue(bm.totalTransfers > 20); // setUp + this one
+        assertTrue(bm.totalRelays > 20); // setUp + this one
     }
 
     function test_RecordBridgeOutcome_Failure() public {
@@ -704,11 +704,11 @@ contract DynamicRoutingOrchestratorTest is Test {
     }
 
     /*//////////////////////////////////////////////////////////////
-                    SETTLEMENT TIME PREDICTION
+                    COMPLETION TIME PREDICTION
     //////////////////////////////////////////////////////////////*/
 
-    function test_PredictSettlementTime_Normal() public view {
-        (uint48 time, uint16 confidence) = orchestrator.predictSettlementTime(
+    function test_PredictCompletionTime_Normal() public view {
+        (uint48 time, uint16 confidence) = orchestrator.predictCompletionTime(
             CHAIN_ETH,
             CHAIN_ARB,
             10 ether
@@ -717,13 +717,13 @@ contract DynamicRoutingOrchestratorTest is Test {
         assertTrue(confidence > 0);
     }
 
-    function test_PredictSettlementTime_LargeAmount() public view {
-        (uint48 timeSmall, ) = orchestrator.predictSettlementTime(
+    function test_PredictCompletionTime_LargeAmount() public view {
+        (uint48 timeSmall, ) = orchestrator.predictCompletionTime(
             CHAIN_ETH,
             CHAIN_ARB,
             1 ether
         );
-        (uint48 timeLarge, ) = orchestrator.predictSettlementTime(
+        (uint48 timeLarge, ) = orchestrator.predictCompletionTime(
             CHAIN_ETH,
             CHAIN_ARB,
             600 ether
@@ -733,9 +733,9 @@ contract DynamicRoutingOrchestratorTest is Test {
         assertTrue(timeLarge >= timeSmall);
     }
 
-    function test_PredictSettlementTime_StaleDataReducesConfidence() public {
+    function test_PredictCompletionTime_StaleDataReducesConfidence() public {
         // Get confidence now
-        (, uint16 freshConfidence) = orchestrator.predictSettlementTime(
+        (, uint16 freshConfidence) = orchestrator.predictCompletionTime(
             CHAIN_ETH,
             CHAIN_ARB,
             10 ether
@@ -744,7 +744,7 @@ contract DynamicRoutingOrchestratorTest is Test {
         // Advance past staleness threshold
         vm.warp(block.timestamp + 15 minutes);
 
-        (, uint16 staleConfidence) = orchestrator.predictSettlementTime(
+        (, uint16 staleConfidence) = orchestrator.predictCompletionTime(
             CHAIN_ETH,
             CHAIN_ARB,
             10 ether
@@ -754,14 +754,14 @@ contract DynamicRoutingOrchestratorTest is Test {
         assertTrue(staleConfidence < freshConfidence);
     }
 
-    function test_PredictSettlementTime_RevertPoolNotFound() public {
+    function test_PredictCompletionTime_RevertPoolNotFound() public {
         vm.expectRevert(
             abi.encodeWithSelector(
                 IDynamicRoutingOrchestrator.PoolNotFound.selector,
                 999
             )
         );
-        orchestrator.predictSettlementTime(CHAIN_ETH, 999, 10 ether);
+        orchestrator.predictCompletionTime(CHAIN_ETH, 999, 10 ether);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -953,12 +953,12 @@ contract DynamicRoutingOrchestratorTest is Test {
         assertTrue(feeB >= feeA);
     }
 
-    function testFuzz_PredictSettlementTime_AlwaysPositive(
+    function testFuzz_PredictCompletionTime_AlwaysPositive(
         uint256 amount
     ) public view {
         amount = bound(amount, 0.001 ether, 500 ether);
 
-        (uint48 time, ) = orchestrator.predictSettlementTime(
+        (uint48 time, ) = orchestrator.predictCompletionTime(
             CHAIN_ETH,
             CHAIN_ARB,
             amount

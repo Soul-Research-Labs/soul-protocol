@@ -28,7 +28,7 @@ export const FEE_DENOMINATOR = 10_000n;
                               TYPES
 //////////////////////////////////////////////////////////////*/
 
-export type TransferStatus = 'PENDING' | 'SENT' | 'CLAIMED' | 'FAILED';
+export type MessageStatus = 'PENDING' | 'SENT' | 'CLAIMED' | 'FAILED';
 
 export interface LineaConfig {
   chainId: number;
@@ -45,7 +45,7 @@ export interface L1ToL2Message {
   value: bigint;
   nonce: bigint;
   data: Hex;
-  status: TransferStatus;
+  status: MessageStatus;
   initiatedAt: number;
 }
 
@@ -57,7 +57,7 @@ export interface L2ToL1Message {
   messageNumber: bigint;
   merkleProof: Hash[];
   leafIndex: bigint;
-  status: TransferStatus;
+  status: MessageStatus;
   initiatedAt: number;
   claimedAt: number;
 }

@@ -46,7 +46,7 @@ module ZKSYNC-TYPES
     // =========================================================================
 
     // Transfer Status
-    syntax TransferStatus ::= "PENDING"
+    syntax RequestStatus ::= "PENDING"
                             | "PROVED"
                             | "EXECUTED"
                             | "FAILED"
@@ -68,7 +68,7 @@ module ZKSYNC-TYPES
         l2GasLimit: Int,
         l2GasPerPubdata: Int,
         l2TxHash: Bytes,
-        status: TransferStatus,
+        status: RequestStatus,
         priorityOpId: Int,
         initiatedAt: Int
     )
@@ -85,7 +85,7 @@ module ZKSYNC-TYPES
         l2MessageIndex: Int,
         l2TxNumberInBatch: Int,
         l2TxHash: Bytes,
-        status: TransferStatus,
+        status: RequestStatus,
         initiatedAt: Int,
         finalizedAt: Int
     )
@@ -408,7 +408,7 @@ module ZKSYNC-BRIDGE
          requires batchVerifiedBeforeExecution(B[BatchNum])
 
     // Helper functions
-    syntax L2ToL1Withdrawal ::= updateWithdrawalStatus(L2ToL1Withdrawal, TransferStatus) [function]
+    syntax L2ToL1Withdrawal ::= updateWithdrawalStatus(L2ToL1Withdrawal, RequestStatus) [function]
     rule updateWithdrawalStatus(withdrawal(Id, L2S, L1R, L2T, L1T, A, BN, MI, TN, TxH, _, Init, _), NewStatus) =>
         withdrawal(Id, L2S, L1R, L2T, L1T, A, BN, MI, TN, TxH, NewStatus, Init, 0)
 

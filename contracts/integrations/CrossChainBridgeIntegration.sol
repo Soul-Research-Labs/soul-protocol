@@ -567,7 +567,7 @@ contract CrossChainBridgeIntegration is
     /**
      * @notice Complete transfer (called by relayer on destination)
      */
-    function completeTransfer(
+    function completeRelay(
         bytes32 transferId,
         bytes32 recipient,
         address token,
@@ -813,7 +813,7 @@ contract CrossChainBridgeIntegration is
         return routes[_getRouteKey(source, dest)];
     }
 
-    function getTransfer(
+    function getRelayRecord(
         bytes32 transferId
     ) external view returns (TransferRecord memory) {
         return transfers[transferId];

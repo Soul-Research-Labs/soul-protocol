@@ -13,7 +13,7 @@ import {
   type MerkleProof,
   type RelayerType,
   type BatchRecipient,
-  type PrivateTransferStatus,
+  type PrivateRelayStatus,
 } from "../src/privacy/CrossChainPrivacyOrchestrator";
 
 // ============================================================

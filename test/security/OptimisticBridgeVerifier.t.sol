@@ -86,7 +86,7 @@ contract OptimisticBridgeVerifierTest is Test {
         );
 
         OptimisticBridgeVerifier.PendingTransfer memory t = verifier
-            .getTransfer(id);
+            .getVerification(id);
         assertEq(t.messageHash, MSG_HASH);
         assertEq(t.value, TRANSFER_VALUE);
         assertEq(t.submitter, submitter);
@@ -102,7 +102,7 @@ contract OptimisticBridgeVerifierTest is Test {
 
     function test_submitTransfer_EmitsEvent() public {
         // We verify the non-indexed data fields (messageHash, value, finalizeAfter)
-        // by checking them after submission via getTransfer, since transferId
+        // by checking them after submission via getVerification, since transferId
         // includes block.timestamp making pre-computation fragile.
         vm.prank(submitter);
         vm.expectEmit(false, false, false, true);
@@ -169,7 +169,7 @@ contract OptimisticBridgeVerifierTest is Test {
         verifier.challengeTransfer{value: 0.1 ether}(id, bytes("evidence"));
 
         OptimisticBridgeVerifier.PendingTransfer memory t = verifier
-            .getTransfer(id);
+            .getVerification(id);
         assertEq(
             uint256(t.status),
             uint256(OptimisticBridgeVerifier.TransferStatus.CHALLENGED)
@@ -283,7 +283,7 @@ contract OptimisticBridgeVerifierTest is Test {
         verifier.resolveChallenge(id, PROOF, true);
 
         OptimisticBridgeVerifier.PendingTransfer memory t = verifier
-            .getTransfer(id);
+            .getVerification(id);
         assertEq(
             uint256(t.status),
             uint256(OptimisticBridgeVerifier.TransferStatus.REJECTED)
@@ -324,7 +324,7 @@ contract OptimisticBridgeVerifierTest is Test {
         verifier.resolveChallenge(id, PROOF, false);
 
         OptimisticBridgeVerifier.PendingTransfer memory t = verifier
-            .getTransfer(id);
+            .getVerification(id);
         assertEq(
             uint256(t.status),
             uint256(OptimisticBridgeVerifier.TransferStatus.FINALIZED)
@@ -411,7 +411,7 @@ contract OptimisticBridgeVerifierTest is Test {
         verifier.finalizeTransfer(id);
 
         OptimisticBridgeVerifier.PendingTransfer memory t = verifier
-            .getTransfer(id);
+            .getVerification(id);
         assertEq(
             uint256(t.status),
             uint256(OptimisticBridgeVerifier.TransferStatus.FINALIZED)
@@ -590,7 +590,7 @@ contract OptimisticBridgeVerifierTest is Test {
             NULLIFIER
         );
         OptimisticBridgeVerifier.PendingTransfer memory t = verifier
-            .getTransfer(id);
+            .getVerification(id);
         assertEq(t.value, value);
         assertEq(
             uint256(t.status),
@@ -631,7 +631,7 @@ contract OptimisticBridgeVerifierTest is Test {
         verifier.finalizeTransfer(id);
 
         OptimisticBridgeVerifier.PendingTransfer memory t = verifier
-            .getTransfer(id);
+            .getVerification(id);
         assertEq(
             uint256(t.status),
             uint256(OptimisticBridgeVerifier.TransferStatus.FINALIZED)

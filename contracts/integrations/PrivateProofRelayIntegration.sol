@@ -9,23 +9,23 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {IPrivacyIntegration} from "../interfaces/IPrivacyIntegration.sol";
 
 /**
- * @title PrivateBridgeIntegration
+ * @title PrivateProofRelayIntegration
  * @author Soul Protocol
- * @notice Cross-chain private transfer integration implementing IPrivateBridge
+ * @notice Cross-chain private proof relay integration implementing IPrivacyIntegration
  * @dev Connects to CrossChainPrivacyHub with stealth addresses and ZK proofs
  *
  * ARCHITECTURE:
  * ┌─────────────────────────────────────────────────────────────────────────────┐
- * │                     PrivateBridgeIntegration                                 │
+ * │                     PrivateProofRelayIntegration                                 │
  * │                                                                              │
  * │   Source Chain                          Destination Chain                    │
  * │   ┌──────────────────┐                  ┌──────────────────┐                │
  * │   │  1. Create       │                  │  4. Verify       │                │
  * │   │     commitment   │                  │     cross-chain  │                │
- * │   │     + nullifier  │      Bridge      │     proof        │                │
+ * │   │     + nullifier  │      Proof Relay │     proof        │                │
  * │   │                  │   ──────────▶    │                  │                │
  * │   │  2. Generate     │                  │  5. Complete     │                │
- * │   │     ZK proof     │                  │     transfer to  │                │
+ * │   │     ZK proof     │                  │     deliver to   │                │
  * │   │                  │                  │     stealth addr │                │
  * │   │  3. Initiate     │                  │                  │                │
  * │   │     transfer     │                  │  6. Register     │                │
@@ -35,14 +35,14 @@ import {IPrivacyIntegration} from "../interfaces/IPrivacyIntegration.sol";
  * │   PRIVACY FEATURES:                                                          │
  * │   ├─ Stealth addresses for unlinkable recipients                            │
  * │   ├─ Cross-chain nullifiers prevent double-spend                            │
- * │   ├─ ZK proofs hide transfer amounts                                        │
+ * │   ├─ ZK proofs hide relay amounts                                        │
  * │   └─ Encrypted metadata for enhanced privacy                                │
  * │                                                                              │
  * └─────────────────────────────────────────────────────────────────────────────┘
  *
  * @custom:security-contact security@soulprotocol.io
  */
-contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
+contract PrivateProofRelayIntegration is ReentrancyGuard, AccessControl, Pausable {
     using SafeERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////
@@ -56,13 +56,13 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
     error InvalidNullifier();
     error InvalidChainId();
     error NullifierAlreadyUsed();
-    error TransferNotFound();
-    error TransferAlreadyCompleted();
-    error TransferExpired();
+    error RequestNotFound();
+    error RequestAlreadyCompleted();
+    error RequestExpired();
     error InvalidRecipient();
     error ChainNotSupported();
-    error InsufficientBridgeCapacity();
-    error BridgeAdapterNotSet();
+    error InsufficientRelayCapacity();
+    error ChainAdapterNotSet();
     error CrossChainVerificationFailed();
     error MessageNotRelayed();
     error InvalidMessageSource();
@@ -72,23 +72,23 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
 
-    event PrivateTransferInitiated(
-        bytes32 indexed transferId,
+    event PrivateRelayInitiated(
+        bytes32 indexed requestId,
         bytes32 indexed commitment,
         uint256 sourceChain,
         uint256 destChain,
         uint256 timestamp
     );
 
-    event PrivateTransferCompleted(
-        bytes32 indexed transferId,
+    event PrivateRelayCompleted(
+        bytes32 indexed requestId,
         bytes32 indexed nullifierHash,
         bytes32 indexed destRecipient,
         uint256 timestamp
     );
 
-    event PrivateTransferRefunded(
-        bytes32 indexed transferId,
+    event PrivateRelayRefunded(
+        bytes32 indexed requestId,
         address indexed refundRecipient,
         uint256 timestamp
     );
@@ -99,7 +99,7 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
         uint256 destChain
     );
 
-    event BridgeAdapterSet(uint256 indexed chainId, address indexed adapter);
+    event ChainAdapterSet(uint256 indexed chainId, address indexed adapter);
 
     event RelayerAuthorized(address indexed relayer, bool authorized);
 
@@ -111,16 +111,16 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
     bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
     bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE");
 
-    /// @notice Domain separator for private bridge
-    bytes32 public constant PRIVATE_BRIDGE_DOMAIN =
-        keccak256("Soul_PRIVATE_BRIDGE_V1");
+    /// @notice Domain separator for private proof relay
+    bytes32 public constant PRIVATE_RELAY_DOMAIN =
+        keccak256("Soul_PRIVATE_RELAY_V1");
 
     /// @notice Cross-domain nullifier separator
     bytes32 public constant CROSS_DOMAIN_TAG =
         keccak256("CROSS_DOMAIN_NULLIFIER");
 
-    /// @notice Transfer expiry time (7 days)
-    uint256 public constant TRANSFER_EXPIRY = 7 days;
+    /// @notice Request expiry time (7 days)
+    uint256 public constant REQUEST_EXPIRY = 7 days;
 
     /// @notice Minimum confirmations for finality
     uint256 public constant MIN_CONFIRMATIONS = 12;
@@ -130,9 +130,9 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Private bridge message structure
+     * @notice Private relay message structure
      */
-    struct PrivateBridgeMessage {
+    struct PrivateRelayMessage {
         bytes32 commitment;
         bytes32 nullifierHash;
         uint256 sourceChain;
@@ -142,10 +142,10 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
     }
 
     /**
-     * @notice Transfer record
+     * @notice Relay request record
      */
-    struct TransferRecord {
-        bytes32 transferId;
+    struct RelayRecord {
+        bytes32 requestId;
         bytes32 commitment;
         bytes32 nullifierHash;
         uint256 sourceChain;
@@ -153,15 +153,15 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
         bytes32 destRecipient;
         address token;
         uint256 amount;
-        TransferStatus status;
+        RequestStatus status;
         uint256 initiatedAt;
         uint256 completedAt;
     }
 
     /**
-     * @notice Transfer status
+     * @notice Request status
      */
-    enum TransferStatus {
+    enum RequestStatus {
         PENDING,
         RELAYED,
         COMPLETED,
@@ -174,9 +174,9 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
      */
     struct ChainConfig {
         bool isSupported;
-        address bridgeAdapter;
+        address chainAdapter;
         uint256 minConfirmations;
-        uint256 maxTransfer;
+        uint256 maxRelayAmount;
         uint256 dailyLimit;
         uint256 dailyUsed;
         uint256 lastResetDay;
@@ -192,11 +192,11 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
     /// @notice Supported chain IDs
     uint256[] public supportedChains;
 
-    /// @notice Transfer records by ID
-    mapping(bytes32 => TransferRecord) public transfers;
+    /// @notice Relay request records by ID
+    mapping(bytes32 => RelayRecord) public relayRecords;
 
-    /// @notice User transfer history
-    mapping(address => bytes32[]) public userTransfers;
+    /// @notice User relay request history
+    mapping(address => bytes32[]) public userRequests;
 
     /// @notice Cross-chain nullifier tracking
     /// @dev nullifierHash => sourceChain => spent
@@ -249,16 +249,16 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
     /**
      * @notice Add or update supported chain
      * @param chainId Chain ID to configure
-     * @param adapter Bridge adapter address
+     * @param adapter Chain adapter address
      * @param minConfirmations Minimum confirmations required
-     * @param maxTransfer Maximum transfer amount
-     * @param dailyLimit Daily transfer limit
+     * @param maxRelayAmount Maximum relay amount
+     * @param dailyLimit Daily relay limit
      */
     function setChainConfig(
         uint256 chainId,
         address adapter,
         uint256 minConfirmations,
-        uint256 maxTransfer,
+        uint256 maxRelayAmount,
         uint256 dailyLimit
     ) external onlyRole(OPERATOR_ROLE) {
         if (adapter == address(0)) revert ZeroAddress();
@@ -268,9 +268,9 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
 
         chainConfigs[chainId] = ChainConfig({
             isSupported: true,
-            bridgeAdapter: adapter,
+            chainAdapter: adapter,
             minConfirmations: minConfirmations,
-            maxTransfer: maxTransfer,
+            maxRelayAmount: maxRelayAmount,
             dailyLimit: dailyLimit,
             dailyUsed: 0,
             lastResetDay: block.timestamp / 1 days
@@ -280,7 +280,7 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
             supportedChains.push(chainId);
         }
 
-        emit BridgeAdapterSet(chainId, adapter);
+        emit ChainAdapterSet(chainId, adapter);
     }
 
     /**
@@ -296,15 +296,15 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
     }
 
     /*//////////////////////////////////////////////////////////////
-                     INITIATE PRIVATE TRANSFER
+                     INITIATE PRIVATE RELAY
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Initiate a private cross-chain transfer
-     * @param message The bridge message with privacy proofs
+     * @notice Initiate a private cross-chain proof relay
+     * @param message The relay message with privacy proofs
      */
-    function initiatePrivateTransfer(
-        PrivateBridgeMessage calldata message
+    function initiatePrivateRelay(
+        PrivateRelayMessage calldata message
     ) external payable nonReentrant whenNotPaused {
         // Validate inputs
         if (message.commitment == bytes32(0)) revert InvalidCommitment();
@@ -328,7 +328,7 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
         _resetDailyLimitIfNeeded(destConfig);
 
         // Generate transfer ID
-        bytes32 transferId = keccak256(
+        bytes32 requestId = keccak256(
             abi.encodePacked(
                 message.commitment,
                 message.nullifierHash,
@@ -339,8 +339,8 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
         );
 
         // Create transfer record
-        transfers[transferId] = TransferRecord({
-            transferId: transferId,
+        relayRecords[requestId] = RelayRecord({
+            requestId: requestId,
             commitment: message.commitment,
             nullifierHash: message.nullifierHash,
             sourceChain: message.sourceChain,
@@ -348,7 +348,7 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
             destRecipient: message.destRecipient,
             token: NATIVE_TOKEN, // Simplified for ETH
             amount: msg.value,
-            status: TransferStatus.PENDING,
+            status: RequestStatus.PENDING,
             initiatedAt: block.timestamp,
             completedAt: 0
         });
@@ -357,13 +357,13 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
         localNullifiers[message.nullifierHash] = true;
 
         // Track user transfer
-        userTransfers[msg.sender].push(transferId);
+        userRequests[msg.sender].push(requestId);
 
-        // Send cross-chain message via bridge adapter
-        _sendCrossChainMessage(message, transferId, destConfig.bridgeAdapter);
+        // Send cross-chain message via chain adapter
+        _sendCrossChainMessage(message, requestId, destConfig.chainAdapter);
 
-        emit PrivateTransferInitiated(
-            transferId,
+        emit PrivateRelayInitiated(
+            requestId,
             message.commitment,
             message.sourceChain,
             message.destChain,
@@ -372,17 +372,17 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
     }
 
     /*//////////////////////////////////////////////////////////////
-                     COMPLETE PRIVATE TRANSFER
+                     COMPLETE PRIVATE RELAY
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Complete a private cross-chain transfer on destination
-     * @param message The bridge message
+     * @notice Complete a private cross-chain proof relay on destination
+     * @param message The relay message
      * @param crossChainProof Proof from source chain
      * @param relayerProof Proof that message was relayed correctly
      */
-    function completePrivateTransfer(
-        PrivateBridgeMessage calldata message,
+    function completePrivateRelay(
+        PrivateRelayMessage calldata message,
         bytes calldata crossChainProof,
         bytes calldata relayerProof
     ) external nonReentrant whenNotPaused {
@@ -413,7 +413,7 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
         }
 
         // Generate transfer ID (same derivation as source)
-        bytes32 transferId = keccak256(
+        bytes32 requestId = keccak256(
             abi.encodePacked(
                 message.commitment,
                 message.nullifierHash,
@@ -432,11 +432,11 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
             message.destChain
         );
 
-        // Execute transfer to stealth address
-        _executeTransferToStealth(message.destRecipient);
+        // Deliver value to stealth address
+        _deliverToStealth(message.destRecipient);
 
-        emit PrivateTransferCompleted(
-            transferId,
+        emit PrivateRelayCompleted(
+            requestId,
             message.nullifierHash,
             message.destRecipient,
             block.timestamp
@@ -474,42 +474,42 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Refund expired transfer
-     * @param transferId Transfer ID to refund
+     * @notice Refund expired relay request
+     * @param requestId Request ID to refund
      * @param refundProof ZK proof for refund authorization
      */
-    function refundExpiredTransfer(
-        bytes32 transferId,
+    function refundExpiredRelay(
+        bytes32 requestId,
         bytes calldata refundProof
     ) external nonReentrant {
-        TransferRecord storage transfer = transfers[transferId];
+        RelayRecord storage transfer = relayRecords[requestId];
 
-        if (transfer.transferId == bytes32(0)) revert TransferNotFound();
-        if (transfer.status != TransferStatus.PENDING)
-            revert TransferAlreadyCompleted();
-        if (block.timestamp < transfer.initiatedAt + TRANSFER_EXPIRY)
-            revert TransferNotFound();
+        if (transfer.requestId == bytes32(0)) revert RequestNotFound();
+        if (transfer.status != RequestStatus.PENDING)
+            revert RequestAlreadyCompleted();
+        if (block.timestamp < transfer.initiatedAt + REQUEST_EXPIRY)
+            revert RequestNotFound();
 
         // Verify refund proof (proves ownership without revealing identity)
-        if (!_verifyRefundProof(transferId, refundProof)) {
+        if (!_verifyRefundProof(requestId, refundProof)) {
             revert InvalidProof();
         }
 
-        transfer.status = TransferStatus.REFUNDED;
+        transfer.status = RequestStatus.REFUNDED;
         transfer.completedAt = block.timestamp;
 
         // Extract refund recipient from proof
         address refundRecipient = _extractRefundRecipient(refundProof);
 
-        // Return funds (implementation depends on token type)
-        // For ETH transfers - use recorded amount, not full balance
+        // Return escrowed value (implementation depends on token type)
+        // For ETH relays - use recorded amount, not full balance
         (bool success, ) = refundRecipient.call{value: transfer.amount}(
             ""
         );
         if (!success) revert InvalidRecipient();
 
-        emit PrivateTransferRefunded(
-            transferId,
+        emit PrivateRelayRefunded(
+            requestId,
             refundRecipient,
             block.timestamp
         );
@@ -534,7 +534,7 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
      * @notice Verify initiation proof
      */
     function _verifyInitiateProof(
-        PrivateBridgeMessage calldata message
+        PrivateRelayMessage calldata message
     ) internal view returns (bool) {
         (bool success, bytes memory result) = proofVerifier.staticcall(
             abi.encodeWithSignature(
@@ -558,7 +558,7 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
      * @notice Verify cross-chain proof
      */
     function _verifyCrossChainProof(
-        PrivateBridgeMessage calldata message,
+        PrivateRelayMessage calldata message,
         bytes calldata crossChainProof
     ) internal view returns (bool) {
         (bool success, bytes memory result) = messageVerifier.staticcall(
@@ -582,7 +582,7 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
      * @notice Verify relayer proof
      */
     function _verifyRelayerProof(
-        PrivateBridgeMessage calldata message,
+        PrivateRelayMessage calldata message,
         bytes calldata relayerProof
     ) internal view returns (bool) {
         (bool success, bytes memory result) = messageVerifier.staticcall(
@@ -605,15 +605,15 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
      * @notice Verify refund proof
      */
     function _verifyRefundProof(
-        bytes32 transferId,
+        bytes32 requestId,
         bytes calldata refundProof
     ) internal view returns (bool) {
-        TransferRecord storage transfer = transfers[transferId];
+        RelayRecord storage transfer = relayRecords[requestId];
 
         (bool success, bytes memory result) = proofVerifier.staticcall(
             abi.encodeWithSignature(
                 "verifyRefundProof(bytes32,bytes32,bytes)",
-                transferId,
+                requestId,
                 transfer.commitment,
                 refundProof
             )
@@ -639,21 +639,21 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
      * @notice Send cross-chain message
      */
     function _sendCrossChainMessage(
-        PrivateBridgeMessage calldata message,
-        bytes32 transferId,
-        address bridgeAdapter
+        PrivateRelayMessage calldata message,
+        bytes32 requestId,
+        address chainAdapter
     ) internal {
         // Encode message for cross-chain delivery
         bytes memory encodedMessage = abi.encode(
-            transferId,
+            requestId,
             message.commitment,
             message.nullifierHash,
             message.destRecipient,
             message.proof
         );
 
-        // Call bridge adapter
-        (bool success, ) = bridgeAdapter.call{value: msg.value}(
+        // Call chain adapter
+        (bool success, ) = chainAdapter.call{value: msg.value}(
             abi.encodeWithSignature(
                 "sendMessage(uint256,bytes)",
                 message.destChain,
@@ -661,17 +661,17 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
             )
         );
 
-        if (!success) revert BridgeAdapterNotSet();
+        if (!success) revert ChainAdapterNotSet();
     }
 
     /**
-     * @notice Execute transfer to stealth address
+     * @notice Deliver value to stealth address
      */
-    function _executeTransferToStealth(bytes32 stealthRecipient) internal {
+    function _deliverToStealth(bytes32 stealthRecipient) internal {
         // Convert bytes32 stealth address to EVM address
         address recipient = address(uint160(uint256(stealthRecipient)));
 
-        // Transfer funds - use msg.value for the current transaction amount
+        // Deliver value - use msg.value for the current transaction amount
         uint256 amount = msg.value;
         if (amount > 0) {
             (bool success, ) = recipient.call{value: amount}("");
@@ -684,21 +684,21 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Get transfer record
+     * @notice Get relay record
      */
-    function getTransfer(
-        bytes32 transferId
-    ) external view returns (TransferRecord memory) {
-        return transfers[transferId];
+    function getRelayRecord(
+        bytes32 requestId
+    ) external view returns (RelayRecord memory) {
+        return relayRecords[requestId];
     }
 
     /**
-     * @notice Get user transfers
+     * @notice Get user relay requests
      */
-    function getUserTransfers(
+    function getUserRequests(
         address user
     ) external view returns (bytes32[] memory) {
-        return userTransfers[user];
+        return userRequests[user];
     }
 
     /**
@@ -749,14 +749,14 @@ contract PrivateBridgeIntegration is ReentrancyGuard, AccessControl, Pausable {
     }
 
     /**
-     * @notice Pause bridge
+     * @notice Pause relay
      */
     function pause() external onlyRole(GUARDIAN_ROLE) {
         _pause();
     }
 
     /**
-     * @notice Unpause bridge
+     * @notice Unpause relay
      */
     function unpause() external onlyRole(OPERATOR_ROLE) {
         _unpause();

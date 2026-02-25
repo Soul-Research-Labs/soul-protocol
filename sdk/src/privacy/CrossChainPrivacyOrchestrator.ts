@@ -72,7 +72,7 @@ export enum TransferStage {
 }
 
 // Transfer status
-export interface PrivateTransferStatus {
+export interface PrivateRelayStatus {
   stage: TransferStage;
   message: string;
   progress: number; // 0-100
@@ -753,7 +753,7 @@ export class CrossChainPrivacyOrchestrator {
     targetChainId: number;
     amount: bigint;
     recipient: Hex;
-    onStatusChange?: (status: PrivateTransferStatus) => void;
+    onStatusChange?: (status: PrivateRelayStatus) => void;
   }): Promise<PrivateTransferResult> {
     const startTime = Date.now();
     const updateStatus = (

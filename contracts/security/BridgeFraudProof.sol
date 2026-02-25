@@ -34,7 +34,7 @@ contract BridgeFraudProof is AccessControl {
     ) external {
         // 1. Verify that the original proof matches the pending transfer
         OptimisticBridgeVerifier.PendingTransfer
-            memory transfer = optimisticVerifier.getTransfer(transferId);
+            memory transfer = optimisticVerifier.getVerification(transferId);
         require(
             transfer.status ==
                 OptimisticBridgeVerifier.TransferStatus.CHALLENGED,

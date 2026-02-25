@@ -14,8 +14,8 @@ import {ComplianceReportingModule} from "../compliance/ComplianceReportingModule
 /**
  * @title CrossChainPrivacyHub
  * @author Soul Protocol
- * @notice Unified aggregator for cross-chain privacy-preserving transfers
- * @dev Provides a single entry point for all 41+ bridge adapters with privacy features
+ * @notice Unified aggregator for cross-chain privacy-preserving proof relays
+ * @dev Provides a single entry point for all 41+ chain adapters with privacy features
  *
  * ARCHITECTURE:
  * ┌─────────────────────────────────────────────────────────────────────────┐
@@ -34,13 +34,13 @@ import {ComplianceReportingModule} from "../compliance/ComplianceReportingModule
  * │                    └──────┬──────┘                                      │
  * │                           │                                             │
  * │  ┌────────────────────────┼────────────────────────────────────────┐   │
- * │  │                   Bridge Adapters                                │   │
+ * │  │                   Chain Adapters                                │   │
  * │  │  Arbitrum · Optimism · Base · LayerZero · Hyperlane             │   │
  * │  └──────────────────────────────────────────────────────────────┘   │
  * └─────────────────────────────────────────────────────────────────────────┘
  *
  * PRIVACY FEATURES:
- * 1. Stealth Addresses - One-time addresses for each transfer
+ * 1. Stealth Addresses - One-time addresses for each relay
  * 2. Ring Confidential Transactions - Amount hiding with decoys
  * 3. Cross-Domain Nullifiers - Double-spend prevention across chains
  * 4. ZK Proof Verification - Groth16, Noir UltraHonk
@@ -73,8 +73,8 @@ contract CrossChainPrivacyHub is
     uint256 public constant MAX_RING_SIZE = 16;
     uint256 public constant MIN_RING_SIZE = 4;
     uint256 public constant NULLIFIER_EXPIRY = 365 days;
-    uint256 public constant MAX_TRANSFER_AMOUNT = 10000 ether;
-    uint256 public constant MIN_TRANSFER_AMOUNT = 0.001 ether;
+    uint256 public constant MAX_RELAY_AMOUNT = 10000 ether;
+    uint256 public constant MIN_RELAY_AMOUNT = 0.001 ether;
     uint256 public constant QUORUM_BPS = 6667; // 66.67%
     uint256 public constant MAX_FEE_BPS = 500; // 5%
 
@@ -90,7 +90,7 @@ contract CrossChainPrivacyHub is
         MAXIMUM // Full RCT with decoys
     }
 
-    enum TransferStatus {
+    enum RequestStatus {
         PENDING,
         RELAYED,
         COMPLETED,
@@ -123,7 +123,7 @@ contract CrossChainPrivacyHub is
     // =========================================================================
 
     /**
-     * @notice Bridge adapter configuration
+     * @notice Chain adapter configuration
      */
     struct AdapterConfig {
         address adapter;
@@ -133,16 +133,16 @@ contract CrossChainPrivacyHub is
         bool isActive;
         bool supportsPrivacy;
         uint256 minConfirmations;
-        uint256 maxTransfer;
+        uint256 maxRelayAmount;
         uint256 dailyLimit;
         uint256 dailyVolume;
         uint256 lastResetTimestamp;
     }
 
     /**
-     * @notice Cross-chain transfer request
+     * @notice Cross-chain proof relay request
      */
-    struct TransferRequest {
+    struct RelayRequest {
         bytes32 requestId;
         address sender;
         bytes32 recipient; // Can be stealth address
@@ -156,7 +156,7 @@ contract CrossChainPrivacyHub is
         bytes32 nullifier;
         uint64 timestamp;
         uint64 expiry;
-        TransferStatus status;
+        RequestStatus status;
     }
 
     /**
@@ -203,7 +203,7 @@ contract CrossChainPrivacyHub is
     }
 
     /**
-     * @notice Privacy transfer proof
+     * @notice Privacy relay proof
      */
     struct PrivacyProof {
         ProofSystem system;
@@ -220,9 +220,9 @@ contract CrossChainPrivacyHub is
     mapping(uint256 => AdapterConfig) public adapters;
     uint256[] public supportedChainIds;
 
-    // Transfer registry: requestId => transfer
-    mapping(bytes32 => TransferRequest) public transfers;
-    mapping(address => bytes32[]) public userTransfers;
+    // Request registry: requestId => transfer
+    mapping(bytes32 => RelayRequest) public relayRequests;
+    mapping(address => bytes32[]) public userRequests;
 
     // Nullifier registry: nullifier => binding
     mapping(bytes32 => NullifierBinding) public nullifierBindings;
@@ -233,9 +233,9 @@ contract CrossChainPrivacyHub is
     mapping(address => bytes32[]) public userStealthAddresses;
 
     // Statistics
-    uint256 public totalTransfers;
+    uint256 public totalRelays;
     uint256 public totalVolume;
-    uint256 public totalPrivateTransfers;
+    uint256 public totalPrivateRelays;
 
     // Configuration
     uint256 public defaultRingSize;
@@ -256,7 +256,7 @@ contract CrossChainPrivacyHub is
     // =========================================================================
 
     /// @notice Optional selective disclosure manager for privacy-preserving compliance
-    /// @dev Non-reverting try/catch pattern — compliance failures never block transfers
+    /// @dev Non-reverting try/catch pattern — compliance failures never block relays
     SelectiveDisclosureManager public disclosureManager;
 
     /// @notice Optional compliance reporting module for aggregate reporting
@@ -282,7 +282,7 @@ contract CrossChainPrivacyHub is
         bool isActive
     );
 
-    event TransferInitiated(
+    event RelayInitiated(
         bytes32 indexed requestId,
         address indexed sender,
         bytes32 indexed recipient,
@@ -292,19 +292,19 @@ contract CrossChainPrivacyHub is
         PrivacyLevel privacyLevel
     );
 
-    event TransferRelayed(
+    event ProofRelayed(
         bytes32 indexed requestId,
         bytes32 indexed nullifier,
         uint256 destChainId
     );
 
-    event TransferCompleted(
+    event RelayCompleted(
         bytes32 indexed requestId,
         bytes32 indexed recipient,
         uint256 amount
     );
 
-    event TransferRefunded(
+    event RelayRefunded(
         bytes32 indexed requestId,
         address indexed sender,
         uint256 amount,
@@ -364,12 +364,12 @@ contract CrossChainPrivacyHub is
     error AdapterNotActive(uint256 chainId);
     error AdapterAlreadyExists(uint256 chainId);
     error InvalidAmount(uint256 amount);
-    error ExceedsMaxTransfer(uint256 amount, uint256 max);
+    error ExceedsMaxRelayAmount(uint256 amount, uint256 max);
     error ExceedsDailyLimit(uint256 amount, uint256 remaining);
     error InsufficientFee(uint256 provided, uint256 required);
-    error TransferNotFound(bytes32 requestId);
-    error TransferAlreadyProcessed(bytes32 requestId);
-    error TransferExpired(bytes32 requestId);
+    error RequestNotFound(bytes32 requestId);
+    error RequestAlreadyProcessed(bytes32 requestId);
+    error RequestExpired(bytes32 requestId);
     error InvalidPrivacyLevel(uint256 level);
     error InvalidProof();
     error InvalidNullifier(bytes32 nullifier);
@@ -380,7 +380,7 @@ contract CrossChainPrivacyHub is
     error CircuitBreakerOn();
     error UnauthorizedCaller();
     error ZeroAddress();
-    error FeeTransferFailed();
+    error FeePaymentFailed();
     error RefundFailed();
     error FeeTooHigh();
 
@@ -469,7 +469,7 @@ contract CrossChainPrivacyHub is
     // =========================================================================
 
     /**
-     * @notice Register a new bridge adapter
+     * @notice Register a new chain adapter
      */
     function registerAdapter(
         uint256 chainId,
@@ -478,7 +478,7 @@ contract CrossChainPrivacyHub is
         ProofSystem proofSystem,
         bool supportsPrivacy,
         uint256 minConfirmations,
-        uint256 maxTransfer,
+        uint256 maxRelayAmount,
         uint256 dailyLimit
     ) external onlyRole(OPERATOR_ROLE) {
         if (adapter == address(0)) revert ZeroAddress();
@@ -493,7 +493,7 @@ contract CrossChainPrivacyHub is
             isActive: true,
             supportsPrivacy: supportsPrivacy,
             minConfirmations: minConfirmations,
-            maxTransfer: maxTransfer,
+            maxRelayAmount: maxRelayAmount,
             dailyLimit: dailyLimit,
             dailyVolume: 0,
             lastResetTimestamp: block.timestamp
@@ -510,26 +510,26 @@ contract CrossChainPrivacyHub is
     function updateAdapter(
         uint256 chainId,
         bool isActive,
-        uint256 maxTransfer,
+        uint256 maxRelayAmount,
         uint256 dailyLimit
     ) external onlyRole(OPERATOR_ROLE) validChain(chainId) {
         AdapterConfig storage config = adapters[chainId];
         config.isActive = isActive;
-        config.maxTransfer = maxTransfer;
+        config.maxRelayAmount = maxRelayAmount;
         config.dailyLimit = dailyLimit;
 
         emit AdapterUpdated(chainId, config.adapter, isActive);
     }
 
     // =========================================================================
-    // PRIVACY TRANSFER FUNCTIONS
+    // PRIVACY RELAY FUNCTIONS
     // =========================================================================
 
     /**
-     * @notice Initiate a privacy-preserving cross-chain transfer
+     * @notice Initiate a privacy-preserving cross-chain proof relay
      * @param destChainId Destination chain ID
      * @param recipient Recipient address (can be stealth address)
-     * @param amount Transfer amount
+     * @param amount Relay amount
      * @param privacyLevel Desired privacy level
      * @param proof Privacy proof (if required)
      */
@@ -549,13 +549,13 @@ contract CrossChainPrivacyHub is
         returns (bytes32 requestId)
     {
         // Validate amount
-        if (amount < MIN_TRANSFER_AMOUNT) revert InvalidAmount(amount);
-        if (amount > MAX_TRANSFER_AMOUNT)
-            revert ExceedsMaxTransfer(amount, MAX_TRANSFER_AMOUNT);
+        if (amount < MIN_RELAY_AMOUNT) revert InvalidAmount(amount);
+        if (amount > MAX_RELAY_AMOUNT)
+            revert ExceedsMaxRelayAmount(amount, MAX_RELAY_AMOUNT);
 
         AdapterConfig storage destAdapter = adapters[destChainId];
-        if (amount > destAdapter.maxTransfer) {
-            revert ExceedsMaxTransfer(amount, destAdapter.maxTransfer);
+        if (amount > destAdapter.maxRelayAmount) {
+            revert ExceedsMaxRelayAmount(amount, destAdapter.maxRelayAmount);
         }
 
         // Check daily limit
@@ -563,7 +563,7 @@ contract CrossChainPrivacyHub is
 
         // Calculate fee
         uint256 fee = (amount * protocolFeeBps) / 10000;
-        // SECURITY FIX C-1: Require msg.value covers BOTH the transfer amount AND protocol fee
+        // SECURITY FIX C-1: Require msg.value covers BOTH the relay amount AND protocol fee
         if (msg.value < amount + fee)
             revert InsufficientFee(msg.value, amount + fee);
 
@@ -584,7 +584,7 @@ contract CrossChainPrivacyHub is
                 destChainId,
                 amount,
                 block.timestamp,
-                totalTransfers
+                totalRelays
             )
         );
 
@@ -594,8 +594,8 @@ contract CrossChainPrivacyHub is
         // Create commitment
         bytes32 commitment = _generateCommitment(recipient, amount, nullifier);
 
-        // Store transfer
-        transfers[requestId] = TransferRequest({
+        // Store request
+        relayRequests[requestId] = RelayRequest({
             requestId: requestId,
             sender: msg.sender,
             recipient: recipient,
@@ -609,27 +609,27 @@ contract CrossChainPrivacyHub is
             nullifier: nullifier,
             timestamp: uint64(block.timestamp),
             expiry: uint64(block.timestamp + 7 days),
-            status: TransferStatus.PENDING
+            status: RequestStatus.PENDING
         });
 
-        userTransfers[msg.sender].push(requestId);
+        userRequests[msg.sender].push(requestId);
         unchecked {
-            totalTransfers++;
+            totalRelays++;
             totalVolume += amount;
         }
         if (privacyLevel >= PrivacyLevel.MEDIUM) {
             unchecked {
-                totalPrivateTransfers++;
+                totalPrivateRelays++;
             }
         }
 
         // Send fee to recipient
         if (fee > 0) {
             (bool sent, ) = feeRecipient.call{value: fee}("");
-            if (!sent) revert FeeTransferFailed();
+            if (!sent) revert FeePaymentFailed();
         }
 
-        emit TransferInitiated(
+        emit RelayInitiated(
             requestId,
             msg.sender,
             recipient,
@@ -651,17 +651,17 @@ contract CrossChainPrivacyHub is
     }
 
     /**
-     * @notice Initiate a privacy-preserving cross-chain ERC20 token transfer
+     * @notice Initiate a privacy-preserving cross-chain ERC20 token proof relay
      * @dev Pulls tokens from sender via safeTransferFrom, deducts protocol fee,
      *      verifies privacy proof (if MEDIUM+ privacy level), generates nullifier
-     *      and commitment, then stores the transfer request for relaying.
+     *      and commitment, then stores the relay request for relaying.
      * @param token The ERC20 token contract address (must not be address(0))
      * @param destChainId The destination chain ID (must be a registered adapter)
      * @param recipient The recipient address encoded as bytes32 (can be stealth address)
-     * @param amount The total transfer amount in token's smallest unit (fee deducted internally)
+     * @param amount The total relay amount in token's smallest unit (fee deducted internally)
      * @param privacyLevel The desired privacy level (BASIC, MEDIUM, HIGH, MAXIMUM)
      * @param proof ZK privacy proof required for MEDIUM+ privacy levels
-     * @return requestId Unique identifier for tracking and completing this transfer
+     * @return requestId Unique identifier for tracking and completing this relay request
      */
     function initiatePrivateTransferERC20(
         address token,
@@ -679,9 +679,9 @@ contract CrossChainPrivacyHub is
         returns (bytes32 requestId)
     {
         if (token == address(0)) revert ZeroAddress();
-        if (amount < MIN_TRANSFER_AMOUNT) revert InvalidAmount(amount);
+        if (amount < MIN_RELAY_AMOUNT) revert InvalidAmount(amount);
 
-        // Transfer tokens to hub
+        // Pull tokens into hub
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
         // Calculate fee
@@ -707,14 +707,14 @@ contract CrossChainPrivacyHub is
                 destChainId,
                 amount,
                 block.timestamp,
-                totalTransfers
+                totalRelays
             )
         );
 
         bytes32 nullifier = _generateNullifier(requestId, msg.sender);
         bytes32 commitment = _generateCommitment(recipient, amount, nullifier);
 
-        transfers[requestId] = TransferRequest({
+        relayRequests[requestId] = RelayRequest({
             requestId: requestId,
             sender: msg.sender,
             recipient: recipient,
@@ -728,21 +728,21 @@ contract CrossChainPrivacyHub is
             nullifier: nullifier,
             timestamp: uint64(block.timestamp),
             expiry: uint64(block.timestamp + 7 days),
-            status: TransferStatus.PENDING
+            status: RequestStatus.PENDING
         });
 
-        // Transfer fee to recipient
+        // Send fee to recipient
         if (fee > 0 && feeRecipient != address(0)) {
             IERC20(token).safeTransfer(feeRecipient, fee);
         }
 
-        userTransfers[msg.sender].push(requestId);
+        userRequests[msg.sender].push(requestId);
         unchecked {
-            totalTransfers++;
+            totalRelays++;
             totalVolume += amount;
         }
 
-        emit TransferInitiated(
+        emit RelayInitiated(
             requestId,
             msg.sender,
             recipient,
@@ -764,26 +764,26 @@ contract CrossChainPrivacyHub is
     }
 
     /**
-     * @notice Relay a pending transfer to the destination chain
-     * @dev Called by authorized relayers after the source chain transfer is initiated.
+     * @notice Relay a pending proof request to the destination chain
+     * @dev Called by authorized relayers after the source chain request is initiated.
      *      Verifies the privacy proof, binds source and destination nullifiers, and
-     *      marks the transfer as RELAYED. Must be called before transfer expiry.
-     * @param requestId The transfer request ID from initiatePrivateTransfer
+     *      marks the request as RELAYED. Must be called before request expiry.
+     * @param requestId The request ID from initiatePrivateTransfer
      * @param destNullifier The derived nullifier on the destination chain
      * @param proof ZK proof validating the cross-chain relay
      */
-    function relayTransfer(
+    function relayProof(
         bytes32 requestId,
         bytes32 destNullifier,
         PrivacyProof calldata proof
     ) external onlyRole(RELAYER_ROLE) nonReentrant whenCircuitBreakerOff {
-        TransferRequest storage transfer = transfers[requestId];
+        RelayRequest storage transfer = relayRequests[requestId];
         if (transfer.requestId == bytes32(0))
-            revert TransferNotFound(requestId);
-        if (transfer.status != TransferStatus.PENDING)
-            revert TransferAlreadyProcessed(requestId);
+            revert RequestNotFound(requestId);
+        if (transfer.status != RequestStatus.PENDING)
+            revert RequestAlreadyProcessed(requestId);
         if (block.timestamp > transfer.expiry)
-            revert TransferExpired(requestId);
+            revert RequestExpired(requestId);
 
         // Verify proof
         if (!_verifyPrivacyProof(proof, transfer.destChainId)) {
@@ -798,30 +798,30 @@ contract CrossChainPrivacyHub is
             transfer.destChainId
         );
 
-        transfer.status = TransferStatus.RELAYED;
+        transfer.status = RequestStatus.RELAYED;
 
-        emit TransferRelayed(requestId, destNullifier, transfer.destChainId);
+        emit ProofRelayed(requestId, destNullifier, transfer.destChainId);
     }
 
     /**
-     * @notice Complete a relayed transfer on the destination chain and release funds
+     * @notice Complete a relayed proof request on the destination chain and release escrowed value
      * @dev Verifies the nullifier hasn't been consumed (double-spend prevention),
-     *      validates the ZK proof, then sends funds to the recipient. Marks the
-     *      nullifier as consumed and the transfer as COMPLETED.
-     * @param requestId The transfer request ID (must be in RELAYED status)
+     *      validates the ZK proof, then sends escrowed value to the recipient. Marks the
+     *      nullifier as consumed and the request as COMPLETED.
+     * @param requestId The request ID (must be in RELAYED status)
      * @param nullifier The destination nullifier to consume (must not be already spent)
      * @param proof ZK proof validating the withdrawal claim
      */
-    function completeTransfer(
+    function completeRelay(
         bytes32 requestId,
         bytes32 nullifier,
         PrivacyProof calldata proof
     ) external onlyRole(RELAYER_ROLE) nonReentrant whenCircuitBreakerOff {
-        TransferRequest storage transfer = transfers[requestId];
+        RelayRequest storage transfer = relayRequests[requestId];
         if (transfer.requestId == bytes32(0))
-            revert TransferNotFound(requestId);
-        if (transfer.status != TransferStatus.RELAYED)
-            revert TransferAlreadyProcessed(requestId);
+            revert RequestNotFound(requestId);
+        if (transfer.status != RequestStatus.RELAYED)
+            revert RequestAlreadyProcessed(requestId);
 
         // Verify nullifier not consumed
         if (consumedNullifiers[nullifier])
@@ -836,20 +836,20 @@ contract CrossChainPrivacyHub is
         consumedNullifiers[nullifier] = true;
         nullifierBindings[transfer.nullifier].consumed = true;
 
-        transfer.status = TransferStatus.COMPLETED;
+        transfer.status = RequestStatus.COMPLETED;
 
-        // SECURITY FIX C-2: Actually deliver escrowed funds to the recipient
+        // SECURITY FIX C-2: Actually deliver escrowed value to the recipient
         address recipientAddr = address(uint160(uint256(transfer.recipient)));
         if (transfer.token == address(0)) {
-            // ETH transfer
+            // ETH delivery
             (bool sent, ) = recipientAddr.call{value: transfer.amount}("");
             if (!sent) revert RefundFailed();
         } else {
-            // ERC20 transfer
+            // ERC20 delivery
             IERC20(transfer.token).safeTransfer(recipientAddr, transfer.amount);
         }
 
-        emit TransferCompleted(requestId, transfer.recipient, transfer.amount);
+        emit RelayCompleted(requestId, transfer.recipient, transfer.amount);
         emit NullifierConsumed(
             transfer.nullifier,
             nullifier,
@@ -867,17 +867,17 @@ contract CrossChainPrivacyHub is
     }
 
     /**
-     * @notice Refund expired or failed transfer
+     * @notice Refund expired or failed relay request
      */
-    function refundTransfer(
+    function refundRelay(
         bytes32 requestId,
         string calldata reason
     ) external nonReentrant {
-        TransferRequest storage transfer = transfers[requestId];
+        RelayRequest storage transfer = relayRequests[requestId];
         if (transfer.requestId == bytes32(0))
-            revert TransferNotFound(requestId);
-        if (transfer.status != TransferStatus.PENDING)
-            revert TransferAlreadyProcessed(requestId);
+            revert RequestNotFound(requestId);
+        if (transfer.status != RequestStatus.PENDING)
+            revert RequestAlreadyProcessed(requestId);
 
         // Only allow refund after expiry or by guardian
         if (
@@ -885,10 +885,10 @@ contract CrossChainPrivacyHub is
             !hasRole(GUARDIAN_ROLE, msg.sender)
         ) {
             if (msg.sender != transfer.sender) revert UnauthorizedCaller();
-            revert TransferExpired(requestId); // Misleading but prevents early refund
+            revert RequestExpired(requestId); // Misleading but prevents early refund
         }
 
-        transfer.status = TransferStatus.REFUNDED;
+        transfer.status = RequestStatus.REFUNDED;
 
         // Refund
         if (transfer.token == address(0)) {
@@ -901,7 +901,7 @@ contract CrossChainPrivacyHub is
             );
         }
 
-        emit TransferRefunded(
+        emit RelayRefunded(
             requestId,
             transfer.sender,
             transfer.amount,
@@ -962,7 +962,7 @@ contract CrossChainPrivacyHub is
     }
 
     /**
-     * @notice Check if an address can claim funds (stealth address scanning)
+     * @notice Check if an address can claim value (stealth address scanning)
      * @param stealthPubKey The stealth public key
      * @param ephemeralPubKey The ephemeral public key from sender
      * @param viewingPrivKey The recipient's viewing private key (hashed)
@@ -993,7 +993,7 @@ contract CrossChainPrivacyHub is
 
     /**
      * @notice Create a ring confidential transaction
-     * @param amount The amount to transfer (hidden)
+     * @param amount The amount to relay (hidden)
      * @param decoyKeys Public keys of decoy outputs
      * @param blindingFactor Random blinding factor
      */
@@ -1119,13 +1119,13 @@ contract CrossChainPrivacyHub is
     // =========================================================================
 
     /**
-     * @dev Register a transfer with the SelectiveDisclosureManager if configured.
-     *      Uses non-reverting try/catch so compliance failures never block transfers.
+     * @dev Register a relay request with the SelectiveDisclosureManager if configured.
+     *      Uses non-reverting try/catch so compliance failures never block relays.
      *      Follows the ConfidentialStateContainerV3 pattern.
-     * @param requestId The transfer request ID (used as txId for disclosure)
-     * @param commitment The transfer commitment
-     * @param owner The transfer initiator
-     * @param privacyLevel The privacy level of the transfer
+     * @param requestId The request ID (used as txId for disclosure)
+     * @param commitment The relay commitment
+     * @param owner The relay initiator
+     * @param privacyLevel The privacy level of the relay
      */
     function _registerWithDisclosureManager(
         bytes32 requestId,
@@ -1149,7 +1149,7 @@ contract CrossChainPrivacyHub is
             level = SelectiveDisclosureManager.DisclosureLevel.PUBLIC;
         }
 
-        // Non-reverting: compliance failure must not block transfer
+        // Non-reverting: compliance failure must not block relay
         try dm.registerTransactionFor(requestId, commitment, owner, level) {
             // Successfully registered
         } catch {
@@ -1397,16 +1397,16 @@ contract CrossChainPrivacyHub is
     // VIEW FUNCTIONS
     // =========================================================================
 
-    function getTransfer(
+    function getRelayRequest(
         bytes32 requestId
-    ) external view returns (TransferRequest memory) {
-        return transfers[requestId];
+    ) external view returns (RelayRequest memory) {
+        return relayRequests[requestId];
     }
 
-    function getUserTransfers(
+    function getUserRequests(
         address user
     ) external view returns (bytes32[] memory) {
-        return userTransfers[user];
+        return userRequests[user];
     }
 
     function getUserStealthAddresses(
@@ -1429,17 +1429,17 @@ contract CrossChainPrivacyHub is
         external
         view
         returns (
-            uint256 _totalTransfers,
+            uint256 _totalRelays,
             uint256 _totalVolume,
-            uint256 _totalPrivateTransfers,
+            uint256 _totalPrivateRelays,
             uint256 _supportedChainsCount,
             bool _circuitBreakerActive
         )
     {
         return (
-            totalTransfers,
+            totalRelays,
             totalVolume,
-            totalPrivateTransfers,
+            totalPrivateRelays,
             supportedChainIds.length,
             circuitBreakerActive
         );

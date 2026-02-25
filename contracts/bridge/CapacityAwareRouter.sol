@@ -26,15 +26,15 @@ import {RouteOptimizer} from "../libraries/RouteOptimizer.sol";
  *      - Bridge adapter fee estimation pass-through
  *
  *      Lifecycle:
- *      1. User calls `quoteTransfer()` → gets Route from orchestrator
- *      2. User calls `commitRoute()` with routeId → locks fee, confirms execution
+ *      1. User calls `quoteRelay()` → gets Route from orchestrator
+ *      2. User calls `commitRelay()` with routeId → locks fee, confirms execution
  *      3. Router calls `beginExecution()` → triggers bridge adapter(s)
- *      4. On completion, `settleTransfer()` finalizes and records metrics
+ *      4. On completion, `completeRelay()` finalizes and records metrics
  *
  *      Security features:
- *      - ReentrancyGuard on all fund-handling functions
- *      - Minimum cooldown between transfers per user (configurable)
- *      - Maximum single transfer limit
+ *      - ReentrancyGuard on all payment-handling functions
+ *      - Minimum cooldown between relay requests per user (configurable)
+ *      - Maximum single relay limit
  *      - Stale route detection (routes expire after 5 minutes)
  *      - Zero-address validation
  */
@@ -45,34 +45,34 @@ contract CapacityAwareRouter is AccessControl, ReentrancyGuard, Pausable {
                                CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Role for executing transfers
+    /// @notice Role for executing relay operations
     bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
 
-    /// @notice Role for settling completed transfers
-    bytes32 public constant SETTLER_ROLE = keccak256("SETTLER_ROLE");
+    /// @notice Role for completing relay operations
+    bytes32 public constant COMPLETER_ROLE = keccak256("COMPLETER_ROLE");
 
-    /// @notice Protocol fee in bps (3%)
-    uint16 public constant PROTOCOL_FEE_BPS = 300;
+    /// @notice Relay service fee in bps (3%)
+    uint16 public constant RELAY_FEE_BPS = 300;
 
     /// @notice Basis points denominator
     uint16 public constant BPS = 10_000;
 
-    /// @notice Default cooldown between transfers per user (30 seconds)
+    /// @notice Default cooldown between relay requests per user (30 seconds)
     uint48 public constant DEFAULT_COOLDOWN = 30;
 
-    /// @notice Maximum single transfer (500 ETH)
-    uint256 public constant MAX_TRANSFER_AMOUNT = 500 ether;
+    /// @notice Maximum single relay amount (500 ETH)
+    uint256 public constant MAX_RELAY_AMOUNT = 500 ether;
 
     /*//////////////////////////////////////////////////////////////
                                  ENUMS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Transfer lifecycle status
-    enum TransferStatus {
+    /// @notice Relay operation lifecycle status
+    enum RelayStatus {
         NONE, // Not created
         COMMITTED, // User committed funds
         EXECUTING, // Adapter called, waiting for confirmation
-        SETTLED, // Successfully completed
+        COMPLETED, // Successfully completed
         FAILED, // Failed, funds returned to user
         REFUNDED // User manually refunded after timeout
     }
@@ -81,27 +81,27 @@ contract CapacityAwareRouter is AccessControl, ReentrancyGuard, Pausable {
                                 STRUCTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice A committed transfer
-    struct Transfer {
+    /// @notice A committed relay operation
+    struct RelayOperation {
         bytes32 routeId; // Associated route from orchestrator
-        address user; // Transfer initiator
+        address user; // Relay initiator
         uint256 sourceChainId; // Source chain
         uint256 destChainId; // Destination chain
-        uint256 amount; // Transfer amount
-        uint256 fee; // Fee charged
+        uint256 amount; // Relay service amount
+        uint256 fee; // Route cost charged
         uint256 protocolFee; // Protocol's share of fee
-        TransferStatus status; // Current status
+        RelayStatus status; // Current status
         uint48 committedAt; // Commitment timestamp
-        uint48 settledAt; // Settlement timestamp (0 if not settled)
+        uint48 completedAt; // Completion timestamp (0 if not completed)
         address destRecipient; // Recipient on destination chain
     }
 
     /// @notice Volume tracking per chain pair
     struct PairMetrics {
-        uint256 totalVolume; // Total value transferred
-        uint256 totalFees; // Total fees collected
-        uint256 transferCount; // Number of transfers
-        uint48 lastTransfer; // Last transfer timestamp
+        uint256 totalVolume; // Total value relayed
+        uint256 totalCosts; // Total costs collected
+        uint256 relayCount; // Number of relay operations
+        uint48 lastRelay; // Last relay timestamp
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -111,33 +111,33 @@ contract CapacityAwareRouter is AccessControl, ReentrancyGuard, Pausable {
     /// @notice The DynamicRoutingOrchestrator this router uses for route selection
     IDynamicRoutingOrchestrator public immutable orchestrator;
 
-    /// @notice Transfers indexed by transfer ID
-    mapping(bytes32 => Transfer) public transfers;
+    /// @notice Relay operations indexed by relay ID
+    mapping(bytes32 => RelayOperation) public relayOps;
 
-    /// @notice User's last transfer timestamp (for cooldown)
-    mapping(address => uint48) public lastTransferAt;
+    /// @notice User's last relay timestamp (for cooldown)
+    mapping(address => uint48) public lastRelayAt;
 
     /// @notice Per-pair volume metrics: keccak256(sourceChain, destChain) => PairMetrics
     mapping(bytes32 => PairMetrics) public pairMetrics;
 
-    /// @notice Accumulated protocol fees (withdrawable by admin)
+    /// @notice Accumulated protocol service fees (withdrawable by admin)
     uint256 public accumulatedFees;
 
-    /// @notice Transfer nonce for unique ID generation
-    uint256 internal _transferNonce;
+    /// @notice Relay nonce for unique ID generation
+    uint256 internal _relayNonce;
 
-    /// @notice Transfer timeout (1 hour)
-    uint48 public transferTimeout = 1 hours;
+    /// @notice Relay timeout (1 hour)
+    uint48 public relayTimeout = 1 hours;
 
-    /// @notice User cooldown between transfers
+    /// @notice User cooldown between relay operations
     uint48 public userCooldown = DEFAULT_COOLDOWN;
 
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
     //////////////////////////////////////////////////////////////*/
 
-    event TransferCommitted(
-        bytes32 indexed transferId,
+    event RelayCommitted(
+        bytes32 indexed relayId,
         bytes32 indexed routeId,
         address indexed user,
         uint256 sourceChainId,
@@ -146,21 +146,21 @@ contract CapacityAwareRouter is AccessControl, ReentrancyGuard, Pausable {
         uint256 fee
     );
 
-    event TransferExecuting(
-        bytes32 indexed transferId,
+    event RelayExecuting(
+        bytes32 indexed relayId,
         address indexed executor
     );
 
-    event TransferSettled(
-        bytes32 indexed transferId,
-        uint48 settlementTime,
+    event RelayCompleted(
+        bytes32 indexed relayId,
+        uint48 completionTime,
         uint256 actualFee
     );
 
-    event TransferFailed(bytes32 indexed transferId, string reason);
+    event RelayFailed(bytes32 indexed relayId, string reason);
 
-    event TransferRefunded(
-        bytes32 indexed transferId,
+    event RelayRefunded(
+        bytes32 indexed relayId,
         address indexed user,
         uint256 amount
     );
@@ -176,16 +176,16 @@ contract CapacityAwareRouter is AccessControl, ReentrancyGuard, Pausable {
     //////////////////////////////////////////////////////////////*/
 
     error ZeroAddress();
-    error TransferTooLarge(uint256 amount, uint256 max);
+    error RelayAmountTooLarge(uint256 amount, uint256 max);
     error CooldownNotElapsed(address user, uint48 remaining);
-    error TransferNotFound(bytes32 transferId);
-    error InvalidTransferStatus(
-        bytes32 transferId,
-        TransferStatus current,
-        TransferStatus expected
+    error RelayNotFound(bytes32 relayId);
+    error InvalidRelayStatus(
+        bytes32 relayId,
+        RelayStatus current,
+        RelayStatus expected
     );
-    error TransferTimedOut(bytes32 transferId);
-    error TransferNotTimedOut(bytes32 transferId);
+    error RelayTimedOut(bytes32 relayId);
+    error RelayNotTimedOut(bytes32 relayId);
     error InsufficientPayment(uint256 required, uint256 provided);
     error NoFeesToWithdraw();
     error WithdrawFailed();
@@ -209,23 +209,23 @@ contract CapacityAwareRouter is AccessControl, ReentrancyGuard, Pausable {
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(EXECUTOR_ROLE, executor);
-        _grantRole(SETTLER_ROLE, executor);
+        _grantRole(COMPLETER_ROLE, executor);
     }
 
     /*//////////////////////////////////////////////////////////////
-                          TRANSFER LIFECYCLE
+                          RELAY LIFECYCLE
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Quote a cross-chain transfer — returns the optimal route and fee
+     * @notice Quote a cross-chain relay — returns the optimal route and cost
      * @param sourceChainId Source chain
      * @param destChainId Destination chain
-     * @param amount Transfer amount
+     * @param amount Relay service amount
      * @param urgency Speed/cost preference
      * @return route The optimal route
      * @return totalRequired Total payment required (amount + fee)
      */
-    function quoteTransfer(
+    function quoteRelay(
         uint256 sourceChainId,
         uint256 destChainId,
         uint256 amount,
@@ -253,24 +253,24 @@ contract CapacityAwareRouter is AccessControl, ReentrancyGuard, Pausable {
         route = orchestrator.findOptimalRoute(request);
 
         // Protocol fee on top of route cost
-        uint256 protocolFee = (route.totalCost * PROTOCOL_FEE_BPS) / BPS;
+        uint256 protocolFee = (route.totalCost * RELAY_FEE_BPS) / BPS;
         totalRequired = amount + route.totalCost + protocolFee;
     }
 
     /**
-     * @notice Commit to a transfer — locks funds and records the transfer
+     * @notice Commit to a relay — locks payment and records the operation
      * @param routeId Route ID from the orchestrator
      * @param destRecipient Recipient address on destination chain
-     * @return transferId Unique transfer identifier
+     * @return relayId Unique relay identifier
      */
-    function commitTransfer(
+    function commitRelay(
         bytes32 routeId,
         address destRecipient
-    ) external payable nonReentrant whenNotPaused returns (bytes32 transferId) {
+    ) external payable nonReentrant whenNotPaused returns (bytes32 relayId) {
         if (destRecipient == address(0)) revert ZeroAddress();
 
         // Check cooldown
-        uint48 lastTx = lastTransferAt[msg.sender];
+        uint48 lastTx = lastRelayAt[msg.sender];
         if (lastTx > 0 && block.timestamp < lastTx + userCooldown) {
             revert CooldownNotElapsed(
                 msg.sender,
@@ -290,24 +290,24 @@ contract CapacityAwareRouter is AccessControl, ReentrancyGuard, Pausable {
         require(block.timestamp <= route.expiresAt, "Route expired");
 
         // Calculate fees
-        uint256 protocolFee = (route.totalCost * PROTOCOL_FEE_BPS) / BPS;
+        uint256 protocolFee = (route.totalCost * RELAY_FEE_BPS) / BPS;
         uint256 totalRequired = route.totalCost + protocolFee;
         if (msg.value < totalRequired) {
             revert InsufficientPayment(totalRequired, msg.value);
         }
 
         uint256 amount = msg.value - totalRequired;
-        if (amount > MAX_TRANSFER_AMOUNT) {
-            revert TransferTooLarge(amount, MAX_TRANSFER_AMOUNT);
+        if (amount > MAX_RELAY_AMOUNT) {
+            revert RelayAmountTooLarge(amount, MAX_RELAY_AMOUNT);
         }
 
-        // Generate transfer ID
-        _transferNonce++;
-        transferId = keccak256(
+        // Generate relay ID
+        _relayNonce++;
+        relayId = keccak256(
             abi.encodePacked(
                 msg.sender,
                 routeId,
-                _transferNonce,
+                _relayNonce,
                 block.timestamp
             )
         );
@@ -315,8 +315,8 @@ contract CapacityAwareRouter is AccessControl, ReentrancyGuard, Pausable {
         uint256 sourceChain = route.chainPath[0];
         uint256 destChain = route.chainPath[route.chainPath.length - 1];
 
-        // Record transfer
-        transfers[transferId] = Transfer({
+        // Record relay operation
+        relayOps[relayId] = RelayOperation({
             routeId: routeId,
             user: msg.sender,
             sourceChainId: sourceChain,
@@ -324,13 +324,13 @@ contract CapacityAwareRouter is AccessControl, ReentrancyGuard, Pausable {
             amount: amount,
             fee: route.totalCost,
             protocolFee: protocolFee,
-            status: TransferStatus.COMMITTED,
+            status: RelayStatus.COMMITTED,
             committedAt: uint48(block.timestamp),
-            settledAt: 0,
+            completedAt: 0,
             destRecipient: destRecipient
         });
 
-        lastTransferAt[msg.sender] = uint48(block.timestamp);
+        lastRelayAt[msg.sender] = uint48(block.timestamp);
         accumulatedFees += protocolFee;
 
         // Refund excess payment
@@ -340,8 +340,8 @@ contract CapacityAwareRouter is AccessControl, ReentrancyGuard, Pausable {
             require(ok, "Refund failed");
         }
 
-        emit TransferCommitted(
-            transferId,
+        emit RelayCommitted(
+            relayId,
             routeId,
             msg.sender,
             sourceChain,
@@ -352,48 +352,48 @@ contract CapacityAwareRouter is AccessControl, ReentrancyGuard, Pausable {
     }
 
     /**
-     * @notice Begin executing a committed transfer
-     * @param transferId The transfer to execute
+     * @notice Begin executing a committed relay operation
+     * @param relayId The relay operation to execute
      */
     function beginExecution(
-        bytes32 transferId
+        bytes32 relayId
     ) external onlyRole(EXECUTOR_ROLE) nonReentrant {
-        Transfer storage t = transfers[transferId];
-        if (t.user == address(0)) revert TransferNotFound(transferId);
-        if (t.status != TransferStatus.COMMITTED) {
-            revert InvalidTransferStatus(
-                transferId,
+        RelayOperation storage t = relayOps[relayId];
+        if (t.user == address(0)) revert RelayNotFound(relayId);
+        if (t.status != RelayStatus.COMMITTED) {
+            revert InvalidRelayStatus(
+                relayId,
                 t.status,
-                TransferStatus.COMMITTED
+                RelayStatus.COMMITTED
             );
         }
 
-        t.status = TransferStatus.EXECUTING;
+        t.status = RelayStatus.EXECUTING;
 
-        emit TransferExecuting(transferId, msg.sender);
+        emit RelayExecuting(relayId, msg.sender);
     }
 
     /**
-     * @notice Settle a completed transfer — records metrics and updates orchestrator
-     * @param transferId The transfer that completed
-     * @param actualLatency Actual settlement latency in seconds
+     * @notice Complete a relay operation — records metrics and updates orchestrator
+     * @param relayId The relay that completed
+     * @param actualLatency Actual completion latency in seconds
      */
-    function settleTransfer(
-        bytes32 transferId,
+    function completeRelay(
+        bytes32 relayId,
         uint48 actualLatency
-    ) external onlyRole(SETTLER_ROLE) nonReentrant {
-        Transfer storage t = transfers[transferId];
-        if (t.user == address(0)) revert TransferNotFound(transferId);
-        if (t.status != TransferStatus.EXECUTING) {
-            revert InvalidTransferStatus(
-                transferId,
+    ) external onlyRole(COMPLETER_ROLE) nonReentrant {
+        RelayOperation storage t = relayOps[relayId];
+        if (t.user == address(0)) revert RelayNotFound(relayId);
+        if (t.status != RelayStatus.EXECUTING) {
+            revert InvalidRelayStatus(
+                relayId,
                 t.status,
-                TransferStatus.EXECUTING
+                RelayStatus.EXECUTING
             );
         }
 
-        t.status = TransferStatus.SETTLED;
-        t.settledAt = uint48(block.timestamp);
+        t.status = RelayStatus.COMPLETED;
+        t.completedAt = uint48(block.timestamp);
 
         // Update pair metrics
         bytes32 pairKey = keccak256(
@@ -401,9 +401,9 @@ contract CapacityAwareRouter is AccessControl, ReentrancyGuard, Pausable {
         );
         PairMetrics storage pm = pairMetrics[pairKey];
         pm.totalVolume += t.amount;
-        pm.totalFees += t.fee;
-        pm.transferCount += 1;
-        pm.lastTransfer = uint48(block.timestamp);
+        pm.totalCosts += t.fee;
+        pm.relayCount += 1;
+        pm.lastRelay = uint48(block.timestamp);
 
         // Record bridge outcome in orchestrator
         IDynamicRoutingOrchestrator.Route memory route = orchestrator.getRoute(
@@ -420,33 +420,33 @@ contract CapacityAwareRouter is AccessControl, ReentrancyGuard, Pausable {
             {} catch {}
         }
 
-        emit TransferSettled(
-            transferId,
+        emit RelayCompleted(
+            relayId,
             uint48(block.timestamp - t.committedAt),
             t.fee
         );
     }
 
     /**
-     * @notice Mark a transfer as failed and record failure metrics
-     * @param transferId The failed transfer
+     * @notice Mark a relay as failed and record failure metrics
+     * @param relayId The failed relay
      * @param reason Failure reason
      */
-    function failTransfer(
-        bytes32 transferId,
+    function failRelay(
+        bytes32 relayId,
         string calldata reason
-    ) external onlyRole(SETTLER_ROLE) nonReentrant {
-        Transfer storage t = transfers[transferId];
-        if (t.user == address(0)) revert TransferNotFound(transferId);
-        if (t.status != TransferStatus.EXECUTING) {
-            revert InvalidTransferStatus(
-                transferId,
+    ) external onlyRole(COMPLETER_ROLE) nonReentrant {
+        RelayOperation storage t = relayOps[relayId];
+        if (t.user == address(0)) revert RelayNotFound(relayId);
+        if (t.status != RelayStatus.EXECUTING) {
+            revert InvalidRelayStatus(
+                relayId,
                 t.status,
-                TransferStatus.EXECUTING
+                RelayStatus.EXECUTING
             );
         }
 
-        t.status = TransferStatus.FAILED;
+        t.status = RelayStatus.FAILED;
 
         // Refund user (amount + routing fee, protocol keeps protocol fee as gas cost)
         uint256 refundAmount = t.amount + t.fee;
@@ -470,31 +470,31 @@ contract CapacityAwareRouter is AccessControl, ReentrancyGuard, Pausable {
             {} catch {}
         }
 
-        emit TransferFailed(transferId, reason);
+        emit RelayFailed(relayId, reason);
     }
 
     /**
-     * @notice Refund a timed-out transfer — user can call after timeout
-     * @param transferId The transfer to refund
+     * @notice Refund a timed-out relay — user can call after timeout
+     * @param relayId The relay to refund
      */
-    function refundTimedOut(bytes32 transferId) external nonReentrant {
-        Transfer storage t = transfers[transferId];
-        if (t.user == address(0)) revert TransferNotFound(transferId);
+    function refundTimedOut(bytes32 relayId) external nonReentrant {
+        RelayOperation storage t = relayOps[relayId];
+        if (t.user == address(0)) revert RelayNotFound(relayId);
         if (
-            t.status != TransferStatus.COMMITTED &&
-            t.status != TransferStatus.EXECUTING
+            t.status != RelayStatus.COMMITTED &&
+            t.status != RelayStatus.EXECUTING
         ) {
-            revert InvalidTransferStatus(
-                transferId,
+            revert InvalidRelayStatus(
+                relayId,
                 t.status,
-                TransferStatus.COMMITTED
+                RelayStatus.COMMITTED
             );
         }
-        if (block.timestamp < t.committedAt + transferTimeout) {
-            revert TransferNotTimedOut(transferId);
+        if (block.timestamp < t.committedAt + relayTimeout) {
+            revert RelayNotTimedOut(relayId);
         }
 
-        t.status = TransferStatus.REFUNDED;
+        t.status = RelayStatus.REFUNDED;
 
         // SECURITY FIX H-10: Do not refund protocol fee to prevent draining
         // contract balance if fees were already withdrawn by admin.
@@ -505,7 +505,7 @@ contract CapacityAwareRouter is AccessControl, ReentrancyGuard, Pausable {
             require(ok, "Refund failed");
         }
 
-        emit TransferRefunded(transferId, t.user, refundAmount);
+        emit RelayRefunded(relayId, t.user, refundAmount);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -513,15 +513,15 @@ contract CapacityAwareRouter is AccessControl, ReentrancyGuard, Pausable {
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Get transfer details
-     * @param transferId The transfer ID
-     * @return t Transfer struct
+     * @notice Get relay operation details
+     * @param relayId The relay ID
+     * @return t RelayOperation struct
      */
-    function getTransfer(
-        bytes32 transferId
-    ) external view returns (Transfer memory t) {
-        t = transfers[transferId];
-        if (t.user == address(0)) revert TransferNotFound(transferId);
+    function getRelayOp(
+        bytes32 relayId
+    ) external view returns (RelayOperation memory t) {
+        t = relayOps[relayId];
+        if (t.user == address(0)) revert RelayNotFound(relayId);
     }
 
     /**
@@ -541,15 +541,15 @@ contract CapacityAwareRouter is AccessControl, ReentrancyGuard, Pausable {
     }
 
     /**
-     * @notice Check if user can transfer (cooldown elapsed)
+     * @notice Check if user can relay (cooldown elapsed)
      * @param user User address
-     * @return canTransfer Whether user can initiate a transfer
+     * @return canRelay Whether user can initiate a relay
      * @return cooldownRemaining Remaining cooldown seconds (0 if ready)
      */
-    function canUserTransfer(
+    function canUserRelay(
         address user
-    ) external view returns (bool canTransfer, uint48 cooldownRemaining) {
-        uint48 lastTx = lastTransferAt[user];
+    ) external view returns (bool canRelay, uint48 cooldownRemaining) {
+        uint48 lastTx = lastRelayAt[user];
         if (lastTx == 0 || block.timestamp >= lastTx + userCooldown) {
             return (true, 0);
         }
@@ -592,15 +592,15 @@ contract CapacityAwareRouter is AccessControl, ReentrancyGuard, Pausable {
     }
 
     /**
-     * @notice Update transfer timeout
+     * @notice Update relay timeout
      * @param newTimeout New timeout in seconds
      */
     function setTimeout(
         uint48 newTimeout
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(newTimeout >= 10 minutes, "Timeout too short");
-        uint48 oldTimeout = transferTimeout;
-        transferTimeout = newTimeout;
+        uint48 oldTimeout = relayTimeout;
+        relayTimeout = newTimeout;
         emit TimeoutUpdated(oldTimeout, newTimeout);
     }
 

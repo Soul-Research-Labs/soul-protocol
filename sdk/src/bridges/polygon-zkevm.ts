@@ -31,7 +31,7 @@ export const ETHEREUM_NETWORK_ID = 0;
                               TYPES
 //////////////////////////////////////////////////////////////*/
 
-export type TransferStatus = 'PENDING' | 'DEPOSITED' | 'CLAIMABLE' | 'CLAIMED' | 'FAILED';
+export type MessageStatus = 'PENDING' | 'DEPOSITED' | 'CLAIMABLE' | 'CLAIMED' | 'FAILED';
 
 export interface PolygonZkEVMConfig {
   chainId: number;
@@ -49,7 +49,7 @@ export interface BridgeDeposit {
   amount: bigint;
   depositCount: bigint;
   metadata: Hex;
-  status: TransferStatus;
+  status: MessageStatus;
   initiatedAt: number;
 }
 

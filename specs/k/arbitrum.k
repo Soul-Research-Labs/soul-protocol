@@ -46,7 +46,7 @@ module ARBITRUM-TYPES
     // =========================================================================
 
     // Transfer Status
-    syntax TransferStatus ::= "PENDING"
+    syntax RequestStatus ::= "PENDING"
                             | "RETRYABLE_CREATED"
                             | "EXECUTED"
                             | "CHALLENGED"
@@ -68,7 +68,7 @@ module ARBITRUM-TYPES
         l2GasLimit: Int,
         l2GasPrice: Int,
         ticketId: Int,
-        status: TransferStatus,
+        status: RequestStatus,
         initiatedAt: Int,
         executedAt: Int
     )
@@ -85,7 +85,7 @@ module ARBITRUM-TYPES
         l1BatchNumber: Int,
         l2Timestamp: Int,
         outputId: Bytes,
-        status: TransferStatus,
+        status: RequestStatus,
         initiatedAt: Int,
         claimableAt: Int,
         claimedAt: Int
@@ -480,11 +480,11 @@ module ARBITRUM-BRIDGE
          where NullifierHash = deriveArbitrumNullifier(WithdrawalId, b"Soul", T)
 
     // Helper functions for state updates
-    syntax L1ToL2Deposit ::= updateDepositStatus(L1ToL2Deposit, TransferStatus) [function]
+    syntax L1ToL2Deposit ::= updateDepositStatus(L1ToL2Deposit, RequestStatus) [function]
     rule updateDepositStatus(deposit(Id, S, R, L1T, L2T, A, MSC, L2G, L2P, TId, _, Init, _), NewStatus) =>
         deposit(Id, S, R, L1T, L2T, A, MSC, L2G, L2P, TId, NewStatus, Init, 0)
 
-    syntax L2ToL1Withdrawal ::= updateWithdrawalStatus(L2ToL1Withdrawal, TransferStatus, Int) [function]
+    syntax L2ToL1Withdrawal ::= updateWithdrawalStatus(L2ToL1Withdrawal, RequestStatus, Int) [function]
     rule updateWithdrawalStatus(withdrawal(Id, L2S, L1R, L2T, L1T, A, L2B, L1B, L2Ts, OutId, _, Init, Claim, _), NewStatus, ClaimedTime) =>
         withdrawal(Id, L2S, L1R, L2T, L1T, A, L2B, L1B, L2Ts, OutId, NewStatus, Init, Claim, ClaimedTime)
 

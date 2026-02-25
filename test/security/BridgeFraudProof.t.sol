@@ -57,7 +57,7 @@ contract BridgeFraudProofTest is Test {
         fraudProof.submitFraudProof(transferId, PROOF, bytes("FRAUD_EVIDENCE"));
 
         OptimisticBridgeVerifier.PendingTransfer memory transfer = verifier
-            .getTransfer(transferId);
+            .getVerification(transferId);
         assertEq(
             uint(transfer.status),
             uint(OptimisticBridgeVerifier.TransferStatus.REJECTED)
@@ -94,7 +94,7 @@ contract BridgeFraudProofTest is Test {
         fraudProof.submitFraudProof(transferId, PROOF, bytes("FRAUD"));
 
         OptimisticBridgeVerifier.PendingTransfer memory t = verifier
-            .getTransfer(transferId);
+            .getVerification(transferId);
         assertEq(
             uint(t.status),
             uint(OptimisticBridgeVerifier.TransferStatus.REJECTED)
@@ -205,7 +205,7 @@ contract BridgeFraudProofTest is Test {
         fraudProof.submitFraudProof(transferId, PROOF, bytes("FRAUD_EV"));
 
         OptimisticBridgeVerifier.PendingTransfer memory t = verifier
-            .getTransfer(transferId);
+            .getVerification(transferId);
         assertEq(
             uint(t.status),
             uint(OptimisticBridgeVerifier.TransferStatus.REJECTED)
@@ -235,7 +235,7 @@ contract BridgeFraudProofTest is Test {
         if (shouldSucceed) {
             fraudProof.submitFraudProof(transferId, PROOF, evidence);
             OptimisticBridgeVerifier.PendingTransfer memory t = verifier
-                .getTransfer(transferId);
+                .getVerification(transferId);
             assertEq(
                 uint(t.status),
                 uint(OptimisticBridgeVerifier.TransferStatus.REJECTED)

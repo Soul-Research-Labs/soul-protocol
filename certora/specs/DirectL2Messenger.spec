@@ -3,7 +3,7 @@
  * Soul Protocol - DirectL2Messenger
  *
  * This spec verifies critical invariants for the Direct L2 Messenger
- * which enables direct L2-to-L2 messaging without L1 settlement,
+ * which enables direct L2-to-L2 messaging without L1 completion,
  * including relayer bonding, message processing, and challenge mechanics.
  */
 

@@ -11,7 +11,7 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
  * @notice Bridges CrossChainPrivacyHub ↔ UniversalShieldedPool for cross-chain commitment sync.
  *
  * @dev This contract is the missing link between:
- *   - CrossChainPrivacyHub.completeTransfer() (which marks transfers complete on dest chain)
+ *   - CrossChainPrivacyHub.completeRelay() (which marks relays complete on dest chain)
  *   - UniversalShieldedPool.insertCrossChainCommitments() (which inserts commitments into the Merkle tree)
  *
  * FLOW:

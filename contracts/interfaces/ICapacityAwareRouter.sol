@@ -5,7 +5,7 @@ import {IDynamicRoutingOrchestrator} from "./IDynamicRoutingOrchestrator.sol";
 
 /**
  * @title ICapacityAwareRouter
- * @notice Interface for the CapacityAwareRouter cross-chain transfer contract
+ * @notice Interface for the CapacityAwareRouter cross-chain relay contract
  * @dev Capacity-aware router that executes routes from DynamicRoutingOrchestrator
  */
 interface ICapacityAwareRouter {
@@ -13,11 +13,11 @@ interface ICapacityAwareRouter {
                                  ENUMS
     //////////////////////////////////////////////////////////////*/
 
-    enum TransferStatus {
+    enum RelayStatus {
         NONE,
         COMMITTED,
         EXECUTING,
-        SETTLED,
+        COMPLETED,
         FAILED,
         REFUNDED
     }
@@ -26,7 +26,7 @@ interface ICapacityAwareRouter {
                                 STRUCTS
     //////////////////////////////////////////////////////////////*/
 
-    struct Transfer {
+    struct RelayOperation {
         bytes32 routeId;
         address user;
         uint256 sourceChainId;
@@ -34,25 +34,25 @@ interface ICapacityAwareRouter {
         uint256 amount;
         uint256 fee;
         uint256 protocolFee;
-        TransferStatus status;
+        RelayStatus status;
         uint48 committedAt;
-        uint48 settledAt;
+        uint48 completedAt;
         address destRecipient;
     }
 
     struct PairMetrics {
         uint256 totalVolume;
-        uint256 totalFees;
-        uint256 transferCount;
-        uint48 lastTransfer;
+        uint256 totalCosts;
+        uint256 relayCount;
+        uint48 lastRelay;
     }
 
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
     //////////////////////////////////////////////////////////////*/
 
-    event TransferCommitted(
-        bytes32 indexed transferId,
+    event RelayCommitted(
+        bytes32 indexed relayId,
         bytes32 indexed routeId,
         address indexed user,
         uint256 sourceChainId,
@@ -61,21 +61,21 @@ interface ICapacityAwareRouter {
         uint256 fee
     );
 
-    event TransferExecuting(
-        bytes32 indexed transferId,
+    event RelayExecuting(
+        bytes32 indexed relayId,
         address indexed executor
     );
 
-    event TransferSettled(
-        bytes32 indexed transferId,
-        uint48 settlementTime,
+    event RelayCompleted(
+        bytes32 indexed relayId,
+        uint48 completionTime,
         uint256 actualFee
     );
 
-    event TransferFailed(bytes32 indexed transferId, string reason);
+    event RelayFailed(bytes32 indexed relayId, string reason);
 
-    event TransferRefunded(
-        bytes32 indexed transferId,
+    event RelayRefunded(
+        bytes32 indexed relayId,
         address indexed user,
         uint256 amount
     );
@@ -91,16 +91,16 @@ interface ICapacityAwareRouter {
     //////////////////////////////////////////////////////////////*/
 
     error ZeroAddress();
-    error TransferTooLarge(uint256 amount, uint256 max);
+    error RelayAmountTooLarge(uint256 amount, uint256 max);
     error CooldownNotElapsed(address user, uint48 remaining);
-    error TransferNotFound(bytes32 transferId);
-    error InvalidTransferStatus(
-        bytes32 transferId,
-        TransferStatus current,
-        TransferStatus expected
+    error RelayNotFound(bytes32 relayId);
+    error InvalidRelayStatus(
+        bytes32 relayId,
+        RelayStatus current,
+        RelayStatus expected
     );
-    error TransferTimedOut(bytes32 transferId);
-    error TransferNotTimedOut(bytes32 transferId);
+    error RelayTimedOut(bytes32 relayId);
+    error RelayNotTimedOut(bytes32 relayId);
     error InsufficientPayment(uint256 required, uint256 provided);
     error NoFeesToWithdraw();
     error WithdrawFailed();
@@ -111,31 +111,31 @@ interface ICapacityAwareRouter {
 
     function EXECUTOR_ROLE() external view returns (bytes32);
 
-    function SETTLER_ROLE() external view returns (bytes32);
+    function COMPLETER_ROLE() external view returns (bytes32);
 
-    function PROTOCOL_FEE_BPS() external view returns (uint16);
+    function RELAY_FEE_BPS() external view returns (uint16);
 
     function BPS() external view returns (uint16);
 
     function DEFAULT_COOLDOWN() external view returns (uint48);
 
-    function MAX_TRANSFER_AMOUNT() external view returns (uint256);
+    function MAX_RELAY_AMOUNT() external view returns (uint256);
 
     function orchestrator() external view returns (IDynamicRoutingOrchestrator);
 
     function accumulatedFees() external view returns (uint256);
 
-    function transferTimeout() external view returns (uint48);
+    function relayTimeout() external view returns (uint48);
 
     function userCooldown() external view returns (uint48);
 
-    function lastTransferAt(address user) external view returns (uint48);
+    function lastRelayAt(address user) external view returns (uint48);
 
     /*//////////////////////////////////////////////////////////////
-                        TRANSFER LIFECYCLE
+                        RELAY LIFECYCLE
     //////////////////////////////////////////////////////////////*/
 
-    function quoteTransfer(
+    function quoteRelay(
         uint256 sourceChainId,
         uint256 destChainId,
         uint256 amount,
@@ -148,35 +148,35 @@ interface ICapacityAwareRouter {
             uint256 totalRequired
         );
 
-    function commitTransfer(
+    function commitRelay(
         bytes32 routeId,
         address destRecipient
-    ) external payable returns (bytes32 transferId);
+    ) external payable returns (bytes32 relayId);
 
-    function beginExecution(bytes32 transferId) external;
+    function beginExecution(bytes32 relayId) external;
 
-    function settleTransfer(bytes32 transferId, uint48 actualLatency) external;
+    function completeRelay(bytes32 relayId, uint48 actualLatency) external;
 
-    function failTransfer(bytes32 transferId, string calldata reason) external;
+    function failRelay(bytes32 relayId, string calldata reason) external;
 
-    function refundTimedOut(bytes32 transferId) external;
+    function refundTimedOut(bytes32 relayId) external;
 
     /*//////////////////////////////////////////////////////////////
                           VIEW FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    function getTransfer(
-        bytes32 transferId
-    ) external view returns (Transfer memory t);
+    function getRelayOp(
+        bytes32 relayId
+    ) external view returns (RelayOperation memory t);
 
     function getPairMetrics(
         uint256 sourceChainId,
         uint256 destChainId
     ) external view returns (PairMetrics memory metrics);
 
-    function canUserTransfer(
+    function canUserRelay(
         address user
-    ) external view returns (bool canTransfer, uint48 cooldownRemaining);
+    ) external view returns (bool canRelay, uint48 cooldownRemaining);
 
     /*//////////////////////////////////////////////////////////////
                          ADMIN FUNCTIONS

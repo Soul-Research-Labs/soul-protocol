@@ -66,7 +66,7 @@ export {
 // Privacy Hub exports
 export {
   PrivacyHubClient,
-  TransferStatus,
+  RequestStatus,
   type PrivateTransfer,
   type BridgeAdapter,
   type PrivacyHubConfig,
@@ -82,7 +82,7 @@ export {
   InsufficientBridgeCapacityError,
   RelayTimeoutError,
   type ChainConfig,
-  type PrivateTransferStatus,
+  type PrivateRequestStatus,
   type PrivateTransferResult,
   type ShieldResult,
   type ZKProofResult,

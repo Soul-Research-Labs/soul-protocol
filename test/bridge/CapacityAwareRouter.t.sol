@@ -90,7 +90,7 @@ contract CapacityAwareRouterTest is Test {
     function test_Constructor_SetsRoles() public view {
         assertTrue(router.hasRole(router.DEFAULT_ADMIN_ROLE(), admin));
         assertTrue(router.hasRole(router.EXECUTOR_ROLE(), executor));
-        assertTrue(router.hasRole(router.SETTLER_ROLE(), executor));
+        assertTrue(router.hasRole(router.COMPLETER_ROLE(), executor));
     }
 
     function test_Constructor_RevertZeroOrchestrator() public {
@@ -109,14 +109,14 @@ contract CapacityAwareRouterTest is Test {
     }
 
     /*//////////////////////////////////////////////////////////////
-                         QUOTE TRANSFER
+                         QUOTE RELAY
     //////////////////////////////////////////////////////////////*/
 
-    function test_QuoteTransfer_ReturnsRoute() public view {
+    function test_QuoteRelay_ReturnsRoute() public view {
         (
             IDynamicRoutingOrchestrator.Route memory route,
             uint256 totalRequired
-        ) = router.quoteTransfer(
+        ) = router.quoteRelay(
                 CHAIN_ETH,
                 CHAIN_ARB,
                 10 ether,
@@ -129,14 +129,14 @@ contract CapacityAwareRouterTest is Test {
         assertTrue(totalRequired > 10 ether); // amount + fees
     }
 
-    function test_QuoteTransfer_FastVsEconomy() public view {
-        (, uint256 fastCost) = router.quoteTransfer(
+    function test_QuoteRelay_FastVsEconomy() public view {
+        (, uint256 fastCost) = router.quoteRelay(
             CHAIN_ETH,
             CHAIN_ARB,
             10 ether,
             IDynamicRoutingOrchestrator.Urgency.FAST
         );
-        (, uint256 economyCost) = router.quoteTransfer(
+        (, uint256 economyCost) = router.quoteRelay(
             CHAIN_ETH,
             CHAIN_ARB,
             10 ether,
@@ -152,9 +152,9 @@ contract CapacityAwareRouterTest is Test {
                       COOLDOWN MANAGEMENT
     //////////////////////////////////////////////////////////////*/
 
-    function test_CanUserTransfer_InitiallyTrue() public view {
-        (bool canTransfer, uint48 cooldown) = router.canUserTransfer(user1);
-        assertTrue(canTransfer);
+    function test_CanUserRelay_InitiallyTrue() public view {
+        (bool canRelay, uint48 cooldown) = router.canUserRelay(user1);
+        assertTrue(canRelay);
         assertEq(cooldown, 0);
     }
 
@@ -175,7 +175,7 @@ contract CapacityAwareRouterTest is Test {
     function test_SetTimeout_Success() public {
         vm.prank(admin);
         router.setTimeout(2 hours);
-        assertEq(router.transferTimeout(), 2 hours);
+        assertEq(router.relayTimeout(), 2 hours);
     }
 
     function test_SetTimeout_RevertTooShort() public {
@@ -185,27 +185,27 @@ contract CapacityAwareRouterTest is Test {
     }
 
     /*//////////////////////////////////////////////////////////////
-                     COMMIT TRANSFER (via mock route)
+                     COMMIT RELAY (via mock route)
     //////////////////////////////////////////////////////////////*/
 
-    // NOTE: commitTransfer requires a stored route from orchestrator.getRoute().
+    // NOTE: commitRelay requires a stored route from orchestrator.getRoute().
     // Since findOptimalRoute is view-only and doesn't store, we test commit
     // against the route-not-found path, and test the full lifecycle through
     // lower-level interactions.
 
-    function test_CommitTransfer_RevertZeroRecipient() public {
+    function test_CommitRelay_RevertZeroRecipient() public {
         vm.prank(user1);
         vm.expectRevert(CapacityAwareRouter.ZeroAddress.selector);
-        router.commitTransfer{value: 1 ether}(keccak256("routeId"), address(0));
+        router.commitRelay{value: 1 ether}(keccak256("routeId"), address(0));
     }
 
-    function test_CommitTransfer_RevertWhenPaused() public {
+    function test_CommitRelay_RevertWhenPaused() public {
         vm.prank(admin);
         router.pause();
 
         vm.prank(user1);
         vm.expectRevert();
-        router.commitTransfer{value: 1 ether}(keccak256("routeId"), user2);
+        router.commitRelay{value: 1 ether}(keccak256("routeId"), user2);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -216,40 +216,40 @@ contract CapacityAwareRouterTest is Test {
         vm.prank(executor);
         vm.expectRevert(
             abi.encodeWithSelector(
-                CapacityAwareRouter.TransferNotFound.selector,
+                CapacityAwareRouter.RelayNotFound.selector,
                 keccak256("fake")
             )
         );
         router.beginExecution(keccak256("fake"));
     }
 
-    function test_SettleTransfer_RevertNotFound() public {
+    function test_CompleteRelay_RevertNotFound() public {
         vm.prank(executor);
         vm.expectRevert(
             abi.encodeWithSelector(
-                CapacityAwareRouter.TransferNotFound.selector,
+                CapacityAwareRouter.RelayNotFound.selector,
                 keccak256("fake")
             )
         );
-        router.settleTransfer(keccak256("fake"), 30);
+        router.completeRelay(keccak256("fake"), 30);
     }
 
-    function test_FailTransfer_RevertNotFound() public {
+    function test_FailRelay_RevertNotFound() public {
         vm.prank(executor);
         vm.expectRevert(
             abi.encodeWithSelector(
-                CapacityAwareRouter.TransferNotFound.selector,
+                CapacityAwareRouter.RelayNotFound.selector,
                 keccak256("fake")
             )
         );
-        router.failTransfer(keccak256("fake"), "reason");
+        router.failRelay(keccak256("fake"), "reason");
     }
 
     function test_RefundTimedOut_RevertNotFound() public {
         vm.prank(user1);
         vm.expectRevert(
             abi.encodeWithSelector(
-                CapacityAwareRouter.TransferNotFound.selector,
+                CapacityAwareRouter.RelayNotFound.selector,
                 keccak256("fake")
             )
         );
@@ -266,8 +266,8 @@ contract CapacityAwareRouterTest is Test {
             CHAIN_ARB
         );
         assertEq(pm.totalVolume, 0);
-        assertEq(pm.totalFees, 0);
-        assertEq(pm.transferCount, 0);
+        assertEq(pm.totalCosts, 0);
+        assertEq(pm.relayCount, 0);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -325,15 +325,15 @@ contract CapacityAwareRouterTest is Test {
 
         vm.prank(admin);
         router.setTimeout(timeout);
-        assertEq(router.transferTimeout(), timeout);
+        assertEq(router.relayTimeout(), timeout);
     }
 
-    function testFuzz_QuoteTransfer_AlwaysMoreThanAmount(
+    function testFuzz_QuoteRelay_AlwaysMoreThanAmount(
         uint256 amount
     ) public view {
         amount = bound(amount, 0.01 ether, 100 ether);
 
-        (, uint256 totalRequired) = router.quoteTransfer(
+        (, uint256 totalRequired) = router.quoteRelay(
             CHAIN_ETH,
             CHAIN_ARB,
             amount,

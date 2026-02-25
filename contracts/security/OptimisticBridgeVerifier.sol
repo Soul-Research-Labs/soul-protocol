@@ -379,7 +379,7 @@ contract OptimisticBridgeVerifier is AccessControl, ReentrancyGuard, Pausable {
      * @param transferId Transfer to query
      * @return transfer Transfer struct
      */
-    function getTransfer(
+    function getVerification(
         bytes32 transferId
     ) external view returns (PendingTransfer memory transfer) {
         return pendingTransfers[transferId];

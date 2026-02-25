@@ -31,7 +31,7 @@ export const FEE_DENOMINATOR = 10_000n;
                               TYPES
 //////////////////////////////////////////////////////////////*/
 
-export type TransferStatus = 'PENDING' | 'COMMITTED' | 'PROVED' | 'EXECUTED' | 'FAILED';
+export type MessageStatus = 'PENDING' | 'COMMITTED' | 'PROVED' | 'EXECUTED' | 'FAILED';
 
 export interface ZkSyncConfig {
   chainId: number;
@@ -49,7 +49,7 @@ export interface L1ToL2Deposit {
   l2TxHash: Hash;
   l2GasLimit: bigint;
   gasPerPubdata: bigint;
-  status: TransferStatus;
+  status: MessageStatus;
   chainId: number;
   initiatedAt: number;
 }
@@ -63,7 +63,7 @@ export interface L2ToL1Withdrawal {
   batchNumber: bigint;
   messageIndex: bigint;
   l2TxHash: Hash;
-  status: TransferStatus;
+  status: MessageStatus;
   initiatedAt: number;
   provedAt: number;
 }

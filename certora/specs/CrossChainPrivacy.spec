@@ -37,10 +37,10 @@ methods {
     function UnifiedNullifierManager.getSoulBinding(bytes32) external returns (bytes32) envfree;
 
     // CrossChainPrivacyHub
-    function CrossChainPrivacyHub.initiatePrivateTransfer(uint256, address, uint256, bytes32, bytes32, bytes) external;
+    function CrossChainPrivacyHub.initiatePrivateRelay(uint256, address, uint256, bytes32, bytes32, bytes) external;
     function CrossChainPrivacyHub.relayPrivateTransfer(bytes32, bytes) external;
     function CrossChainPrivacyHub.completePrivateTransfer(bytes32, bytes) external;
-    function CrossChainPrivacyHub.getTransferStatus(bytes32) external returns (uint8) envfree;
+    function CrossChainPrivacyHub.getRequestStatus(bytes32) external returns (uint8) envfree;
     function CrossChainPrivacyHub.isBridgeRegistered(uint256) external returns (bool) envfree;
 }
 
@@ -69,8 +69,8 @@ ghost uint256 ghostAnnouncementCount {
 }
 
 // Track transfer statuses
-ghost mapping(bytes32 => uint8) ghostTransferStatus {
-    init_state axiom forall bytes32 id. ghostTransferStatus[id] == 0;
+ghost mapping(bytes32 => uint8) ghostRequestStatus {
+    init_state axiom forall bytes32 id. ghostRequestStatus[id] == 0;
 }
 
 // =============================================================================
@@ -337,11 +337,11 @@ rule transferStatusMonotonicity(bytes32 transferId, method f) {
     env e;
     calldataarg args;
 
-    uint8 statusBefore = getTransferStatus(transferId);
+    uint8 statusBefore = getRequestStatus(transferId);
 
     f(e, args);
 
-    uint8 statusAfter = getTransferStatus(transferId);
+    uint8 statusAfter = getRequestStatus(transferId);
 
     // Status can only increase (0=PENDING, 1=RELAYED, 2=COMPLETED, 3=FAILED, 4=REFUNDED)
     assert statusAfter >= statusBefore || statusAfter == 3 || statusAfter == 4, 
@@ -364,7 +364,7 @@ rule bridgeRequired(
 
     bool bridgeRegistered = isBridgeRegistered(targetChainId);
 
-    initiatePrivateTransfer@withrevert(e, targetChainId, recipient, amount, commitment, nullifier, proof);
+    initiatePrivateRelay@withrevert(e, targetChainId, recipient, amount, commitment, nullifier, proof);
 
     assert !bridgeRegistered => lastReverted, "Unregistered bridge must revert";
 }
@@ -376,7 +376,7 @@ rule bridgeRequired(
 rule completeRequiresRelay(bytes32 transferId, bytes proof) {
     env e;
 
-    uint8 status = getTransferStatus(transferId);
+    uint8 status = getRequestStatus(transferId);
     
     // Status 1 = RELAYED
     completePrivateTransfer@withrevert(e, transferId, proof);
@@ -406,7 +406,7 @@ rule nullifierRegisteredOnTransfer(
     uint256 soulDomain = 1;
     bool consumedBefore = isNullifierConsumed(nullifier, soulDomain);
 
-    initiatePrivateTransfer(e, targetChainId, recipient, amount, commitment, nullifier, proof);
+    initiatePrivateRelay(e, targetChainId, recipient, amount, commitment, nullifier, proof);
 
     bool consumedAfter = isNullifierConsumed(nullifier, soulDomain);
 

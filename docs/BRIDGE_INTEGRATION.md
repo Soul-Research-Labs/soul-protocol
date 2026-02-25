@@ -11,10 +11,10 @@ interface IBridgeAdapter {
         bytes32 recipient,
         uint256 amount,
         bytes calldata proof
-    ) external returns (bytes32 transferId);
+    ) external returns (bytes32 relayId);
 
     function completeBridge(
-        bytes32 transferId,
+        bytes32 relayId,
         bytes calldata proof
     ) external returns (bool success);
 
@@ -50,7 +50,7 @@ import { SoulBridge, ChainId } from "@soul/sdk";
 const bridge = new SoulBridge(provider);
 
 // Initiate cross-chain transfer
-const transferId = await bridge.transfer({
+const relayId = await bridge.transfer({
   sourceChain: ChainId.ETHEREUM,
   targetChain: ChainId.POLYGON,
   amount: ethers.parseEther("1.0"),
@@ -59,7 +59,7 @@ const transferId = await bridge.transfer({
 });
 
 // Monitor transfer status
-const status = await bridge.getTransferStatus(transferId);
+const status = await bridge.getRequestStatus(relayId);
 console.log(status); // 'pending' | 'relayed' | 'completed' | 'failed'
 ```
 
@@ -67,7 +67,7 @@ console.log(status); // 'pending' | 'relayed' | 'completed' | 'failed'
 
 ```typescript
 // On destination chain
-const completed = await bridge.completeBridge(transferId, proof);
+const completed = await bridge.completeBridge(relayId, proof);
 ```
 
 ---
@@ -82,7 +82,7 @@ import { SoulBridge, ChainId } from "@soul/sdk";
 const bridge = new SoulBridge(provider);
 
 // Bridge to Arbitrum using native messaging
-const transferId = await bridge.transfer({
+const relayId = await bridge.transfer({
   sourceChain: ChainId.ETHEREUM,
   targetChain: ChainId.ARBITRUM,
   amount: ethers.parseEther("1.0"),
@@ -91,9 +91,9 @@ const transferId = await bridge.transfer({
 });
 
 // Arbitrum uses retryable tickets - may need to manually redeem
-const status = await bridge.getTransferStatus(transferId);
+const status = await bridge.getRequestStatus(relayId);
 if (status === "pending_retry") {
-  await bridge.redeemRetryableTicket(transferId);
+  await bridge.redeemRetryableTicket(relayId);
 }
 ```
 
