@@ -50,27 +50,48 @@ contract PrivacyPoolIntegration is ReentrancyGuard, AccessControl, Pausable {
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Thrown when an address parameter is the zero address
     error ZeroAddress();
+    /// @notice Thrown when a value or amount parameter is zero
     error ZeroAmount();
+    /// @notice Thrown when a commitment value is invalid (e.g., zero or malformed)
     error InvalidCommitment();
+    /// @notice Thrown when a deposit range proof fails verification
     error InvalidRangeProof();
+    /// @notice Thrown when a withdrawal ZK proof fails verification
     error InvalidWithdrawProof();
+    /// @notice Thrown when a private swap ZK proof fails verification
     error InvalidSwapProof();
+    /// @notice Thrown when a nullifier has already been spent (double-spend attempt)
     error NullifierAlreadyUsed();
+    /// @notice Thrown when the pool lacks sufficient balance for a withdrawal
     error InsufficientPoolBalance();
+    /// @notice Thrown when the withdrawal recipient is invalid
     error InvalidRecipient();
+    /// @notice Thrown when a commitment already exists in the Merkle tree
     error CommitmentAlreadyExists();
+    /// @notice Thrown when a deposit exceeds the per-token deposit limit
     error DepositExceedsLimit();
+    /// @notice Thrown when a withdrawal exceeds the per-token withdrawal limit
     error WithdrawExceedsLimit();
+    /// @notice Thrown when an unsupported or unregistered token is used
     error InvalidToken();
+    /// @notice Thrown when the pool is paused or not yet activated
     error PoolNotActive();
+    /// @notice Thrown when the fee parameter is invalid
     error InvalidFee();
+    /// @notice Thrown when price slippage exceeds the permitted threshold
     error SlippageExceeded();
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Emitted on a private deposit into the shielded pool
+    /// @param commitment The Pedersen commitment for the deposited amount
+    /// @param nullifier The nullifier hash bound to this deposit
+    /// @param token The ERC-20 token address (or native token sentinel)
+    /// @param timestamp Block timestamp of the deposit
     event PrivateDeposit(
         bytes32 indexed commitment,
         bytes32 indexed nullifier,
@@ -78,6 +99,11 @@ contract PrivacyPoolIntegration is ReentrancyGuard, AccessControl, Pausable {
         uint256 timestamp
     );
 
+    /// @notice Emitted on a private withdrawal from the shielded pool
+    /// @param nullifierHash The spent nullifier proving ownership
+    /// @param recipient The encrypted or stealth recipient address
+    /// @param token The ERC-20 token address (or native token sentinel)
+    /// @param timestamp Block timestamp of the withdrawal
     event PrivateWithdraw(
         bytes32 indexed nullifierHash,
         bytes32 indexed recipient,
@@ -85,6 +111,11 @@ contract PrivacyPoolIntegration is ReentrancyGuard, AccessControl, Pausable {
         uint256 timestamp
     );
 
+    /// @notice Emitted on a private token swap within the pool
+    /// @param inputNullifier Nullifier of the input commitment being consumed
+    /// @param inputCommitment The commitment being spent
+    /// @param outputCommitment The new commitment created from the swap
+    /// @param timestamp Block timestamp of the swap
     event PrivateSwap(
         bytes32 indexed inputNullifier,
         bytes32 indexed inputCommitment,
@@ -92,19 +123,32 @@ contract PrivacyPoolIntegration is ReentrancyGuard, AccessControl, Pausable {
         uint256 timestamp
     );
 
+    /// @notice Emitted when a new commitment is added to the Merkle tree
+    /// @param commitment The commitment hash added
+    /// @param leafIndex The leaf index in the Merkle tree
     event CommitmentAdded(bytes32 indexed commitment, uint256 leafIndex);
 
+    /// @notice Emitted when a new token is registered for the privacy pool
+    /// @param token The ERC-20 token address
+    /// @param maxDeposit Maximum deposit amount for this token
+    /// @param maxWithdraw Maximum withdrawal amount for this token
     event PoolTokenAdded(
         address indexed token,
         uint256 maxDeposit,
         uint256 maxWithdraw
     );
 
+    /// @notice Emitted when the range proof verifier contract is updated
+    /// @param oldVerifier Previous verifier address
+    /// @param newVerifier New verifier address
     event RangeProofVerifierUpdated(
         address indexed oldVerifier,
         address indexed newVerifier
     );
 
+    /// @notice Emitted when the withdrawal proof verifier contract is updated
+    /// @param oldVerifier Previous verifier address
+    /// @param newVerifier New verifier address
     event WithdrawProofVerifierUpdated(
         address indexed oldVerifier,
         address indexed newVerifier
@@ -160,6 +204,9 @@ contract PrivacyPoolIntegration is ReentrancyGuard, AccessControl, Pausable {
 
     /// @notice Mapping of nullifier hash to spent status
     mapping(bytes32 => bool) public nullifierSpent;
+
+    /// @notice Cached Merkle root (updated incrementally on each insert)
+    bytes32 public cachedMerkleRoot;
 
     /// @notice Range proof verifier contract
     address public rangeProofVerifier;
@@ -398,8 +445,7 @@ contract PrivacyPoolIntegration is ReentrancyGuard, AccessControl, Pausable {
         // Extract amount from proof (simplified - real impl would use proof public outputs)
         uint256 amount = _extractAmountFromProof(proof);
         if (amount > poolToken.maxWithdraw) revert WithdrawExceedsLimit();
-        if (amount > poolToken.totalDeposited)
-            revert InsufficientPoolBalance();
+        if (amount > poolToken.totalDeposited) revert InsufficientPoolBalance();
 
         // Calculate fee
         uint256 fee = (amount * poolToken.fee) / 10000;
@@ -500,6 +546,15 @@ contract PrivacyPoolIntegration is ReentrancyGuard, AccessControl, Pausable {
         commitments[commitment] = true;
         commitmentTree[nextLeafIndex] = commitment;
 
+        // Update cached Merkle root incrementally (O(1) per insert)
+        if (nextLeafIndex == 0) {
+            cachedMerkleRoot = commitment;
+        } else {
+            cachedMerkleRoot = keccak256(
+                abi.encodePacked(cachedMerkleRoot, commitment)
+            );
+        }
+
         emit CommitmentAdded(commitment, nextLeafIndex);
         nextLeafIndex++;
     }
@@ -509,22 +564,7 @@ contract PrivacyPoolIntegration is ReentrancyGuard, AccessControl, Pausable {
      * @return root The current Merkle root
      */
     function _getMerkleRoot() internal view returns (bytes32 root) {
-        // Simplified Merkle root calculation
-        // Real implementation would use incremental Merkle tree
-        if (nextLeafIndex == 0) {
-            return bytes32(0);
-        }
-
-        // For simplicity, hash all commitments together
-        // Production should use proper incremental Merkle tree
-        bytes32 hash = commitmentTree[0];
-        for (uint256 i = 1; i < nextLeafIndex; ) {
-            hash = keccak256(abi.encodePacked(hash, commitmentTree[i]));
-            unchecked {
-                ++i;
-            }
-        }
-        return hash;
+        return cachedMerkleRoot;
     }
 
     /**

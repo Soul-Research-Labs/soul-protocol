@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
+
 /**
  * @title GasOptimizedStealthRegistry
  * @author Soul Team
@@ -19,23 +22,36 @@ contract GasOptimizedStealthRegistry {
     // ERRORS (more gas efficient than require strings)
     // ═══════════════════════════════════════════════════════════════════════
 
+    /// @notice Thrown when a view tag is zero or invalid
     error InvalidViewTag();
+    /// @notice Thrown when the ephemeral public key is zero or invalid
     error InvalidEphemeralKey();
+    /// @notice Thrown when a spending or viewing public key is invalid
     error InvalidPublicKey();
+    /// @notice Thrown when a batch operation exceeds the maximum allowed size
     error BatchSizeExceeded();
+    /// @notice Thrown when a stealth address has already been registered
     error StealthAddressAlreadyRegistered();
+    /// @notice Thrown when the caller is not authorized for the operation
     error Unauthorized();
 
     // ═══════════════════════════════════════════════════════════════════════
     // EVENTS (indexed parameters for efficient filtering)
     // ═══════════════════════════════════════════════════════════════════════
 
+    /// @notice Emitted when a new stealth address is generated
+    /// @param ephemeralKey The ephemeral public key used for derivation
+    /// @param stealthAddress The derived stealth address
+    /// @param viewTag The view tag for efficient scanning
     event StealthAddressGenerated(
         bytes32 indexed ephemeralKey,
         address indexed stealthAddress,
         uint8 viewTag
     );
 
+    /// @notice Emitted when a batch of stealth addresses is generated
+    /// @param batchId Unique identifier for the batch
+    /// @param count Number of stealth addresses generated
     event BatchStealthGenerated(uint256 indexed batchId, uint256 count);
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -294,7 +310,7 @@ contract GasOptimizedStealthRegistry {
  * @notice Gas-optimized nullifier management with batch operations
  * @dev Targets <50k gas per nullifier (down from ~120k)
  */
-contract GasOptimizedNullifierManager {
+contract GasOptimizedNullifierManager is Ownable2Step {
     // ═══════════════════════════════════════════════════════════════════════
     // ERRORS
     // ═══════════════════════════════════════════════════════════════════════
@@ -303,7 +319,6 @@ contract GasOptimizedNullifierManager {
     error InvalidNullifier();
     error InvalidDomain();
     error BatchSizeExceeded();
-    error Unauthorized();
 
     // ═══════════════════════════════════════════════════════════════════════
     // EVENTS
@@ -321,16 +336,7 @@ contract GasOptimizedNullifierManager {
     // ACCESS CONTROL
     // ═══════════════════════════════════════════════════════════════════════
 
-    address public owner;
-
-    modifier onlyOwner() {
-        if (msg.sender != owner) revert Unauthorized();
-        _;
-    }
-
-    constructor() {
-        owner = msg.sender;
-    }
+    constructor() Ownable(msg.sender) {}
 
     // ═══════════════════════════════════════════════════════════════════════
     // STORAGE (optimized packing)
@@ -455,7 +461,7 @@ contract GasOptimizedNullifierManager {
  * @notice Gas-optimized Ring Confidential Transactions
  * @dev Targets <200k gas per RingCT transaction (down from ~500k)
  */
-contract GasOptimizedRingCT {
+contract GasOptimizedRingCT is Ownable2Step {
     // ═══════════════════════════════════════════════════════════════════════
     // ERRORS
     // ═══════════════════════════════════════════════════════════════════════
@@ -466,7 +472,6 @@ contract GasOptimizedRingCT {
     error BalanceNotPreserved();
     error InvalidSignature();
     error RingSignatureVerificationNotImplemented();
-    error Unauthorized();
     error ZeroAddress();
 
     // ═════════════════════════════════════════════════════════════════════
@@ -497,21 +502,11 @@ contract GasOptimizedRingCT {
     // External ring signature verifier contract
     address public ringSignatureVerifier;
 
-    // Contract owner for admin operations
-    address public owner;
-
     // Constants
     uint256 public constant MIN_RING_SIZE = 2;
     uint256 public constant MAX_RING_SIZE = 16;
 
-    constructor() {
-        owner = msg.sender;
-    }
-
-    modifier onlyOwner() {
-        if (msg.sender != owner) revert Unauthorized();
-        _;
-    }
+    constructor() Ownable(msg.sender) {}
 
     /**
      * @notice Set external ring signature verifier contract
