@@ -202,7 +202,6 @@ contract CrossChainProofHubV3Upgradeable is
         __AccessControl_init();
         __ReentrancyGuard_init();
         __Pausable_init();
-        __UUPSUpgradeable_init();
 
         chainId = block.chainid;
 

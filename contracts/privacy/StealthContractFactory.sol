@@ -174,7 +174,6 @@ contract StealthContractFactory is
     function initialize(address admin) external initializer {
         if (admin == address(0)) revert ZeroAddress();
 
-        __UUPSUpgradeable_init();
         __AccessControl_init();
         __ReentrancyGuard_init();
 

@@ -156,7 +156,6 @@ contract NullifierRegistryV3Upgradeable is
         __AccessControl_init();
         __Pausable_init();
         __ReentrancyGuard_init();
-        __UUPSUpgradeable_init();
 
         chainId = block.chainid;
         require(block.chainid <= type(uint64).max, "Chain ID exceeds uint64");

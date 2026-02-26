@@ -323,7 +323,6 @@ contract DirectL2MessengerUpgradeable is
         __ReentrancyGuard_init();
         __AccessControl_init();
         __Pausable_init();
-        __UUPSUpgradeable_init();
 
         currentChainId = block.chainid;
         soulHub = _soulHub;

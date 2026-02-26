@@ -325,7 +325,6 @@ contract ZKBoundStateLocksUpgradeable is
         __AccessControl_init();
         __ReentrancyGuard_init();
         __Pausable_init();
-        __UUPSUpgradeable_init();
 
         // Grant roles to admin
         _grantRole(DEFAULT_ADMIN_ROLE, admin);

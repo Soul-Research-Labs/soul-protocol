@@ -191,7 +191,6 @@ contract ProofCarryingContainerUpgradeable is
         __AccessControl_init();
         __ReentrancyGuard_init();
         __Pausable_init();
-        __UUPSUpgradeable_init();
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(CONTAINER_ADMIN_ROLE, admin);

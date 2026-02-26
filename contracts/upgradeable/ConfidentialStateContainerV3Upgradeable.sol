@@ -175,7 +175,6 @@ contract ConfidentialStateContainerV3Upgradeable is
         __AccessControl_init();
         __ReentrancyGuard_init();
         __Pausable_init();
-        __UUPSUpgradeable_init();
 
         verifier = ICSCProofVerifier(_verifier);
         chainId = block.chainid;

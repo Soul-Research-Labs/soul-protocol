@@ -449,7 +449,6 @@ contract CrossChainPrivacyHub is
         if (guardian == address(0)) revert ZeroAddress();
         if (_feeRecipient == address(0)) revert ZeroAddress();
 
-        __UUPSUpgradeable_init();
         __AccessControl_init();
         __ReentrancyGuard_init();
         __Pausable_init();

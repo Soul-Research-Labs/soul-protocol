@@ -235,7 +235,6 @@ contract PrivacyRouterUpgradeable is
         __AccessControl_init();
         __ReentrancyGuard_init();
         __Pausable_init();
-        __UUPSUpgradeable_init();
 
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(OPERATOR_ROLE, _admin);

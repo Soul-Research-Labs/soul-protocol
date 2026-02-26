@@ -339,7 +339,6 @@ contract PrivateRelayerNetwork is
         uint256 _protocolFeeBps,
         address _featureRegistry
     ) external initializer {
-        __UUPSUpgradeable_init();
         __AccessControl_init();
         __ReentrancyGuard_init();
 

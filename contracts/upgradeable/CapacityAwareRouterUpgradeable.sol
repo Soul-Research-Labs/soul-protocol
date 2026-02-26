@@ -244,7 +244,6 @@ contract CapacityAwareRouterUpgradeable is
         __AccessControl_init();
         __ReentrancyGuard_init();
         __Pausable_init();
-        __UUPSUpgradeable_init();
 
         orchestrator = IDynamicRoutingOrchestrator(_orchestrator);
 

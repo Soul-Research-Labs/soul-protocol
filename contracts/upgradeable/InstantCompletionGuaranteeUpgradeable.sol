@@ -91,7 +91,6 @@ contract InstantCompletionGuaranteeUpgradeable is
 
         __AccessControl_init();
         __ReentrancyGuard_init();
-        __UUPSUpgradeable_init();
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(OPERATOR_ROLE, admin);
