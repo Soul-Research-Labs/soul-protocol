@@ -197,9 +197,10 @@ rule dvnMinimumConfirmationsRequired(env e, bytes32 msgId) {
     // Message execution should fail without enough confirmations
     require confirmations < required;
     
-    // Attempting to finalize should fail
-    // (This is a placeholder - actual rule depends on contract implementation)
-    assert confirmations < required, "Confirmations below required";
+    // With insufficient DVN confirmations the message must not reach EXECUTED status (2)
+    uint8 status = messageStatus(msgId);
+    assert status != 2,
+        "Messages with insufficient DVN confirmations must not reach EXECUTED status";
 }
 
 /**
@@ -373,14 +374,15 @@ rule pauseStopsOperations(env e, method f)
 rule roleBasedAccessEnforced(env e, method f)
     filtered { f -> !f.isView } {
     
-    // Operations should check caller roles
-    // This is a generic check - specific rules would be per-function
     calldataarg args;
-    f(e, args);
+    f@withrevert(e, args);
     
-    // If operation succeeded, caller has appropriate role
-    // (This is a placeholder - actual verification needs specific role checks)
-    assert true, "Role-based access completed";
+    bool succeeded = !lastReverted;
+    bool isPaused = paused();
+    
+    // When the system is paused, non-admin callers must not execute state-changing ops
+    assert (isPaused && !hasRole(0x00, e.msg.sender)) => !succeeded,
+        "Non-admin callers cannot execute state-changing operations when paused";
 }
 
 /*//////////////////////////////////////////////////////////////

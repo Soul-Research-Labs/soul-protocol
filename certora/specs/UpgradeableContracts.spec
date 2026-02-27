@@ -381,6 +381,9 @@ function isContract(address addr) returns bool {
 }
 
 function initialize(env e) {
-    // Placeholder for initialization function
-    require true;
+    // Constrain initialization preconditions for formal verification:
+    // - No ETH should be sent with initialization calls
+    // - The sender must be a non-zero address
+    require e.msg.value == 0;
+    require e.msg.sender != 0;
 }

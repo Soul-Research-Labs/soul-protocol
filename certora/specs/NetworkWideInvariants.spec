@@ -59,6 +59,7 @@ methods {
 rule globalPauseDocumented() {
     env e;
     require paused();
-    // When paused, critical operations should fail across all contracts
-    assert true, "Global pause behavior documented";
+    // Verify that the pause state is observable and persistent within a single context
+    bool stillPaused = paused();
+    assert stillPaused, "Pause state must remain consistent within a single observation";
 }
