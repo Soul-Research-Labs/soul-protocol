@@ -71,6 +71,30 @@ optimizer_runs = 0
 fuzz = { runs = 100000 }
 invariant = { runs = 1024, depth = 512 }
 
+# Deep fuzz: extended runs for security-critical paths (10M fuzz runs)
+# Usage: FOUNDRY_PROFILE=deep-fuzz forge test --match-path 'test/fuzz/*'
+[profile.deep-fuzz]
+fuzz = { runs = 10000000, max_test_rejects = 1000000, seed = "0x42" }
+invariant = { runs = 4096, depth = 1024, fail_on_revert = false }
+optimizer_runs = 200
+via_ir = true
+
+# Security-focused fuzz: high runs for attack tests
+# Usage: FOUNDRY_PROFILE=security-fuzz forge test --match-path 'test/attacks/*'
+[profile.security-fuzz]
+fuzz = { runs = 1000000, max_test_rejects = 500000 }
+invariant = { runs = 2048, depth = 512, fail_on_revert = false }
+optimizer_runs = 200
+via_ir = true
+
+# Nightly fuzz: balanced between CI speed and thoroughness
+# Usage: FOUNDRY_PROFILE=nightly forge test
+[profile.nightly]
+fuzz = { runs = 500000, max_test_rejects = 200000 }
+invariant = { runs = 1024, depth = 256, fail_on_revert = false }
+optimizer_runs = 200
+via_ir = true
+
 [profile.coverage]
 # Coverage: run with `forge coverage --ir-minimum` (FOUNDRY_PROFILE=coverage).
 # forge coverage disables via_ir for source mapping accuracy; --ir-minimum re-enables it.

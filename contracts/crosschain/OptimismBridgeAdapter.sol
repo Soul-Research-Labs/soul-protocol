@@ -59,11 +59,6 @@ import {IOptimismBridgeAdapter} from "../interfaces/IOptimismBridgeAdapter.sol";
  * - Pausable emergency circuit breaker
  * - Nullifier-based double-spend prevention for privacy deposits
  */
-/**
- * @title OptimismBridgeAdapter
- * @author Soul Protocol Team
- * @notice Optimism Bridge Adapter contract
- */
 contract OptimismBridgeAdapter is
     IOptimismBridgeAdapter,
     AccessControl,
@@ -219,15 +214,7 @@ contract OptimismBridgeAdapter is
     //////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IOptimismBridgeAdapter
-        /**
-     * @notice Configures the operation
-     * @param optimismBridgeContract The optimismBridgeContract identifier
-     * @param wrappedOP The wrapped o p
-     * @param l1OutputOracle The l1 output oracle
-     * @param minValidatorSignatures The minValidatorSignatures identifier
-     * @param requiredBlockConfirmations The required block confirmations
-     */
-function configure(
+    function configure(
         address optimismBridgeContract,
         address wrappedOP,
         address l1OutputOracle,
@@ -258,11 +245,7 @@ function configure(
     }
 
     /// @inheritdoc IOptimismBridgeAdapter
-        /**
-     * @notice Sets the treasury
-     * @param _treasury The _treasury
-     */
-function setTreasury(
+    function setTreasury(
         address _treasury
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_treasury == address(0)) revert ZeroAddress();
@@ -274,16 +257,7 @@ function setTreasury(
     //////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IOptimismBridgeAdapter
-        /**
-     * @notice Submits l2 output
-     * @param l2BlockNumber The l2 block number
-     * @param outputRoot The output root
-     * @param stateRoot The state root
-     * @param withdrawalStorageRoot The withdrawal storage root
-     * @param timestamp The timestamp timestamp
-     * @param attestations The attestations
-     */
-function submitL2Output(
+    function submitL2Output(
         uint256 l2BlockNumber,
         bytes32 outputRoot,
         bytes32 stateRoot,
@@ -321,18 +295,7 @@ function submitL2Output(
     //////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IOptimismBridgeAdapter
-        /**
-     * @notice Initiates o p deposit
-     * @param l2TxHash The l2TxHash hash value
-     * @param l2Sender The l2 sender
-     * @param evmRecipient The evm recipient
-     * @param amountWei The amountWei amount
-     * @param l2BlockNumber The l2 block number
-     * @param txProof The tx proof
-     * @param attestations The attestations
-     * @return depositId The deposit id
-     */
-function initiateOPDeposit(
+    function initiateOPDeposit(
         bytes32 l2TxHash,
         address l2Sender,
         address evmRecipient,
@@ -420,11 +383,7 @@ function initiateOPDeposit(
     }
 
     /// @inheritdoc IOptimismBridgeAdapter
-        /**
-     * @notice Completes o p deposit
-     * @param depositId The depositId identifier
-     */
-function completeOPDeposit(
+    function completeOPDeposit(
         bytes32 depositId
     ) external nonReentrant whenNotPaused onlyRole(OPERATOR_ROLE) {
         OPDeposit storage deposit = deposits[depositId];
@@ -459,13 +418,7 @@ function completeOPDeposit(
     //////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IOptimismBridgeAdapter
-        /**
-     * @notice Initiates withdrawal
-     * @param l2Recipient The l2 recipient
-     * @param amountWei The amountWei amount
-     * @return withdrawalId The withdrawal id
-     */
-function initiateWithdrawal(
+    function initiateWithdrawal(
         address l2Recipient,
         uint256 amountWei
     ) external nonReentrant whenNotPaused returns (bytes32 withdrawalId) {
@@ -526,14 +479,7 @@ function initiateWithdrawal(
     }
 
     /// @inheritdoc IOptimismBridgeAdapter
-        /**
-     * @notice Completes withdrawal
-     * @param withdrawalId The withdrawalId identifier
-     * @param l2TxHash The l2TxHash hash value
-     * @param txProof The tx proof
-     * @param attestations The attestations
-     */
-function completeWithdrawal(
+    function completeWithdrawal(
         bytes32 withdrawalId,
         bytes32 l2TxHash,
         OutputRootProof calldata txProof,
@@ -585,11 +531,7 @@ function completeWithdrawal(
     }
 
     /// @inheritdoc IOptimismBridgeAdapter
-        /**
-     * @notice Refund withdrawal
-     * @param withdrawalId The withdrawalId identifier
-     */
-function refundWithdrawal(
+    function refundWithdrawal(
         bytes32 withdrawalId
     ) external nonReentrant whenNotPaused {
         OPWithdrawal storage withdrawal = withdrawals[withdrawalId];
@@ -638,15 +580,7 @@ function refundWithdrawal(
     //////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IOptimismBridgeAdapter
-        /**
-     * @notice Creates escrow
-     * @param l2Party The l2 party
-     * @param hashlock The hashlock hash value
-     * @param finishAfter The finish after
-     * @param cancelAfter The cancel after
-     * @return escrowId The escrow id
-     */
-function createEscrow(
+    function createEscrow(
         address l2Party,
         bytes32 hashlock,
         uint256 finishAfter,
@@ -698,12 +632,7 @@ function createEscrow(
     }
 
     /// @inheritdoc IOptimismBridgeAdapter
-        /**
-     * @notice Finish escrow
-     * @param escrowId The escrowId identifier
-     * @param preimage The preimage
-     */
-function finishEscrow(
+    function finishEscrow(
         bytes32 escrowId,
         bytes32 preimage
     ) external nonReentrant whenNotPaused {
@@ -735,11 +664,7 @@ function finishEscrow(
     }
 
     /// @inheritdoc IOptimismBridgeAdapter
-        /**
-     * @notice Cancels escrow
-     * @param escrowId The escrowId identifier
-     */
-function cancelEscrow(
+    function cancelEscrow(
         bytes32 escrowId
     ) external nonReentrant whenNotPaused {
         OPEscrow storage escrow = escrows[escrowId];
@@ -767,14 +692,7 @@ function cancelEscrow(
     //////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IOptimismBridgeAdapter
-        /**
-     * @notice Registers private deposit
-     * @param depositId The depositId identifier
-     * @param commitment The cryptographic commitment
-     * @param nullifier The nullifier hash
-     * @param zkProof The zk proof
-     */
-function registerPrivateDeposit(
+    function registerPrivateDeposit(
         bytes32 depositId,
         bytes32 commitment,
         bytes32 nullifier,
@@ -801,19 +719,15 @@ function registerPrivateDeposit(
                         EMERGENCY CONTROLS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Pause the bridge
-        /**
-     * @notice Pauses the operation
-     */
-function pause() external onlyRole(GUARDIAN_ROLE) {
+    /// @notice Pause all bridge operations
+    /// @dev Callable only by GUARDIAN_ROLE. Affects deposits, withdrawals, and escrows.
+    function pause() external onlyRole(GUARDIAN_ROLE) {
         _pause();
     }
 
-    /// @notice Unpause the bridge
-        /**
-     * @notice Unpauses the operation
-     */
-function unpause() external onlyRole(GUARDIAN_ROLE) {
+    /// @notice Resume bridge operations after pause
+    /// @dev Callable only by GUARDIAN_ROLE.
+    function unpause() external onlyRole(GUARDIAN_ROLE) {
         _unpause();
     }
 
@@ -828,13 +742,10 @@ function unpause() external onlyRole(GUARDIAN_ROLE) {
         zkProofVerifier = verifier;
     }
 
-    /// @notice Withdraw accumulated bridge fees
+    /// @notice Withdraw accumulated bridge fees to treasury
     /// @dev Transfers wrappedOP fees to the treasury address. Amount is capped
     ///      at the contract's wrappedOP balance.
-        /**
-     * @notice Withdraws fees
-     */
-function withdrawFees() external onlyRole(TREASURY_ROLE) {
+    function withdrawFees() external onlyRole(TREASURY_ROLE) {
         uint256 amount = accumulatedFees;
         if (amount == 0) revert InvalidAmount();
         accumulatedFees = 0;
@@ -860,48 +771,28 @@ function withdrawFees() external onlyRole(TREASURY_ROLE) {
     //////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IOptimismBridgeAdapter
-        /**
-     * @notice Returns the deposit
-     * @param depositId The depositId identifier
-     * @return The result value
-     */
-function getDeposit(
+    function getDeposit(
         bytes32 depositId
     ) external view returns (OPDeposit memory) {
         return deposits[depositId];
     }
 
     /// @inheritdoc IOptimismBridgeAdapter
-        /**
-     * @notice Returns the withdrawal
-     * @param withdrawalId The withdrawalId identifier
-     * @return The result value
-     */
-function getWithdrawal(
+    function getWithdrawal(
         bytes32 withdrawalId
     ) external view returns (OPWithdrawal memory) {
         return withdrawals[withdrawalId];
     }
 
     /// @inheritdoc IOptimismBridgeAdapter
-        /**
-     * @notice Returns the escrow
-     * @param escrowId The escrowId identifier
-     * @return The result value
-     */
-function getEscrow(
+    function getEscrow(
         bytes32 escrowId
     ) external view returns (OPEscrow memory) {
         return escrows[escrowId];
     }
 
     /// @inheritdoc IOptimismBridgeAdapter
-        /**
-     * @notice Returns the l2 output
-     * @param l2BlockNumber The l2 block number
-     * @return The result value
-     */
-function getL2Output(
+    function getL2Output(
         uint256 l2BlockNumber
     ) external view returns (L2OutputProposal memory) {
         return l2Outputs[l2BlockNumber];
@@ -910,12 +801,7 @@ function getL2Output(
     /// @notice Get user deposit history
     /// @param user Address of the depositor
     /// @return Array of deposit IDs associated with the user
-        /**
-     * @notice Returns the user deposits
-     * @param user The user
-     * @return The result value
-     */
-function getUserDeposits(
+    function getUserDeposits(
         address user
     ) external view returns (bytes32[] memory) {
         return userDeposits[user];
@@ -924,12 +810,7 @@ function getUserDeposits(
     /// @notice Get user withdrawal history
     /// @param user Address of the withdrawer
     /// @return Array of withdrawal IDs associated with the user
-        /**
-     * @notice Returns the user withdrawals
-     * @param user The user
-     * @return The result value
-     */
-function getUserWithdrawals(
+    function getUserWithdrawals(
         address user
     ) external view returns (bytes32[] memory) {
         return userWithdrawals[user];
@@ -938,12 +819,7 @@ function getUserWithdrawals(
     /// @notice Get user escrow history
     /// @param user Address of the escrow creator
     /// @return Array of escrow IDs associated with the user
-        /**
-     * @notice Returns the user escrows
-     * @param user The user
-     * @return The result value
-     */
-function getUserEscrows(
+    function getUserEscrows(
         address user
     ) external view returns (bytes32[] memory) {
         return userEscrows[user];
@@ -957,17 +833,7 @@ function getUserEscrows(
     /// @return totalEscCancelled Number of cancelled escrows
     /// @return fees Accumulated bridge fees in wei
     /// @return latestBlock Latest verified L2 block number
-        /**
-     * @notice Returns the bridge stats
-     * @return totalDep The total dep
-     * @return totalWith The total with
-     * @return totalEsc The total esc
-     * @return totalEscFinished The total esc finished
-     * @return totalEscCancelled The total esc cancelled
-     * @return fees The fees
-     * @return latestBlock The latest block
-     */
-function getBridgeStats()
+    function getBridgeStats()
         external
         view
         returns (

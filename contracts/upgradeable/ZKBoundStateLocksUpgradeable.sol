@@ -348,38 +348,38 @@ contract ZKBoundStateLocksUpgradeable is
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Get total locks created
-        /**
+    /**
      * @notice Total locks created
-     * @return The result value
+     * @return The total number of locks created
      */
-function totalLocksCreated() external view returns (uint256) {
+    function totalLocksCreated() external view returns (uint256) {
         return uint64(_packedStats);
     }
 
     /// @notice Get total locks unlocked
-        /**
+    /**
      * @notice Total locks unlocked
-     * @return The result value
+     * @return The total number of locks that have been unlocked
      */
-function totalLocksUnlocked() external view returns (uint256) {
+    function totalLocksUnlocked() external view returns (uint256) {
         return uint64(_packedStats >> _STAT_SHIFT_UNLOCKED);
     }
 
     /// @notice Get total optimistic unlocks
-        /**
+    /**
      * @notice Total optimistic unlocks
-     * @return The result value
+     * @return The total number of optimistic unlocks performed
      */
-function totalOptimisticUnlocks() external view returns (uint256) {
+    function totalOptimisticUnlocks() external view returns (uint256) {
         return uint64(_packedStats >> _STAT_SHIFT_OPTIMISTIC);
     }
 
     /// @notice Get total disputes
-        /**
+    /**
      * @notice Total disputes
-     * @return The result value
+     * @return The total number of disputes raised
      */
-function totalDisputes() external view returns (uint256) {
+    function totalDisputes() external view returns (uint256) {
         return uint64(_packedStats >> _STAT_SHIFT_DISPUTES);
     }
 
@@ -685,7 +685,7 @@ function totalDisputes() external view returns (uint256) {
      * @param appId The application ID
      * @param epoch The epoch for versioning
      * @param name Human-readable domain name
-          * @return domainSeparator The domain separator
+     * @return domainSeparator The domain separator
      */
     function registerDomain(
         uint64 chainId,
@@ -769,13 +769,13 @@ function totalDisputes() external view returns (uint256) {
         }
     }
 
-        /**
+    /**
      * @notice _verify proof
      * @param lock The lock
      * @param unlockProof The unlock proof
-     * @return The result value
+     * @return True if the ZK proof is valid for the given lock
      */
-function _verifyProof(
+    function _verifyProof(
         ZKSLock storage lock,
         UnlockProof calldata unlockProof
     ) internal view returns (bool) {
@@ -928,10 +928,10 @@ function _verifyProof(
     /**
      * @notice Generates a domain separator from components
      * @dev Uses explicit masking to prevent LLVM optimization bugs on L2s
-          * @param chainId The chain identifier
+     * @param chainId The chain identifier
      * @param appId The appId identifier
      * @param epoch The epoch
-     * @return The result value
+     * @return The computed domain separator as bytes32
      */
     function generateDomainSeparator(
         uint16 chainId,
@@ -952,10 +952,10 @@ function _verifyProof(
 
     /**
      * @notice Generates domain separator with extended chain ID support
-          * @param chainId The chain identifier
+     * @param chainId The chain identifier
      * @param appId The appId identifier
      * @param epoch The epoch
-     * @return The result value
+     * @return The computed extended domain separator as bytes32
      */
     function generateDomainSeparatorExtended(
         uint64 chainId,
@@ -967,10 +967,10 @@ function _verifyProof(
 
     /**
      * @notice Generates cross-domain nullifier
-          * @param secret The secret value
+     * @param secret The secret value
      * @param lockId The lock identifier
      * @param domainSeparator The domain separator
-     * @return The result value
+     * @return The computed cross-domain nullifier as bytes32
      */
     function generateNullifier(
         bytes32 secret,
@@ -992,7 +992,7 @@ function _verifyProof(
      * @notice Get active lock IDs with pagination
      * @param offset Start index
      * @param limit Maximum number of items to return
-          * @return The result value
+     * @return Paginated array of active lock IDs
      */
     function getActiveLockIds(
         uint256 offset,
@@ -1020,7 +1020,7 @@ function _verifyProof(
 
     /**
      * @notice Returns the number of active locks
-          * @return The result value
+     * @return The number of currently active locks
      */
     function getActiveLockCount() external view returns (uint256) {
         return _activeLockIds.length;
@@ -1029,7 +1029,7 @@ function _verifyProof(
     /**
      * @notice Returns all active lock IDs (up to 100)
      * @dev Convenience method for tests — in production use the paginated version
-          * @return The result value
+     * @return Array of active lock IDs (capped at 100)
      */
     function getActiveLockIds() external view returns (bytes32[] memory) {
         uint256 count = _activeLockIds.length;
@@ -1048,8 +1048,8 @@ function _verifyProof(
 
     /**
      * @notice Returns lock details
-          * @param lockId The lock identifier
-     * @return The result value
+     * @param lockId The lock identifier
+     * @return The ZKSLock struct for the given lock ID
      */
     function getLock(bytes32 lockId) external view returns (ZKSLock memory) {
         return locks[lockId];
@@ -1057,8 +1057,8 @@ function _verifyProof(
 
     /**
      * @notice Checks if lock can be unlocked
-          * @param lockId The lock identifier
-     * @return The result value
+     * @param lockId The lock identifier
+     * @return True if the lock exists, is not yet unlocked, and has not expired
      */
     function canUnlock(bytes32 lockId) external view returns (bool) {
         ZKSLock storage lock = locks[lockId];
@@ -1070,7 +1070,7 @@ function _verifyProof(
 
     /**
      * @notice Returns commitment chain history
-          * @param startCommitment The start commitment
+     * @param startCommitment The start commitment
      * @param maxDepth The maxDepth bound
      * @return chain The chain
      */
@@ -1152,18 +1152,18 @@ function _verifyProof(
     }
 
     /// @notice Pause all lock operations (emergency use)
-        /**
+    /**
      * @notice Pauses the operation
      */
-function pause() external onlyRole(LOCK_ADMIN_ROLE) {
+    function pause() external onlyRole(LOCK_ADMIN_ROLE) {
         _pause();
     }
 
     /// @notice Resume lock operations after pause
-        /**
+    /**
      * @notice Unpauses the operation
      */
-function unpause() external onlyRole(LOCK_ADMIN_ROLE) {
+    function unpause() external onlyRole(LOCK_ADMIN_ROLE) {
         _unpause();
     }
 

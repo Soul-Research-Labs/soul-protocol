@@ -62,6 +62,81 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
 
+  modular-coverage:
+    name: Modular Forge Coverage (per-module)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        module:
+          - { name: security, path: "test/security/*" }
+          - { name: governance, path: "test/governance/*" }
+          - { name: primitives, path: "test/primitives/*" }
+          - { name: crosschain, path: "test/crosschain/*" }
+          - { name: privacy, path: "test/privacy/*" }
+          - { name: relayer, path: "test/relayer/*" }
+    env:
+      FOUNDRY_PROFILE: coverage
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Run ${{ matrix.module.name }} coverage
+        run: |
+          forge coverage --ir-minimum \
+            --match-path '${{ matrix.module.path }}' \
+            --report summary 2>&1 | tee coverage-${{ matrix.module.name }}.txt || true
+
+      - name: Upload module coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.module.name }}
+          path: coverage-${{ matrix.module.name }}.txt
+          retention-days: 14
+          if-no-files-found: warn
+
+  hardhat-compile-check:
+    name: Hardhat Compile + Test Verification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Hardhat compile
+        run: npx hardhat compile
+
+      - name: Hardhat tests
+        run: npx hardhat test
+        timeout-minutes: 30
+
+      - name: Contract size check
+        run: |
+          echo "=== Contract Sizes ==="
+          forge build --sizes 2>&1 | grep -E '^\|' | head -40
+
   sdk-coverage:
     name: SDK Test Coverage
     runs-on: ubuntu-latest

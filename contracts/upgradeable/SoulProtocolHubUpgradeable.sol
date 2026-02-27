@@ -164,11 +164,11 @@ contract SoulProtocolHubUpgradeable is
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Set the verifier registry
-        /**
+    /**
      * @notice Sets the verifier registry
      * @param _registry The _registry
      */
-function setVerifierRegistry(
+    function setVerifierRegistry(
         address _registry
     ) external onlyRole(OPERATOR_ROLE) {
         if (_registry == address(0)) revert ZeroAddress();
@@ -182,11 +182,11 @@ function setVerifierRegistry(
     }
 
     /// @notice Set the universal verifier
-        /**
+    /**
      * @notice Sets the universal verifier
      * @param _verifier The _verifier
      */
-function setUniversalVerifier(
+    function setUniversalVerifier(
         address _verifier
     ) external onlyRole(OPERATOR_ROLE) {
         if (_verifier == address(0)) revert ZeroAddress();
@@ -200,11 +200,11 @@ function setUniversalVerifier(
     }
 
     /// @notice Set the multi-prover hub
-        /**
+    /**
      * @notice Sets the multi prover
      * @param _multiProver The _multi prover
      */
-function setMultiProver(
+    function setMultiProver(
         address _multiProver
     ) external onlyRole(OPERATOR_ROLE) {
         if (_multiProver == address(0)) revert ZeroAddress();
@@ -218,13 +218,13 @@ function setMultiProver(
     }
 
     /// @notice Register a verifier by type
-        /**
+    /**
      * @notice Registers verifier
      * @param verifierType The verifier type
      * @param _verifier The _verifier
      * @param gasLimit The gas limit
      */
-function registerVerifier(
+    function registerVerifier(
         bytes32 verifierType,
         address _verifier,
         uint256 gasLimit
@@ -242,13 +242,13 @@ function registerVerifier(
     }
 
     /// @notice Batch register verifiers
-        /**
+    /**
      * @notice Batchs register verifiers
      * @param verifierTypes The verifier types
      * @param verifierAddresses The verifierAddresses address
      * @param gasLimits The gas limits
      */
-function batchRegisterVerifiers(
+    function batchRegisterVerifiers(
         bytes32[] calldata verifierTypes,
         address[] calldata verifierAddresses,
         uint256[] calldata gasLimits
@@ -288,11 +288,11 @@ function batchRegisterVerifiers(
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Set the cross-chain message relay
-        /**
+    /**
      * @notice Sets the cross chain message relay
      * @param _relay The _relay
      */
-function setCrossChainMessageRelay(
+    function setCrossChainMessageRelay(
         address _relay
     ) external onlyRole(OPERATOR_ROLE) {
         if (_relay == address(0)) revert ZeroAddress();
@@ -306,11 +306,11 @@ function setCrossChainMessageRelay(
     }
 
     /// @notice Set the cross-chain privacy hub
-        /**
+    /**
      * @notice Sets the cross chain privacy hub
      * @param _hub The _hub
      */
-function setCrossChainPrivacyHub(
+    function setCrossChainPrivacyHub(
         address _hub
     ) external onlyRole(OPERATOR_ROLE) {
         if (_hub == address(0)) revert ZeroAddress();
@@ -324,14 +324,14 @@ function setCrossChainPrivacyHub(
     }
 
     /// @notice Register a bridge adapter for a chain
-        /**
+    /**
      * @notice Registers relay adapter
      * @param chainId The chain identifier
      * @param adapter The bridge adapter address
      * @param supportsPrivacy The supports privacy
      * @param minConfirmations The minConfirmations bound
      */
-function registerRelayAdapter(
+    function registerRelayAdapter(
         uint256 chainId,
         address adapter,
         bool supportsPrivacy,
@@ -355,14 +355,14 @@ function registerRelayAdapter(
     }
 
     /// @notice Batch register bridge adapters
-        /**
+    /**
      * @notice Batchs register relay adapters
      * @param chainIds The chainIds identifier
      * @param adapters The adapters
      * @param supportsPrivacy The supports privacy
      * @param minConfirmations The minConfirmations bound
      */
-function batchRegisterRelayAdapters(
+    function batchRegisterRelayAdapters(
         uint256[] calldata chainIds,
         address[] calldata adapters,
         bool[] calldata supportsPrivacy,
@@ -409,11 +409,11 @@ function batchRegisterRelayAdapters(
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Set Stealth Address Registry
-        /**
+    /**
      * @notice Sets the stealth address registry
      * @param _module The _module
      */
-function setStealthAddressRegistry(
+    function setStealthAddressRegistry(
         address _module
     ) external onlyRole(OPERATOR_ROLE) {
         if (_module == address(0)) revert ZeroAddress();
@@ -422,11 +422,11 @@ function setStealthAddressRegistry(
     }
 
     /// @notice Set Private Relayer Network
-        /**
+    /**
      * @notice Sets the private relayer network
      * @param _module The _module
      */
-function setPrivateRelayerNetwork(
+    function setPrivateRelayerNetwork(
         address _module
     ) external onlyRole(OPERATOR_ROLE) {
         if (_module == address(0)) revert ZeroAddress();
@@ -435,11 +435,11 @@ function setPrivateRelayerNetwork(
     }
 
     /// @notice Set View Key Registry
-        /**
+    /**
      * @notice Sets the view key registry
      * @param _module The _module
      */
-function setViewKeyRegistry(
+    function setViewKeyRegistry(
         address _module
     ) external onlyRole(OPERATOR_ROLE) {
         if (_module == address(0)) revert ZeroAddress();
@@ -448,22 +448,22 @@ function setViewKeyRegistry(
     }
 
     /// @notice Set Shielded Pool
-        /**
+    /**
      * @notice Sets the shielded pool
      * @param _module The _module
      */
-function setShieldedPool(address _module) external onlyRole(OPERATOR_ROLE) {
+    function setShieldedPool(address _module) external onlyRole(OPERATOR_ROLE) {
         if (_module == address(0)) revert ZeroAddress();
         shieldedPool = _module;
         emit PrivacyModuleRegistered("SHIELDED_POOL", _module);
     }
 
     /// @notice Set Nullifier Manager
-        /**
+    /**
      * @notice Sets the nullifier manager
      * @param _module The _module
      */
-function setNullifierManager(
+    function setNullifierManager(
         address _module
     ) external onlyRole(OPERATOR_ROLE) {
         if (_module == address(0)) revert ZeroAddress();
@@ -472,11 +472,11 @@ function setNullifierManager(
     }
 
     /// @notice Set Compliance Oracle
-        /**
+    /**
      * @notice Sets the compliance oracle
      * @param _module The _module
      */
-function setComplianceOracle(
+    function setComplianceOracle(
         address _module
     ) external onlyRole(OPERATOR_ROLE) {
         if (_module == address(0)) revert ZeroAddress();
@@ -485,11 +485,11 @@ function setComplianceOracle(
     }
 
     /// @notice Set Proof Translator
-        /**
+    /**
      * @notice Sets the proof translator
      * @param _module The _module
      */
-function setProofTranslator(
+    function setProofTranslator(
         address _module
     ) external onlyRole(OPERATOR_ROLE) {
         if (_module == address(0)) revert ZeroAddress();
@@ -498,11 +498,11 @@ function setProofTranslator(
     }
 
     /// @notice Set Privacy Router
-        /**
+    /**
      * @notice Sets the privacy router
      * @param _module The _module
      */
-function setPrivacyRouter(
+    function setPrivacyRouter(
         address _module
     ) external onlyRole(OPERATOR_ROLE) {
         if (_module == address(0)) revert ZeroAddress();
@@ -515,11 +515,11 @@ function setPrivacyRouter(
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Set Relay Proof Validator
-        /**
+    /**
      * @notice Sets the relay proof validator
      * @param _module The _module
      */
-function setRelayProofValidator(
+    function setRelayProofValidator(
         address _module
     ) external onlyRole(OPERATOR_ROLE) {
         if (_module == address(0)) revert ZeroAddress();
@@ -528,11 +528,11 @@ function setRelayProofValidator(
     }
 
     /// @notice Set Relay Watchtower
-        /**
+    /**
      * @notice Sets the relay watchtower
      * @param _module The _module
      */
-function setRelayWatchtower(
+    function setRelayWatchtower(
         address _module
     ) external onlyRole(OPERATOR_ROLE) {
         if (_module == address(0)) revert ZeroAddress();
@@ -541,11 +541,11 @@ function setRelayWatchtower(
     }
 
     /// @notice Set Relay Circuit Breaker
-        /**
+    /**
      * @notice Sets the relay circuit breaker
      * @param _module The _module
      */
-function setRelayCircuitBreaker(
+    function setRelayCircuitBreaker(
         address _module
     ) external onlyRole(OPERATOR_ROLE) {
         if (_module == address(0)) revert ZeroAddress();
@@ -558,11 +558,11 @@ function setRelayCircuitBreaker(
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Set ZK-Bound State Locks
-        /**
+    /**
      * @notice Sets the z k bound state locks
      * @param _module The _module
      */
-function setZKBoundStateLocks(
+    function setZKBoundStateLocks(
         address _module
     ) external onlyRole(OPERATOR_ROLE) {
         if (_module == address(0)) revert ZeroAddress();
@@ -576,11 +576,11 @@ function setZKBoundStateLocks(
     }
 
     /// @notice Set Proof-Carrying Container
-        /**
+    /**
      * @notice Sets the proof carrying container
      * @param _module The _module
      */
-function setProofCarryingContainer(
+    function setProofCarryingContainer(
         address _module
     ) external onlyRole(OPERATOR_ROLE) {
         if (_module == address(0)) revert ZeroAddress();
@@ -594,11 +594,11 @@ function setProofCarryingContainer(
     }
 
     /// @notice Set Cross-Domain Nullifier Algebra
-        /**
+    /**
      * @notice Sets the cross domain nullifier algebra
      * @param _module The _module
      */
-function setCrossDomainNullifierAlgebra(
+    function setCrossDomainNullifierAlgebra(
         address _module
     ) external onlyRole(OPERATOR_ROLE) {
         if (_module == address(0)) revert ZeroAddress();
@@ -612,11 +612,11 @@ function setCrossDomainNullifierAlgebra(
     }
 
     /// @notice Set Policy Bound Proofs
-        /**
+    /**
      * @notice Sets the policy bound proofs
      * @param _module The _module
      */
-function setPolicyBoundProofs(
+    function setPolicyBoundProofs(
         address _module
     ) external onlyRole(OPERATOR_ROLE) {
         if (_module == address(0)) revert ZeroAddress();
@@ -634,11 +634,11 @@ function setPolicyBoundProofs(
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Set Timelock
-        /**
+    /**
      * @notice Sets the timelock
      * @param _module The _module
      */
-function setTimelock(
+    function setTimelock(
         address _module
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_module == address(0)) revert ZeroAddress();
@@ -652,11 +652,11 @@ function setTimelock(
     }
 
     /// @notice Set Upgrade Timelock
-        /**
+    /**
      * @notice Sets the upgrade timelock
      * @param _module The _module
      */
-function setUpgradeTimelock(
+    function setUpgradeTimelock(
         address _module
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_module == address(0)) revert ZeroAddress();
@@ -674,63 +674,63 @@ function setUpgradeTimelock(
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Get verifier address by type
-        /**
+    /**
      * @notice Returns the verifier
      * @param verifierType The verifier type
-     * @return The result value
+     * @return The verifier contract address for the given type
      */
-function getVerifier(bytes32 verifierType) external view returns (address) {
+    function getVerifier(bytes32 verifierType) external view returns (address) {
         return verifiers[verifierType].verifier;
     }
 
     /// @notice Get relay adapter for a chain
-        /**
+    /**
      * @notice Returns the relay adapter
      * @param chainId The chain identifier
-     * @return The result value
+     * @return The relay adapter address for the given chain ID
      */
-function getRelayAdapter(uint256 chainId) external view returns (address) {
+    function getRelayAdapter(uint256 chainId) external view returns (address) {
         return relayAdapters[chainId].adapter;
     }
 
     /// @notice Check if a chain is supported
-        /**
+    /**
      * @notice Checks if chain supported
      * @param chainId The chain identifier
-     * @return The result value
+     * @return True if the given chain ID has an active relay adapter
      */
-function isChainSupported(uint256 chainId) external view returns (bool) {
+    function isChainSupported(uint256 chainId) external view returns (bool) {
         return relayAdapters[chainId].isActive;
     }
 
     /// @notice Get all supported chain IDs
-        /**
+    /**
      * @notice Returns the supported chain ids
-     * @return The result value
+     * @return Array of all supported chain IDs
      */
-function getSupportedChainIds() external view returns (uint256[] memory) {
+    function getSupportedChainIds() external view returns (uint256[] memory) {
         return supportedChainIds;
     }
 
     /// @notice Get verifier info
-        /**
+    /**
      * @notice Returns the verifier info
      * @param verifierType The verifier type
-     * @return The result value
+     * @return The VerifierInfo struct for the given verifier type
      */
-function getVerifierInfo(
+    function getVerifierInfo(
         bytes32 verifierType
     ) external view returns (VerifierInfo memory) {
         return verifiers[verifierType];
     }
 
     /// @notice Get relay info
-        /**
+    /**
      * @notice Returns the relay info
      * @param chainId The chain identifier
-     * @return The result value
+     * @return The RelayInfo struct for the given chain ID
      */
-function getRelayInfo(
+    function getRelayInfo(
         uint256 chainId
     ) external view returns (RelayInfo memory) {
         return relayAdapters[chainId];
@@ -741,11 +741,11 @@ function getRelayInfo(
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Wire all core protocol components in a single transaction
-        /**
+    /**
      * @notice Wire all
      * @param p The p
      */
-function wireAll(
+    function wireAll(
         WireAllParams calldata p
     ) external onlyRole(OPERATOR_ROLE) nonReentrant {
         uint256 updated;
@@ -757,7 +757,9 @@ function wireAll(
                 p._verifierRegistry,
                 1
             );
-            unchecked { ++updated; }
+            unchecked {
+                ++updated;
+            }
         }
         if (p._universalVerifier != address(0)) {
             universalVerifier = p._universalVerifier;
@@ -767,7 +769,9 @@ function wireAll(
                 p._universalVerifier,
                 1
             );
-            unchecked { ++updated; }
+            unchecked {
+                ++updated;
+            }
         }
         if (p._crossChainMessageRelay != address(0)) {
             crossChainMessageRelay = p._crossChainMessageRelay;
@@ -777,7 +781,9 @@ function wireAll(
                 p._crossChainMessageRelay,
                 1
             );
-            unchecked { ++updated; }
+            unchecked {
+                ++updated;
+            }
         }
         if (p._crossChainPrivacyHub != address(0)) {
             crossChainPrivacyHub = p._crossChainPrivacyHub;
@@ -785,7 +791,9 @@ function wireAll(
                 "CROSS_CHAIN_PRIVACY_HUB",
                 p._crossChainPrivacyHub
             );
-            unchecked { ++updated; }
+            unchecked {
+                ++updated;
+            }
         }
         if (p._stealthAddressRegistry != address(0)) {
             stealthAddressRegistry = p._stealthAddressRegistry;
@@ -793,7 +801,9 @@ function wireAll(
                 "STEALTH_REGISTRY",
                 p._stealthAddressRegistry
             );
-            unchecked { ++updated; }
+            unchecked {
+                ++updated;
+            }
         }
         if (p._privateRelayerNetwork != address(0)) {
             privateRelayerNetwork = p._privateRelayerNetwork;
@@ -801,7 +811,9 @@ function wireAll(
                 "PRIVATE_RELAYER",
                 p._privateRelayerNetwork
             );
-            unchecked { ++updated; }
+            unchecked {
+                ++updated;
+            }
         }
         if (p._viewKeyRegistry != address(0)) {
             viewKeyRegistry = p._viewKeyRegistry;
@@ -809,12 +821,16 @@ function wireAll(
                 "VIEW_KEY_REGISTRY",
                 p._viewKeyRegistry
             );
-            unchecked { ++updated; }
+            unchecked {
+                ++updated;
+            }
         }
         if (p._shieldedPool != address(0)) {
             shieldedPool = p._shieldedPool;
             emit PrivacyModuleRegistered("SHIELDED_POOL", p._shieldedPool);
-            unchecked { ++updated; }
+            unchecked {
+                ++updated;
+            }
         }
         if (p._nullifierManager != address(0)) {
             nullifierManager = p._nullifierManager;
@@ -822,7 +838,9 @@ function wireAll(
                 "NULLIFIER_MANAGER",
                 p._nullifierManager
             );
-            unchecked { ++updated; }
+            unchecked {
+                ++updated;
+            }
         }
         if (p._complianceOracle != address(0)) {
             complianceOracle = p._complianceOracle;
@@ -830,7 +848,9 @@ function wireAll(
                 "COMPLIANCE_ORACLE",
                 p._complianceOracle
             );
-            unchecked { ++updated; }
+            unchecked {
+                ++updated;
+            }
         }
         if (p._proofTranslator != address(0)) {
             proofTranslator = p._proofTranslator;
@@ -840,7 +860,9 @@ function wireAll(
                 p._proofTranslator,
                 1
             );
-            unchecked { ++updated; }
+            unchecked {
+                ++updated;
+            }
         }
         if (p._privacyRouter != address(0)) {
             privacyRouter = p._privacyRouter;
@@ -850,7 +872,9 @@ function wireAll(
                 p._privacyRouter,
                 1
             );
-            unchecked { ++updated; }
+            unchecked {
+                ++updated;
+            }
         }
         if (p._relayProofValidator != address(0)) {
             relayProofValidator = p._relayProofValidator;
@@ -858,7 +882,9 @@ function wireAll(
                 "RELAY_PROOF_VALIDATOR",
                 p._relayProofValidator
             );
-            unchecked { ++updated; }
+            unchecked {
+                ++updated;
+            }
         }
         if (p._zkBoundStateLocks != address(0)) {
             zkBoundStateLocks = p._zkBoundStateLocks;
@@ -868,7 +894,9 @@ function wireAll(
                 p._zkBoundStateLocks,
                 1
             );
-            unchecked { ++updated; }
+            unchecked {
+                ++updated;
+            }
         }
         if (p._proofCarryingContainer != address(0)) {
             proofCarryingContainer = p._proofCarryingContainer;
@@ -878,7 +906,9 @@ function wireAll(
                 p._proofCarryingContainer,
                 1
             );
-            unchecked { ++updated; }
+            unchecked {
+                ++updated;
+            }
         }
         if (p._crossDomainNullifierAlgebra != address(0)) {
             crossDomainNullifierAlgebra = p._crossDomainNullifierAlgebra;
@@ -888,7 +918,9 @@ function wireAll(
                 p._crossDomainNullifierAlgebra,
                 1
             );
-            unchecked { ++updated; }
+            unchecked {
+                ++updated;
+            }
         }
         if (p._policyBoundProofs != address(0)) {
             policyBoundProofs = p._policyBoundProofs;
@@ -898,7 +930,9 @@ function wireAll(
                 p._policyBoundProofs,
                 1
             );
-            unchecked { ++updated; }
+            unchecked {
+                ++updated;
+            }
         }
         if (p._multiProver != address(0)) {
             multiProver = p._multiProver;
@@ -908,7 +942,9 @@ function wireAll(
                 p._multiProver,
                 1
             );
-            unchecked { ++updated; }
+            unchecked {
+                ++updated;
+            }
         }
         if (p._relayWatchtower != address(0)) {
             relayWatchtower = p._relayWatchtower;
@@ -916,7 +952,9 @@ function wireAll(
                 "RELAY_WATCHTOWER",
                 p._relayWatchtower
             );
-            unchecked { ++updated; }
+            unchecked {
+                ++updated;
+            }
         }
         if (p._intentCompletionLayer != address(0)) {
             intentCompletionLayer = p._intentCompletionLayer;
@@ -926,7 +964,9 @@ function wireAll(
                 p._intentCompletionLayer,
                 1
             );
-            unchecked { ++updated; }
+            unchecked {
+                ++updated;
+            }
         }
         if (p._instantCompletionGuarantee != address(0)) {
             instantCompletionGuarantee = p._instantCompletionGuarantee;
@@ -936,7 +976,9 @@ function wireAll(
                 p._instantCompletionGuarantee,
                 1
             );
-            unchecked { ++updated; }
+            unchecked {
+                ++updated;
+            }
         }
         if (p._dynamicRoutingOrchestrator != address(0)) {
             dynamicRoutingOrchestrator = p._dynamicRoutingOrchestrator;
@@ -946,18 +988,20 @@ function wireAll(
                 p._dynamicRoutingOrchestrator,
                 1
             );
-            unchecked { ++updated; }
+            unchecked {
+                ++updated;
+            }
         }
 
         emit ProtocolWired(msg.sender, updated);
     }
 
     /// @notice Check if all critical protocol components are configured
-        /**
+    /**
      * @notice Checks if fully configured
      * @return configured The configured
      */
-function isFullyConfigured() external view returns (bool configured) {
+    function isFullyConfigured() external view returns (bool configured) {
         return (verifierRegistry != address(0) &&
             universalVerifier != address(0) &&
             nullifierManager != address(0) &&
@@ -977,12 +1021,12 @@ function isFullyConfigured() external view returns (bool configured) {
     }
 
     /// @notice Get a summary of which components are configured
-        /**
+    /**
      * @notice Returns the component status
      * @return names The names
      * @return addresses The addresses
      */
-function getComponentStatus()
+    function getComponentStatus()
         external
         view
         returns (string[] memory names, address[] memory addresses)
@@ -1046,27 +1090,27 @@ function getComponentStatus()
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Emergency pause
-        /**
+    /**
      * @notice Pauses the operation
      */
-function pause() external onlyRole(GUARDIAN_ROLE) {
+    function pause() external onlyRole(GUARDIAN_ROLE) {
         _pause();
     }
 
     /// @notice Unpause
-        /**
+    /**
      * @notice Unpauses the operation
      */
-function unpause() external onlyRole(OPERATOR_ROLE) {
+    function unpause() external onlyRole(OPERATOR_ROLE) {
         _unpause();
     }
 
     /// @notice Deactivate a verifier
-        /**
+    /**
      * @notice Deactivate verifier
      * @param verifierType The verifier type
      */
-function deactivateVerifier(
+    function deactivateVerifier(
         bytes32 verifierType
     ) external onlyRole(GUARDIAN_ROLE) {
         verifiers[verifierType].isActive = false;
@@ -1074,13 +1118,11 @@ function deactivateVerifier(
     }
 
     /// @notice Deactivate a bridge adapter
-        /**
+    /**
      * @notice Deactivate relay
      * @param chainId The chain identifier
      */
-function deactivateRelay(
-        uint256 chainId
-    ) external onlyRole(GUARDIAN_ROLE) {
+    function deactivateRelay(uint256 chainId) external onlyRole(GUARDIAN_ROLE) {
         relayAdapters[chainId].isActive = false;
         emit ComponentDeactivated(bytes32(chainId));
     }

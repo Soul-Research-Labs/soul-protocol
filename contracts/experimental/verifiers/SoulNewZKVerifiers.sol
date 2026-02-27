@@ -8,6 +8,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * @notice Verifier for SP1 RISC-V zkVM proofs
  * @dev Supports Succinct's SP1 proving system for Soul
  * @custom:experimental This contract is research-tier and NOT production-ready. See contracts/experimental/README.md for promotion criteria.
+ * @custom:deprecated SP1 verification is now handled by SoulMultiProver (contracts/verifiers/SoulMultiProver.sol)
+ *   which implements 2-of-3 consensus across Noir, SP1, and Jolt. This standalone verifier is retained
+ *   for reference only. Use SoulMultiProver + SoulUniversalVerifier for new integrations.
  */
 contract SoulSP1Verifier is Ownable {
     // ============================================
@@ -274,13 +277,13 @@ contract SoulPlonky3Verifier is Ownable {
     // Admin Functions
     // ============================================
 
-        /**
+    /**
      * @notice Registers circuit
      * @param circuitHash The circuitHash hash value
      * @param numPublicInputs The num public inputs
      * @param degree The degree
      */
-function registerCircuit(
+    function registerCircuit(
         bytes32 circuitHash,
         uint256 numPublicInputs,
         uint256 degree
@@ -299,12 +302,12 @@ function registerCircuit(
     // Verification
     // ============================================
 
-        /**
+    /**
      * @notice Verifys the operation
      * @param proof The ZK proof data
      * @return The result value
      */
-function verify(Plonky3Proof calldata proof) external returns (bool) {
+    function verify(Plonky3Proof calldata proof) external returns (bool) {
         CircuitConfig storage config = circuits[proof.circuitHash];
         if (!config.active) revert CircuitNotRegistered();
         if (proof.publicInputs.length != config.numPublicInputs)
@@ -397,12 +400,12 @@ contract SoulJoltVerifier is Ownable {
     // Admin Functions
     // ============================================
 
-        /**
+    /**
      * @notice Registers program
      * @param programHash The programHash hash value
      * @param maxCycles The maxCycles bound
      */
-function registerProgram(
+    function registerProgram(
         bytes32 programHash,
         uint256 maxCycles
     ) external onlyOwner {
@@ -419,12 +422,12 @@ function registerProgram(
     // Verification
     // ============================================
 
-        /**
+    /**
      * @notice Verifys the operation
      * @param proof The ZK proof data
      * @return The result value
      */
-function verify(JoltProof calldata proof) external returns (bool) {
+    function verify(JoltProof calldata proof) external returns (bool) {
         JoltProgram storage program = programs[proof.programHash];
         if (!program.active) revert ProgramNotRegistered();
 
@@ -518,11 +521,11 @@ contract SoulBiniusVerifier is Ownable {
     // Admin Functions
     // ============================================
 
-        /**
+    /**
      * @notice Registers circuit
      * @param circuitHash The circuitHash hash value
- */
-function registerCircuit(bytes32 circuitHash) external onlyOwner {
+     */
+    function registerCircuit(bytes32 circuitHash) external onlyOwner {
         registeredCircuits[circuitHash] = true;
     }
 
@@ -530,12 +533,12 @@ function registerCircuit(bytes32 circuitHash) external onlyOwner {
     // Verification
     // ============================================
 
-        /**
+    /**
      * @notice Verifys the operation
      * @param proof The ZK proof data
      * @return The result value
      */
-function verify(BiniusProof calldata proof) external returns (bool) {
+    function verify(BiniusProof calldata proof) external returns (bool) {
         if (!registeredCircuits[proof.circuitHash])
             revert CircuitNotRegistered();
 

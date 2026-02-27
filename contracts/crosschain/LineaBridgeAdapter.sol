@@ -162,14 +162,14 @@ contract LineaBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
                         CONFIGURATION
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Update Linea bridge addresses
-        /**
-     * @notice Configures linea bridge
-     * @param _messageService The _message service
-     * @param _tokenBridge The _tokenBridge identifier
-     * @param _rollup The _rollup
+    /**
+     * @notice Update Linea bridge contract addresses
+     * @param _messageService Address of the Linea IMessageService contract
+     * @param _tokenBridge Address of the Linea TokenBridge for ERC20 bridging
+     * @param _rollup Address of the Linea Rollup contract for finalization queries
+     * @dev Only callable by OPERATOR_ROLE. _messageService must be non-zero.
      */
-function configureLineaBridge(
+    function configureLineaBridge(
         address _messageService,
         address _tokenBridge,
         address _rollup
@@ -181,12 +181,10 @@ function configureLineaBridge(
         emit BridgeConfigured(_messageService, _tokenBridge, _rollup);
     }
 
-    /// @notice Set Soul Hub L2 address on Linea
-        /**
-     * @notice Sets the soul hub l2
-     * @param _soulHubL2 The _soul hub l2
-     */
-function setSoulHubL2(
+    /// @notice Set the Soul Hub L2 contract address deployed on Linea
+    /// @param _soulHubL2 Address of the Soul Hub on Linea L2
+    /// @dev Only callable by DEFAULT_ADMIN_ROLE. Reverts if zero address.
+    function setSoulHubL2(
         address _soulHubL2
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(_soulHubL2 != address(0), "Invalid address");
@@ -194,12 +192,10 @@ function setSoulHubL2(
         emit SoulHubL2Set(_soulHubL2);
     }
 
-    /// @notice Set Proof Registry address
-        /**
-     * @notice Sets the proof registry
-     * @param _proofRegistry The _proof registry
-     */
-function setProofRegistry(
+    /// @notice Set the Proof Registry address for proof validation
+    /// @param _proofRegistry Address of the proof registry contract
+    /// @dev Only callable by DEFAULT_ADMIN_ROLE. Reverts if zero address.
+    function setProofRegistry(
         address _proofRegistry
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(_proofRegistry != address(0), "Invalid address");
@@ -212,42 +208,26 @@ function setProofRegistry(
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Get the Linea mainnet chain ID
-    /// @return The chain ID (59144)
-        /**
-     * @notice Chain id
-     * @return The result value
-     */
-function chainId() external pure returns (uint256) {
+    /// @return The chain ID constant (59144)
+    function chainId() external pure returns (uint256) {
         return LINEA_MAINNET_CHAIN_ID;
     }
 
     /// @notice Get the human-readable chain name
-    /// @return The chain name string
-        /**
-     * @notice Chain name
-     * @return The result value
-     */
-function chainName() external pure returns (string memory) {
+    /// @return The chain name string ("Linea")
+    function chainName() external pure returns (string memory) {
         return "Linea";
     }
 
     /// @notice Check whether the adapter is fully configured
-    /// @return True if both messageService and soulHubL2 are set
-        /**
-     * @notice Checks if configured
-     * @return The result value
-     */
-function isConfigured() external view returns (bool) {
+    /// @return True if both messageService and soulHubL2 are set to non-zero addresses
+    function isConfigured() external view returns (bool) {
         return messageService != address(0) && soulHubL2 != address(0);
     }
 
-    /// @notice Get the number of blocks required for finality
-    /// @return The finality block count
-        /**
-     * @notice Returns the finality blocks
-     * @return The result value
-     */
-function getFinalityBlocks() external pure returns (uint256) {
+    /// @notice Get the number of blocks required for ZK proof finality on Linea
+    /// @return The finality block count (1 — ZK proof provides cryptographic finality)
+    function getFinalityBlocks() external pure returns (uint256) {
         return FINALITY_BLOCKS;
     }
 
@@ -350,10 +330,10 @@ function getFinalityBlocks() external pure returns (uint256) {
     }
 
     /**
-     * @notice Verify a message from Linea
-     * @param messageHash Hash of the message
-     * @param proof Proof data
-          * @return The result value
+     * @notice Verify a message from Linea by checking its claim status
+     * @param messageHash Hash of the message to verify
+     * @param proof Proof data (unused for status-based verification, but part of interface)
+     * @return True if the message has been successfully claimed
      */
     function verifyMessage(
         bytes32 messageHash,
@@ -383,29 +363,23 @@ function getFinalityBlocks() external pure returns (uint256) {
                         ADMIN FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Pause the adapter (emergency use)
-        /**
-     * @notice Pauses the operation
-     */
-function pause() external onlyRole(PAUSER_ROLE) {
+    /// @notice Pause the adapter, blocking all bridge operations
+    /// @dev Only callable by PAUSER_ROLE. Emits a {Paused} event.
+    function pause() external onlyRole(PAUSER_ROLE) {
         _pause();
     }
 
     /// @notice Resume the adapter after a pause
-        /**
-     * @notice Unpauses the operation
-     */
-function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    /// @dev Only callable by DEFAULT_ADMIN_ROLE. Emits an {Unpaused} event.
+    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
 
-    /// @notice Emergency withdrawal of ETH
-        /**
-     * @notice Emergency withdraw e t h
-     * @param to The destination address
-     * @param amount The amount to process
-     */
-function emergencyWithdrawETH(
+    /// @notice Emergency withdrawal of ETH from the adapter
+    /// @param to Recipient address for the withdrawn ETH
+    /// @param amount Amount of ETH (in wei) to withdraw
+    /// @dev Only callable by DEFAULT_ADMIN_ROLE. Protected by nonReentrant guard.
+    function emergencyWithdrawETH(
         address payable to,
         uint256 amount
     ) external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {

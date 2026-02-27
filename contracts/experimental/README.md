@@ -38,10 +38,19 @@ experimental/
 
 ## Status
 
-| Category        | Status     | Notes                                                                               |
-| --------------- | ---------- | ----------------------------------------------------------------------------------- |
-| Privacy Modules | Research   | Mixnet, recursive proofs, relayer selection — needs further R&D                     |
-| Verifiers       | Superseded | VerifierHub superseded by VerifierRegistryV2; others are experimental proof systems |
+| Category        | Status         | Notes                                                               |
+| --------------- | -------------- | ------------------------------------------------------------------- |
+| Privacy Modules | Research       | Mixnet, recursive proofs, relayer selection — needs further R&D     |
+| Verifiers       | **Deprecated** | All 4 verifiers superseded — see deprecation notes in each contract |
+
+### Superseded Verifier Details
+
+| Contract                       | Superseded By                                                    | Migration Path                                              |
+| ------------------------------ | ---------------------------------------------------------------- | ----------------------------------------------------------- |
+| `CLSAGVerifier.sol`            | `RingSignatureHonkVerifier.sol` (generated)                      | Use Noir ring_signature circuit + UltraHonk verifier        |
+| `SoulRecursiveVerifier.sol`    | `RecursiveProofAggregator.sol` + `AggregatorVerifier.sol` (stub) | Await bb >= 3.1.0, then use Noir aggregator circuit         |
+| `SoulNewZKVerifiers.sol` (SP1) | `SoulMultiProver.sol`                                            | Use multi-prover 2-of-3 consensus via SoulUniversalVerifier |
+| `VerifierHub.sol`              | `VerifierRegistryV2.sol`                                         | Use type-safe CircuitType enum + adapter routing            |
 
 ## Promotion Criteria
 

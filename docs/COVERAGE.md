@@ -1,19 +1,31 @@
 # Soul Protocol - Coverage Tracking
 
 > **Last Updated:** July 2026  
-> **Coverage Tool:** Forge + Python Stub System
+> **Coverage Tools:** Forge (modular + stub) · Hardhat 3 (compile + test) · SDK (vitest)
 
 ---
 
 ## ⚠️ Known Limitation
 
-Forge coverage fails on this project with **"stack too deep"** errors due to:
+Forge coverage fails on **full-project** builds with **"stack too deep"** errors due to:
 
 1. Complex assembly blocks in ZK verifiers
 2. Deep call stacks in verification pipelines
 3. Foundry coverage instrumentation overhead
 
-**Workaround:** Use `scripts/run_coverage.py` which swaps complex contracts with stubs.
+### Available Workarounds
+
+| Approach                           | Command                         | Description                                               |
+| ---------------------------------- | ------------------------------- | --------------------------------------------------------- |
+| **Modular coverage** (recommended) | `npm run coverage:modular`      | Per-module forge coverage avoiding stack-too-deep         |
+| **Stub-swap pipeline**             | `npm run coverage:stub`         | Swaps complex contracts with stubs, runs full coverage    |
+| **Hardhat compile+test**           | `npm run coverage:hardhat`      | Compiles and tests via Hardhat 3 (no line-level coverage) |
+| **Targeted coverage**              | `npm run coverage:targeted`     | Coverage for unit tests only                              |
+| **Per-module LCOV**                | `npm run coverage:modular:lcov` | Generates per-module LCOV reports                         |
+
+The **modular coverage** approach is the recommended default. It runs `forge coverage` per-module
+(security, governance, primitives, crosschain, privacy, relayer) so each compilation is small
+enough to avoid stack-too-deep errors. CI runs these in parallel via matrix strategy.
 
 ---
 

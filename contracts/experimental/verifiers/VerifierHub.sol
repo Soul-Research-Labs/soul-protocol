@@ -10,6 +10,10 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
  * @notice Central registry and router for all ZK proof verifiers
  * @dev Manages multiple circuit verifiers with versioning and upgrade support
  * @custom:experimental This contract is research-tier and NOT production-ready. See contracts/experimental/README.md for promotion criteria.
+ * @custom:deprecated Superseded by VerifierRegistryV2 (contracts/verifiers/VerifierRegistryV2.sol) which provides
+ *   type-safe CircuitType enum for all 20 Noir circuits, adapter routing, and migration support.
+ *   This contract is retained for reference only. Do NOT use in new integrations.
+ *   Migration: Deploy VerifierRegistryV2 → register Noir verifiers with adapters → call registry.verify(circuitType, proof, inputs)
  */
 contract VerifierHub is AccessControl, Pausable {
     /*//////////////////////////////////////////////////////////////
@@ -273,7 +277,7 @@ contract VerifierHub is AccessControl, Pausable {
      * @param proof The Groth16 proof
      * @param commitment The state commitment
      * @param ownerPubkey The owner's public key
-          * @return The result value
+     * @return The result value
      */
     function verifyStateCommitment(
         uint256[8] calldata proof,
@@ -320,7 +324,7 @@ contract VerifierHub is AccessControl, Pausable {
      * @param nullifier The nullifier to prevent double-spending
      * @param senderPubkey The sender's public key
      * @param recipientPubkey The recipient's public key
-          * @return The result value
+     * @return The result value
      */
     function verifyStateTransfer(
         uint256[8] calldata proof,

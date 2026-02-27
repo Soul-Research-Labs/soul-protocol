@@ -1,0 +1,145 @@
+name: Noir Benchmarks
+
+permissions:
+  contents: read
+
+on:
+  # Run on PRs that touch Noir circuits or verifiers
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "noir/**"
+      - "contracts/verifiers/**"
+      - "scripts/generate_verifiers.sh"
+  # Weekly benchmark on Monday at 03:00 UTC
+  schedule:
+    - cron: "0 3 * * 1"
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      circuit:
+        description: "Specific circuit to benchmark (leave empty for all)"
+        required: false
+        type: string
+
+concurrency:
+  group: noir-bench-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "20"
+
+jobs:
+  noir-benchmarks:
+    name: Circuit Benchmarks
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Noir (nargo)
+        run: |
+          curl -L https://raw.githubusercontent.com/noir-lang/noirup/main/install | bash
+          echo "$HOME/.nargo/bin" >> $GITHUB_PATH
+
+      - name: Verify nargo installation
+        run: nargo --version
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run circuit benchmarks
+        working-directory: noir
+        run: |
+          chmod +x benchmark.sh
+          if [ -n "${{ inputs.circuit }}" ]; then
+            ./benchmark.sh "${{ inputs.circuit }}"
+          else
+            ./benchmark.sh
+          fi
+
+      - name: Run on-chain verifier gas benchmarks
+        run: forge test --match-contract VerifierGasBenchmark --gas-report -vvv 2>&1 | tee verifier_gas_report.txt
+
+      - name: Compare with previous benchmarks
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "## Noir Circuit Benchmark Results" > benchmark_summary.md
+          echo "" >> benchmark_summary.md
+
+          # Parse benchmark results if available
+          if [ -f noir/benchmark_results.md ]; then
+            cat noir/benchmark_results.md >> benchmark_summary.md
+          fi
+
+          echo "" >> benchmark_summary.md
+          echo "## Verifier Gas Report" >> benchmark_summary.md
+          echo '```' >> benchmark_summary.md
+          head -100 verifier_gas_report.txt >> benchmark_summary.md
+          echo '```' >> benchmark_summary.md
+
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: noir-benchmarks
+          path: |
+            noir/benchmark_results.json
+            noir/benchmark_results.md
+            verifier_gas_report.txt
+            benchmark_summary.md
+          retention-days: 90
+
+  constraint-count-check:
+    name: Constraint Count Regression
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Noir (nargo)
+        run: |
+          curl -L https://raw.githubusercontent.com/noir-lang/noirup/main/install | bash
+          echo "$HOME/.nargo/bin" >> $GITHUB_PATH
+
+      - name: Check constraint counts
+        working-directory: noir
+        run: |
+          echo "Circuit Constraint Counts:" > constraint_counts.txt
+          echo "=========================" >> constraint_counts.txt
+
+          for circuit in nullifier state_commitment state_transfer cross_chain_proof container \
+            cross_domain_nullifier merkle_proof balance_proof private_transfer swap_proof \
+            pedersen_commitment compliance_proof policy policy_bound_proof shielded_pool \
+            sanctions_check accredited_investor aggregator encrypted_transfer ring_signature; do
+
+            if [ -d "$circuit" ]; then
+              cd "$circuit"
+              # nargo info outputs constraint count
+              COUNT=$(nargo info 2>&1 | grep -oP 'Circuit size: \K[0-9]+' || echo "N/A")
+              echo "  $circuit: $COUNT constraints" >> ../constraint_counts.txt
+              cd ..
+            fi
+          done
+
+          cat constraint_counts.txt
+
+      - name: Upload constraint counts
+        uses: actions/upload-artifact@v4
+        with:
+          name: constraint-counts
+          path: noir/constraint_counts.txt
+          retention-days: 30

@@ -8,8 +8,18 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 /**
  * @title PolygonZkEVMBridgeAdapter
  * @author Soul Protocol
- * @notice Bridge adapter for Polygon zkEVM integration
+ * @notice Bridge adapter for Polygon zkEVM L2 integration
+ * @dev Enables Soul Protocol cross-chain interoperability with Polygon zkEVM.
+ *      Uses the Polygon zkEVM bridge contract for L1 <-> L2 message passing.
+ *
+ * POLYGON ZKEVM INTEGRATION:
+ * - Uses PolygonZkEVMBridge for asset/message bridging
+ * - GlobalExitRootManager tracks L2 exit roots on L1
+ * - networkId distinguishes L1 (0) vs zkEVM (1) messages
+ * - Proof finality: ~1 block (ZK proof verified on L1)
+ *
  * @custom:graduated Promoted from experimental to production. Formally verified via Certora.
+ * @custom:security-contact security@soulprotocol.io
  */
 contract PolygonZkEVMBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
@@ -40,6 +50,14 @@ contract PolygonZkEVMBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     );
     event SoulHubL2Set(address indexed soulHubL2);
 
+    /**
+     * @notice Deploy a new PolygonZkEVMBridgeAdapter
+     * @param _bridge Address of the PolygonZkEVMBridge contract on L1
+     * @param _globalExitRootManager Address of the GlobalExitRootManager for exit root verification
+     * @param _polygonZkEVM Address of the Polygon zkEVM rollup contract
+     * @param _networkId Network identifier (0 for L1 mainnet, 1 for zkEVM)
+     * @param _admin Address to receive DEFAULT_ADMIN_ROLE and OPERATOR_ROLE
+     */
     constructor(
         address _bridge,
         address _globalExitRootManager,
@@ -63,13 +81,10 @@ contract PolygonZkEVMBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         _grantRole(OPERATOR_ROLE, _admin);
     }
 
-    /// @notice Set the Soul Hub L2 contract address
-    /// @param _soulHubL2 The address of the Soul Hub on Polygon zkEVM
-        /**
-     * @notice Sets the soul hub l2
-     * @param _soulHubL2 The _soul hub l2
- */
-function setSoulHubL2(
+    /// @notice Set the Soul Hub L2 contract address on Polygon zkEVM
+    /// @param _soulHubL2 The address of the Soul Hub deployed on Polygon zkEVM L2
+    /// @dev Only callable by DEFAULT_ADMIN_ROLE. Reverts if _soulHubL2 is zero address.
+    function setSoulHubL2(
         address _soulHubL2
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(_soulHubL2 != address(0), "Invalid address");
@@ -78,58 +93,38 @@ function setSoulHubL2(
     }
 
     /// @notice Get the Polygon zkEVM mainnet chain ID
-    /// @return The chain ID (1101)
-        /**
-     * @notice Chain id
-     * @return The result value
-     */
-function chainId() external pure returns (uint256) {
+    /// @return The chain ID constant (1101)
+    function chainId() external pure returns (uint256) {
         return POLYGON_ZKEVM_MAINNET;
     }
 
     /// @notice Get the human-readable chain name
-    /// @return The chain name string
-        /**
-     * @notice Chain name
-     * @return The result value
-     */
-function chainName() external pure returns (string memory) {
+    /// @return The chain name string ("Polygon zkEVM")
+    function chainName() external pure returns (string memory) {
         return "Polygon zkEVM";
     }
 
     /// @notice Check whether the adapter has its bridge address configured
     /// @return True if the bridge address is set (non-zero)
-        /**
-     * @notice Checks if configured
-     * @return The result value
-     */
-function isConfigured() external view returns (bool) {
+    function isConfigured() external view returns (bool) {
         return bridge != address(0);
     }
 
-    /// @notice Get the number of blocks required for finality
-    /// @return The finality block count
-        /**
-     * @notice Returns the finality blocks
-     * @return The result value
-     */
-function getFinalityBlocks() external pure returns (uint256) {
+    /// @notice Get the number of blocks required for finality on Polygon zkEVM
+    /// @return The finality block count (1 — ZK proof provides instant finality)
+    function getFinalityBlocks() external pure returns (uint256) {
         return FINALITY_BLOCKS;
     }
 
-    /// @notice Pause the adapter (emergency use)
-        /**
-     * @notice Pauses the operation
-     */
-function pause() external onlyRole(PAUSER_ROLE) {
+    /// @notice Pause the adapter, blocking all bridge operations
+    /// @dev Only callable by PAUSER_ROLE. Emits a {Paused} event.
+    function pause() external onlyRole(PAUSER_ROLE) {
         _pause();
     }
 
     /// @notice Resume the adapter after a pause
-        /**
-     * @notice Unpauses the operation
-     */
-function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    /// @dev Only callable by DEFAULT_ADMIN_ROLE. Emits an {Unpaused} event.
+    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
 }

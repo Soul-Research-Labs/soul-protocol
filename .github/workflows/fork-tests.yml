@@ -1,0 +1,141 @@
+name: Fork Tests
+
+permissions:
+  contents: read
+
+on:
+  # Run nightly at 04:00 UTC
+  schedule:
+    - cron: "0 4 * * *"
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      chain:
+        description: "Chain to fork test against"
+        required: false
+        type: choice
+        options:
+          - all
+          - sepolia
+          - arbitrum-sepolia
+          - optimism-sepolia
+          - base-sepolia
+        default: all
+
+concurrency:
+  group: fork-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "20"
+
+jobs:
+  fork-tests:
+    name: Fork Tests (${{ matrix.chain }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        chain:
+          - name: sepolia
+            rpc_secret: SEPOLIA_RPC_URL
+          - name: arbitrum-sepolia
+            rpc_secret: ARBITRUM_SEPOLIA_RPC_URL
+          - name: optimism-sepolia
+            rpc_secret: OPTIMISM_SEPOLIA_RPC_URL
+          - name: base-sepolia
+            rpc_secret: BASE_SEPOLIA_RPC_URL
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check RPC URL availability
+        id: check_rpc
+        run: |
+          if [ -n "${{ secrets[matrix.chain.rpc_secret] }}" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "⚠️ RPC URL secret ${{ matrix.chain.rpc_secret }} not configured, skipping ${{ matrix.chain.name }}"
+          fi
+
+      - name: Run fork tests - ${{ matrix.chain.name }}
+        if: steps.check_rpc.outputs.available == 'true'
+        run: |
+          echo "Running fork tests against ${{ matrix.chain.name }}..."
+          FORK_TESTS=true forge test \
+            --match-path "test/fork/*" \
+            -vvv \
+            --fork-url "${{ secrets[matrix.chain.rpc_secret] }}" \
+            2>&1 | tee fork-test-results-${{ matrix.chain.name }}.txt
+        env:
+          FORK_TESTS: "true"
+
+      - name: Upload fork test results
+        if: always() && steps.check_rpc.outputs.available == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: fork-tests-${{ matrix.chain.name }}
+          path: fork-test-results-${{ matrix.chain.name }}.txt
+          retention-days: 7
+
+  cross-chain-integration:
+    name: Cross-Chain Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: fork-tests
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run cross-chain privacy tests
+        run: |
+          forge test --match-path "test/crosschain/*" -vvv 2>&1 | tee cross-chain-results.txt
+          forge test --match-path "test/privacy/CrossChain*" -vvv 2>&1 | tee -a cross-chain-results.txt
+
+      - name: Run bridge adapter tests
+        run: |
+          forge test --match-path "test/bridge/*" -vvv 2>&1 | tee bridge-results.txt
+          forge test --match-path "test/adapters/*" -vvv 2>&1 | tee -a bridge-results.txt
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cross-chain-integration-results
+          path: |
+            cross-chain-results.txt
+            bridge-results.txt
+          retention-days: 7

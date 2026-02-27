@@ -58,11 +58,6 @@ import {IL2DirectMessenger} from "../interfaces/IL2DirectMessenger.sol";
  * - Superchain: OP Stack native security model
  * - Fallback: L1 completion for disputed messages
  */
-/**
- * @title DirectL2Messenger
- * @author Soul Protocol Team
- * @notice Direct L2 Messenger contract
- */
 contract DirectL2Messenger is
     ReentrancyGuard,
     AccessControl,
@@ -957,20 +952,15 @@ contract DirectL2Messenger is
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Pause all messaging operations (emergency use)
+    /// @notice Pause all messaging operations
     /// @dev Only callable by addresses with OPERATOR_ROLE. Blocks sendMessage, receiveMessage, and relayer operations.
-        /**
-     * @notice Pauses the operation
-     */
-function pause() external onlyRole(OPERATOR_ROLE) {
+    function pause() external onlyRole(OPERATOR_ROLE) {
         _pause();
     }
 
     /// @notice Resume messaging operations after pause
     /// @dev Only callable by addresses with OPERATOR_ROLE. Re-enables all paused functions.
-        /**
-     * @notice Unpauses the operation
-     */
-function unpause() external onlyRole(OPERATOR_ROLE) {
+    function unpause() external onlyRole(OPERATOR_ROLE) {
         _unpause();
     }
 
@@ -981,12 +971,7 @@ function unpause() external onlyRole(OPERATOR_ROLE) {
     /// @notice Retrieve a message by its unique identifier
     /// @param messageId The unique hash identifying the message
     /// @return The L2Message struct containing sender, target, data, and status
-        /**
-     * @notice Returns the message
-     * @param messageId The message identifier
-     * @return The result value
-     */
-function getMessage(
+    function getMessage(
         bytes32 messageId
     ) external view returns (L2Message memory) {
         return messages[messageId];
@@ -995,12 +980,7 @@ function getMessage(
     /// @notice Get relayer registration details
     /// @param addr The relayer address to query
     /// @return The Relayer struct (stake, active status, performance stats)
-        /**
-     * @notice Returns the relayer
-     * @param addr The target address
-     * @return The result value
-     */
-function getRelayer(address addr) external view returns (Relayer memory) {
+    function getRelayer(address addr) external view returns (Relayer memory) {
         return relayers[addr];
     }
 
@@ -1008,13 +988,7 @@ function getRelayer(address addr) external view returns (Relayer memory) {
     /// @param sourceChainId The source chain identifier
     /// @param destChainId The destination chain identifier
     /// @return The RouteConfig including enabled status, gas limits, and fees
-        /**
-     * @notice Returns the route
-     * @param sourceChainId The source chain identifier
-     * @param destChainId The destination chain identifier
-     * @return The result value
-     */
-function getRoute(
+    function getRoute(
         uint256 sourceChainId,
         uint256 destChainId
     ) external view returns (RouteConfig memory) {
@@ -1024,12 +998,7 @@ function getRoute(
     /// @notice Get the number of relayer confirmations for a message
     /// @param messageId The message to check confirmations for
     /// @return The count of unique relayer confirmations
-        /**
-     * @notice Returns the confirmation count
-     * @param messageId The message identifier
-     * @return The result value
-     */
-function getConfirmationCount(
+    function getConfirmationCount(
         bytes32 messageId
     ) external view returns (uint256) {
         return messageConfirmations[messageId].length;
@@ -1038,12 +1007,7 @@ function getConfirmationCount(
     /// @notice Check whether a message has already been processed
     /// @param messageId The message to check
     /// @return True if the message has been executed on this chain
-        /**
-     * @notice Checks if message processed
-     * @param messageId The message identifier
-     * @return The result value
-     */
-function isMessageProcessed(
+    function isMessageProcessed(
         bytes32 messageId
     ) external view returns (bool) {
         return processedMessages[messageId];
@@ -1051,11 +1015,7 @@ function isMessageProcessed(
 
     /// @notice Get the total number of registered relayers
     /// @return The count of relayers in the relayer list
-        /**
-     * @notice Returns the relayer count
-     * @return The result value
-     */
-function getRelayerCount() external view returns (uint256) {
+    function getRelayerCount() external view returns (uint256) {
         return relayerList.length;
     }
 
@@ -1067,13 +1027,11 @@ function getRelayerCount() external view returns (uint256) {
 //////////////////////////////////////////////////////////////*/
 
 interface IL2ToL2CrossDomainMessenger {
-        /**
-     * @notice Send message
-     * @param _destination The _destination
-     * @param _target The _target
-     * @param _message The _message
-     */
-function sendMessage(
+    /// @notice Send a cross-domain message to another L2
+    /// @param _destination Target chain identifier
+    /// @param _target Contract address to call on the destination chain
+    /// @param _message ABI-encoded calldata for the target contract
+    function sendMessage(
         uint256 _destination,
         address _target,
         bytes calldata _message
@@ -1081,25 +1039,21 @@ function sendMessage(
 }
 
 interface ISharedSequencer {
-        /**
-     * @notice Submits cross chain message
-     * @param destChainId The destination chain identifier
-     * @param payload The message payload
-     */
-function submitCrossChainMessage(
+    /// @notice Submit a message through the shared sequencer for cross-chain delivery
+    /// @param destChainId Destination chain identifier in the shared sequencer network
+    /// @param payload ABI-encoded message payload
+    function submitCrossChainMessage(
         uint256 destChainId,
         bytes calldata payload
     ) external;
 }
 
 interface IL1BridgeAdapter {
-        /**
-     * @notice Send message
-     * @param destChainId The destination chain identifier
-     * @param recipient The recipient address
-     * @param payload The message payload
-     */
-function sendMessage(
+    /// @notice Send a message through the L1 bridge to another chain
+    /// @param destChainId Destination chain identifier
+    /// @param recipient Address to receive the message on the destination chain
+    /// @param payload ABI-encoded message payload
+    function sendMessage(
         uint256 destChainId,
         address recipient,
         bytes calldata payload

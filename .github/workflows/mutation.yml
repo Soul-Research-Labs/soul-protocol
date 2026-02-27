@@ -1,0 +1,177 @@
+name: Mutation Testing (Gambit)
+
+permissions:
+  contents: read
+
+on:
+  # Run weekly on Sunday at 02:00 UTC
+  schedule:
+    - cron: "0 2 * * 0"
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      contracts:
+        description: "Specific contract to mutate (leave empty for all)"
+        required: false
+        type: string
+
+concurrency:
+  group: mutation-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "20"
+
+jobs:
+  gambit-mutation:
+    name: Gambit Mutation Testing
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Gambit
+        run: |
+          pip3 install gambit-sol
+          gambit --version || echo "Gambit installed via pip"
+
+      - name: Build contracts
+        run: forge build
+
+      - name: Generate mutants
+        run: |
+          if [ -n "${{ inputs.contracts }}" ]; then
+            echo "Mutating specific contract: ${{ inputs.contracts }}"
+            gambit mutate --config gambit.yaml --contract "${{ inputs.contracts }}"
+          else
+            gambit mutate --config gambit.yaml
+          fi
+
+      - name: Count mutants
+        id: count
+        run: |
+          MUTANT_COUNT=$(jq '.[] | length' gambit_out/gambit_results.json 2>/dev/null | head -1 || echo "0")
+          echo "mutant_count=$MUTANT_COUNT" >> "$GITHUB_OUTPUT"
+          echo "Generated $MUTANT_COUNT mutants"
+
+      - name: Run tests against mutants
+        run: |
+          KILLED=0
+          SURVIVED=0
+          ERRORS=0
+          TOTAL=0
+
+          # Process each mutant directory
+          for mutant_dir in gambit_out/mutants/*/; do
+            if [ ! -d "$mutant_dir" ]; then
+              continue
+            fi
+            TOTAL=$((TOTAL + 1))
+
+            # Get mutant info
+            MUTANT_ID=$(basename "$mutant_dir")
+
+            # Apply mutant (copy mutated file over original)
+            MUTATED_FILE=$(find "$mutant_dir" -name "*.sol" | head -1)
+            if [ -z "$MUTATED_FILE" ]; then
+              ERRORS=$((ERRORS + 1))
+              continue
+            fi
+
+            # Determine original file path from mutant structure
+            RELATIVE_PATH=$(echo "$MUTATED_FILE" | sed "s|gambit_out/mutants/$MUTANT_ID/||")
+            ORIGINAL_FILE="$RELATIVE_PATH"
+
+            if [ ! -f "$ORIGINAL_FILE" ]; then
+              ERRORS=$((ERRORS + 1))
+              continue
+            fi
+
+            # Backup original, apply mutant
+            cp "$ORIGINAL_FILE" "${ORIGINAL_FILE}.bak"
+            cp "$MUTATED_FILE" "$ORIGINAL_FILE"
+
+            # Run tests (expect failures = mutant killed)
+            if forge test --no-match-path 'test/stress/*' --fail-fast 2>/dev/null; then
+              SURVIVED=$((SURVIVED + 1))
+              echo "⚠️  Mutant $MUTANT_ID SURVIVED: $RELATIVE_PATH"
+            else
+              KILLED=$((KILLED + 1))
+            fi
+
+            # Restore original
+            mv "${ORIGINAL_FILE}.bak" "$ORIGINAL_FILE"
+
+            # Progress update every 10 mutants
+            if [ $((TOTAL % 10)) -eq 0 ]; then
+              echo "Progress: $TOTAL mutants processed ($KILLED killed, $SURVIVED survived)"
+            fi
+          done
+
+          # Calculate mutation score
+          if [ $TOTAL -gt 0 ]; then
+            SCORE=$(echo "scale=2; $KILLED * 100 / $TOTAL" | bc)
+          else
+            SCORE="0"
+          fi
+
+          echo ""
+          echo "═══════════════════════════════════════════════"
+          echo "  MUTATION TESTING RESULTS"
+          echo "═══════════════════════════════════════════════"
+          echo "  Total mutants:    $TOTAL"
+          echo "  Killed:           $KILLED"
+          echo "  Survived:         $SURVIVED"
+          echo "  Errors:           $ERRORS"
+          echo "  Mutation score:   ${SCORE}%"
+          echo "═══════════════════════════════════════════════"
+
+          # Write results to file for artifact
+          cat > mutation_results.json << EOF
+          {
+            "total": $TOTAL,
+            "killed": $KILLED,
+            "survived": $SURVIVED,
+            "errors": $ERRORS,
+            "score": $SCORE,
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+
+          # Fail if mutation score is below threshold (70%)
+          if [ "$(echo "$SCORE < 70" | bc)" -eq 1 ] && [ $TOTAL -gt 0 ]; then
+            echo "❌ Mutation score ${SCORE}% is below 70% threshold"
+            exit 1
+          fi
+          echo "✅ Mutation score ${SCORE}% meets threshold"
+
+      - name: Upload mutation results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-results
+          path: |
+            mutation_results.json
+            gambit_out/gambit_results.json
+          retention-days: 30

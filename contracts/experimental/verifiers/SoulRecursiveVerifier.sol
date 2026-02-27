@@ -12,6 +12,11 @@ import {ExperimentalFeatureRegistry} from "../../security/ExperimentalFeatureReg
  * @notice Verifies aggregated recursive proofs for Soul protocol
  * @dev Supports both single proofs (backward compatible) and aggregated proofs
  * @custom:experimental This contract is research-tier and NOT production-ready. See contracts/experimental/README.md for promotion criteria.
+ * @custom:deprecated Superseded by UltraHonk-based recursive verification via the generated aggregator verifier
+ *   (contracts/verifiers/generated/AggregatorVerifier.sol) and RecursiveProofAggregator
+ *   (contracts/experimental/privacy/RecursiveProofAggregator.sol). This approach is obsolete
+ *   now that Noir supports native recursive proof composition via ACIR.
+ *   Note: AggregatorVerifier is currently a stub pending bb >= 3.1.0 on_curve fix.
  */
 contract SoulRecursiveVerifier is
     Ownable,
@@ -390,7 +395,7 @@ contract SoulRecursiveVerifier is
 
     /**
      * @notice Internal aggregated proof verification
-          * @param proof The ZK proof data
+     * @param proof The ZK proof data
      * @param proofHash The proofHash hash value
      * @param proofData The proof data bytes
      * @return The result value
