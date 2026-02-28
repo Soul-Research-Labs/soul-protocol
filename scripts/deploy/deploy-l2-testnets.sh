@@ -1,7 +1,7 @@
 #!/bin/bash
-# Soul Protocol - L2 Testnet Deployment Runner
+# ZASEON - L2 Testnet Deployment Runner
 #
-# Deploys Soul contracts to remaining L2 Sepolia testnets using the unified
+# Deploys Zaseon contracts to remaining L2 Sepolia testnets using the unified
 # Foundry script (DeployL2Testnet.s.sol).
 #
 # Prerequisites:
@@ -105,7 +105,7 @@ if [ ${#SELECTED_NETWORKS[@]} -eq 0 ]; then
 fi
 
 echo -e "${BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║         SOUL PROTOCOL - L2 TESTNET DEPLOYMENT              ║${NC}"
+echo -e "${BLUE}║         ZASEON PROTOCOL - L2 TESTNET DEPLOYMENT              ║${NC}"
 echo -e "${BLUE}╚══════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 echo -e "Mode:     $([ "$BROADCAST" = true ] && echo -e "${RED}LIVE BROADCAST${NC}" || echo -e "${GREEN}DRY RUN (simulation)${NC}")"

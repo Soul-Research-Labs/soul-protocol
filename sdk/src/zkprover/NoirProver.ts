@@ -1,5 +1,5 @@
 /**
- * Soul Protocol - Noir ZK Prover
+ * ZASEON - Noir ZK Prover
  *
  * Client-side proof generation using Noir circuits and Barretenberg.
  * Supports browser (WASM) and Node.js environments.
@@ -76,7 +76,7 @@ export interface ProverOptions {
 //////////////////////////////////////////////////////////////*/
 
 /**
- * Available Noir circuits in the Soul Protocol
+ * Available Noir circuits in the ZASEON
  */
 export enum Circuit {
   /** Commitment to a secret value */
@@ -249,7 +249,7 @@ export interface PrivateTransferInputs {
 //////////////////////////////////////////////////////////////*/
 
 /**
- * Noir ZK Prover for Soul Protocol
+ * Noir ZK Prover for ZASEON
  *
  * Uses Barretenberg (bb) for proof generation.
  * Falls back to placeholder implementation if bb is not available.

@@ -1,6 +1,6 @@
 # ZK-Bound State Locks Demo
 
-A minimal frontend demo for Soul Protocol's ZK-Bound State Locks.
+A minimal frontend demo for ZASEON's ZK-Bound State Locks.
 
 ## Features
 
@@ -46,7 +46,7 @@ Get testnet ETH from:
 | ZKBoundStateLocks | `0xf390ae12c9ce8f546ef7c7adaa6a1ab7768a2c78` |
 | NullifierRegistry | `0x3e21d559f19c76a0bcec378b10dae2cc0e4c2191` |
 | CrossChainProofHub | `0x40eaa5de0c6497c8943c967b42799cb092c26adc` |
-| SoulAtomicSwapV2 | `0xdefb9a66dc14a6d247b282555b69da7745b0ab57` |
+| ZaseonAtomicSwapV2 | `0xdefb9a66dc14a6d247b282555b69da7745b0ab57` |
 
 ## How It Works
 

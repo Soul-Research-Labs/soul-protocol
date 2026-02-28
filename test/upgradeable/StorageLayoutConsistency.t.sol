@@ -22,11 +22,11 @@ import {DirectL2MessengerUpgradeable} from "../../contracts/upgradeable/DirectL2
  */
 contract StorageLayoutConsistencyTest is Test {
     address public admin;
-    address public soulHub;
+    address public zaseonHub;
 
     function setUp() public {
         admin = makeAddr("admin");
-        soulHub = makeAddr("soulHub");
+        zaseonHub = makeAddr("zaseonHub");
         vm.deal(admin, 100 ether);
     }
 
@@ -95,7 +95,7 @@ contract StorageLayoutConsistencyTest is Test {
         bytes memory initData = abi.encodeWithSelector(
             DirectL2MessengerUpgradeable.initialize.selector,
             admin,
-            soulHub
+            zaseonHub
         );
         ERC1967Proxy proxy = new ERC1967Proxy(address(impl), initData);
 

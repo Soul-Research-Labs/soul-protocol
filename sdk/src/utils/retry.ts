@@ -1,15 +1,15 @@
 /**
- * Soul SDK Retry Utility
+ * Zaseon SDK Retry Utility
  * 
  * Exponential backoff retry logic with configurable options,
  * jitter, and error classification.
  */
 
 import {
-  SoulError,
+  ZaseonError,
   NetworkError,
   TimeoutError,
-  isSoulError,
+  isZaseonError,
 } from "./errors";
 
 /**
@@ -90,7 +90,7 @@ function defaultShouldRetry(error: Error, _attempt: number): boolean {
   }
   
   // Check if error is marked as retryable
-  if (isSoulError(error)) {
+  if (isZaseonError(error)) {
     return error.retryable;
   }
   

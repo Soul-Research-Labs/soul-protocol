@@ -9,7 +9,7 @@ import {IProofVerifier} from "../interfaces/IProofVerifier.sol";
 
 /**
  * @title ZKBoundStateLocks (ZK-SLocks)
- * @author Soul v2 - Soul Protocol
+ * @author Zaseon v2 - ZASEON
  * @notice Cross-Chain Confidential State Lock Manager - Novel Primitive
  * @dev Core contract managing zero-knowledge bound state locks for privacy-preserving cross-chain state transitions
  *
@@ -35,7 +35,7 @@ import {IProofVerifier} from "../interfaces/IProofVerifier.sol";
  * - Privacy-Preserving: No plaintext state exposure at any layer
  * - Composable: Multiple locks can reference the same state commitment
  *
- * INTEGRATION WITH Soul:
+ * INTEGRATION WITH Zaseon:
  * - Uses CDNA for cross-domain nullifier generation
  * - Integrates with PC³ for self-authenticating containers
  * - Leverages EASC for execution-agnostic commitments

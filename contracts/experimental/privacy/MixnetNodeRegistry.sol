@@ -10,16 +10,16 @@ import {ExperimentalFeatureRegistry} from "../../security/ExperimentalFeatureReg
 
 /**
  * @title MixnetNodeRegistry
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Registry for mixnet relay nodes enabling onion-routed private message delivery.
  *         Nodes register with a stake, provide encryption keys for onion routing layers,
  *         and can be slashed for misbehavior (e.g., failing to relay, deanonymization attacks).
  *
- * @dev Referenced by CrossChainPrivacyHub and SoulProtocolHub for relay path construction.
+ * @dev Referenced by CrossChainPrivacyHub and ZaseonProtocolHub for relay path construction.
  *      Implements layer-based node selection for mixnet topology (entry → middle → exit).
  *
  * @custom:experimental This contract is research-tier and NOT production-ready. See contracts/experimental/README.md for promotion criteria.
- * @custom:security-contact security@soul.network
+ * @custom:security-contact security@zaseon.network
  */
 contract MixnetNodeRegistry is
     IMixnetNodeRegistry,

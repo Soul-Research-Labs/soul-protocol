@@ -67,7 +67,7 @@ contract PrivacyCoverageTest is Test {
             UnifiedNullifierManager.NullifierType.STANDARD
         );
 
-        bytes32 soulNullifier = nullifierManager.registerNullifier(
+        bytes32 zaseonNullifier = nullifierManager.registerNullifier(
             nullifier,
             commitment,
             chainId,
@@ -76,7 +76,7 @@ contract PrivacyCoverageTest is Test {
         );
 
         // precise checking of return value
-        assertNotEq(soulNullifier, bytes32(0));
+        assertNotEq(zaseonNullifier, bytes32(0));
 
         // Check state
         UnifiedNullifierManager.NullifierRecord memory record = nullifierManager
@@ -155,16 +155,16 @@ contract PrivacyCoverageTest is Test {
         // if we are not on mainnet (block.chainid != 1). Simple check.
         bytes memory proof = new bytes(32); // Valid length
 
-        (bytes32 destNf, bytes32 soulNf) = nullifierManager
+        (bytes32 destNf, bytes32 zaseonNf) = nullifierManager
             .createCrossDomainBinding(sourceNf, srcChain, dstChain, proof);
 
         assertNotEq(destNf, bytes32(0));
-        assertNotEq(soulNf, bytes32(0));
+        assertNotEq(zaseonNf, bytes32(0));
 
         (bool valid, bytes32 queriedPil) = nullifierManager
             .verifyCrossDomainBinding(sourceNf, destNf);
         assertTrue(valid);
-        assertEq(queriedPil, soulNf);
+        assertEq(queriedPil, zaseonNf);
     }
 }
 

@@ -1,6 +1,6 @@
 # Privacy Middleware Architecture
 
-Soul's privacy middleware provides a complete stack for shielded transactions, cross-chain proof translation, compliance screening, and incentivized relaying.
+Zaseon's privacy middleware provides a complete stack for shielded transactions, cross-chain proof translation, compliance screening, and incentivized relaying.
 
 ## Overview
 
@@ -114,7 +114,7 @@ Deploy order: SanctionsOracle → ProofTranslator → RelayerFeeMarket → Shiel
 ## SDK Usage
 
 ```typescript
-import { PrivacyRouterClient, ShieldedPoolClient } from "@soul/sdk";
+import { PrivacyRouterClient, ShieldedPoolClient } from "@zaseon/sdk";
 
 // Generate a deposit note (client-side)
 const pool = new ShieldedPoolClient({

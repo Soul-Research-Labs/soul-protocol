@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title VerifierHub
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Central registry and router for all ZK proof verifiers
  * @dev Manages multiple circuit verifiers with versioning and upgrade support
  * @custom:experimental This contract is research-tier and NOT production-ready. See contracts/experimental/README.md for promotion criteria.
@@ -27,7 +27,7 @@ contract VerifierHub is AccessControl, Pausable {
                                  TYPES
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Circuit types supported by Soul
+    /// @notice Circuit types supported by Zaseon
     enum CircuitType {
         StateCommitment, // 0: Prove knowledge of state preimage
         StateTransfer, // 1: Prove valid state ownership transfer

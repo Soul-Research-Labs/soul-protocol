@@ -10,7 +10,7 @@ import "../interfaces/IStealthAddressRegistry.sol";
 /**
  * @notice Interface for cross-chain derivation proof verification
   * @title IDerivationVerifier
- * @author Soul Protocol Team
+ * @author ZASEON Team
  */
 interface IDerivationVerifier {
     /**
@@ -27,7 +27,7 @@ interface IDerivationVerifier {
 
 /**
  * @title StealthAddressRegistry
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Registry for stealth addresses enabling unlinkable transfers
  * @dev Implements ERC-5564 compatible stealth address scheme
  *
@@ -104,7 +104,7 @@ contract StealthAddressRegistry is
 
     /// @notice Domain separator for stealth key derivation
     bytes32 public constant STEALTH_DOMAIN =
-        keccak256("Soul_STEALTH_ADDRESS_V1");
+        keccak256("Zaseon_STEALTH_ADDRESS_V1");
 
     /// @notice Maximum announcements to store per address
     uint256 public constant MAX_ANNOUNCEMENTS = 1000;

@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - HomomorphicHiding
+ * ZASEON - HomomorphicHiding
  * 
  * This spec verifies critical invariants for the Homomorphic Hiding primitive
  * which enables computations on encrypted/committed values

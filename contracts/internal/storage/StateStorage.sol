@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title StateStorage
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Extracted confidential state storage management for stack depth optimisation
  * @dev Separates state CRUD from ConfidentialStateContainerV3 so its verification
  *      pipeline stays within the stack limit during coverage instrumentation.

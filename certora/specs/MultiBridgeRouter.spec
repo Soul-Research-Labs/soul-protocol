@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - MultiBridgeRouter
+ * ZASEON - MultiBridgeRouter
  *
  * Verifies routing invariants, bridge health, verification consensus,
  * and access control for the multi-bridge cross-chain router.

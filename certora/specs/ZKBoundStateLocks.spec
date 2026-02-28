@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - ZKBoundStateLocks (ZK-SLocks)
+ * ZASEON - ZKBoundStateLocks (ZK-SLocks)
  */
 
 methods {

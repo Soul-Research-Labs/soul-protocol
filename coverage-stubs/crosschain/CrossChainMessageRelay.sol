@@ -74,7 +74,7 @@ contract CrossChainMessageRelay is AccessControl, ReentrancyGuard, Pausable {
     uint256 public totalMessagesSent;
     uint256 public totalMessagesReceived;
     uint256 public totalMessagesExecuted;
-    address public soulProtocolHub;
+    address public zaseonProtocolHub;
     address public bridgeProofValidator;
     address public bridgeWatchtower;
     address public securityOracle;
@@ -328,8 +328,8 @@ contract CrossChainMessageRelay is AccessControl, ReentrancyGuard, Pausable {
         messageExpiry = _expiry;
     }
 
-    function setSoulProtocolHub(address _hub) external onlyRole(OPERATOR_ROLE) {
-        soulProtocolHub = _hub;
+    function setZaseonProtocolHub(address _hub) external onlyRole(OPERATOR_ROLE) {
+        zaseonProtocolHub = _hub;
     }
 
     function setBridgeProofValidator(

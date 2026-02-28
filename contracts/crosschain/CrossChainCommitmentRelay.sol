@@ -7,7 +7,7 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title CrossChainCommitmentRelay
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Bridges CrossChainPrivacyHub ↔ UniversalShieldedPool for cross-chain commitment sync.
  *
  * @dev This contract is the missing link between:
@@ -29,7 +29,7 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
  *   │  transfers)  │      └────────────────────────┘      └─────────────────────────┘
  *   └──────────────┘
  *
- * @custom:security-contact security@soul.network
+ * @custom:security-contact security@zaseon.network
  */
 contract CrossChainCommitmentRelay is AccessControl, ReentrancyGuard, Pausable {
     /*//////////////////////////////////////////////////////////////
@@ -246,7 +246,7 @@ contract CrossChainCommitmentRelay is AccessControl, ReentrancyGuard, Pausable {
     /**
      * @notice Permissionless self-relay for users — bypasses RELAYER_ROLE.
      * @dev Prevents censorship and single-point-of-failure if all relayers go offline.
-     *      Mirrors SoulCrossChainRelay.selfRelayProof() pattern.
+     *      Mirrors ZaseonCrossChainRelay.selfRelayProof() pattern.
      *      Anyone can relay a commitment batch by paying gas directly.
      *      The shielded pool's own RELAYER_ROLE gate still applies — this contract's
      *      address must be granted RELAYER_ROLE on the pool.

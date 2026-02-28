@@ -2,15 +2,15 @@
 pragma solidity ^0.8.24;
 
 import {Script, console} from "forge-std/Script.sol";
-import {SoulProtocolHub} from "../../contracts/core/SoulProtocolHub.sol";
-import "../../contracts/interfaces/ISoulProtocolHub.sol";
+import {ZaseonProtocolHub} from "../../contracts/core/ZaseonProtocolHub.sol";
+import "../../contracts/interfaces/IZaseonProtocolHub.sol";
 import {IntentCompletionLayer} from "../../contracts/core/IntentCompletionLayer.sol";
 import {InstantCompletionGuarantee} from "../../contracts/core/InstantCompletionGuarantee.sol";
 import {DynamicRoutingOrchestrator} from "../../contracts/core/DynamicRoutingOrchestrator.sol";
 
 /**
  * @title WireIntentComponents
- * @notice Deploy and wire the Tachyon-inspired intent suite into the SoulProtocolHub.
+ * @notice Deploy and wire the Tachyon-inspired intent suite into the ZaseonProtocolHub.
  *
  * @dev Deploys three contracts in dependency order:
  *      1. IntentCompletionLayer   — intent-based cross-chain completion
@@ -20,7 +20,7 @@ import {DynamicRoutingOrchestrator} from "../../contracts/core/DynamicRoutingOrc
  *      Then wires all three into the Hub via wireAll (zero-address for existing components).
  *
  * Required env vars:
- *   SOUL_HUB           — Existing Hub address
+ *   ZASEON_HUB           — Existing Hub address
  *   ADMIN              — Admin address for all three contracts
  *   ORACLE             — Oracle address for DynamicRoutingOrchestrator
  *   BRIDGE_ADMIN       — Bridge admin for DynamicRoutingOrchestrator
@@ -29,7 +29,7 @@ import {DynamicRoutingOrchestrator} from "../../contracts/core/DynamicRoutingOrc
  *   INTENT_VERIFIER    — ZK verifier for IntentCompletionLayer (default: address(0), set later)
  *
  * Usage:
- *   SOUL_HUB=0x...       \
+ *   ZASEON_HUB=0x...       \
  *   ADMIN=0x...           \
  *   ORACLE=0x...          \
  *   BRIDGE_ADMIN=0x...    \
@@ -38,8 +38,8 @@ import {DynamicRoutingOrchestrator} from "../../contracts/core/DynamicRoutingOrc
  */
 contract WireIntentComponents is Script {
     function run() external {
-        address hubAddr = vm.envAddress("SOUL_HUB");
-        require(hubAddr != address(0), "SOUL_HUB required");
+        address hubAddr = vm.envAddress("ZASEON_HUB");
+        require(hubAddr != address(0), "ZASEON_HUB required");
 
         address admin = vm.envAddress("ADMIN");
         require(admin != address(0), "ADMIN required");
@@ -52,7 +52,7 @@ contract WireIntentComponents is Script {
 
         address intentVerifier = _envOr("INTENT_VERIFIER");
 
-        SoulProtocolHub hub = SoulProtocolHub(hubAddr);
+        ZaseonProtocolHub hub = ZaseonProtocolHub(hubAddr);
 
         console.log("=== Deploy & Wire Intent Components ===");
         console.log("Hub:              ", hubAddr);
@@ -90,7 +90,7 @@ contract WireIntentComponents is Script {
 
         // 4. Wire all three into the Hub (zero-address for pre-existing components)
         hub.wireAll(
-            ISoulProtocolHub.WireAllParams({
+            IZaseonProtocolHub.WireAllParams({
                 _verifierRegistry: address(0),
                 _universalVerifier: address(0),
                 _crossChainMessageRelay: address(0),

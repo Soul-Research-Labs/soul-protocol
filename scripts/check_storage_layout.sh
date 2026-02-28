@@ -14,13 +14,13 @@
 set -euo pipefail
 
 FORGE="${FORGE:-forge}"
-OUTDIR="/tmp/soul-storage-layouts"
+OUTDIR="/tmp/zaseon-storage-layouts"
 ERRORS=0
 
 mkdir -p "$OUTDIR"
 
 echo "═══════════════════════════════════════════════════════════════"
-echo " Soul Protocol — Storage Layout Consistency Check"
+echo " ZASEON — Storage Layout Consistency Check"
 echo "═══════════════════════════════════════════════════════════════"
 echo ""
 
@@ -28,7 +28,7 @@ echo ""
 declare -A CONTRACTS=(
     ["NullifierRegistryV3"]="NullifierRegistryV3Upgradeable"
     ["CrossChainProofHubV3"]="CrossChainProofHubV3Upgradeable"
-    ["SoulAtomicSwapV2"]="SoulAtomicSwapV2Upgradeable"
+    ["ZaseonAtomicSwapV2"]="ZaseonAtomicSwapV2Upgradeable"
     ["ZKBoundStateLocks"]="ZKBoundStateLocksUpgradeable"
     ["DirectL2Messenger"]="DirectL2MessengerUpgradeable"
     ["UniversalShieldedPool"]="UniversalShieldedPoolUpgradeable"
@@ -39,8 +39,8 @@ declare -A CONTRACTS=(
     ["InstantCompletionGuarantee"]="InstantCompletionGuaranteeUpgradeable"
     ["IntentCompletionLayer"]="IntentCompletionLayerUpgradeable"
     ["PrivacyRouter"]="PrivacyRouterUpgradeable"
-    ["SoulProtocolHub"]="SoulProtocolHubUpgradeable"
-    ["Soulv2Orchestrator"]="Soulv2OrchestratorUpgradeable"
+    ["ZaseonProtocolHub"]="ZaseonProtocolHubUpgradeable"
+    ["Zaseonv2Orchestrator"]="Zaseonv2OrchestratorUpgradeable"
 )
 
 for base in "${!CONTRACTS[@]}"; do

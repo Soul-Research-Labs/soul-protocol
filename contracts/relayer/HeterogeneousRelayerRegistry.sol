@@ -8,7 +8,7 @@ import {IHeterogeneousRelayerRegistry} from "../interfaces/IHeterogeneousRelayer
 
 /**
  * @title HeterogeneousRelayerRegistry
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Role-separated relayer system for privacy-preserving cross-chain operations
  * @dev Inspired by LayerZero Zero's Block Producer/Validator split: the old model
  *      of identical relayers is replaced with specialized roles that match the
@@ -50,7 +50,7 @@ import {IHeterogeneousRelayerRegistry} from "../interfaces/IHeterogeneousRelayer
  * 3. REPUTATION: Task assignment prioritizes high-performing relayers
  * 4. SLASHING: Misbehaving relayers lose stake proportional to offense severity
  *
- * @custom:security-contact security@soul.network
+ * @custom:security-contact security@zaseon.network
  */
 contract HeterogeneousRelayerRegistry is
     AccessControl,

@@ -1,8 +1,8 @@
 [package]
 name = "balance_proof"
 type = "bin"
-authors = ["Soul Team"]
-description = "Balance proof circuit for deposits and withdrawals in Soul Exchange"
+authors = ["Zaseon Team"]
+description = "Balance proof circuit for deposits and withdrawals in Zaseon Exchange"
 
 [dependencies]
 poseidon = { tag = "v0.2.3", git = "https://github.com/noir-lang/poseidon" }

@@ -10,7 +10,7 @@ Accepted
 
 ## Context
 
-Soul Protocol's privacy transactions require relayers to submit proofs on behalf of users (to avoid linking the user's address to the transaction). The relayer infrastructure must:
+ZASEON's privacy transactions require relayers to submit proofs on behalf of users (to avoid linking the user's address to the transaction). The relayer infrastructure must:
 
 1. **Incentivize speed**: Faster relay improves UX and reduces exposure to MEV/front-running
 2. **Prevent freeloading**: Relayers must stake to participate, ensuring accountability

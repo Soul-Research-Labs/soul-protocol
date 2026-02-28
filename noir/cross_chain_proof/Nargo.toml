@@ -1,7 +1,7 @@
 [package]
 name = "cross_chain_proof"
 type = "bin"
-authors = ["Soul Protocol"]
+authors = ["ZASEON"]
 description = "Optimized circuit for cross-chain proof relay"
 
 [dependencies]

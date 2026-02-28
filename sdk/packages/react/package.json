@@ -1,7 +1,7 @@
 {
-  "name": "@soul/react",
+  "name": "@zaseon/react",
   "version": "1.0.0",
-  "description": "React hooks for Soul Protocol",
+  "description": "React hooks for ZASEON",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
   "types": "dist/index.d.ts",
@@ -28,7 +28,7 @@
     }
   },
   "peerDependencies": {
-    "@soul/sdk": ">=1.0.0",
+    "@zaseon/sdk": ">=1.0.0",
     "react": ">=17.0.0",
     "react-dom": ">=17.0.0"
   },
@@ -59,11 +59,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Soul-Research-Labs/SOUL.git",
+    "url": "https://github.com/Zaseon-Research-Labs/ZASEON.git",
     "directory": "packages/react"
   },
   "keywords": [
-    "soul",
+    "zaseon",
     "privacy",
     "interoperability",
     "react",
@@ -72,6 +72,6 @@
     "web3",
     "zk-proofs"
   ],
-  "author": "Soul Protocol",
+  "author": "ZASEON",
   "license": "MIT"
 }

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Linea bridge utilities for Soul SDK
+ * @fileoverview Linea bridge utilities for Zaseon SDK
  * @module bridges/linea
  */
 

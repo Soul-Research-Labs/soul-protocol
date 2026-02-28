@@ -2,10 +2,10 @@ import hre from "hardhat";
 import { formatEther, parseEther, keccak256, toBytes } from "viem";
 
 /**
- * Soul Protocol - Deploy with Real ZK Verifiers
+ * ZASEON - Deploy with Real ZK Verifiers
  * 
  * Deploys the bb-generated UltraHonk verifiers from Noir circuits
- * and wires them into the core Soul contracts via registerVerifier().
+ * and wires them into the core Zaseon contracts via registerVerifier().
  * 
  * Prerequisites:
  *   1. `cd noir && nargo compile` (compile circuits)
@@ -29,7 +29,7 @@ const VERIFIER_CONFIG = {
 
 async function main() {
   console.log("\n" + "=".repeat(80));
-  console.log("Soul Protocol - REAL ZK VERIFIER DEPLOYMENT");
+  console.log("ZASEON - REAL ZK VERIFIER DEPLOYMENT");
   console.log("=".repeat(80) + "\n");
 
   const { viem } = await hre.network.connect();

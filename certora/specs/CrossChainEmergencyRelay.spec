@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - CrossChainEmergencyRelay
+ * ZASEON - CrossChainEmergencyRelay
  *
  * Verifies critical invariants for emergency propagation across chains.
  * A bug here could prevent halting a compromised chain.

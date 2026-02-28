@@ -1,6 +1,6 @@
 /**
  * @title Formal Verification Specification for SemanticProofTranslationCertificate
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Simplified Certora CVL specification for certified proof translation
  */
 

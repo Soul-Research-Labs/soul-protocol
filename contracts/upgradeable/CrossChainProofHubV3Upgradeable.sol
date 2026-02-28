@@ -10,18 +10,18 @@ import {SecurityModule} from "../security/SecurityModule.sol";
 import {ICrossChainProofHubV3, BatchProofInput} from "../interfaces/ICrossChainProofHubV3.sol";
 
 /// @title CrossChainProofHubV3Upgradeable
-/// @author Soul Protocol
+/// @author ZASEON
 /// @notice UUPS-upgradeable version of CrossChainProofHubV3 with optimistic verification
 /// @dev Converts immutable CHAIN_ID to storage variable for proxy compatibility.
 ///      Inherits SecurityModule directly (abstract, no constructor params needed).
 ///      Preserves all security features: role separation, TOCTOU protection,
 ///      circuit breakers, challenge periods.
 ///
-/// @custom:security-contact security@soul.network
+/// @custom:security-contact security@zaseon.network
 /// @custom:oz-upgrades-from CrossChainProofHubV3
 /**
  * @title CrossChainProofHubV3Upgradeable
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice Cross Chain Proof Hub V3 Upgradeable contract
  */
 contract CrossChainProofHubV3Upgradeable is

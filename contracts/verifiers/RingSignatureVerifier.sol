@@ -6,7 +6,7 @@ import {BN254} from "../libraries/BN254.sol";
 
 /**
  * @title RingSignatureVerifier
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Production CLSAG ring signature verifier for GasOptimizedRingCT
  * @dev Implements hash-based CLSAG (Concise Linkable Spontaneous Anonymous Group)
  *      verification using BN254 (alt_bn128) elliptic curve operations via EVM precompiles.
@@ -18,7 +18,7 @@ import {BN254} from "../libraries/BN254.sol";
  *      a. L_i = s_i · G + c_i · P_i              (using ecMul + ecAdd precompiles)
  *      b. H_p(P_i) = hashToPoint(ring[i])         (try-and-increment hash-to-curve)
  *      c. R_i = s_i · H_p(P_i) + c_i · I
- *      d. c_{i+1} = H("Soul_CLSAG_v1", message, L_i, R_i) mod n
+ *      d. c_{i+1} = H("Zaseon_CLSAG_v1", message, L_i, R_i) mod n
  *   4. Verify ring closure: c_n == c_0
  *
  * Security properties:
@@ -70,7 +70,7 @@ contract RingSignatureVerifier is IRingSignatureVerifier {
     uint256 public constant MAX_RING_SIZE = 64;
 
     /// @dev Domain separator for challenge computation
-    bytes13 internal constant DOMAIN = "Soul_CLSAG_v1";
+    bytes13 internal constant DOMAIN = "Zaseon_CLSAG_v1";
 
     /*//////////////////////////////////////////////////////////////
                           VERIFICATION

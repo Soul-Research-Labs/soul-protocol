@@ -2,9 +2,9 @@ import hre from "hardhat";
 import { formatEther, keccak256, toBytes } from "viem";
 
 /**
- * Soul Protocol - Cross-Chain Deployment Script
+ * ZASEON - Cross-Chain Deployment Script
  * 
- * Deploys the full Soul Protocol stack to an L2 pair (Arbitrum Sepolia + Base Sepolia)
+ * Deploys the full ZASEON stack to an L2 pair (Arbitrum Sepolia + Base Sepolia)
  * with real ZK verifiers and cross-chain relay infrastructure.
  * 
  * Deployment order:
@@ -12,7 +12,7 @@ import { formatEther, keccak256, toBytes } from "viem";
  *   2. UltraHonk Adapters (IProofVerifier bridge)
  *   3. Core contracts (NullifierRegistryV3, ConfidentialStateContainerV3, ZKBoundStateLocks)
  *   4. CrossChainProofHubV3
- *   5. SoulCrossChainRelay
+ *   5. ZaseonCrossChainRelay
  *   6. CrossChainNullifierSync
  *   7. Bridge adapter configuration
  * 
@@ -63,7 +63,7 @@ async function main() {
   const l2Config = L2_CONFIG[networkName] || L2_CONFIG["localhost"];
 
   console.log("\n" + "=".repeat(80));
-  console.log(`Soul Protocol - Cross-Chain Deployment: ${l2Config.name}`);
+  console.log(`ZASEON - Cross-Chain Deployment: ${l2Config.name}`);
   console.log("=".repeat(80) + "\n");
 
   const { viem } = await hre.network.connect();
@@ -191,19 +191,19 @@ async function main() {
   // ============================================
   // STEP 5: Deploy Cross-Chain Relay
   // ============================================
-  console.log("\n--- Step 5: SoulCrossChainRelay ---\n");
+  console.log("\n--- Step 5: ZaseonCrossChainRelay ---\n");
 
   if (deployed.proofHub) {
     try {
       // BridgeType.LAYERZERO = 0, HYPERLANE = 1
-      const relay = await viem.deployContract("SoulCrossChainRelay", [
+      const relay = await viem.deployContract("ZaseonCrossChainRelay", [
         deployed.proofHub,
         0, // LayerZero as default bridge
       ]);
       deployed.relay = relay.address;
-      console.log(`  SoulCrossChainRelay: ${relay.address}`);
+      console.log(`  ZaseonCrossChainRelay: ${relay.address}`);
     } catch (err: any) {
-      console.error(`  FAILED SoulCrossChainRelay: ${err.message?.slice(0, 80)}`);
+      console.error(`  FAILED ZaseonCrossChainRelay: ${err.message?.slice(0, 80)}`);
     }
   }
 

@@ -171,7 +171,7 @@ contract MultiBridgeRouterForkTest is ForkTestBase {
         bytes32[] memory separators = new bytes32[](registeredChains.length);
         for (uint256 i = 0; i < registeredChains.length; i++) {
             separators[i] = _domainSeparator(
-                "SoulProtocol",
+                "ZaseonProtocol",
                 "1",
                 _chainId(registeredChains[i]),
                 verifier
@@ -207,8 +207,8 @@ contract MultiBridgeRouterForkTest is ForkTestBase {
         vm.assume(chainA != chainB);
         vm.assume(chainA > 0 && chainB > 0);
 
-        bytes32 domainA = keccak256(abi.encode("SoulProtocol", chainA));
-        bytes32 domainB = keccak256(abi.encode("SoulProtocol", chainB));
+        bytes32 domainA = keccak256(abi.encode("ZaseonProtocol", chainA));
+        bytes32 domainB = keccak256(abi.encode("ZaseonProtocol", chainB));
         assertTrue(
             domainA != domainB,
             "Distinct chain IDs must yield distinct domains"

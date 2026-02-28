@@ -16,7 +16,7 @@
         }
       ],
       "alertThreshold": { "amount": 1, "windowSeconds": 1 },
-      "notificationChannels": ["soul-pagerduty", "soul-slack-critical"],
+      "notificationChannels": ["zaseon-pagerduty", "zaseon-slack-critical"],
       "riskCategory": "TECHNICAL"
     },
     "batch_accumulator_batch_ready": {
@@ -32,7 +32,7 @@
         }
       ],
       "alertThreshold": { "amount": 1, "windowSeconds": 60 },
-      "notificationChannels": ["soul-slack-ops"],
+      "notificationChannels": ["zaseon-slack-ops"],
       "riskCategory": "TECHNICAL"
     },
     "batch_accumulator_stale_batch": {
@@ -48,7 +48,7 @@
         }
       ],
       "alertThreshold": { "amount": 1, "windowSeconds": 1800 },
-      "notificationChannels": ["soul-slack-ops", "soul-pagerduty"],
+      "notificationChannels": ["zaseon-slack-ops", "zaseon-pagerduty"],
       "riskCategory": "TECHNICAL"
     },
     "privacy_oracle_price_update": {
@@ -64,7 +64,7 @@
         }
       ],
       "alertThreshold": { "amount": 100, "windowSeconds": 60 },
-      "notificationChannels": ["soul-slack-ops"],
+      "notificationChannels": ["zaseon-slack-ops"],
       "riskCategory": "FINANCIAL"
     },
     "privacy_oracle_stale_prices": {
@@ -75,7 +75,7 @@
       "addresses": [],
       "eventConditions": [],
       "alertThreshold": { "amount": 0, "windowSeconds": 900 },
-      "notificationChannels": ["soul-pagerduty", "soul-slack-critical"],
+      "notificationChannels": ["zaseon-pagerduty", "zaseon-slack-critical"],
       "riskCategory": "FINANCIAL"
     },
     "scroll_bridge_message_sent": {
@@ -91,7 +91,7 @@
         }
       ],
       "alertThreshold": { "amount": 50, "windowSeconds": 300 },
-      "notificationChannels": ["soul-slack-ops"],
+      "notificationChannels": ["zaseon-slack-ops"],
       "riskCategory": "TECHNICAL"
     },
     "scroll_bridge_relay_failure": {
@@ -107,7 +107,7 @@
         }
       ],
       "alertThreshold": { "amount": 1, "windowSeconds": 1 },
-      "notificationChannels": ["soul-slack-critical"],
+      "notificationChannels": ["zaseon-slack-critical"],
       "riskCategory": "TECHNICAL"
     },
     "proof_verifier_change": {
@@ -123,7 +123,7 @@
         }
       ],
       "alertThreshold": { "amount": 1, "windowSeconds": 1 },
-      "notificationChannels": ["soul-pagerduty", "soul-slack-critical", "soul-email-critical"],
+      "notificationChannels": ["zaseon-pagerduty", "zaseon-slack-critical", "zaseon-email-critical"],
       "riskCategory": "ACCESS-CONTROL"
     }
   }

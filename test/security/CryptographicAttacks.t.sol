@@ -8,7 +8,7 @@ import {MockProofVerifier} from "../../contracts/mocks/MockProofVerifier.sol";
 
 /**
  * @title CryptographicAttacks
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Comprehensive cryptographic attack vector testing
  * @dev Tests nullifier collision, proof forgery, replay, range proof soundness,
  *      and state commitment manipulation attacks per
@@ -471,10 +471,10 @@ contract CryptographicAttacksTest is Test {
         vm.assume(input1 != input2);
 
         bytes32 nullifier1 = keccak256(
-            abi.encodePacked("soul_nullifier_v3", input1)
+            abi.encodePacked("zaseon_nullifier_v3", input1)
         );
         bytes32 nullifier2 = keccak256(
-            abi.encodePacked("soul_nullifier_v3", input2)
+            abi.encodePacked("zaseon_nullifier_v3", input2)
         );
 
         assertNotEq(
@@ -489,10 +489,10 @@ contract CryptographicAttacksTest is Test {
         bytes32 baseSecret = keccak256("shared_secret");
 
         bytes32 nullifierDomain1 = keccak256(
-            abi.encodePacked("soul_domain_1", baseSecret)
+            abi.encodePacked("zaseon_domain_1", baseSecret)
         );
         bytes32 nullifierDomain2 = keccak256(
-            abi.encodePacked("soul_domain_2", baseSecret)
+            abi.encodePacked("zaseon_domain_2", baseSecret)
         );
 
         assertNotEq(
@@ -548,8 +548,8 @@ contract CryptographicAttacksTest is Test {
         scalar2 = bound(scalar2, 0, FR_MODULUS - 1);
         vm.assume(scalar1 != scalar2);
 
-        bytes32 null1 = keccak256(abi.encodePacked("soul_null", scalar1));
-        bytes32 null2 = keccak256(abi.encodePacked("soul_null", scalar2));
+        bytes32 null1 = keccak256(abi.encodePacked("zaseon_null", scalar1));
+        bytes32 null2 = keccak256(abi.encodePacked("zaseon_null", scalar2));
 
         assertNotEq(
             null1,

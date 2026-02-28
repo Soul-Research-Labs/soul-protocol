@@ -1,14 +1,14 @@
 /**
- * Soul SDK Error Classes
+ * Zaseon SDK Error Classes
  * 
  * Comprehensive error handling with typed errors, error codes,
  * and contextual information for debugging.
  */
 
 /**
- * Base error code enum for all Soul SDK errors
+ * Base error code enum for all Zaseon SDK errors
  */
-export enum SoulErrorCode {
+export enum ZaseonErrorCode {
   // General errors (1xxx)
   UNKNOWN_ERROR = 1000,
   INVALID_CONFIGURATION = 1001,
@@ -76,8 +76,8 @@ export enum SoulErrorCode {
 /**
  * Error metadata interface
  */
-export interface SoulErrorMetadata {
-  code: SoulErrorCode;
+export interface ZaseonErrorMetadata {
+  code: ZaseonErrorCode;
   timestamp: Date;
   context?: Record<string, unknown>;
   cause?: Error;
@@ -86,10 +86,10 @@ export interface SoulErrorMetadata {
 }
 
 /**
- * Base Soul SDK Error
+ * Base Zaseon SDK Error
  */
-export class SoulError extends Error {
-  public readonly code: SoulErrorCode;
+export class ZaseonError extends Error {
+  public readonly code: ZaseonErrorCode;
   public readonly timestamp: Date;
   public readonly context: Record<string, unknown>;
   public readonly cause?: Error;
@@ -98,11 +98,11 @@ export class SoulError extends Error {
 
   constructor(
     message: string,
-    code: SoulErrorCode = SoulErrorCode.UNKNOWN_ERROR,
-    options: Partial<SoulErrorMetadata> = {}
+    code: ZaseonErrorCode = ZaseonErrorCode.UNKNOWN_ERROR,
+    options: Partial<ZaseonErrorMetadata> = {}
   ) {
     super(message);
-    this.name = "SoulError";
+    this.name = "ZaseonError";
     this.code = code;
     this.timestamp = options.timestamp || new Date();
     this.context = options.context || {};
@@ -122,7 +122,7 @@ export class SoulError extends Error {
       name: this.name,
       message: this.message,
       code: this.code,
-      codeName: SoulErrorCode[this.code],
+      codeName: ZaseonErrorCode[this.code],
       timestamp: this.timestamp.toISOString(),
       context: this.context,
       retryable: this.retryable,
@@ -135,7 +135,7 @@ export class SoulError extends Error {
   /**
    * Check if error is of a specific type
    */
-  isType(code: SoulErrorCode): boolean {
+  isType(code: ZaseonErrorCode): boolean {
     return this.code === code;
   }
 
@@ -160,10 +160,10 @@ export class SoulError extends Error {
 /**
  * Validation Error
  */
-export class ValidationError extends SoulError {
+export class ValidationError extends ZaseonError {
   constructor(
     message: string,
-    code: SoulErrorCode = SoulErrorCode.INVALID_INPUT,
+    code: ZaseonErrorCode = ZaseonErrorCode.INVALID_INPUT,
     context?: Record<string, unknown>
   ) {
     super(message, code, {
@@ -178,13 +178,13 @@ export class ValidationError extends SoulError {
 /**
  * Contract Error
  */
-export class ContractError extends SoulError {
+export class ContractError extends ZaseonError {
   public readonly transactionHash?: string;
   public readonly revertReason?: string;
 
   constructor(
     message: string,
-    code: SoulErrorCode = SoulErrorCode.CONTRACT_CALL_FAILED,
+    code: ZaseonErrorCode = ZaseonErrorCode.CONTRACT_CALL_FAILED,
     options: {
       transactionHash?: string;
       revertReason?: string;
@@ -200,9 +200,9 @@ export class ContractError extends SoulError {
       },
       cause: options.cause,
       retryable: [
-        SoulErrorCode.NONCE_TOO_LOW,
-        SoulErrorCode.REPLACEMENT_UNDERPRICED,
-        SoulErrorCode.NETWORK_ERROR,
+        ZaseonErrorCode.NONCE_TOO_LOW,
+        ZaseonErrorCode.REPLACEMENT_UNDERPRICED,
+        ZaseonErrorCode.NETWORK_ERROR,
       ].includes(code),
       suggestedAction: options.revertReason
         ? `Transaction reverted: ${options.revertReason}`
@@ -217,7 +217,7 @@ export class ContractError extends SoulError {
 /**
  * Network Error
  */
-export class NetworkError extends SoulError {
+export class NetworkError extends ZaseonError {
   public readonly endpoint?: string;
   public readonly statusCode?: number;
 
@@ -229,7 +229,7 @@ export class NetworkError extends SoulError {
       cause?: Error;
     } = {}
   ) {
-    super(message, SoulErrorCode.NETWORK_ERROR, {
+    super(message, ZaseonErrorCode.NETWORK_ERROR, {
       context: {
         endpoint: options.endpoint,
         statusCode: options.statusCode,
@@ -247,13 +247,13 @@ export class NetworkError extends SoulError {
 /**
  * Proof Error
  */
-export class ProofError extends SoulError {
+export class ProofError extends ZaseonError {
   public readonly proofType?: string;
   public readonly circuitId?: string;
 
   constructor(
     message: string,
-    code: SoulErrorCode = SoulErrorCode.PROOF_GENERATION_FAILED,
+    code: ZaseonErrorCode = ZaseonErrorCode.PROOF_GENERATION_FAILED,
     options: {
       proofType?: string;
       circuitId?: string;
@@ -268,9 +268,9 @@ export class ProofError extends SoulError {
         circuitId: options.circuitId,
       },
       cause: options.cause,
-      retryable: code === SoulErrorCode.PROOF_EXPIRED,
+      retryable: code === ZaseonErrorCode.PROOF_EXPIRED,
       suggestedAction:
-        code === SoulErrorCode.PROOF_EXPIRED
+        code === ZaseonErrorCode.PROOF_EXPIRED
           ? "Generate a new proof with updated timestamp"
           : "Check proof inputs and circuit compatibility",
     });
@@ -283,13 +283,13 @@ export class ProofError extends SoulError {
 /**
  * State Error
  */
-export class StateError extends SoulError {
+export class StateError extends ZaseonError {
   public readonly entityId?: string;
   public readonly entityType?: string;
 
   constructor(
     message: string,
-    code: SoulErrorCode = SoulErrorCode.CONTAINER_NOT_FOUND,
+    code: ZaseonErrorCode = ZaseonErrorCode.CONTAINER_NOT_FOUND,
     options: {
       entityId?: string;
       entityType?: string;
@@ -314,13 +314,13 @@ export class StateError extends SoulError {
 /**
  * Compliance Error
  */
-export class ComplianceError extends SoulError {
+export class ComplianceError extends ZaseonError {
   public readonly policyId?: string;
   public readonly violation?: string;
 
   constructor(
     message: string,
-    code: SoulErrorCode = SoulErrorCode.COMPLIANCE_CHECK_FAILED,
+    code: ZaseonErrorCode = ZaseonErrorCode.COMPLIANCE_CHECK_FAILED,
     options: {
       policyId?: string;
       violation?: string;
@@ -345,14 +345,14 @@ export class ComplianceError extends SoulError {
 /**
  * Timeout Error
  */
-export class TimeoutError extends SoulError {
+export class TimeoutError extends ZaseonError {
   public readonly timeoutMs: number;
   public readonly operation: string;
 
   constructor(operation: string, timeoutMs: number) {
     super(
       `Operation "${operation}" timed out after ${timeoutMs}ms`,
-      SoulErrorCode.TIMEOUT_ERROR,
+      ZaseonErrorCode.TIMEOUT_ERROR,
       {
         context: { operation, timeoutMs },
         retryable: true,
@@ -375,7 +375,7 @@ export function parseContractError(error: Error): ContractError {
   if (message.includes("NullifierAlreadyConsumed")) {
     return new ContractError(
       "Nullifier has already been consumed",
-      SoulErrorCode.NULLIFIER_ALREADY_CONSUMED,
+      ZaseonErrorCode.NULLIFIER_ALREADY_CONSUMED,
       { cause: error, revertReason: "NullifierAlreadyConsumed" }
     );
   }
@@ -383,7 +383,7 @@ export function parseContractError(error: Error): ContractError {
   if (message.includes("ContainerNotFound")) {
     return new ContractError(
       "Container not found",
-      SoulErrorCode.CONTAINER_NOT_FOUND,
+      ZaseonErrorCode.CONTAINER_NOT_FOUND,
       { cause: error, revertReason: "ContainerNotFound" }
     );
   }
@@ -391,7 +391,7 @@ export function parseContractError(error: Error): ContractError {
   if (message.includes("PolicyNotFound")) {
     return new ContractError(
       "Policy not found",
-      SoulErrorCode.POLICY_NOT_FOUND,
+      ZaseonErrorCode.POLICY_NOT_FOUND,
       { cause: error, revertReason: "PolicyNotFound" }
     );
   }
@@ -399,7 +399,7 @@ export function parseContractError(error: Error): ContractError {
   if (message.includes("PolicyExpired")) {
     return new ContractError(
       "Policy has expired",
-      SoulErrorCode.POLICY_EXPIRED,
+      ZaseonErrorCode.POLICY_EXPIRED,
       { cause: error, revertReason: "PolicyExpired" }
     );
   }
@@ -407,7 +407,7 @@ export function parseContractError(error: Error): ContractError {
   if (message.includes("nonce too low")) {
     return new ContractError(
       "Transaction nonce too low",
-      SoulErrorCode.NONCE_TOO_LOW,
+      ZaseonErrorCode.NONCE_TOO_LOW,
       { cause: error }
     );
   }
@@ -415,22 +415,22 @@ export function parseContractError(error: Error): ContractError {
   if (message.includes("replacement transaction underpriced")) {
     return new ContractError(
       "Replacement transaction underpriced",
-      SoulErrorCode.REPLACEMENT_UNDERPRICED,
+      ZaseonErrorCode.REPLACEMENT_UNDERPRICED,
       { cause: error }
     );
   }
 
   // Default contract error
-  return new ContractError(message, SoulErrorCode.CONTRACT_CALL_FAILED, {
+  return new ContractError(message, ZaseonErrorCode.CONTRACT_CALL_FAILED, {
     cause: error,
   });
 }
 
 /**
- * Type guard for Soul errors
+ * Type guard for Zaseon errors
  */
-export function isSoulError(error: unknown): error is SoulError {
-  return error instanceof SoulError;
+export function isZaseonError(error: unknown): error is ZaseonError {
+  return error instanceof ZaseonError;
 }
 
 /**
@@ -446,14 +446,14 @@ export interface RetryOptions {
   /** Maximum delay in ms between retries (default: 30000) */
   maxDelayMs?: number;
   /** Callback invoked before each retry attempt */
-  onRetry?: (error: SoulError, attempt: number, delayMs: number) => void;
+  onRetry?: (error: ZaseonError, attempt: number, delayMs: number) => void;
 }
 
-const RETRYABLE_CODES: SoulErrorCode[] = [
-  SoulErrorCode.NETWORK_ERROR,
-  SoulErrorCode.TIMEOUT_ERROR,
-  SoulErrorCode.RATE_LIMITED,
-  SoulErrorCode.NONCE_TOO_LOW,
+const RETRYABLE_CODES: ZaseonErrorCode[] = [
+  ZaseonErrorCode.NETWORK_ERROR,
+  ZaseonErrorCode.TIMEOUT_ERROR,
+  ZaseonErrorCode.RATE_LIMITED,
+  ZaseonErrorCode.NONCE_TOO_LOW,
 ];
 
 /**
@@ -461,7 +461,7 @@ const RETRYABLE_CODES: SoulErrorCode[] = [
  * @param fn - Async function to execute
  * @param options - Retry configuration
  * @returns Result of the function
- * @throws SoulError if all retries fail
+ * @throws ZaseonError if all retries fail
  */
 export async function withRetry<T>(
   fn: () => Promise<T>,
@@ -475,18 +475,18 @@ export async function withRetry<T>(
     onRetry,
   } = options;
 
-  let lastError: SoulError | undefined;
+  let lastError: ZaseonError | undefined;
   let delay = initialDelayMs;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       return await fn();
     } catch (error) {
-      lastError = isSoulError(error) 
+      lastError = isZaseonError(error) 
         ? error 
-        : new SoulError(
+        : new ZaseonError(
             error instanceof Error ? error.message : String(error),
-            SoulErrorCode.UNKNOWN_ERROR,
+            ZaseonErrorCode.UNKNOWN_ERROR,
             { cause: error instanceof Error ? error : undefined }
           );
 
@@ -509,7 +509,7 @@ export async function withRetry<T>(
     }
   }
 
-  throw lastError ?? new SoulError("Unknown error after retries", SoulErrorCode.UNKNOWN_ERROR);
+  throw lastError ?? new ZaseonError("Unknown error after retries", ZaseonErrorCode.UNKNOWN_ERROR);
 }
 
 /**

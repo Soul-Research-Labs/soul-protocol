@@ -8,9 +8,9 @@ import {IIntentCompletionLayer} from "../interfaces/IIntentCompletionLayer.sol";
 
 /**
  * @title InstantCompletionGuarantee
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Bonded guarantees for ZK proof delivery — guarantors bond ETH that the proof lands
- * @dev Soul Protocol is proof middleware. This contract guarantees PROOF DELIVERY, not token
+ * @dev ZASEON is proof middleware. This contract guarantees PROOF DELIVERY, not token
  *      delivery. A guarantor (typically a solver) posts an over-collateralized bond promising
  *      that a ZK proof will be verified on the destination chain within a time window.
  *
@@ -35,7 +35,7 @@ import {IIntentCompletionLayer} from "../interfaces/IIntentCompletionLayer.sol";
  * - Guarantee expiry prevents indefinite bond lock
  * - Zero-address validation on all critical params
  *
- * @custom:security-contact security@soulprotocol.io
+ * @custom:security-contact security@zaseonprotocol.io
  */
 contract InstantCompletionGuarantee is
     AccessControl,

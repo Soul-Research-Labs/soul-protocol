@@ -22,7 +22,7 @@ interface INoirVerifier {
 
 /**
  * @title NoirVerifierAdapter
- * @notice Base adapter to bridge SoulUniversalVerifier to auto-generated Noir verifiers
+ * @notice Base adapter to bridge ZaseonUniversalVerifier to auto-generated Noir verifiers
  * @dev Handles decoding of generic bytes public inputs into Noir's expected bytes32[]
  */
 abstract contract NoirVerifierAdapter is IProofVerifier {

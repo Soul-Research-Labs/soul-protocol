@@ -7,7 +7,7 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title CrossChainMessageVerifier
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Multi-oracle cross-chain message verification
  * @dev Implements redundant verification for cross-chain messages
  *

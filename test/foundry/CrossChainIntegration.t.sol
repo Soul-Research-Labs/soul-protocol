@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import "../../contracts/crosschain/SoulCrossChainRelay.sol";
+import "../../contracts/crosschain/ZaseonCrossChainRelay.sol";
 import "../../contracts/crosschain/CrossChainNullifierSync.sol";
 
 /**
@@ -15,8 +15,8 @@ import "../../contracts/crosschain/CrossChainNullifierSync.sol";
  *         deployed LayerZero/Hyperlane endpoints on testnets.
  */
 contract CrossChainIntegrationTest is Test {
-    SoulCrossChainRelay public relaySource;
-    SoulCrossChainRelay public relayDest;
+    ZaseonCrossChainRelay public relaySource;
+    ZaseonCrossChainRelay public relayDest;
     CrossChainNullifierSync public nullifierSync;
 
     // Mock addresses for bridge and proof hub
@@ -31,15 +31,15 @@ contract CrossChainIntegrationTest is Test {
 
     function setUp() public {
         // Deploy source relay (simulating Arbitrum)
-        relaySource = new SoulCrossChainRelay(
+        relaySource = new ZaseonCrossChainRelay(
             mockProofHub,
-            SoulCrossChainRelay.BridgeType.LAYERZERO
+            ZaseonCrossChainRelay.BridgeType.LAYERZERO
         );
 
         // Deploy destination relay (simulating Base)
-        relayDest = new SoulCrossChainRelay(
+        relayDest = new ZaseonCrossChainRelay(
             mockProofHub,
-            SoulCrossChainRelay.BridgeType.LAYERZERO
+            ZaseonCrossChainRelay.BridgeType.LAYERZERO
         );
 
         // Deploy nullifier sync
@@ -48,7 +48,7 @@ contract CrossChainIntegrationTest is Test {
         // Configure source → destination chain
         relaySource.configureChain(
             BASE_CHAIN_ID,
-            SoulCrossChainRelay.ChainConfig({
+            ZaseonCrossChainRelay.ChainConfig({
                 proofHub: mockProofHub,
                 relayAdapter: mockRelayAdapter,
                 bridgeChainId: BASE_LZ_EID,
@@ -59,7 +59,7 @@ contract CrossChainIntegrationTest is Test {
         // Configure destination → source
         relayDest.configureChain(
             ARBITRUM_CHAIN_ID,
-            SoulCrossChainRelay.ChainConfig({
+            ZaseonCrossChainRelay.ChainConfig({
                 proofHub: mockProofHub,
                 relayAdapter: mockRelayAdapter,
                 bridgeChainId: ARBITRUM_LZ_EID,
@@ -83,7 +83,7 @@ contract CrossChainIntegrationTest is Test {
     }
 
     // ═══════════════════════════════════════════════
-    //  SoulCrossChainRelay Tests
+    //  ZaseonCrossChainRelay Tests
     // ═══════════════════════════════════════════════
 
     function test_relayDeployed() public view {
@@ -122,7 +122,7 @@ contract CrossChainIntegrationTest is Test {
         // (the low-level call to relayAdapter will fail silently since it's an EOA)
         // Only check indexed topic (proofId), skip non-indexed data matching
         vm.expectEmit(true, false, false, false);
-        emit SoulCrossChainRelay.ProofRelayed(
+        emit ZaseonCrossChainRelay.ProofRelayed(
             proofId,
             uint64(block.chainid),
             uint64(BASE_CHAIN_ID),
@@ -145,7 +145,7 @@ contract CrossChainIntegrationTest is Test {
     function test_relayProofToUnsupportedChainReverts() public {
         vm.expectRevert(
             abi.encodeWithSelector(
-                SoulCrossChainRelay.ChainNotSupported.selector,
+                ZaseonCrossChainRelay.ChainNotSupported.selector,
                 999
             )
         );
@@ -163,7 +163,7 @@ contract CrossChainIntegrationTest is Test {
         bytes memory bigProof = new bytes(33_000); // > MAX_PROOF_SIZE
         vm.expectRevert(
             abi.encodeWithSelector(
-                SoulCrossChainRelay.ProofTooLarge.selector,
+                ZaseonCrossChainRelay.ProofTooLarge.selector,
                 33_000
             )
         );
@@ -198,7 +198,7 @@ contract CrossChainIntegrationTest is Test {
         // Only check indexed proofId — submitted may be true since
         // proofHub.call to a mock EOA returns success
         vm.expectEmit(true, false, false, false);
-        emit SoulCrossChainRelay.ProofReceived(
+        emit ZaseonCrossChainRelay.ProofReceived(
             proofId,
             uint64(ARBITRUM_CHAIN_ID),
             commitment,

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Soul Protocol manages complexity through modular architecture, clear boundaries, and progressive feature adoption.
+ZASEON manages complexity through modular architecture, clear boundaries, and progressive feature adoption.
 
 ## Module Classification
 

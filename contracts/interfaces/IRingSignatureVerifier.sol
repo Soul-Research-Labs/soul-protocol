@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title IRingSignatureVerifier
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Interface for ring signature verification (CLSAG/MLSAG style)
  * @dev Matches the ABI expected by GasOptimizedRingCT._verifyRingSignature(),
  *      which uses staticcall with: verify(bytes32[],bytes32[],bytes,bytes32)

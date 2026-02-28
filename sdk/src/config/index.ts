@@ -1,5 +1,5 @@
 /**
- * Soul Protocol - Configuration Exports
+ * ZASEON - Configuration Exports
  */
 
 export * from "./addresses";

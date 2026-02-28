@@ -1,4 +1,4 @@
-# Soul Incident Response
+# Zaseon Incident Response
 
 > Quick reference for security incidents. For detailed procedures, see [INCIDENT_RESPONSE_RUNBOOK.md](INCIDENT_RESPONSE_RUNBOOK.md).
 
@@ -50,12 +50,12 @@ npx hardhat run scripts/emergency-pause.js --network mainnet
 
 **Initial:**
 ```
-🚨 Soul Security Notice - Investigating [COMPONENT]. Status: [IN PROGRESS]. Updates every [30 min].
+🚨 Zaseon Security Notice - Investigating [COMPONENT]. Status: [IN PROGRESS]. Updates every [30 min].
 ```
 
 **Resolved:**
 ```
-✅ Soul Security Update - Resolved. Root cause: [X]. Impact: [Y]. Post-mortem in 7 days.
+✅ Zaseon Security Update - Resolved. Root cause: [X]. Impact: [Y]. Post-mortem in 7 days.
 ```
 
 ## Post-Incident

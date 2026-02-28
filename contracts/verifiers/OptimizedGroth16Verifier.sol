@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title OptimizedGroth16Verifier
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Gas-optimized Groth16 verifier using assembly and precompiles
  * @dev Reduces verification gas by ~40% compared to naive implementation
  *

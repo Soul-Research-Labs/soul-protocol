@@ -5,7 +5,7 @@ pragma solidity ^0.8.24;
  * @title IProtocolEmergencyCoordinator
  * @notice Interface for the unified emergency coordinator that wires together
  *         ProtocolHealthAggregator, EmergencyRecovery, EnhancedKillSwitch,
- *         RelayCircuitBreaker, and SoulProtocolHub.
+ *         RelayCircuitBreaker, and ZaseonProtocolHub.
  */
 interface IProtocolEmergencyCoordinator {
     /*//////////////////////////////////////////////////////////////

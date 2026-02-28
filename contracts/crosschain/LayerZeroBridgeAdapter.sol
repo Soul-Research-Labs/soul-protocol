@@ -7,18 +7,18 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title LayerZeroBridgeAdapter
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Omnichain bridge adapter using LayerZero V2 protocol
- * @custom:security-contact security@soulprotocol.io
+ * @custom:security-contact security@zaseonprotocol.io
  * @dev Enables cross-chain interoperability across 120+ chains via LayerZero
  *
  * LAYERZERO V2 INTEGRATION ARCHITECTURE:
  * ┌─────────────────────────────────────────────────────────────────────────┐
- * │                     Soul <-> LayerZero Omnichain                         │
+ * │                     Zaseon <-> LayerZero Omnichain                         │
  * ├─────────────────────────────────────────────────────────────────────────┤
  * │                                                                         │
  * │  ┌───────────────────┐           ┌───────────────────┐                 │
- * │  │   Soul Protocol    │           │   Remote Chains   │                 │
+ * │  │   ZASEON    │           │   Remote Chains   │                 │
  * │  │  ┌─────────────┐  │           │  ┌─────────────┐  │                 │
  * │  │  │ OApp        │  │◄─────────►│  │ OApp        │  │                 │
  * │  │  │ (Omnichain) │  │           │  │ (Peer)      │  │                 │
@@ -61,7 +61,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
  */
 /**
  * @title LayerZeroBridgeAdapter
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice Layer Zero Bridge Adapter contract
  */
 contract LayerZeroBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {

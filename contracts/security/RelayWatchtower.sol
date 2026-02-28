@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title IPausable
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice I Pausable interface
  */
 interface IPausable {
@@ -19,7 +19,7 @@ function pause() external;
 
 /**
  * @title RelayWatchtower
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Decentralized watchtower network for bridge security monitoring
  * @dev Implements:
  *      - Distributed proof verification

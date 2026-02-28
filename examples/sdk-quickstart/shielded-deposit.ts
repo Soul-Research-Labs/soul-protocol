@@ -1,5 +1,5 @@
 /**
- * Soul Protocol — Shielded Pool Deposit Example
+ * ZASEON — Shielded Pool Deposit Example
  *
  * Demonstrates depositing ETH into the UniversalShieldedPool.
  * The pool uses a Merkle tree of commitments so that withdrawals

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Hyperlane bridge utilities for Soul SDK
+ * @fileoverview Hyperlane bridge utilities for Zaseon SDK
  * @module bridges/hyperlane
  */
 

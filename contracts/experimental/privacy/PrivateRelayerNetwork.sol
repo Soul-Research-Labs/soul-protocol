@@ -10,7 +10,7 @@ import {ExperimentalFeatureRegistry} from "../../security/ExperimentalFeatureReg
 
 /**
  * @title PrivateRelayerNetwork
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Privacy-preserving relayer network with commit-reveal MEV protection
  * @dev Implements stake-weighted VRF-based relayer selection and stealth fee payments
  * @custom:experimental This contract is research-tier and NOT production-ready. See contracts/experimental/README.md for promotion criteria.
@@ -81,7 +81,7 @@ contract PrivateRelayerNetwork is
     uint256 public constant MIN_RELAYERS = 3;
 
     /// @notice VRF domain separator
-    bytes32 public constant VRF_DOMAIN = keccak256("Soul_RELAYER_VRF_V1");
+    bytes32 public constant VRF_DOMAIN = keccak256("Zaseon_RELAYER_VRF_V1");
 
     /// @notice Cooldown period after slashing
     uint256 public constant SLASH_COOLDOWN = 1 days;

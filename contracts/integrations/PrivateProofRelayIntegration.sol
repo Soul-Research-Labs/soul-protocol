@@ -10,7 +10,7 @@ import {IPrivacyIntegration} from "../interfaces/IPrivacyIntegration.sol";
 
 /**
  * @title PrivateProofRelayIntegration
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Cross-chain private proof relay integration implementing IPrivacyIntegration
  * @dev Connects to CrossChainPrivacyHub with stealth addresses and ZK proofs
  *
@@ -40,7 +40,7 @@ import {IPrivacyIntegration} from "../interfaces/IPrivacyIntegration.sol";
  * │                                                                              │
  * └─────────────────────────────────────────────────────────────────────────────┘
  *
- * @custom:security-contact security@soulprotocol.io
+ * @custom:security-contact security@zaseonprotocol.io
  */
 contract PrivateProofRelayIntegration is ReentrancyGuard, AccessControl, Pausable {
     using SafeERC20 for IERC20;
@@ -113,7 +113,7 @@ contract PrivateProofRelayIntegration is ReentrancyGuard, AccessControl, Pausabl
 
     /// @notice Domain separator for private proof relay
     bytes32 public constant PRIVATE_RELAY_DOMAIN =
-        keccak256("Soul_PRIVATE_RELAY_V1");
+        keccak256("Zaseon_PRIVATE_RELAY_V1");
 
     /// @notice Cross-domain nullifier separator
     bytes32 public constant CROSS_DOMAIN_TAG =

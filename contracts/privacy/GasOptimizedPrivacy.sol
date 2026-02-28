@@ -6,7 +6,7 @@ import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 
 /**
  * @title GasOptimizedStealthRegistry
- * @author Soul Team
+ * @author Zaseon Team
  * @notice Gas-optimized stealth address registry with batch operations
  * @dev Targets <100k gas per stealth address generation (down from ~180k)
  *
@@ -448,7 +448,7 @@ function registerDomain(bytes32 domain) external onlyOwner {
             mstore(ptr, sourceNullifier)
             mstore(add(ptr, 0x20), sourceDomain)
             mstore(add(ptr, 0x40), targetDomain)
-            mstore(add(ptr, 0x60), 0x5049 /* "Soul" prefix */)
+            mstore(add(ptr, 0x60), 0x5049 /* "Zaseon" prefix */)
             result := keccak256(ptr, 0x80)
         }
         return result;

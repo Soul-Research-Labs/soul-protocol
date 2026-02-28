@@ -3,12 +3,12 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import {MessageBatcher} from "../../contracts/crosschain/MessageBatcher.sol";
-import {SoulCrossChainRelay} from "../../contracts/crosschain/SoulCrossChainRelay.sol";
+import {ZaseonCrossChainRelay} from "../../contracts/crosschain/ZaseonCrossChainRelay.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
-/// @title MockSoulRelay
-/// @notice Minimal mock of SoulCrossChainRelay for MessageBatcher testing
-contract MockSoulRelay {
+/// @title MockZaseonRelay
+/// @notice Minimal mock of ZaseonCrossChainRelay for MessageBatcher testing
+contract MockZaseonRelay {
     uint8 public constant MSG_PROOF_RELAY = 1;
     uint256 public batchCount;
     uint64 public lastDestChainId;
@@ -37,7 +37,7 @@ contract MockSoulRelay {
  */
 contract MessageBatcherTest is Test {
     MessageBatcher public batcher;
-    MockSoulRelay public relay;
+    MockZaseonRelay public relay;
 
     address public admin;
     address public user1;
@@ -57,7 +57,7 @@ contract MessageBatcherTest is Test {
         user1 = makeAddr("user1");
         user2 = makeAddr("user2");
 
-        relay = new MockSoulRelay();
+        relay = new MockZaseonRelay();
         batcher = new MessageBatcher(address(relay), admin);
 
         // Fund test users

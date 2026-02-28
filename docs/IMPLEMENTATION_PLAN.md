@@ -1,4 +1,4 @@
-# Soul Protocol - Improvement Implementation Plan
+# ZASEON - Improvement Implementation Plan
 
 > **Document Version:** 1.0  
 > **Created:** February 1, 2026  
@@ -248,10 +248,10 @@ contracts/relayer/*.sol             # ~45% documented
 
 ### Contracts
 - `@title` - Contract name
-- `@author` - "Soul Protocol"
+- `@author` - "ZASEON"
 - `@notice` - User-facing description
 - `@dev` - Developer notes (architecture, integrations)
-- `@custom:security-contact` - security@soul.network
+- `@custom:security-contact` - security@zaseon.network
 
 ### Functions
 - `@notice` - What it does (user-facing)
@@ -404,8 +404,8 @@ contracts/security/
 ## Issue 3: Governance Organization (P2)
 
 ### Current State
-- Governance logic exists in `contracts/security/SoulMultiSigGovernance.sol`
-- Timelock exists in `contracts/security/SoulTimelock.sol` and `SoulUpgradeTimelock.sol`
+- Governance logic exists in `contracts/security/ZaseonMultiSigGovernance.sol`
+- Timelock exists in `contracts/security/ZaseonTimelock.sol` and `ZaseonUpgradeTimelock.sol`
 - No dedicated `contracts/governance/` directory
 - Governance contracts mixed with security contracts
 
@@ -421,9 +421,9 @@ mkdir -p contracts/governance
 **1.2 Move Existing Governance Contracts**
 ```
 # Current Location → New Location
-contracts/security/SoulMultiSigGovernance.sol → contracts/governance/SoulMultiSigGovernance.sol
-contracts/security/SoulTimelock.sol           → contracts/governance/SoulTimelock.sol
-contracts/security/SoulUpgradeTimelock.sol    → contracts/governance/SoulUpgradeTimelock.sol
+contracts/security/ZaseonMultiSigGovernance.sol → contracts/governance/ZaseonMultiSigGovernance.sol
+contracts/security/ZaseonTimelock.sol           → contracts/governance/ZaseonTimelock.sol
+contracts/security/ZaseonUpgradeTimelock.sol    → contracts/governance/ZaseonUpgradeTimelock.sol
 contracts/security/TimelockAdmin.sol          → contracts/governance/TimelockAdmin.sol
 ```
 
@@ -431,35 +431,35 @@ contracts/security/TimelockAdmin.sol          → contracts/governance/TimelockA
 ```bash
 # Find and replace imports
 find contracts -name "*.sol" -exec sed -i '' \
-  's|security/SoulMultiSigGovernance|governance/SoulMultiSigGovernance|g' {} \;
+  's|security/ZaseonMultiSigGovernance|governance/ZaseonMultiSigGovernance|g' {} \;
 ```
 
 **1.4 Final Directory Structure**
 ```
 contracts/governance/
-├── SoulMultiSigGovernance.sol      # Multi-sig governance
-├── SoulTimelock.sol                # Standard timelock
-├── SoulUpgradeTimelock.sol         # Upgrade-specific timelock
+├── ZaseonMultiSigGovernance.sol      # Multi-sig governance
+├── ZaseonTimelock.sol                # Standard timelock
+├── ZaseonUpgradeTimelock.sol         # Upgrade-specific timelock
 ├── TimelockAdmin.sol               # Timelock administration
-├── SoulGovernor.sol                # (NEW) OpenZeppelin Governor
-├── SoulVotes.sol                   # (NEW) Voting token wrapper
+├── ZaseonGovernor.sol                # (NEW) OpenZeppelin Governor
+├── ZaseonVotes.sol                   # (NEW) Voting token wrapper
 └── interfaces/
-    ├── ISoulGovernor.sol
-    └── ISoulTimelock.sol
+    ├── IZaseonGovernor.sol
+    └── IZaseonTimelock.sol
 ```
 
 #### Phase 2: Governance Enhancements (Optional - Future)
 
 **2.1 Add OpenZeppelin Governor Integration**
 ```solidity
-// contracts/governance/SoulGovernor.sol
+// contracts/governance/ZaseonGovernor.sol
 import "@openzeppelin/contracts/governance/Governor.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
 
-contract SoulGovernor is
+contract ZaseonGovernor is
     Governor,
     GovernorSettings,
     GovernorCountingSimple,
@@ -470,7 +470,7 @@ contract SoulGovernor is
         IVotes _token,
         TimelockController _timelock
     )
-        Governor("Soul Governor")
+        Governor("Zaseon Governor")
         GovernorSettings(1 days, 1 weeks, 100_000e18) // delay, period, threshold
         GovernorVotes(_token)
         GovernorTimelockControl(_timelock)
@@ -481,7 +481,7 @@ contract SoulGovernor is
 **2.2 Update Certora Specs**
 ```bash
 # Rename/move spec file
-mv certora/specs/SoulGovernor.spec → stays (already exists)
+mv certora/specs/ZaseonGovernor.spec → stays (already exists)
 
 # Create new governance specs
 certora/specs/GovernanceIntegration.spec
@@ -494,7 +494,7 @@ certora/specs/TimelockSafety.spec
 - [ ] All imports updated across codebase
 - [ ] `contracts/governance/interfaces/` created
 - [ ] Tests updated with new paths
-- [ ] (Optional) `SoulGovernor.sol` using OpenZeppelin Governor
+- [ ] (Optional) `ZaseonGovernor.sol` using OpenZeppelin Governor
 
 ---
 
@@ -549,9 +549,9 @@ contracts/governance/interfaces/
 
 ### Files to Move
 ```
-contracts/security/SoulMultiSigGovernance.sol → contracts/governance/
-contracts/security/SoulTimelock.sol → contracts/governance/
-contracts/security/SoulUpgradeTimelock.sol → contracts/governance/
+contracts/security/ZaseonMultiSigGovernance.sol → contracts/governance/
+contracts/security/ZaseonTimelock.sol → contracts/governance/
+contracts/security/ZaseonUpgradeTimelock.sol → contracts/governance/
 contracts/security/TimelockAdmin.sol → contracts/governance/
 ```
 
@@ -576,4 +576,4 @@ contracts/security/*.sol        # NatSpec additions
 
 ---
 
-*Document maintained by: Soul Protocol Engineering Team*
+*Document maintained by: ZASEON Engineering Team*

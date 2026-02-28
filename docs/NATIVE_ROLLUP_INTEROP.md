@@ -1,8 +1,8 @@
 # Native Rollup Interoperability Strategy
 
-> **Soul Protocol alignment with Ethereum's native rollup precompile and synchronous composability**
+> **ZASEON alignment with Ethereum's native rollup precompile and synchronous composability**
 
-This document outlines how Soul Protocol can maximize interoperability with Ethereum's emerging native rollup architecture, incorporating insights from Vitalik's "Possible Futures of the Ethereum Protocol" series (October 2024) and the "Glue and Coprocessor Architectures" post (September 2024).
+This document outlines how ZASEON can maximize interoperability with Ethereum's emerging native rollup architecture, incorporating insights from Vitalik's "Possible Futures of the Ethereum Protocol" series (October 2024) and the "Glue and Coprocessor Architectures" post (September 2024).
 
 ---
 
@@ -14,7 +14,7 @@ Vitalik's "Glue and Coprocessor" post establishes a foundational mental model fo
 
 > Modern computation is increasingly following what I call a **glue and coprocessor architecture**: you have some central "glue" component, which has high generality but low efficiency, which is responsible for shuttling data between one or more coprocessor components, which have low generality but high efficiency.
 
-#### Key Insights for Soul Protocol
+#### Key Insights for ZASEON
 
 **1. Computation Separation Pattern**
 | Component | Characteristics | Examples |
@@ -49,7 +49,7 @@ Vitalik's "Glue and Coprocessor" post establishes a foundational mental model fo
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-**4. Implications for Soul**
+**4. Implications for Zaseon**
 - **Privacy business logic** (intent parsing, commitment management) → EVM/Noir glue
 - **Intensive operations** (nullifier hashing, Pedersen commitments, Merkle proofs) → Optimized precompiles/circuits
 - **Multi-prover approach** benefits from this: each prover optimizes different coprocessors
@@ -61,13 +61,13 @@ Vitalik's "Glue and Coprocessor" post establishes a foundational mental model fo
 
 ### Vitalik's "Possible Futures" Series - Key Takeaways
 
-The October 2024 series outlines five major roadmap components that directly impact Soul Protocol:
+The October 2024 series outlines five major roadmap components that directly impact ZASEON:
 
 #### The Merge (Part 1)
 - **Single Slot Finality (SSF)**: 12s finality instead of 15 minutes
 - **Orbit SSF**: Committee-based finality with reduced economic finality requirements
 - **Faster confirmations**: L1 preconfirmations and reduced slot times (potentially 4s)
-- **Implications for Soul**: Faster cross-chain finality, reduced challenge periods possible
+- **Implications for Zaseon**: Faster cross-chain finality, reduced challenge periods possible
 
 #### The Surge (Part 2)
 - **100,000+ TPS** goal across L1+L2
@@ -82,19 +82,19 @@ The October 2024 series outlines five major roadmap components that directly imp
 - **FOCIL + APS**: Fork-choice enforced inclusion lists + attester-proposer separation
 - **MEV mitigation**: Reduces block builder centralization
 - **Encrypted mempools**: Threshold decryption or delay encryption for pre-inclusion privacy
-- **Implications for Soul**: Private transaction inclusion guarantees via inclusion lists
+- **Implications for Zaseon**: Private transaction inclusion guarantees via inclusion lists
 
 #### The Verge (Part 4)
 - **Stateless verification**: Verkle trees OR STARKed binary hash trees
 - **ZK-EVM validity proofs**: Full chain verification via SNARK/STARK
 - **Light client improvements**: Phone/smartwatch can verify Ethereum
-- **Implications for Soul**: Our proofs can integrate with L1 verification infrastructure
+- **Implications for Zaseon**: Our proofs can integrate with L1 verification infrastructure
 
 #### The Purge (Part 5)
 - **History expiry (EIP-4444)**: ~18 day storage, distributed via Portal network
 - **State expiry**: Partial expiry (EIP-7736) or address-period-based schemes
 - **EOF mandatory**: Simplified EVM with gas unobservability
-- **Implications for Soul**: Need to ensure privacy state doesn't rely on expired history
+- **Implications for Zaseon**: Need to ensure privacy state doesn't rely on expired history
 
 ### 1. Native Rollup Precompile (Vitalik's Proposal)
 
@@ -125,13 +125,13 @@ Reference implementation: https://github.com/jbaylina/sync-rollups
 
 ### 3. Cross-L2 Interoperability Standards
 
-From The Surge, key standards Soul should integrate:
+From The Surge, key standards Zaseon should integrate:
 
-| Standard | Purpose | Soul Integration |
+| Standard | Purpose | Zaseon Integration |
 |----------|---------|------------------|
 | ERC-7683 | Cross-chain intents & swaps | Private intent submission |
 | RIP-7755 | Cross-L2 call standard | Privacy-preserving cross-L2 calls |
-| L1SLOAD | L2 reads L1 state cheaply | Keystore wallet for Soul accounts |
+| L1SLOAD | L2 reads L1 state cheaply | Keystore wallet for Zaseon accounts |
 | CCIP-read (ERC-3668) | Light client friendly reads | Trustless privacy proof verification |
 | Helios | L1 light client | Extend to L2 privacy verification |
 
@@ -139,7 +139,7 @@ From The Surge, key standards Soul should integrate:
 
 From The Verge, proof system tradeoffs:
 
-| Approach | Proof Size | Security | Prover Time | Soul Compatibility |
+| Approach | Proof Size | Security | Prover Time | Zaseon Compatibility |
 |----------|-----------|----------|-------------|-------------------|
 | Verkle Trees | ~100-2000 kB | Elliptic curve (not PQ) | <1s | Current approach |
 | STARK + SHA256/BLAKE | ~100-300 kB | Conservative hashes | >10s | Future migration |
@@ -149,9 +149,9 @@ From The Verge, proof system tradeoffs:
 
 ---
 
-## Soul Protocol's Position
+## ZASEON's Position
 
-Soul is **cross-chain ZK privacy middleware** - we're not an L2 ourselves, but we provide:
+Zaseon is **cross-chain ZK privacy middleware** - we're not an L2 ourselves, but we provide:
 - Privacy-preserving state transfers across L2s
 - ZK proofs for confidential state
 - Cross-chain nullifier tracking (CDNA)
@@ -161,12 +161,12 @@ Soul is **cross-chain ZK privacy middleware** - we're not an L2 ourselves, but w
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                     CURRENT: SOUL CROSS-CHAIN FLOW                       │
+│                     CURRENT: ZASEON CROSS-CHAIN FLOW                       │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
 │  L2-A (e.g., Arbitrum)              L2-B (e.g., Optimism)               │
 │  ┌──────────────────┐               ┌──────────────────┐                │
-│  │ Soul Contracts   │               │ Soul Contracts   │                │
+│  │ Zaseon Contracts   │               │ Zaseon Contracts   │                │
 │  │                  │               │                  │                │
 │  │ • StateContainer │               │ • StateContainer │                │
 │  │ • NullifierReg   │──[async]─────▶│ • NullifierReg   │                │
@@ -196,16 +196,16 @@ Soul is **cross-chain ZK privacy middleware** - we're not an L2 ourselves, but w
 
 ### Phase 1: Lookup Table Interface (Near-term)
 
-Create a canonical interface that exposes Soul's privacy operations as input/output lookup tables, compatible with the native rollup precompile vision.
+Create a canonical interface that exposes Zaseon's privacy operations as input/output lookup tables, compatible with the native rollup precompile vision.
 
 ```solidity
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-/// @title ISoulLookupTable
-/// @notice Canonical interface for Soul privacy operation I/O
+/// @title IZaseonLookupTable
+/// @notice Canonical interface for Zaseon privacy operation I/O
 /// @dev Compatible with native rollup precompile lookup table pattern
-interface ISoulLookupTable {
+interface IZaseonLookupTable {
     /// @notice Lookup table entry for privacy operations
     struct LookupEntry {
         bytes32 inputHash;      // keccak256(calldata)
@@ -247,9 +247,9 @@ Integrate with jbaylina's execution table pattern for synchronous privacy operat
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-/// @title ISoulExecutionTable
+/// @title IZaseonExecutionTable
 /// @notice Execution table for synchronous cross-chain privacy operations
-interface ISoulExecutionTable {
+interface IZaseonExecutionTable {
     enum ActionType {
         PRIVATE_TRANSFER,
         NULLIFIER_REGISTER,
@@ -290,19 +290,19 @@ interface ISoulExecutionTable {
 
 ### Phase 3: Proxy Contract Pattern (Medium-term)
 
-Deploy Soul proxy contracts that enable synchronous privacy operations.
+Deploy Zaseon proxy contracts that enable synchronous privacy operations.
 
 ```solidity
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {ISoulExecutionTable} from "./ISoulExecutionTable.sol";
+import {IZaseonExecutionTable} from "./IZaseonExecutionTable.sol";
 
-/// @title SoulPrivacyProxy
+/// @title ZaseonPrivacyProxy
 /// @notice Proxy contract for synchronous cross-chain privacy calls
-/// @dev Deployed on L1, represents Soul contracts on any L2
-contract SoulPrivacyProxy {
-    ISoulExecutionTable public immutable executionTable;
+/// @dev Deployed on L1, represents Zaseon contracts on any L2
+contract ZaseonPrivacyProxy {
+    IZaseonExecutionTable public immutable executionTable;
     uint256 public immutable remoteChainId;
     address public immutable remoteContract;
     
@@ -311,7 +311,7 @@ contract SoulPrivacyProxy {
         uint256 _remoteChainId,
         address _remoteContract
     ) {
-        executionTable = ISoulExecutionTable(_executionTable);
+        executionTable = IZaseonExecutionTable(_executionTable);
         remoteChainId = _remoteChainId;
         remoteContract = _remoteContract;
     }
@@ -339,7 +339,7 @@ contract SoulPrivacyProxy {
 
 ### Phase 4: Native Precompile Compatibility (Long-term)
 
-When Ethereum ships the native rollup precompile, Soul can:
+When Ethereum ships the native rollup precompile, Zaseon can:
 
 1. **Use native EVM verification** for standard operations
 2. **Provide custom provers** only for privacy-specific operations:
@@ -350,10 +350,10 @@ When Ethereum ships the native rollup precompile, Soul can:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│              FUTURE: NATIVE PRECOMPILE + SOUL PROVERS                    │
+│              FUTURE: NATIVE PRECOMPILE + ZASEON PROVERS                    │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
-│  Native Rollup Precompile (0x0b)     Soul Custom Provers                │
+│  Native Rollup Precompile (0x0b)     Zaseon Custom Provers                │
 │  ┌──────────────────────────┐       ┌──────────────────────────┐       │
 │  │                          │       │                          │       │
 │  │  Verifies:               │       │  Verifies:               │       │
@@ -379,13 +379,13 @@ When Ethereum ships the native rollup precompile, Soul can:
 ## Implementation Roadmap
 
 ### Q1 2026: Foundation
-- [ ] Implement `ISoulLookupTable` interface
+- [ ] Implement `IZaseonLookupTable` interface
 - [ ] Add lookup table support to `CrossChainProofHubV3`
 - [ ] Create Noir circuits for lookup table proofs
 - [ ] Unit tests for lookup table pattern
 
 ### Q2 2026: Execution Tables
-- [ ] Implement `ISoulExecutionTable` 
+- [ ] Implement `IZaseonExecutionTable` 
 - [ ] Deploy proxy contracts for major L2s
 - [ ] Integrate with jbaylina's sync-rollups reference
 - [ ] Add aggregated proof support in Noir
@@ -398,7 +398,7 @@ When Ethereum ships the native rollup precompile, Soul can:
 
 ### Q4 2026: Native Precompile Ready
 - [ ] Abstract EVM verification to use native precompile
-- [ ] Isolate Soul-specific provers
+- [ ] Isolate Zaseon-specific provers
 - [ ] Testing on devnets with precompile
 - [ ] Mainnet deployment (pending precompile availability)
 
@@ -410,7 +410,7 @@ The user raised: *"what if you're not EVM, or even not financial?"*
 
 ### Non-EVM Chains (e.g., Midnight, Solana, Cosmos)
 
-Soul already supports non-EVM via:
+Zaseon already supports non-EVM via:
 - **Midnight Bridge**: Compact contracts (just merged)
 - **Noir circuits**: Chain-agnostic ZK proofs
 
@@ -428,7 +428,7 @@ struct NonEVMLookupEntry {
 
 ### Non-Financial Applications
 
-Soul's privacy primitives apply beyond DeFi:
+Zaseon's privacy primitives apply beyond DeFi:
 - **Identity**: Private credentials, ZK attestations
 - **Governance**: Private voting with public tallies
 - **Data**: Confidential state for any application
@@ -453,16 +453,16 @@ struct VoteLookupEntry {
 2. **Execution Table Atomicity**: Partial execution must revert everything
 3. **Proxy Trust**: Proxies inherit security from execution table proofs
 4. **Nullifier Consistency**: Cross-chain nullifiers must sync atomically
-5. **Precompile Bugs**: Even with native precompile, Soul provers need auditing
+5. **Precompile Bugs**: Even with native precompile, Zaseon provers need auditing
 6. **Multi-prover Strategy**: Use 2-of-3 between different proof systems (from The Verge)
-7. **Formal Verification**: Lean4-based verification of Soul ZK circuits (per The Surge)
+7. **Formal Verification**: Lean4-based verification of Zaseon ZK circuits (per The Surge)
 8. **Quantum Resistance**: Plan migration path away from BLS12-381 and elliptic curves
 
 ### Quantum Resistance Planning
 
 From The Merge and The Verge, quantum computers may break cryptography by ~2030s:
 
-**Current Soul Cryptography:**
+**Current Zaseon Cryptography:**
 - BLS12-381 (nullifier commitments) - VULNERABLE
 - ECDSA signatures - VULNERABLE  
 - Pedersen commitments - VULNERABLE
@@ -485,18 +485,18 @@ struct PQCCommitment {
 
 ## Light Client Integration
 
-From The Verge, Soul should enable light client verification:
+From The Verge, Zaseon should enable light client verification:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                    SOUL LIGHT CLIENT VERIFICATION                        │
+│                    ZASEON LIGHT CLIENT VERIFICATION                        │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
 │  Mobile/Browser Wallet                                                   │
 │  ┌───────────────────────────────────────────────────────────────┐      │
 │  │                                                               │      │
 │  │  1. Download block header (sync committee signature)          │      │
-│  │  2. Download witness for Soul state (Verkle/STARK proof)      │      │
+│  │  2. Download witness for Zaseon state (Verkle/STARK proof)      │      │
 │  │  3. Verify privacy proof locally (~100ms)                     │      │
 │  │  4. Execute transaction with confidence                       │      │
 │  │                                                               │      │
@@ -518,35 +518,35 @@ From The Verge, Soul should enable light client verification:
 
 ### Contracts Implemented
 
-The following contracts have been created to align Soul Protocol with Ethereum's roadmap:
+The following contracts have been created to align ZASEON with Ethereum's roadmap:
 
 #### The Merge Alignment
 | Contract | Purpose | Status |
 |----------|---------|--------|
-| SoulPreconfirmationHandler | SSF-aware preconfirmations, Orbit committee verification | 🔄 Planned |
-| ISoulPreconfirmationHandler | Interface | 🔄 Planned |
+| ZaseonPreconfirmationHandler | SSF-aware preconfirmations, Orbit committee verification | 🔄 Planned |
+| IZaseonPreconfirmationHandler | Interface | 🔄 Planned |
 
 #### The Surge Alignment
 | Contract | Purpose | Status |
 |----------|---------|--------|
-| [SoulIntentResolver](../contracts/crosschain/SoulIntentResolver.sol) | ERC-7683 private cross-chain intents | ✅ Implemented |
-| [SoulL2Messenger](../contracts/crosschain/SoulL2Messenger.sol) | RIP-7755 privacy-preserving L2 messaging | ✅ Implemented |
-| [ISoulIntentResolver](../contracts/interfaces/ISoulIntentResolver.sol) | Interface | ✅ Implemented |
-| [ISoulL2Messenger](../contracts/interfaces/ISoulL2Messenger.sol) | Interface | ✅ Implemented |
+| [ZaseonIntentResolver](../contracts/crosschain/ZaseonIntentResolver.sol) | ERC-7683 private cross-chain intents | ✅ Implemented |
+| [ZaseonL2Messenger](../contracts/crosschain/ZaseonL2Messenger.sol) | RIP-7755 privacy-preserving L2 messaging | ✅ Implemented |
+| [IZaseonIntentResolver](../contracts/interfaces/IZaseonIntentResolver.sol) | Interface | ✅ Implemented |
+| [IZaseonL2Messenger](../contracts/interfaces/IZaseonL2Messenger.sol) | Interface | ✅ Implemented |
 
 #### The Verge Alignment
 | Contract | Purpose | Status |
 |----------|---------|--------|
-| [SoulVerkleVerifier](../contracts/verifiers/SoulVerkleVerifier.sol) | Verkle witness verification, IPA proofs | ✅ Implemented |
-| [SoulMultiProver](../contracts/verifiers/SoulMultiProver.sol) | 2-of-3 multi-prover consensus (Noir/SP1/Jolt) | ✅ Implemented |
-| [ISoulVerkleVerifier](../contracts/interfaces/ISoulVerkleVerifier.sol) | Interface | ✅ Implemented |
-| [ISoulMultiProver](../contracts/interfaces/ISoulMultiProver.sol) | Interface | ✅ Implemented |
+| [ZaseonVerkleVerifier](../contracts/verifiers/ZaseonVerkleVerifier.sol) | Verkle witness verification, IPA proofs | ✅ Implemented |
+| [ZaseonMultiProver](../contracts/verifiers/ZaseonMultiProver.sol) | 2-of-3 multi-prover consensus (Noir/SP1/Jolt) | ✅ Implemented |
+| [IZaseonVerkleVerifier](../contracts/interfaces/IZaseonVerkleVerifier.sol) | Interface | ✅ Implemented |
+| [IZaseonMultiProver](../contracts/interfaces/IZaseonMultiProver.sol) | Interface | ✅ Implemented |
 
 #### The Purge Alignment
 | Contract | Purpose | Status |
 |----------|---------|--------|
-| [SoulStateExpiry](../contracts/storage/SoulStateExpiry.sol) | EIP-7736 state expiry, resurrection proofs | ✅ Implemented |
-| [ISoulStateExpiry](../contracts/interfaces/ISoulStateExpiry.sol) | Interface | ✅ Implemented |
+| [ZaseonStateExpiry](../contracts/storage/ZaseonStateExpiry.sol) | EIP-7736 state expiry, resurrection proofs | ✅ Implemented |
+| [IZaseonStateExpiry](../contracts/interfaces/IZaseonStateExpiry.sol) | Interface | ✅ Implemented |
 
 ### Noir Circuits Implemented
 
@@ -561,13 +561,13 @@ The following contracts have been created to align Soul Protocol with Ethereum's
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│              ETHEREUM ROADMAP ALIGNED SOUL ARCHITECTURE                  │
+│              ETHEREUM ROADMAP ALIGNED ZASEON ARCHITECTURE                  │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
 │  THE MERGE                    THE SURGE                                 │
 │  ┌─────────────────────┐      ┌─────────────────────────────────────┐   │
-│  │ SoulPreconfirmation │      │ SoulIntentResolver (ERC-7683)       │   │
-│  │ Handler             │      │ SoulL2Messenger (RIP-7755)          │   │
+│  │ ZaseonPreconfirmation │      │ ZaseonIntentResolver (ERC-7683)       │   │
+│  │ Handler             │      │ ZaseonL2Messenger (RIP-7755)          │   │
 │  │ • SSF support       │      │ • Private cross-chain intents       │   │
 │  │ • Orbit attestation │      │ • L1SLOAD keystore wallet           │   │
 │  │ • 12s finality      │      │ • Privacy-preserving L2 calls       │   │
@@ -575,8 +575,8 @@ The following contracts have been created to align Soul Protocol with Ethereum's
 │                                                                          │
 │  THE VERGE                    THE PURGE                                 │
 │  ┌─────────────────────┐      ┌─────────────────────────────────────┐   │
-│  │ SoulVerkleVerifier  │      │ SoulStateExpiry                     │   │
-│  │ SoulMultiProver     │      │ • EIP-7736 resurrection proofs      │   │
+│  │ ZaseonVerkleVerifier  │      │ ZaseonStateExpiry                     │   │
+│  │ ZaseonMultiProver     │      │ • EIP-7736 resurrection proofs      │   │
 │  │ • Verkle witnesses  │      │ • Keep-alive for stealth addresses  │   │
 │  │ • IPA proof verify  │      │ • Archive root management           │   │
 │  │ • 2-of-3 consensus  │      │ • EIP-4444 Portal Network URIs      │   │
@@ -598,12 +598,12 @@ The following contracts have been created to align Soul Protocol with Ethereum's
 
 ## State Expiry Compatibility
 
-From The Purge, Soul must handle state expiry:
+From The Purge, Zaseon must handle state expiry:
 
 ### Partial State Expiry (EIP-7736)
-Soul state accessed within 6 months stays hot. Dormant privacy state needs resurrection proofs.
+Zaseon state accessed within 6 months stays hot. Dormant privacy state needs resurrection proofs.
 
-### Strategy for Soul
+### Strategy for Zaseon
 1. **Nullifier Registry**: Always accessed (never expires)
 2. **Dormant Commitments**: Can be expired, resurrected with Merkle proof
 3. **State Containers**: Hot-cold separation based on activity
@@ -641,4 +641,4 @@ struct ResurrectableState {
 - [L1SLOAD (RIP-7728)](https://ethereum-magicians.org/t/rip-7728-l1sload-precompile/20388)
 - [EIP-4444: History Expiry](https://eips.ethereum.org/EIPS/eip-4444)
 - [EIP-7736: Partial State Expiry](https://eips.ethereum.org/EIPS/eip-7736)
-- Soul Protocol Architecture: [docs/architecture.md](./architecture.md)
+- ZASEON Architecture: [docs/architecture.md](./architecture.md)

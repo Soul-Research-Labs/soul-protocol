@@ -1,5 +1,5 @@
 /**
- * @fileoverview zkSync Era bridge utilities for Soul SDK
+ * @fileoverview zkSync Era bridge utilities for Zaseon SDK
  * @module bridges/zksync
  */
 

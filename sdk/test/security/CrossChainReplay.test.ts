@@ -37,7 +37,7 @@ describe("Cross-Chain Replay Protection", () => {
           toBytes(
             encodePacked(
               ["string", "uint256"],
-              ["SoulProtocol", BigInt(chainId)],
+              ["ZaseonProtocol", BigInt(chainId)],
             ),
           ),
         );
@@ -58,7 +58,7 @@ describe("Cross-Chain Replay Protection", () => {
               keccak256(
                 stringToBytes("EIP712Domain(string name,uint256 chainId)"),
               ),
-              keccak256(stringToBytes("SoulProtocol")),
+              keccak256(stringToBytes("ZaseonProtocol")),
               BigInt(chainId),
             ],
           ),

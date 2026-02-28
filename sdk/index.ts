@@ -1,1 +1,1 @@
-export { SoulSDK, CryptoModule } from "./src/index";
+export { ZaseonSDK, CryptoModule } from "./src/index";

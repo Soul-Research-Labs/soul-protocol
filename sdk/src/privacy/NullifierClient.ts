@@ -22,7 +22,7 @@ export interface ChainDomain {
 
 // Nullifier types supported by different chains
 export enum NullifierType {
-  Soul_NATIVE = 0,
+  Zaseon_NATIVE = 0,
   MONERO_KEY_IMAGE = 1,
   ZCASH_NOTE = 2,
   SECRET_TEE = 3,
@@ -37,7 +37,7 @@ export interface NullifierRecord {
   nullifier: Hex;
   domain: number;
   timestamp: number;
-  soulBinding: Hex;
+  zaseonBinding: Hex;
 }
 
 // Cross-domain nullifier derivation result
@@ -46,12 +46,12 @@ export interface CrossDomainNullifier {
   sourceDomain: number;
   targetDomain: number;
   crossDomainNullifier: Hex;
-  soulBinding: Hex;
+  zaseonBinding: Hex;
 }
 
 // Predefined chain domains
 export const CHAIN_DOMAINS: Record<string, ChainDomain> = {
-  Soul: { chainId: 1, domainTag: "Soul_MAINNET", name: "Soul Mainnet" },
+  Zaseon: { chainId: 1, domainTag: "Zaseon_MAINNET", name: "Zaseon Mainnet" },
   ETHEREUM: { chainId: 1, domainTag: "ETHEREUM", name: "Ethereum" },
   MONERO: { chainId: 0, domainTag: "MONERO", name: "Monero" },
   ZCASH: { chainId: 0, domainTag: "ZCASH", name: "Zcash" },
@@ -70,9 +70,9 @@ export const CHAIN_DOMAINS: Record<string, ChainDomain> = {
 };
 
 // Domain separator constants
-const NULLIFIER_DOMAIN = keccak256(stringToBytes("Soul_UNIFIED_NULLIFIER_V1"));
+const NULLIFIER_DOMAIN = keccak256(stringToBytes("Zaseon_UNIFIED_NULLIFIER_V1"));
 const CROSS_DOMAIN_TAG = keccak256(stringToBytes("CROSS_DOMAIN"));
-const Soul_BINDING_TAG = keccak256(stringToBytes("Soul_BINDING"));
+const Zaseon_BINDING_TAG = keccak256(stringToBytes("Zaseon_BINDING"));
 
 // ABI for UnifiedNullifierManager
 const NULLIFIER_MANAGER_ABI = [
@@ -106,7 +106,7 @@ const NULLIFIER_MANAGER_ABI = [
     outputs: [{ type: "bytes32" }],
   },
   {
-    name: "deriveSoulBinding",
+    name: "deriveZaseonBinding",
     type: "function",
     stateMutability: "view",
     inputs: [{ name: "nullifier", type: "bytes32" }],
@@ -130,7 +130,7 @@ const NULLIFIER_MANAGER_ABI = [
     outputs: [{ type: "bool" }],
   },
   {
-    name: "getSoulBinding",
+    name: "getZaseonBinding",
     type: "function",
     stateMutability: "view",
     inputs: [{ name: "nullifier", type: "bytes32" }],
@@ -146,7 +146,7 @@ const NULLIFIER_MANAGER_ABI = [
     ],
     outputs: [
       { name: "timestamp", type: "uint256" },
-      { name: "soulBinding", type: "bytes32" },
+      { name: "zaseonBinding", type: "bytes32" },
     ],
   },
   {
@@ -163,7 +163,7 @@ const NULLIFIER_MANAGER_ABI = [
     inputs: [
       { name: "nullifier", type: "bytes32", indexed: true },
       { name: "domain", type: "uint256", indexed: true },
-      { name: "soulBinding", type: "bytes32" },
+      { name: "zaseonBinding", type: "bytes32" },
     ],
   },
   {
@@ -223,7 +223,7 @@ export class NullifierClient {
       concat([
         keyImage,
         keccak256(stringToBytes("MONERO_KEY_IMAGE")),
-        Soul_BINDING_TAG,
+        Zaseon_BINDING_TAG,
       ]),
     );
   }
@@ -237,7 +237,7 @@ export class NullifierClient {
         noteNullifier,
         anchor,
         keccak256(stringToBytes("ZCASH_NOTE")),
-        Soul_BINDING_TAG,
+        Zaseon_BINDING_TAG,
       ]),
     );
   }
@@ -263,10 +263,10 @@ export class NullifierClient {
   }
 
   /**
-   * Derive Soul binding locally
+   * Derive Zaseon binding locally
    */
-  static deriveSoulBindingLocal(nullifier: Hex): Hex {
-    return keccak256(concat([nullifier, Soul_BINDING_TAG]));
+  static deriveZaseonBindingLocal(nullifier: Hex): Hex {
+    return keccak256(concat([nullifier, Zaseon_BINDING_TAG]));
   }
 
   /**
@@ -311,7 +311,7 @@ export class NullifierClient {
         BigInt(targetDomainId),
       ]);
 
-    const soulBinding = await this.contract.read.deriveSoulBinding([
+    const zaseonBinding = await this.contract.read.deriveZaseonBinding([
       sourceNullifier,
     ]);
 
@@ -320,7 +320,7 @@ export class NullifierClient {
       sourceDomain: sourceDomainId,
       targetDomain: targetDomainId,
       crossDomainNullifier,
-      soulBinding,
+      zaseonBinding,
     };
   }
 
@@ -345,10 +345,10 @@ export class NullifierClient {
   }
 
   /**
-   * Get Soul binding for a nullifier
+   * Get Zaseon binding for a nullifier
    */
-  async getSoulBinding(nullifier: Hex): Promise<Hex> {
-    return await this.contract.read.getSoulBinding([nullifier]);
+  async getZaseonBinding(nullifier: Hex): Promise<Hex> {
+    return await this.contract.read.getZaseonBinding([nullifier]);
   }
 
   /**
@@ -359,7 +359,7 @@ export class NullifierClient {
     domainChainId: number,
   ): Promise<NullifierRecord | null> {
     try {
-      const [timestamp, soulBinding] =
+      const [timestamp, zaseonBinding] =
         (await this.contract.read.getNullifierRecord([
           nullifier,
           BigInt(domainChainId),
@@ -371,7 +371,7 @@ export class NullifierClient {
         nullifier,
         domain: domainChainId,
         timestamp: Number(timestamp),
-        soulBinding,
+        zaseonBinding,
       };
     } catch {
       return null;
@@ -379,14 +379,14 @@ export class NullifierClient {
   }
 
   /**
-   * Check if two nullifiers are linked (same Soul binding)
+   * Check if two nullifiers are linked (same Zaseon binding)
    */
   async areNullifiersLinked(
     nullifier1: Hex,
     nullifier2: Hex,
   ): Promise<boolean> {
-    const binding1 = await this.getSoulBinding(nullifier1);
-    const binding2 = await this.getSoulBinding(nullifier2);
+    const binding1 = await this.getZaseonBinding(nullifier1);
+    const binding2 = await this.getZaseonBinding(nullifier2);
     return binding1 === binding2;
   }
 
@@ -413,7 +413,7 @@ export class NullifierClient {
    * Listen for nullifier registration events
    */
   onNullifierRegistered(
-    callback: (nullifier: Hex, domain: number, soulBinding: Hex) => void,
+    callback: (nullifier: Hex, domain: number, zaseonBinding: Hex) => void,
   ): () => void {
     const unwatch = this.publicClient.watchContractEvent({
       address: this.contract.address,
@@ -425,7 +425,7 @@ export class NullifierClient {
           callback(
             args.nullifier as Hex,
             Number(args.domain),
-            args.soulBinding as Hex,
+            args.zaseonBinding as Hex,
           );
         }
       },

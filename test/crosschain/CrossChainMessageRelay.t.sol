@@ -626,14 +626,14 @@ contract CrossChainMessageRelayTest is Test {
     // SECURITY MODULE SETTERS
     // =========================================================================
 
-    function test_setSoulProtocolHub() public {
-        relay.setSoulProtocolHub(address(0x1));
-        assertEq(relay.soulProtocolHub(), address(0x1));
+    function test_setZaseonProtocolHub() public {
+        relay.setZaseonProtocolHub(address(0x1));
+        assertEq(relay.zaseonProtocolHub(), address(0x1));
     }
 
-    function test_setSoulProtocolHub_revertOnZero() public {
+    function test_setZaseonProtocolHub_revertOnZero() public {
         vm.expectRevert(CrossChainMessageRelay.ZeroAddress.selector);
-        relay.setSoulProtocolHub(address(0));
+        relay.setZaseonProtocolHub(address(0));
     }
 
     function test_setRelayProofValidator() public {

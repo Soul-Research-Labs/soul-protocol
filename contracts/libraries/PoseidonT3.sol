@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title PoseidonT3
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Full-round Poseidon hash function for BN254 (T=3, 2 inputs)
  * @dev Implements the complete Poseidon permutation with:
  *      - 4 initial full rounds (R_f/2)

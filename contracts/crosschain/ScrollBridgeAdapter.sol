@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title ScrollBridgeAdapter
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Bridge adapter for Scroll zkEVM integration
  * @dev Enables cross-chain interoperability with Scroll L2
  * @custom:graduated Promoted from experimental to production. Formally verified via Certora.
@@ -71,8 +71,8 @@ contract ScrollBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     /// @notice Scroll Rollup contract address
     address public rollupContract;
 
-    /// @notice Soul Hub L2 address
-    address public soulHubL2;
+    /// @notice Zaseon Hub L2 address
+    address public zaseonHubL2;
 
     /// @notice Proof Registry address
     address public proofRegistry;
@@ -98,7 +98,7 @@ contract ScrollBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         address gatewayRouter,
         address rollupContract
     );
-    event SoulHubL2Set(address indexed soulHubL2);
+    event ZaseonHubL2Set(address indexed zaseonHubL2);
     event ProofRegistrySet(address indexed proofRegistry);
 
     /*//////////////////////////////////////////////////////////////
@@ -159,15 +159,15 @@ contract ScrollBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     }
 
     /**
-     * @notice Set Soul Hub L2 address
-     * @param _soulHubL2 Soul Hub L2 address
+     * @notice Set Zaseon Hub L2 address
+     * @param _zaseonHubL2 Zaseon Hub L2 address
      */
-    function setSoulHubL2(
-        address _soulHubL2
+    function setZaseonHubL2(
+        address _zaseonHubL2
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(_soulHubL2 != address(0), "Invalid address");
-        soulHubL2 = _soulHubL2;
-        emit SoulHubL2Set(_soulHubL2);
+        require(_zaseonHubL2 != address(0), "Invalid address");
+        zaseonHubL2 = _zaseonHubL2;
+        emit ZaseonHubL2Set(_zaseonHubL2);
     }
 
     /**

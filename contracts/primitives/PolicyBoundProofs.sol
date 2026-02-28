@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 import "../interfaces/IProofVerifier.sol";
 
 /// @title PolicyBoundProofs (PBP)
-/// @author Soul Protocol - Soul v2
+/// @author ZASEON - Zaseon v2
 /// @notice Proofs that are cryptographically scoped by disclosure policy
 /// @dev MVP Implementation - Makes compliance a cryptographic invariant
 ///
@@ -23,7 +23,7 @@ import "../interfaces/IProofVerifier.sol";
 /// - Public input validation ensures policy commitment
 /**
  * @title PolicyBoundProofs
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice Policy Bound Proofs contract
  */
 contract PolicyBoundProofs is AccessControl, Pausable {

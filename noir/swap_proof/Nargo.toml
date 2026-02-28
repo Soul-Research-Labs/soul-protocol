@@ -1,8 +1,8 @@
 [package]
 name = "swap_proof"
 type = "bin"
-authors = ["Soul Team"]
-description = "AMM swap proof circuit for Soul Exchange with constant product verification"
+authors = ["Zaseon Team"]
+description = "AMM swap proof circuit for Zaseon Exchange with constant product verification"
 
 [dependencies]
 poseidon = { tag = "v0.2.3", git = "https://github.com/noir-lang/poseidon" }

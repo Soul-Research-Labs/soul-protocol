@@ -11,9 +11,9 @@ const { ethers } = hre as any;
 import { keccak256, toBytes, encodePacked, getAddress, parseEther } from "viem";
 
 // Test constants
-const NULLIFIER_DOMAIN = keccak256(toBytes("Soul_UNIFIED_NULLIFIER_V1"));
-const STEALTH_DOMAIN = keccak256(toBytes("Soul_STEALTH_ADDRESS_V1"));
-const RINGCT_DOMAIN = keccak256(toBytes("Soul_RINGCT_V1"));
+const NULLIFIER_DOMAIN = keccak256(toBytes("Zaseon_UNIFIED_NULLIFIER_V1"));
+const STEALTH_DOMAIN = keccak256(toBytes("Zaseon_STEALTH_ADDRESS_V1"));
+const RINGCT_DOMAIN = keccak256(toBytes("Zaseon_RINGCT_V1"));
 
 // Chain IDs for testing
 const CHAIN_IDS = {
@@ -35,7 +35,7 @@ const PRIVACY_PROTOCOLS = {
     RAILGUN: 5,
     TORNADO: 6,
     AZTEC: 7,
-    Soul_NATIVE: 8,
+    Zaseon_NATIVE: 8,
 };
 
 describe("CrossChainPrivacy Integration", function () {
@@ -302,9 +302,9 @@ describe("CrossChainPrivacy Integration", function () {
             expect(crossDomainNullifier).to.not.equal(ethers.ZeroHash);
         });
 
-        it("Should derive Soul binding", async function () {
-            const soulBinding = await nullifierManager.deriveSoulBinding(testNullifier);
-            expect(soulBinding).to.not.equal(ethers.ZeroHash);
+        it("Should derive Zaseon binding", async function () {
+            const zaseonBinding = await nullifierManager.deriveZaseonBinding(testNullifier);
+            expect(zaseonBinding).to.not.equal(ethers.ZeroHash);
         });
 
         it("Should verify cross-domain proof", async function () {
@@ -332,7 +332,7 @@ describe("CrossChainPrivacy Integration", function () {
         it("Should register bridge adapter", async function () {
             const bridgeId = keccak256(toBytes("test_bridge"));
             const chainId = CHAIN_IDS.POLYGON;
-            const protocolType = PRIVACY_PROTOCOLS.Soul_NATIVE;
+            const protocolType = PRIVACY_PROTOCOLS.Zaseon_NATIVE;
 
             await privacyHub.connect(admin).registerAdapter(
                 bridgeId,

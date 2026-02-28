@@ -29,7 +29,7 @@ contract DeployRoutingSuite is Script {
         address bridgeAdmin = vm.envOr("ROUTING_BRIDGE_ADMIN", deployer);
         address executor = vm.envOr("ROUTING_EXECUTOR", deployer);
 
-        console.log("=== Soul Protocol Routing Suite Deployment ===");
+        console.log("=== ZASEON Routing Suite Deployment ===");
         console.log("Deployer:", deployer);
         console.log("Admin:", admin);
         console.log("Oracle:", oracle);
@@ -127,7 +127,7 @@ contract DeployRoutingSuiteTestnet is Script {
         uint256 deployerPk = vm.envUint("DEPLOYER_PRIVATE_KEY");
         address deployer = vm.addr(deployerPk);
 
-        console.log("=== Soul Protocol Routing Suite (Testnet) ===");
+        console.log("=== ZASEON Routing Suite (Testnet) ===");
         console.log("Deployer:", deployer);
         console.log("Chain ID:", block.chainid);
         console.log("");

@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 
 /**
- * Soul Mainnet Deployment Script
+ * Zaseon Mainnet Deployment Script
  *
  * Prerequisites:
  * 1. Set PRIVATE_KEY and RPC_URL in .env
@@ -39,10 +39,10 @@ const CONFIG = {
     "PolicyBoundProofs",
     "ExecutionAgnosticStateCommitments",
     "CrossDomainNullifierAlgebra",
-    "Soulv2Orchestrator",
-    "SoulToken",
-    "SoulUpgradeTimelock",
-    "SoulGovernor",
+    "Zaseonv2Orchestrator",
+    "ZaseonToken",
+    "ZaseonUpgradeTimelock",
+    "ZaseonGovernor",
   ],
 };
 
@@ -51,7 +51,7 @@ const deployedAddresses = {};
 
 async function main() {
   console.log("═══════════════════════════════════════════════════════════");
-  console.log("           Soul Mainnet Deployment");
+  console.log("           Zaseon Mainnet Deployment");
   console.log("═══════════════════════════════════════════════════════════");
 
   const [deployer] = await ethers.getSigners();
@@ -80,14 +80,14 @@ async function main() {
   // 1. Deploy Verifier
   await deployContract("Groth16VerifierBN254", []);
 
-  // 2. Deploy Soul v2 Primitives
+  // 2. Deploy Zaseon v2 Primitives
   await deployContract("ProofCarryingContainer", []);
   await deployContract("PolicyBoundProofs", []);
   await deployContract("ExecutionAgnosticStateCommitments", []);
   await deployContract("CrossDomainNullifierAlgebra", []);
 
   // 3. Deploy Orchestrator
-  await deployContract("Soulv2Orchestrator", [
+  await deployContract("Zaseonv2Orchestrator", [
     deployedAddresses.ProofCarryingContainer,
     deployedAddresses.PolicyBoundProofs,
     deployedAddresses.ExecutionAgnosticStateCommitments,
@@ -97,91 +97,91 @@ async function main() {
   // 4. Deploy Governance Stack
   console.log("\n📦 Deploying Governance Stack...\n");
 
-  // 4a. Deploy SoulToken — initial mint of 100M SOUL (10% of cap) to treasury multisig
-  const initialMintAmount = ethers.parseEther("100000000"); // 100M SOUL
+  // 4a. Deploy ZaseonToken — initial mint of 100M ZASEON (10% of cap) to treasury multisig
+  const initialMintAmount = ethers.parseEther("100000000"); // 100M ZASEON
   const treasuryAddress = CONFIG.multiSig.treasury;
   if (treasuryAddress === "0x0000000000000000000000000000000000000000") {
     console.log(
       "   ⚠️  WARNING: Treasury multi-sig is zero address. Set MULTISIG_TREASURY env var.",
     );
   }
-  await deployContract("SoulToken", [
+  await deployContract("ZaseonToken", [
     deployer.address, // admin (will transfer to timelock later)
     treasuryAddress, // initial mint recipient
     initialMintAmount, // initial mint amount
   ]);
 
-  // 4b. Deploy SoulUpgradeTimelock
+  // 4b. Deploy ZaseonUpgradeTimelock
   //     proposers = [deployer, admin multisig]
   //     executors = [deployer, admin multisig]
-  //     admin = deployer (will renounce after SoulGovernor is wired)
+  //     admin = deployer (will renounce after ZaseonGovernor is wired)
   const timelockProposers = [deployer.address, CONFIG.multiSig.admin].filter(
     (addr) => addr !== "0x0000000000000000000000000000000000000000",
   );
   const timelockExecutors = [deployer.address, CONFIG.multiSig.admin].filter(
     (addr) => addr !== "0x0000000000000000000000000000000000000000",
   );
-  await deployContract("SoulUpgradeTimelock", [
+  await deployContract("ZaseonUpgradeTimelock", [
     CONFIG.timelock.minDelay, // 48 hours minimum delay
     timelockProposers, // proposers
     timelockExecutors, // executors
     deployer.address, // admin (temporary — will renounce)
   ]);
 
-  // 4c. Deploy SoulGovernor with token + timelock
+  // 4c. Deploy ZaseonGovernor with token + timelock
   //     Passing 0 for voting params uses contract defaults:
   //     - votingDelay: 1 day, votingPeriod: 5 days
-  //     - proposalThreshold: 100,000 SOUL, quorum: 4%
-  await deployContract("SoulGovernor", [
-    deployedAddresses.SoulToken, // governance token (IVotes)
-    deployedAddresses.SoulUpgradeTimelock, // timelock controller
+  //     - proposalThreshold: 100,000 ZASEON, quorum: 4%
+  await deployContract("ZaseonGovernor", [
+    deployedAddresses.ZaseonToken, // governance token (IVotes)
+    deployedAddresses.ZaseonUpgradeTimelock, // timelock controller
     0, // votingDelay (0 = use default 1 day)
     0, // votingPeriod (0 = use default 5 days)
-    0, // proposalThreshold (0 = use default 100k SOUL)
+    0, // proposalThreshold (0 = use default 100k ZASEON)
     0, // quorumPercentage (0 = use default 4%)
   ]);
 
-  // 4d. Wire governance: grant SoulGovernor the proposer role on the timelock
+  // 4d. Wire governance: grant ZaseonGovernor the proposer role on the timelock
   console.log("   Wiring governance roles...");
   const timelock = await ethers.getContractAt(
-    "SoulUpgradeTimelock",
-    deployedAddresses.SoulUpgradeTimelock,
+    "ZaseonUpgradeTimelock",
+    deployedAddresses.ZaseonUpgradeTimelock,
   );
   const PROPOSER_ROLE = await timelock.PROPOSER_ROLE();
   const EXECUTOR_ROLE = await timelock.EXECUTOR_ROLE();
   const CANCELLER_ROLE = await timelock.CANCELLER_ROLE();
 
   // Governor gets proposer + canceller roles
-  await timelock.grantRole(PROPOSER_ROLE, deployedAddresses.SoulGovernor);
-  console.log("   ✅ Granted PROPOSER_ROLE to SoulGovernor");
+  await timelock.grantRole(PROPOSER_ROLE, deployedAddresses.ZaseonGovernor);
+  console.log("   ✅ Granted PROPOSER_ROLE to ZaseonGovernor");
 
-  await timelock.grantRole(CANCELLER_ROLE, deployedAddresses.SoulGovernor);
-  console.log("   ✅ Granted CANCELLER_ROLE to SoulGovernor");
+  await timelock.grantRole(CANCELLER_ROLE, deployedAddresses.ZaseonGovernor);
+  console.log("   ✅ Granted CANCELLER_ROLE to ZaseonGovernor");
 
   // Allow anyone to execute queued proposals (standard OZ pattern)
   await timelock.grantRole(EXECUTOR_ROLE, ethers.ZeroAddress);
   console.log("   ✅ Granted EXECUTOR_ROLE to address(0) (open execution)");
 
-  // 4e. Transfer SoulToken minter role to timelock (governance-controlled minting)
-  const soulToken = await ethers.getContractAt(
-    "SoulToken",
-    deployedAddresses.SoulToken,
+  // 4e. Transfer ZaseonToken minter role to timelock (governance-controlled minting)
+  const zaseonToken = await ethers.getContractAt(
+    "ZaseonToken",
+    deployedAddresses.ZaseonToken,
   );
-  const MINTER_ROLE = await soulToken.MINTER_ROLE();
-  await soulToken.grantRole(MINTER_ROLE, deployedAddresses.SoulUpgradeTimelock);
-  console.log("   ✅ Granted MINTER_ROLE on SoulToken to Timelock");
+  const MINTER_ROLE = await zaseonToken.MINTER_ROLE();
+  await zaseonToken.grantRole(MINTER_ROLE, deployedAddresses.ZaseonUpgradeTimelock);
+  console.log("   ✅ Granted MINTER_ROLE on ZaseonToken to Timelock");
 
   // Revoke deployer's minter role (minting now only via governance)
-  await soulToken.revokeRole(MINTER_ROLE, deployer.address);
-  console.log("   ✅ Revoked deployer MINTER_ROLE on SoulToken");
+  await zaseonToken.revokeRole(MINTER_ROLE, deployer.address);
+  console.log("   ✅ Revoked deployer MINTER_ROLE on ZaseonToken");
 
   // Post-deployment configuration
   console.log("\n⚙️  Post-Deployment Configuration...\n");
 
   // Configure orchestrator permissions
   const orchestrator = await ethers.getContractAt(
-    "Soulv2Orchestrator",
-    deployedAddresses.Soulv2Orchestrator,
+    "Zaseonv2Orchestrator",
+    deployedAddresses.Zaseonv2Orchestrator,
   );
 
   console.log("   Setting up primitive registrations...");

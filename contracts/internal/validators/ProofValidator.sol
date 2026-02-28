@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title ProofValidator
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Extracted proof validation logic for stack depth optimization
  * @dev Separates proof validation from main contract logic to enable
  *      better coverage instrumentation and reduce stack pressure.

@@ -7,7 +7,7 @@ import {IProofVerifier} from "../interfaces/IProofVerifier.sol";
 
 /**
  * @title ComplianceReportingModule
- * @author Soul Protocol
+ * @author ZASEON
  * @notice On-chain compliance reporting with ZK privacy preservation
  * @dev Generates verifiable compliance reports without revealing transaction details.
  *
@@ -20,9 +20,9 @@ import {IProofVerifier} from "../interfaces/IProofVerifier.sol";
  * INTEGRATION:
  *  - Works alongside SelectiveDisclosureManager for field-level access
  *  - Uses IProofVerifier for compliance proof verification
- *  - Compatible with SoulComplianceV2 KYC tiers for access gating
+ *  - Compatible with ZaseonComplianceV2 KYC tiers for access gating
  *
- * @custom:security-contact security@soulprotocol.io
+ * @custom:security-contact security@zaseonprotocol.io
  */
 contract ComplianceReportingModule is AccessControl, ReentrancyGuard {
     /*//////////////////////////////////////////////////////////////

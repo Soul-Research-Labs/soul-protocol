@@ -7,11 +7,11 @@ error InvalidLength();
 /// @notice Library providing constant-time operations to prevent timing side-channel attacks
 /// @dev Critical for privacy-preserving operations where timing leaks could reveal secrets
 /// @custom:experimental This library is research-tier and NOT production-ready. See contracts/experimental/README.md for promotion criteria.
-/// @custom:security-contact security@soulprotocol.io
+/// @custom:security-contact security@zaseonprotocol.io
 
 /**
  * @title ConstantTimeOperations
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice Constant Time Operations library
  */
 library ConstantTimeOperations {

@@ -7,9 +7,9 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title PolygonZkEVMBridgeAdapter
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Bridge adapter for Polygon zkEVM L2 integration
- * @dev Enables Soul Protocol cross-chain interoperability with Polygon zkEVM.
+ * @dev Enables ZASEON cross-chain interoperability with Polygon zkEVM.
  *      Uses the Polygon zkEVM bridge contract for L1 <-> L2 message passing.
  *
  * POLYGON ZKEVM INTEGRATION:
@@ -19,7 +19,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
  * - Proof finality: ~1 block (ZK proof verified on L1)
  *
  * @custom:graduated Promoted from experimental to production. Formally verified via Certora.
- * @custom:security-contact security@soulprotocol.io
+ * @custom:security-contact security@zaseonprotocol.io
  */
 contract PolygonZkEVMBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
@@ -39,7 +39,7 @@ contract PolygonZkEVMBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     address public globalExitRootManager;
     address public polygonZkEVM;
     uint32 public networkId;
-    address public soulHubL2;
+    address public zaseonHubL2;
     uint256 public messageNonce;
     mapping(bytes32 => bool) public messageStatus;
 
@@ -48,7 +48,7 @@ contract PolygonZkEVMBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         address indexed target,
         uint256 nonce
     );
-    event SoulHubL2Set(address indexed soulHubL2);
+    event ZaseonHubL2Set(address indexed zaseonHubL2);
 
     /**
      * @notice Deploy a new PolygonZkEVMBridgeAdapter
@@ -81,15 +81,15 @@ contract PolygonZkEVMBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         _grantRole(OPERATOR_ROLE, _admin);
     }
 
-    /// @notice Set the Soul Hub L2 contract address on Polygon zkEVM
-    /// @param _soulHubL2 The address of the Soul Hub deployed on Polygon zkEVM L2
-    /// @dev Only callable by DEFAULT_ADMIN_ROLE. Reverts if _soulHubL2 is zero address.
-    function setSoulHubL2(
-        address _soulHubL2
+    /// @notice Set the Zaseon Hub L2 contract address on Polygon zkEVM
+    /// @param _zaseonHubL2 The address of the Zaseon Hub deployed on Polygon zkEVM L2
+    /// @dev Only callable by DEFAULT_ADMIN_ROLE. Reverts if _zaseonHubL2 is zero address.
+    function setZaseonHubL2(
+        address _zaseonHubL2
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(_soulHubL2 != address(0), "Invalid address");
-        soulHubL2 = _soulHubL2;
-        emit SoulHubL2Set(_soulHubL2);
+        require(_zaseonHubL2 != address(0), "Invalid address");
+        zaseonHubL2 = _zaseonHubL2;
+        emit ZaseonHubL2Set(_zaseonHubL2);
     }
 
     /// @notice Get the Polygon zkEVM mainnet chain ID

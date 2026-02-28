@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - PrivacyZoneManager
+ * ZASEON - PrivacyZoneManager
  *
  * This spec verifies critical invariants for the Privacy Zone Manager
  * which implements isolated privacy domains (Atomicity Zones) with

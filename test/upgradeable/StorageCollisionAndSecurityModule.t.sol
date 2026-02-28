@@ -5,7 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 import {CrossChainProofHubV3Upgradeable} from "../../contracts/upgradeable/CrossChainProofHubV3Upgradeable.sol";
-import {SoulAtomicSwapV2Upgradeable} from "../../contracts/upgradeable/SoulAtomicSwapV2Upgradeable.sol";
+import {ZaseonAtomicSwapV2Upgradeable} from "../../contracts/upgradeable/ZaseonAtomicSwapV2Upgradeable.sol";
 import {NullifierRegistryV3Upgradeable} from "../../contracts/upgradeable/NullifierRegistryV3Upgradeable.sol";
 import {ConfidentialStateContainerV3Upgradeable} from "../../contracts/upgradeable/ConfidentialStateContainerV3Upgradeable.sol";
 
@@ -26,7 +26,7 @@ contract StorageCollisionAndSecurityModuleTest is Test {
     address public feeRecipient;
 
     CrossChainProofHubV3Upgradeable public hubProxy;
-    SoulAtomicSwapV2Upgradeable public swapProxy;
+    ZaseonAtomicSwapV2Upgradeable public swapProxy;
 
     function setUp() public {
         admin = makeAddr("admin");
@@ -42,15 +42,15 @@ contract StorageCollisionAndSecurityModuleTest is Test {
         ERC1967Proxy hubErc = new ERC1967Proxy(address(hubImpl), hubInit);
         hubProxy = CrossChainProofHubV3Upgradeable(payable(address(hubErc)));
 
-        // Deploy SoulAtomicSwapV2Upgradeable behind proxy
-        SoulAtomicSwapV2Upgradeable swapImpl = new SoulAtomicSwapV2Upgradeable();
+        // Deploy ZaseonAtomicSwapV2Upgradeable behind proxy
+        ZaseonAtomicSwapV2Upgradeable swapImpl = new ZaseonAtomicSwapV2Upgradeable();
         bytes memory swapInit = abi.encodeWithSelector(
-            SoulAtomicSwapV2Upgradeable.initialize.selector,
+            ZaseonAtomicSwapV2Upgradeable.initialize.selector,
             admin,
             feeRecipient
         );
         ERC1967Proxy swapErc = new ERC1967Proxy(address(swapImpl), swapInit);
-        swapProxy = SoulAtomicSwapV2Upgradeable(payable(address(swapErc)));
+        swapProxy = ZaseonAtomicSwapV2Upgradeable(payable(address(swapErc)));
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -236,7 +236,7 @@ contract StorageCollisionAndSecurityModuleTest is Test {
         assertEq(swapProxy.feeRecipient(), feeRecipient);
 
         // Upgrade
-        SoulAtomicSwapV2Upgradeable newImpl = new SoulAtomicSwapV2Upgradeable();
+        ZaseonAtomicSwapV2Upgradeable newImpl = new ZaseonAtomicSwapV2Upgradeable();
         vm.prank(admin);
         swapProxy.upgradeToAndCall(address(newImpl), "");
 
@@ -275,7 +275,7 @@ contract StorageCollisionAndSecurityModuleTest is Test {
     }
 
     function test_swap_implementationCannotBeReinitialized() public {
-        SoulAtomicSwapV2Upgradeable impl = new SoulAtomicSwapV2Upgradeable();
+        ZaseonAtomicSwapV2Upgradeable impl = new ZaseonAtomicSwapV2Upgradeable();
 
         vm.expectRevert();
         impl.initialize(admin, feeRecipient);

@@ -3,9 +3,9 @@ pragma solidity ^0.8.24;
 
 /**
  * @title IOptimismBridgeAdapter
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Interface for the Optimism bridge adapter
- * @dev Enables cross-chain interoperability between Soul Protocol and Optimism
+ * @dev Enables cross-chain interoperability between ZASEON and Optimism
  *
  * OPTIMISM CONCEPTS:
  * - Wei: Standard EVM 18-decimal precision (ETH native)

@@ -1,6 +1,6 @@
-# Soul Protocol - Monitoring Infrastructure
+# ZASEON - Monitoring Infrastructure
 
-This directory contains configuration for monitoring Soul Protocol in production.
+This directory contains configuration for monitoring ZASEON in production.
 
 ## Monitoring Services
 
@@ -14,7 +14,7 @@ This directory contains configuration for monitoring Soul Protocol in production
 
 **Setup:**
 1. Create Tenderly account at https://tenderly.co
-2. Create new project for Soul Protocol
+2. Create new project for ZASEON
 3. Import config: `tenderly config import tenderly.config.json`
 4. Add contract addresses after deployment
 5. Configure notification channels (Slack, PagerDuty, Email)
@@ -50,7 +50,7 @@ This directory contains configuration for monitoring Soul Protocol in production
 
 These events trigger immediate response:
 
-1. **Contract Paused** - Any Soul contract has been paused
+1. **Contract Paused** - Any Zaseon contract has been paused
 2. **Emergency Withdrawal** - Emergency funds extraction executed
 3. **Circuit Breaker Triggered** - Security circuit breaker activated
 4. **Double-Spend Attempt** - Nullifier reuse detected
@@ -136,7 +136,7 @@ Run test alerts to verify configuration:
 tenderly simulate --config tenderly.config.json
 
 # Defender - Test notification
-npx @openzeppelin/defender-client test-notification soul-slack-alerts
+npx @openzeppelin/defender-client test-notification zaseon-slack-alerts
 ```
 
 ## Additional Resources

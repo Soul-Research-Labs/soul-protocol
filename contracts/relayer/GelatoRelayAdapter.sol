@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 // Mock Gelato Interface
 /**
  * @title IGelatoRelay
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice I Gelato Relay interface
  */
 interface IGelatoRelay {
@@ -40,16 +40,16 @@ function getFeeEstimate(
 
 /**
  * @title GelatoRelayAdapter
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Adapter integrating Gelato Relay Network for gasless transaction relaying
  * @dev Wraps the IGelatoRelay interface to provide a unified IRelayerAdapter for the
- *      Soul Protocol relayer infrastructure. Uses callWithSyncFee where the caller
+ *      ZASEON relayer infrastructure. Uses callWithSyncFee where the caller
  *      pays in ETH and Gelato deducts the fee from the forwarded value.
  *
  *      This is a simplified integration — production deployments should use
  *      GelatoRelayContext or callWithSyncFeeERC2771 for meta-transaction support.
  *
- * @custom:security-contact security@soulprotocol.io
+ * @custom:security-contact security@zaseonprotocol.io
  */
 contract GelatoRelayAdapter is IRelayerAdapter, Ownable {
     /// @notice Address of the Gelato Relay contract (immutable, set at deployment)

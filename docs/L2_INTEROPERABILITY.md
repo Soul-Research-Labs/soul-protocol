@@ -1,6 +1,6 @@
 # L2 Interoperability Guide
 
-> **Soul native integration with Arbitrum, Optimism, Base, and zkEVM networks**
+> **Zaseon native integration with Arbitrum, Optimism, Base, and zkEVM networks**
 
 [![L2s](https://img.shields.io/badge/L2s-Arbitrum%20|%20Optimism%20|%20Base%20|%20zkSync-blue.svg)]()
 
@@ -45,11 +45,11 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                    Soul <-> Arbitrum Bridge                              │
+│                    Zaseon <-> Arbitrum Bridge                              │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
 │  ┌───────────────────┐           ┌───────────────────┐                 │
-│  │   Soul Protocol    │           │   Arbitrum        │                 │
+│  │   ZASEON    │           │   Arbitrum        │                 │
 │  │  (L1 Ethereum)    │           │   (L2 Rollup)     │                 │
 │  │  ┌─────────────┐  │           │  ┌─────────────┐  │                 │
 │  │  │ Delayed     │  │           │  │ ArbOS       │  │                 │
@@ -74,11 +74,11 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                    Soul <-> Optimism Bridge                              │
+│                    Zaseon <-> Optimism Bridge                              │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
 │  ┌───────────────────┐           ┌───────────────────┐                 │
-│  │   Soul Protocol    │           │   Optimism        │                 │
+│  │   ZASEON    │           │   Optimism        │                 │
 │  │  (L1 Ethereum)    │           │   (L2 OP Stack)   │                 │
 │  │  ┌─────────────┐  │           │  ┌─────────────┐  │                 │
 │  │  │ L1 Cross    │  │           │  │ L2 Cross    │  │                 │
@@ -104,7 +104,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                    Soul <-> Base Bridge                                  │
+│                    Zaseon <-> Base Bridge                                  │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
 │  Features unique to Base:                                               │

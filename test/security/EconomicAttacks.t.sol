@@ -11,7 +11,7 @@ import {MockERC20} from "../../contracts/mocks/MockERC20.sol";
 
 /**
  * @title EconomicAttacks
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Comprehensive economic attack vector testing
  * @dev Tests front-running, MEV extraction, griefing, Sybil, and proof grinding attacks
  *      per CROSS_CHAIN_PRIVACY_SECURITY_NEXT_STEPS.md Security Phase 2
@@ -79,7 +79,7 @@ contract EconomicAttacksTest is Test {
         flashLoanGuard = new FlashLoanGuard(500, 1000, admin);
 
         // Deploy staking token and relayer staking
-        stakingToken = new MockERC20("Soul Token", "SOUL", 18);
+        stakingToken = new MockERC20("Zaseon Token", "ZASEON", 18);
         relayerStaking = new RelayerStaking(
             address(stakingToken),
             MIN_STAKE,

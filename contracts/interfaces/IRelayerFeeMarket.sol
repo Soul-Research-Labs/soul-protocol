@@ -5,7 +5,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
  * @title IRelayerFeeMarket
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Interface for EIP-1559-style dynamic relay fee market
  */
 interface IRelayerFeeMarket {

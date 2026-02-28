@@ -2,8 +2,8 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import "../../contracts/governance/SoulGovernance.sol";
-import "../../contracts/crosschain/SoulCrossChainRelay.sol";
+import "../../contracts/governance/ZaseonGovernance.sol";
+import "../../contracts/crosschain/ZaseonCrossChainRelay.sol";
 import "../../contracts/crosschain/MessageBatcher.sol";
 
 // Mock ProofHub
@@ -22,8 +22,8 @@ contract MockRelayAdapter {
 }
 
 contract Phase4Test is Test {
-    SoulGovernance public governance;
-    SoulCrossChainRelay public relay;
+    ZaseonGovernance public governance;
+    ZaseonCrossChainRelay public relay;
     MessageBatcher public batcher;
     MockProofHub public proofHub;
     MockRelayAdapter public relayAdapter;
@@ -39,10 +39,10 @@ contract Phase4Test is Test {
         relayAdapter = new MockRelayAdapter();
 
         // Deploy Relay
-        relay = new SoulCrossChainRelay(address(proofHub), SoulCrossChainRelay.BridgeType.HYPERLANE);
+        relay = new ZaseonCrossChainRelay(address(proofHub), ZaseonCrossChainRelay.BridgeType.HYPERLANE);
         
         // Configure Relay
-        SoulCrossChainRelay.ChainConfig memory config = SoulCrossChainRelay.ChainConfig({
+        ZaseonCrossChainRelay.ChainConfig memory config = ZaseonCrossChainRelay.ChainConfig({
             proofHub: address(proofHub),
             relayAdapter: address(relayAdapter),
             bridgeChainId: 100,
@@ -56,7 +56,7 @@ contract Phase4Test is Test {
         address[] memory executors = new address[](1);
         executors[0] = executor;
         
-        governance = new SoulGovernance(
+        governance = new ZaseonGovernance(
             1 days, // minDelay
             proposers,
             executors,
@@ -69,7 +69,7 @@ contract Phase4Test is Test {
         // Setup Roles
         // Grant Batcher RELAYER_ROLE on Relay?
         // Relay checks RELAYER_ROLE for relayProof, but what about relayBatch?
-        // Let's check relayBatch in SoulCrossChainRelay.sol
+        // Let's check relayBatch in ZaseonCrossChainRelay.sol
         // It does NOT have `onlyRole(RELAYER_ROLE)`!
         // It is `external payable nonReentrant whenNotPaused`.
         // So anyone can call relayBatch. Good.

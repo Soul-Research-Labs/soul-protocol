@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 /**
- * Soul Multi-Chain Testnet Deployment Script
+ * Zaseon Multi-Chain Testnet Deployment Script
  * Supports: Sepolia, Arbitrum Sepolia, Base Sepolia, Optimism Sepolia
  */
 
@@ -36,8 +36,8 @@ interface DeployedContracts {
     PQCProtectedLock?: string;
 
     // Governance
-    SoulToken?: string;
-    SoulGovernor?: string;
+    ZaseonToken?: string;
+    ZaseonGovernor?: string;
     TimelockController?: string;
 
     // Bridge Adapters
@@ -96,7 +96,7 @@ async function main() {
   }
 
   console.log("\n" + "=".repeat(60));
-  console.log(`Soul TESTNET DEPLOYMENT - ${config.name}`);
+  console.log(`Zaseon TESTNET DEPLOYMENT - ${config.name}`);
   console.log("=".repeat(60) + "\n");
 
   const [deployer] = await ethers.getSigners();
@@ -185,7 +185,7 @@ async function main() {
   }
 
   // ==========================================================================
-  // PHASE 2: Deploy Core Soul Contracts
+  // PHASE 2: Deploy Core Zaseon Contracts
   // ==========================================================================
   console.log("\n📦 Phase 2: Deploying Core Contracts...\n");
 
@@ -227,17 +227,17 @@ async function main() {
   // ==========================================================================
   console.log("\n📦 Phase 3: Deploying Governance Contracts...\n");
 
-  // SoulToken
+  // ZaseonToken
   try {
-    console.log("  Deploying SoulToken...");
-    const SoulToken = await ethers.getContractFactory("SoulToken");
-    const soulToken = await SoulToken.deploy(deployer.address);
-    await soulToken.waitForDeployment();
-    const tokenAddr = await soulToken.getAddress();
-    deployment.contracts.SoulToken = tokenAddr;
-    deployment.txHashes.SoulToken =
-      soulToken.deploymentTransaction()?.hash || "";
-    console.log(`    ✅ SoulToken: ${tokenAddr}`);
+    console.log("  Deploying ZaseonToken...");
+    const ZaseonToken = await ethers.getContractFactory("ZaseonToken");
+    const zaseonToken = await ZaseonToken.deploy(deployer.address);
+    await zaseonToken.waitForDeployment();
+    const tokenAddr = await zaseonToken.getAddress();
+    deployment.contracts.ZaseonToken = tokenAddr;
+    deployment.txHashes.ZaseonToken =
+      zaseonToken.deploymentTransaction()?.hash || "";
+    console.log(`    ✅ ZaseonToken: ${tokenAddr}`);
 
     // TimelockController
     console.log("  Deploying TimelockController...");
@@ -260,16 +260,16 @@ async function main() {
       timelock.deploymentTransaction()?.hash || "";
     console.log(`    ✅ TimelockController: ${timelockAddr}`);
 
-    // SoulGovernor
-    console.log("  Deploying SoulGovernor...");
-    const SoulGovernor = await ethers.getContractFactory("SoulGovernor");
-    const governor = await SoulGovernor.deploy(tokenAddr, timelockAddr);
+    // ZaseonGovernor
+    console.log("  Deploying ZaseonGovernor...");
+    const ZaseonGovernor = await ethers.getContractFactory("ZaseonGovernor");
+    const governor = await ZaseonGovernor.deploy(tokenAddr, timelockAddr);
     await governor.waitForDeployment();
     const govAddr = await governor.getAddress();
-    deployment.contracts.SoulGovernor = govAddr;
-    deployment.txHashes.SoulGovernor =
+    deployment.contracts.ZaseonGovernor = govAddr;
+    deployment.txHashes.ZaseonGovernor =
       governor.deploymentTransaction()?.hash || "";
-    console.log(`    ✅ SoulGovernor: ${govAddr}`);
+    console.log(`    ✅ ZaseonGovernor: ${govAddr}`);
 
     // Grant proposer role to governor
     console.log("  Configuring governance roles...");

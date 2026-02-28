@@ -4,7 +4,7 @@ const path = require("path");
 const { getChainConfig, saveDeployment, loadDeployment } = require("./chain-config");
 
 /**
- * Soul v2 Multi-Chain Deployment Script
+ * Zaseon v2 Multi-Chain Deployment Script
  * 
  * Unified deployment script that adapts to each chain's requirements.
  * 
@@ -17,7 +17,7 @@ const { getChainConfig, saveDeployment, loadDeployment } = require("./chain-conf
 
 async function main() {
     console.log("\n" + "=".repeat(80));
-    console.log("Soul v2 MULTI-CHAIN DEPLOYMENT");
+    console.log("Zaseon v2 MULTI-CHAIN DEPLOYMENT");
     console.log("=".repeat(80) + "\n");
 
     // Get chain info
@@ -137,9 +137,9 @@ async function main() {
         console.log(`   ✅ TEEAttestation: ${deployed.contracts.teeAttestation}`);
 
         // ============================================
-        // PHASE 2: Soul v2 Primitives
+        // PHASE 2: Zaseon v2 Primitives
         // ============================================
-        console.log("\n📦 PHASE 2: Soul v2 Primitives\n");
+        console.log("\n📦 PHASE 2: Zaseon v2 Primitives\n");
 
         // 4. Deploy ProofCarryingContainer (PC³)
         console.log("4️⃣  Deploying ProofCarryingContainer (PC³)...");
@@ -186,10 +186,10 @@ async function main() {
         // ============================================
         console.log("\n📦 PHASE 3: Integration Layer\n");
 
-        // 8. Deploy Soulv2Orchestrator
-        console.log("8️⃣  Deploying Soulv2Orchestrator...");
-        const Soulv2Orchestrator = await ethers.getContractFactory("Soulv2Orchestrator");
-        const orchestrator = await Soulv2Orchestrator.deploy(
+        // 8. Deploy Zaseonv2Orchestrator
+        console.log("8️⃣  Deploying Zaseonv2Orchestrator...");
+        const Zaseonv2Orchestrator = await ethers.getContractFactory("Zaseonv2Orchestrator");
+        const orchestrator = await Zaseonv2Orchestrator.deploy(
             deployed.contracts.pc3,
             deployed.contracts.pbp,
             deployed.contracts.easc,
@@ -200,17 +200,17 @@ async function main() {
         await orchestrator.deploymentTransaction().wait(chainConfig.confirmations);
         deployed.contracts.orchestrator = await orchestrator.getAddress();
         deployed.txHashes.orchestrator = orchestrator.deploymentTransaction().hash;
-        console.log(`   ✅ Soulv2Orchestrator: ${deployed.contracts.orchestrator}`);
+        console.log(`   ✅ Zaseonv2Orchestrator: ${deployed.contracts.orchestrator}`);
 
         // ============================================
         // PHASE 4: Security Layer
         // ============================================
         console.log("\n📦 PHASE 4: Security Layer\n");
 
-        // 9. Deploy SoulTimelock
-        console.log("9️⃣  Deploying SoulTimelock...");
-        const SoulTimelock = await ethers.getContractFactory("SoulTimelock");
-        const timelock = await SoulTimelock.deploy(
+        // 9. Deploy ZaseonTimelock
+        console.log("9️⃣  Deploying ZaseonTimelock...");
+        const ZaseonTimelock = await ethers.getContractFactory("ZaseonTimelock");
+        const timelock = await ZaseonTimelock.deploy(
             chainConfig.timelockDelay,
             [proposer?.address || deployer.address],
             [executor?.address || deployer.address],
@@ -221,7 +221,7 @@ async function main() {
         await timelock.deploymentTransaction().wait(chainConfig.confirmations);
         deployed.contracts.timelock = await timelock.getAddress();
         deployed.txHashes.timelock = timelock.deploymentTransaction().hash;
-        console.log(`   ✅ SoulTimelock: ${deployed.contracts.timelock}`);
+        console.log(`   ✅ ZaseonTimelock: ${deployed.contracts.timelock}`);
 
         // 10. Deploy TimelockAdmin
         console.log("\n🔟 Deploying TimelockAdmin...");

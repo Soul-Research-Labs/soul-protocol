@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "./SoulCrossChainRelay.sol";
+import "./ZaseonCrossChainRelay.sol";
 
 /**
  * @title MessageBatcher
@@ -12,7 +12,7 @@ import "./SoulCrossChainRelay.sol";
 contract MessageBatcher is AccessControl, ReentrancyGuard {
     bytes32 public constant KEEPER_ROLE = keccak256("KEEPER_ROLE");
 
-    SoulCrossChainRelay public relay;
+    ZaseonCrossChainRelay public relay;
 
     struct QueuedMessage {
         bytes payload;
@@ -33,10 +33,10 @@ contract MessageBatcher is AccessControl, ReentrancyGuard {
     );
 
     /// @notice Initializes the batcher with a relay contract and admin
-    /// @param _relay Address of the SoulCrossChainRelay contract
+    /// @param _relay Address of the ZaseonCrossChainRelay contract
     /// @param _admin Address to receive the default admin role
     constructor(address _relay, address _admin) {
-        relay = SoulCrossChainRelay(_relay);
+        relay = ZaseonCrossChainRelay(_relay);
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
     }
 
@@ -58,13 +58,13 @@ contract MessageBatcher is AccessControl, ReentrancyGuard {
         uint64 destChainId,
         bytes32 proofType
     ) external payable {
-        // Encode payload matching SoulCrossChainRelay relayProof format internal decoding
+        // Encode payload matching ZaseonCrossChainRelay relayProof format internal decoding
         // But wait, relayBatch expects ARRAY of payloads.
         // Each payload in existing system is:
         // abi.encode(MSG_PROOF_RELAY, proofId, proof, publicInputs, commitment, srcChainId, proofType)
         // SrcChainId is usually filled by Relay.
         // But here Batcher constructs it?
-        // SoulCrossChainRelay._processBatch decodes:
+        // ZaseonCrossChainRelay._processBatch decodes:
         // (uint8 msgType, bytes32 proofId, ...)
 
         bytes memory payload = abi.encode(

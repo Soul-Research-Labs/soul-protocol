@@ -8,7 +8,7 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 /**
  * @title PrivacyOracleIntegration
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Privacy-preserving oracle for encrypted data feeds implementing IPrivacyOracle
  * @dev Provides encrypted price data and ZK proof verification for private DeFi
  *
@@ -45,7 +45,7 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
  * - Private Lending: Verify collateral ratios privately
  * - Private Options: Verify strike prices without revealing positions
  *
- * @custom:security-contact security@soulprotocol.io
+ * @custom:security-contact security@zaseonprotocol.io
  */
 contract PrivacyOracleIntegration is ReentrancyGuard, AccessControl, Pausable {
     /*//////////////////////////////////////////////////////////////
@@ -104,7 +104,7 @@ contract PrivacyOracleIntegration is ReentrancyGuard, AccessControl, Pausable {
 
     /// @notice Domain separator
     bytes32 public constant PRIVACY_ORACLE_DOMAIN =
-        keccak256("Soul_PRIVACY_ORACLE_V1");
+        keccak256("Zaseon_PRIVACY_ORACLE_V1");
 
     /// @notice Maximum price staleness (1 hour)
     uint256 public constant MAX_PRICE_STALENESS = 1 hours;

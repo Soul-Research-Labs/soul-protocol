@@ -22,7 +22,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title CrossChainProofVerifier
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice Cross Chain Proof Verifier contract
  */
 contract CrossChainProofVerifier {

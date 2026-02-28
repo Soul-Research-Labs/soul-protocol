@@ -9,7 +9,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 
 /**
  * @title CrossChainBridgeIntegration
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Unified cross-chain bridge integration connecting all L2 and bridge adapters
  * @dev Single entry point for cross-chain operations across 40+ supported chains
  *
@@ -57,11 +57,11 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
  * │                                                                                  │
  * └─────────────────────────────────────────────────────────────────────────────────┘
  *
- * @custom:security-contact security@soulprotocol.io
+ * @custom:security-contact security@zaseonprotocol.io
  */
 /**
  * @title CrossChainBridgeIntegration
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice Cross Chain Bridge Integration contract
  */
 contract CrossChainBridgeIntegration is
@@ -236,7 +236,7 @@ contract CrossChainBridgeIntegration is
     bytes32 public constant ROUTER_ROLE = keccak256("ROUTER_ROLE");
 
     bytes32 public constant BRIDGE_DOMAIN =
-        keccak256("Soul_BRIDGE_INTEGRATION_V1");
+        keccak256("Zaseon_BRIDGE_INTEGRATION_V1");
 
     /// @notice Maximum protocols per route
     uint256 public constant MAX_PROTOCOLS_PER_ROUTE = 5;

@@ -2,7 +2,7 @@ const { ethers } = require("hardhat");
 
 async function main() {
   const [deployer] = await ethers.getSigners();
-  console.log("Deploying Soul V3 contracts with account:", deployer.address);
+  console.log("Deploying Zaseon V3 contracts with account:", deployer.address);
   console.log("Account balance:", (await ethers.provider.getBalance(deployer.address)).toString());
 
   // Track deployed addresses
@@ -42,23 +42,23 @@ async function main() {
   deployed.proofHub = await proofHub.getAddress();
   console.log("   CrossChainProofHubV3 deployed to:", deployed.proofHub);
 
-  // 5. Deploy SoulAtomicSwapV2
-  console.log("\n5. Deploying SoulAtomicSwapV2...");
-  const AtomicSwap = await ethers.getContractFactory("SoulAtomicSwapV2");
+  // 5. Deploy ZaseonAtomicSwapV2
+  console.log("\n5. Deploying ZaseonAtomicSwapV2...");
+  const AtomicSwap = await ethers.getContractFactory("ZaseonAtomicSwapV2");
   const atomicSwap = await AtomicSwap.deploy(deployer.address); // Deployer as fee collector
   await atomicSwap.waitForDeployment();
   deployed.atomicSwap = await atomicSwap.getAddress();
-  console.log("   SoulAtomicSwapV2 deployed to:", deployed.atomicSwap);
+  console.log("   ZaseonAtomicSwapV2 deployed to:", deployed.atomicSwap);
 
-  // 6. Deploy SoulComplianceV2
-  console.log("\n6. Deploying SoulComplianceV2...");
-  const Compliance = await ethers.getContractFactory("SoulComplianceV2");
+  // 6. Deploy ZaseonComplianceV2
+  console.log("\n6. Deploying ZaseonComplianceV2...");
+  const Compliance = await ethers.getContractFactory("ZaseonComplianceV2");
   const compliance = await Compliance.deploy();
   await compliance.waitForDeployment();
   deployed.compliance = await compliance.getAddress();
-  console.log("   SoulComplianceV2 deployed to:", deployed.compliance);
+  console.log("   ZaseonComplianceV2 deployed to:", deployed.compliance);
 
-  // ========== Soul v2 PRIMITIVES ==========
+  // ========== Zaseon v2 PRIMITIVES ==========
 
   // 7. Deploy ProofCarryingContainer (PC³)
   console.log("\n7. Deploying ProofCarryingContainer (PC³)...");
@@ -92,22 +92,22 @@ async function main() {
   deployed.crossDomainNullifierAlgebra = await crossDomainNullifierAlgebra.getAddress();
   console.log("   CrossDomainNullifierAlgebra deployed to:", deployed.crossDomainNullifierAlgebra);
 
-  // 11. Deploy Soulv2Orchestrator (Integrator)
-  console.log("\n11. Deploying Soulv2Orchestrator...");
-  const Soulv2Orchestrator = await ethers.getContractFactory("Soulv2Orchestrator");
-  const soulv2Orchestrator = await Soulv2Orchestrator.deploy(
+  // 11. Deploy Zaseonv2Orchestrator (Integrator)
+  console.log("\n11. Deploying Zaseonv2Orchestrator...");
+  const Zaseonv2Orchestrator = await ethers.getContractFactory("Zaseonv2Orchestrator");
+  const zaseonv2Orchestrator = await Zaseonv2Orchestrator.deploy(
     deployed.proofCarryingContainer,
     deployed.policyBoundProofs,
     deployed.executionAgnosticStateCommitments,
     deployed.crossDomainNullifierAlgebra
   );
-  await soulv2Orchestrator.waitForDeployment();
-  deployed.soulv2Orchestrator = await soulv2Orchestrator.getAddress();
-  console.log("   Soulv2Orchestrator deployed to:", deployed.soulv2Orchestrator);
+  await zaseonv2Orchestrator.waitForDeployment();
+  deployed.zaseonv2Orchestrator = await zaseonv2Orchestrator.getAddress();
+  console.log("   Zaseonv2Orchestrator deployed to:", deployed.zaseonv2Orchestrator);
 
   // Summary
   console.log("\n" + "=".repeat(60));
-  console.log("Soul V3 DEPLOYMENT SUMMARY");
+  console.log("Zaseon V3 DEPLOYMENT SUMMARY");
   console.log("=".repeat(60));
   console.log(JSON.stringify(deployed, null, 2));
   console.log("=".repeat(60));

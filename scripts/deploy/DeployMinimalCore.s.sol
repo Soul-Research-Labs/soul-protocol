@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Script.sol";
 import "../../contracts/privacy/PrivacyZoneManager.sol";
-import "../../contracts/crosschain/SoulCrossChainRelay.sol";
+import "../../contracts/crosschain/ZaseonCrossChainRelay.sol";
 import "../../contracts/security/OptimisticRelayVerifier.sol";
 import "../../contracts/security/RelayRateLimiter.sol";
 import "../../contracts/security/RelayWatchtower.sol";
@@ -12,7 +12,7 @@ import "../../contracts/relayer/DecentralizedRelayerRegistry.sol";
 
 /**
  * @title DeployMinimalCore
- * @notice Deploys the minimal core set of Soul Protocol contracts.
+ * @notice Deploys the minimal core set of ZASEON contracts.
  *
  * Usage (dry-run):
  *   forge script scripts/deploy/DeployMinimalCore.s.sol \
@@ -44,9 +44,9 @@ contract DeployMinimalCore is Script {
         PrivacyZoneManager zoneManager = new PrivacyZoneManager(deployer, true);
 
         // proofHub = verifier address, BridgeType.LAYERZERO for L2 testnets
-        SoulCrossChainRelay relay = new SoulCrossChainRelay(
+        ZaseonCrossChainRelay relay = new ZaseonCrossChainRelay(
             address(verifier),
-            SoulCrossChainRelay.BridgeType.LAYERZERO
+            ZaseonCrossChainRelay.BridgeType.LAYERZERO
         );
 
         // 3. Deploy Enhancements
@@ -68,7 +68,7 @@ contract DeployMinimalCore is Script {
         console.log("");
         console.log("=== Deployed Minimal Core ===");
         console.log("PrivacyZoneManager:           ", address(zoneManager));
-        console.log("SoulCrossChainRelay:          ", address(relay));
+        console.log("ZaseonCrossChainRelay:          ", address(relay));
         console.log("OptimisticRelayVerifier:     ", address(verifier));
         console.log("RelayRateLimiter:            ", address(limiter));
         console.log("RelayWatchtower:             ", address(watchtower));

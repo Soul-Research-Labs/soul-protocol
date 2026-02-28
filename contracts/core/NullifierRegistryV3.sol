@@ -8,7 +8,7 @@ import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {INullifierRegistryV3} from "../interfaces/INullifierRegistryV3.sol";
 
 /// @title NullifierRegistryV3
-/// @author Soul Protocol
+/// @author ZASEON
 /// @notice Production-ready nullifier registry with merkle tree support for light client verification
 /// @dev Implements incremental merkle tree, cross-chain sync, and efficient batch operations
 ///
@@ -19,7 +19,7 @@ import {INullifierRegistryV3} from "../interfaces/INullifierRegistryV3.sol";
 /// - Packed NullifierData struct (saves ~20k gas on writes)
 /**
  * @title NullifierRegistryV3
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice Nullifier Registry V3 contract
  */
 contract NullifierRegistryV3 is

@@ -1,4 +1,4 @@
-# Soul Incident Response Runbook
+# Zaseon Incident Response Runbook
 
 > Step-by-step procedures for security incidents. All operational team members must be familiar with these procedures.
 
@@ -132,7 +132,7 @@ cast send $CONTRACT_ADDRESS "pause()" \
 
 # For multiple contracts, pause in order:
 # 1. CrossChainProofHubV3
-# 2. SoulAtomicSwapV2
+# 2. ZaseonAtomicSwapV2
 # 3. All bridge adapters
 # 4. ZKBoundStateLocks
 ```
@@ -305,7 +305,7 @@ Re-enablement Order:
 2. NullifierRegistry
 3. CrossChainProofHubV3
 4. Bridge Adapters (one at a time)
-5. SoulAtomicSwapV2 (highest risk, last)
+5. ZaseonAtomicSwapV2 (highest risk, last)
 ```
 
 ### Service Restoration Verification

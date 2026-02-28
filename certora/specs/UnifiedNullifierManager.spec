@@ -1,9 +1,9 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - UnifiedNullifierManager
+ * ZASEON - UnifiedNullifierManager
  *
  * Verifies nullifier uniqueness, cross-domain binding integrity,
- * and soul-binding correctness across pools and chains.
+ * and zaseon-binding correctness across pools and chains.
  */
 
 using UnifiedNullifierManager as unm;
@@ -21,7 +21,7 @@ methods {
     function crossChainVerifier() external returns (address) envfree;
     function getRegisteredChainCount() external returns (uint256) envfree;
     function hasRole(bytes32, address) external returns (bool) envfree;
-    function deriveSoulBinding(bytes32, bytes32) external returns (bytes32) envfree;
+    function deriveZaseonBinding(bytes32, bytes32) external returns (bytes32) envfree;
     function deriveCrossDomainNullifier(bytes32, uint256, uint256) external returns (bytes32) envfree;
 
     // State-changing
@@ -270,18 +270,18 @@ rule onlyOperatorCanRegisterDomain(
 }
 
 /**
- * @title Soul binding derivation is deterministic
- * @notice Same inputs must always produce the same soul binding
+ * @title Zaseon binding derivation is deterministic
+ * @notice Same inputs must always produce the same zaseon binding
  */
-rule soulBindingDeterministic(
+rule zaseonBindingDeterministic(
     bytes32 sourceNullifier,
     bytes32 domainTag
 ) {
-    bytes32 binding1 = deriveSoulBinding(sourceNullifier, domainTag);
-    bytes32 binding2 = deriveSoulBinding(sourceNullifier, domainTag);
+    bytes32 binding1 = deriveZaseonBinding(sourceNullifier, domainTag);
+    bytes32 binding2 = deriveZaseonBinding(sourceNullifier, domainTag);
 
     assert binding1 == binding2,
-        "Soul binding derivation must be deterministic";
+        "Zaseon binding derivation must be deterministic";
 }
 
 /**

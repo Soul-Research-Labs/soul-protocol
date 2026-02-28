@@ -1,4 +1,4 @@
-# Soul Protocol - NatSpec Style Guide
+# ZASEON - NatSpec Style Guide
 
 > **Version:** 1.0  
 > **Last Updated:** February 1, 2026
@@ -7,7 +7,7 @@
 
 ## Overview
 
-This guide defines the NatSpec documentation standards for Soul Protocol smart contracts. Consistent documentation improves code readability, enables automated doc generation, and helps auditors understand contract behavior.
+This guide defines the NatSpec documentation standards for ZASEON smart contracts. Consistent documentation improves code readability, enables automated doc generation, and helps auditors understand contract behavior.
 
 ---
 
@@ -20,13 +20,13 @@ Every contract MUST include:
 ```solidity
 /**
  * @title ContractName
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Brief user-facing description of what the contract does
  * @dev Technical implementation notes for developers:
  *      - Architecture decisions
  *      - Integration points
  *      - Key invariants
- * @custom:security-contact security@soul.network
+ * @custom:security-contact security@zaseon.network
  */
 contract ContractName {
     // ...
@@ -114,7 +114,7 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
 /**
  * @title ZKBoundStateLocks
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Cross-chain confidential state lock manager using zero-knowledge proofs
  * @dev Core primitive enabling privacy-preserving cross-chain state transfers.
  *      Implements the ZK-SLocks paradigm where state is locked with commitments
@@ -131,7 +131,7 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
  *      - Integrates with PC³ for self-authenticating containers
  *      - Compatible with PBP policy enforcement
  *
- * @custom:security-contact security@soul.network
+ * @custom:security-contact security@zaseon.network
  */
 contract ZKBoundStateLocks is AccessControl {
     /*//////////////////////////////////////////////////////////////
@@ -243,7 +243,7 @@ contract ZKBoundStateLocks is AccessControl {
 
 ### Contract Level
 - [ ] `@title` matches contract name
-- [ ] `@author` is "Soul Protocol"
+- [ ] `@author` is "ZASEON"
 - [ ] `@notice` explains purpose in plain English
 - [ ] `@dev` includes architecture notes
 - [ ] `@custom:security-contact` is included

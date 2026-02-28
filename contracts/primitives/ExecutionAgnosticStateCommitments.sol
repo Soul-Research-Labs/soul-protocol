@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 import "../interfaces/IProofVerifier.sol";
 
 /// @title ExecutionAgnosticStateCommitments (EASC)
-/// @author Soul Protocol - Soul v2
+/// @author ZASEON - Zaseon v2
 /// @notice State commitments independent of execution environment
 /// @dev MVP Implementation - Decouples what happened from how it happened
 ///
@@ -23,7 +23,7 @@ import "../interfaces/IProofVerifier.sol";
 /// - Backend deactivation isolates compromised backends
 /**
  * @title ExecutionAgnosticStateCommitments
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice Execution Agnostic State Commitments contract
  */
 contract ExecutionAgnosticStateCommitments is AccessControl, Pausable {

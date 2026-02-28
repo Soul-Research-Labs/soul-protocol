@@ -2,13 +2,13 @@
 
 ## Overview
 
-The Soul Protocol (Soul) provides comprehensive Ethereum mainnet (L1) interoperability through a multi-layered bridge architecture. This enables secure cross-chain proof relay, state synchronization, and privacy-preserving asset transfers between Ethereum L1 and various L2 networks.
+The ZASEON (Zaseon) provides comprehensive Ethereum mainnet (L1) interoperability through a multi-layered bridge architecture. This enables secure cross-chain proof relay, state synchronization, and privacy-preserving asset transfers between Ethereum L1 and various L2 networks.
 
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                         Soul Ethereum Interoperability                        │
+│                         Zaseon Ethereum Interoperability                        │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  ┌─────────────────────────────────────────────────────────────────────┐   │
@@ -80,7 +80,7 @@ The main bridge contract for Ethereum L1 interoperability.
    - Automatic finalization for ZK rollups
 
 3. **Privacy-Preserving Deposits**
-   - Deposit ETH with Soul commitments
+   - Deposit ETH with Zaseon commitments
    - Nullifier-based double-spend prevention
    - Merkle proof verification for withdrawals
 
@@ -111,7 +111,7 @@ bridge.configureL2Chain(L2Config({
 bridge.submitStateCommitment{value: 0.1 ether}(
     42161,           // Arbitrum chain ID
     stateRoot,       // L2 state root
-    proofRoot,       // Soul proof merkle root
+    proofRoot,       // Zaseon proof merkle root
     blockNumber      // L2 block number
 );
 
@@ -123,7 +123,7 @@ bridge.depositETH{value: 1 ether}(42161, commitment);
 bridge.initiateWithdrawal(
     42161,           // Source chain
     1 ether,         // Amount
-    nullifier,       // Soul nullifier
+    nullifier,       // Zaseon nullifier
     merkleProof      // Proof from L2 state
 );
 ```
@@ -178,7 +178,7 @@ relay.retryMessage(messageId);
 
 ```
 ┌──────────────┐     ┌───────────────┐     ┌──────────────┐
-│   L1 Deposit │     │ Soul Privacy   │     │   L2 Claim   │
+│   L1 Deposit │     │ Zaseon Privacy   │     │   L2 Claim   │
 │   + Commit   │────▶│ Commitment    │────▶│   + Nullify  │
 └──────────────┘     └───────────────┘     └──────────────┘
       │                     │                     │
@@ -248,7 +248,7 @@ Relayers must submit bonds with state commitments:
 
 ### Prerequisites
 
-1. Deploy Soul core contracts
+1. Deploy Zaseon core contracts
 2. Configure verifiers (Groth16, PLONK)
 3. Set up relayer infrastructure
 
@@ -334,4 +334,4 @@ event WithdrawalFinalized(bytes32 indexed withdrawalId, address recipient, uint2
 - [ZK Proof Systems](./RECURSIVE_PROOFS.md)
 - [Cross-Chain Architecture](./CROSS_CHAIN_PRIVACY.md)
 - [Security Model](./THREAT_MODEL.md)
-- [Soul Protocol Specification](./architecture.md)
+- [ZASEON Specification](./architecture.md)

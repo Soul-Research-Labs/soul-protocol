@@ -9,7 +9,7 @@ import {UniversalChainRegistry} from "../libraries/UniversalChainRegistry.sol";
 
 /**
  * @title UniversalAdapterRegistry
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Central registry for all chain adapters across every blockchain ecosystem
  * @dev Manages the mapping of universal chain IDs to their adapter contracts,
  *      tracks supported proof systems, and facilitates cross-chain adapter discovery.
@@ -39,7 +39,7 @@ import {UniversalChainRegistry} from "../libraries/UniversalChainRegistry.sol";
  *   │  └─────────────┘  └─────────────┘  └─────────────┘             │
  *   └──────────────────────────────────────────────────────────────────┘
  *
- * @custom:security-contact security@soul.network
+ * @custom:security-contact security@zaseon.network
  */
 contract UniversalAdapterRegistry is AccessControl, ReentrancyGuard, Pausable {
     using UniversalChainRegistry for *;

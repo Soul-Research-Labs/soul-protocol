@@ -4,16 +4,16 @@ import path from "path";
 import { formatEther, parseEther } from "viem";
 
 /**
- * Soul v3 Deployment Script for Hardhat v3 (viem)
+ * Zaseon v3 Deployment Script for Hardhat v3 (viem)
  * 
- * Deploys all Soul contracts with proper configuration
+ * Deploys all Zaseon contracts with proper configuration
  */
 
 const DEPLOYMENT_LOG_DIR = "./deployments";
 
 async function main() {
     console.log("\n" + "=".repeat(80));
-    console.log("Soul v3 DEPLOYMENT (Hardhat v3 / Viem)");
+    console.log("Zaseon v3 DEPLOYMENT (Hardhat v3 / Viem)");
     console.log("=".repeat(80) + "\n");
 
     const { viem } = await hre.network.connect();
@@ -97,22 +97,22 @@ async function main() {
         // ============================================
         console.log("\n📦 PHASE 3: Application Layer\n");
 
-        // 8. Deploy SoulAtomicSwapV2
-        console.log("8️⃣  Deploying SoulAtomicSwapV2...");
-        const atomicSwap = await viem.deployContract("SoulAtomicSwapV2", [deployer.account.address]);
+        // 8. Deploy ZaseonAtomicSwapV2
+        console.log("8️⃣  Deploying ZaseonAtomicSwapV2...");
+        const atomicSwap = await viem.deployContract("ZaseonAtomicSwapV2", [deployer.account.address]);
         deployed.contracts.atomicSwap = atomicSwap.address;
-        console.log("   ✅ SoulAtomicSwapV2:", deployed.contracts.atomicSwap);
+        console.log("   ✅ ZaseonAtomicSwapV2:", deployed.contracts.atomicSwap);
 
-        // 9. Deploy SoulComplianceV2
-        console.log("\n9️⃣  Deploying SoulComplianceV2...");
-        const compliance = await viem.deployContract("SoulComplianceV2");
+        // 9. Deploy ZaseonComplianceV2
+        console.log("\n9️⃣  Deploying ZaseonComplianceV2...");
+        const compliance = await viem.deployContract("ZaseonComplianceV2");
         deployed.contracts.compliance = compliance.address;
-        console.log("   ✅ SoulComplianceV2:", deployed.contracts.compliance);
+        console.log("   ✅ ZaseonComplianceV2:", deployed.contracts.compliance);
 
         // ============================================
-        // PHASE 4: Soul v2 Primitives
+        // PHASE 4: Zaseon v2 Primitives
         // ============================================
-        console.log("\n📦 PHASE 4: Soul v2 Primitives\n");
+        console.log("\n📦 PHASE 4: Zaseon v2 Primitives\n");
 
         // 10. Deploy ProofCarryingContainer (PC³)
         console.log("🔟 Deploying ProofCarryingContainer (PC³)...");

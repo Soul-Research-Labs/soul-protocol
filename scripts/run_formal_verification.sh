@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# Soul Protocol - Comprehensive Formal Verification Suite
+# ZASEON - Comprehensive Formal Verification Suite
 # This script runs all Certora verification jobs for the complete network
 
 set -e
 
 echo "╔══════════════════════════════════════════════════════════════════╗"
-echo "║        Soul Protocol - Formal Verification Suite                  ║"
+echo "║        ZASEON - Formal Verification Suite                  ║"
 echo "║        Certora Prover - Complete Network Verification             ║"
 echo "╚══════════════════════════════════════════════════════════════════╝"
 
@@ -99,7 +99,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --homomorphic          Run HomomorphicHiding verification only"
             echo "  --aggregate-disclosure  Run AggregateDisclosureAlgebra verification only"
             echo "  --sptc                 Run SPTC verification only"
-            echo "  --core                 Run core Soul verification only"
+            echo "  --core                 Run core Zaseon verification only"
             echo "  --help                 Show this help message"
             echo ""
             echo "Without options, runs all verification jobs."
@@ -121,8 +121,8 @@ if [ "$RUN_ALL" = true ]; then
     echo "Running complete verification suite..."
     echo ""
     
-    # 1. Core Soul Verification
-    run_verification "certora/conf/verify.conf" "Core Soul Contracts"
+    # 1. Core Zaseon Verification
+    run_verification "certora/conf/verify.conf" "Core Zaseon Contracts"
     
     # 2. SPTC - Semantic Proof Translation
     run_verification "certora/conf/verify_sptc.conf" "Semantic Proof Translation Certificate (SPTC)"

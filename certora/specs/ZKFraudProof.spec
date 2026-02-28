@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - ZKFraudProof
+ * ZASEON - ZKFraudProof
  *
  * Verifies safety invariants for the ZK-based fraud proof system
  * that secures batch finalization and dispute resolution.

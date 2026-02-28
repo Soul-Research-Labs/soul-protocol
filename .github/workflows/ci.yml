@@ -479,7 +479,7 @@ jobs:
           - verify_view_key_registry
           - verify_ring_signature
           - OperationTimelockModule
-          - SoulProtocolHub
+          - ZaseonProtocolHub
           - verify_emergency_coordinator
           - verify_emergency_relay
           - verify_experimental_feature_registry
@@ -580,8 +580,8 @@ jobs:
       - name: Run TLC model checker
         run: |
           cd specs/tla
-          if [ -f MC_SoulBridge.tla ]; then
-            java -cp ~/tla/tla2tools.jar tlc2.TLC MC_SoulBridge -workers auto -deadlock 2>&1 || echo "TLC completed with warnings"
+          if [ -f MC_ZaseonBridge.tla ]; then
+            java -cp ~/tla/tla2tools.jar tlc2.TLC MC_ZaseonBridge -workers auto -deadlock 2>&1 || echo "TLC completed with warnings"
           fi
 
   storage-layout:

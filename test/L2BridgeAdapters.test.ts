@@ -86,14 +86,14 @@ describe("L2 Bridge Adapters", function () {
         });
 
         describe("Bridge Configuration", function () {
-            it("Should set Soul Hub L2 address", async function () {
+            it("Should set Zaseon Hub L2 address", async function () {
                 const { adapter, admin, user } = await deployScrollAdapter();
 
-                // Admin can set Soul Hub L2
-                await adapter.write.setSoulHubL2([user.account.address]);
+                // Admin can set Zaseon Hub L2
+                await adapter.write.setZaseonHubL2([user.account.address]);
 
-                const soulHub = await adapter.read.soulHubL2();
-                expect(soulHub.toLowerCase()).to.equal(user.account.address.toLowerCase());
+                const zaseonHub = await adapter.read.zaseonHubL2();
+                expect(zaseonHub.toLowerCase()).to.equal(user.account.address.toLowerCase());
             });
 
             it("Should set proof registry", async function () {
@@ -168,14 +168,14 @@ describe("L2 Bridge Adapters", function () {
         });
 
         describe("Bridge Configuration", function () {
-            it("Should set Soul Hub L2 address", async function () {
+            it("Should set Zaseon Hub L2 address", async function () {
                 const { adapter, admin, user } = await deployLineaAdapter();
 
-                // Admin can set Soul Hub L2
-                await adapter.write.setSoulHubL2([user.account.address]);
+                // Admin can set Zaseon Hub L2
+                await adapter.write.setZaseonHubL2([user.account.address]);
 
-                const soulHub = await adapter.read.soulHubL2();
-                expect(soulHub.toLowerCase()).to.equal(user.account.address.toLowerCase());
+                const zaseonHub = await adapter.read.zaseonHubL2();
+                expect(zaseonHub.toLowerCase()).to.equal(user.account.address.toLowerCase());
             });
         });
 
@@ -250,14 +250,14 @@ describe("L2 Bridge Adapters", function () {
         });
 
         describe("Bridge Configuration", function () {
-            it("Should set Soul Hub L2 address", async function () {
+            it("Should set Zaseon Hub L2 address", async function () {
                 const { adapter, admin, user } = await deployPolygonZkEVMAdapter();
 
-                // Admin can set Soul Hub L2
-                await adapter.write.setSoulHubL2([user.account.address]);
+                // Admin can set Zaseon Hub L2
+                await adapter.write.setZaseonHubL2([user.account.address]);
 
-                const soulHub = await adapter.read.soulHubL2();
-                expect(soulHub.toLowerCase()).to.equal(user.account.address.toLowerCase());
+                const zaseonHub = await adapter.read.zaseonHubL2();
+                expect(zaseonHub.toLowerCase()).to.equal(user.account.address.toLowerCase());
             });
         });
 

@@ -1,6 +1,6 @@
-# Soul Protocol Architecture
+# ZASEON Architecture
 
-> **Technical Deep-Dive into Soul's Modular Privacy Infrastructure**
+> **Technical Deep-Dive into Zaseon's Modular Privacy Infrastructure**
 
 [![Status](https://img.shields.io/badge/Status-Production-green.svg)]()
 [![Version](https://img.shields.io/badge/Version-3.0-blue.svg)]()
@@ -10,7 +10,7 @@
 ## Table of Contents
 
 - [Overview](#overview)
-- [Soul Is Proof Middleware, Not a Bridge](#soul-is-proof-middleware-not-a-bridge)
+- [Zaseon Is Proof Middleware, Not a Bridge](#zaseon-is-proof-middleware-not-a-bridge)
 - [Token Flow: Bridge-Wrapped Privacy](#token-flow-bridge-wrapped-privacy)
 - [Core Design Principles](#core-design-principles)
 - [Terminology Guide](#terminology-guide)
@@ -30,17 +30,17 @@
 
 ## Overview
 
-The Soul Protocol (Soul) is designed as a modular middleware protocol that enables private cross-chain state transfers and ZK proof verification. This document describes the technical architecture, component interactions, and security model.
+The ZASEON (Zaseon) is designed as a modular middleware protocol that enables private cross-chain state transfers and ZK proof verification. This document describes the technical architecture, component interactions, and security model.
 
-> **Key insight:** Soul Protocol transfers **proofs**, not tokens. It is ZK proof middleware, not a bridge.
+> **Key insight:** ZASEON transfers **proofs**, not tokens. It is ZK proof middleware, not a bridge.
 
 ---
 
-## Soul Is Proof Middleware, Not a Bridge
+## Zaseon Is Proof Middleware, Not a Bridge
 
-Soul Protocol does **not** move tokens between chains. It moves **verified cryptographic claims** (ZK proofs) about token ownership across chains. The distinction is critical:
+ZASEON does **not** move tokens between chains. It moves **verified cryptographic claims** (ZK proofs) about token ownership across chains. The distinction is critical:
 
-| Aspect            | Traditional Bridge                    | Soul Protocol                                 |
+| Aspect            | Traditional Bridge                    | ZASEON                                 |
 | ----------------- | ------------------------------------- | --------------------------------------------- |
 | **Moves**         | Tokens (lock/mint or burn/mint)       | ZK proofs of state                            |
 | **Creates**       | Wrapped/synthetic tokens              | Nothing — no new tokens                       |
@@ -48,7 +48,7 @@ Soul Protocol does **not** move tokens between chains. It moves **verified crypt
 | **Token source**  | Its own reserves or minting           | External bridges (Hyperlane, LayerZero, etc.) |
 | **Value prop**    | Cross-chain token transfer            | **Privacy** for cross-chain state transitions |
 
-### What Soul Actually Does
+### What Zaseon Actually Does
 
 1. **Proves** state on Chain A (e.g., "I deposited 10 USDC into ShieldedPool")
 2. **Carries** that ZK proof to Chain B via `ProofCarryingContainer` + `MultiBridgeRouter`
@@ -61,11 +61,11 @@ The actual token movement is handled by **external bridges** (Hyperlane, LayerZe
 
 ## Token Flow: Bridge-Wrapped Privacy
 
-Soul wraps existing bridges with a privacy layer. Tokens always move through external bridges — Soul adds ZK proofs, nullifiers, and stealth addresses on top.
+Zaseon wraps existing bridges with a privacy layer. Tokens always move through external bridges — Zaseon adds ZK proofs, nullifiers, and stealth addresses on top.
 
 ```
 Chain A: User deposits USDC → ShieldedPool (commitment stored)
-         Soul generates ZK proof of deposit
+         Zaseon generates ZK proof of deposit
          MultiBridgeRouter selects bridge adapter
          Actual bridge moves tokens: Chain A → Chain B
 Chain B: Bridge delivers USDC → ShieldedPool on Chain B
@@ -73,7 +73,7 @@ Chain B: Bridge delivers USDC → ShieldedPool on Chain B
 ```
 
 **Token source:** The underlying bridge (Hyperlane, LayerZero, Wormhole, etc.)
-**Soul's role:** Privacy layer wrapping the bridge. `MultiBridgeRouter` + `IBridgeAdapter` pattern.
+**Zaseon's role:** Privacy layer wrapping the bridge. `MultiBridgeRouter` + `IBridgeAdapter` pattern.
 
 ### How the Intent Layer Fits
 
@@ -81,16 +81,16 @@ The `IntentCompletionLayer` is an optional UX abstraction within this model. Ins
 
 Neither contract moves tokens or manages capital. They coordinate **proof generation and delivery** within the bridge-wrapped model.
 
-### What Soul Does and Does Not Do
+### What Zaseon Does and Does Not Do
 
-Soul Protocol does NOT:
+ZASEON does NOT:
 
 - Create, mint, or burn tokens
 - Manage token bridge capacity
 - Hold or custody user funds beyond ShieldedPool deposits
 - Replace bridges — it wraps them with privacy
 
-Soul Protocol DOES:
+ZASEON DOES:
 
 - Generate and verify ZK proofs of state transitions
 - Route proof delivery through optimal bridge adapters
@@ -117,7 +117,7 @@ The codebase uses certain terms that map to proof middleware concepts:
 
 | Codebase Term                | Proof Middleware Meaning                                                                                                                                   |
 | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `BridgeCapacity` (struct)    | Oracle-observed throughput capacity of a bridge adapter on a given chain. Soul does NOT manage this capacity — it queries it for routing decisions.        |
+| `BridgeCapacity` (struct)    | Oracle-observed throughput capacity of a bridge adapter on a given chain. Zaseon does NOT manage this capacity — it queries it for routing decisions.        |
 | `DynamicRoutingOrchestrator` | Routes **proof relay requests** through optimal bridge adapters based on observed bridge capacity, latency, and success rates.                             |
 | `CapacityAwareRouter`        | Routes proof-carrying transfers through the `DynamicRoutingOrchestrator`, tracking per-pair relay metrics.                                                 |
 | `IntentCompletionLayer`      | Proof service marketplace where solvers compete to generate and deliver ZK proofs for user intents. "Completion" = proof verification, not token delivery. |
@@ -260,7 +260,7 @@ e(A, B) = e(α, β) · e(∑ᵢ aᵢ·ICᵢ, γ) · e(C, δ)
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                   SoulAtomicSwap                          │
+│                   ZaseonAtomicSwap                          │
 ├─────────────────────────────────────────────────────────┤
 │                                                         │
 │  Swap Lifecycle:                                        │
@@ -285,7 +285,7 @@ e(A, B) = e(α, β) · e(∑ᵢ aᵢ·ICᵢ, γ) · e(C, δ)
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                   SoulCompliance                          │
+│                   ZaseonCompliance                          │
 ├─────────────────────────────────────────────────────────┤
 │                                                         │
 │  KYC Tiers:                                             │
@@ -367,11 +367,11 @@ All critical contracts include:
 
 **Protected Contracts**:
 
-- `SoulMultiSigGovernance` - Multi-sig governance with reentrancy protection
+- `ZaseonMultiSigGovernance` - Multi-sig governance with reentrancy protection
 - `BridgeWatchtower` - Watchtower network with optimized slashing
-- `SoulPreconfirmationHandler` - Preconfirmation with safe ETH transfers
-- `SoulIntentResolver` - Cross-chain intents with bond management
-- `SoulL2Messenger` - L2 messaging with fulfiller protection
+- `ZaseonPreconfirmationHandler` - Preconfirmation with safe ETH transfers
+- `ZaseonIntentResolver` - Cross-chain intents with bond management
+- `ZaseonL2Messenger` - L2 messaging with fulfiller protection
 - `ConfidentialDataAvailability` - DA with comprehensive event logging
 
 ### Cryptographic Assumptions

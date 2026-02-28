@@ -77,7 +77,7 @@ contract ExperimentalFeatureRegistryTest is Test {
             impl,
             1000 ether,
             true,
-            "https://docs.soul.io/new-feature"
+            "https://docs.zaseon.io/new-feature"
         );
 
         ExperimentalFeatureRegistry.Feature memory f = registry.getFeature(

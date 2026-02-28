@@ -1,5 +1,5 @@
 /**
- * @fileoverview Polygon zkEVM bridge utilities for Soul SDK
+ * @fileoverview Polygon zkEVM bridge utilities for Zaseon SDK
  * @module bridges/polygon-zkevm
  */
 

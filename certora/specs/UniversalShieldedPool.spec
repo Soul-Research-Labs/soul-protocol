@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - UniversalShieldedPool
+ * ZASEON - UniversalShieldedPool
  *
  * @title Shielded Pool Invariants and Rules
  * @notice Verifies TVL safety, nullifier uniqueness, Merkle tree monotonicity,

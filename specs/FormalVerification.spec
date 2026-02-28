@@ -1,11 +1,11 @@
 /**
- * @title Soul v2 Formal Verification Specifications
- * @author Soul Protocol
- * @notice Certora-style specifications for formal verification of Soul v2 contracts
+ * @title Zaseon v2 Formal Verification Specifications
+ * @author ZASEON
+ * @notice Certora-style specifications for formal verification of Zaseon v2 contracts
  * @dev These specifications define invariants, pre/post conditions, and safety properties
  *
  * To run verification with Certora:
- * $ certoraRun specs/Soul.spec --contract ProofCarryingContainer
+ * $ certoraRun specs/Zaseon.spec --contract ProofCarryingContainer
  *
  * To run verification with Scribble:
  * $ scribble contracts/primitives/ProofCarryingContainer.sol --output-mode files
@@ -197,11 +197,11 @@
  */
 
 /*//////////////////////////////////////////////////////////////
-                    SoulV2ORCHESTRATOR
+                    ZaseonV2ORCHESTRATOR
 //////////////////////////////////////////////////////////////*/
 
 /**
- * INVARIANTS for Soulv2Orchestrator
+ * INVARIANTS for Zaseonv2Orchestrator
  *
  * INV-ORCH-001: Contract references are immutable
  *   □(pc3 = initial_pc3 ∧ pbp = initial_pbp ∧ 
@@ -218,7 +218,7 @@
  */
 
 /**
- * SAFETY PROPERTIES for Soulv2Orchestrator
+ * SAFETY PROPERTIES for Zaseonv2Orchestrator
  *
  * SAFE-ORCH-001: Atomic transition guarantee
  *   createCoordinatedTransition(t) successful ⟹
@@ -235,11 +235,11 @@
  */
 
 /*//////////////////////////////////////////////////////////////
-                    SoulTIMELOCK
+                    ZaseonTIMELOCK
 //////////////////////////////////////////////////////////////*/
 
 /**
- * INVARIANTS for SoulTimelock
+ * INVARIANTS for ZaseonTimelock
  *
  * INV-TL-001: Delay bounds
  *   MIN_DELAY_FLOOR ≤ minDelay ≤ MAX_DELAY
@@ -262,7 +262,7 @@
  */
 
 /**
- * SAFETY PROPERTIES for SoulTimelock
+ * SAFETY PROPERTIES for ZaseonTimelock
  *
  * SAFE-TL-001: Execution requires sufficient delay
  *   ∀ op: execute(op) successful ⟹ 
@@ -327,9 +327,9 @@
  *     "contracts/primitives/PolicyBoundProofs.sol",
  *     "contracts/primitives/ExecutionAgnosticStateCommitments.sol",
  *     "contracts/primitives/CrossDomainNullifierAlgebra.sol",
- *     "contracts/security/SoulTimelock.sol"
+ *     "contracts/security/ZaseonTimelock.sol"
  *   ],
- *   "verify": "ProofCarryingContainer:specs/Soul.spec",
+ *   "verify": "ProofCarryingContainer:specs/Zaseon.spec",
  *   "rule_sanity": "basic",
  *   "multi_assert_check": true,
  *   "optimistic_loop": true,

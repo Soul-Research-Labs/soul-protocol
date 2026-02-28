@@ -1,9 +1,9 @@
 {
-  "name": "@soul/sdk-quickstart-examples",
+  "name": "@zaseon/sdk-quickstart-examples",
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Quick-start examples for the Soul Protocol SDK",
+  "description": "Quick-start examples for the ZASEON SDK",
   "scripts": {
     "cross-chain": "tsx cross-chain-transfer.ts",
     "stealth": "tsx stealth-address.ts",
@@ -14,7 +14,7 @@
     "intent": "tsx intent-settlement.ts"
   },
   "dependencies": {
-    "@soul/sdk": "file:../../sdk"
+    "@zaseon/sdk": "file:../../sdk"
   },
   "devDependencies": {
     "tsx": "^4.19.0",

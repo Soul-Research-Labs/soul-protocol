@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - ProtocolEmergencyCoordinator
+ * ZASEON - ProtocolEmergencyCoordinator
  *
  * Verifies safety invariants for the multi-role emergency incident
  * coordination system with severity escalation, emergency plan execution,

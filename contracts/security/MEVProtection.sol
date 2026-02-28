@@ -7,7 +7,7 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title MEVProtection
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Commit-reveal scheme to protect against MEV extraction
  * @dev Implements a two-phase commit-reveal pattern for sensitive operations
  *
@@ -132,7 +132,7 @@ contract MEVProtection is ReentrancyGuard, AccessControl, Pausable {
                 keccak256(
                     "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
                 ),
-                keccak256("SoulMEVProtection"),
+                keccak256("ZaseonMEVProtection"),
                 keccak256("1"),
                 block.chainid,
                 address(this)

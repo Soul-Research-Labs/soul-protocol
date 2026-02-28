@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - SecurityModule
+ * ZASEON - SecurityModule
  *
  * Verifies safety invariants for the abstract security module including
  * rate limiting, circuit breaker, flash loan guard, and withdrawal limits.

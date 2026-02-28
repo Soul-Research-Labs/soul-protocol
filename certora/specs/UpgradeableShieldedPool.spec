@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol — UniversalShieldedPoolUpgradeable
+ * ZASEON — UniversalShieldedPoolUpgradeable
  *
  * @title Upgradeable Shielded Pool Security Invariants
  * @notice Extends the base pool spec with upgrade safety, rate limiting,

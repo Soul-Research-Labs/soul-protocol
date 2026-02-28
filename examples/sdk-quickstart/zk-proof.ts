@@ -1,14 +1,14 @@
 /**
- * Soul Protocol — ZK Proof Generation & Relay Example
+ * ZASEON — ZK Proof Generation & Relay Example
  *
- * Shows how to use the SoulSDK to send encrypted private state
+ * Shows how to use the ZaseonSDK to send encrypted private state
  * across chains and subscribe to incoming state on the receiver side.
  */
-import { SoulSDK } from "../../sdk/src/client/SoulSDK";
-import type { SoulConfig } from "../../sdk/src/utils/crypto";
+import { ZaseonSDK } from "../../sdk/src/client/ZaseonSDK";
+import type { ZaseonConfig } from "../../sdk/src/utils/crypto";
 
 // --- Configuration -----------------------------------------------------------
-const config: SoulConfig = {
+const config: ZaseonConfig = {
   curve: "secp256k1",
   relayerEndpoint: process.env.RELAYER_URL ?? "http://localhost:3002",
   proverUrl: process.env.PROVER_URL ?? "http://localhost:3001",
@@ -22,7 +22,7 @@ const LOCAL_CHAIN = process.env.LOCAL_CHAIN ?? "sepolia";
 
 async function main() {
   // 1. Instantiate the SDK
-  const sdk = new SoulSDK(config);
+  const sdk = new ZaseonSDK(config);
 
   // 2. Send encrypted private state across chains
   //    sendPrivateState handles encryption, proof generation, and relaying.

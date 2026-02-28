@@ -108,7 +108,7 @@ import {
     addressToBytes32,
     computeMessageId,
     getDomainName
-} from '@soul/sdk/bridges/hyperlane';
+} from '@zaseon/sdk/bridges/hyperlane';
 
 const recipient = addressToBytes32(targetContract);
 const domainName = getDomainName(1); // "ethereum"

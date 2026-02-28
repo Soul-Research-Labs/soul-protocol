@@ -1,4 +1,4 @@
-# Soul Deployment Checklist
+# Zaseon Deployment Checklist
 
 ## Pre-Deployment Verification
 
@@ -81,10 +81,10 @@
 
 | Contract         | Address                                                                                                                         | Verified |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| SoulAtomicSwapV2 | [`0xdefb9a66dc14a6d247b282555b69da7745b0ab57`](https://sepolia.etherscan.io/address/0xdefb9a66dc14a6d247b282555b69da7745b0ab57) | ✅       |
-| SoulComplianceV2 | [`0x5d41f63f35babed689a63f7e5c9e2943e1f72067`](https://sepolia.etherscan.io/address/0x5d41f63f35babed689a63f7e5c9e2943e1f72067) | ✅       |
+| ZaseonAtomicSwapV2 | [`0xdefb9a66dc14a6d247b282555b69da7745b0ab57`](https://sepolia.etherscan.io/address/0xdefb9a66dc14a6d247b282555b69da7745b0ab57) | ✅       |
+| ZaseonComplianceV2 | [`0x5d41f63f35babed689a63f7e5c9e2943e1f72067`](https://sepolia.etherscan.io/address/0x5d41f63f35babed689a63f7e5c9e2943e1f72067) | ✅       |
 
-#### Soul v2 Primitives
+#### Zaseon v2 Primitives
 
 | Contract                                 | Address                                                                                                                         | Verified |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | -------- |
@@ -118,8 +118,8 @@
 ✅ ConfidentialStateContainerV3 - Read total states
 ✅ NullifierRegistryV3 - Check nullifier not used
 ✅ CrossChainProofHubV3 - Contract accessible
-✅ SoulAtomicSwapV2 - Contract accessible
-✅ SoulComplianceV2 - Contract accessible
+✅ ZaseonAtomicSwapV2 - Contract accessible
+✅ ZaseonComplianceV2 - Contract accessible
 ✅ ProofCarryingContainer - Contract accessible
 ✅ PolicyBoundProofs - Contract accessible
 ✅ ExecutionAgnosticStateCommitments - Contract accessible
@@ -203,7 +203,7 @@ npx hardhat run scripts/deploy-v3.ts --network optimismSepolia
 2. [ ] VerifierRegistryV2 (depends on verifiers + adapters)
 3. [ ] Core state containers
 4. [ ] Privacy middleware (PrivacyRouter, ShieldedPool)
-5. [ ] SoulProtocolHub (central registry)
+5. [ ] ZaseonProtocolHub (central registry)
 6. [ ] Bridge contracts + L2 adapters
 7. [ ] Governance contracts (Timelock, Governor)
 8. [ ] Application layer (swaps, compliance)
@@ -257,9 +257,9 @@ timelockAdmin.executeUpgrade();
 
 ## Contact & Support
 
-- **Security Issues**: security@soul.network
-- **Technical Support**: support@soul.network
-- **Bug Bounty**: immunefi.com/bounty/soul
+- **Security Issues**: security@zaseon.network
+- **Technical Support**: support@zaseon.network
+- **Bug Bounty**: immunefi.com/bounty/zaseon
 
 ---
 

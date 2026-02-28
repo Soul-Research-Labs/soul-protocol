@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Soul Protocol — Scroll Sepolia Deployment
+# ZASEON — Scroll Sepolia Deployment
 # Deploy and configure ScrollBridgeAdapter + core contracts on Scroll Sepolia
 #
 # Prerequisites:
@@ -12,7 +12,7 @@
 set -euo pipefail
 
 echo "=========================================="
-echo "Soul Protocol — Scroll Sepolia Deployment"
+echo "ZASEON — Scroll Sepolia Deployment"
 echo "=========================================="
 echo ""
 

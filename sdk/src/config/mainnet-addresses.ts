@@ -1,5 +1,5 @@
 /**
- * Soul Protocol - Mainnet & L2 Address Configuration
+ * ZASEON - Mainnet & L2 Address Configuration
  *
  * ⚠️ WARNING: ALL addresses below are zero (NOT DEPLOYED).
  * This file will be auto-populated by deployment scripts:
@@ -21,7 +21,7 @@ export const MAINNET_ADDRESSES = {
   proofHub: "0x0000000000000000000000000000000000000000",
   atomicSwap: "0x0000000000000000000000000000000000000000",
 
-  // Soul v2 Primitives
+  // Zaseon v2 Primitives
   proofCarryingContainer: "0x0000000000000000000000000000000000000000",
   policyBoundProofs: "0x0000000000000000000000000000000000000000",
   executionAgnosticStateCommitments:
@@ -115,7 +115,7 @@ export function getAddressesForChain(
  * Check which addresses are set (not zero address).
  * Returns a non-throwing result with missing keys.
  *
- * For a throwing variant, use `verifyAddressesConfigured` from `@soul/sdk/privacy`.
+ * For a throwing variant, use `verifyAddressesConfigured` from `@zaseon/sdk/privacy`.
  */
 export function checkAddressesConfigured(addresses: typeof MAINNET_ADDRESSES): {
   valid: boolean;

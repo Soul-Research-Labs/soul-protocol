@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 
 /**
  * @title LibrariesTest
- * @notice Tests for Soul Protocol shared library contracts
+ * @notice Tests for ZASEON shared library contracts
  */
 contract LibrariesTest is Test {
     /*//////////////////////////////////////////////////////////////

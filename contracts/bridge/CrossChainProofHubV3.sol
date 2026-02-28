@@ -9,7 +9,7 @@ import {IProofVerifier} from "../interfaces/IProofVerifier.sol";
 import {ICrossChainProofHubV3, BatchProofInput} from "../interfaces/ICrossChainProofHubV3.sol";
 
 /// @title CrossChainProofHubV3
-/// @author Soul Protocol
+/// @author ZASEON
 /// @notice Production-ready cross-chain proof relay with optimistic verification and dispute resolution
 /// @dev Implements a stake-and-slash model for proof submission with a configurable challenge period.
 ///
@@ -34,10 +34,10 @@ import {ICrossChainProofHubV3, BatchProofInput} from "../interfaces/ICrossChainP
 ///   - Verifier pinning: challenges use proof-type-specific verifiers without fallback to default,
 ///     preventing verifier bypass attacks
 ///
-/// @custom:security-contact security@soul.network
+/// @custom:security-contact security@zaseon.network
 /**
  * @title CrossChainProofHubV3
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice Cross Chain Proof Hub V3 contract
  */
 contract CrossChainProofHubV3 is

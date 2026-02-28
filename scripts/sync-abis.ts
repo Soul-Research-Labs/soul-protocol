@@ -28,7 +28,7 @@ const ABI_DIR = path.join(PROJECT_ROOT, "sdk", "src", "abis");
  */
 const CONTRACTS: Record<string, string> = {
   // Core
-  SoulProtocolHub: "SoulProtocolHub",
+  ZaseonProtocolHub: "ZaseonProtocolHub",
   CrossChainProofHubV3: "CrossChainProofHubV3",
 
   // Privacy
@@ -47,7 +47,7 @@ const CONTRACTS: Record<string, string> = {
 
   // Bridge
   MultiBridgeRouter: "MultiBridgeRouter",
-  SoulAtomicSwapV2: "SoulAtomicSwapV2",
+  ZaseonAtomicSwapV2: "ZaseonAtomicSwapV2",
 
   // Cross-chain adapters
   ArbitrumBridgeAdapter: "ArbitrumBridgeAdapter",
@@ -72,7 +72,7 @@ const CONTRACTS: Record<string, string> = {
   SelectiveDisclosure: "SelectiveDisclosure",
 
   // Governance
-  SoulGovernance: "SoulGovernance",
+  ZaseonGovernance: "ZaseonGovernance",
 
   // Verifiers
   VerifierRegistryV2: "VerifierRegistryV2",

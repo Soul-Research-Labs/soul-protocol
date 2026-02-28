@@ -118,8 +118,8 @@ wrap_comments = true
 
 [doc]
 out = "docs/foundry"
-title = "Soul Protocol - Cross-Chain ZK Privacy Middleware"
-repository = "https://github.com/Soul-Research-Labs/SOUL"
+title = "ZASEON - Cross-Chain ZK Privacy Middleware"
+repository = "https://github.com/Zaseon-Research-Labs/ZASEON"
 
 
 # RPC endpoints for forking (use environment variables)

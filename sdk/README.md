@@ -1,10 +1,10 @@
-# @soul/sdk - Soul Protocol SDK
+# @zaseon/sdk - ZASEON SDK
 
-[![npm version](https://badge.fury.io/js/%40soul%2Fsdk.svg)](https://www.npmjs.com/package/@soul/sdk)
+[![npm version](https://badge.fury.io/js/%40zaseon%2Fsdk.svg)](https://www.npmjs.com/package/@zaseon/sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 
-The official TypeScript SDK for the Soul Protocol - cross-chain ZK privacy middleware with post-quantum cryptography support.
+The official TypeScript SDK for the ZASEON - cross-chain ZK privacy middleware with post-quantum cryptography support.
 
 ## Features
 
@@ -18,21 +18,21 @@ The official TypeScript SDK for the Soul Protocol - cross-chain ZK privacy middl
 ## Installation
 
 ```bash
-npm install @soul/sdk
+npm install @zaseon/sdk
 # or
-yarn add @soul/sdk
+yarn add @zaseon/sdk
 ```
 
 ## Quick Start
 
 ```typescript
-import { createSoulClient, createReadOnlySoulClient } from "@soul/sdk";
+import { createZaseonClient, createReadOnlyZaseonClient } from "@zaseon/sdk";
 
 // Read-only client (no private key needed)
-const readClient = createReadOnlySoulClient("https://rpc.sepolia.org");
+const readClient = createReadOnlyZaseonClient("https://rpc.sepolia.org");
 
 // Full client with write access
-const client = createSoulClient({
+const client = createZaseonClient({
   rpcUrl: "https://rpc.sepolia.org",
   chainId: 11155111, // Sepolia
   privateKey: "0x...", // Your private key
@@ -49,10 +49,10 @@ console.log("Active locks:", stats.activeLocks);
 Create privacy-preserving locks that can be unlocked with ZK proofs:
 
 ```typescript
-import { createSoulClient, NoirProver } from "@soul/sdk";
+import { createZaseonClient, NoirProver } from "@zaseon/sdk";
 import { parseEther } from "viem";
 
-const client = createSoulClient({
+const client = createZaseonClient({
   rpcUrl: "https://rpc.sepolia.org",
   privateKey: "0x...",
 });
@@ -95,9 +95,9 @@ await client.unlockWithProof({
 
 ## API Reference
 
-### SoulProtocolClient
+### ZaseonProtocolClient
 
-Main entry point for Soul Protocol interactions.
+Main entry point for ZASEON interactions.
 
 | Method                                                   | Description                      |
 | -------------------------------------------------------- | -------------------------------- |
@@ -117,7 +117,7 @@ Main entry point for Soul Protocol interactions.
 Client-side ZK proof generation using Noir circuits.
 
 ```typescript
-import { NoirProver, Circuit } from "@soul/sdk";
+import { NoirProver, Circuit } from "@zaseon/sdk";
 
 const prover = new NoirProver();
 await prover.initialize();
@@ -142,7 +142,7 @@ const result = await prover.proveStateCommitment({
 ### Contract Addresses
 
 ```typescript
-import { SEPOLIA_ADDRESSES, getAddresses } from "@soul/sdk";
+import { SEPOLIA_ADDRESSES, getAddresses } from "@zaseon/sdk";
 
 // Deployed Sepolia addresses
 console.log(SEPOLIA_ADDRESSES.zkBoundStateLocks);
@@ -170,7 +170,7 @@ const addresses = getAddresses(11155111);
 ### Post-Quantum Cryptography
 
 ```typescript
-import { PQCRegistryClient, PQCAlgorithm, TransitionPhase } from "@soul/sdk";
+import { PQCRegistryClient, PQCAlgorithm, TransitionPhase } from "@zaseon/sdk";
 
 const pqcClient = new PQCRegistryClient(
   "0xRegistryAddress",
@@ -189,7 +189,7 @@ await pqcClient.registerHybridKey(
 ### Cross-Chain Bridges
 
 ```typescript
-import { BridgeFactory, SupportedChain } from "@soul/sdk";
+import { BridgeFactory, SupportedChain } from "@zaseon/sdk";
 import { parseEther } from "viem";
 
 // Create a bridge adapter
@@ -217,13 +217,13 @@ const status = await cardanoBridge.getStatus(result.transferId);
 ### React Hooks
 
 ```tsx
-import { SoulProvider, useSoul, useContainer } from "@soul/react";
+import { ZaseonProvider, useZaseon, useContainer } from "@zaseon/react";
 
 function MyComponent() {
-  const { client, connect, isConnected } = useSoul();
+  const { client, connect, isConnected } = useZaseon();
   const { container, isLoading } = useContainer("0xContainerId");
 
-  if (!isConnected) return <button onClick={connect}>Connect Soul</button>;
+  if (!isConnected) return <button onClick={connect}>Connect Zaseon</button>;
   if (isLoading) return <div>Loading container...</div>;
 
   return <div>State Commitment: {container?.stateCommitment}</div>;
@@ -231,9 +231,9 @@ function MyComponent() {
 
 function App() {
   return (
-    <SoulProvider config={{ orchestrator: "0x..." }}>
+    <ZaseonProvider config={{ orchestrator: "0x..." }}>
       <MyComponent />
-    </SoulProvider>
+    </ZaseonProvider>
   );
 }
 ```
@@ -242,8 +242,8 @@ function App() {
 
 ### Core
 
-- `SoulSDK` - Main SDK entry point
-- `Soulv2ClientFactory` - Unified factory for Soul v2 primitives
+- `ZaseonSDK` - Main SDK entry point
+- `Zaseonv2ClientFactory` - Unified factory for Zaseon v2 primitives
 - `CryptoModule` - Cryptographic utilities
 
 ### Bridges
@@ -281,16 +281,16 @@ The SDK includes a CLI for common operations:
 
 ```bash
 # Install globally
-npm install -g @soul/sdk
+npm install -g @zaseon/sdk
 
 # Generate a proof
-soul proof generate --circuit transfer --input input.json
+zaseon proof generate --circuit transfer --input input.json
 
 # Verify a proof
-soul proof verify --proof proof.json --vk vk.json
+zaseon proof verify --proof proof.json --vk vk.json
 
 # Bridge status
-soul bridge status --id abc123 --chain cardano
+zaseon bridge status --id abc123 --chain cardano
 ```
 
 ## Configuration
@@ -299,17 +299,17 @@ soul bridge status --id abc123 --chain cardano
 
 ```bash
 # Network configuration
-SOUL_NETWORK=sepolia
-SOUL_RPC_URL=https://sepolia.infura.io/v3/YOUR_KEY
+ZASEON_NETWORK=sepolia
+ZASEON_RPC_URL=https://sepolia.infura.io/v3/YOUR_KEY
 
 # Contract addresses
-SOUL_REGISTRY_ADDRESS=0x...
-SOUL_PQC_REGISTRY_ADDRESS=0x...
+ZASEON_REGISTRY_ADDRESS=0x...
+ZASEON_PQC_REGISTRY_ADDRESS=0x...
 ```
 
 ## API Reference
 
-See the [full API documentation](https://soul-research-labs.github.io/soul-sdk/) for detailed type definitions and method signatures.
+See the [full API documentation](https://zaseon-research-labs.github.io/zaseon-sdk/) for detailed type definitions and method signatures.
 
 ## Security
 
@@ -328,7 +328,7 @@ MIT License - see [LICENSE](./LICENSE) for details.
 
 ## Links
 
-- [Documentation](https://docs.soul.network)
-- [GitHub](https://github.com/Soul-Research-Labs/SOUL)
-- [Discord](https://discord.gg/soul-protocol)
-- [Twitter](https://twitter.com/soul_protocol)
+- [Documentation](https://docs.zaseon.network)
+- [GitHub](https://github.com/Zaseon-Research-Labs/ZASEON)
+- [Discord](https://discord.gg/zaseon)
+- [Twitter](https://twitter.com/zaseon_protocol)

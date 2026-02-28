@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Certora CVL Specification for Scroll Bridge Adapter
-// Soul Protocol (Soul) - Formal Verification
+// ZASEON (Zaseon) - Formal Verification
 
 /*
  * =============================================================================
@@ -182,10 +182,10 @@ rule nullifierUniqueness(bytes32 msgId1, bytes32 msgId2) {
 
 /// @title Cross-domain nullifier determinism
 rule crossDomainNullifierDeterminism(bytes32 scrollNullifier, bytes32 domain) {
-    bytes32 soulNf1 = keccak256(abi.encodePacked(scrollNullifier, domain, "SCROLL2Soul"));
-    bytes32 soulNf2 = keccak256(abi.encodePacked(scrollNullifier, domain, "SCROLL2Soul"));
+    bytes32 zaseonNf1 = keccak256(abi.encodePacked(scrollNullifier, domain, "SCROLL2Zaseon"));
+    bytes32 zaseonNf2 = keccak256(abi.encodePacked(scrollNullifier, domain, "SCROLL2Zaseon"));
     
-    assert soulNf1 == soulNf2, "Cross-domain nullifier must be deterministic";
+    assert zaseonNf1 == zaseonNf2, "Cross-domain nullifier must be deterministic";
 }
 
 /// @title Cross-domain direction matters

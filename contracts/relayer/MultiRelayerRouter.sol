@@ -9,7 +9,7 @@ import {IMultiRelayerRouter} from "../interfaces/IMultiRelayerRouter.sol";
 
 /**
  * @title MultiRelayerRouter
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Priority-ordered multi-relayer router with automatic fallback and health-aware
  *         adapter selection. Provides censorship resistance through emergency self-relay.
  *
@@ -31,7 +31,7 @@ import {IMultiRelayerRouter} from "../interfaces/IMultiRelayerRouter.sol";
  *      - consecutiveFails thresholds trigger automatic degradation
  *      - Excess ETH is refunded to caller
  *
- * @custom:security-contact security@soulprotocol.io
+ * @custom:security-contact security@zaseonprotocol.io
  */
 contract MultiRelayerRouter is
     IMultiRelayerRouter,

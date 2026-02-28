@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title GasOptimizations
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Gas optimization library providing common patterns for efficient operations
  * @dev Targets 20-40% gas reduction through assembly, storage packing, and algorithmic improvements
  *

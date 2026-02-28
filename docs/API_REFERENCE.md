@@ -1,8 +1,8 @@
-# Soul Protocol API Reference
+# ZASEON API Reference
 
-> **Complete SDK Documentation for Soul v2**
+> **Complete SDK Documentation for Zaseon v2**
 
-[![npm](https://img.shields.io/badge/npm-@soul/sdk-blue.svg)](https://www.npmjs.com/package/@soul/sdk)
+[![npm](https://img.shields.io/badge/npm-@zaseon/sdk-blue.svg)](https://www.npmjs.com/package/@zaseon/sdk)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)]()
 
 ---
@@ -13,7 +13,7 @@
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Core Classes](#core-classes)
-  - [SoulClient](#soulclient)
+  - [ZaseonClient](#zaseonclient)
   - [PC3Client](#pc3client)
   - [PBPClient](#pbpclient)
   - [EASCClient](#eascclient)
@@ -30,39 +30,39 @@
 
 ## Overview
 
-The Soul Protocol (Soul) provides a comprehensive SDK for interacting with privacy-preserving cross-chain operations.
+The ZASEON (Zaseon) provides a comprehensive SDK for interacting with privacy-preserving cross-chain operations.
 
 ## Installation
 
 ```bash
-npm install @soul/sdk
+npm install @zaseon/sdk
 ```
 
 ## Quick Start
 
 ```typescript
-import { SoulClient, SoulClientConfig } from "@soul/sdk";
+import { ZaseonClient, ZaseonClientConfig } from "@zaseon/sdk";
 
-const config: SoulClientConfig = {
+const config: ZaseonClientConfig = {
   network: "mainnet",
   rpcUrl: "https://eth-mainnet.alchemyapi.io/v2/YOUR_KEY",
 };
 
-const client = new SoulClient(config);
+const client = new ZaseonClient(config);
 ```
 
 ---
 
 ## Core Classes
 
-### SoulClient
+### ZaseonClient
 
-The main entry point for all Soul operations.
+The main entry point for all Zaseon operations.
 
 #### Constructor
 
 ```typescript
-new SoulClient(config: SoulClientConfig)
+new ZaseonClient(config: ZaseonClientConfig)
 ```
 
 **Parameters:**
@@ -344,7 +344,7 @@ enum OperationType {
 
 ### generateProof()
 
-Generate a ZK proof using the Soul circuit.
+Generate a ZK proof using the Zaseon circuit.
 
 ```typescript
 async function generateProof(
@@ -439,12 +439,12 @@ interface NullifierConsumedEvent {
 ### Error Types
 
 ```typescript
-import { SoulError, ErrorCode } from '@soul/sdk';
+import { ZaseonError, ErrorCode } from '@zaseon/sdk';
 
 try {
   await client.getPC3().createContainer({...});
 } catch (error) {
-  if (error instanceof SoulError) {
+  if (error instanceof ZaseonError) {
     switch (error.code) {
       case ErrorCode.PROOF_INVALID:
         console.error('Invalid proof provided');
@@ -486,7 +486,7 @@ The SDK is written in TypeScript and includes full type definitions.
 
 ```typescript
 import type {
-  SoulClientConfig,
+  ZaseonClientConfig,
   Container,
   ContainerStatus,
   PolicyResult,
@@ -494,7 +494,7 @@ import type {
   Nullifier,
   OperationType,
   TransactionResult,
-} from "@soul/sdk";
+} from "@zaseon/sdk";
 ```
 
 ---
@@ -505,7 +505,7 @@ import type {
 
 ```typescript
 // Reuse client instances
-const client = new SoulClient(config);
+const client = new ZaseonClient(config);
 
 // Don't create new clients per operation
 async function processContainers(ids: string[]) {
@@ -559,10 +559,10 @@ const result = await client.getPC3().createContainer({
 
 ```typescript
 // v1
-import { SoulClient } from "soul-sdk";
+import { ZaseonClient } from "zaseon-sdk";
 
 // v2
-import { SoulClient } from "@soul/sdk";
+import { ZaseonClient } from "@zaseon/sdk";
 ```
 
 2. Update method signatures:
@@ -589,7 +589,7 @@ client.getPC3().on("ContainerCreated", handler);
 
 ## Support
 
-- Documentation: https://docs.soul.network
-- GitHub: https://github.com/soul-protocol/sdk
-- Discord: https://discord.gg/soul-protocol
-- Twitter: https://twitter.com/soul_protocol
+- Documentation: https://docs.zaseon.network
+- GitHub: https://github.com/zaseon/sdk
+- Discord: https://discord.gg/zaseon
+- Twitter: https://twitter.com/zaseon_protocol

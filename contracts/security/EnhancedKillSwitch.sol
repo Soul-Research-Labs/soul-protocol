@@ -10,8 +10,8 @@ import "../interfaces/IEnhancedKillSwitch.sol";
  * @title EnhancedKillSwitch
  * @notice Multi-level emergency response system with graduated shutdown capabilities
  * @dev Implements 5 emergency levels from WARNING to LOCKED with different restrictions
- * @author Soul Protocol Team
- * @custom:security-contact security@soul.network
+ * @author ZASEON Team
+ * @custom:security-contact security@zaseon.network
  */
 contract EnhancedKillSwitch is
     IEnhancedKillSwitch,

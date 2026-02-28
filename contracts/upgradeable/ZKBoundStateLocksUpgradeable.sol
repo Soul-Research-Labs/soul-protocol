@@ -11,7 +11,7 @@ import {IProofVerifier} from "../interfaces/IProofVerifier.sol";
 
 /**
  * @title ZKBoundStateLocksUpgradeable (ZK-SLocks)
- * @author Soul v2 - Soul Protocol
+ * @author Zaseon v2 - ZASEON
  * @notice UUPS-upgradeable version of ZKBoundStateLocks for proxy deployments
  * @dev Cross-Chain Confidential State Lock Manager with UUPS upgrade capability.
  *

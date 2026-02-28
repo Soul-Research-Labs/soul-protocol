@@ -66,15 +66,15 @@ contract StorageLayoutTest is Test {
     function test_slots_matchKeccak() public pure {
         assertEq(
             StorageSlots.PC3_CONTAINERS_SLOT,
-            keccak256("soul.storage.pc3.containers")
+            keccak256("zaseon.storage.pc3.containers")
         );
         assertEq(
             StorageSlots.PC3_NULLIFIERS_SLOT,
-            keccak256("soul.storage.pc3.nullifiers")
+            keccak256("zaseon.storage.pc3.nullifiers")
         );
         assertEq(
             StorageSlots.CDNA_DOMAINS_SLOT,
-            keccak256("soul.storage.cdna.domains")
+            keccak256("zaseon.storage.cdna.domains")
         );
     }
 

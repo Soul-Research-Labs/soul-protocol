@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title OptimisticRelayVerifier
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Optimistic verification with challenge periods for high-value transfers
  * @dev Implements:
  *      - Challenge period before finalization

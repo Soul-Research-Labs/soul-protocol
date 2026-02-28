@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Soul Protocol will be documented in this file.
+All notable changes to ZASEON will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- 5 UUPS upgradeable contract test suites (SoulProtocolHub, CapacityAwareRouter, DynamicRoutingOrchestrator, InstantCompletionGuarantee, IntentCompletionLayer)
+- 5 UUPS upgradeable contract test suites (ZaseonProtocolHub, CapacityAwareRouter, DynamicRoutingOrchestrator, InstantCompletionGuarantee, IntentCompletionLayer)
 - Tests for previously-untested contracts: CrossChainMessageCodec, VerifierGasUtils, ExperimentalFeatureGated, BitVMBridgeAdapter
 - CrossChainMessageCodec library for standardized cross-chain message encoding
 - `rescueETH` / `emergencyWithdraw` to contracts with bare `receive()` (DataAvailabilityOracle, CrossChainPrivacyHub, PrivacyPoolIntegration, OperationTimelockModule)
@@ -25,14 +25,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI fuzz runs now use FOUNDRY_PROFILE=ci (50,000 runs) instead of explicit `--fuzz-runs 1000` override
 - Coverage threshold analysis made CI-blocking (removed `continue-on-error`)
 - 20 Certora CVL placeholder assertions replaced with meaningful formal properties across 12 specs
-- VerifierGasUtils wired into VerifierRegistryV2 and SoulUniversalVerifier
+- VerifierGasUtils wired into VerifierRegistryV2 and ZaseonUniversalVerifier
 - Comprehensive NatSpec documentation added to all contracts (100% coverage)
 
 ### Fixed
 
 - Zero-address check in UniversalShieldedPool.setSanctionsOracle
-- DirectL2Messenger.soulHub made immutable
-- CEI-compliant event ordering in SoulAtomicSwapV2.executeFeeWithdrawal
+- DirectL2Messenger.zaseonHub made immutable
+- CEI-compliant event ordering in ZaseonAtomicSwapV2.executeFeeWithdrawal
 - Indexed parameters in FeeRecipientUpdated event
 - NullifierRegistryV3 batch size caps to prevent gas griefing
 - Dead test:symbolic script (pointed to test/formal/ with halmos profile)
@@ -41,5 +41,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- Deprecated `sdk/src/client/_deprecated/SoulPrivacySDK.ts`
-- Deprecated `sdk/src/client/SoulClient.ts` (superseded by SoulProtocolClient)
+- Deprecated `sdk/src/client/_deprecated/ZaseonPrivacySDK.ts`
+- Deprecated `sdk/src/client/ZaseonClient.ts` (superseded by ZaseonProtocolClient)

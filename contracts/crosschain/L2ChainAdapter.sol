@@ -8,9 +8,9 @@ import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 /**
  * @title L2ChainAdapter
- * @author Soul Protocol
- * @notice Adapter for connecting Soul to Layer 2 networks
- * @custom:security-contact security@soulprotocol.io
+ * @author ZASEON
+ * @notice Adapter for connecting Zaseon to Layer 2 networks
+ * @custom:security-contact security@zaseonprotocol.io
  * @dev Handles chain-specific messaging and proof verification with full
  *      Merkle proof validation and oracle signature verification
  */

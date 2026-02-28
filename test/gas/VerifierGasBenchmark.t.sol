@@ -13,7 +13,7 @@ import "../../contracts/verifiers/VerifierRegistryV2.sol";
 
 /**
  * @title VerifierGasBenchmark
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Gas benchmarks comparing Noir-generated verifiers vs legacy
  * @dev Run with: forge test --match-contract VerifierGasBenchmark --gas-report -vvv
  *

@@ -9,13 +9,13 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {IPrivacyRouter} from "../interfaces/IPrivacyRouter.sol";
 import {IUniversalShieldedPool} from "../interfaces/IUniversalShieldedPool.sol";
 
-/// @notice Minimal interface for SoulProtocolHub address resolution
+/// @notice Minimal interface for ZaseonProtocolHub address resolution
 /**
- * @title ISoulProtocolHub
- * @author Soul Protocol Team
- * @notice I Soul Protocol Hub interface
+ * @title IZaseonProtocolHub
+ * @author ZASEON Team
+ * @notice I ZASEON Hub interface
  */
-interface ISoulProtocolHub {
+interface IZaseonProtocolHub {
         /**
      * @notice Shielded pool
      * @return The result value
@@ -114,10 +114,10 @@ function meetsKYCTier(
 
 /**
  * @title PrivacyRouter
- * @author Soul Protocol
- * @notice Unified entry point for all Soul Protocol privacy operations
+ * @author ZASEON
+ * @notice Unified entry point for all ZASEON privacy operations
  * @dev Composes UniversalShieldedPool, CrossChainPrivacyHub, StealthAddressRegistry,
- *      UnifiedNullifierManager, SoulComplianceV2, and UniversalProofTranslator into
+ *      UnifiedNullifierManager, ZaseonComplianceV2, and UniversalProofTranslator into
  *      a single developer-facing API. This is the "privacy middleware" that dApps integrate.
  *
  * DESIGN PHILOSOPHY:
@@ -139,7 +139,7 @@ function meetsKYCTier(
  *                │ (KYC check)  │                        │ (recipient)  │
  *                └──────────────┘                        └──────────────┘
  *
- * @custom:security-contact security@soul.network
+ * @custom:security-contact security@zaseon.network
  */
 contract PrivacyRouter is
     AccessControl,
@@ -226,7 +226,7 @@ contract PrivacyRouter is
     event MinimumKYCTierUpdated(uint8 oldTier, uint8 newTier);
     /// @notice Emitted when ETH is withdrawn from the contract by an admin
     event ETHWithdrawn(address indexed to, uint256 amount);
-    /// @notice Emitted when component addresses are synced from a SoulProtocolHub
+    /// @notice Emitted when component addresses are synced from a ZaseonProtocolHub
     event SyncedFromHub(address indexed hub);
 
     /*//////////////////////////////////////////////////////////////
@@ -641,7 +641,7 @@ function getReceipt(
     /// @dev Component names are matched via `keccak256` against pre-computed hashes
     ///      to save gas. Valid names: "shieldedPool", "crossChainHub", "stealthRegistry",
     ///      "nullifierManager", "compliance", "proofTranslator". Reverts with `InvalidParams()`
-    ///      if the name is not recognized. Use `syncFromHub()` to batch-update from SoulProtocolHub.
+    ///      if the name is not recognized. Use `syncFromHub()` to batch-update from ZaseonProtocolHub.
     /// @param name The component name (must match one of the six supported components)
     /// @param addr The new non-zero address for the component
         /**
@@ -668,19 +668,19 @@ function setComponent(
         emit ComponentUpdated(name, addr);
     }
 
-    /// @notice Sync all component addresses from SoulProtocolHub
+    /// @notice Sync all component addresses from ZaseonProtocolHub
     /// @dev Reads all six component addresses from the hub and updates local storage.
     ///      Only updates a component if the hub returns a non-zero address, preserving
     ///      any manually-configured value. This is the preferred way to keep PrivacyRouter
     ///      in sync after hub component upgrades.
-    /// @param hub The SoulProtocolHub contract address to read component addresses from
+    /// @param hub The ZaseonProtocolHub contract address to read component addresses from
         /**
      * @notice Sync from hub
      * @param hub The hub
      */
 function syncFromHub(address hub) external onlyRole(OPERATOR_ROLE) {
         if (hub == address(0)) revert ZeroAddress();
-        ISoulProtocolHub h = ISoulProtocolHub(hub);
+        IZaseonProtocolHub h = IZaseonProtocolHub(hub);
 
         address _shieldedPool = h.shieldedPool();
         address _crossChainHub = h.crossChainPrivacyHub();

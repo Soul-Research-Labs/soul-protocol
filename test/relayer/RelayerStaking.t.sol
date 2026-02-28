@@ -6,8 +6,8 @@ import "../../contracts/relayer/RelayerStaking.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 /// @dev Minimal ERC20 for testing
-contract MockSoulToken is ERC20 {
-    constructor() ERC20("Soul Token", "SOUL") {
+contract MockZaseonToken is ERC20 {
+    constructor() ERC20("Zaseon Token", "ZASEON") {
         _mint(msg.sender, 1_000_000 ether);
     }
 
@@ -18,7 +18,7 @@ contract MockSoulToken is ERC20 {
 
 contract RelayerStakingTest is Test {
     RelayerStaking public staking;
-    MockSoulToken public token;
+    MockZaseonToken public token;
 
     address public admin = address(this);
     address public relayerA = address(0xA);
@@ -29,7 +29,7 @@ contract RelayerStakingTest is Test {
     uint256 public constant MIN_STAKE = 100 ether;
 
     function setUp() public {
-        token = new MockSoulToken();
+        token = new MockZaseonToken();
         staking = new RelayerStaking(address(token), MIN_STAKE, admin);
 
         // Fund relayers

@@ -1,4 +1,4 @@
-## Echidna Configuration for Soul Protocol
+## Echidna Configuration for ZASEON
 ## Run: echidna . --contract <Target> --config test/fuzz/echidna.config.yaml
 
 # Testing mode — property-based testing

@@ -10,13 +10,13 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
-/// @notice Minimal interface for SoulProtocolHub address resolution
+/// @notice Minimal interface for ZaseonProtocolHub address resolution
 /**
- * @title ISoulProtocolHubUpgradeable
- * @author Soul Protocol Team
- * @notice I Soul Protocol Hub Upgradeable interface
+ * @title IZaseonProtocolHubUpgradeable
+ * @author ZASEON Team
+ * @notice I ZASEON Hub Upgradeable interface
  */
-interface ISoulProtocolHubUpgradeable {
+interface IZaseonProtocolHubUpgradeable {
         /**
      * @notice Shielded pool
      * @return The result value
@@ -56,15 +56,15 @@ function proofTranslator() external view returns (address);
 
 /**
  * @title PrivacyRouterUpgradeable
- * @author Soul Protocol
- * @notice UUPS-upgradeable unified entry point for all Soul Protocol privacy operations
+ * @author ZASEON
+ * @notice UUPS-upgradeable unified entry point for all ZASEON privacy operations
  * @dev Upgradeable version of PrivacyRouter using UUPS proxy pattern.
  *      Improvements over the non-upgradeable version:
  *      - UUPS upgradeability with UPGRADER_ROLE
  *      - Uses `Address.functionCallWithValue` to bubble up revert reasons
  *      - ERC20 deposits: router pulls tokens then approves pool (user approves router)
  *
- * @custom:security-contact security@soul.network
+ * @custom:security-contact security@zaseon.network
  * @custom:oz-upgrades-from PrivacyRouter
  */
 contract PrivacyRouterUpgradeable is
@@ -619,14 +619,14 @@ function setComponent(
         emit ComponentUpdated(name, addr);
     }
 
-    /// @notice Sync all component addresses from SoulProtocolHub
+    /// @notice Sync all component addresses from ZaseonProtocolHub
         /**
      * @notice Sync from hub
      * @param hub The hub
      */
 function syncFromHub(address hub) external onlyRole(OPERATOR_ROLE) {
         if (hub == address(0)) revert ZeroAddress();
-        ISoulProtocolHubUpgradeable h = ISoulProtocolHubUpgradeable(hub);
+        IZaseonProtocolHubUpgradeable h = IZaseonProtocolHubUpgradeable(hub);
 
         address _shieldedPool = h.shieldedPool();
         address _crossChainHub = h.crossChainPrivacyHub();

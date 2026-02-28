@@ -11,10 +11,10 @@ import {IIntentCompletionLayer} from "../interfaces/IIntentCompletionLayer.sol";
 
 /**
  * @title IntentCompletionLayerUpgradeable
- * @author Soul Protocol
+ * @author ZASEON
  * @notice UUPS-upgradeable version of IntentCompletionLayer for proxy deployments
  * @dev Proof service marketplace — solvers compete to deliver ZK proofs.
- *      Soul is proof middleware, NOT a bridge. See IntentCompletionLayer for full docs.
+ *      Zaseon is proof middleware, NOT a bridge. See IntentCompletionLayer for full docs.
  *
  * UPGRADE NOTES:
  * - Constructor replaced with `initialize(address admin, address _intentVerifier)`

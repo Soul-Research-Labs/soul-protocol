@@ -1,7 +1,7 @@
 [package]
 name = "merkle_proof"
 type = "bin"
-authors = ["Soul Protocol"]
+authors = ["ZASEON"]
 description = "Optimized Merkle tree inclusion proof for nullifier registry using Poseidon hashing"
 
 [dependencies]

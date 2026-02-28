@@ -9,7 +9,7 @@ import "../../contracts/libraries/PoseidonYul.sol";
 
 /**
  * @title CoreGasBenchmark
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Gas benchmarks for core protocol operations
  * @dev Run with: forge test --match-contract CoreGasBenchmark --gas-report -vvv
  *

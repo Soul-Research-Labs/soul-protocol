@@ -1,4 +1,4 @@
-# Soul Protocol Security Policy
+# ZASEON Security Policy
 
 ## Supported Versions
 
@@ -9,15 +9,15 @@
 
 ## Reporting a Vulnerability
 
-We take security seriously. If you discover a security vulnerability within Soul Protocol, please report it responsibly.
+We take security seriously. If you discover a security vulnerability within ZASEON, please report it responsibly.
 
 ### How to Report
 
 1. **DO NOT** create a public GitHub issue for security vulnerabilities.
 
-2. **Email us directly** at: security@soul.network
+2. **Email us directly** at: security@zaseon.network
 
-3. **Encrypt your message** using our PGP key (available at https://soul.network/.well-known/pgp-key.txt)
+3. **Encrypt your message** using our PGP key (available at https://zaseon.network/.well-known/pgp-key.txt)
 
 4. Include in your report:
    - Description of the vulnerability
@@ -200,23 +200,23 @@ We take security seriously. If you discover a security vulnerability within Soul
 
 | Fix        | Contract               | Description                                                |
 | ---------- | ---------------------- | ---------------------------------------------------------- |
-| Reentrancy | SoulMultiSigGovernance | Added ReentrancyGuard + nonReentrant to executeProposal()  |
+| Reentrancy | ZaseonMultiSigGovernance | Added ReentrancyGuard + nonReentrant to executeProposal()  |
 | Reentrancy | BridgeWatchtower       | Added ReentrancyGuard to completeExit() and claimRewards() |
 
 ##### High Fixes
 
 | Fix                 | Contract                   | Description                                                         |
 | ------------------- | -------------------------- | ------------------------------------------------------------------- |
-| DoS via .transfer() | SoulPreconfirmationHandler | Replaced .transfer() with .call{value:}() in 4 locations            |
-| DoS via .transfer() | SoulIntentResolver         | Replaced .transfer() with .call{value:}() in withdrawBond()         |
-| DoS via .transfer() | SoulL2Messenger            | Replaced .transfer() with .call{value:}() in withdrawBond()         |
+| DoS via .transfer() | ZaseonPreconfirmationHandler | Replaced .transfer() with .call{value:}() in 4 locations            |
+| DoS via .transfer() | ZaseonIntentResolver         | Replaced .transfer() with .call{value:}() in withdrawBond()         |
+| DoS via .transfer() | ZaseonL2Messenger            | Replaced .transfer() with .call{value:}() in withdrawBond()         |
 | Loop Gas            | BridgeWatchtower           | Optimized slashInactive() with cached length + batch storage writes |
 
 ##### Medium Fixes
 
 | Fix          | Contract        | Description                             |
 | ------------ | --------------- | --------------------------------------- |
-| Zero-Address | SoulProtocolHub | Added validation to addSupportedChain() |
+| Zero-Address | ZaseonProtocolHub | Added validation to addSupportedChain() |
 
 **Total: 44 vulnerabilities fixed across both phases**
 
@@ -237,7 +237,7 @@ As of February 2026, the following dependency vulnerabilities exist with **no up
 - **Impact**: Potential secret key exposure under specific cryptanalysis conditions
 - **EPSS Score**: 0.01% (1st percentile - very low exploitation probability)
 
-**Why This Doesn't Affect Soul Protocol:**
+**Why This Doesn't Affect ZASEON:**
 
 1. **Smart Contracts**: On-chain signature verification uses `ecrecover` opcode, not JavaScript elliptic
 2. **ZK Proofs**: All cryptographic operations use Noir circuits with BN254, not elliptic curves via JS
@@ -345,4 +345,4 @@ See [docs/SECURITY_AUDIT_REPORT.md](./docs/SECURITY_AUDIT_REPORT.md) for the com
 | [FORMAL_VERIFICATION.md](./docs/FORMAL_VERIFICATION.md)     | Formal verification report (54 Certora specs + Halmos + K Framework + TLA+) |
 | [THREAT_MODEL.md](./docs/THREAT_MODEL.md)                   | Threat analysis                                                             |
 
-Thank you for contributing to Soul Protocol security!
+Thank you for contributing to ZASEON security!

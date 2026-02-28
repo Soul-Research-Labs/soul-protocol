@@ -8,7 +8,7 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 /**
  * @title HyperlaneAdapter
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Hyperlane Interchain Security Module (ISM) integration
  * @dev Implements Hyperlane's modular security for cross-chain messaging
  *
@@ -181,8 +181,8 @@ contract HyperlaneAdapter is ReentrancyGuard, AccessControl, Pausable {
     /// @notice Inbound nonce per domain
     mapping(uint32 => uint256) public inboundNonce;
 
-    /// @notice Soul hub addresses per domain
-    mapping(uint32 => address) public soulHubs;
+    /// @notice Zaseon hub addresses per domain
+    mapping(uint32 => address) public zaseonHubs;
 
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
@@ -637,15 +637,15 @@ contract HyperlaneAdapter is ReentrancyGuard, AccessControl, Pausable {
     }
 
     /**
-     * @notice Set Soul hub for a domain
+     * @notice Set Zaseon hub for a domain
      * @param domain Domain ID
-     * @param hub Soul hub address
+     * @param hub Zaseon hub address
      */
     function setPilHub(
         uint32 domain,
         address hub
     ) external onlyRole(OPERATOR_ROLE) {
-        soulHubs[domain] = hub;
+        zaseonHubs[domain] = hub;
     }
 
     /**
@@ -699,7 +699,7 @@ contract HyperlaneAdapter is ReentrancyGuard, AccessControl, Pausable {
 
 /**
  * @title IMailbox
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice \1 \1ailbox interface
  */
 interface IMailbox {

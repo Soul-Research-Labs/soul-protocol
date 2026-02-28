@@ -8,7 +8,7 @@ import {IDataAvailabilityOracle} from "../interfaces/IDataAvailabilityOracle.sol
 
 /**
  * @title DataAvailabilityOracle
- * @author Soul Protocol
+ * @author ZASEON
  * @notice SVID-inspired Data Availability layer for confidential payloads
  * @dev Inspired by LayerZero Zero's SVID: instead of storing full encrypted
  *      payloads on-chain (1KB-1MB per PC³ container), store only a 32-byte
@@ -42,7 +42,7 @@ import {IDataAvailabilityOracle} from "../interfaces/IDataAvailabilityOracle.sol
  * - If challenge succeeds: attestor slashed, challenger rewarded
  * - If challenge fails: challenger bond forfeited to attestor
  *
- * @custom:security-contact security@soul.network
+ * @custom:security-contact security@zaseon.network
  */
 contract DataAvailabilityOracle is
     AccessControl,

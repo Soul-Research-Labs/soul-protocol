@@ -1,6 +1,6 @@
-# Soul Integration Guide
+# Zaseon Integration Guide
 
-> **Step-by-step guide to integrate Soul into your application**
+> **Step-by-step guide to integrate Zaseon into your application**
 
 ---
 
@@ -29,7 +29,7 @@
 ## Installation
 
 ```bash
-npm install @soul/sdk viem
+npm install @zaseon/sdk viem
 ```
 
 The SDK uses [viem](https://viem.sh) for all Ethereum interactions.
@@ -38,14 +38,14 @@ The SDK uses [viem](https://viem.sh) for all Ethereum interactions.
 
 ## Client Setup
 
-### Main Client (SoulProtocolClient)
+### Main Client (ZaseonProtocolClient)
 
 The primary entry point for ZK-SLocks, nullifier tracking, and cross-chain proof hub:
 
 ```typescript
-import { createSoulClient, type SoulProtocolConfig } from "@soul/sdk";
+import { createZaseonClient, type ZaseonProtocolConfig } from "@zaseon/sdk";
 
-const client = createSoulClient({
+const client = createZaseonClient({
   rpcUrl: process.env.RPC_URL!,
   chainId: 11155111, // Sepolia
   privateKey: "0x...", // Optional for read-only
@@ -55,9 +55,9 @@ const client = createSoulClient({
 For read-only access (no transactions):
 
 ```typescript
-import { createReadOnlySoulClient } from "@soul/sdk";
+import { createReadOnlyZaseonClient } from "@zaseon/sdk";
 
-const readOnly = createReadOnlySoulClient({
+const readOnly = createReadOnlyZaseonClient({
   rpcUrl: process.env.RPC_URL!,
   chainId: 11155111,
 });
@@ -68,9 +68,9 @@ const readOnly = createReadOnlySoulClient({
 For interacting with PC³, PBP, EASC, and CDNA contracts:
 
 ```typescript
-import { Soulv2ClientFactory, type Soulv2Config } from "@soul/sdk";
+import { Zaseonv2ClientFactory, type Zaseonv2Config } from "@zaseon/sdk";
 
-const config: Soulv2Config = {
+const config: Zaseonv2Config = {
   rpcUrl: process.env.RPC_URL!,
   privateKey: "0x...",
   // Contract addresses (auto-resolved from deployments if omitted)
@@ -82,7 +82,7 @@ const config: Soulv2Config = {
   },
 };
 
-const factory = new Soulv2ClientFactory(config);
+const factory = new Zaseonv2ClientFactory(config);
 const pc3 = factory.createPC3Client();
 const pbp = factory.createPBPClient();
 const easc = factory.createEASCClient();
@@ -221,7 +221,7 @@ const isSpent = await cdna.isNullifierSpent(domain.domainId, nullifierHash);
 For deposits, withdrawals, and cross-chain transfers through the shielded pool:
 
 ```typescript
-import { createPrivacyRouterClient, OperationType } from "@soul/sdk";
+import { createPrivacyRouterClient, OperationType } from "@zaseon/sdk";
 
 const router = createPrivacyRouterClient({
   rpcUrl: process.env.RPC_URL!,
@@ -246,7 +246,7 @@ const withdrawal = await router.withdraw({
 ### Shielded Pool
 
 ```typescript
-import { createShieldedPoolClient } from "@soul/sdk";
+import { createShieldedPoolClient } from "@zaseon/sdk";
 
 const pool = createShieldedPoolClient({
   rpcUrl: process.env.RPC_URL!,
@@ -264,7 +264,7 @@ console.log("Total deposited:", stats.totalDeposited);
 ### Bridge Factory
 
 ```typescript
-import { BridgeFactory } from "@soul/sdk";
+import { BridgeFactory } from "@zaseon/sdk";
 
 // Create a bridge adapter for the target chain
 const bridge = BridgeFactory.create("arbitrum", {
@@ -283,12 +283,12 @@ const result = await bridge.bridgeWithProof({
 
 ### Cross-Chain Proof Relay
 
-Soul uses `SoulCrossChainRelay` for relaying proofs between L2s. The relay supports LayerZero and Hyperlane bridges:
+Zaseon uses `ZaseonCrossChainRelay` for relaying proofs between L2s. The relay supports LayerZero and Hyperlane bridges:
 
 ```typescript
 // Run the relayer (see sdk/src/relayer/CrossChainProofRelayer.ts)
 // ENV: SOURCE_RPC, DEST_RPC, PROOF_HUB_ADDRESS, RELAY_ADDRESS, RELAYER_PRIVATE_KEY
-import { CrossChainProofRelayer } from "@soul/sdk";
+import { CrossChainProofRelayer } from "@zaseon/sdk";
 ```
 
 ### Cross-Chain Nullifier Sync
@@ -308,7 +308,7 @@ Nullifiers are synchronized across chains via `CrossChainNullifierSync`:
 The SDK includes a `NoirProver` for generating proofs using Noir circuits:
 
 ```typescript
-import { NoirProver } from "@soul/sdk";
+import { NoirProver } from "@zaseon/sdk";
 
 const prover = new NoirProver();
 
@@ -332,7 +332,7 @@ For translating proofs between different backends (snarkjs, gnark, arkworks):
 import ProofTranslator, {
   parseSnarkjsProof,
   createVerifyCalldata,
-} from "@soul/sdk";
+} from "@zaseon/sdk";
 
 // Parse snarkjs output to Solidity-compatible format
 const solidityProof = parseSnarkjsProof(snarkjsProof);
@@ -346,21 +346,21 @@ const calldata = createVerifyCalldata(proof, publicInputs);
 ## Error Handling
 
 ```typescript
-import { SoulError, SoulErrorCode } from "@soul/sdk";
+import { ZaseonError, ZaseonErrorCode } from "@zaseon/sdk";
 
 try {
   await client.createLock(params);
 } catch (error) {
-  if (error instanceof SoulError) {
+  if (error instanceof ZaseonError) {
     switch (error.code) {
-      case SoulErrorCode.PROOF_INVALID:
+      case ZaseonErrorCode.PROOF_INVALID:
         console.error("Invalid proof - regenerate");
         break;
-      case SoulErrorCode.NETWORK_ERROR:
+      case ZaseonErrorCode.NETWORK_ERROR:
         console.error("Network error - retry");
         break;
       default:
-        console.error("Soul error:", error.message);
+        console.error("Zaseon error:", error.message);
     }
   }
 }
@@ -411,7 +411,7 @@ npx hardhat run scripts/deploy-v3.ts --network localhost
 Manage relayer staking, rewards, and slashing:
 
 ```typescript
-import { DecentralizedRelayerRegistryClient } from "@soul/sdk";
+import { DecentralizedRelayerRegistryClient } from "@zaseon/sdk";
 import { createPublicClient, createWalletClient, http } from "viem";
 import { sepolia } from "viem/chains";
 
@@ -463,7 +463,7 @@ import {
   EnhancedKillSwitchClient,
   EmergencyLevel,
   ActionType,
-} from "@soul/sdk";
+} from "@zaseon/sdk";
 
 const killSwitch = new EnhancedKillSwitchClient(
   "0xKillSwitchAddress",
@@ -499,7 +499,7 @@ killSwitch.watchLevelChanges((prev, next, initiator) => {
 On-chain nullifier Merkle tree with cross-chain support:
 
 ```typescript
-import { NullifierRegistryV3Client } from "@soul/sdk";
+import { NullifierRegistryV3Client } from "@zaseon/sdk";
 
 const nullifierRegistry = new NullifierRegistryV3Client(
   "0xNullifierRegistryAddress",
@@ -553,7 +553,7 @@ nullifierRegistry.watchCrossChainReceived((sourceChainId, count) => {
 ### Production Config
 
 ```typescript
-const client = createSoulClient({
+const client = createZaseonClient({
   rpcUrl: process.env.MAINNET_RPC_URL!,
   chainId: 1,
   privateKey: process.env.PRIVATE_KEY as `0x${string}`,
@@ -571,9 +571,9 @@ The Intent Completion Layer provides a solver-marketplace for cross-chain operat
 ### Submit an Intent
 
 ```typescript
-import { createSoulClient } from "@soul/sdk";
+import { createZaseonClient } from "@zaseon/sdk";
 
-const client = createSoulClient({
+const client = createZaseonClient({
   rpcUrl: process.env.RPC_URL!,
   chainId: 11155111,
   privateKey: "0x...",
@@ -639,7 +639,7 @@ The Dynamic Routing Orchestrator selects optimal cross-chain paths based on brid
 ### Query Optimal Route
 
 ```typescript
-import { BridgeFactory } from "@soul/sdk";
+import { BridgeFactory } from "@zaseon/sdk";
 
 // The bridge factory uses the routing orchestrator internally
 const bridge = BridgeFactory.create("auto", {
@@ -682,14 +682,14 @@ console.log("Utilization:", capacity.utilizationBps, "bps");
 
 ## Compliance & Selective Disclosure
 
-### SoulComplianceProvider
+### ZaseonComplianceProvider
 
 For KYC/AML compliance with privacy-preserving credential issuance:
 
 ```typescript
-import { SoulComplianceProvider } from "@soul/sdk/compliance";
+import { ZaseonComplianceProvider } from "@zaseon/sdk/compliance";
 
-const provider = new SoulComplianceProvider({
+const provider = new ZaseonComplianceProvider({
   rpcUrl: process.env.RPC_URL!,
   contractAddress: "0x...",
   providerId: "your-provider-id",
@@ -730,7 +730,7 @@ const disclosure = await provider.createDisclosure({
 Monitor and manage experimental features through the graduation pipeline:
 
 ```typescript
-import { ExperimentalFeatureRegistryClient, FeatureStatus } from "@soul/sdk";
+import { ExperimentalFeatureRegistryClient, FeatureStatus } from "@zaseon/sdk";
 import { createPublicClient, http } from "viem";
 import { sepolia } from "viem/chains";
 

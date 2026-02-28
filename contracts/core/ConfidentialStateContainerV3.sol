@@ -10,7 +10,7 @@ import {IConfidentialStateContainerV3, BatchStateInput} from "../interfaces/ICon
 import {SelectiveDisclosureManager} from "../compliance/SelectiveDisclosureManager.sol";
 
 /// @title ConfidentialStateContainerV3
-/// @author Soul Protocol
+/// @author ZASEON
 /// @notice Production-ready confidential state management with enhanced security
 /// @dev Gas-optimized with storage packing, assembly, and immutable variables
 ///
@@ -22,7 +22,7 @@ import {SelectiveDisclosureManager} from "../compliance/SelectiveDisclosureManag
 /// - Unchecked arithmetic in safe contexts (saves ~40 gas per operation)
 /**
  * @title ConfidentialStateContainerV3
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice Confidential State Container V3 contract
  */
 contract ConfidentialStateContainerV3 is

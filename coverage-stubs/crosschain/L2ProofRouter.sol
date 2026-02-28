@@ -160,15 +160,15 @@ contract L2ProofRouter is ReentrancyGuard, AccessControl, Pausable {
     mapping(bytes32 => bool) public processedProofs;
     uint256 public batchNonce;
     uint256 public proofNonce;
-    address public soulHub;
+    address public zaseonHub;
     address public directMessenger;
 
-    constructor(address _admin, address _soulHub) {
+    constructor(address _admin, address _zaseonHub) {
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(OPERATOR_ROLE, _admin);
         _grantRole(ROUTER_ROLE, _admin);
         currentChainId = block.chainid;
-        soulHub = _soulHub;
+        zaseonHub = _zaseonHub;
     }
 
     function submitProof(

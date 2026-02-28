@@ -535,7 +535,7 @@ contract MockNullifierManagerE2E {
     ) external pure returns (bytes32) {
         return
             keccak256(
-                abi.encodePacked(source, sourceDomain, targetDomain, "Soul")
+                abi.encodePacked(source, sourceDomain, targetDomain, "Zaseon")
             );
     }
 }

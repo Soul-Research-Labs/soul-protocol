@@ -8,11 +8,11 @@ import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /**
  * @title CrossChainNullifierSync
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Handles bidirectional nullifier synchronization between chains.
  *         Outbound: batches locally-registered nullifiers and sends via bridge.
  *         Inbound: receives batches and submits to NullifierRegistryV3.
- * @dev Integrates with SoulCrossChainRelay for message transport.
+ * @dev Integrates with ZaseonCrossChainRelay for message transport.
  *      Uses a batch accumulator to amortize bridge costs.
  *
  *      Nullifier batch format:
@@ -49,7 +49,7 @@ contract CrossChainNullifierSync is AccessControl, ReentrancyGuard, Pausable {
 
     struct SyncTarget {
         address nullifierRegistry; // NullifierRegistryV3 address
-        address relay; // SoulCrossChainRelay address
+        address relay; // ZaseonCrossChainRelay address
         uint256 chainId; // Target chain ID
         bool active;
     }
@@ -209,7 +209,7 @@ contract CrossChainNullifierSync is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Flush pending nullifiers to a target chain via the relay.
-     *         Encodes the batch and sends via SoulCrossChainRelay.
+     *         Encodes the batch and sends via ZaseonCrossChainRelay.
      * @param targetChainId The EVM chain ID to sync to
      */
     function flushToChain(
@@ -307,7 +307,7 @@ contract CrossChainNullifierSync is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Receive a batch of nullifiers from a remote chain.
-     *         Called by SoulCrossChainRelay when a nullifier sync message
+     *         Called by ZaseonCrossChainRelay when a nullifier sync message
      *         arrives via bridge adapter.
      * @param sourceChainId The originating chain ID
      * @param nullifiers Array of nullifier hashes

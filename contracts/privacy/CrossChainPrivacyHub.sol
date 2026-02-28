@@ -13,7 +13,7 @@ import {ComplianceReportingModule} from "../compliance/ComplianceReportingModule
 
 /**
  * @title CrossChainPrivacyHub
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Unified aggregator for cross-chain privacy-preserving proof relays
  * @dev Provides a single entry point for all 41+ chain adapters with privacy features
  *
@@ -195,7 +195,7 @@ contract CrossChainPrivacyHub is
      */
     struct NullifierBinding {
         bytes32 sourceNullifier;
-        bytes32 soulNullifier;
+        bytes32 zaseonNullifier;
         uint256 sourceChainId;
         uint256 destChainId;
         uint64 timestamp;
@@ -319,7 +319,7 @@ contract CrossChainPrivacyHub is
 
     event NullifierConsumed(
         bytes32 indexed sourceNullifier,
-        bytes32 indexed soulNullifier,
+        bytes32 indexed zaseonNullifier,
         uint256 sourceChainId,
         uint256 destChainId
     );
@@ -1093,11 +1093,11 @@ contract CrossChainPrivacyHub is
     // =========================================================================
 
     /**
-     * @notice Bind source nullifier to Soul nullifier
+     * @notice Bind source nullifier to Zaseon nullifier
      */
     function _bindNullifier(
         bytes32 sourceNullifier,
-        bytes32 soulNullifier,
+        bytes32 zaseonNullifier,
         uint256 sourceChainId,
         uint256 destChainId
     ) internal {
@@ -1107,7 +1107,7 @@ contract CrossChainPrivacyHub is
 
         nullifierBindings[sourceNullifier] = NullifierBinding({
             sourceNullifier: sourceNullifier,
-            soulNullifier: soulNullifier,
+            zaseonNullifier: zaseonNullifier,
             sourceChainId: sourceChainId,
             destChainId: destChainId,
             timestamp: uint64(block.timestamp),
@@ -1191,7 +1191,7 @@ contract CrossChainPrivacyHub is
                     requestId,
                     sender,
                     block.chainid,
-                    "Soul_NULLIFIER"
+                    "Zaseon_NULLIFIER"
                 )
             );
     }
@@ -1208,7 +1208,7 @@ contract CrossChainPrivacyHub is
                     amount,
                     nullifier,
                     block.timestamp,
-                    "Soul_COMMITMENT"
+                    "Zaseon_COMMITMENT"
                 )
             );
     }

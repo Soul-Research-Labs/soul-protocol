@@ -6,7 +6,7 @@ import {NullifierRegistryV3} from "../../contracts/core/NullifierRegistryV3.sol"
 import {CrossChainProofHubV3} from "../../contracts/bridge/CrossChainProofHubV3.sol";
 
 /**
- * @title Soul Protocol Cross-Chain Configuration Script
+ * @title ZASEON Cross-Chain Configuration Script
  * @notice Links L1 Sepolia and L2 testnet deployments after initial deploys
  *
  * This script should be run AFTER:
@@ -148,10 +148,10 @@ contract ConfigureCrossChain is Script {
         console.log("1. Fund relayer wallets on each L2 testnet");
         console.log("2. Submit a test proof via SDK:");
         console.log(
-            "     npx soul-cli submit-proof --network arbitrum-sepolia"
+            "     npx zaseon-cli submit-proof --network arbitrum-sepolia"
         );
         console.log("3. Verify cross-chain nullifier sync:");
-        console.log("     npx soul-cli check-nullifier --all-chains");
+        console.log("     npx zaseon-cli check-nullifier --all-chains");
         console.log("4. Run e2e integration test suite:");
         console.log(
             "     npx hardhat test test/integration/ --network arbitrum-sepolia"

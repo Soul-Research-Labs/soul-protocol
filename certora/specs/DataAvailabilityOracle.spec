@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - DataAvailabilityOracle
+ * ZASEON - DataAvailabilityOracle
  *
  * This spec verifies critical invariants for the Data Availability Oracle
  * which implements SVID-inspired off-chain DA with staked attestors,

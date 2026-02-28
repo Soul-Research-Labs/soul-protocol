@@ -9,7 +9,7 @@ import {NullifierRegistryV3} from "../../contracts/core/NullifierRegistryV3.sol"
 
 /**
  * @title AdvancedSecurityAttacks
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Tests for attack vectors: cross-chain replay, time manipulation,
  *         bridge spoofing, fee overflow, reentrancy via callbacks, delegatecall escalation
  * @dev Phase 7 — fills gaps identified in security test gap analysis

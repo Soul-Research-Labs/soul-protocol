@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - DirectL2Messenger
+ * ZASEON - DirectL2Messenger
  *
  * This spec verifies critical invariants for the Direct L2 Messenger
  * which enables direct L2-to-L2 messaging without L1 completion,

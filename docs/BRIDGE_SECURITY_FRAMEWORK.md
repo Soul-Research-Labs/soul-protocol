@@ -1,7 +1,7 @@
 # Cross-Chain Bridge Security Framework
 
 ## Problem Statement
-Soul Protocol relies on external bridge infrastructure (LayerZero, Hyperlane, native L2 bridges). Bridge exploits have resulted in $2B+ in losses historically. We must minimize trust assumptions and implement defense-in-depth.
+ZASEON relies on external bridge infrastructure (LayerZero, Hyperlane, native L2 bridges). Bridge exploits have resulted in $2B+ in losses historically. We must minimize trust assumptions and implement defense-in-depth.
 
 ## Threat Model
 

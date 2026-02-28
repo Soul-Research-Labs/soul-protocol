@@ -1,6 +1,6 @@
 [package]
 name = "aggregator"
-authors = ["Soul Protocol"]
+authors = ["ZASEON"]
 compiler_version = ">=0.36.0"
 type = "bin"
 

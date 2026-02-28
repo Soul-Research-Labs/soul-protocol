@@ -4,11 +4,11 @@ import path from "path";
 import { formatEther, parseEther, type Address, keccak256, toHex } from "viem";
 
 /**
- * Soul Protocol Full Deployment Orchestrator
+ * ZASEON Full Deployment Orchestrator
  *
- * Deploys ALL Soul contracts and wires them together in correct dependency order.
+ * Deploys ALL Zaseon contracts and wires them together in correct dependency order.
  * Includes: Verifier infrastructure, Core contracts, Privacy modules, Security,
- * Primitives, Governance, and full hub wiring via SoulProtocolHub.wireAll().
+ * Primitives, Governance, and full hub wiring via ZaseonProtocolHub.wireAll().
  *
  * Usage:
  *   npx hardhat run scripts/deploy-orchestrator.ts --network <network>
@@ -33,7 +33,7 @@ interface DeploymentRecord {
 
 async function main() {
   console.log("\n" + "=".repeat(80));
-  console.log("SOUL PROTOCOL — FULL DEPLOYMENT ORCHESTRATOR");
+  console.log("ZASEON PROTOCOL — FULL DEPLOYMENT ORCHESTRATOR");
   console.log("=".repeat(80) + "\n");
 
   const { viem } = await hre.network.connect();
@@ -92,10 +92,10 @@ async function main() {
     deployed.contracts.verifierRegistry = verifierRegistry.address;
     console.log("      =>", verifierRegistry.address);
 
-    // 1d. Deploy SoulUniversalVerifier
-    console.log("  [4] SoulUniversalVerifier...");
+    // 1d. Deploy ZaseonUniversalVerifier
+    console.log("  [4] ZaseonUniversalVerifier...");
     const universalVerifier = await viem.deployContract(
-      "SoulUniversalVerifier",
+      "ZaseonUniversalVerifier",
     );
     deployed.contracts.universalVerifier = universalVerifier.address;
     console.log("      =>", universalVerifier.address);
@@ -159,18 +159,18 @@ async function main() {
     deployed.contracts.batchAccumulator = batchAccumulator.address;
     console.log("       =>", batchAccumulator.address);
 
-    // 3d. SoulAtomicSwapV2
-    console.log("  [12] SoulAtomicSwapV2...");
-    const atomicSwap = await viem.deployContract("SoulAtomicSwapV2", [
+    // 3d. ZaseonAtomicSwapV2
+    console.log("  [12] ZaseonAtomicSwapV2...");
+    const atomicSwap = await viem.deployContract("ZaseonAtomicSwapV2", [
       deployer.account.address,
     ]);
     deployed.contracts.atomicSwap = atomicSwap.address;
     console.log("       =>", atomicSwap.address);
 
     // ================================================================
-    // PHASE 4: Soul v2 Primitives
+    // PHASE 4: Zaseon v2 Primitives
     // ================================================================
-    console.log("\nPHASE 4: Soul v2 Primitives\n");
+    console.log("\nPHASE 4: Zaseon v2 Primitives\n");
 
     // 4a. ZKBoundStateLocks
     console.log("  [13] ZKBoundStateLocks...");
@@ -216,13 +216,13 @@ async function main() {
     console.log("       =>", emergencyRecovery.address);
 
     // ================================================================
-    // PHASE 6: SoulProtocolHub (Central Registry)
+    // PHASE 6: ZaseonProtocolHub (Central Registry)
     // ================================================================
-    console.log("\nPHASE 6: SoulProtocolHub\n");
+    console.log("\nPHASE 6: ZaseonProtocolHub\n");
 
-    console.log("  [19] SoulProtocolHub...");
-    const hub = await viem.deployContract("SoulProtocolHub");
-    deployed.contracts.soulProtocolHub = hub.address;
+    console.log("  [19] ZaseonProtocolHub...");
+    const hub = await viem.deployContract("ZaseonProtocolHub");
+    deployed.contracts.zaseonProtocolHub = hub.address;
     console.log("       =>", hub.address);
 
     // ================================================================
@@ -230,7 +230,7 @@ async function main() {
     // ================================================================
     console.log("\nPHASE 7: WIRING\n");
 
-    // 7a. Wire SoulProtocolHub via wireAll()
+    // 7a. Wire ZaseonProtocolHub via wireAll()
     console.log("  [W1] Hub wireAll()...");
     await hub.write.wireAll([
       {

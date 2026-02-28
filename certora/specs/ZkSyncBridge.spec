@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Certora CVL Specification for zkSync Bridge Adapter
-// Soul Protocol (Soul) - Formal Verification
+// ZASEON (Zaseon) - Formal Verification
 
 /*
  * =============================================================================
@@ -279,14 +279,14 @@ rule nullifierUniqueness(bytes32 transferId1, bytes32 transferId2) {
 /// @title Cross-domain nullifier determinism
 /// @notice Same input produces same nullifier
 rule crossDomainNullifierDeterminism(bytes32 zkNullifier, bytes32 domain) {
-    bytes32 soulNf1 = keccak256(abi.encodePacked(zkNullifier, domain, "ZKSYNC2Soul"));
-    bytes32 soulNf2 = keccak256(abi.encodePacked(zkNullifier, domain, "ZKSYNC2Soul"));
+    bytes32 zaseonNf1 = keccak256(abi.encodePacked(zkNullifier, domain, "ZKSYNC2Zaseon"));
+    bytes32 zaseonNf2 = keccak256(abi.encodePacked(zkNullifier, domain, "ZKSYNC2Zaseon"));
     
-    assert soulNf1 == soulNf2, "Cross-domain nullifier must be deterministic";
+    assert zaseonNf1 == zaseonNf2, "Cross-domain nullifier must be deterministic";
 }
 
 /// @title Cross-domain direction matters
-/// @notice zkSync->Soul differs from Soul->zkSync
+/// @notice zkSync->Zaseon differs from Zaseon->zkSync
 rule crossDomainDirectionMatters(bytes32 nullifier, bytes32 domainA, bytes32 domainB) {
     require domainA != domainB;
     

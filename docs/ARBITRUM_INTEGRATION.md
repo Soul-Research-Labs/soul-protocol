@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `ArbitrumBridgeAdapter` provides native integration with Arbitrum's canonical bridge for L1↔L2 message passing and asset transfers within the Soul Protocol ecosystem.
+The `ArbitrumBridgeAdapter` provides native integration with Arbitrum's canonical bridge for L1↔L2 message passing and asset transfers within the ZASEON ecosystem.
 
 ## Architecture
 
@@ -66,7 +66,7 @@ import {
   ARBITRUM_BRIDGE_ABI,
   ArbitrumConstants,
   calculateBridgeFee,
-} from "@soul/sdk/bridges/arbitrum";
+} from "@zaseon/sdk/bridges/arbitrum";
 
 const fee = calculateBridgeFee(depositAmount, feeBps);
 ```

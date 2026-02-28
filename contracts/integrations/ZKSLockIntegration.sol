@@ -6,8 +6,8 @@ import "../primitives/ProofCarryingContainer.sol";
 import "../primitives/CrossDomainNullifierAlgebra.sol";
 
 /// @title ZKSLockIntegration
-/// @author Soul Protocol - Soul v2
-/// @notice Integration library connecting ZK-Bound State Locks with PC³, CDNA, and other Soul primitives
+/// @author ZASEON - Zaseon v2
+/// @notice Integration library connecting ZK-Bound State Locks with PC³, CDNA, and other Zaseon primitives
 /// @dev Provides unified interface for cross-primitive operations involving ZK-SLocks
 ///
 /// Key Integrations:
@@ -17,7 +17,7 @@ import "../primitives/CrossDomainNullifierAlgebra.sol";
 /// - PBP: Policy-bound proof enforcement
 /**
  * @title ZKSLockIntegration
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice Z K S Lock Integration contract
  */
 contract ZKSLockIntegration {

@@ -10,7 +10,7 @@ Accepted
 
 ## Context
 
-Soul Protocol requires zero-knowledge proofs for:
+ZASEON requires zero-knowledge proofs for:
 
 - State commitment verification across L2 chains
 - Nullifier derivation proofs (CDNA)
@@ -41,7 +41,7 @@ Alternative proving systems evaluated:
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                SoulUniversalVerifier                  │
+│                ZaseonUniversalVerifier                  │
 │  Supports: Groth16, Plonk, Noir, SP1, Plonky3,      │
 │           Jolt, Binius, Recursive                     │
 └──────────┬───────────────────────────────────────────┘
@@ -62,10 +62,10 @@ Alternative proving systems evaluated:
 ### Key components
 
 1. **22 Noir circuits** in `noir/` — constraint counts from ~1,500 (state_commitment) to ~45,000 (aggregator recursive batch)
-2. **UltraHonkAdapter** — bridges Barretenberg's `(bytes proof, bytes32[] publicInputs)` to Soul's `IProofVerifier` interface `(bytes proof, uint256[] publicInputs)`
+2. **UltraHonkAdapter** — bridges Barretenberg's `(bytes proof, bytes32[] publicInputs)` to Zaseon's `IProofVerifier` interface `(bytes proof, uint256[] publicInputs)`
 3. **NoirVerifierAdapter** — abstract base for decoding generic bytes public inputs into Noir's `bytes32[]`
 4. **21 auto-generated verifiers** in `contracts/verifiers/generated/` — produced by `bb write_vk && bb contract`
-5. **SoulMultiProver** — 2-of-3 consensus across Noir (Aztec), SP1 (Succinct), and Jolt (a16z) for critical operations
+5. **ZaseonMultiProver** — 2-of-3 consensus across Noir (Aztec), SP1 (Succinct), and Jolt (a16z) for critical operations
 6. **Groth16VerifierBN254** — retained for backward compatibility with existing Circom/snarkjs proofs
 
 ### Migration path (via VerifierRegistryV2)
@@ -91,7 +91,7 @@ All circuits migrated from external `poseidon` crate v0.2.3 to `std::hash::posei
 
 ### Negative
 
-- **Interface bridging overhead**: UltraHonk uses `bytes32[]` while Soul uses `uint256[]` — adapters add gas (~2-3k per verification)
+- **Interface bridging overhead**: UltraHonk uses `bytes32[]` while Zaseon uses `uint256[]` — adapters add gas (~2-3k per verification)
 - **Barretenberg dependency**: Generated verifiers depend on `bb` toolchain stability. The aggregator verifier is currently a stub due to an `on_curve` assertion bug (awaiting bb >= 3.1.0)
 - **Dual verifier maintenance**: Supporting both Groth16 and UltraHonk doubles the verifier surface area during transition
 - **Generated code volume**: 21 auto-generated verifiers are large (~600+ lines each, N=65536) and cannot be manually modified

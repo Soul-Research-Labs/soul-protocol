@@ -6,7 +6,7 @@ import {ICrossChainSanctionsOracle} from "../interfaces/ICrossChainSanctionsOrac
 
 /**
  * @title CrossChainSanctionsOracle
- * @author Soul Protocol
+ * @author ZASEON
  * @notice On-chain sanctions screening for cross-chain privacy operations
  * @dev Acts as a pluggable compliance hook for the UniversalShieldedPool,
  *      CrossChainPrivacyHub, and PrivacyRouter. Supports multiple external
@@ -19,7 +19,7 @@ import {ICrossChainSanctionsOracle} from "../interfaces/ICrossChainSanctionsOrac
  * - ZK-compatible: exposes isSanctioned(address) for on-chain checks
  *   and generateComplianceProof() for ZK proof of non-sanctioned status
  *
- * @custom:security-contact security@soul.network
+ * @custom:security-contact security@zaseon.network
  */
 contract CrossChainSanctionsOracle is
     AccessControl,

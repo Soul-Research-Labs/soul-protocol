@@ -1,6 +1,6 @@
-# Soul Deployment Guide
+# Zaseon Deployment Guide
 
-> **Deploy Soul Protocol to Ethereum testnets and L2 networks**
+> **Deploy ZASEON to Ethereum testnets and L2 networks**
 
 ---
 
@@ -85,7 +85,7 @@ forge build && npx hardhat compile
 
 ## ZK Circuit Setup
 
-Soul uses **Noir circuits** compiled to **UltraHonk proofs** — no trusted setup ceremony is required.
+Zaseon uses **Noir circuits** compiled to **UltraHonk proofs** — no trusted setup ceremony is required.
 
 ### Compile Circuits
 
@@ -144,7 +144,7 @@ npx hardhat run scripts/deploy-cross-chain.ts
 ```
 
 This deploys:
-- `SoulCrossChainRelay` — proof relay with LayerZero/Hyperlane bridge support
+- `ZaseonCrossChainRelay` — proof relay with LayerZero/Hyperlane bridge support
 - `CrossChainNullifierSync` — bidirectional nullifier synchronization
 
 ### Step 4: Deploy Privacy Middleware
@@ -190,7 +190,7 @@ At ~30 gwei (Ethereum mainnet):
 | PolicyBoundProofs | ~2,300,000 | ~0.069 |
 | ExecutionAgnosticStateCommitments | ~2,000,000 | ~0.060 |
 | CrossDomainNullifierAlgebra | ~2,300,000 | ~0.069 |
-| SoulCrossChainRelay | ~2,500,000 | ~0.075 |
+| ZaseonCrossChainRelay | ~2,500,000 | ~0.075 |
 | CrossChainNullifierSync | ~2,200,000 | ~0.066 |
 | UniversalShieldedPool | ~3,200,000 | ~0.096 |
 | UltraHonk Verifiers (×8) | ~12,000,000 | ~0.360 |

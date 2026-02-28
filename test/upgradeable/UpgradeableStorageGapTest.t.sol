@@ -5,8 +5,8 @@ import "forge-std/Test.sol";
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 import "../../contracts/upgradeable/NullifierRegistryV3Upgradeable.sol";
-import "../../contracts/upgradeable/SoulProtocolHubUpgradeable.sol";
-import "../../contracts/upgradeable/Soulv2OrchestratorUpgradeable.sol";
+import "../../contracts/upgradeable/ZaseonProtocolHubUpgradeable.sol";
+import "../../contracts/upgradeable/Zaseonv2OrchestratorUpgradeable.sol";
 
 /**
  * @title UpgradeableStorageGapTest
@@ -149,19 +149,19 @@ contract UpgradeableStorageGapTest is Test {
     }
 
     // =========================================================================
-    // SoulProtocolHubUpgradeable
+    // ZaseonProtocolHubUpgradeable
     // =========================================================================
 
-    function test_SoulHub_proxyInitialization() public {
-        SoulProtocolHubUpgradeable impl = new SoulProtocolHubUpgradeable();
+    function test_ZaseonHub_proxyInitialization() public {
+        ZaseonProtocolHubUpgradeable impl = new ZaseonProtocolHubUpgradeable();
 
         bytes memory initData = abi.encodeWithSelector(
-            SoulProtocolHubUpgradeable.initialize.selector,
+            ZaseonProtocolHubUpgradeable.initialize.selector,
             admin
         );
 
         ERC1967Proxy proxy = new ERC1967Proxy(address(impl), initData);
-        SoulProtocolHubUpgradeable hub = SoulProtocolHubUpgradeable(
+        ZaseonProtocolHubUpgradeable hub = ZaseonProtocolHubUpgradeable(
             address(proxy)
         );
 
@@ -171,16 +171,16 @@ contract UpgradeableStorageGapTest is Test {
         );
     }
 
-    function test_SoulHub_cannotReinitialize() public {
-        SoulProtocolHubUpgradeable impl = new SoulProtocolHubUpgradeable();
+    function test_ZaseonHub_cannotReinitialize() public {
+        ZaseonProtocolHubUpgradeable impl = new ZaseonProtocolHubUpgradeable();
 
         bytes memory initData = abi.encodeWithSelector(
-            SoulProtocolHubUpgradeable.initialize.selector,
+            ZaseonProtocolHubUpgradeable.initialize.selector,
             admin
         );
 
         ERC1967Proxy proxy = new ERC1967Proxy(address(impl), initData);
-        SoulProtocolHubUpgradeable hub = SoulProtocolHubUpgradeable(
+        ZaseonProtocolHubUpgradeable hub = ZaseonProtocolHubUpgradeable(
             address(proxy)
         );
 
@@ -189,14 +189,14 @@ contract UpgradeableStorageGapTest is Test {
     }
 
     // =========================================================================
-    // Soulv2OrchestratorUpgradeable
+    // Zaseonv2OrchestratorUpgradeable
     // =========================================================================
 
     function test_Orchestrator_proxyInitialization() public {
-        Soulv2OrchestratorUpgradeable impl = new Soulv2OrchestratorUpgradeable();
+        Zaseonv2OrchestratorUpgradeable impl = new Zaseonv2OrchestratorUpgradeable();
 
         bytes memory initData = abi.encodeWithSelector(
-            Soulv2OrchestratorUpgradeable.initialize.selector,
+            Zaseonv2OrchestratorUpgradeable.initialize.selector,
             admin,
             address(0x1), // pc3
             address(0x2), // pbp
@@ -205,7 +205,7 @@ contract UpgradeableStorageGapTest is Test {
         );
 
         ERC1967Proxy proxy = new ERC1967Proxy(address(impl), initData);
-        Soulv2OrchestratorUpgradeable orch = Soulv2OrchestratorUpgradeable(
+        Zaseonv2OrchestratorUpgradeable orch = Zaseonv2OrchestratorUpgradeable(
             address(proxy)
         );
 
@@ -216,10 +216,10 @@ contract UpgradeableStorageGapTest is Test {
     }
 
     function test_Orchestrator_cannotReinitialize() public {
-        Soulv2OrchestratorUpgradeable impl = new Soulv2OrchestratorUpgradeable();
+        Zaseonv2OrchestratorUpgradeable impl = new Zaseonv2OrchestratorUpgradeable();
 
         bytes memory initData = abi.encodeWithSelector(
-            Soulv2OrchestratorUpgradeable.initialize.selector,
+            Zaseonv2OrchestratorUpgradeable.initialize.selector,
             admin,
             address(0x1),
             address(0x2),
@@ -228,7 +228,7 @@ contract UpgradeableStorageGapTest is Test {
         );
 
         ERC1967Proxy proxy = new ERC1967Proxy(address(impl), initData);
-        Soulv2OrchestratorUpgradeable orch = Soulv2OrchestratorUpgradeable(
+        Zaseonv2OrchestratorUpgradeable orch = Zaseonv2OrchestratorUpgradeable(
             address(proxy)
         );
 

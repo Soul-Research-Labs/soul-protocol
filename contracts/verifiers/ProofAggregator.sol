@@ -5,12 +5,12 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /// @title ProofAggregator
-/// @author Soul Protocol
+/// @author ZASEON
 /// @notice Aggregates multiple ZK proofs into a single proof for gas-efficient batch verification
 /// @dev Supports recursive proof aggregation and merkle-based batch verification
 /**
  * @title ProofAggregator
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice Proof Aggregator contract
  */
 contract ProofAggregator is AccessControl, ReentrancyGuard {

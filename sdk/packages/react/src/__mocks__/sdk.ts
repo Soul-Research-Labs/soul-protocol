@@ -1,6 +1,6 @@
 /**
  * Mock SDK module for React hook testing.
- * Provides a minimal Soulv2ClientFactory stub that hooks can call.
+ * Provides a minimal Zaseonv2ClientFactory stub that hooks can call.
  */
 
 export interface Container {
@@ -24,18 +24,18 @@ export interface Domain {
   chainId: number;
 }
 
-export interface Soulv2Config {
+export interface Zaseonv2Config {
   rpcUrl: string;
   chainId: number;
   contracts: Record<string, string>;
 }
 
-export class Soulv2ClientFactory {
-  private config: Soulv2Config;
+export class Zaseonv2ClientFactory {
+  private config: Zaseonv2Config;
   private publicClient: any;
   private walletClient: any;
 
-  constructor(config: Soulv2Config, publicClient: any, walletClient: any) {
+  constructor(config: Zaseonv2Config, publicClient: any, walletClient: any) {
     this.config = config;
     this.publicClient = publicClient;
     this.walletClient = walletClient;

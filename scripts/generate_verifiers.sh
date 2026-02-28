@@ -3,7 +3,7 @@
 # Ensure toolchain is in PATH
 export PATH="$(pwd)/tools/nargo:$(pwd)/tools/bb:$HOME/.nargo/bin:$HOME/.bb/bin:$PATH"
 # Avoid permission issues in home
-export HOME="/tmp/soul_home"
+export HOME="/tmp/zaseon_home"
 
 GENERATED_DIR="contracts/verifiers/generated"
 mkdir -p "$GENERATED_DIR"

@@ -86,28 +86,28 @@ contract PolygonZkEVMBridgeAdapterTest is Test {
         assertEq(adapter.getFinalityBlocks(), 1);
     }
 
-    // ── setSoulHubL2
+    // ── setZaseonHubL2
     // ─────────────────────────────────────────────
 
-    function test_setSoulHubL2() public {
+    function test_setZaseonHubL2() public {
         address hub = makeAddr("hub");
         vm.prank(admin);
-        adapter.setSoulHubL2(hub);
-        assertEq(adapter.soulHubL2(), hub);
+        adapter.setZaseonHubL2(hub);
+        assertEq(adapter.zaseonHubL2(), hub);
     }
 
-    function test_setSoulHubL2_emitsEvent() public {
+    function test_setZaseonHubL2_emitsEvent() public {
         address hub = makeAddr("hub");
         vm.prank(admin);
         vm.expectEmit(true, false, false, false);
-        emit PolygonZkEVMBridgeAdapter.SoulHubL2Set(hub);
-        adapter.setSoulHubL2(hub);
+        emit PolygonZkEVMBridgeAdapter.ZaseonHubL2Set(hub);
+        adapter.setZaseonHubL2(hub);
     }
 
-    function test_setSoulHubL2_revert_notAdmin() public {
+    function test_setZaseonHubL2_revert_notAdmin() public {
         vm.prank(operator);
         vm.expectRevert();
-        adapter.setSoulHubL2(makeAddr("hub"));
+        adapter.setZaseonHubL2(makeAddr("hub"));
     }
 
     // ── Pause / Unpause

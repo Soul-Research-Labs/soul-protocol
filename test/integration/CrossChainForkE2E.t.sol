@@ -97,9 +97,9 @@ contract CrossChainForkE2E is Test {
     DirectL2Messenger private _lastDeployedMessenger;
 
     function _deployMessenger(uint256 /* chainId */) internal {
-        address soulHub = makeAddr("soulHub");
+        address zaseonHub = makeAddr("zaseonHub");
         vm.prank(admin);
-        _lastDeployedMessenger = new DirectL2Messenger(admin, soulHub);
+        _lastDeployedMessenger = new DirectL2Messenger(admin, zaseonHub);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -214,14 +214,14 @@ contract CrossChainForkE2E is Test {
         bytes32 domainArbitrum = keccak256(
             abi.encode(
                 keccak256("EIP712Domain(string name,uint256 chainId)"),
-                keccak256("SoulProtocol"),
+                keccak256("ZaseonProtocol"),
                 ARBITRUM_CHAIN_ID
             )
         );
         bytes32 domainOptimism = keccak256(
             abi.encode(
                 keccak256("EIP712Domain(string name,uint256 chainId)"),
-                keccak256("SoulProtocol"),
+                keccak256("ZaseonProtocol"),
                 OPTIMISM_CHAIN_ID
             )
         );
@@ -263,8 +263,8 @@ contract CrossChainForkE2E is Test {
         vm.assume(chainA != chainB);
         vm.assume(chainA > 0 && chainB > 0);
 
-        bytes32 domainA = keccak256(abi.encode("Soul", chainA));
-        bytes32 domainB = keccak256(abi.encode("Soul", chainB));
+        bytes32 domainA = keccak256(abi.encode("Zaseon", chainA));
+        bytes32 domainB = keccak256(abi.encode("Zaseon", chainB));
 
         assertTrue(domainA != domainB);
     }

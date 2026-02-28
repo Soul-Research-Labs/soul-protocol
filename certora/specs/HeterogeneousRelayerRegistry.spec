@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - HeterogeneousRelayerRegistry
+ * ZASEON - HeterogeneousRelayerRegistry
  *
  * This spec verifies critical invariants for the Heterogeneous Relayer Registry
  * which implements role-separated relayers (ProofGenerator, LightRelayer,

@@ -1,6 +1,6 @@
-# Getting Started with Soul
+# Getting Started with Zaseon
 
-> **Soul Protocol** — Cross-chain ZK privacy middleware for confidential state transfer across L2 networks.
+> **ZASEON** — Cross-chain ZK privacy middleware for confidential state transfer across L2 networks.
 
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -46,8 +46,8 @@
 ### From Source
 
 ```bash
-git clone https://github.com/Soul-Research-Labs/SOUL.git
-cd SOUL
+git clone https://github.com/Zaseon-Research-Labs/ZASEON.git
+cd ZASEON
 npm install
 ```
 
@@ -104,10 +104,10 @@ npx hardhat compile --quiet && echo "Hardhat OK"
 ### 1. Initialize the Client
 
 ```typescript
-import { createSoulClient } from "@soul/sdk";
+import { createZaseonClient } from "@zaseon/sdk";
 
 // Create client (uses viem under the hood)
-const client = createSoulClient({
+const client = createZaseonClient({
   rpcUrl: "https://eth-sepolia.g.alchemy.com/v2/YOUR_KEY",
   chainId: 11155111, // Sepolia
   privateKey: "0x...", // Optional: for signing transactions
@@ -133,7 +133,7 @@ console.log("Lock created:", lockTx);
 
 ```typescript
 // Generate proof off-chain using NoirProver
-import { NoirProver } from "@soul/sdk";
+import { NoirProver } from "@zaseon/sdk";
 
 const prover = new NoirProver();
 const proof = await prover.generateProof("state_transfer", {
@@ -157,7 +157,7 @@ const unlockTx = await client.unlockWithProof({
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    Soul CORE PRIMITIVES                          │
+│                    Zaseon CORE PRIMITIVES                          │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
@@ -196,7 +196,7 @@ const unlockTx = await client.unlockWithProof({
 
 ### ZK Backend: Noir + UltraHonk
 
-Soul uses **Noir** circuits compiled to **UltraHonk** proofs (no trusted setup required). Generated Solidity verifiers are deployed on-chain and integrated via `UltraHonkAdapter.sol`.
+Zaseon uses **Noir** circuits compiled to **UltraHonk** proofs (no trusted setup required). Generated Solidity verifiers are deployed on-chain and integrated via `UltraHonkAdapter.sol`.
 
 Available circuits (in `noir/circuits/`):
 
@@ -214,11 +214,11 @@ Available circuits (in `noir/circuits/`):
 ## Complete Example: Private Cross-Chain Transfer
 
 ```typescript
-import { createSoulClient, NoirProver, BridgeFactory } from "@soul/sdk";
+import { createZaseonClient, NoirProver, BridgeFactory } from "@zaseon/sdk";
 
 async function privateTransfer() {
   // 1. Create clients for source and destination chains
-  const sourceClient = createSoulClient({
+  const sourceClient = createZaseonClient({
     rpcUrl: process.env.SEPOLIA_RPC_URL!,
     chainId: 11155111,
     privateKey: process.env.PRIVATE_KEY as `0x${string}`,
@@ -243,7 +243,7 @@ async function privateTransfer() {
   });
 
   // 4. Unlock on destination chain with proof
-  const destClient = createSoulClient({
+  const destClient = createZaseonClient({
     rpcUrl: process.env.ARBITRUM_SEPOLIA_RPC_URL!,
     chainId: 421614,
     privateKey: process.env.PRIVATE_KEY as `0x${string}`,
@@ -317,4 +317,4 @@ SCROLLSCAN_API_KEY=your_key
 
 ---
 
-_Built by [Soul Research Labs](https://github.com/soul-research-labs)_
+_Built by [Zaseon Research Labs](https://github.com/zaseon-research-labs)_

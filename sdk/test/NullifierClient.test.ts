@@ -145,25 +145,25 @@ describe("NullifierClient", () => {
     });
   });
 
-  describe("deriveSoulBindingLocal()", () => {
-    it("should derive a Soul binding from a nullifier", () => {
+  describe("deriveZaseonBindingLocal()", () => {
+    it("should derive a Zaseon binding from a nullifier", () => {
       const nf = ("0x" + "44".repeat(32)) as Hex;
-      const result = NullifierClient.deriveSoulBindingLocal(nf);
+      const result = NullifierClient.deriveZaseonBindingLocal(nf);
       expect(result).to.match(/^0x[0-9a-f]{64}$/i);
     });
 
     it("should be deterministic", () => {
       const nf = ("0x" + "55".repeat(32)) as Hex;
-      const a = NullifierClient.deriveSoulBindingLocal(nf);
-      const b = NullifierClient.deriveSoulBindingLocal(nf);
+      const a = NullifierClient.deriveZaseonBindingLocal(nf);
+      const b = NullifierClient.deriveZaseonBindingLocal(nf);
       expect(a).to.equal(b);
     });
 
     it("should differ for different nullifiers", () => {
-      const a = NullifierClient.deriveSoulBindingLocal(
+      const a = NullifierClient.deriveZaseonBindingLocal(
         ("0x" + "66".repeat(32)) as Hex,
       );
-      const b = NullifierClient.deriveSoulBindingLocal(
+      const b = NullifierClient.deriveZaseonBindingLocal(
         ("0x" + "77".repeat(32)) as Hex,
       );
       expect(a).to.not.equal(b);
@@ -214,7 +214,7 @@ describe("NullifierClient", () => {
 
   describe("NullifierType enum", () => {
     it("should have expected values", () => {
-      expect(NullifierType.Soul_NATIVE).to.equal(0);
+      expect(NullifierType.Zaseon_NATIVE).to.equal(0);
       expect(NullifierType.MONERO_KEY_IMAGE).to.equal(1);
       expect(NullifierType.ZCASH_NOTE).to.equal(2);
       expect(NullifierType.AZTEC_NOTE).to.equal(7);

@@ -1,8 +1,8 @@
 #!/bin/bash
 # ==============================================================================
-# Soul v2 Multi-Chain Deployment Script
+# Zaseon v2 Multi-Chain Deployment Script
 # ==============================================================================
-# Deploys Soul v2 contracts to multiple EVM chains:
+# Deploys Zaseon v2 contracts to multiple EVM chains:
 # - Ethereum Mainnet
 # - Polygon
 # - Arbitrum One
@@ -133,7 +133,7 @@ verify_contracts() {
         "PolicyBoundProofs"
         "ExecutionAgnosticStateCommitments"
         "CrossDomainNullifierAlgebra"
-        "Soulv2Orchestrator"
+        "Zaseonv2Orchestrator"
         "HomomorphicHiding"
         "ComposableRevocationProofs"
     )

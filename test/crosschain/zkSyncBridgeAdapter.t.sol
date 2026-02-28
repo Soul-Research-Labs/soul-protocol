@@ -120,13 +120,13 @@ contract zkSyncBridgeAdapterTest is Test {
     }
 
     function test_isConfigured_false_noHub() public view {
-        // zkSyncDiamond is set but soulHubL2 is address(0)
+        // zkSyncDiamond is set but zaseonHubL2 is address(0)
         assertFalse(adapter.isConfigured());
     }
 
     function test_isConfigured_true() public {
         vm.prank(admin);
-        adapter.setSoulHubL2(makeAddr("hub"));
+        adapter.setZaseonHubL2(makeAddr("hub"));
         assertTrue(adapter.isConfigured());
     }
 
@@ -164,17 +164,17 @@ contract zkSyncBridgeAdapterTest is Test {
         adapter.configureZkSyncBridge(makeAddr("x"));
     }
 
-    function test_setSoulHubL2() public {
+    function test_setZaseonHubL2() public {
         address hub = makeAddr("hub");
         vm.prank(admin);
-        adapter.setSoulHubL2(hub);
-        assertEq(adapter.soulHubL2(), hub);
+        adapter.setZaseonHubL2(hub);
+        assertEq(adapter.zaseonHubL2(), hub);
     }
 
-    function test_setSoulHubL2_revert_zero() public {
+    function test_setZaseonHubL2_revert_zero() public {
         vm.prank(admin);
         vm.expectRevert("Invalid address");
-        adapter.setSoulHubL2(address(0));
+        adapter.setZaseonHubL2(address(0));
     }
 
     function test_setProofRegistry() public {

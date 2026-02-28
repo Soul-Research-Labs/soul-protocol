@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title ICrossChainSanctionsOracle
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Interface for quorum-based multi-provider sanctions screening
  */
 interface ICrossChainSanctionsOracle {

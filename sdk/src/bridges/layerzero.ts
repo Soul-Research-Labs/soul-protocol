@@ -1,5 +1,5 @@
 /**
- * @fileoverview LayerZero V2 bridge utilities for Soul SDK
+ * @fileoverview LayerZero V2 bridge utilities for Zaseon SDK
  * @module bridges/layerzero
  */
 

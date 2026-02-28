@@ -6,7 +6,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 
 /**
  * @title InstantRelayerRewards
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Per-relay instant fee distribution with speed-based tiers
  * @dev Layered on top of existing RelayerStaking pool-share model.
  *      RelayerStaking handles long-term staking rewards; this contract handles
@@ -29,7 +29,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
  * - Zero-address validation on all critical params
  * - Bounded reward multiplier prevents overflow
  *
- * @custom:security-contact security@soulprotocol.io
+ * @custom:security-contact security@zaseonprotocol.io
  */
 contract InstantRelayerRewards is AccessControl, ReentrancyGuard {
     /*//////////////////////////////////////////////////////////////

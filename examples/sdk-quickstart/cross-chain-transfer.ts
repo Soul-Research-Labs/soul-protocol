@@ -1,5 +1,5 @@
 /**
- * Soul Protocol — Cross-Chain Private Transfer Example
+ * ZASEON — Cross-Chain Private Transfer Example
  *
  * Uses the CrossChainPrivacyOrchestrator to send a private transfer
  * from one L2 to another.  The orchestrator coordinates:

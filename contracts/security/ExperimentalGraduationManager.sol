@@ -60,7 +60,7 @@ function updateFeatureStatus(
 
 /**
  * @title ExperimentalGraduationManager
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Formalises the graduation lifecycle for experimental features.
  *         Enforces on-chain criteria (audit attestation, test-coverage attestation,
  *         minimum time-in-beta, security-review sign-off) before a feature can
@@ -90,7 +90,7 @@ function updateFeatureStatus(
  *      - Attestation timestamps must be after feature entered BETA
  *      - Only one active proposal per feature at a time
  *
- * @custom:security-contact security@soulprotocol.io
+ * @custom:security-contact security@zaseonprotocol.io
  */
 contract ExperimentalGraduationManager is AccessControl, ReentrancyGuard {
     /*//////////////////////////////////////////////////////////////

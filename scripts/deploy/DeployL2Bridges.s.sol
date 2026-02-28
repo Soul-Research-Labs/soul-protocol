@@ -11,7 +11,7 @@ import {zkSyncBridgeAdapter} from "../../contracts/crosschain/zkSyncBridgeAdapte
 import {PolygonZkEVMBridgeAdapter} from "../../contracts/crosschain/PolygonZkEVMBridgeAdapter.sol";
 
 /**
- * @title Soul Protocol L2 Bridge Deployment Script
+ * @title ZASEON L2 Bridge Deployment Script
  * @notice Deploys bridge adapters to individual L2 networks
  *
  * Environment Variables:
@@ -77,7 +77,7 @@ contract DeployL2Bridges is Script {
 
         require(admin != address(0), "MULTISIG_ADMIN not set");
 
-        console.log("=== Soul L2 Bridge Deployment ===");
+        console.log("=== Zaseon L2 Bridge Deployment ===");
         console.log("Target:", target);
         console.log("Chain ID:", block.chainid);
         console.log("Deployer:", deployer);
@@ -251,7 +251,7 @@ contract DeployL2Bridges is Script {
 
         console.log("Scroll bridge deployed. Admin:", admin);
         console.log(
-            "  Post-deploy: configure soulHubL2 and proof registry via multisig"
+            "  Post-deploy: configure zaseonHubL2 and proof registry via multisig"
         );
     }
 
@@ -364,7 +364,7 @@ contract DeployL2Bridges is Script {
         adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
 
         console.log("Polygon zkEVM bridge deployed. Admin:", admin);
-        console.log("  Post-deploy: configure soulHubL2 via multisig");
+        console.log("  Post-deploy: configure zaseonHubL2 via multisig");
     }
 
     function _strEq(

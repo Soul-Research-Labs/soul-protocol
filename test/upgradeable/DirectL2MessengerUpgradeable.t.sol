@@ -28,7 +28,7 @@ contract DirectL2MessengerUpgradeableTest is Test {
     DirectL2MessengerUpgradeable public messenger;
 
     address admin = address(this);
-    address soulHub = makeAddr("soulHub");
+    address zaseonHub = makeAddr("zaseonHub");
     address operator = makeAddr("operator");
     address relayer1 = makeAddr("relayer1");
     address relayer2 = makeAddr("relayer2");
@@ -40,7 +40,7 @@ contract DirectL2MessengerUpgradeableTest is Test {
 
     function setUp() public {
         impl = new DirectL2MessengerUpgradeable();
-        bytes memory data = abi.encodeCall(impl.initialize, (admin, soulHub));
+        bytes memory data = abi.encodeCall(impl.initialize, (admin, zaseonHub));
         ERC1967Proxy proxy = new ERC1967Proxy(address(impl), data);
         messenger = DirectL2MessengerUpgradeable(payable(address(proxy)));
     }
@@ -61,8 +61,8 @@ contract DirectL2MessengerUpgradeableTest is Test {
         assertTrue(messenger.hasRole(messenger.UPGRADER_ROLE(), admin));
     }
 
-    function test_InitializerSetsSoulHub() public view {
-        assertEq(messenger.soulHub(), soulHub);
+    function test_InitializerSetsZaseonHub() public view {
+        assertEq(messenger.zaseonHub(), zaseonHub);
     }
 
     function test_InitializerSetsChainId() public view {
@@ -83,7 +83,7 @@ contract DirectL2MessengerUpgradeableTest is Test {
 
     function test_CannotDoubleInitialize() public {
         vm.expectRevert();
-        messenger.initialize(admin, soulHub);
+        messenger.initialize(admin, zaseonHub);
     }
 
     function test_CannotInitializeWithZeroAdmin() public {
@@ -91,7 +91,7 @@ contract DirectL2MessengerUpgradeableTest is Test {
         vm.expectRevert(DirectL2MessengerUpgradeable.ZeroAddress.selector);
         new ERC1967Proxy(
             address(newImpl),
-            abi.encodeCall(newImpl.initialize, (address(0), soulHub))
+            abi.encodeCall(newImpl.initialize, (address(0), zaseonHub))
         );
     }
 
@@ -274,7 +274,7 @@ contract DirectL2MessengerUpgradeableTest is Test {
         // State preserved
         assertEq(messenger.requiredConfirmations(), 7);
         assertEq(messenger.challengerReward(), 0.5 ether);
-        assertEq(messenger.soulHub(), soulHub);
+        assertEq(messenger.zaseonHub(), zaseonHub);
         assertEq(messenger.currentChainId(), block.chainid);
         assertEq(messenger.contractVersion(), 2);
     }

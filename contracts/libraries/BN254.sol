@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title BN254
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Gas-efficient BN254 (alt_bn128) elliptic curve operations
  * @dev Uses EVM precompiles: ecAdd (0x06), ecMul (0x07), modExp (0x05).
  *      Curve equation: y² = x³ + 3 over F_p

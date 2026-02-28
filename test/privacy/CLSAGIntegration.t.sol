@@ -17,9 +17,9 @@ contract CLSAGIntegrationTest is Test {
     address public owner;
 
     // Mirror CLSAGVerifier domain separators
-    bytes32 constant COMMITMENT_DOMAIN = keccak256("SOUL_CLSAG_COMMITMENT_V1");
-    bytes32 constant CHALLENGE_DOMAIN = keccak256("SOUL_CLSAG_CHALLENGE_V1");
-    bytes32 constant KEY_IMAGE_DOMAIN = keccak256("SOUL_KEY_IMAGE_V1");
+    bytes32 constant COMMITMENT_DOMAIN = keccak256("ZASEON_CLSAG_COMMITMENT_V1");
+    bytes32 constant CHALLENGE_DOMAIN = keccak256("ZASEON_CLSAG_CHALLENGE_V1");
+    bytes32 constant KEY_IMAGE_DOMAIN = keccak256("ZASEON_KEY_IMAGE_V1");
 
     // secp256k1 half-order for malleability check
     uint256 constant HALF_N =

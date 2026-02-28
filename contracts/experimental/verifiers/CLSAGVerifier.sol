@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title CLSAGVerifier
- * @author Soul Protocol
+ * @author ZASEON
  * @notice On-chain CLSAG-style ring signature verifier for Ring Confidential Transactions
  * @custom:experimental This contract is research-tier and NOT production-ready. See contracts/experimental/README.md for promotion criteria.
  * @custom:deprecated Ring signature verification has been migrated to a Noir circuit
@@ -65,14 +65,14 @@ contract CLSAGVerifier {
 
     /// @notice Domain separator for commitment computation
     bytes32 public constant COMMITMENT_DOMAIN =
-        keccak256("SOUL_CLSAG_COMMITMENT_V1");
+        keccak256("ZASEON_CLSAG_COMMITMENT_V1");
 
     /// @notice Domain separator for challenge computation
     bytes32 public constant CHALLENGE_DOMAIN =
-        keccak256("SOUL_CLSAG_CHALLENGE_V1");
+        keccak256("ZASEON_CLSAG_CHALLENGE_V1");
 
     /// @notice Domain separator for key image computation
-    bytes32 public constant KEY_IMAGE_DOMAIN = keccak256("SOUL_KEY_IMAGE_V1");
+    bytes32 public constant KEY_IMAGE_DOMAIN = keccak256("ZASEON_KEY_IMAGE_V1");
 
     // ═══════════════════════════════════════════════════════════════════════
     // VERIFICATION

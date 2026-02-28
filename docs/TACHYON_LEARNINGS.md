@@ -1,26 +1,26 @@
-# What Soul Protocol Can Learn from Tachyon
+# What ZASEON Can Learn from Tachyon
 
 ## Executive Summary
 
-Tachyon offers several innovative approaches that Soul Protocol can adopt while maintaining its cryptographic privacy guarantees. This document outlines 7 key learnings and provides implementation strategies.
+Tachyon offers several innovative approaches that ZASEON can adopt while maintaining its cryptographic privacy guarantees. This document outlines 7 key learnings and provides implementation strategies.
 
 ---
 
-## ⚠️ Critical Context: Soul Is Proof Middleware, Not a Bridge
+## ⚠️ Critical Context: Zaseon Is Proof Middleware, Not a Bridge
 
 Before reading the learnings below, understand the key distinction:
 
-**Soul Protocol transfers ZK proofs, not tokens.** It is cross-chain privacy middleware. The Tachyon-inspired contracts adapt Tachyon's concepts to this proof-centric model:
+**ZASEON transfers ZK proofs, not tokens.** It is cross-chain privacy middleware. The Tachyon-inspired contracts adapt Tachyon's concepts to this proof-centric model:
 
-| Tachyon Concept                   | Soul Adaptation                                         | Key Difference                   |
+| Tachyon Concept                   | Zaseon Adaptation                                         | Key Difference                   |
 | --------------------------------- | ------------------------------------------------------- | -------------------------------- |
-| Solvers move tokens               | Solvers generate & deliver ZK proofs                    | No token movement in Soul        |
-| Bridge capacity                   | `BridgeCapacity` (oracle-observed bridge metadata)      | Soul doesn't manage pools        |
+| Solvers move tokens               | Solvers generate & deliver ZK proofs                    | No token movement in Zaseon        |
+| Bridge capacity                   | `BridgeCapacity` (oracle-observed bridge metadata)      | Zaseon doesn't manage pools        |
 | Instant completion of funds       | Bonded guarantee that proof will land                   | Guarantee covers proof delivery  |
 | Dynamic routing of value      | Routing of proof relay requests through bridge adapters | Routes proofs, not value         |
 | Solver rewards for token delivery | Relayer rewards for proof relay speed                   | Incentivizes fast proof delivery |
 
-**Where do the tokens come from?** Soul uses a single model: **Bridge-Wrapped Privacy** (see [architecture.md](architecture.md#token-flow-bridge-wrapped-privacy)). Existing bridges (Hyperlane, LayerZero, Wormhole, etc.) move tokens. Soul wraps them with ZK proofs, nullifiers, and stealth addresses. The `IntentCompletionLayer` and `InstantCompletionGuarantee` are UX optimizations within this model — they coordinate proof generation and delivery, not token movement.
+**Where do the tokens come from?** Zaseon uses a single model: **Bridge-Wrapped Privacy** (see [architecture.md](architecture.md#token-flow-bridge-wrapped-privacy)). Existing bridges (Hyperlane, LayerZero, Wormhole, etc.) move tokens. Zaseon wraps them with ZK proofs, nullifiers, and stealth addresses. The `IntentCompletionLayer` and `InstantCompletionGuarantee` are UX optimizations within this model — they coordinate proof generation and delivery, not token movement.
 
 ---
 
@@ -35,9 +35,9 @@ Before reading the learnings below, understand the key distinction:
 - Instant completion without waiting for traditional bridges
 - Solvers get immediate payouts upon confirmation
 
-**What Soul Can Learn**:
+**What Zaseon Can Learn**:
 
-- Current Soul model: Users must manually construct ZK proofs and submit to specific bridges
+- Current Zaseon model: Users must manually construct ZK proofs and submit to specific bridges
 - **Improvement**: Add an intent layer where users express desired outcomes, solvers handle proof generation and routing
 
 **Implementation Strategy**:
@@ -80,7 +80,7 @@ contract IntentCompletionLayer {
 }
 ```
 
-**Benefits for Soul**:
+**Benefits for Zaseon**:
 
 - Better UX - users don't need to understand ZK proofs
 - Faster execution - competitive solver market
@@ -98,9 +98,9 @@ contract IntentCompletionLayer {
 - Institutions maintain privacy while satisfying compliance
 - Selective disclosure without breaking privacy
 
-**What Soul Can Learn**:
+**What Zaseon Can Learn**:
 
-- Current Soul model: All-or-nothing privacy (either fully private or fully public)
+- Current Zaseon model: All-or-nothing privacy (either fully private or fully public)
 - **Improvement**: Add granular viewing permissions for compliance
 
 **Implementation Strategy**:
@@ -156,7 +156,7 @@ contract SelectiveDisclosureManager {
 }
 ```
 
-**Benefits for Soul**:
+**Benefits for Zaseon**:
 
 - Opens institutional market (banks, enterprises)
 - Maintains privacy while satisfying regulators
@@ -174,9 +174,9 @@ contract SelectiveDisclosureManager {
 - Capital returns instantly, improving efficiency
 - Competitive market drives down fees
 
-**What Soul Can Learn**:
+**What Zaseon Can Learn**:
 
-- Current Soul model: Relayers wait for challenge periods, capital locked
+- Current Zaseon model: Relayers wait for challenge periods, capital locked
 - **Improvement**: Instant rewards for successful proof relay
 
 **Implementation Strategy**:
@@ -220,7 +220,7 @@ contract InstantRelayerRewards {
 }
 ```
 
-**Benefits for Soul**:
+**Benefits for Zaseon**:
 
 - Better capital efficiency for relayers
 - Lower fees due to competition
@@ -238,9 +238,9 @@ contract InstantRelayerRewards {
 - Dynamic routing based on bridge capacity
 - Predictive completion paths
 
-**What Soul Can Learn**:
+**What Zaseon Can Learn**:
 
-- Current Soul model: Static bridge selection, no real-time optimization
+- Current Zaseon model: Static bridge selection, no real-time optimization
 - **Improvement**: Dynamic routing with real-time capacity awareness
 
 **Implementation Strategy**:
@@ -306,7 +306,7 @@ contract DynamicRoutingOrchestrator {
 }
 ```
 
-**Benefits for Soul**:
+**Benefits for Zaseon**:
 
 - Lower costs through optimal routing
 - Faster completions
@@ -324,9 +324,9 @@ contract DynamicRoutingOrchestrator {
 - Different levels for different use cases
 - Flexible privacy policies
 
-**What Soul Can Learn**:
+**What Zaseon Can Learn**:
 
-- Current Soul model: Maximum privacy always (one-size-fits-all)
+- Current Zaseon model: Maximum privacy always (one-size-fits-all)
 - **Improvement**: Let users choose privacy level based on needs
 
 **Implementation Strategy**:
@@ -382,7 +382,7 @@ contract ConfigurablePrivacyLevels {
 }
 ```
 
-**Benefits for Soul**:
+**Benefits for Zaseon**:
 
 - Attracts institutional users (need compliance)
 - Lower fees for less privacy (more users)
@@ -400,9 +400,9 @@ contract ConfigurablePrivacyLevels {
 - Solver takes on the risk
 - Better user experience
 
-**What Soul Can Learn**:
+**What Zaseon Can Learn**:
 
-- Current Soul model: Users wait for challenge periods (1 hour for high-value)
+- Current Zaseon model: Users wait for challenge periods (1 hour for high-value)
 - **Improvement**: Instant UX with bonded proof delivery guarantees
 
 **Implementation Strategy**:
@@ -469,7 +469,7 @@ contract InstantCompletionGuarantee {
 }
 ```
 
-**Benefits for Soul**:
+**Benefits for Zaseon**:
 
 - Instant UX for users
 - Solvers earn fees for taking risk
@@ -487,9 +487,9 @@ contract InstantCompletionGuarantee {
 - Regulatory reporting tools
 - KYC/AML integration
 
-**What Soul Can Learn**:
+**What Zaseon Can Learn**:
 
-- Current Soul model: Privacy-first, compliance is afterthought
+- Current Zaseon model: Privacy-first, compliance is afterthought
 - **Improvement**: First-class compliance features
 
 **Implementation Strategy**:
@@ -574,7 +574,7 @@ contract ComplianceReportingModule {
 }
 ```
 
-**Benefits for Soul**:
+**Benefits for Zaseon**:
 
 - Opens institutional market
 - Regulatory approval easier
@@ -607,7 +607,7 @@ contract ComplianceReportingModule {
 
 **Tachyon's main advantage**: Compliance-first design attracts institutions
 
-**Soul's opportunity**: Add compliance features WITHOUT sacrificing cryptographic privacy
+**Zaseon's opportunity**: Add compliance features WITHOUT sacrificing cryptographic privacy
 
 **Strategy**:
 
@@ -690,7 +690,7 @@ contract IntentLayer {
 
 ## 🎓 Conclusion
 
-Tachyon's compliance-first approach offers valuable lessons for Soul Protocol. By implementing:
+Tachyon's compliance-first approach offers valuable lessons for ZASEON. By implementing:
 
 1. **Programmable viewing permissions**
 2. **Configurable privacy levels**
@@ -698,7 +698,7 @@ Tachyon's compliance-first approach offers valuable lessons for Soul Protocol. B
 4. **Instant completion UX**
 5. **Compliance reporting tools**
 
-Soul can maintain its cryptographic privacy guarantees while opening up the institutional market and improving user experience.
+Zaseon can maintain its cryptographic privacy guarantees while opening up the institutional market and improving user experience.
 
 **Key Principle**: Add compliance features as an OPTIONAL LAYER on top of core ZK privacy, never compromising the cryptographic foundation.
 
@@ -717,7 +717,7 @@ Soul can maintain its cryptographic privacy guarantees while opening up the inst
 
 ## Implementation Status
 
-All 7 Tachyon learnings are now implemented in Soul Protocol:
+All 7 Tachyon learnings are now implemented in ZASEON:
 
 | #   | Learning                              | Contract(s)                  | Status                           |
 | --- | ------------------------------------- | ---------------------------- | -------------------------------- |
@@ -736,14 +736,14 @@ All 7 Tachyon learnings are now implemented in Soul Protocol:
 
 ### Hub Wiring
 
-SoulProtocolHub expanded from 19 → 25 components:
+ZaseonProtocolHub expanded from 19 → 25 components:
 
 - Slot 20: `IntentCompletionLayer` (CORE)
 - Slot 21: `InstantCompletionGuarantee` (CORE)
 - Slot 22: `DynamicRoutingOrchestrator` (INFRASTRUCTURE)
 - Slot 23: `BridgeCircuitBreaker` (SECURITY)
-- Slot 24: `SoulTimelock` (GOVERNANCE)
-- Slot 25: `SoulUpgradeTimelock` (GOVERNANCE)
+- Slot 24: `ZaseonTimelock` (GOVERNANCE)
+- Slot 25: `ZaseonUpgradeTimelock` (GOVERNANCE)
 
 ### Privacy ↔ Compliance Integration
 
@@ -773,5 +773,5 @@ CrossChainPrivacyHub now has compliance hooks:
 
 **Document Version**: 2.0  
 **Last Updated**: June 2025  
-**Author**: Soul Protocol Team  
+**Author**: ZASEON Team  
 **Status**: All Tachyon Learnings Implemented

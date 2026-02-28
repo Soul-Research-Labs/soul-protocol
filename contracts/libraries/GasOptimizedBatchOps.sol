@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title GasOptimizedBatchOps
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Gas-optimized batch operation helpers for protocol-wide batch processing
  * @dev Provides pure/view utility functions for batching common protocol operations
  *      to reduce per-tx overhead. Uses assembly where beneficial for gas savings.
@@ -22,7 +22,7 @@ pragma solidity ^0.8.24;
  *      - Assembly used only where measurable gas savings exist
  *      - All assembly blocks are well-documented
  *
- * @custom:security-contact security@soulprotocol.io
+ * @custom:security-contact security@zaseonprotocol.io
  */
 library GasOptimizedBatchOps {
     /*//////////////////////////////////////////////////////////////
@@ -358,7 +358,7 @@ library GasOptimizedBatchOps {
         bytes32 batchHash
     ) internal pure returns (bytes32 domainHash) {
         domainHash = keccak256(
-            abi.encodePacked("SoulBatch_v1", chainId, batchNonce, batchHash)
+            abi.encodePacked("ZaseonBatch_v1", chainId, batchNonce, batchHash)
         );
     }
 

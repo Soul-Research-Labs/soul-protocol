@@ -50,14 +50,14 @@ contract DirectL2MessengerTest is Test {
     MockSuperchainMessenger public mockSuperchain;
 
     address public admin = address(this);
-    address public soulHub = makeAddr("soulHub");
+    address public zaseonHub = makeAddr("zaseonHub");
     address public operator = makeAddr("operator");
     address public user = makeAddr("user");
 
     uint256 public constant DEST_CHAIN = 10; // Optimism
 
     function setUp() public {
-        messenger = new DirectL2Messenger(admin, soulHub);
+        messenger = new DirectL2Messenger(admin, zaseonHub);
         recipient = new MockRecipient();
         mockSuperchain = new MockSuperchainMessenger();
 
@@ -102,8 +102,8 @@ contract DirectL2MessengerTest is Test {
         assertTrue(messenger.hasRole(messenger.OPERATOR_ROLE(), admin));
     }
 
-    function test_constructor_setsSoulHub() public view {
-        assertEq(messenger.soulHub(), soulHub);
+    function test_constructor_setsZaseonHub() public view {
+        assertEq(messenger.zaseonHub(), zaseonHub);
     }
 
     function test_constructor_setsChainId() public view {
@@ -112,10 +112,10 @@ contract DirectL2MessengerTest is Test {
 
     function test_constructor_revertsZeroAdmin() public {
         vm.expectRevert(DirectL2Messenger.ZeroAddress.selector);
-        new DirectL2Messenger(address(0), soulHub);
+        new DirectL2Messenger(address(0), zaseonHub);
     }
 
-    function test_constructor_revertsZeroSoulHub() public {
+    function test_constructor_revertsZeroZaseonHub() public {
         vm.expectRevert(DirectL2Messenger.ZeroAddress.selector);
         new DirectL2Messenger(admin, address(0));
     }

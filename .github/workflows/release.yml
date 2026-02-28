@@ -185,10 +185,10 @@ jobs:
         run: |
           mkdir -p release-artifacts/abis
           # Extract ABIs from core contracts
-          for contract in SoulProtocolHub CrossChainProofHubV3 MultiBridgeRouter \
+          for contract in ZaseonProtocolHub CrossChainProofHubV3 MultiBridgeRouter \
             ZKBoundStateLocks NullifierRegistryV3 StealthAddressRegistry \
             ProofCarryingContainer UniversalShieldedPool PrivacyRouter \
-            SoulGovernor SoulToken; do
+            ZaseonGovernor ZaseonToken; do
             ABI_FILE=$(find out/ -name "${contract}.json" -path "*/out/*" | head -1)
             if [ -f "$ABI_FILE" ]; then
               jq '.abi' "$ABI_FILE" > "release-artifacts/abis/${contract}.json"
@@ -207,13 +207,13 @@ jobs:
       - name: Package release
         run: |
           VERSION="${{ needs.validate.outputs.version }}"
-          tar -czf "soul-protocol-${VERSION}-artifacts.tar.gz" release-artifacts/
+          tar -czf "zaseon-${VERSION}-artifacts.tar.gz" release-artifacts/
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: release-artifacts
-          path: soul-protocol-*-artifacts.tar.gz
+          path: zaseon-*-artifacts.tar.gz
           retention-days: 90
 
   create-release:
@@ -232,11 +232,11 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.validate.outputs.version }}
-          name: "Soul Protocol ${{ needs.validate.outputs.version }}"
+          name: "ZASEON ${{ needs.validate.outputs.version }}"
           body: ${{ needs.generate-changelog.outputs.changelog }}
           draft: false
           prerelease: ${{ inputs.prerelease || false }}
           files: |
-            soul-protocol-*-artifacts.tar.gz
+            zaseon-*-artifacts.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

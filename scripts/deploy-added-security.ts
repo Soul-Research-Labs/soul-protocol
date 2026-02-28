@@ -25,7 +25,7 @@ interface DeploymentResult {
 
 async function main() {
   console.log("\n" + "=".repeat(60));
-  console.log("   Soul Security Modules Deployment");
+  console.log("   Zaseon Security Modules Deployment");
   console.log("=".repeat(60) + "\n");
 
   const [deployer] = await hre.viem.getWalletClients();

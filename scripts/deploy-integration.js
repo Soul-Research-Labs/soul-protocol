@@ -3,10 +3,10 @@ const { ethers } = require("hardhat");
 const fs = require("fs");
 
 /**
- * Soul Protocol Integration Deployment Script
+ * ZASEON Integration Deployment Script
  * 
- * Deploys and wires up all Soul Protocol components:
- * - SoulProtocolHub (Central registry)
+ * Deploys and wires up all ZASEON components:
+ * - ZaseonProtocolHub (Central registry)
  * - Verifiers (Groth16, Universal, MultiProver, Registry)
  * - Security Modules (Proof Validator, Watchtower, Circuit Breaker)
  * - Core Primitives (PC³, PBP, CDNA)
@@ -14,18 +14,18 @@ const fs = require("fs");
 
 async function main() {
     const [deployer] = await ethers.getSigners();
-    console.log("Deploying Soul Protocol Integration with account:", deployer.address);
+    console.log("Deploying ZASEON Integration with account:", deployer.address);
     console.log("Account balance:", ethers.formatEther(await ethers.provider.getBalance(deployer.address)));
 
     // =========================================================================
-    // STEP 1: Deploy SoulProtocolHub
+    // STEP 1: Deploy ZaseonProtocolHub
     // =========================================================================
-    console.log("\n[1/6] Deploying SoulProtocolHub...");
+    console.log("\n[1/6] Deploying ZaseonProtocolHub...");
     
-    const SoulProtocolHub = await ethers.getContractFactory("SoulProtocolHub");
-    const hub = await SoulProtocolHub.deploy();
+    const ZaseonProtocolHub = await ethers.getContractFactory("ZaseonProtocolHub");
+    const hub = await ZaseonProtocolHub.deploy();
     await hub.waitForDeployment();
-    console.log("SoulProtocolHub deployed to:", await hub.getAddress());
+    console.log("ZaseonProtocolHub deployed to:", await hub.getAddress());
 
     // =========================================================================
     // STEP 2: Deploy Verifiers
@@ -37,15 +37,15 @@ async function main() {
     await groth16Verifier.waitForDeployment();
     console.log("Groth16VerifierBN254 deployed to:", await groth16Verifier.getAddress());
 
-    const SoulUniversalVerifier = await ethers.getContractFactory("SoulUniversalVerifier");
-    const universalVerifier = await SoulUniversalVerifier.deploy();
+    const ZaseonUniversalVerifier = await ethers.getContractFactory("ZaseonUniversalVerifier");
+    const universalVerifier = await ZaseonUniversalVerifier.deploy();
     await universalVerifier.waitForDeployment();
-    console.log("SoulUniversalVerifier deployed to:", await universalVerifier.getAddress());
+    console.log("ZaseonUniversalVerifier deployed to:", await universalVerifier.getAddress());
 
-    const SoulMultiProver = await ethers.getContractFactory("SoulMultiProver");
-    const multiProver = await SoulMultiProver.deploy();
+    const ZaseonMultiProver = await ethers.getContractFactory("ZaseonMultiProver");
+    const multiProver = await ZaseonMultiProver.deploy();
     await multiProver.waitForDeployment();
-    console.log("SoulMultiProver deployed to:", await multiProver.getAddress());
+    console.log("ZaseonMultiProver deployed to:", await multiProver.getAddress());
 
     const VerifierRegistry = await ethers.getContractFactory("VerifierRegistry");
     const verifierRegistry = await VerifierRegistry.deploy();
@@ -63,7 +63,7 @@ async function main() {
     await hub.setMultiProver(await multiProver.getAddress());
     await hub.setVerifierRegistry(await verifierRegistry.getAddress());
     await hub.registerVerifier(GROTH16_VERIFIER, await groth16Verifier.getAddress(), 300000);
-    console.log("Verifiers registered with SoulProtocolHub");
+    console.log("Verifiers registered with ZaseonProtocolHub");
 
     // =========================================================================
     // STEP 4: Deploy Security Modules
@@ -88,7 +88,7 @@ async function main() {
     await hub.setBridgeProofValidator(await bridgeProofValidator.getAddress());
     await hub.setBridgeWatchtower(await bridgeWatchtower.getAddress());
     await hub.setBridgeCircuitBreaker(await bridgeCircuitBreaker.getAddress());
-    console.log("Security modules registered with SoulProtocolHub");
+    console.log("Security modules registered with ZaseonProtocolHub");
 
     // =========================================================================
     // STEP 5: Deploy Core Primitives
@@ -113,13 +113,13 @@ async function main() {
     await hub.setProofCarryingContainer(await pc3.getAddress());
     await hub.setPolicyBoundProofs(await pbp.getAddress());
     await hub.setCrossDomainNullifierAlgebra(await cdna.getAddress());
-    console.log("Core primitives registered with SoulProtocolHub");
+    console.log("Core primitives registered with ZaseonProtocolHub");
 
     // =========================================================================
     // STEP 6: Deployment Summary
     // =========================================================================
     console.log("\n" + "=".repeat(80));
-    console.log("SOUL PROTOCOL INTEGRATION DEPLOYMENT COMPLETE");
+    console.log("ZASEON PROTOCOL INTEGRATION DEPLOYMENT COMPLETE");
     console.log("=".repeat(80));
     
     const deploymentInfo = {

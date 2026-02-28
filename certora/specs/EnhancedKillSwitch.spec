@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - EnhancedKillSwitch
+ * ZASEON - EnhancedKillSwitch
  *
  * Verifies safety invariants for the multi-level emergency stop
  * system with guardian consensus and recovery procedures.

@@ -1,8 +1,8 @@
 {
-  "name": "@soul/sdk",
+  "name": "@zaseon/sdk",
   "version": "2.0.0",
   "type": "module",
-  "description": "Soul Protocol - Cross-chain ZK privacy middleware for confidential state transfer across L2 networks",
+  "description": "ZASEON - Cross-chain ZK privacy middleware for confidential state transfer across L2 networks",
   "scripts": {
     "compile": "hardhat compile",
     "compile:forge": "forge build",
@@ -33,7 +33,7 @@
     "slither:json": "slither . --config-file slither.config.json --json slither-report.json",
     "mythril": "myth analyze contracts/primitives/ZKBoundStateLocks.sol --execution-timeout 3600 --max-depth 50",
     "mythril:quick": "myth analyze contracts/primitives/ZKBoundStateLocks.sol --max-depth 10",
-    "echidna": "echidna . --config test/fuzz/echidna.config.yaml --contract SoulInvariantTests",
+    "echidna": "echidna . --config test/fuzz/echidna.config.yaml --contract ZaseonInvariantTests",
     "certora": "certoraRun certora/conf/verify.conf",
     "certora:zkslocks": "certoraRun certora/conf/verify_zkslocks.conf",
     "certora:batch-accumulator": "certoraRun certora/conf/verify_batch_accumulator.conf",

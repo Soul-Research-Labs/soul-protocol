@@ -4,7 +4,7 @@ import path from "path";
 import { formatEther, parseEther, type Address } from "viem";
 
 /**
- * Soul Privacy Middleware Deployment Script (Hardhat v3 / viem)
+ * Zaseon Privacy Middleware Deployment Script (Hardhat v3 / viem)
  *
  * Deploys the privacy middleware stack in dependency order:
  *   1. CrossChainSanctionsOracle
@@ -33,7 +33,7 @@ interface DeploymentLog {
 
 async function main() {
     console.log("\n" + "=".repeat(80));
-    console.log("SOUL PRIVACY MIDDLEWARE DEPLOYMENT (Hardhat v3 / Viem)");
+    console.log("ZASEON PRIVACY MIDDLEWARE DEPLOYMENT (Hardhat v3 / Viem)");
     console.log("=".repeat(80) + "\n");
 
     const { viem } = await hre.network.connect();

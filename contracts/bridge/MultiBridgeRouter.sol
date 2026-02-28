@@ -9,7 +9,7 @@ import "../interfaces/IMultiBridgeRouter.sol";
 
 /**
  * @title MultiBridgeRouter
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Routes cross-chain messages through multiple bridge providers for redundancy
  * @dev Implements:
  *      - Multi-bridge verification (2-of-3 consensus)

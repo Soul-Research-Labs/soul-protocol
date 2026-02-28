@@ -1,4 +1,4 @@
-# Soul Protocol — Deployments
+# ZASEON — Deployments
 
 This directory contains deployment artifacts (contract addresses, ABIs, verification status) for each network.
 

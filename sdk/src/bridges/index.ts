@@ -1,5 +1,5 @@
 /**
- * Soul SDK - Bridge Adapters Module
+ * Zaseon SDK - Bridge Adapters Module
  *
  * Provides TypeScript interfaces and implementations for supported L2 bridge adapters.
  * All adapters target EVM-compatible L2 networks.
@@ -243,7 +243,7 @@ const CHAIN_CONFIGS: Record<SupportedChain, BridgeAdapterConfig> = {
 // ============================================
 
 /**
- * Generic L2 bridge adapter that delegates to Soul bridge contracts.
+ * Generic L2 bridge adapter that delegates to Zaseon bridge contracts.
  * Uses the bridge adapter ABI to interact with on-chain contracts.
  */
 export class L2BridgeAdapter extends BaseBridgeAdapter {

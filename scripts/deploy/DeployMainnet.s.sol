@@ -14,7 +14,7 @@ import {RelayProofValidator} from "../../contracts/security/RelayProofValidator.
 
 // ── Phase 2: Verifiers ──
 import {VerifierRegistryV2} from "../../contracts/verifiers/VerifierRegistryV2.sol";
-import {SoulUniversalVerifier} from "../../contracts/verifiers/SoulUniversalVerifier.sol";
+import {ZaseonUniversalVerifier} from "../../contracts/verifiers/ZaseonUniversalVerifier.sol";
 import {UltraHonkAdapter} from "../../contracts/verifiers/adapters/UltraHonkAdapter.sol";
 
 // ── Phase 3: Primitives ──
@@ -24,16 +24,16 @@ import {CrossDomainNullifierAlgebra} from "../../contracts/primitives/CrossDomai
 import {PolicyBoundProofs} from "../../contracts/primitives/PolicyBoundProofs.sol";
 
 // ── Phase 4: Hub ──
-import {SoulProtocolHub} from "../../contracts/core/SoulProtocolHub.sol";
-import "../../contracts/interfaces/ISoulProtocolHub.sol";
+import {ZaseonProtocolHub} from "../../contracts/core/ZaseonProtocolHub.sol";
+import "../../contracts/interfaces/IZaseonProtocolHub.sol";
 
 // ── Phase 5: Governance ──
-import {SoulToken} from "../../contracts/governance/SoulToken.sol";
-import {SoulGovernor} from "../../contracts/governance/SoulGovernor.sol";
-import {SoulUpgradeTimelock} from "../../contracts/governance/SoulUpgradeTimelock.sol";
+import {ZaseonToken} from "../../contracts/governance/ZaseonToken.sol";
+import {ZaseonGovernor} from "../../contracts/governance/ZaseonGovernor.sol";
+import {ZaseonUpgradeTimelock} from "../../contracts/governance/ZaseonUpgradeTimelock.sol";
 
 /**
- * @title Soul Protocol Mainnet Deployment Script
+ * @title ZASEON Mainnet Deployment Script
  * @notice Full 8-phase deployment: Security → Verifiers → Primitives → Hub → Governance → Wiring → Roles → Verification
  *
  * Requirements:
@@ -90,7 +90,7 @@ contract DeployMainnet is Script {
 
     // Phase 2: Verifiers
     VerifierRegistryV2 public verifierRegistry;
-    SoulUniversalVerifier public universalVerifier;
+    ZaseonUniversalVerifier public universalVerifier;
 
     // Phase 3: Primitives
     ZKBoundStateLocks public zkBoundStateLocks;
@@ -99,12 +99,12 @@ contract DeployMainnet is Script {
     PolicyBoundProofs public policyBoundProofs;
 
     // Phase 4: Hub
-    SoulProtocolHub public hub;
+    ZaseonProtocolHub public hub;
 
     // Phase 5: Governance
-    SoulToken public soulToken;
-    SoulGovernor public governor;
-    SoulUpgradeTimelock public upgradeTimelock;
+    ZaseonToken public zaseonToken;
+    ZaseonGovernor public governor;
+    ZaseonUpgradeTimelock public upgradeTimelock;
 
     function run() external {
         // ========= LOAD CONFIGURATION =========
@@ -121,7 +121,7 @@ contract DeployMainnet is Script {
         uint256 deployerPK = vm.envUint("DEPLOYER_PRIVATE_KEY");
         address deployer = vm.addr(deployerPK);
 
-        console.log("=== Soul Protocol Mainnet Deployment (Full) ===");
+        console.log("=== ZASEON Mainnet Deployment (Full) ===");
         console.log("Deployer:", deployer);
         console.log("Admin (multisig):", admin);
         console.log("Chain ID:", block.chainid);
@@ -173,8 +173,8 @@ contract DeployMainnet is Script {
         verifierRegistry = new VerifierRegistryV2();
         console.log("VerifierRegistryV2:", address(verifierRegistry));
 
-        universalVerifier = new SoulUniversalVerifier(deployer);
-        console.log("SoulUniversalVerifier:", address(universalVerifier));
+        universalVerifier = new ZaseonUniversalVerifier(deployer);
+        console.log("ZaseonUniversalVerifier:", address(universalVerifier));
 
         // ======== PHASE 3: PRIMITIVES ========
         console.log("\n--- Phase 3: Primitives ---");
@@ -194,37 +194,37 @@ contract DeployMainnet is Script {
         // ======== PHASE 4: HUB ========
         console.log("\n--- Phase 4: Hub ---");
 
-        hub = new SoulProtocolHub();
-        console.log("SoulProtocolHub:", address(hub));
+        hub = new ZaseonProtocolHub();
+        console.log("ZaseonProtocolHub:", address(hub));
 
         // ======== PHASE 5: GOVERNANCE ========
         console.log("\n--- Phase 5: Governance ---");
 
-        soulToken = new SoulToken();
-        console.log("SoulToken:", address(soulToken));
+        zaseonToken = new ZaseonToken();
+        console.log("ZaseonToken:", address(zaseonToken));
 
         // Timelock: admin is proposer + executor, governor will be added after
         address[] memory proposers = new address[](1);
         proposers[0] = admin;
         address[] memory executors = new address[](1);
         executors[0] = address(0); // anyone can execute once queued
-        upgradeTimelock = new SoulUpgradeTimelock(
+        upgradeTimelock = new ZaseonUpgradeTimelock(
             1 days,
             proposers,
             executors,
             admin
         );
-        console.log("SoulUpgradeTimelock:", address(upgradeTimelock));
+        console.log("ZaseonUpgradeTimelock:", address(upgradeTimelock));
 
-        governor = new SoulGovernor(
-            IVotes(address(soulToken)),
+        governor = new ZaseonGovernor(
+            IVotes(address(zaseonToken)),
             TimelockController(payable(address(upgradeTimelock))),
             0,
             0,
             0,
             0 // defaults: 1d delay, 5d period, 100k threshold, 4% quorum
         );
-        console.log("SoulGovernor:", address(governor));
+        console.log("ZaseonGovernor:", address(governor));
 
         // Grant governor proposer/executor/canceller on timelock
         upgradeTimelock.grantRole(
@@ -251,7 +251,7 @@ contract DeployMainnet is Script {
 
         // Wire the Hub with all component addresses
         hub.wireAll(
-            ISoulProtocolHub.WireAllParams({
+            IZaseonProtocolHub.WireAllParams({
                 _verifierRegistry: address(verifierRegistry),
                 _universalVerifier: address(universalVerifier),
                 _crossChainMessageRelay: address(0), // deployed separately per L2
@@ -320,7 +320,7 @@ contract DeployMainnet is Script {
         );
         verifierRegistry.grantRole(verifierRegistry.GUARDIAN_ROLE(), admin);
 
-        // SoulProtocolHub
+        // ZaseonProtocolHub
         hub.grantRole(hub.DEFAULT_ADMIN_ROLE(), admin);
         hub.grantRole(hub.OPERATOR_ROLE(), admin);
         hub.grantRole(hub.GUARDIAN_ROLE(), admin);
@@ -368,7 +368,7 @@ contract DeployMainnet is Script {
             deployer
         );
 
-        // SoulProtocolHub
+        // ZaseonProtocolHub
         hub.renounceRole(hub.UPGRADER_ROLE(), deployer);
         hub.renounceRole(hub.GUARDIAN_ROLE(), deployer);
         hub.renounceRole(hub.OPERATOR_ROLE(), deployer);
@@ -398,18 +398,18 @@ contract DeployMainnet is Script {
         console.log("RelayProofValidator:", address(relayProofValidator));
         console.log("\n-- Verifiers --");
         console.log("VerifierRegistryV2:", address(verifierRegistry));
-        console.log("SoulUniversalVerifier:", address(universalVerifier));
+        console.log("ZaseonUniversalVerifier:", address(universalVerifier));
         console.log("\n-- Primitives --");
         console.log("ZKBoundStateLocks:", address(zkBoundStateLocks));
         console.log("ProofCarryingContainer:", address(proofCarryingContainer));
         console.log("CrossDomainNullifierAlgebra:", address(cdna));
         console.log("PolicyBoundProofs:", address(policyBoundProofs));
         console.log("\n-- Hub --");
-        console.log("SoulProtocolHub:", address(hub));
+        console.log("ZaseonProtocolHub:", address(hub));
         console.log("\n-- Governance --");
-        console.log("SoulToken:", address(soulToken));
-        console.log("SoulGovernor:", address(governor));
-        console.log("SoulUpgradeTimelock:", address(upgradeTimelock));
+        console.log("ZaseonToken:", address(zaseonToken));
+        console.log("ZaseonGovernor:", address(governor));
+        console.log("ZaseonUpgradeTimelock:", address(upgradeTimelock));
         console.log("\nPost-deploy checklist:");
         console.log("  1. Verify all contracts on Etherscan");
         console.log(

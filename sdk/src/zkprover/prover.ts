@@ -1,5 +1,5 @@
 /**
- * Soul ZK Prover Module
+ * Zaseon ZK Prover Module
  *
  * Re-exports Noir-based prover and utility functions (Poseidon hashing,
  * commitment / nullifier derivation).

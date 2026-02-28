@@ -1,5 +1,5 @@
 /**
- * Soul SDK Input Validation
+ * Zaseon SDK Input Validation
  * 
  * Comprehensive input validation with type-safe validators,
  * sanitization, and detailed error messages.
@@ -8,7 +8,7 @@
 import { isAddress, getAddress } from "viem";
 import {
   ValidationError,
-  SoulErrorCode,
+  ZaseonErrorCode,
 } from "./errors";
 
 /**
@@ -378,7 +378,7 @@ export function validate<T>(
   if (!result.valid) {
     throw new ValidationError(
       `Validation failed for ${fieldName}: ${result.error}`,
-      SoulErrorCode.INVALID_INPUT,
+      ZaseonErrorCode.INVALID_INPUT,
       { field: fieldName, value, error: result.error }
     );
   }
@@ -406,7 +406,7 @@ export function validateAll(
   if (errors.length > 0) {
     throw new ValidationError(
       `Validation failed:\n${errors.join("\n")}`,
-      SoulErrorCode.SCHEMA_VALIDATION_FAILED,
+      ZaseonErrorCode.SCHEMA_VALIDATION_FAILED,
       { errors }
     );
   }

@@ -5,7 +5,7 @@ import {Test, console2} from "forge-std/Test.sol";
 
 /**
  * @title PrivacyFuzz
- * @notice Comprehensive fuzz tests for Soul privacy contracts
+ * @notice Comprehensive fuzz tests for Zaseon privacy contracts
  * @dev Tests cryptographic primitives and privacy properties with random inputs
  */
 contract PrivacyFuzz is Test {

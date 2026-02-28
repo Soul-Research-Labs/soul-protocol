@@ -290,21 +290,21 @@ contract ScrollBridgeAdapterExtendedTest is Test {
     }
 
     /*//////////////////////////////////////////////////////////////
-                  setSoulHubL2 & setProofRegistry — ZERO ADDRESS
+                  setZaseonHubL2 & setProofRegistry — ZERO ADDRESS
     //////////////////////////////////////////////////////////////*/
 
-    function test_setSoulHubL2_revert_zeroAddress() public {
+    function test_setZaseonHubL2_revert_zeroAddress() public {
         vm.prank(admin);
         vm.expectRevert("Invalid address");
-        adapter.setSoulHubL2(address(0));
+        adapter.setZaseonHubL2(address(0));
     }
 
-    function test_setSoulHubL2_emitsEvent() public {
+    function test_setZaseonHubL2_emitsEvent() public {
         address hub = makeAddr("hub");
         vm.prank(admin);
         vm.expectEmit(true, false, false, false);
-        emit ScrollBridgeAdapter.SoulHubL2Set(hub);
-        adapter.setSoulHubL2(hub);
+        emit ScrollBridgeAdapter.ZaseonHubL2Set(hub);
+        adapter.setZaseonHubL2(hub);
     }
 
     function test_setProofRegistry_emitsEvent() public {

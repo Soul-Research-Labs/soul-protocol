@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Certora CVL Specification for Arbitrum Bridge Adapter
-// Soul Protocol (Soul) - Formal Verification
+// ZASEON (Zaseon) - Formal Verification
 
 /*
  * =============================================================================
@@ -329,16 +329,16 @@ rule nullifierConsumptionPermanent(bytes32 nullifier) {
 }
 
 /// @title Cross-domain nullifier binding determinism
-/// @notice Same Arbitrum nullifier + domain should always produce same Soul nullifier
+/// @notice Same Arbitrum nullifier + domain should always produce same Zaseon nullifier
 rule crossDomainNullifierDeterminism(bytes32 arbNullifier, bytes32 domain) {
-    bytes32 soulNf1 = keccak256(abi.encodePacked(arbNullifier, domain, "ARB2Soul"));
-    bytes32 soulNf2 = keccak256(abi.encodePacked(arbNullifier, domain, "ARB2Soul"));
+    bytes32 zaseonNf1 = keccak256(abi.encodePacked(arbNullifier, domain, "ARB2Zaseon"));
+    bytes32 zaseonNf2 = keccak256(abi.encodePacked(arbNullifier, domain, "ARB2Zaseon"));
     
-    assert soulNf1 == soulNf2, "Cross-domain nullifier must be deterministic";
+    assert zaseonNf1 == zaseonNf2, "Cross-domain nullifier must be deterministic";
 }
 
 /// @title Cross-domain direction matters
-/// @notice ARB->Soul nullifier should differ from Soul->ARB
+/// @notice ARB->Zaseon nullifier should differ from Zaseon->ARB
 rule crossDomainDirectionMatters(bytes32 nullifier, bytes32 domainA, bytes32 domainB) {
     require domainA != domainB;
     

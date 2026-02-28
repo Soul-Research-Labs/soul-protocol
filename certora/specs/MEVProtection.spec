@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - MEVProtection
+ * ZASEON - MEVProtection
  *
  * Verifies safety invariants for the commit-reveal scheme used to
  * prevent front-running and MEV extraction in privacy operations.

@@ -11,10 +11,10 @@ import {RouteOptimizer} from "../libraries/RouteOptimizer.sol";
 
 /**
  * @title CapacityAwareRouter
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Proof-routing frontend that executes routes from DynamicRoutingOrchestrator
  * @dev Routes ZK proof relay requests through optimal bridge adapters.
- *      Soul Protocol is proof middleware — the "transfers" tracked here are
+ *      ZASEON is proof middleware — the "transfers" tracked here are
  *      proof relay operations, not token transfers. The `amount` field
  *      represents the service fee for the proof relay, not tokens being moved.
  *

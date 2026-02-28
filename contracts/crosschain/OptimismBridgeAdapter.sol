@@ -10,13 +10,13 @@ import {IOptimismBridgeAdapter} from "../interfaces/IOptimismBridgeAdapter.sol";
 
 /**
  * @title OptimismBridgeAdapter
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Bridge adapter for Optimism (OP Mainnet) integration
- * @dev Enables cross-chain interoperability between Soul Protocol and Optimism L2
+ * @dev Enables cross-chain interoperability between ZASEON and Optimism L2
  *
  * ARCHITECTURE:
  * ┌─────────────────────────────────────────────────────────────────────────────┐
- * │                     Soul <-> Optimism Bridge                                │
+ * │                     Zaseon <-> Optimism Bridge                                │
  * ├─────────────────────────────────────────────────────────────────────────────┤
  * │                                                                             │
  * │  ┌───────────────────┐           ┌───────────────────────────────────┐     │

@@ -3,9 +3,9 @@ pragma solidity ^0.8.24;
 
 /**
  * @title IProofVerifier
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Standard interface for ZK proof verifiers
- * @dev All Soul v2 proof verifiers must implement this interface
+ * @dev All Zaseon v2 proof verifiers must implement this interface
  */
 interface IProofVerifier {
     /**

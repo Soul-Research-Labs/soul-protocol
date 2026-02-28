@@ -7,7 +7,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 
 /**
  * @title ProtocolHealthAggregator
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Unified protocol health monitoring that aggregates multi-subsystem health signals
  * @dev Collects health data from bridge circuit breakers, relayer monitors, routing orchestrators,
  *      and security scorecards into a single composite score. Auto-triggers graduated emergency
@@ -49,7 +49,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
  *      - GUARDIAN_ROLE: Override health, trigger/clear emergencies manually
  *      - DEFAULT_ADMIN_ROLE: Register subsystems, manage thresholds
  *
- * @custom:security-contact security@soulprotocol.io
+ * @custom:security-contact security@zaseonprotocol.io
  */
 contract ProtocolHealthAggregator is AccessControl, ReentrancyGuard, Pausable {
     /*//////////////////////////////////////////////////////////////

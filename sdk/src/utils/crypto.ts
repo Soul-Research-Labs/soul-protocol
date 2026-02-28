@@ -1,6 +1,6 @@
 import crypto from "crypto";
 
-export interface SoulConfig {
+export interface ZaseonConfig {
   curve: string;
   relayerEndpoint: string;
   proverUrl: string;
@@ -8,7 +8,7 @@ export interface SoulConfig {
 }
 
 /** Payload can be any JSON-serializable object */
-export type SoulPayload = Record<string, unknown>;
+export type ZaseonPayload = Record<string, unknown>;
 
 /** Disclosure policy defines what information can be revealed */
 export interface DisclosurePolicy {
@@ -31,7 +31,7 @@ export interface CircuitWitnesses {
 export interface SendParams {
   sourceChain: string;
   destChain: string;
-  payload: SoulPayload;
+  payload: ZaseonPayload;
   circuitId: string;
   disclosurePolicy: DisclosurePolicy;
   inputs?: CircuitInputs;
@@ -77,7 +77,7 @@ export class CryptoModule {
         ? Buffer.from(recipientPublicKey.replace(/^0x/, ''), 'hex')
         : recipientPublicKey;
       const sharedSecret = ephemeral.computeSecret(pubKeyBuf);
-      aesKey = crypto.createHash('sha256').update(sharedSecret).update('soul-ecies-v1').digest();
+      aesKey = crypto.createHash('sha256').update(sharedSecret).update('zaseon-ecies-v1').digest();
     } else {
       // Self-contained mode: derive key from ephemeral private key (for dev/testing)
       aesKey = crypto.createHash('sha256').update(ephemeral.getPrivateKey()).digest();
@@ -111,7 +111,7 @@ export class CryptoModule {
     const ecdh = crypto.createECDH(this.curve === 'secp256k1' ? 'secp256k1' : 'prime256v1');
     ecdh.setPrivateKey(recipientPrivateKey);
     const sharedSecret = ecdh.computeSecret(ephemeralPublicKey);
-    const aesKey = crypto.createHash('sha256').update(sharedSecret).update('soul-ecies-v1').digest();
+    const aesKey = crypto.createHash('sha256').update(sharedSecret).update('zaseon-ecies-v1').digest();
 
     // Extract IV from ciphertext prefix
     const iv = ciphertext.subarray(0, 12);

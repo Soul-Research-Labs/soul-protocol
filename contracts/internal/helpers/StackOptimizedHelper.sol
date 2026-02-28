@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title StackOptimizedHelper
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Gas and stack-optimized helper functions for complex operations
  * @dev Extracts common logic from main contracts to reduce stack depth.
  *      These functions are designed to be called internally and help

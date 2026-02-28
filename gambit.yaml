@@ -8,16 +8,16 @@ mutate:
     contract: NullifierRegistryV3
   - filename: contracts/bridge/CrossChainProofHubV3.sol
     contract: CrossChainProofHubV3
-  - filename: contracts/bridge/SoulAtomicSwapV2.sol
-    contract: SoulAtomicSwapV2
+  - filename: contracts/bridge/ZaseonAtomicSwapV2.sol
+    contract: ZaseonAtomicSwapV2
   - filename: contracts/privacy/UniversalShieldedPool.sol
     contract: UniversalShieldedPool
   - filename: contracts/crosschain/DirectL2Messenger.sol
     contract: DirectL2Messenger
   - filename: contracts/core/ConfidentialStateContainerV3.sol
     contract: ConfidentialStateContainerV3
-  - filename: contracts/core/SoulProtocolHub.sol
-    contract: SoulProtocolHub
+  - filename: contracts/core/ZaseonProtocolHub.sol
+    contract: ZaseonProtocolHub
   - filename: contracts/core/PrivacyRouter.sol
     contract: PrivacyRouter
   - filename: contracts/security/ExperimentalFeatureRegistry.sol
@@ -66,8 +66,8 @@ mutate:
     contract: CrossDomainNullifierAlgebra
   - filename: contracts/primitives/PolicyBoundProofs.sol
     contract: PolicyBoundProofs
-  - filename: contracts/primitives/Soulv2Orchestrator.sol
-    contract: Soulv2Orchestrator
+  - filename: contracts/primitives/Zaseonv2Orchestrator.sol
+    contract: Zaseonv2Orchestrator
   - filename: contracts/primitives/HomomorphicHiding.sol
     contract: HomomorphicHiding
   - filename: contracts/primitives/AggregateDisclosureAlgebra.sol
@@ -102,14 +102,14 @@ mutate:
     contract: ZKFraudProof
 
   # ── Governance ──
-  - filename: contracts/governance/SoulGovernor.sol
-    contract: SoulGovernor
-  - filename: contracts/governance/SoulGovernance.sol
-    contract: SoulGovernance
-  - filename: contracts/governance/SoulToken.sol
-    contract: SoulToken
-  - filename: contracts/governance/SoulUpgradeTimelock.sol
-    contract: SoulUpgradeTimelock
+  - filename: contracts/governance/ZaseonGovernor.sol
+    contract: ZaseonGovernor
+  - filename: contracts/governance/ZaseonGovernance.sol
+    contract: ZaseonGovernance
+  - filename: contracts/governance/ZaseonToken.sol
+    contract: ZaseonToken
+  - filename: contracts/governance/ZaseonUpgradeTimelock.sol
+    contract: ZaseonUpgradeTimelock
   - filename: contracts/governance/OperationTimelockModule.sol
     contract: OperationTimelockModule
 
@@ -134,8 +134,8 @@ mutate:
   # ── Compliance ──
   - filename: contracts/compliance/CrossChainSanctionsOracle.sol
     contract: CrossChainSanctionsOracle
-  - filename: contracts/compliance/SoulComplianceV2.sol
-    contract: SoulComplianceV2
+  - filename: contracts/compliance/ZaseonComplianceV2.sol
+    contract: ZaseonComplianceV2
   - filename: contracts/compliance/ComplianceReportingModule.sol
     contract: ComplianceReportingModule
   - filename: contracts/compliance/SelectiveDisclosureManager.sol
@@ -166,8 +166,8 @@ mutate:
     contract: HyperlaneAdapter
   - filename: contracts/crosschain/CrossChainNullifierSync.sol
     contract: CrossChainNullifierSync
-  - filename: contracts/crosschain/SoulL2Messenger.sol
-    contract: SoulL2Messenger
+  - filename: contracts/crosschain/ZaseonL2Messenger.sol
+    contract: ZaseonL2Messenger
   - filename: contracts/crosschain/L2ProofRouter.sol
     contract: L2ProofRouter
 
@@ -184,8 +184,8 @@ mutate:
     contract: GasNormalizer
 
   # ── Verifiers (non-generated) ──
-  - filename: contracts/verifiers/SoulUniversalVerifier.sol
-    contract: SoulUniversalVerifier
+  - filename: contracts/verifiers/ZaseonUniversalVerifier.sol
+    contract: ZaseonUniversalVerifier
   - filename: contracts/verifiers/VerifierRegistryV2.sol
     contract: VerifierRegistryV2
   - filename: contracts/verifiers/CrossChainProofVerifier.sol

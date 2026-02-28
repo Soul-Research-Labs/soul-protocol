@@ -1,8 +1,8 @@
-# Soul Protocol - Monitoring Configuration
+# ZASEON - Monitoring Configuration
 
 ## Overview
 
-This document defines monitoring alerts and thresholds for Soul Protocol production deployment.
+This document defines monitoring alerts and thresholds for ZASEON production deployment.
 
 ## Alert Severity Levels
 
@@ -79,7 +79,7 @@ events:
       critical: "> 1"
 ```
 
-### SoulAtomicSwap
+### ZaseonAtomicSwap
 
 ```yaml
 events:
@@ -100,7 +100,7 @@ events:
     threshold:
 ```
 
-### SoulMultiSigGovernance
+### ZaseonMultiSigGovernance
 
 ```yaml
 events:
@@ -246,8 +246,8 @@ endpoints:
 
 ```yaml
 subgraph:
-  name: soul-mainnet
-  health_endpoint: "https://api.thegraph.com/subgraphs/name/soul/soul-mainnet"
+  name: zaseon-mainnet
+  health_endpoint: "https://api.thegraph.com/subgraphs/name/zaseon/zaseon-mainnet"
   
   metrics:
     - name: indexing_lag
@@ -272,7 +272,7 @@ subgraph:
 ```yaml
 pagerduty:
   service_key: "${PAGERDUTY_SERVICE_KEY}"
-  escalation_policy: "soul-security"
+  escalation_policy: "zaseon-security"
   
   triggers:
     - EmergencyPaused
@@ -286,7 +286,7 @@ pagerduty:
 ```yaml
 slack:
   webhook: "${SLACK_WEBHOOK_URL}"
-  channel: "#soul-alerts"
+  channel: "#zaseon-alerts"
   
   triggers:
     - ProofVerificationFailed

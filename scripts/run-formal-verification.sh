@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================================================
-# Soul Formal Verification Runner
-# Comprehensive verification suite for Soul Network Soul Protocol
+# Zaseon Formal Verification Runner
+# Comprehensive verification suite for Zaseon Network ZASEON
 # ============================================================================
 
 set -e
@@ -149,7 +149,7 @@ run_all_verifications() {
     relayer_verifications=(
         "verify_proofhub.conf:CrossChainProofHub"
         "verify_nullifier.conf:NullifierRegistry"
-        "verify_atomicswap.conf:SoulAtomicSwap"
+        "verify_atomicswap.conf:ZaseonAtomicSwap"
     )
     
     for v in "${relayer_verifications[@]}"; do
@@ -249,7 +249,7 @@ generate_report() {
     local report_file="$OUTPUT_DIR/verification_report_${TIMESTAMP}.md"
     
     cat > "$report_file" << EOF
-# Soul Formal Verification Report
+# Zaseon Formal Verification Report
 
 **Generated:** $(date)
 **Verification Suite Version:** 3.0
@@ -307,7 +307,7 @@ EOF
 # ============================================================================
 
 usage() {
-    echo "Soul Formal Verification Runner"
+    echo "Zaseon Formal Verification Runner"
     echo ""
     echo "Usage: $0 [command] [options]"
     echo ""

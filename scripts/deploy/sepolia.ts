@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 /**
- * Sepolia Deployment Script for Soul Private Exchange
+ * Sepolia Deployment Script for Zaseon Private Exchange
  * 
  * Prerequisites:
  * 1. Set SEPOLIA_RPC_URL and PRIVATE_KEY in .env
@@ -31,7 +31,7 @@ interface DeployedContracts {
 }
 
 async function main() {
-  console.log("\n🚀 Soul Private Exchange - Sepolia Deployment\n");
+  console.log("\n🚀 Zaseon Private Exchange - Sepolia Deployment\n");
   console.log("=".repeat(60));
 
   // Verify network
@@ -81,7 +81,7 @@ async function main() {
 
   // Token A
   console.log("   Deploying Token A...");
-  const tokenA = await MockToken.deploy("Soul Test Token A", "SoulA", 18);
+  const tokenA = await MockToken.deploy("Zaseon Test Token A", "ZaseonA", 18);
   await tokenA.waitForDeployment();
   deployed.contracts.tokenA = await tokenA.getAddress();
   deployed.txHashes.tokenA = tokenA.deploymentTransaction()?.hash || "";
@@ -89,7 +89,7 @@ async function main() {
 
   // Token B
   console.log("   Deploying Token B...");
-  const tokenB = await MockToken.deploy("Soul Test Token B", "SoulB", 18);
+  const tokenB = await MockToken.deploy("Zaseon Test Token B", "ZaseonB", 18);
   await tokenB.waitForDeployment();
   deployed.contracts.tokenB = await tokenB.getAddress();
   deployed.txHashes.tokenB = tokenB.deploymentTransaction()?.hash || "";
@@ -97,7 +97,7 @@ async function main() {
 
   // Token C (6 decimals for USDC-like token)
   console.log("   Deploying Token C...");
-  const tokenC = await MockToken.deploy("Soul Stablecoin", "SoulUSD", 6);
+  const tokenC = await MockToken.deploy("Zaseon Stablecoin", "ZaseonUSD", 6);
   await tokenC.waitForDeployment();
   deployed.contracts.tokenC = await tokenC.getAddress();
   deployed.txHashes.tokenC = tokenC.deploymentTransaction()?.hash || "";
@@ -123,8 +123,8 @@ async function main() {
   console.log(`   ✅ BatchProofVerifier: ${deployed.contracts.gasOptimizedVerifier}`);
 
   // Exchange
-  console.log("   Deploying SoulPrivateExchange...");
-  const Exchange = await ethers.getContractFactory("SoulPrivateExchange");
+  console.log("   Deploying ZaseonPrivateExchange...");
+  const Exchange = await ethers.getContractFactory("ZaseonPrivateExchange");
   const exchange = await Exchange.deploy(deployer.address);
   await exchange.waitForDeployment();
   deployed.contracts.exchange = await exchange.getAddress();
@@ -215,7 +215,7 @@ async function main() {
       console.log("   Verifying Token A...");
       await run("verify:verify", {
         address: deployed.contracts.tokenA,
-        constructorArguments: ["Soul Test Token A", "SoulA", 18],
+        constructorArguments: ["Zaseon Test Token A", "ZaseonA", 18],
       });
       console.log("   ✅ Token A verified");
     } catch (e: any) {

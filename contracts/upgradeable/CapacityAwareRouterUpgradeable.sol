@@ -12,10 +12,10 @@ import {RouteOptimizer} from "../libraries/RouteOptimizer.sol";
 
 /**
  * @title CapacityAwareRouterUpgradeable
- * @author Soul Protocol
+ * @author ZASEON
  * @notice UUPS-upgradeable version of CapacityAwareRouter for proxy deployments
  * @dev Proof-routing frontend that executes routes from DynamicRoutingOrchestrator.
- *      Soul is proof middleware — transfers tracked here are proof relay ops, not token moves.
+ *      Zaseon is proof middleware — transfers tracked here are proof relay ops, not token moves.
  *      Composes with DynamicRoutingOrchestrator for route selection and adds:
  *      - Quote-and-execute pattern: get route → commit → execute within validity window
  *      - Adaptive fee calculation with capacity impact premium

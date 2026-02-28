@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title zkSyncBridgeAdapter
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Bridge adapter for zkSync Era integration
  * @dev Enables cross-chain interoperability with zkSync Era L2
  * @custom:graduated Promoted from experimental to production. Formally verified via Certora.
@@ -94,8 +94,8 @@ contract zkSyncBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     /// @notice zkSync Diamond Proxy (Mailbox facet)
     address public zkSyncDiamond;
 
-    /// @notice Soul Hub address on zkSync L2
-    address public soulHubL2;
+    /// @notice Zaseon Hub address on zkSync L2
+    address public zaseonHubL2;
 
     /// @notice Proof Registry address
     address public proofRegistry;
@@ -122,7 +122,7 @@ contract zkSyncBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     event MessageRelayed(bytes32 indexed messageHash, address indexed sender);
     event MessageProved(bytes32 indexed messageHash, uint256 batchNumber);
     event BridgeConfigured(address indexed zkSyncDiamond);
-    event SoulHubL2Set(address indexed soulHubL2);
+    event ZaseonHubL2Set(address indexed zaseonHubL2);
     event ProofRegistrySet(address indexed proofRegistry);
 
     /*//////////////////////////////////////////////////////////////
@@ -153,13 +153,13 @@ contract zkSyncBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         emit BridgeConfigured(_zkSyncDiamond);
     }
 
-    /// @notice Set Soul Hub L2 address on zkSync
-    function setSoulHubL2(
-        address _soulHubL2
+    /// @notice Set Zaseon Hub L2 address on zkSync
+    function setZaseonHubL2(
+        address _zaseonHubL2
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(_soulHubL2 != address(0), "Invalid address");
-        soulHubL2 = _soulHubL2;
-        emit SoulHubL2Set(_soulHubL2);
+        require(_zaseonHubL2 != address(0), "Invalid address");
+        zaseonHubL2 = _zaseonHubL2;
+        emit ZaseonHubL2Set(_zaseonHubL2);
     }
 
     /// @notice Set Proof Registry address
@@ -188,9 +188,9 @@ contract zkSyncBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     }
 
     /// @notice Check whether the adapter is fully configured
-    /// @return True if both zkSyncDiamond and soulHubL2 are set
+    /// @return True if both zkSyncDiamond and zaseonHubL2 are set
     function isConfigured() external view returns (bool) {
-        return zkSyncDiamond != address(0) && soulHubL2 != address(0);
+        return zkSyncDiamond != address(0) && zaseonHubL2 != address(0);
     }
 
     /// @notice Get the number of blocks required for finality

@@ -10,7 +10,7 @@ Accepted
 
 ## Context
 
-Soul Protocol enables confidential state transfers across L2 networks (Arbitrum, Optimism, Base, zkSync, Scroll, Linea, Polygon zkEVM). A fundamental requirement is **double-spend prevention** — ensuring a note or state transition consumed on one chain cannot be replayed on another.
+ZASEON enables confidential state transfers across L2 networks (Arbitrum, Optimism, Base, zkSync, Scroll, Linea, Polygon zkEVM). A fundamental requirement is **double-spend prevention** — ensuring a note or state transition consumed on one chain cannot be replayed on another.
 
 Traditional approaches:
 

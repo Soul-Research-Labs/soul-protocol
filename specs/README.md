@@ -1,8 +1,8 @@
-# Soul Protocol - Certora Formal Verification Suite
+# ZASEON - Certora Formal Verification Suite
 
 ## Overview
 
-This directory contains comprehensive formal verification specifications for Soul Protocol using Certora Prover. The verification suite covers all major protocol components including JAM-style computations, mixnet delivery proofs, and cross-chain message lifecycle.
+This directory contains comprehensive formal verification specifications for ZASEON using Certora Prover. The verification suite covers all major protocol components including JAM-style computations, mixnet delivery proofs, and cross-chain message lifecycle.
 
 ## Setup
 
@@ -30,7 +30,7 @@ pip install certora-cli
 ./scripts/run_formal_verification.sh --controlplane  # 5-Stage Lifecycle
 ./scripts/run_formal_verification.sh --sptc     # Proof Translation
 ./scripts/run_formal_verification.sh --network  # Network-Wide Invariants
-./scripts/run_formal_verification.sh --core     # Core Soul Contracts
+./scripts/run_formal_verification.sh --core     # Core Zaseon Contracts
 
 # Run individual spec
 certoraRun certora/conf/verify_jam.conf
@@ -69,7 +69,7 @@ Key properties verified:
 4. **Backend Compatibility**: Only compatible backends can be joined
 5. **Access Control**: Role-based execution and verification
 
-#### SoulControlPlane.spec - 5-Stage Message Lifecycle
+#### ZaseonControlPlane.spec - 5-Stage Message Lifecycle
 
 Key properties verified:
 1. **Stage Progression**: IntentCommitted → Executed → ProofGenerated → Verified → Materialized

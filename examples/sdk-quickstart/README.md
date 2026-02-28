@@ -1,11 +1,11 @@
-# Soul Protocol SDK — Quickstart Examples
+# ZASEON SDK — Quickstart Examples
 
-Minimal TypeScript examples showing the most common Soul Protocol workflows.
+Minimal TypeScript examples showing the most common ZASEON workflows.
 
 ## Prerequisites
 
 ```bash
-npm install @soul-protocol/sdk viem
+npm install @zaseon/sdk viem
 ```
 
 ## Examples

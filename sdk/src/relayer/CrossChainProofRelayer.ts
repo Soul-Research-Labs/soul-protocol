@@ -14,14 +14,14 @@ import { privateKeyToAccount } from "viem/accounts";
 import type { DecodedEventArgs } from "../types/contracts";
 
 /**
- * Soul Protocol — Cross-Chain Proof Relayer MVP
+ * ZASEON — Cross-Chain Proof Relayer MVP
  *
  * Monitors CrossChainProofHubV3 for new proof submissions on one chain
- * and relays them to SoulCrossChainRelay for delivery to the destination chain.
+ * and relays them to ZaseonCrossChainRelay for delivery to the destination chain.
  *
  * Phase 4 deliverable: minimal viable relayer that can:
  * 1. Watch ProofSubmitted events on source chain
- * 2. Forward verified proofs to destination via SoulCrossChainRelay
+ * 2. Forward verified proofs to destination via ZaseonCrossChainRelay
  * 3. Monitor ProofFinalized / ProofRejected / ChallengeCreated events
  * 4. Log relay status and errors
  *
@@ -52,7 +52,7 @@ const PROOF_HUB_ABI = parseAbi([
   "function proofCount() external view returns (uint256)",
 ]);
 
-// ─── ABI: SoulCrossChainRelay ───────────────────────────────────
+// ─── ABI: ZaseonCrossChainRelay ───────────────────────────────────
 const RELAY_ABI = parseAbi([
   "function relayProof(bytes32 proofId, bytes calldata proof, bytes calldata publicInputs, uint256 destChainId) external",
   "event ProofRelayed(bytes32 indexed proofId, uint256 indexed destChainId, bytes32 messageId)",

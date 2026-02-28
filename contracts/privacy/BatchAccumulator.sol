@@ -10,7 +10,7 @@ import "../interfaces/IBatchAccumulator.sol";
 
 /**
  * @title BatchAccumulator
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Aggregates transactions into batches to prevent timing correlation attacks
  * @dev Phase 1 of Metadata Resistance - breaks timing correlation by batching 8+ transactions
  *

@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title LockStorage
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Extracted lock storage management for stack depth optimisation
  * @dev Separates lock CRUD operations from ZKBoundStateLocks' core logic,
  *      letting the main contract delegate storage reads/writes here so

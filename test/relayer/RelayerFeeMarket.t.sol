@@ -8,7 +8,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 /// @dev Mock ERC20 fee token for testing
 contract MockFeeToken is ERC20 {
-    constructor() ERC20("Soul Token", "SOUL") {
+    constructor() ERC20("Zaseon Token", "ZASEON") {
         _mint(msg.sender, 1_000_000 ether);
     }
 

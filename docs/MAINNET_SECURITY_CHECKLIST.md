@@ -1,4 +1,4 @@
-# Soul Protocol - Mainnet Security Checklist
+# ZASEON - Mainnet Security Checklist
 
 ## Pre-Launch Security Verification
 
@@ -169,7 +169,7 @@ npx hardhat run scripts/verify-contracts.ts --network mainnet
 ### Emergency Contacts
 
 <!-- ACTION REQUIRED: Replace these with actual team contacts before mainnet launch.
-     See internal contacts sheet: notion.so/soul/emergency-contacts -->
+     See internal contacts sheet: notion.so/zaseon/emergency-contacts -->
 
 | Role                | Primary                        | Backup     |
 | ------------------- | ------------------------------ | ---------- |
@@ -180,7 +180,7 @@ npx hardhat run scripts/verify-contracts.ts --network mainnet
 ### Runbook Location
 
 - [docs/INCIDENT_RESPONSE_RUNBOOK.md](./INCIDENT_RESPONSE_RUNBOOK.md)
-- Internal: `notion.so/soul/incident-response`
+- Internal: `notion.so/zaseon/incident-response`
 
 ## Contract Upgrade Policy
 
@@ -216,9 +216,9 @@ forge verify-check <IMPLEMENTATION_ADDRESS> \
 
 | Service     | URL                                                      | Purpose                |
 | ----------- | -------------------------------------------------------- | ---------------------- |
-| Dune        | `dune.com/soul/mainnet`                                  | Analytics              |
-| TheGraph    | `thegraph.com/hosted-service/subgraph/soul/soul-mainnet` | Indexing               |
-| Tenderly    | `dashboard.tenderly.co/soul`                             | Transaction simulation |
+| Dune        | `dune.com/zaseon/mainnet`                                  | Analytics              |
+| TheGraph    | `thegraph.com/hosted-service/subgraph/zaseon/zaseon-mainnet` | Indexing               |
+| Tenderly    | `dashboard.tenderly.co/zaseon`                             | Transaction simulation |
 | OZ Defender | `defender.openzeppelin.com`                              | Admin operations       |
 
 ---

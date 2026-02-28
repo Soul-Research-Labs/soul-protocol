@@ -8,9 +8,9 @@ import {GasOptimizations} from "../libraries/GasOptimizations.sol";
 
 /**
  * @title L2ProofRouter
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Optimized proof routing for cross-L2 transfers with caching and batching
- * @custom:security-contact security@soulprotocol.io
+ * @custom:security-contact security@zaseonprotocol.io
  * @dev Routes proofs efficiently across L2 networks with compression and aggregation
  *
  * GAS OPTIMIZATIONS APPLIED:
@@ -157,7 +157,7 @@ contract L2ProofRouter is ReentrancyGuard, AccessControl, Pausable {
         NOVA_IVC, // Nova folding proof
         RECURSIVE, // Recursively aggregated proof
         STATE_PROOF, // Merkle state proof
-        NULLIFIER_PROOF // Soul nullifier proof
+        NULLIFIER_PROOF // Zaseon nullifier proof
     }
 
     /// @notice Routing paths
@@ -298,8 +298,8 @@ contract L2ProofRouter is ReentrancyGuard, AccessControl, Pausable {
     /// @notice Global proof nonce
     uint256 public proofNonce;
 
-    /// @notice Soul Hub address
-    address public soulHub;
+    /// @notice Zaseon Hub address
+    address public zaseonHub;
 
     /// @notice Direct L2 Messenger address
     address public directMessenger;
@@ -308,9 +308,9 @@ contract L2ProofRouter is ReentrancyGuard, AccessControl, Pausable {
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    constructor(address _admin, address _soulHub) {
+    constructor(address _admin, address _zaseonHub) {
         currentChainId = block.chainid;
-        soulHub = _soulHub;
+        zaseonHub = _zaseonHub;
 
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(OPERATOR_ROLE, _admin);
@@ -326,7 +326,7 @@ contract L2ProofRouter is ReentrancyGuard, AccessControl, Pausable {
      * @param destChainId Destination chain ID
      * @param proofData Proof bytes
      * @param publicInputs Public inputs
-     * @param nullifierBinding Optional Soul nullifier
+     * @param nullifierBinding Optional Zaseon nullifier
      * @return proofId Unique proof identifier
      */
     function submitProof(
@@ -1029,7 +1029,7 @@ function getRouteMetrics(
 
 /**
  * @title IDirectL2Messenger
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice \1 \1irect \12 \1essenger interface
  */
 interface IDirectL2Messenger {
@@ -1060,7 +1060,7 @@ function sendMessage(
 
 /**
  * @title IL1Adapter
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice \1 \11 \1dapter interface
  */
 interface IL1Adapter {

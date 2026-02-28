@@ -10,11 +10,11 @@ import {RouteOptimizer} from "../libraries/RouteOptimizer.sol";
 
 /**
  * @title DynamicRoutingOrchestrator
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Routes ZK proof relay requests through optimal bridge adapters
- * @dev Soul Protocol is proof middleware — this contract routes PROOFS, not tokens.
+ * @dev ZASEON is proof middleware — this contract routes PROOFS, not tokens.
  *      AdapterCapacity data is oracle-observed metadata about external bridge adapters.
- *      Soul does NOT manage bridge capacity. It queries bridge capacity data to select
+ *      Zaseon does NOT manage bridge capacity. It queries bridge capacity data to select
  *      the most efficient path for proof delivery.
  *
  *      Core capabilities:

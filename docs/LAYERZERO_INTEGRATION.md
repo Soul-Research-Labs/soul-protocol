@@ -91,7 +91,7 @@ import {
     addressToBytes32,
     calculateLzFee,
     createDefaultOptions
-} from '@soul/sdk/bridges/layerzero';
+} from '@zaseon/sdk/bridges/layerzero';
 
 const peerAddr = addressToBytes32(remoteContractAddress);
 const options = createDefaultOptions(200_000n);

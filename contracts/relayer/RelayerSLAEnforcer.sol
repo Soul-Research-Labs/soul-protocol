@@ -6,7 +6,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 
 /**
  * @title RelayerSLAEnforcer
- * @author Soul Protocol
+ * @author ZASEON
  * @notice On-chain Service Level Agreement (SLA) enforcement for relayers.
  *         Tracks liveness commitments, response time commitments, and minimum
  *         success rates, automatically applying penalties for violations.
@@ -30,7 +30,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
  *      - epochs are evaluated in order (no skipping)
  *      - fines cannot exceed relayer's remaining deposit
  *
- * @custom:security-contact security@soulprotocol.io
+ * @custom:security-contact security@zaseonprotocol.io
  */
 contract RelayerSLAEnforcer is AccessControl, ReentrancyGuard {
     /*//////////////////////////////////////////////////////////////

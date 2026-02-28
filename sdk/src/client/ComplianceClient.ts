@@ -291,7 +291,7 @@ const PRIVACY_LEVELS_ABI = [
 // ============================================================================
 
 /**
- * SDK client for the Soul Protocol compliance suite (Tachyon Learnings #2 & #7).
+ * SDK client for the ZASEON compliance suite (Tachyon Learnings #2 & #7).
  *
  * Covers:
  * - SelectiveDisclosureManager: Privacy-preserving transaction disclosure with field-level ACLs

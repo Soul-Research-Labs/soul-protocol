@@ -5,8 +5,8 @@ import "forge-std/Test.sol";
 
 /**
  * @title IntegrationsTest
- * @notice Tests for Soul Protocol integration orchestrator contracts
- * @dev Covers SoulProtocolHub, CrossChainPrivacyHub integration points
+ * @notice Tests for ZASEON integration orchestrator contracts
+ * @dev Covers ZaseonProtocolHub, CrossChainPrivacyHub integration points
  */
 contract IntegrationsTest is Test {
     /// @notice Verify module address setting pattern

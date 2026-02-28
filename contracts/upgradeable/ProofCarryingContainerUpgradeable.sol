@@ -11,12 +11,12 @@ import "../verifiers/VerifierRegistryV2.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /// @title ProofCarryingContainerUpgradeable (PC³)
-/// @author Soul Protocol - Soul v2
+/// @author ZASEON - Zaseon v2
 /// @notice Upgradeable version of PC³ using UUPS proxy pattern
 /// @dev Self-authenticating confidential containers with embedded ZK proofs
 /**
  * @title ProofCarryingContainerUpgradeable
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice Proof Carrying Container Upgradeable contract
  */
 contract ProofCarryingContainerUpgradeable is

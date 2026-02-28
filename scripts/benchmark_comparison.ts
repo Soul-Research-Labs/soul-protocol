@@ -7,7 +7,7 @@ import { keccak256, toBytes, toHex, zeroAddress } from "viem";
  * @notice Compares legacy Groth16 verifiers vs new Noir Adapters
  */
 async function main() {
-    console.log("=== Soul Protocol: Gas Benchmark Comparison ===");
+    console.log("=== ZASEON: Gas Benchmark Comparison ===");
     
     // 1. Setup Infrastructure
     const { viem } = hre as any;
@@ -17,7 +17,7 @@ async function main() {
     console.log("Deploying testing infrastructure...");
     
     // Deploy Universal Verifier
-    const universalVerifier = await viem.deployContract("SoulUniversalVerifier");
+    const universalVerifier = await viem.deployContract("ZaseonUniversalVerifier");
     
     // Deploy Mocks
     const mockGroth16 = await viem.deployContract("MockNoirVerifier"); // Reuse mock as it has simple verify()

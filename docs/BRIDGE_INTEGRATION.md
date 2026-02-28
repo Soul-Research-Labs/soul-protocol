@@ -1,8 +1,8 @@
-# Soul Bridge Adapters Integration Guide
+# Zaseon Bridge Adapters Integration Guide
 
 > Cross-chain privacy-preserving transfers via unified `IBridgeAdapter` interface.
 
-Soul Bridge Adapters provide a unified interface for cross-chain operations. Each adapter implements the `IBridgeAdapter` interface:
+Zaseon Bridge Adapters provide a unified interface for cross-chain operations. Each adapter implements the `IBridgeAdapter` interface:
 
 ```solidity
 interface IBridgeAdapter {
@@ -45,9 +45,9 @@ interface IBridgeAdapter {
 ### Initiating a Bridge Transfer
 
 ```typescript
-import { SoulBridge, ChainId } from "@soul/sdk";
+import { ZaseonBridge, ChainId } from "@zaseon/sdk";
 
-const bridge = new SoulBridge(provider);
+const bridge = new ZaseonBridge(provider);
 
 // Initiate cross-chain transfer
 const relayId = await bridge.transfer({
@@ -77,9 +77,9 @@ const completed = await bridge.completeBridge(relayId, proof);
 ### Arbitrum
 
 ```typescript
-import { SoulBridge, ChainId } from "@soul/sdk";
+import { ZaseonBridge, ChainId } from "@zaseon/sdk";
 
-const bridge = new SoulBridge(provider);
+const bridge = new ZaseonBridge(provider);
 
 // Bridge to Arbitrum using native messaging
 const relayId = await bridge.transfer({
@@ -100,7 +100,7 @@ if (status === "pending_retry") {
 ### LayerZero
 
 ```typescript
-import { LayerZeroAdapter } from "@soul/sdk/bridges";
+import { LayerZeroAdapter } from "@zaseon/sdk/bridges";
 
 const lzBridge = new LayerZeroAdapter({
   sourceRpc: "https://eth-mainnet...",
@@ -122,7 +122,7 @@ const transfer = await lzBridge.send({
 ### Direct L2-to-L2
 
 ```typescript
-import { DirectL2Messenger } from "@soul/sdk/bridges";
+import { DirectL2Messenger } from "@zaseon/sdk/bridges";
 
 const messenger = new DirectL2Messenger({
   sourceRpc: process.env.ARBITRUM_RPC,
@@ -155,12 +155,12 @@ The following chains are planned for future releases:
 ## Error Handling
 
 ```typescript
-import { SoulBridgeError, ErrorCodes } from "@soul/sdk";
+import { ZaseonBridgeError, ErrorCodes } from "@zaseon/sdk";
 
 try {
   await bridge.transfer(params);
 } catch (error) {
-  if (error instanceof SoulBridgeError) {
+  if (error instanceof ZaseonBridgeError) {
     // ErrorCodes: INSUFFICIENT_BALANCE, PROOF_VERIFICATION_FAILED,
     // BRIDGE_PAUSED, TIMEOUT_EXCEEDED, INVALID_RECIPIENT
     handleError(error.code);

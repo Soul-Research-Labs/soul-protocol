@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Soul Multi-Chain Testnet Deployment Script
-# Deploys Soul contracts to multiple testnet networks
+# Zaseon Multi-Chain Testnet Deployment Script
+# Deploys Zaseon contracts to multiple testnet networks
 
 set -e
 
@@ -173,7 +173,7 @@ generate_summary() {
 
 # Main execution
 main() {
-    print_header "Soul Multi-Chain Testnet Deployment"
+    print_header "Zaseon Multi-Chain Testnet Deployment"
     
     echo "Networks: ${NETWORKS[*]}"
     echo "Project root: $PROJECT_ROOT"

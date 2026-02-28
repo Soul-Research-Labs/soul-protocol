@@ -3,10 +3,10 @@ pragma solidity ^0.8.24;
 
 /**
  * @title IDynamicRoutingOrchestrator
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Interface for dynamic cross-chain proof routing with bridge capacity awareness
  * @dev Routes ZK proof relay requests through optimal bridge adapters.
- *      Soul Protocol is proof middleware — it does NOT manage bridge capacity.
+ *      ZASEON is proof middleware — it does NOT manage bridge capacity.
  *      AdapterCapacity data is oracle-provided metadata about external bridge adapters.
  *      The orchestrator uses this data to select the best route for proof delivery,
  *      optimizing for cost, latency, and success probability.
@@ -47,7 +47,7 @@ interface IDynamicRoutingOrchestrator {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Oracle-observed bridge adapter capacity for a specific chain.
-    ///         Soul does NOT manage these pools — this is observed metadata from
+    ///         Zaseon does NOT manage these pools — this is observed metadata from
     ///         external bridge adapters used to make routing decisions.
     struct AdapterCapacity {
         uint256 chainId; // Target chain ID

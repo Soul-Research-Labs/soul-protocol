@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {PrivacyRouterUpgradeable} from "../../contracts/upgradeable/PrivacyRouterUpgradeable.sol";
 import {ProofCarryingContainerUpgradeable} from "../../contracts/upgradeable/ProofCarryingContainerUpgradeable.sol";
-import {Soulv2OrchestratorUpgradeable} from "../../contracts/upgradeable/Soulv2OrchestratorUpgradeable.sol";
+import {Zaseonv2OrchestratorUpgradeable} from "../../contracts/upgradeable/Zaseonv2OrchestratorUpgradeable.sol";
 import {UniversalShieldedPoolUpgradeable} from "../../contracts/upgradeable/UniversalShieldedPoolUpgradeable.sol";
 import {StorageSlots} from "../../contracts/upgradeable/StorageLayout.sol";
 
@@ -133,16 +133,16 @@ contract UpgradeableContractsTest is Test {
     }
 
     /*//////////////////////////////////////////////////////////////
-                  SOULV2 ORCHESTRATOR UPGRADEABLE
+                  ZASEONV2 ORCHESTRATOR UPGRADEABLE
     //////////////////////////////////////////////////////////////*/
 
     function _deployOrchestrator()
         internal
-        returns (Soulv2OrchestratorUpgradeable)
+        returns (Zaseonv2OrchestratorUpgradeable)
     {
-        Soulv2OrchestratorUpgradeable impl = new Soulv2OrchestratorUpgradeable();
+        Zaseonv2OrchestratorUpgradeable impl = new Zaseonv2OrchestratorUpgradeable();
         bytes memory initData = abi.encodeCall(
-            Soulv2OrchestratorUpgradeable.initialize,
+            Zaseonv2OrchestratorUpgradeable.initialize,
             (
                 admin,
                 makeAddr("pc3"),
@@ -152,17 +152,17 @@ contract UpgradeableContractsTest is Test {
             )
         );
         ERC1967Proxy proxy = new ERC1967Proxy(address(impl), initData);
-        return Soulv2OrchestratorUpgradeable(address(proxy));
+        return Zaseonv2OrchestratorUpgradeable(address(proxy));
     }
 
     function test_OrchestratorInitialize() public {
-        Soulv2OrchestratorUpgradeable orch = _deployOrchestrator();
+        Zaseonv2OrchestratorUpgradeable orch = _deployOrchestrator();
         assertEq(orch.contractVersion(), 1);
         assertEq(orch.totalOperations(), 0);
     }
 
     function test_OrchestratorDoubleInitReverts() public {
-        Soulv2OrchestratorUpgradeable orch = _deployOrchestrator();
+        Zaseonv2OrchestratorUpgradeable orch = _deployOrchestrator();
         vm.expectRevert();
         orch.initialize(
             admin,
@@ -174,7 +174,7 @@ contract UpgradeableContractsTest is Test {
     }
 
     function test_OrchestratorAdminRoles() public {
-        Soulv2OrchestratorUpgradeable orch = _deployOrchestrator();
+        Zaseonv2OrchestratorUpgradeable orch = _deployOrchestrator();
         assertTrue(orch.hasRole(orch.DEFAULT_ADMIN_ROLE(), admin));
         assertTrue(orch.hasRole(orch.ORCHESTRATOR_ADMIN_ROLE(), admin));
         assertTrue(orch.hasRole(orch.OPERATOR_ROLE(), admin));
@@ -259,11 +259,11 @@ contract UpgradeableContractsTest is Test {
     function test_StorageSlotsMatchKeccak() public pure {
         assertEq(
             StorageSlots.PC3_CONTAINERS_SLOT,
-            keccak256("soul.storage.pc3.containers")
+            keccak256("zaseon.storage.pc3.containers")
         );
         assertEq(
             StorageSlots.PC3_NULLIFIERS_SLOT,
-            keccak256("soul.storage.pc3.nullifiers")
+            keccak256("zaseon.storage.pc3.nullifiers")
         );
     }
 

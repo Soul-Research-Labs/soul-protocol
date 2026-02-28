@@ -15,7 +15,7 @@ import "../../contracts/relayer/SelfRelayAdapter.sol";
 
 /**
  * @title DeployRelayerInfrastructure
- * @notice Deploys the full relayer infrastructure stack for Soul Protocol.
+ * @notice Deploys the full relayer infrastructure stack for ZASEON.
  *
  * @dev Deployment order is dependency-aware:
  *   Phase 1 — Core Registries (no cross-contract deps)
@@ -212,7 +212,7 @@ contract DeployRelayerInfrastructure is Script {
             "  1. Register adapters on MultiRelayerRouter (SelfRelay, Gelato)"
         );
         console.log(
-            "  2. Wire DecentralizedRelayerRegistry into SoulProtocolHub via"
+            "  2. Wire DecentralizedRelayerRegistry into ZaseonProtocolHub via"
         );
         console.log("     WireRemainingComponents (RELAYER_NETWORK env var)");
         console.log("  3. Fund RelayerStaking reward pool");

@@ -1,5 +1,5 @@
 /**
- * Soul Multi-ZK System SDK
+ * Zaseon Multi-ZK System SDK
  *
  * Provides unified interface for multiple ZK proving systems:
  * - SP1 (Succinct)
@@ -59,7 +59,7 @@ export interface ZKSystemConfig {
 // ABSTRACT BASE CLIENT
 // =========================================================================
 
-export abstract class SoulZKClient {
+export abstract class ZaseonZKClient {
   protected config: ZKSystemConfig;
   protected system: ProofSystem;
 
@@ -120,7 +120,7 @@ export interface SP1Proof {
   vkeyHash: string;
 }
 
-export class SoulSP1Client extends SoulZKClient {
+export class ZaseonSP1Client extends ZaseonZKClient {
   private programELF?: Uint8Array;
   private vkey?: string;
 
@@ -214,7 +214,7 @@ export interface Plonky3Proof {
   evaluations: string[];
 }
 
-export class SoulPlonky3Client extends SoulZKClient {
+export class ZaseonPlonky3Client extends ZaseonZKClient {
   private circuitConfig?: Record<string, unknown>;
 
   constructor(config?: ZKSystemConfig) {
@@ -310,7 +310,7 @@ export interface JoltProof {
   memoryProof: Uint8Array;
 }
 
-export class SoulJoltClient extends SoulZKClient {
+export class ZaseonJoltClient extends ZaseonZKClient {
   private programBytes?: Uint8Array;
   private preprocessedData?: Uint8Array;
 
@@ -397,7 +397,7 @@ export interface BiniusProof {
   tensorCheckpoint: Uint8Array;
 }
 
-export class SoulBiniusClient extends SoulZKClient {
+export class ZaseonBiniusClient extends ZaseonZKClient {
   private circuitDefinition?: Record<string, unknown>;
 
   constructor(config?: ZKSystemConfig) {
@@ -464,8 +464,8 @@ export class SoulBiniusClient extends SoulZKClient {
 // UNIVERSAL ZK CLIENT
 // =========================================================================
 
-export class SoulUniversalZKClient {
-  private clients: Map<ProofSystem, SoulZKClient>;
+export class ZaseonUniversalZKClient {
+  private clients: Map<ProofSystem, ZaseonZKClient>;
   private publicClient?: PublicClient;
   private universalVerifier?: ReturnType<typeof getContract>;
 
@@ -474,21 +474,21 @@ export class SoulUniversalZKClient {
     this.publicClient = publicClient;
   }
 
-  initClient(system: ProofSystem, config?: ZKSystemConfig): SoulZKClient {
-    let client: SoulZKClient;
+  initClient(system: ProofSystem, config?: ZKSystemConfig): ZaseonZKClient {
+    let client: ZaseonZKClient;
 
     switch (system) {
       case ProofSystem.SP1:
-        client = new SoulSP1Client(config);
+        client = new ZaseonSP1Client(config);
         break;
       case ProofSystem.Plonky3:
-        client = new SoulPlonky3Client(config);
+        client = new ZaseonPlonky3Client(config);
         break;
       case ProofSystem.Jolt:
-        client = new SoulJoltClient(config);
+        client = new ZaseonJoltClient(config);
         break;
       case ProofSystem.Binius:
-        client = new SoulBiniusClient(config);
+        client = new ZaseonBiniusClient(config);
         break;
       default:
         throw new Error(`Unsupported proof system: ${system}`);
@@ -498,7 +498,7 @@ export class SoulUniversalZKClient {
     return client;
   }
 
-  getClient(system: ProofSystem): SoulZKClient | undefined {
+  getClient(system: ProofSystem): ZaseonZKClient | undefined {
     return this.clients.get(system);
   }
 
@@ -587,37 +587,37 @@ export class SoulUniversalZKClient {
 // FACTORY FUNCTIONS
 // =========================================================================
 
-export function createSP1Client(config?: ZKSystemConfig): SoulSP1Client {
-  return new SoulSP1Client(config);
+export function createSP1Client(config?: ZKSystemConfig): ZaseonSP1Client {
+  return new ZaseonSP1Client(config);
 }
 
 export function createPlonky3Client(
   config?: ZKSystemConfig
-): SoulPlonky3Client {
-  return new SoulPlonky3Client(config);
+): ZaseonPlonky3Client {
+  return new ZaseonPlonky3Client(config);
 }
 
-export function createJoltClient(config?: ZKSystemConfig): SoulJoltClient {
-  return new SoulJoltClient(config);
+export function createJoltClient(config?: ZKSystemConfig): ZaseonJoltClient {
+  return new ZaseonJoltClient(config);
 }
 
-export function createBiniusClient(config?: ZKSystemConfig): SoulBiniusClient {
-  return new SoulBiniusClient(config);
+export function createBiniusClient(config?: ZKSystemConfig): ZaseonBiniusClient {
+  return new ZaseonBiniusClient(config);
 }
 
 export function createUniversalClient(
   publicClient?: PublicClient
-): SoulUniversalZKClient {
-  return new SoulUniversalZKClient(publicClient);
+): ZaseonUniversalZKClient {
+  return new ZaseonUniversalZKClient(publicClient);
 }
 
 export default {
   ProofSystem,
-  SoulSP1Client,
-  SoulPlonky3Client,
-  SoulJoltClient,
-  SoulBiniusClient,
-  SoulUniversalZKClient,
+  ZaseonSP1Client,
+  ZaseonPlonky3Client,
+  ZaseonJoltClient,
+  ZaseonBiniusClient,
+  ZaseonUniversalZKClient,
   createSP1Client,
   createPlonky3Client,
   createJoltClient,

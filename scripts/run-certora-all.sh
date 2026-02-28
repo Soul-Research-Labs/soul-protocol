@@ -1,5 +1,5 @@
 #!/bin/bash
-# Comprehensive Certora Verification Script for Soul
+# Comprehensive Certora Verification Script for Zaseon
 # Runs all Certora specifications in parallel batches
 
 set -e
@@ -15,7 +15,7 @@ if [ -z "$CERTORAKEY" ]; then
 fi
 
 echo "==========================================="
-echo "  Soul Certora Formal Verification Suite   "
+echo "  Zaseon Certora Formal Verification Suite   "
 echo "==========================================="
 echo ""
 echo "Starting verification at $(date)"

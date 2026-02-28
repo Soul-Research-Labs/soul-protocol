@@ -4,13 +4,13 @@ pragma solidity ^0.8.24;
 import "forge-std/Test.sol";
 
 // Core
-import {SoulProtocolHub} from "../../contracts/core/SoulProtocolHub.sol";
-import "../../contracts/interfaces/ISoulProtocolHub.sol";
+import {ZaseonProtocolHub} from "../../contracts/core/ZaseonProtocolHub.sol";
+import "../../contracts/interfaces/IZaseonProtocolHub.sol";
 import {NullifierRegistryV3} from "../../contracts/core/NullifierRegistryV3.sol";
 
 // Verifiers
 import {VerifierRegistryV2} from "../../contracts/verifiers/VerifierRegistryV2.sol";
-import {SoulUniversalVerifier} from "../../contracts/verifiers/SoulUniversalVerifier.sol";
+import {ZaseonUniversalVerifier} from "../../contracts/verifiers/ZaseonUniversalVerifier.sol";
 
 // Security
 import {RelayProofValidator} from "../../contracts/security/RelayProofValidator.sol";
@@ -23,9 +23,9 @@ import {CrossDomainNullifierAlgebra} from "../../contracts/primitives/CrossDomai
 import {PolicyBoundProofs} from "../../contracts/primitives/PolicyBoundProofs.sol";
 
 // Governance
-import {SoulToken} from "../../contracts/governance/SoulToken.sol";
-import {SoulGovernor} from "../../contracts/governance/SoulGovernor.sol";
-import {SoulUpgradeTimelock} from "../../contracts/governance/SoulUpgradeTimelock.sol";
+import {ZaseonToken} from "../../contracts/governance/ZaseonToken.sol";
+import {ZaseonGovernor} from "../../contracts/governance/ZaseonGovernor.sol";
+import {ZaseonUpgradeTimelock} from "../../contracts/governance/ZaseonUpgradeTimelock.sol";
 
 // OpenZeppelin
 import {IVotes} from "@openzeppelin/contracts/governance/utils/IVotes.sol";
@@ -41,9 +41,9 @@ import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol"
  */
 contract FullDeploymentE2E is Test {
     // ── Contracts ──
-    SoulProtocolHub public hub;
+    ZaseonProtocolHub public hub;
     VerifierRegistryV2 public verifierRegistry;
-    SoulUniversalVerifier public universalVerifier;
+    ZaseonUniversalVerifier public universalVerifier;
     NullifierRegistryV3 public nullifierRegistry;
     RelayProofValidator public relayProofValidator;
     RelayCircuitBreaker public circuitBreaker;
@@ -51,9 +51,9 @@ contract FullDeploymentE2E is Test {
     ProofCarryingContainer public proofCarryingContainer;
     CrossDomainNullifierAlgebra public cdna;
     PolicyBoundProofs public policyBoundProofs;
-    SoulToken public soulToken;
-    SoulGovernor public governor;
-    SoulUpgradeTimelock public upgradeTimelock;
+    ZaseonToken public zaseonToken;
+    ZaseonGovernor public governor;
+    ZaseonUpgradeTimelock public upgradeTimelock;
 
     // ── Actors ──
     address public deployer;
@@ -66,9 +66,9 @@ contract FullDeploymentE2E is Test {
         deployer = address(this);
 
         // ════════ PHASE 1: Deploy all contracts ════════
-        hub = new SoulProtocolHub();
+        hub = new ZaseonProtocolHub();
         verifierRegistry = new VerifierRegistryV2();
-        universalVerifier = new SoulUniversalVerifier();
+        universalVerifier = new ZaseonUniversalVerifier();
         nullifierRegistry = new NullifierRegistryV3();
         relayProofValidator = new RelayProofValidator(deployer);
         circuitBreaker = new RelayCircuitBreaker(deployer);
@@ -79,21 +79,21 @@ contract FullDeploymentE2E is Test {
 
         // ════════ PHASE 2: Governance ════════
         uint256 totalSupply = 10_000_000e18;
-        soulToken = new SoulToken(deployer, deployer, totalSupply);
+        zaseonToken = new ZaseonToken(deployer, deployer, totalSupply);
 
         address[] memory proposers = new address[](1);
         proposers[0] = admin;
         address[] memory executors = new address[](1);
         executors[0] = address(0); // anyone can execute
-        upgradeTimelock = new SoulUpgradeTimelock(
+        upgradeTimelock = new ZaseonUpgradeTimelock(
             1 days,
             proposers,
             executors,
             admin
         );
 
-        governor = new SoulGovernor(
-            IVotes(address(soulToken)),
+        governor = new ZaseonGovernor(
+            IVotes(address(zaseonToken)),
             TimelockController(payable(address(upgradeTimelock))),
             0,
             0,
@@ -118,23 +118,23 @@ contract FullDeploymentE2E is Test {
         vm.stopPrank();
 
         // Distribute tokens to voters and delegate
-        soulToken.transfer(voter1, 5_000_000e18);
-        soulToken.transfer(voter2, 3_000_000e18);
-        soulToken.transfer(voter3, 2_000_000e18);
+        zaseonToken.transfer(voter1, 5_000_000e18);
+        zaseonToken.transfer(voter2, 3_000_000e18);
+        zaseonToken.transfer(voter3, 2_000_000e18);
 
         vm.prank(voter1);
-        soulToken.delegate(voter1);
+        zaseonToken.delegate(voter1);
         vm.prank(voter2);
-        soulToken.delegate(voter2);
+        zaseonToken.delegate(voter2);
         vm.prank(voter3);
-        soulToken.delegate(voter3);
+        zaseonToken.delegate(voter3);
 
         // Advance 1 block for vote snapshotting
         vm.warp(block.timestamp + 1);
 
         // ════════ PHASE 3: Wire Hub ════════
         hub.wireAll(
-            ISoulProtocolHub.WireAllParams({
+            IZaseonProtocolHub.WireAllParams({
                 _verifierRegistry: address(verifierRegistry),
                 _universalVerifier: address(universalVerifier),
                 _crossChainMessageRelay: address(0),
@@ -442,9 +442,9 @@ contract FullDeploymentE2E is Test {
         // Only voter3 (2M = 20%) votes, need 4% quorum = 400k. But voter3 votes alone.
         // Actually 2M > 400k so quorum is reached. Let's use a smaller voter.
         address smallVoter = makeAddr("smallVoter");
-        soulToken.mint(smallVoter, 100_000e18);
+        zaseonToken.mint(smallVoter, 100_000e18);
         vm.prank(smallVoter);
-        soulToken.delegate(smallVoter);
+        zaseonToken.delegate(smallVoter);
         vm.warp(block.timestamp + 1);
 
         address[] memory targets = new address[](1);
@@ -561,14 +561,14 @@ contract FullDeploymentE2E is Test {
         hub.deactivateRelay(42161);
 
         // Bridge should show as inactive
-        ISoulProtocolHub.RelayInfo memory info = hub.getRelayInfo(42161);
+        IZaseonProtocolHub.RelayInfo memory info = hub.getRelayInfo(42161);
         assertFalse(info.isActive);
     }
 
     function test_MultiPhaseWiringPreservesExisting() public {
         // Phase 1: wire primitives
         hub.wireAll(
-            ISoulProtocolHub.WireAllParams({
+            IZaseonProtocolHub.WireAllParams({
                 _verifierRegistry: address(0),
                 _universalVerifier: address(0),
                 _crossChainMessageRelay: address(0),
@@ -601,16 +601,16 @@ contract FullDeploymentE2E is Test {
         assertEq(hub.zkBoundStateLocks(), address(zkBoundStateLocks)); // from setUp
     }
 
-    function test_SoulTokenGovernancePower() public view {
+    function test_ZaseonTokenGovernancePower() public view {
         // Verify voting power delegation
-        assertEq(soulToken.getVotes(voter1), 5_000_000e18);
-        assertEq(soulToken.getVotes(voter2), 3_000_000e18);
-        assertEq(soulToken.getVotes(voter3), 2_000_000e18);
-        assertEq(soulToken.totalSupply(), 10_000_000e18);
+        assertEq(zaseonToken.getVotes(voter1), 5_000_000e18);
+        assertEq(zaseonToken.getVotes(voter2), 3_000_000e18);
+        assertEq(zaseonToken.getVotes(voter3), 2_000_000e18);
+        assertEq(zaseonToken.totalSupply(), 10_000_000e18);
     }
 
     function test_GovernorConfiguration() public view {
-        assertEq(governor.name(), "SoulGovernor");
+        assertEq(governor.name(), "ZaseonGovernor");
         assertEq(governor.votingDelay(), 1 days);
         assertEq(governor.votingPeriod(), 5 days);
         assertEq(governor.proposalThreshold(), 100_000e18);
@@ -623,7 +623,7 @@ contract FullDeploymentE2E is Test {
 
     /// @dev Helper: mirrors DeployMainnet Phase 7 — grant all roles to admin
     function _executePhase7_RoleTransfer() internal {
-        // ── SoulProtocolHub ──
+        // ── ZaseonProtocolHub ──
         hub.grantRole(hub.DEFAULT_ADMIN_ROLE(), admin);
         hub.grantRole(hub.OPERATOR_ROLE(), admin);
         hub.grantRole(hub.GUARDIAN_ROLE(), admin);
@@ -676,7 +676,7 @@ contract FullDeploymentE2E is Test {
 
     /// @dev Helper: mirrors DeployMainnet Phase 8 — deployer renounces all roles
     function _executePhase8_RenounceDeployer() internal {
-        // ── SoulProtocolHub ──
+        // ── ZaseonProtocolHub ──
         hub.renounceRole(hub.UPGRADER_ROLE(), deployer);
         hub.renounceRole(hub.GUARDIAN_ROLE(), deployer);
         hub.renounceRole(hub.OPERATOR_ROLE(), deployer);
@@ -1094,7 +1094,7 @@ contract FullDeploymentE2E is Test {
             )
         );
         hub.wireAll(
-            ISoulProtocolHub.WireAllParams({
+            IZaseonProtocolHub.WireAllParams({
                 _verifierRegistry: address(0),
                 _universalVerifier: address(0),
                 _crossChainMessageRelay: address(0),
@@ -1228,7 +1228,7 @@ contract FullDeploymentE2E is Test {
         assertEq(hub.privacyRouter(), address(0xCAFE));
 
         hub.registerRelayAdapter(42161, address(0xA0B1), true, 12);
-        ISoulProtocolHub.RelayInfo memory info = hub.getRelayInfo(42161);
+        IZaseonProtocolHub.RelayInfo memory info = hub.getRelayInfo(42161);
         assertEq(info.adapter, address(0xA0B1));
 
         hub.pause();

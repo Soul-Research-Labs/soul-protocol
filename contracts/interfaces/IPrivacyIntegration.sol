@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title IPrivacyIntegration
- * @notice Interface for integrating privacy primitives across Soul
+ * @notice Interface for integrating privacy primitives across Zaseon
  * @dev Unified interface for stealth addresses, ring signatures, and nullifiers
  */
 interface IPrivacyIntegration {

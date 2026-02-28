@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - ComposableRevocationProofs
+ * ZASEON - ComposableRevocationProofs
  * 
  * This spec verifies critical invariants for the Composable Revocation Proofs (CRP)
  * which enables privacy-preserving credential revocation with composable proofs

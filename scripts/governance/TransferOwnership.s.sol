@@ -2,8 +2,8 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Script.sol";
-import "../../contracts/governance/SoulGovernance.sol";
-import "../../contracts/crosschain/SoulCrossChainRelay.sol";
+import "../../contracts/governance/ZaseonGovernance.sol";
+import "../../contracts/crosschain/ZaseonCrossChainRelay.sol";
 import "../../contracts/crosschain/MessageBatcher.sol";
 
 contract TransferOwnership is Script {
@@ -23,17 +23,17 @@ contract TransferOwnership is Script {
         address[] memory executors = new address[](1);
         executors[0] = address(0); // Anyone can execute
         
-        SoulGovernance governance = new SoulGovernance(
+        ZaseonGovernance governance = new ZaseonGovernance(
             2 days,   // 2 day delay
             proposers,
             executors,
             deployer  // Admin
         );
 
-        console.log("Deployed SoulGovernance:", address(governance));
+        console.log("Deployed ZaseonGovernance:", address(governance));
 
         // 2. Transfer Relay Admin
-        SoulCrossChainRelay relay = SoulCrossChainRelay(relayAddr);
+        ZaseonCrossChainRelay relay = ZaseonCrossChainRelay(relayAddr);
         relay.grantRole(relay.DEFAULT_ADMIN_ROLE(), address(governance));
         relay.revokeRole(relay.DEFAULT_ADMIN_ROLE(), deployer);
         

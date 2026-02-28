@@ -1,38 +1,38 @@
 /**
- * Soul SDK Integration Test
+ * Zaseon SDK Integration Test
  * 
  * Tests the SDK against deployed Sepolia contracts
  */
 
 import { expect } from "chai";
 import {
-  SoulProtocolClient,
-  createReadOnlySoulClient,
-} from "../dist/client/SoulProtocolClient";
+  ZaseonProtocolClient,
+  createReadOnlyZaseonClient,
+} from "../dist/client/ZaseonProtocolClient";
 import { SEPOLIA_ADDRESSES } from "../dist/config/addresses";
 import { NoirProver, Circuit } from "../dist/zkprover/NoirProver";
 import type { Hex } from "viem";
 
 const SEPOLIA_RPC = process.env.SEPOLIA_RPC || "https://rpc.sepolia.org";
 
-describe("SoulProtocolClient", () => {
+describe("ZaseonProtocolClient", () => {
   describe("Read-only operations", () => {
     it("should create a read-only client", () => {
-      const client = createReadOnlySoulClient(SEPOLIA_RPC);
+      const client = createReadOnlyZaseonClient(SEPOLIA_RPC);
       expect(client).to.exist;
       expect(client.chainId).to.equal(11155111);
       expect(client.addresses).to.deep.equal(SEPOLIA_ADDRESSES);
     });
 
     it("should have correct contract addresses", () => {
-      const client = createReadOnlySoulClient(SEPOLIA_RPC);
+      const client = createReadOnlyZaseonClient(SEPOLIA_RPC);
       expect(client.addresses.zkBoundStateLocks).to.equal("0xf390ae12c9ce8f546ef7c7adaa6a1ab7768a2c78");
       expect(client.addresses.nullifierRegistry).to.equal("0x3e21d559f19c76a0bcec378b10dae2cc0e4c2191");
       expect(client.addresses.proofHub).to.equal("0x40eaa5de0c6497c8943c967b42799cb092c26adc");
     });
 
     it("should generate secrets", () => {
-      const client = createReadOnlySoulClient(SEPOLIA_RPC);
+      const client = createReadOnlyZaseonClient(SEPOLIA_RPC);
       const { secret, nullifier } = client.generateSecrets();
       
       expect(secret).to.match(/^0x[a-f0-9]{64}$/);
@@ -41,7 +41,7 @@ describe("SoulProtocolClient", () => {
     });
 
     it("should generate commitment from secrets", () => {
-      const client = createReadOnlySoulClient(SEPOLIA_RPC);
+      const client = createReadOnlyZaseonClient(SEPOLIA_RPC);
       const secret = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef" as Hex;
       const nullifier = "0xfedcba0987654321fedcba0987654321fedcba0987654321fedcba0987654321" as Hex;
       
@@ -58,7 +58,7 @@ describe("SoulProtocolClient", () => {
 
   describe("Contract reads (requires RPC)", () => {
     it("should read protocol stats", async () => {
-      const client = createReadOnlySoulClient(SEPOLIA_RPC);
+      const client = createReadOnlyZaseonClient(SEPOLIA_RPC);
       
       try {
         const stats = await client.getStats();
@@ -76,7 +76,7 @@ describe("SoulProtocolClient", () => {
     });
 
     it("should check if chain is supported", async () => {
-      const client = createReadOnlySoulClient(SEPOLIA_RPC);
+      const client = createReadOnlyZaseonClient(SEPOLIA_RPC);
       
       try {
         const isSupported = await client.isChainSupported(11155111);

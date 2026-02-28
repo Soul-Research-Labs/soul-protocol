@@ -10,7 +10,7 @@ import {IPrivacyIntegration} from "../interfaces/IPrivacyIntegration.sol";
 
 /**
  * @title PrivacyPoolIntegration
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Privacy-preserving bridge capacity implementing IPrivacyPool interface
  * @dev Integrates with stealth addresses, ring signatures, and nullifier management
  *
@@ -41,7 +41,7 @@ import {IPrivacyIntegration} from "../interfaces/IPrivacyIntegration.sol";
  * │                                                                              │
  * └─────────────────────────────────────────────────────────────────────────────┘
  *
- * @custom:security-contact security@soulprotocol.io
+ * @custom:security-contact security@zaseonprotocol.io
  */
 contract PrivacyPoolIntegration is ReentrancyGuard, AccessControl, Pausable {
     using SafeERC20 for IERC20;
@@ -163,7 +163,7 @@ contract PrivacyPoolIntegration is ReentrancyGuard, AccessControl, Pausable {
 
     /// @notice Domain separator for privacy pool
     bytes32 public constant PRIVACY_POOL_DOMAIN =
-        keccak256("Soul_PRIVACY_POOL_V1");
+        keccak256("Zaseon_PRIVACY_POOL_V1");
 
     /// @notice Merkle tree depth for commitments
     uint256 public constant MERKLE_TREE_DEPTH = 20;

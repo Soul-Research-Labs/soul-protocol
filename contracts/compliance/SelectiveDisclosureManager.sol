@@ -7,7 +7,7 @@ import {IProofVerifier} from "../interfaces/IProofVerifier.sol";
 
 /**
  * @title SelectiveDisclosureManager
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Programmable viewing permissions for institutional compliance
  * @dev Enables selective field-level disclosure while maintaining ZK privacy.
  *
@@ -18,7 +18,7 @@ import {IProofVerifier} from "../interfaces/IProofVerifier.sol";
  *  3. Audit trail is append-only and bounded per transaction.
  *  4. All state-changing external functions use nonReentrant.
  *
- * @custom:security-contact security@soulprotocol.io
+ * @custom:security-contact security@zaseonprotocol.io
  */
 contract SelectiveDisclosureManager is AccessControl, ReentrancyGuard {
     /*//////////////////////////////////////////////////////////////

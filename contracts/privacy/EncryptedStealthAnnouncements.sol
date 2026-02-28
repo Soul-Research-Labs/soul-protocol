@@ -8,10 +8,10 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 /// @title EncryptedStealthAnnouncements
 /// @notice Enables encrypted stealth address announcements to prevent front-running
 /// @dev Announcements are encrypted with recipient's view key, preventing MEV extraction
-/// @custom:security-contact security@soulprotocol.io
+/// @custom:security-contact security@zaseonprotocol.io
 /**
  * @title EncryptedStealthAnnouncements
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice Encrypted Stealth Announcements contract
  */
 contract EncryptedStealthAnnouncements is
@@ -32,7 +32,7 @@ contract EncryptedStealthAnnouncements is
 
     /// @notice Domain separator for encrypted announcements
     bytes32 public constant DOMAIN_SEPARATOR =
-        keccak256("Soul_ENCRYPTED_STEALTH_V1");
+        keccak256("Zaseon_ENCRYPTED_STEALTH_V1");
 
     /// @notice Minimum encryption overhead (nonce + tag)
     uint256 public constant MIN_CIPHERTEXT_OVERHEAD = 40; // 24 bytes nonce + 16 bytes tag

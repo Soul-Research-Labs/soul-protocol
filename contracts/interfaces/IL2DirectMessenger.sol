@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title IL2DirectMessenger
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Interface for direct L2-to-L2 messaging without L1 completion
  */
 interface IL2DirectMessenger {
@@ -117,7 +117,7 @@ interface IL2DirectMessenger {
      * @param recipient Message recipient on destination
      * @param payload Message payload
      * @param path Preferred message path
-     * @param nullifierBinding Optional Soul nullifier for privacy
+     * @param nullifierBinding Optional Zaseon nullifier for privacy
      * @return messageId Unique message identifier
      */
     function sendMessage(
@@ -265,7 +265,7 @@ interface IL2DirectMessenger {
 
 /**
  * @title IL2ProofRouter
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Interface for optimized proof routing across L2 networks
  */
 interface IL2ProofRouter {
@@ -406,7 +406,7 @@ interface IL2ProofRouter {
 
 /**
  * @title ISharedSequencerIntegration
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Interface for shared sequencer integration
  */
 interface ISharedSequencerIntegration {

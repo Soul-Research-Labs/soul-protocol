@@ -346,12 +346,12 @@ contract HyperlaneAdapterTest is Test {
         assertEq(adapter.trustedSenders(42), sender);
     }
 
-    /* ── Soul Hub ───────────────────────────────────── */
+    /* ── Zaseon Hub ───────────────────────────────────── */
 
     function test_setPilHub() public {
         vm.prank(operator);
         adapter.setPilHub(remoteDomain, address(0x123));
-        assertEq(adapter.soulHubs(remoteDomain), address(0x123));
+        assertEq(adapter.zaseonHubs(remoteDomain), address(0x123));
     }
 
     /* ── Receive ETH ────────────────────────────────── */

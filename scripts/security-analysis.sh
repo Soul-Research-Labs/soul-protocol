@@ -6,7 +6,7 @@ set -e
 # =============================================================================
 
 echo "═══════════════════════════════════════════════════════════"
-echo "        Soul Protocol Security Analysis (Slither)"
+echo "        ZASEON Security Analysis (Slither)"
 echo "═══════════════════════════════════════════════════════════"
 
 # Check if slither is installed

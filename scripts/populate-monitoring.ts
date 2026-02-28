@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 /**
- * Soul Protocol - Monitoring Address Populator
+ * ZASEON - Monitoring Address Populator
  *
  * After deployment, run this script to populate contract addresses
  * into Tenderly and Defender monitoring configurations.
@@ -59,8 +59,8 @@ function populateDefenderConfig(deployments: DeploymentInfo, network: string): v
         'CrossChainProofHub': ['CrossChainProofHubV3'],
         'NullifierRegistry': ['NullifierRegistryV3'],
         'ConfidentialState': ['ConfidentialStateContainerV3'],
-        'AtomicSwap': ['SoulAtomicSwapV2'],
-        'Compliance': ['SoulComplianceV2'],
+        'AtomicSwap': ['ZaseonAtomicSwapV2'],
+        'Compliance': ['ZaseonComplianceV2'],
     };
 
     let addressesPopulated = 0;
@@ -157,26 +157,26 @@ function generateAlertChannels(network: string): void {
                 },
                 slack: {
                     webhookUrl: process.env.SLACK_CRITICAL_WEBHOOK || 'TODO: Set SLACK_CRITICAL_WEBHOOK',
-                    channel: '#soul-critical-alerts',
+                    channel: '#zaseon-critical-alerts',
                 },
             },
             high: {
                 slack: {
                     webhookUrl: process.env.SLACK_HIGH_WEBHOOK || 'TODO: Set SLACK_HIGH_WEBHOOK',
-                    channel: '#soul-high-alerts',
+                    channel: '#zaseon-high-alerts',
                 },
-                email: process.env.ALERT_EMAIL || 'security@soulprotocol.io',
+                email: process.env.ALERT_EMAIL || 'security@zaseonprotocol.io',
             },
             medium: {
                 slack: {
                     webhookUrl: process.env.SLACK_MEDIUM_WEBHOOK || 'TODO: Set SLACK_MEDIUM_WEBHOOK',
-                    channel: '#soul-monitoring',
+                    channel: '#zaseon-monitoring',
                 },
             },
             low: {
                 slack: {
                     webhookUrl: process.env.SLACK_LOW_WEBHOOK || 'TODO: Set SLACK_LOW_WEBHOOK',
-                    channel: '#soul-monitoring',
+                    channel: '#zaseon-monitoring',
                 },
             },
         },
@@ -198,7 +198,7 @@ const network = process.argv.includes('--network')
     : 'sepolia';
 
 console.log('╔══════════════════════════════════════════════════════════════╗');
-console.log('║      SOUL PROTOCOL - MONITORING CONFIG POPULATOR           ║');
+console.log('║      ZASEON PROTOCOL - MONITORING CONFIG POPULATOR           ║');
 console.log('╚══════════════════════════════════════════════════════════════╝\n');
 console.log(`Network: ${network}\n`);
 

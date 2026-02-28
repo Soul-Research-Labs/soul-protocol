@@ -6,7 +6,7 @@ import "forge-std/console.sol";
 
 /**
  * @title BridgeOperationsGasBenchmark
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Gas benchmarks for bridge-specific operations and optimization tracking
  * @dev Run with: forge test --match-contract BridgeOperationsGasBenchmark --gas-report -vvv
  *

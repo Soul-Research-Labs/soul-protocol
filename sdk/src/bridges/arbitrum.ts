@@ -1,5 +1,5 @@
 /**
- * @fileoverview Arbitrum bridge utilities for Soul SDK
+ * @fileoverview Arbitrum bridge utilities for Zaseon SDK
  * @module bridges/arbitrum
  */
 

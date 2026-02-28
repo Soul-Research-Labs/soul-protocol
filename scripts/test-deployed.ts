@@ -1,5 +1,5 @@
 /**
- * Soul v3 Deployed Contract Integration Tests
+ * Zaseon v3 Deployed Contract Integration Tests
  * 
  * Tests against live Sepolia contracts
  * 
@@ -38,7 +38,7 @@ const ADDRESSES = {
 
 async function main() {
   console.log("\n" + "=".repeat(80));
-  console.log("Soul v3 DEPLOYED CONTRACT INTEGRATION TESTS");
+  console.log("Zaseon v3 DEPLOYED CONTRACT INTEGRATION TESTS");
   console.log("=".repeat(80) + "\n");
 
   const network = await hre.network.connect();
@@ -125,19 +125,19 @@ async function main() {
 
   console.log("\n📦 Testing Application Layer...\n");
 
-  // Test 8: SoulAtomicSwapV2
-  await test("SoulAtomicSwapV2 - Contract accessible", async () => {
+  // Test 8: ZaseonAtomicSwapV2
+  await test("ZaseonAtomicSwapV2 - Contract accessible", async () => {
     const code = await publicClient.getCode({ address: ADDRESSES.atomicSwap });
     if (!code || code === "0x") throw new Error("No code at address");
   });
 
-  // Test 9: SoulComplianceV2
-  await test("SoulComplianceV2 - Contract accessible", async () => {
+  // Test 9: ZaseonComplianceV2
+  await test("ZaseonComplianceV2 - Contract accessible", async () => {
     const code = await publicClient.getCode({ address: ADDRESSES.compliance });
     if (!code || code === "0x") throw new Error("No code at address");
   });
 
-  console.log("\n📦 Testing Soul v2 Primitives...\n");
+  console.log("\n📦 Testing Zaseon v2 Primitives...\n");
 
   // Test 10: ProofCarryingContainer (PC³)
   await test("ProofCarryingContainer - Contract accessible", async () => {

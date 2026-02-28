@@ -22,7 +22,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title StateTransferVerifier
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice State Transfer Verifier contract
  */
 contract StateTransferVerifier {

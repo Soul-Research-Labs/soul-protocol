@@ -8,7 +8,7 @@ import {IPrivacyZoneManager} from "../interfaces/IPrivacyZoneManager.sol";
 
 /**
  * @title PrivacyZoneManager
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Multi-core Privacy Zone management for isolated privacy domains
  * @dev Inspired by LayerZero Zero's Atomicity Zones: each Privacy Zone
  *      operates as an independent execution domain with its own shielded pool,
@@ -39,7 +39,7 @@ import {IPrivacyZoneManager} from "../interfaces/IPrivacyZoneManager.sol";
  * 3. POLICY SEPARATION: Each zone enforces its own compliance rules
  * 4. MIGRATION: State can move between zones via ZK proof (no metadata leakage)
  *
- * @custom:security-contact security@soul.network
+ * @custom:security-contact security@zaseon.network
  */
 contract PrivacyZoneManager is
     AccessControl,

@@ -1,7 +1,7 @@
 /**
  * @title Network-Wide Formal Verification Invariants
- * @author Soul Protocol
- * @notice Simplified cross-contract global invariants for Soul Protocol
+ * @author ZASEON
+ * @notice Simplified cross-contract global invariants for ZASEON
  */
 
 // This specification documents cross-contract properties
@@ -14,7 +14,7 @@
  *    - A nullifier used in NullifierRegistry cannot be reused anywhere
  *    - Nullifiers in MixnetReceiptProofs are unique
  *    - Nullifiers in AnonymousDeliveryVerifier are unique
- *    - Nullifiers in SoulControlPlane are unique
+ *    - Nullifiers in ZaseonControlPlane are unique
  * 
  * 2. MESSAGE FLOW CONSISTENCY
  *    - IntentCommitted -> Executed -> ProofGenerated -> Verified -> Materialized

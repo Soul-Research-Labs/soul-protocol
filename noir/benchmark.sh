@@ -1,5 +1,5 @@
 #!/bin/bash
-# Soul Protocol - Noir Circuit Benchmarks
+# ZASEON - Noir Circuit Benchmarks
 # This script benchmarks all Noir circuits for proving time and constraint counts
 #
 # Prerequisites:
@@ -30,7 +30,7 @@ if ! command -v nargo &> /dev/null; then
     exit 1
 fi
 
-echo -e "${BLUE}=== Soul Protocol Noir Circuit Benchmarks ===${NC}"
+echo -e "${BLUE}=== ZASEON Noir Circuit Benchmarks ===${NC}"
 echo ""
 
 # Get nargo version
@@ -80,7 +80,7 @@ echo "  \"circuits\": {" >> "$RESULTS_FILE"
 
 # Initialize markdown
 cat > "$MARKDOWN_FILE" << EOF
-# Soul Protocol Noir Circuit Benchmarks
+# ZASEON Noir Circuit Benchmarks
 
 **Generated:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
 **Nargo Version:** $NARGO_VERSION

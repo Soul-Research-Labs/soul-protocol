@@ -1,4 +1,4 @@
-# Soul Protocol — Solidity API Reference
+# ZASEON — Solidity API Reference
 
 > **Auto-generated from Solidity source** — covers all public/external functions, events, roles, and key state variables for the eight core contracts.
 
@@ -9,8 +9,8 @@
 1. [CrossChainProofHubV3](#1-crosschainproofhubv3)
 2. [ConfidentialStateContainerV3](#2-confidentialstatecontainerv3)
 3. [NullifierRegistryV3](#3-nullifierregistryv3)
-4. [SoulProtocolHub](#4-soulprotocolhub)
-5. [SoulAtomicSwapV2](#5-soulatomicswapv2)
+4. [ZaseonProtocolHub](#4-zaseonprotocolhub)
+5. [ZaseonAtomicSwapV2](#5-zaseonatomicswapv2)
 6. [DirectL2Messenger](#6-directl2messenger)
 7. [UniversalShieldedPool](#7-universalshieldedpool)
 8. [StealthAddressRegistry](#8-stealthaddressregistry)
@@ -372,13 +372,13 @@ function getTreeStats() external view returns (uint256, bytes32, uint256)
 
 ---
 
-## 4. SoulProtocolHub
+## 4. ZaseonProtocolHub
 
-**Path:** `contracts/core/SoulProtocolHub.sol`
+**Path:** `contracts/core/ZaseonProtocolHub.sol`
 **Solidity:** `^0.8.24`
 **Inherits:** `AccessControl`, `Pausable`
 
-Central registry and integration hub for all Soul Protocol components. Routes requests to modules and maintains versioned component registrations.
+Central registry and integration hub for all ZASEON components. Routes requests to modules and maintains versioned component registrations.
 
 ### Roles
 
@@ -441,9 +441,9 @@ function deactivateBridge(uint256 chainId) external onlyRole(GUARDIAN_ROLE)
 
 ---
 
-## 5. SoulAtomicSwapV2
+## 5. ZaseonAtomicSwapV2
 
-**Path:** `contracts/bridge/SoulAtomicSwapV2.sol`
+**Path:** `contracts/bridge/ZaseonAtomicSwapV2.sol`
 **Solidity:** `^0.8.20`
 **Inherits:** `Ownable`, `ReentrancyGuard`, `Pausable`, `SecurityModule`
 

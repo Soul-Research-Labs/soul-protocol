@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - DecentralizedRelayerRegistry
+ * ZASEON - DecentralizedRelayerRegistry
  *
  * Verifies staking invariants, slashing correctness, reward distribution,
  * unbonding lifecycle, and access control for the permissionless relayer registry.

@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - NullifierRegistryV3
+ * ZASEON - NullifierRegistryV3
  * 
  * This spec verifies critical invariants for the Nullifier Registry
  * which manages nullifier registration with merkle tree support

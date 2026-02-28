@@ -49,7 +49,7 @@ describe("CryptoModule", () => {
     it("should encrypt and decrypt short plaintext", async () => {
       const mod = new CryptoModule(CURVE);
       const { privateKey, publicKey } = generateKeyPair(CURVE);
-      const plaintext = Buffer.from("hello soul protocol");
+      const plaintext = Buffer.from("hello zaseon");
 
       const { ciphertext, ephemeralKey, mac } = await mod.encrypt(
         plaintext,
@@ -62,7 +62,7 @@ describe("CryptoModule", () => {
         privateKey,
       );
 
-      expect(decrypted.toString()).to.equal("hello soul protocol");
+      expect(decrypted.toString()).to.equal("hello zaseon");
     });
 
     it("should encrypt and decrypt empty buffer", async () => {

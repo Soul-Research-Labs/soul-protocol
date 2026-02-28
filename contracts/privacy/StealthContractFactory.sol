@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/proxy/Clones.sol";
 
 /**
  * @title StealthContractFactory
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Deploys fresh contracts for each receive to hide destination patterns
  * @dev Phase 5 of Metadata Resistance - no address reuse across transactions
  *

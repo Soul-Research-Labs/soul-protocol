@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - RecursiveProofAggregator
+ * ZASEON - RecursiveProofAggregator
  *
  * This spec verifies critical invariants for the Recursive Proof Aggregator
  * which implements IVC-based proof aggregation (Nova/SuperNova-style folding)

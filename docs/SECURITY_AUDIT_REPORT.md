@@ -1,4 +1,4 @@
-# Soul Protocol Security Audit Report
+# ZASEON Security Audit Report
 
 **Date:** February 5, 2026  
 **Auditor:** Internal Security Review  
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-This report documents the comprehensive security audit performed on the Soul Protocol codebase. The audit identified and fixed **44 vulnerabilities** across multiple security reviews:
+This report documents the comprehensive security audit performed on the ZASEON codebase. The audit identified and fixed **44 vulnerabilities** across multiple security reviews:
 
 ### Security Review Phase 1 (January 2026)
 
@@ -52,12 +52,12 @@ This report documents the comprehensive security audit performed on the Soul Pro
 
 | Contract            | Path                                           | Lines  | Risk Level |
 | ------------------- | ---------------------------------------------- | ------ | ---------- |
-| SoulUpgradeTimelock | `contracts/governance/SoulUpgradeTimelock.sol` | ~600   | High       |
+| ZaseonUpgradeTimelock | `contracts/governance/ZaseonUpgradeTimelock.sol` | ~600   | High       |
 | BridgeWatchtower    | `contracts/security/BridgeWatchtower.sol`      | ~650   | High       |
-| SoulProtocolHub     | `contracts/core/SoulProtocolHub.sol`           | ~1,005 | High       |
-| SoulL2Messenger     | `contracts/crosschain/SoulL2Messenger.sol`     | ~520   | Medium     |
+| ZaseonProtocolHub     | `contracts/core/ZaseonProtocolHub.sol`           | ~1,005 | High       |
+| ZaseonL2Messenger     | `contracts/crosschain/ZaseonL2Messenger.sol`     | ~520   | Medium     |
 
-> **Note:** `SoulMultiSigGovernance`, `SoulPreconfirmationHandler`, `SoulIntentResolver`, `ConfidentialDataAvailability`, and `MPCGateway` were removed during Q1 2026 cleanup. MPC functionality was replaced by threshold signature support in `SoulProtocolHub`.
+> **Note:** `ZaseonMultiSigGovernance`, `ZaseonPreconfirmationHandler`, `ZaseonIntentResolver`, `ConfidentialDataAvailability`, and `MPCGateway` were removed during Q1 2026 cleanup. MPC functionality was replaced by threshold signature support in `ZaseonProtocolHub`.
 
 ---
 
@@ -181,7 +181,7 @@ bytes32 public constant REGISTER_STATE_TYPEHASH = keccak256(
 
 ---
 
-### H-2: Hash Collision in `deriveSoulBinding()`
+### H-2: Hash Collision in `deriveZaseonBinding()`
 
 **Contract:** UnifiedNullifierManager  
 **Severity:** High  
@@ -284,7 +284,7 @@ Challenge winnings were credited to `relayerStakes[challenger]`, but non-relayer
 
 | ID   | Contract             | Issue                                     | Fix                             |
 | ---- | -------------------- | ----------------------------------------- | ------------------------------- |
-| M-7  | DirectL2Messenger    | Missing zero-check for `soulHub`          | Added validation in constructor |
+| M-7  | DirectL2Messenger    | Missing zero-check for `zaseonHub`          | Added validation in constructor |
 | M-8  | DirectL2Messenger    | No upper bound on `requiredConfirmations` | Added max of 20                 |
 | M-9  | CrossChainPrivacyHub | Missing zero-checks in `initialize()`     | Added for all parameters        |
 | M-10 | CrossChainProofHubV3 | No minimum for `challengePeriod`          | Added 10 minute minimum         |
@@ -295,7 +295,7 @@ Challenge winnings were credited to `relayerStakes[challenger]`, but non-relayer
 | ---- | ---------------------------- | ------------------------------- | -------------------------------------- |
 | M-11 | ZKBoundStateLocks            | `MAX_ACTIVE_LOCKS` not enforced | Added check in `createLock()`          |
 | M-12 | ConfidentialStateContainerV3 | Unbounded `_ownerCommitments`   | Added `getOwnerCommitmentsPaginated()` |
-| M-13 | UnifiedNullifierManager      | Unbounded `reverseSoulLookup`   | Added `getSourceNullifiersPaginated()` |
+| M-13 | UnifiedNullifierManager      | Unbounded `reverseZaseonLookup`   | Added `getSourceNullifiersPaginated()` |
 
 ### Miscellaneous
 
@@ -310,9 +310,9 @@ Challenge winnings were credited to `relayerStakes[challenger]`, but non-relayer
 
 ### Critical Vulnerabilities (2)
 
-#### P2-C-1: Missing ReentrancyGuard in SoulMultiSigGovernance
+#### P2-C-1: Missing ReentrancyGuard in ZaseonMultiSigGovernance
 
-**Contract:** SoulMultiSigGovernance  
+**Contract:** ZaseonMultiSigGovernance  
 **Severity:** Critical  
 **Status:** ✅ Fixed
 
@@ -323,7 +323,7 @@ The `executeProposal()` function performed external calls without reentrancy pro
 
 ```solidity
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-contract SoulMultiSigGovernance is AccessControl, ReentrancyGuard {
+contract ZaseonMultiSigGovernance is AccessControl, ReentrancyGuard {
     function executeProposal(bytes32 proposalId) external nonReentrant { ... }
 }
 ```
@@ -348,7 +348,7 @@ Added `ReentrancyGuard` inheritance and `nonReentrant` modifier to both function
 
 #### P2-H-1 to P2-H-3: Deprecated `.transfer()` Usage
 
-**Contracts:** SoulL2Messenger (SoulPreconfirmationHandler, SoulIntentResolver removed)  
+**Contracts:** ZaseonL2Messenger (ZaseonPreconfirmationHandler, ZaseonIntentResolver removed)  
 **Severity:** High  
 **Status:** ✅ Fixed
 
@@ -386,7 +386,7 @@ Cached array length, accumulated values in memory, and performed single storage 
 
 | ID     | Contract                     | Issue                                                    | Fix                                            |
 | ------ | ---------------------------- | -------------------------------------------------------- | ---------------------------------------------- |
-| P2-M-1 | _(MPCGateway - removed)_     | Missing zero-address validation in `addSupportedChain()` | Superseded by threshold sig in SoulProtocolHub |
+| P2-M-1 | _(MPCGateway - removed)_     | Missing zero-address validation in `addSupportedChain()` | Superseded by threshold sig in ZaseonProtocolHub |
 | P2-M-2 | ConfidentialDataAvailability | Missing zero-address validation in `setVerifiers()`      | Added validation for both parameters           |
 | P2-M-3 | ConfidentialDataAvailability | Missing events for `setMinChallengeStake()`              | Added `MinChallengeStakeUpdated` event         |
 | P2-M-4 | ConfidentialDataAvailability | Missing events for `setDefaultRetentionPeriod()`         | Added `DefaultRetentionPeriodUpdated` event    |
@@ -440,7 +440,7 @@ Cached array length, accumulated values in memory, and performed single storage 
 | `1bbc246`  | Fix 4 additional high severity vulnerabilities                  |
 | `8b83c58`  | Fix 10 medium severity vulnerabilities                          |
 | `7e5a4b0`  | Fix 5 additional medium severity vulnerabilities                |
-| `feb2026a` | Phase 2: Fix reentrancy in SoulMultiSigGovernance               |
+| `feb2026a` | Phase 2: Fix reentrancy in ZaseonMultiSigGovernance               |
 | `feb2026b` | Phase 2: Fix reentrancy in BridgeWatchtower + loop optimization |
 | `feb2026c` | Phase 2: Replace .transfer() with .call{} in 3 contracts        |
 | `feb2026d` | Phase 2: Add zero-address validation + missing events           |
@@ -457,4 +457,4 @@ Test execution requires Foundry installation. All Solidity test contracts compil
 
 ---
 
-_This report was generated as part of the Soul Protocol internal security audit process._
+_This report was generated as part of the ZASEON internal security audit process._

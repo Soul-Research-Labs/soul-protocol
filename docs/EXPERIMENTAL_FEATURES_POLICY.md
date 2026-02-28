@@ -2,7 +2,7 @@
 
 ## Overview
 
-Soul Protocol includes experimental cryptographic features (FHE, PQC, MPC) that are not yet production-ready. This document outlines how to manage these features safely.
+ZASEON includes experimental cryptographic features (FHE, PQC, MPC) that are not yet production-ready. This document outlines how to manage these features safely.
 
 ## Feature Classification
 
@@ -33,7 +33,7 @@ Soul Protocol includes experimental cryptographic features (FHE, PQC, MPC) that 
 
 🔴 **Research/prototype, no real value**
 
-- FHE operations (SoulFHEModule, EncryptedERC20)
+- FHE operations (ZaseonFHEModule, EncryptedERC20)
 - Post-quantum crypto (Dilithium, Kyber, SPHINCS+)
 - MPC threshold signatures
 - Advanced privacy (Seraphim, Triptych)
@@ -103,7 +103,7 @@ contract ExperimentalFeatureRegistry is AccessControl {
             address(0),
             1 ether,  // Max 1 ETH for testing
             true,
-            "https://docs.soul.xyz/experimental/fhe"
+            "https://docs.zaseon.xyz/experimental/fhe"
         );
 
         _registerFeature(
@@ -113,7 +113,7 @@ contract ExperimentalFeatureRegistry is AccessControl {
             address(0),
             0.1 ether,
             true,
-            "https://docs.soul.xyz/experimental/pqc"
+            "https://docs.zaseon.xyz/experimental/pqc"
         );
     }
 
@@ -204,7 +204,7 @@ interface IExperimentalWarning {
     /// @notice WARNING: This feature is EXPERIMENTAL and NOT AUDITED
     /// @notice Use only for testing with small amounts
     /// @notice Risk of total loss of funds
-    /// @dev See documentation: https://docs.soul.xyz/experimental/fhe
+    /// @dev See documentation: https://docs.zaseon.xyz/experimental/fhe
     function experimentalFHEOperation() external;
 }
 ```
@@ -277,7 +277,7 @@ docs/
 
 **Contracts**:
 
-- `SoulFHEModule.sol`
+- `ZaseonFHEModule.sol`
 - `EncryptedERC20.sol`
 - `EncryptedVoting.sol`
 - `FHEGateway.sol`
@@ -331,8 +331,8 @@ docs/
 
 **Contracts**:
 
-- `SoulThresholdSignature.sol`
-- `SoulMPCComplianceModule.sol`
+- `ZaseonThresholdSignature.sol`
+- `ZaseonMPCComplianceModule.sol`
 
 **Issues**:
 
@@ -438,12 +438,12 @@ This feature is experimental and should not be used with real value...
 **In Code**:
 
 ```solidity
-/// @custom:security-contact security@soul.xyz
+/// @custom:security-contact security@zaseon.xyz
 /// @custom:experimental This contract is EXPERIMENTAL and NOT AUDITED
 /// @custom:risk-level HIGH
 /// @custom:max-value 1 ether
 /// @custom:status RESEARCH_PHASE
-contract SoulFHEModule {
+contract ZaseonFHEModule {
     // ...
 }
 ```
@@ -473,4 +473,4 @@ An experimental feature is successful if:
 - [NIST Post-Quantum Cryptography](https://csrc.nist.gov/projects/post-quantum-cryptography)
 - [Zama FHE](https://www.zama.ai/)
 - [Lit Protocol MPC](https://litprotocol.com/)
-- [Experimental Features Dashboard](https://testnet.soul.xyz/experimental)
+- [Experimental Features Dashboard](https://testnet.zaseon.xyz/experimental)

@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - RelayCircuitBreaker
+ * ZASEON - RelayCircuitBreaker
  *
  * Verifies safety invariants for the anomaly-driven circuit breaker
  * that protects bridge operations from suspicious activity.

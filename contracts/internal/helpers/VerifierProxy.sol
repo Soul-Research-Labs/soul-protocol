@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title VerifierProxy
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Thin delegation layer that routes ZK proof verification requests
  *         to the correct verifier contract, reducing stack depth in callers.
  * @dev Designed to be used as a library by contracts that need to dispatch

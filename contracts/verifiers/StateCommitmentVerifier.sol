@@ -22,7 +22,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title StateCommitmentVerifier
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice State Commitment Verifier contract
  */
 contract StateCommitmentVerifier {

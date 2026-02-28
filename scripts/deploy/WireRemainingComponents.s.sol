@@ -2,8 +2,8 @@
 pragma solidity ^0.8.24;
 
 import {Script, console} from "forge-std/Script.sol";
-import {SoulProtocolHub} from "../../contracts/core/SoulProtocolHub.sol";
-import "../../contracts/interfaces/ISoulProtocolHub.sol";
+import {ZaseonProtocolHub} from "../../contracts/core/ZaseonProtocolHub.sol";
+import "../../contracts/interfaces/IZaseonProtocolHub.sol";
 
 /**
  * @title WireRemainingComponents
@@ -12,7 +12,7 @@ import "../../contracts/interfaces/ISoulProtocolHub.sol";
  *
  * @dev The initial mainnet deploy sets 8/17 wireAll params. This script fills
  *      the remaining 9 that are deployed per-L2 or as upgradeable proxies:
- *        - crossChainMessageRelay   (per-L2 SoulCrossChainRelay)
+ *        - crossChainMessageRelay   (per-L2 ZaseonCrossChainRelay)
  *        - crossChainPrivacyHub     (per-L2 privacy coordination)
  *        - stealthAddressRegistry   (upgradeable)
  *        - privateRelayerNetwork    (DecentralizedRelayerRegistry)
@@ -26,7 +26,7 @@ import "../../contracts/interfaces/ISoulProtocolHub.sol";
  *        - relayCircuitBreaker      (not in wireAll, wired via setter)
  *
  * Usage:
- *   SOUL_HUB=0x...         \
+ *   ZASEON_HUB=0x...         \
  *   RELAY=0x...             \
  *   PRIVACY_HUB=0x...       \
  *   STEALTH_REGISTRY=0x...  \
@@ -46,8 +46,8 @@ import "../../contracts/interfaces/ISoulProtocolHub.sol";
  */
 contract WireRemainingComponents is Script {
     function run() external {
-        address hubAddr = vm.envAddress("SOUL_HUB");
-        require(hubAddr != address(0), "SOUL_HUB required");
+        address hubAddr = vm.envAddress("ZASEON_HUB");
+        require(hubAddr != address(0), "ZASEON_HUB required");
 
         // Read optional addresses — default to address(0) if not set
         address relay = _envOr("RELAY");
@@ -63,7 +63,7 @@ contract WireRemainingComponents is Script {
         address relayWatchtower = _envOr("RELAY_WATCHTOWER");
         address relayCircuitBreaker = _envOr("RELAY_CIRCUIT_BREAKER");
 
-        SoulProtocolHub hub = SoulProtocolHub(hubAddr);
+        ZaseonProtocolHub hub = ZaseonProtocolHub(hubAddr);
 
         console.log("=== Wire Remaining Components ===");
         console.log("Hub:                ", hubAddr);
@@ -84,7 +84,7 @@ contract WireRemainingComponents is Script {
 
         // wireAll with zero-address for already-wired components (Hub skips them)
         hub.wireAll(
-            ISoulProtocolHub.WireAllParams({
+            IZaseonProtocolHub.WireAllParams({
                 _verifierRegistry: address(0), // already set
                 _universalVerifier: address(0), // already set
                 _crossChainMessageRelay: relay,

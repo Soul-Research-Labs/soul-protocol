@@ -6,8 +6,8 @@ import "../../contracts/core/IntentCompletionLayer.sol";
 import "../../contracts/core/InstantCompletionGuarantee.sol";
 import "../../contracts/relayer/InstantRelayerRewards.sol";
 import "../../contracts/core/DynamicRoutingOrchestrator.sol";
-import "../../contracts/core/SoulProtocolHub.sol";
-import "../../contracts/interfaces/ISoulProtocolHub.sol";
+import "../../contracts/core/ZaseonProtocolHub.sol";
+import "../../contracts/interfaces/IZaseonProtocolHub.sol";
 import {IIntentCompletionLayer} from "../../contracts/interfaces/IIntentCompletionLayer.sol";
 import {IInstantCompletionGuarantee} from "../../contracts/interfaces/IInstantCompletionGuarantee.sol";
 import {IDynamicRoutingOrchestrator} from "../../contracts/interfaces/IDynamicRoutingOrchestrator.sol";
@@ -29,7 +29,7 @@ contract IntentCompletionE2E is Test {
     InstantCompletionGuarantee public guarantee;
     InstantRelayerRewards public rewards;
     DynamicRoutingOrchestrator public router;
-    SoulProtocolHub public hub;
+    ZaseonProtocolHub public hub;
 
     // =========================================================================
     // ACTORS
@@ -536,10 +536,10 @@ contract IntentCompletionE2E is Test {
     function test_hubWiringWithIntentComponents() public {
         // Deploy hub and wire everything
         vm.startPrank(admin);
-        hub = new SoulProtocolHub();
+        hub = new ZaseonProtocolHub();
 
         hub.wireAll(
-            ISoulProtocolHub.WireAllParams({
+            IZaseonProtocolHub.WireAllParams({
                 _verifierRegistry: address(0),
                 _universalVerifier: address(0),
                 _crossChainMessageRelay: address(0),

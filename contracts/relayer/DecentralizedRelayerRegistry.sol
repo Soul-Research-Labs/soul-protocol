@@ -6,9 +6,9 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title DecentralizedRelayerRegistry
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Permissionless registry for relayers with staking, slashing, and reward distribution
- * @dev Manages the lifecycle of relayers in the Soul Protocol relay network.
+ * @dev Manages the lifecycle of relayers in the ZASEON relay network.
  *
  * ARCHITECTURE:
  * ┌────────────────────────────────────────────────────────────────────────┐

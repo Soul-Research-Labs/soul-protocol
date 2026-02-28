@@ -1,7 +1,7 @@
 /**
- * Soul FHE TypeScript Integration
+ * Zaseon FHE TypeScript Integration
  *
- * Client-side library for FHE operations with Soul protocol.
+ * Client-side library for FHE operations with Zaseon protocol.
  * NOTE: This module provides the interface and simplified simulation
  * of FHE operations. Production use requires a real FHE backend
  * (e.g., TFHE-rs, SEAL, or fhEVM gateway).
@@ -44,7 +44,7 @@ export interface ComputationResult {
 // FHE CLIENT
 // =========================================================================
 
-export class SoulFHEClient {
+export class ZaseonFHEClient {
   private config: FHEConfig;
   private publicKey: Uint8Array | null = null;
   private evaluationKey: Uint8Array | null = null;
@@ -285,10 +285,10 @@ export class SoulFHEClient {
 // =========================================================================
 
 export class EncryptedBalanceManager {
-  private fheClient: SoulFHEClient;
+  private fheClient: ZaseonFHEClient;
   private balances: Map<string, EncryptedValue>;
 
-  constructor(fheClient: SoulFHEClient) {
+  constructor(fheClient: ZaseonFHEClient) {
     this.fheClient = fheClient;
     this.balances = new Map();
   }
@@ -361,8 +361,8 @@ export class EncryptedBalanceManager {
 // FACTORY FUNCTIONS
 // =========================================================================
 
-export function createTFHEClient(): SoulFHEClient {
-  return new SoulFHEClient({
+export function createTFHEClient(): ZaseonFHEClient {
+  return new ZaseonFHEClient({
     scheme: "TFHE",
     securityLevel: 128,
     polyModulusDegree: 2048,
@@ -370,8 +370,8 @@ export function createTFHEClient(): SoulFHEClient {
   });
 }
 
-export function createBFVClient(): SoulFHEClient {
-  return new SoulFHEClient({
+export function createBFVClient(): ZaseonFHEClient {
+  return new ZaseonFHEClient({
     scheme: "BFV",
     securityLevel: 128,
     polyModulusDegree: 4096,
@@ -380,8 +380,8 @@ export function createBFVClient(): SoulFHEClient {
   });
 }
 
-export function createCKKSClient(): SoulFHEClient {
-  return new SoulFHEClient({
+export function createCKKSClient(): ZaseonFHEClient {
+  return new ZaseonFHEClient({
     scheme: "CKKS",
     securityLevel: 128,
     polyModulusDegree: 8192,

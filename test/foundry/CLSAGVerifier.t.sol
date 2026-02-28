@@ -11,9 +11,9 @@ import "../../contracts/experimental/verifiers/CLSAGVerifier.sol";
 contract CLSAGVerifierTest is Test {
     CLSAGVerifier public verifier;
 
-    bytes32 constant COMMITMENT_DOMAIN = keccak256("SOUL_CLSAG_COMMITMENT_V1");
-    bytes32 constant CHALLENGE_DOMAIN = keccak256("SOUL_CLSAG_CHALLENGE_V1");
-    bytes32 constant KEY_IMAGE_DOMAIN = keccak256("SOUL_KEY_IMAGE_V1");
+    bytes32 constant COMMITMENT_DOMAIN = keccak256("ZASEON_CLSAG_COMMITMENT_V1");
+    bytes32 constant CHALLENGE_DOMAIN = keccak256("ZASEON_CLSAG_CHALLENGE_V1");
+    bytes32 constant KEY_IMAGE_DOMAIN = keccak256("ZASEON_KEY_IMAGE_V1");
 
     uint256 constant N =
         0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;

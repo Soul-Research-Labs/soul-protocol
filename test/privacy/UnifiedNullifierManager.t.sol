@@ -174,7 +174,7 @@ contract UnifiedNullifierManagerTest is Test {
         bytes32 commitment = keccak256("c1");
         uint256 chainId = 42_161; // Arbitrum
 
-        bytes32 soul = manager.registerNullifier(
+        bytes32 zaseon = manager.registerNullifier(
             nullifier,
             commitment,
             chainId,
@@ -182,7 +182,7 @@ contract UnifiedNullifierManagerTest is Test {
             0
         );
 
-        assertNotEq(soul, bytes32(0));
+        assertNotEq(zaseon, bytes32(0));
 
         UnifiedNullifierManager.NullifierRecord memory record = manager
             .getNullifierRecord(nullifier);
@@ -194,8 +194,8 @@ contract UnifiedNullifierManagerTest is Test {
             uint256(UnifiedNullifierManager.NullifierStatus.REGISTERED)
         );
 
-        // Verify soul binding
-        assertEq(manager.getSoulBinding(nullifier), soul);
+        // Verify zaseon binding
+        assertEq(manager.getZaseonBinding(nullifier), zaseon);
         assertEq(manager.totalNullifiers(), 1);
     }
 
@@ -234,9 +234,9 @@ contract UnifiedNullifierManagerTest is Test {
         );
     }
 
-    function test_registerNullifier_soulBindingDerived() public {
+    function test_registerNullifier_zaseonBindingDerived() public {
         bytes32 nullifier = keccak256("sb");
-        bytes32 soul = manager.registerNullifier(
+        bytes32 zaseon = manager.registerNullifier(
             nullifier,
             keccak256("c"),
             42_161,
@@ -246,14 +246,14 @@ contract UnifiedNullifierManagerTest is Test {
 
         UnifiedNullifierManager.ChainDomain memory domain = manager
             .getChainDomain(42_161);
-        bytes32 expected = manager.deriveSoulBinding(
+        bytes32 expected = manager.deriveZaseonBinding(
             nullifier,
             domain.domainTag
         );
-        assertEq(soul, expected);
+        assertEq(zaseon, expected);
 
         // Verify reverse lookup
-        bytes32[] memory sources = manager.getSourceNullifiers(soul);
+        bytes32[] memory sources = manager.getSourceNullifiers(zaseon);
         assertEq(sources.length, 1);
         assertEq(sources[0], nullifier);
     }
@@ -341,7 +341,7 @@ contract UnifiedNullifierManagerTest is Test {
             0
         );
 
-        (bytes32 destNull, bytes32 soul) = manager.createCrossDomainBinding(
+        (bytes32 destNull, bytes32 zaseon) = manager.createCrossDomainBinding(
             sourceNull,
             42_161, // Arbitrum
             10, // Optimism
@@ -349,16 +349,16 @@ contract UnifiedNullifierManagerTest is Test {
         );
 
         assertNotEq(destNull, bytes32(0));
-        assertNotEq(soul, bytes32(0));
+        assertNotEq(zaseon, bytes32(0));
         assertEq(manager.totalBindings(), 1);
 
         // Verify binding
-        (bool valid, bytes32 soulBinding) = manager.verifyCrossDomainBinding(
+        (bool valid, bytes32 zaseonBinding) = manager.verifyCrossDomainBinding(
             sourceNull,
             destNull
         );
         assertTrue(valid);
-        assertEq(soulBinding, soul);
+        assertEq(zaseonBinding, zaseon);
     }
 
     function test_createCrossDomainBinding_revertOnUnknownSource() public {
@@ -507,21 +507,21 @@ contract UnifiedNullifierManagerTest is Test {
     // DERIVATION FUNCTIONS
     // =========================================================================
 
-    function test_deriveSoulBinding_deterministic() public view {
+    function test_deriveZaseonBinding_deterministic() public view {
         bytes32 n = keccak256("test");
         bytes32 d = keccak256("domain");
-        bytes32 s1 = manager.deriveSoulBinding(n, d);
-        bytes32 s2 = manager.deriveSoulBinding(n, d);
+        bytes32 s1 = manager.deriveZaseonBinding(n, d);
+        bytes32 s2 = manager.deriveZaseonBinding(n, d);
         assertEq(s1, s2);
     }
 
-    function test_deriveSoulBinding_domainSeparation() public view {
+    function test_deriveZaseonBinding_domainSeparation() public view {
         bytes32 n = keccak256("test");
         bytes32 d1 = keccak256("ARBITRUM");
         bytes32 d2 = keccak256("OPTIMISM");
 
-        bytes32 s1 = manager.deriveSoulBinding(n, d1);
-        bytes32 s2 = manager.deriveSoulBinding(n, d2);
+        bytes32 s1 = manager.deriveZaseonBinding(n, d1);
+        bytes32 s2 = manager.deriveZaseonBinding(n, d2);
         assertNotEq(s1, s2);
     }
 
@@ -555,7 +555,7 @@ contract UnifiedNullifierManagerTest is Test {
     // =========================================================================
 
     function test_getSourceNullifiersPaginated() public {
-        // Register multiple nullifiers that map to the same soul binding
+        // Register multiple nullifiers that map to the same zaseon binding
         bytes32 n1 = keccak256("p1");
         bytes32 n2 = keccak256("p2");
 
@@ -567,13 +567,13 @@ contract UnifiedNullifierManagerTest is Test {
             0
         );
 
-        bytes32 soul = manager.getSoulBinding(n1);
+        bytes32 zaseon = manager.getZaseonBinding(n1);
 
-        // Use createCrossDomainBinding to add more entries to the same soul binding
-        // The second nullifier would need same domain tag to get same soul binding
+        // Use createCrossDomainBinding to add more entries to the same zaseon binding
+        // The second nullifier would need same domain tag to get same zaseon binding
         // Let's just test the pagination function directly
         (bytes32[] memory nullifiers, uint256 total) = manager
-            .getSourceNullifiersPaginated(soul, 0, 10);
+            .getSourceNullifiersPaginated(zaseon, 0, 10);
         assertEq(total, 1);
         assertEq(nullifiers.length, 1);
         assertEq(nullifiers[0], n1);
@@ -588,10 +588,10 @@ contract UnifiedNullifierManagerTest is Test {
             UnifiedNullifierManager.NullifierType.STANDARD,
             0
         );
-        bytes32 soul = manager.getSoulBinding(n);
+        bytes32 zaseon = manager.getZaseonBinding(n);
 
         (bytes32[] memory nullifiers, uint256 total) = manager
-            .getSourceNullifiersPaginated(soul, 100, 10);
+            .getSourceNullifiersPaginated(zaseon, 100, 10);
         assertEq(total, 1);
         assertEq(nullifiers.length, 0);
     }

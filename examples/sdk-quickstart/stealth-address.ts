@@ -1,5 +1,5 @@
 /**
- * Soul Protocol — Stealth Address Example
+ * ZASEON — Stealth Address Example
  *
  * Demonstrates the full stealth address lifecycle:
  *   1. Generate a stealth meta-address keypair (spending + viewing keys)

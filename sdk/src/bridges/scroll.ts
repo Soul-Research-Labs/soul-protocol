@@ -1,5 +1,5 @@
 /**
- * @fileoverview Scroll bridge utilities for Soul SDK
+ * @fileoverview Scroll bridge utilities for Zaseon SDK
  * @module bridges/scroll
  */
 

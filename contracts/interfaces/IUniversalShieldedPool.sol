@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title IUniversalShieldedPool
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Interface for the multi-asset shielded pool with cross-chain ZK deposits/withdrawals
  */
 interface IUniversalShieldedPool {

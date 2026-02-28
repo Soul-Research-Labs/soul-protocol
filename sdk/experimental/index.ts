@@ -1,5 +1,5 @@
 /**
- * Soul SDK - Experimental Modules
+ * Zaseon SDK - Experimental Modules
  *
  * ⚠️ WARNING: These modules are experimental/research-tier and NOT production-ready.
  * They contain placeholder implementations and should not be used in mainnet deployments.

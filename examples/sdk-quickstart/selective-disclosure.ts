@@ -1,5 +1,5 @@
 /**
- * Soul Protocol — Selective Disclosure Example
+ * ZASEON — Selective Disclosure Example
  *
  * Demonstrates the compliance-with-privacy flow:
  *   1. Register as a compliance provider
@@ -7,12 +7,12 @@
  *   3. Create selective disclosure (prove attributes without revealing all)
  *   4. Verify compliance status
  *
- * Uses the SoulComplianceProvider SDK client.
+ * Uses the ZaseonComplianceProvider SDK client.
  */
 import {
-  SoulComplianceProvider,
+  ZaseonComplianceProvider,
   type ComplianceConfig,
-} from "../../sdk/src/compliance/SoulComplianceProvider";
+} from "../../sdk/src/compliance/ZaseonComplianceProvider";
 
 // ─── Configuration ──────────────────────────────────────────────────────────
 const config: ComplianceConfig = {
@@ -26,7 +26,7 @@ async function main() {
     throw new Error("Set COMPLIANCE_CONTRACT_ADDRESS env var");
   }
 
-  const provider = new SoulComplianceProvider(config);
+  const provider = new ZaseonComplianceProvider(config);
 
   // ─── 1. Register as a Compliance Provider ─────────────────────────────
   console.log("Registering as compliance provider...");

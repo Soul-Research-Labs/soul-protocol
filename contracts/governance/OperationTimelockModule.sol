@@ -6,9 +6,9 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 
 /**
  * @title OperationTimelockModule
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Timelocked execution of sensitive operational parameter changes
- * @dev Complements SoulUpgradeTimelock (which handles contract upgrades) by providing
+ * @dev Complements ZaseonUpgradeTimelock (which handles contract upgrades) by providing
  *      timelock protection for everyday admin operations: fee changes, threshold updates,
  *      role grants, bridge registrations, etc.
  *
@@ -32,7 +32,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
  *      - Nonce-based replay protection
  *      - Operations expire if not executed within grace period
  *
- * @custom:security-contact security@soulprotocol.io
+ * @custom:security-contact security@zaseonprotocol.io
  */
 contract OperationTimelockModule is AccessControl, ReentrancyGuard {
     /*//////////////////////////////////////////////////////////////

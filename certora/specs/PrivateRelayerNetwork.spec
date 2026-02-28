@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - PrivateRelayerNetwork
+ * ZASEON - PrivateRelayerNetwork
  *
  * This spec verifies critical invariants for the Private Relayer Network
  * which implements stake-weighted VRF-based relayer selection,

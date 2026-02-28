@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - GasNormalizer
+ * ZASEON - GasNormalizer
  *
  * This spec verifies critical invariants for the Gas Normalizer
  * which normalizes gas consumption to prevent gas-based deanonymization

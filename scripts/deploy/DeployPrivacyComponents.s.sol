@@ -14,7 +14,7 @@ import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 /**
  * @title DeployPrivacyComponents
- * @notice Deploys the full privacy middleware stack for Soul Protocol.
+ * @notice Deploys the full privacy middleware stack for ZASEON.
  *
  * @dev Deployment order is dependency-aware:
  *   Phase 1 — Standalone registries (no cross-contract deps)
@@ -194,7 +194,7 @@ contract DeployPrivacyComponents is Script {
         console.log("");
         console.log("POST-DEPLOY REQUIRED:");
         console.log(
-            "  1. Wire these into SoulProtocolHub via wireAll() or individual setters"
+            "  1. Wire these into ZaseonProtocolHub via wireAll() or individual setters"
         );
         console.log("  2. Register bridge adapters on CrossChainPrivacyHub");
         console.log("  3. Set derivation verifier on StealthAddressRegistry");

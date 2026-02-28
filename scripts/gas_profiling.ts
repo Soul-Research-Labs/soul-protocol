@@ -6,7 +6,7 @@ async function main() {
 
   // In a real run, these would be the deployed addresses
   const universalVerifierAddress = process.env.UNIVERSAL_VERIFIER || "0x...";
-  const UniversalVerifier = await ethers.getContractAt("SoulUniversalVerifier", universalVerifierAddress);
+  const UniversalVerifier = await ethers.getContractAt("ZaseonUniversalVerifier", universalVerifierAddress);
 
   const proofTypes = [
     { name: "State Transfer", system: 1, typeHash: ethers.utils.keccak256(ethers.utils.toUtf8Bytes("STATE_TRANSITION_PROOF")) },

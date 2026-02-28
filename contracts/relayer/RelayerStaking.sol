@@ -8,9 +8,9 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /**
  * @title RelayerStaking
- * @author Soul Protocol
- * @notice Staking and slashing mechanism for Soul relayers
- * @custom:security-contact security@soulprotocol.io
+ * @author ZASEON
+ * @notice Staking and slashing mechanism for Zaseon relayers
+ * @custom:security-contact security@zaseonprotocol.io
  * @dev Relayers must stake tokens to participate in the network
  */
 contract RelayerStaking is AccessControl, ReentrancyGuard {
@@ -28,7 +28,7 @@ contract RelayerStaking is AccessControl, ReentrancyGuard {
     error NoStakers();
     error InvalidSlashingPercentage();
 
-    // Staking token (Soul token)
+    // Staking token (Zaseon token)
     IERC20 public immutable stakingToken;
 
     // Minimum stake required to be an active relayer

@@ -2,14 +2,14 @@
   "$schema": "https://docs.openzeppelin.com/defender/v2/reference/schema",
   "version": "2.0",
   "project": {
-    "name": "Soul Protocol",
+    "name": "ZASEON",
     "network": "mainnet",
     "description": "Cross-chain ZK privacy middleware"
   },
   "monitors": {
     "critical_events": {
-      "name": "Soul Critical Events",
-      "description": "Monitor critical security events across all Soul contracts",
+      "name": "Zaseon Critical Events",
+      "description": "Monitor critical security events across all Zaseon contracts",
       "type": "BLOCK",
       "network": "mainnet",
       "addresses": [],
@@ -33,9 +33,9 @@
         "windowSeconds": 1
       },
       "notificationChannels": [
-        "soul-pagerduty",
-        "soul-slack-critical",
-        "soul-email-critical"
+        "zaseon-pagerduty",
+        "zaseon-slack-critical",
+        "zaseon-email-critical"
       ],
       "riskCategory": "TECHNICAL"
     },
@@ -56,7 +56,7 @@
         "amount": 1,
         "windowSeconds": 1
       },
-      "notificationChannels": ["soul-pagerduty", "soul-slack-security"],
+      "notificationChannels": ["zaseon-pagerduty", "zaseon-slack-security"],
       "riskCategory": "FINANCIAL"
     },
     "proof_failures": {
@@ -76,7 +76,7 @@
         "amount": 5,
         "windowSeconds": 3600
       },
-      "notificationChannels": ["soul-slack-alerts"],
+      "notificationChannels": ["zaseon-slack-alerts"],
       "riskCategory": "TECHNICAL"
     },
     "relayer_slashing": {
@@ -96,7 +96,7 @@
         "amount": 1,
         "windowSeconds": 1
       },
-      "notificationChannels": ["soul-slack-security"],
+      "notificationChannels": ["zaseon-slack-security"],
       "riskCategory": "FINANCIAL"
     },
     "large_transfers": {
@@ -116,7 +116,7 @@
         "amount": 1,
         "windowSeconds": 1
       },
-      "notificationChannels": ["soul-slack-security", "soul-email-security"],
+      "notificationChannels": ["zaseon-slack-security", "zaseon-email-security"],
       "riskCategory": "FINANCIAL"
     },
     "admin_actions": {
@@ -144,7 +144,7 @@
         "amount": 1,
         "windowSeconds": 1
       },
-      "notificationChannels": ["soul-slack-admin"],
+      "notificationChannels": ["zaseon-slack-admin"],
       "riskCategory": "ACCESS-CONTROL"
     },
     "cross_chain_messages": {
@@ -172,7 +172,7 @@
         "amount": 1,
         "windowSeconds": 1
       },
-      "notificationChannels": ["soul-slack-ops"],
+      "notificationChannels": ["zaseon-slack-ops"],
       "riskCategory": "TECHNICAL"
     },
     "base_sepolia_bridge_monitoring": {
@@ -216,7 +216,7 @@
         "amount": 1,
         "windowSeconds": 1
       },
-      "notificationChannels": ["soul-slack-ops"],
+      "notificationChannels": ["zaseon-slack-ops"],
       "riskCategory": "TECHNICAL"
     }
   },
@@ -239,61 +239,61 @@
     }
   },
   "notifications": {
-    "soul-pagerduty": {
+    "zaseon-pagerduty": {
       "type": "pagerduty",
-      "name": "Soul PagerDuty",
+      "name": "Zaseon PagerDuty",
       "config": {
         "serviceKey": "${PAGERDUTY_SERVICE_KEY}",
         "severity": "critical"
       }
     },
-    "soul-slack-critical": {
+    "zaseon-slack-critical": {
       "type": "slack",
-      "name": "Soul Slack Critical",
+      "name": "Zaseon Slack Critical",
       "config": {
         "webhookUrl": "${SLACK_CRITICAL_WEBHOOK}"
       }
     },
-    "soul-slack-security": {
+    "zaseon-slack-security": {
       "type": "slack",
-      "name": "Soul Slack Security",
+      "name": "Zaseon Slack Security",
       "config": {
         "webhookUrl": "${SLACK_SECURITY_WEBHOOK}"
       }
     },
-    "soul-slack-alerts": {
+    "zaseon-slack-alerts": {
       "type": "slack",
-      "name": "Soul Slack Alerts",
+      "name": "Zaseon Slack Alerts",
       "config": {
         "webhookUrl": "${SLACK_ALERTS_WEBHOOK}"
       }
     },
-    "soul-slack-admin": {
+    "zaseon-slack-admin": {
       "type": "slack",
-      "name": "Soul Slack Admin",
+      "name": "Zaseon Slack Admin",
       "config": {
         "webhookUrl": "${SLACK_ADMIN_WEBHOOK}"
       }
     },
-    "soul-slack-ops": {
+    "zaseon-slack-ops": {
       "type": "slack",
-      "name": "Soul Slack Ops",
+      "name": "Zaseon Slack Ops",
       "config": {
         "webhookUrl": "${SLACK_OPS_WEBHOOK}"
       }
     },
-    "soul-email-critical": {
+    "zaseon-email-critical": {
       "type": "email",
-      "name": "Soul Email Critical",
+      "name": "Zaseon Email Critical",
       "config": {
-        "emails": ["security@soulprotocol.io"]
+        "emails": ["security@zaseonprotocol.io"]
       }
     },
-    "soul-email-security": {
+    "zaseon-email-security": {
       "type": "email",
-      "name": "Soul Email Security",
+      "name": "Zaseon Email Security",
       "config": {
-        "emails": ["security@soulprotocol.io"]
+        "emails": ["security@zaseonprotocol.io"]
       }
     }
   },

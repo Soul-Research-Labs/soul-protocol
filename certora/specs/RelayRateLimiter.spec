@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - RelayRateLimiter
+ * ZASEON - RelayRateLimiter
  *
  * Verifies safety invariants for the bridge rate limiting system
  * that prevents excessive fund movement velocity.

@@ -10,7 +10,7 @@ import {GasOptimizations} from "../libraries/GasOptimizations.sol";
 
 /**
  * @title CrossChainMessageRelay
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Handles cross-chain message passing between Ethereum L1 and L2 networks
  * @dev Implements secure message relay with signature verification and replay protection
  *
@@ -157,8 +157,8 @@ contract CrossChainMessageRelay is AccessControl, ReentrancyGuard, Pausable {
                         SECURITY MODULE INTEGRATION
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Soul Protocol Hub for component discovery
-    address public soulProtocolHub;
+    /// @notice ZASEON Hub for component discovery
+    address public zaseonProtocolHub;
 
     /// @notice Bridge proof validator for cross-chain proof verification
     address public relayProofValidator;
@@ -715,12 +715,12 @@ contract CrossChainMessageRelay is AccessControl, ReentrancyGuard, Pausable {
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Set Soul Protocol Hub for component discovery
-     * @param _hub The SoulProtocolHub address
+     * @notice Set ZASEON Hub for component discovery
+     * @param _hub The ZaseonProtocolHub address
      */
-    function setSoulProtocolHub(address _hub) external onlyRole(OPERATOR_ROLE) {
+    function setZaseonProtocolHub(address _hub) external onlyRole(OPERATOR_ROLE) {
         if (_hub == address(0)) revert ZeroAddress();
-        soulProtocolHub = _hub;
+        zaseonProtocolHub = _hub;
     }
 
     /**

@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-This document consolidates ALL next steps for cross-chain privacy and security in the Soul Protocol (Soul). It covers immediate tasks through long-term strategic goals.
+This document consolidates ALL next steps for cross-chain privacy and security in the ZASEON (Zaseon). It covers immediate tasks through long-term strategic goals.
 
 ---
 
@@ -300,9 +300,9 @@ contract PrivacyInvariants is Test {
         // Different ephemeral keys → different stealth addresses
     }
 
-    // Soul binding is deterministic
-    function invariant_soulBindingDeterminism() external {
-        // Same nullifier → same Soul binding
+    // Zaseon binding is deterministic
+    function invariant_zaseonBindingDeterminism() external {
+        // Same nullifier → same Zaseon binding
     }
 }
 ```
@@ -393,9 +393,9 @@ contract PrivacyInvariants is Test {
 
 ## 📞 Contacts
 
-- **Security Lead:** security@soulprotocol.io
-- **Privacy Research:** privacy@soulprotocol.io
-- **Integration Support:** integrations@soulprotocol.io
+- **Security Lead:** security@zaseonprotocol.io
+- **Privacy Research:** privacy@zaseonprotocol.io
+- **Integration Support:** integrations@zaseonprotocol.io
 
 ---
 

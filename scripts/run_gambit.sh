@@ -21,7 +21,7 @@ KILLED_MUTANTS=0
 SURVIVED_MUTANTS=0
 
 echo "═══════════════════════════════════════════════════════════════"
-echo " Soul Protocol — Gambit Mutation Testing"
+echo " ZASEON — Gambit Mutation Testing"
 echo "═══════════════════════════════════════════════════════════════"
 echo ""
 

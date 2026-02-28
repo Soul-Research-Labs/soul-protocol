@@ -1,6 +1,6 @@
 /**
  * @title Cross-Chain Privacy SDK
- * @description Main entry point for Soul cross-chain privacy operations
+ * @description Main entry point for Zaseon cross-chain privacy operations
  */
 
 // Stealth Address exports
@@ -116,7 +116,7 @@ export function verifyAddressesConfigured(
   for (const [key, value] of entries) {
     if (typeof value === "string" && value.toLowerCase() === ZERO_ADDRESS) {
       throw new Error(
-        `Soul SDK: ${key} is a zero address${label}. ` +
+        `Zaseon SDK: ${key} is a zero address${label}. ` +
           "Deploy contracts and update NETWORK_CONFIGS before using in production.",
       );
     }
@@ -149,7 +149,7 @@ export function createCrossChainOrchestrator(
  *
  * ⚠️ WARNING: Mainnet and testnet addresses are placeholders (zero addresses).
  * They must be populated after deployment using scripts/deploy/populate-sdk-addresses.ts.
- * Use `verifyAddressesConfigured()` from `@soul/sdk` to validate before production use.
+ * Use `verifyAddressesConfigured()` from `@zaseon/sdk` to validate before production use.
  */
 export const NETWORK_CONFIGS: Record<string, PrivacyHubConfig> = {
   // Mainnet (NOT DEPLOYED — zero addresses)
@@ -185,7 +185,7 @@ export function getNetworkConfig(network: string): PrivacyHubConfig {
   const config = NETWORK_CONFIGS[network];
   if (!config) {
     throw new Error(
-      `Soul SDK: Unknown network "${network}". ` +
+      `Zaseon SDK: Unknown network "${network}". ` +
         `Available: ${Object.keys(NETWORK_CONFIGS).join(", ")}`,
     );
   }

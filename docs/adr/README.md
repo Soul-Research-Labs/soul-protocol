@@ -1,6 +1,6 @@
 # Architecture Decision Records (ADRs)
 
-Records of significant architectural decisions made during Soul Protocol development.
+Records of significant architectural decisions made during ZASEON development.
 
 ## Index
 

@@ -1,7 +1,7 @@
 {
   "name": "zk-locks-demo",
   "version": "1.0.0",
-  "description": "Demo DApp for Soul Protocol ZK-Bound State Locks",
+  "description": "Demo DApp for ZASEON ZK-Bound State Locks",
   "type": "module",
   "scripts": {
     "dev": "npx serve . -p 3000",

@@ -1,5 +1,5 @@
 /**
- * Soul MPC (Multi-Party Computation) SDK
+ * Zaseon MPC (Multi-Party Computation) SDK
  *
  * Implements:
  * - Threshold signatures for bridge security
@@ -228,7 +228,7 @@ export class ShamirSecretSharing {
 // THRESHOLD SIGNATURE
 // =========================================================================
 
-export class SoulThresholdSignature {
+export class ZaseonThresholdSignature {
   private config: ThresholdConfig;
   private sessions: Map<string, SigningSession>;
   private sss: ShamirSecretSharing;
@@ -352,7 +352,7 @@ export class SoulThresholdSignature {
 // DISTRIBUTED KEY GENERATION
 // =========================================================================
 
-export class SoulDistributedKeyGeneration {
+export class ZaseonDistributedKeyGeneration {
   private config: ThresholdConfig;
   private sss: ShamirSecretSharing;
   private rounds: Map<number, DKGRound>;
@@ -466,7 +466,7 @@ export class SoulDistributedKeyGeneration {
 // MPC COMPLIANCE
 // =========================================================================
 
-export class SoulMPCCompliance {
+export class ZaseonMPCCompliance {
   private pendingRequests: Map<string, ComplianceRequest>;
   private oracleCount: number;
   private oracleThreshold: number;
@@ -568,7 +568,7 @@ export class SoulMPCCompliance {
 // MPC ON-CHAIN CLIENT
 // =========================================================================
 
-export class SoulMPCOnChainClient {
+export class ZaseonMPCOnChainClient {
   private publicClient: PublicClient;
   private walletClient?: WalletClient;
   private thresholdContract?: ReturnType<typeof getContract>;
@@ -645,36 +645,36 @@ export class SoulMPCOnChainClient {
 export function createThresholdSignature(
   config: ThresholdConfig,
   sessionTimeout?: number
-): SoulThresholdSignature {
-  return new SoulThresholdSignature(config, sessionTimeout);
+): ZaseonThresholdSignature {
+  return new ZaseonThresholdSignature(config, sessionTimeout);
 }
 
 export function createDKG(
   config: ThresholdConfig
-): SoulDistributedKeyGeneration {
-  return new SoulDistributedKeyGeneration(config);
+): ZaseonDistributedKeyGeneration {
+  return new ZaseonDistributedKeyGeneration(config);
 }
 
 export function createMPCCompliance(
   oracleCount: number,
   oracleThreshold: number
-): SoulMPCCompliance {
-  return new SoulMPCCompliance(oracleCount, oracleThreshold);
+): ZaseonMPCCompliance {
+  return new ZaseonMPCCompliance(oracleCount, oracleThreshold);
 }
 
 export function createMPCOnChainClient(
   publicClient: PublicClient,
   walletClient?: WalletClient
-): SoulMPCOnChainClient {
-  return new SoulMPCOnChainClient(publicClient, walletClient);
+): ZaseonMPCOnChainClient {
+  return new ZaseonMPCOnChainClient(publicClient, walletClient);
 }
 
 export default {
   ShamirSecretSharing,
-  SoulThresholdSignature,
-  SoulDistributedKeyGeneration,
-  SoulMPCCompliance,
-  SoulMPCOnChainClient,
+  ZaseonThresholdSignature,
+  ZaseonDistributedKeyGeneration,
+  ZaseonMPCCompliance,
+  ZaseonMPCOnChainClient,
   createThresholdSignature,
   createDKG,
   createMPCCompliance,

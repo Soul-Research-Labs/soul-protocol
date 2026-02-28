@@ -6,7 +6,7 @@ import "forge-std/console.sol";
 
 /**
  * @title Flash Loan Attack Simulation Tests
- * @notice Tests flash loan attack vectors against Soul contracts
+ * @notice Tests flash loan attack vectors against Zaseon contracts
  * @dev Part of security:attack test suite
  */
 contract FlashLoanAttacks is Test {

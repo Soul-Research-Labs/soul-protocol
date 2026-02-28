@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 import "../interfaces/IProofVerifier.sol";
 
 /// @title CrossDomainNullifierAlgebra (CDNA)
-/// @author Soul Protocol - Soul v2
+/// @author ZASEON - Zaseon v2
 /// @notice Domain-separated nullifiers that compose across chains, epochs, and applications
 /// @dev MVP Implementation - Enables cross-chain double-spend prevention without global state
 ///
@@ -23,7 +23,7 @@ import "../interfaces/IProofVerifier.sol";
 /// - Nullifier consumption is atomic and irreversible
 /**
  * @title CrossDomainNullifierAlgebra
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice Cross Domain Nullifier Algebra contract
  */
 contract CrossDomainNullifierAlgebra is AccessControl, Pausable {

@@ -45,12 +45,12 @@ contract NullifierValidatorHarness {
             );
     }
 
-    function computeSoulBinding(
+    function computeZaseonBinding(
         bytes32 sourceNullifier,
         bytes32 domainTag
     ) external pure returns (bytes32) {
         return
-            NullifierValidator.computeSoulBinding(sourceNullifier, domainTag);
+            NullifierValidator.computeZaseonBinding(sourceNullifier, domainTag);
     }
 
     function isValidFormat(bytes32 nullifier) external pure returns (bool) {
@@ -175,22 +175,22 @@ contract NullifierValidatorTest is Test {
     }
 
     /* ══════════════════════════════════════════════════
-                  COMPUTE SOUL BINDING
+                  COMPUTE ZASEON BINDING
        ══════════════════════════════════════════════════ */
 
-    function test_computeSoulBinding_deterministic() public view {
+    function test_computeZaseonBinding_deterministic() public view {
         bytes32 source = bytes32(uint256(0xAA));
         bytes32 domain = bytes32(uint256(0xBB));
 
-        bytes32 b1 = lib.computeSoulBinding(source, domain);
-        bytes32 b2 = lib.computeSoulBinding(source, domain);
+        bytes32 b1 = lib.computeZaseonBinding(source, domain);
+        bytes32 b2 = lib.computeZaseonBinding(source, domain);
         assertEq(b1, b2);
     }
 
-    function test_computeSoulBinding_differentDomains() public view {
+    function test_computeZaseonBinding_differentDomains() public view {
         bytes32 source = bytes32(uint256(0xAA));
-        bytes32 b1 = lib.computeSoulBinding(source, bytes32(uint256(1)));
-        bytes32 b2 = lib.computeSoulBinding(source, bytes32(uint256(2)));
+        bytes32 b1 = lib.computeZaseonBinding(source, bytes32(uint256(1)));
+        bytes32 b2 = lib.computeZaseonBinding(source, bytes32(uint256(2)));
         assertTrue(b1 != b2);
     }
 

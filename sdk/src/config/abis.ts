@@ -1,5 +1,5 @@
 /**
- * Soul Protocol - Contract ABIs
+ * ZASEON - Contract ABIs
  * 
  * Minimal ABIs for SDK interactions
  */
@@ -61,4 +61,4 @@ export const CONFIDENTIAL_STATE_CONTAINER_ABI = [
   { name: 'createState', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'encryptedData', type: 'bytes' }, { name: 'commitment', type: 'bytes32' }], outputs: [{ name: 'stateId', type: 'bytes32' }] },
 ] as const;
 
-// PC3, PBP, EASC, CDNA ABIs are defined in Soulv2Primitives.ts
+// PC3, PBP, EASC, CDNA ABIs are defined in Zaseonv2Primitives.ts

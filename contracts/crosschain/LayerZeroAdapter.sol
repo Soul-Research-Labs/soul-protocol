@@ -8,7 +8,7 @@ import {GasOptimizations} from "../libraries/GasOptimizations.sol";
 
 /**
  * @title LayerZeroAdapter
- * @author Soul Protocol
+ * @author ZASEON
  * @notice LayerZero Ultra Light Node (ULN) integration for cross-chain messaging
  * @dev Implements LayerZero's ULN verification for enhanced cross-chain security
  *
@@ -24,7 +24,7 @@ import {GasOptimizations} from "../libraries/GasOptimizations.sol";
  * │  Source Chain                          Destination Chain        │
  * │  ┌────────────┐     ┌──────────┐      ┌────────────┐           │
  * │  │ OApp       │────▶│ Endpoint │─────▶│ OApp       │           │
- * │  │ (Soul)      │     │          │      │ (Soul)      │           │
+ * │  │ (Zaseon)      │     │          │      │ (Zaseon)      │           │
  * │  └────────────┘     └────┬─────┘      └────────────┘           │
  * │                          │                                      │
  * │                    ┌─────▼─────┐                                │
@@ -167,8 +167,8 @@ contract LayerZeroAdapter is ReentrancyGuard, AccessControl, Pausable {
     /// @notice DVN confirmations per message
     mapping(bytes32 => mapping(address => bool)) public dvnConfirmations;
 
-    /// @notice Soul proof hub on each chain
-    mapping(uint32 => address) public soulHubs;
+    /// @notice Zaseon proof hub on each chain
+    mapping(uint32 => address) public zaseonHubs;
 
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
@@ -465,15 +465,15 @@ contract LayerZeroAdapter is ReentrancyGuard, AccessControl, Pausable {
     }
 
     /**
-     * @notice Set Soul hub address for a chain
+     * @notice Set Zaseon hub address for a chain
      * @param eid Endpoint ID
-     * @param hub Soul hub address
+     * @param hub Zaseon hub address
      */
     function setPilHub(
         uint32 eid,
         address hub
     ) external onlyRole(OPERATOR_ROLE) {
-        soulHubs[eid] = hub;
+        zaseonHubs[eid] = hub;
     }
 
     /**

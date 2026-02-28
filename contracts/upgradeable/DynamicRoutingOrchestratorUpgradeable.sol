@@ -12,10 +12,10 @@ import {RouteOptimizer} from "../libraries/RouteOptimizer.sol";
 
 /**
  * @title DynamicRoutingOrchestratorUpgradeable
- * @author Soul Protocol
+ * @author ZASEON
  * @notice UUPS-upgradeable version of DynamicRoutingOrchestrator for proxy deployments
  * @dev Routes ZK proof relay requests through optimal bridge adapters.
- *      Soul is proof middleware — AdapterCapacity data is oracle-observed, not managed.
+ *      Zaseon is proof middleware — AdapterCapacity data is oracle-observed, not managed.
  *
  * UPGRADE NOTES:
  * - AccessControlUpgradeable used for role-based permissioning

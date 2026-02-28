@@ -229,7 +229,7 @@ contract CryptoValidationTest is Test {
     }
 
     function test_HashToPoint_NonZero() public view {
-        CryptoLib.G1Point memory p = crypto.hashToPoint("soul");
+        CryptoLib.G1Point memory p = crypto.hashToPoint("zaseon");
         assertTrue(p.x != 0 || p.y != 0);
     }
 

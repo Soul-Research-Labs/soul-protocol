@@ -19,7 +19,7 @@ describe("Noir Verifier Differential Testing", function () {
     adapter = await (hre as any).viem.deployContract("PolicyVerifierAdapter", [mockNoir.address]);
     
     registry = await (hre as any).viem.deployContract("VerifierRegistry");
-    universalVerifier = await (hre as any).viem.deployContract("SoulUniversalVerifier");
+    universalVerifier = await (hre as any).viem.deployContract("ZaseonUniversalVerifier");
     
     await (universalVerifier as any).write.setVerifierRegistry([registry.address]);
   });

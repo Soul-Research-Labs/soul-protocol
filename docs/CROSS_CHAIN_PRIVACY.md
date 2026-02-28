@@ -76,7 +76,7 @@ contracts/crosschain/
 ├── LayerZeroAdapter.sol           # LayerZero V2 OApp
 ├── DirectL2Messenger.sol          # Direct L2-to-L2 messaging
 ├── EthereumL1Bridge.sol           # L1 state commitments
-├── SoulL2Messenger.sol            # RIP-7755 L2 messaging
+├── ZaseonL2Messenger.sol            # RIP-7755 L2 messaging
 └── L2ChainAdapter.sol             # Generic L2 chain adapter
 
 contracts/core/
@@ -84,20 +84,20 @@ contracts/core/
 └── ConfidentialStateContainerV3.sol # Encrypted state management
 
 contracts/governance/
-└── SoulUpgradeTimelock.sol        # Time-locked admin operations
+└── ZaseonUpgradeTimelock.sol        # Time-locked admin operations
 
 contracts/security/
 └── BridgeWatchtower.sol           # Decentralized watchtower network
 
 contracts/core/
-└── SoulProtocolHub.sol            # Central registry hub (threshold sig support)
+└── ZaseonProtocolHub.sol            # Central registry hub (threshold sig support)
 ```
 
 ---
 
 ## Privacy Levels
 
-Soul supports three privacy levels, configurable per transfer:
+Zaseon supports three privacy levels, configurable per transfer:
 
 | Level     | ID  | Sender | Receiver | Amount | Proof        |
 | --------- | --- | ------ | -------- | ------ | ------------ |
@@ -272,7 +272,7 @@ where:
 
 ## Research Reference Material
 
-> **Note:** The following sections document cryptographic primitives used by privacy chains (Monero, Zcash). These are provided for **educational reference only** and are **not implemented** in Soul Protocol's production contracts. Soul uses Groth16 (BN254) proofs with stealth addresses and CDNA for privacy.
+> **Note:** The following sections document cryptographic primitives used by privacy chains (Monero, Zcash). These are provided for **educational reference only** and are **not implemented** in ZASEON's production contracts. Zaseon uses Groth16 (BN254) proofs with stealth addresses and CDNA for privacy.
 
 ### Ring Signatures (CLSAG)
 
@@ -446,8 +446,8 @@ scale = 1 / 1.61
 │  CROSS-DOMAIN NULLIFIER (for bridging):                                 │
 │  nf_cross = H(nf_source || sourceChain || destChain || "CROSS_DOMAIN")  │
 │                                                                          │
-│  Soul UNIFIED NULLIFIER:                                                 │
-│  nf_pil = H(nf_source || domain || "Soul_BINDING")                       │
+│  Zaseon UNIFIED NULLIFIER:                                                 │
+│  nf_pil = H(nf_source || domain || "Zaseon_BINDING")                       │
 │                                                                          │
 │  PROPERTIES:                                                            │
 │  ┌─────────────────────────────────────────────────────────────────┐   │
@@ -463,8 +463,8 @@ scale = 1 / 1.61
 │  │ 4. SOUNDNESS:                                                    │   │
 │  │    Cannot create valid nullifier without secret                  │   │
 │  │                                                                  │   │
-│  │ 5. CROSS-DOMAIN LINKABILITY (for Soul only):                      │   │
-│  │    Soul can link source/dest nullifiers to prevent double-spend   │   │
+│  │ 5. CROSS-DOMAIN LINKABILITY (for Zaseon only):                      │   │
+│  │    Zaseon can link source/dest nullifiers to prevent double-spend   │   │
 │  └─────────────────────────────────────────────────────────────────┘   │
 │                                                                          │
 └─────────────────────────────────────────────────────────────────────────┘
@@ -473,7 +473,7 @@ scale = 1 / 1.61
 ### Nullifier Flow
 
 ```
-Source Chain                    Soul                      Destination Chain
+Source Chain                    Zaseon                      Destination Chain
      │                           │                              │
      │  1. Spend note            │                              │
      │  nf_src = H(secret||cm)   │                              │
@@ -482,7 +482,7 @@ Source Chain                    Soul                      Destination Chain
      │                           │  2. Derive cross-domain nf   │
      │                           │  nf_cross = H(nf_src||...)   │
      │                           │                              │
-     │                           │  3. Derive Soul nullifier     │
+     │                           │  3. Derive Zaseon nullifier     │
      │                           │  nf_pil = H(nf_src||domain)  │
      │                           │                              │
      │                           │  4. Register binding         │
@@ -543,7 +543,7 @@ import {
   CrossChainPrivacyHub,
   StealthAddressRegistry,
   PrivacyLevel,
-} from "@soul/sdk";
+} from "@zaseon/sdk";
 
 // Initialize
 const privacyHub = new CrossChainPrivacyHub(provider);
@@ -588,11 +588,11 @@ await privacyHub.completeRelay(relayId, zkProof, nullifierPreimage);
 
 ### RingCT Integration (Research Reference)
 
-> **Note:** RingCT integration is provided for **reference only**. This API is not yet implemented in the production SDK. Soul Protocol currently uses Groth16 proofs for privacy.
+> **Note:** RingCT integration is provided for **reference only**. This API is not yet implemented in the production SDK. ZASEON currently uses Groth16 proofs for privacy.
 
 ```typescript
 // RESEARCH REFERENCE - Not yet implemented
-import { RingConfidentialTransactions } from "@soul/sdk";
+import { RingConfidentialTransactions } from "@zaseon/sdk";
 
 const ringCT = new RingConfidentialTransactions(provider);
 

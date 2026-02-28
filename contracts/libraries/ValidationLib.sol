@@ -3,8 +3,8 @@ pragma solidity ^0.8.24;
 
 /**
  * @title ValidationLib
- * @author Soul Protocol
- * @notice Gas-optimized validation library for common checks across Soul Protocol
+ * @author ZASEON
+ * @notice Gas-optimized validation library for common checks across ZASEON
  * @dev Reduces code duplication and provides consistent error handling
  *
  * GAS SAVINGS:

@@ -10,7 +10,7 @@ import {MockProofVerifier} from "../../contracts/mocks/MockProofVerifier.sol";
 
 /**
  * @title GasSnapshotBenchmark
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Gas benchmark tests for critical protocol operations
  * @dev Run with: forge test --match-contract GasSnapshotBenchmark --gas-report
  *      Compare against .gas-snapshot: forge snapshot --match-contract GasSnapshotBenchmark

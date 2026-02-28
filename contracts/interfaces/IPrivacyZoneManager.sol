@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title IPrivacyZoneManager
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Interface for Privacy Zone Manager — multi-core privacy domain management
  * @dev Inspired by LayerZero Zero's Atomicity Zones concept, adapted for privacy.
  *      Each Privacy Zone operates as an independent execution domain with its own

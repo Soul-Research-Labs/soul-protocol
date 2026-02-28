@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This document provides a prioritized, actionable roadmap to address the four key concerns identified in the Soul Protocol codebase analysis:
+This document provides a prioritized, actionable roadmap to address the four key concerns identified in the ZASEON codebase analysis:
 
 1. **High Complexity** (large surface area)
 2. **Relayer Network Dependency**
@@ -183,7 +183,7 @@ Security:
 ├── BridgeCircuitBreaker
 ├── BridgeRateLimiter
 ├── BridgeWatchtower
-└── SoulTimelock
+└── ZaseonTimelock
 
 Total: ~15 contracts (vs. 100+)
 ```
@@ -378,7 +378,7 @@ Total: ~15 contracts (vs. 100+)
 
 ## Conclusion
 
-This roadmap provides a clear, actionable path to address all identified concerns. By following this plan, Soul Protocol can:
+This roadmap provides a clear, actionable path to address all identified concerns. By following this plan, ZASEON can:
 
 1. **Secure bridges** with defense-in-depth
 2. **Decentralize relayers** to eliminate single points of failure

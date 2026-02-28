@@ -3,9 +3,9 @@ pragma solidity ^0.8.24;
 
 /**
  * @title IIntentCompletionLayer
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Interface for the proof service marketplace — solver networks deliver ZK proofs
- * @dev Soul Protocol is proof middleware, NOT a bridge. This contract coordinates
+ * @dev ZASEON is proof middleware, NOT a bridge. This contract coordinates
  *      proof generation and delivery, not token transfers.
  *      Users submit intents (desired state transitions). Solvers compete to fulfill them
  *      by generating valid ZK proofs. The user escrows a service fee, not a transfer amount.

@@ -1,10 +1,10 @@
 #!/bin/bash
-# Mutation Testing Runner for Soul
+# Mutation Testing Runner for Zaseon
 # Requires: pip install gambit-sol
 
 set -e
 
-echo "🧬 Soul Mutation Testing Suite"
+echo "🧬 Zaseon Mutation Testing Suite"
 echo "=============================="
 echo ""
 

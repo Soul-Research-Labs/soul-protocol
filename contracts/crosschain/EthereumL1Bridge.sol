@@ -8,10 +8,10 @@ import "../interfaces/IEthereumL1Bridge.sol";
 
 /**
  * @title EthereumL1Bridge
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Bridge adapter for Ethereum mainnet (L1) interoperability
- * @custom:security-contact security@soulprotocol.io
- * @dev Handles cross-chain proof relay and state synchronization between Soul and Ethereum L1
+ * @custom:security-contact security@zaseonprotocol.io
+ * @dev Handles cross-chain proof relay and state synchronization between Zaseon and Ethereum L1
  *
  * ARCHITECTURE:
  * ┌─────────────────────────────────────────────────────────────────┐
@@ -437,7 +437,7 @@ contract EthereumL1Bridge is
      * @notice Submit a state commitment from an L2 chain
      * @param sourceChainId The source L2 chain ID
      * @param stateRoot The state root from L2
-     * @param proofRoot The Soul proof merkle root
+     * @param proofRoot The Zaseon proof merkle root
      * @param blockNumber The L2 block number
      */
     function submitStateCommitment(
@@ -459,7 +459,7 @@ contract EthereumL1Bridge is
      * @notice Submit state commitment using EIP-4844 blob
      * @param sourceChainId The source L2 chain ID
      * @param stateRoot The state root from L2
-     * @param proofRoot The Soul proof merkle root
+     * @param proofRoot The Zaseon proof merkle root
      * @param blockNumber The L2 block number
      * @param blobIndex The index of the blob in the current transaction
      */
@@ -694,7 +694,7 @@ contract EthereumL1Bridge is
     /**
      * @notice Initiate a deposit from L1 to L2 with privacy commitment
      * @param targetChainId The target L2 chain ID
-     * @param commitment The Soul commitment for the deposit
+     * @param commitment The Zaseon commitment for the deposit
      */
     function depositETH(
         uint256 targetChainId,
@@ -753,7 +753,7 @@ contract EthereumL1Bridge is
      * @notice Initiate withdrawal claim from L2
      * @param sourceChainId The source L2 chain ID
      * @param amount The withdrawal amount
-     * @param nullifier The Soul nullifier to prevent double-spend
+     * @param nullifier The Zaseon nullifier to prevent double-spend
      * @param proof Merkle proof from L2 state
      */
     function initiateWithdrawal(
@@ -866,7 +866,7 @@ contract EthereumL1Bridge is
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Relay a Soul proof from L2 to L1
+     * @notice Relay a Zaseon proof from L2 to L1
      * @param sourceChainId The source L2 chain
      * @param proofHash The proof hash
      * @param stateRoot The state root the proof is against

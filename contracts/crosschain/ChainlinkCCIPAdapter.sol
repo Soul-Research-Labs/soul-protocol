@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 /// @notice Minimal interface for the Chainlink CCIP Router contract
 /**
  * @title IRouterClient
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice I Router Client interface
  */
 interface IRouterClient {
@@ -158,7 +158,7 @@ function isMessageVerified(
 
     // Callback?
     // In real CCIP, the router calls ccipReceive on the receiver contract.
-    // This adapter sends messages. Receiving is handled by the Soul architecture separately?
+    // This adapter sends messages. Receiving is handled by the Zaseon architecture separately?
     // Or this adapter also receives?
     // For now, implementing sending side.
 }

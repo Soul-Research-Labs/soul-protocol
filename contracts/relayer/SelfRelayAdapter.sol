@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title SelfRelayAdapter
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Allows users to relay their own cross-chain messages directly without
  *         a third-party relayer, eliminating censorship risk and relayer dependency.
  *
@@ -24,7 +24,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
  *      - Integration with RelayerHealthMonitor for stats tracking
  *      - Pausable for emergency scenarios
  *
- * @custom:security-contact security@soulprotocol.io
+ * @custom:security-contact security@zaseonprotocol.io
  */
 contract SelfRelayAdapter is
     IRelayerAdapter,

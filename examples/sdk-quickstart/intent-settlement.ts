@@ -1,5 +1,5 @@
 /**
- * Soul Protocol — Intent Settlement Example
+ * ZASEON — Intent Settlement Example
  *
  * Demonstrates the solver marketplace for cross-chain operations:
  *   1. Submit an intent (desired cross-chain outcome)

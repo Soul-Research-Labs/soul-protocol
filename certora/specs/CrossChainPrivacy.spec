@@ -2,7 +2,7 @@
  * Certora CVL Specification for Cross-Chain Privacy
  * 
  * @title Cross-Chain Privacy Verification Rules
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Formal verification of privacy contracts
  */
 
@@ -31,10 +31,10 @@ methods {
     function UnifiedNullifierManager.registerDomain(uint256, bytes) external;
     function UnifiedNullifierManager.registerNullifier(bytes32, uint256) external;
     function UnifiedNullifierManager.deriveCrossDomainNullifier(bytes32, uint256, uint256) external returns (bytes32);
-    function UnifiedNullifierManager.deriveSoulBinding(bytes32) external returns (bytes32);
+    function UnifiedNullifierManager.deriveZaseonBinding(bytes32) external returns (bytes32);
     function UnifiedNullifierManager.isNullifierConsumed(bytes32, uint256) external returns (bool) envfree;
     function UnifiedNullifierManager.isDomainRegistered(uint256) external returns (bool) envfree;
-    function UnifiedNullifierManager.getSoulBinding(bytes32) external returns (bytes32) envfree;
+    function UnifiedNullifierManager.getZaseonBinding(bytes32) external returns (bytes32) envfree;
 
     // CrossChainPrivacyHub
     function CrossChainPrivacyHub.initiatePrivateRelay(uint256, address, uint256, bytes32, bytes32, bytes) external;
@@ -241,16 +241,16 @@ rule crossDomainDirectionSensitivity(bytes32 nullifier, uint256 domainA, uint256
 }
 
 /**
- * @title Soul Binding Uniqueness
- * @notice Different nullifiers produce different Soul bindings
+ * @title Zaseon Binding Uniqueness
+ * @notice Different nullifiers produce different Zaseon bindings
  */
-rule soulBindingUniqueness(bytes32 nf1, bytes32 nf2) {
+rule zaseonBindingUniqueness(bytes32 nf1, bytes32 nf2) {
     env e;
 
     require nf1 != nf2;
 
-    bytes32 binding1 = deriveSoulBinding(e, nf1);
-    bytes32 binding2 = deriveSoulBinding(e, nf2);
+    bytes32 binding1 = deriveZaseonBinding(e, nf1);
+    bytes32 binding2 = deriveZaseonBinding(e, nf2);
 
     // High probability they differ (collision resistance)
     satisfy binding1 != binding2;
@@ -402,13 +402,13 @@ rule nullifierRegisteredOnTransfer(
 ) {
     env e;
 
-    // Assuming Soul chain is domain 1
-    uint256 soulDomain = 1;
-    bool consumedBefore = isNullifierConsumed(nullifier, soulDomain);
+    // Assuming Zaseon chain is domain 1
+    uint256 zaseonDomain = 1;
+    bool consumedBefore = isNullifierConsumed(nullifier, zaseonDomain);
 
     initiatePrivateRelay(e, targetChainId, recipient, amount, commitment, nullifier, proof);
 
-    bool consumedAfter = isNullifierConsumed(nullifier, soulDomain);
+    bool consumedAfter = isNullifierConsumed(nullifier, zaseonDomain);
 
     assert !consumedBefore => consumedAfter, "Nullifier must be consumed after transfer";
 }

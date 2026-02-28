@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - PrivacyRouter
+ * ZASEON - PrivacyRouter
  *
  * @title Privacy Router Facade Invariants and Rules
  * @notice Verifies operation counting, receipt integrity, compliance gating,

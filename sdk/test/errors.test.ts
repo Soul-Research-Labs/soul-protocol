@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import {
-  SoulError,
-  SoulErrorCode,
+  ZaseonError,
+  ZaseonErrorCode,
   ValidationError,
   ContractError,
   NetworkError,
@@ -10,7 +10,7 @@ import {
   ComplianceError,
   TimeoutError,
   parseContractError,
-  isSoulError,
+  isZaseonError,
   withRetry,
   withTimeout,
   withRetryAndTimeout,
@@ -18,27 +18,27 @@ import {
 
 describe("errors", () => {
   // ═══════════════════════════════════════════════════════════════
-  // SoulError base class
+  // ZaseonError base class
   // ═══════════════════════════════════════════════════════════════
-  describe("SoulError", () => {
+  describe("ZaseonError", () => {
     it("should set defaults correctly", () => {
-      const err = new SoulError("test");
+      const err = new ZaseonError("test");
       expect(err.message).to.equal("test");
-      expect(err.code).to.equal(SoulErrorCode.UNKNOWN_ERROR);
+      expect(err.code).to.equal(ZaseonErrorCode.UNKNOWN_ERROR);
       expect(err.retryable).to.be.false;
       expect(err.timestamp).to.be.instanceOf(Date);
-      expect(err.name).to.equal("SoulError");
+      expect(err.name).to.equal("ZaseonError");
     });
 
     it("should accept custom code and options", () => {
       const cause = new Error("root");
-      const err = new SoulError("fail", SoulErrorCode.NETWORK_ERROR, {
+      const err = new ZaseonError("fail", ZaseonErrorCode.NETWORK_ERROR, {
         cause,
         retryable: true,
         suggestedAction: "retry",
         context: { key: "val" },
       });
-      expect(err.code).to.equal(SoulErrorCode.NETWORK_ERROR);
+      expect(err.code).to.equal(ZaseonErrorCode.NETWORK_ERROR);
       expect(err.retryable).to.be.true;
       expect(err.cause).to.equal(cause);
       expect(err.suggestedAction).to.equal("retry");
@@ -46,18 +46,18 @@ describe("errors", () => {
     });
 
     it("toJSON() should include all fields", () => {
-      const err = new SoulError("j", SoulErrorCode.INVALID_INPUT);
+      const err = new ZaseonError("j", ZaseonErrorCode.INVALID_INPUT);
       const json = err.toJSON();
-      expect(json).to.have.property("name", "SoulError");
-      expect(json).to.have.property("code", SoulErrorCode.INVALID_INPUT);
+      expect(json).to.have.property("name", "ZaseonError");
+      expect(json).to.have.property("code", ZaseonErrorCode.INVALID_INPUT);
       expect(json).to.have.property("codeName", "INVALID_INPUT");
       expect(json).to.have.property("timestamp");
     });
 
     it("isType() should match code", () => {
-      const err = new SoulError("x", SoulErrorCode.TIMEOUT_ERROR);
-      expect(err.isType(SoulErrorCode.TIMEOUT_ERROR)).to.be.true;
-      expect(err.isType(SoulErrorCode.NETWORK_ERROR)).to.be.false;
+      const err = new ZaseonError("x", ZaseonErrorCode.TIMEOUT_ERROR);
+      expect(err.isType(ZaseonErrorCode.TIMEOUT_ERROR)).to.be.true;
+      expect(err.isType(ZaseonErrorCode.NETWORK_ERROR)).to.be.false;
     });
 
     it("isCategory() should match code ranges", () => {
@@ -80,12 +80,12 @@ describe("errors", () => {
     it("ValidationError", () => {
       const err = new ValidationError("bad input");
       expect(err.name).to.equal("ValidationError");
-      expect(err.code).to.equal(SoulErrorCode.INVALID_INPUT);
+      expect(err.code).to.equal(ZaseonErrorCode.INVALID_INPUT);
       expect(err.retryable).to.be.false;
     });
 
     it("ContractError", () => {
-      const err = new ContractError("reverted", SoulErrorCode.TRANSACTION_REVERTED, {
+      const err = new ContractError("reverted", ZaseonErrorCode.TRANSACTION_REVERTED, {
         transactionHash: "0x123",
         revertReason: "Overflow",
       });
@@ -95,7 +95,7 @@ describe("errors", () => {
     });
 
     it("ContractError retryable for NONCE_TOO_LOW", () => {
-      const err = new ContractError("nonce", SoulErrorCode.NONCE_TOO_LOW);
+      const err = new ContractError("nonce", ZaseonErrorCode.NONCE_TOO_LOW);
       expect(err.retryable).to.be.true;
     });
 
@@ -108,7 +108,7 @@ describe("errors", () => {
     });
 
     it("ProofError", () => {
-      const err = new ProofError("gen failed", SoulErrorCode.PROOF_GENERATION_FAILED, {
+      const err = new ProofError("gen failed", ZaseonErrorCode.PROOF_GENERATION_FAILED, {
         proofType: "groth16",
         circuitId: "nullifier",
       });
@@ -118,7 +118,7 @@ describe("errors", () => {
     });
 
     it("StateError", () => {
-      const err = new StateError("not found", SoulErrorCode.CONTAINER_NOT_FOUND, {
+      const err = new StateError("not found", ZaseonErrorCode.CONTAINER_NOT_FOUND, {
         entityId: "0xabc",
         entityType: "container",
       });
@@ -127,7 +127,7 @@ describe("errors", () => {
     });
 
     it("ComplianceError", () => {
-      const err = new ComplianceError("blocked", SoulErrorCode.JURISDICTION_BLOCKED, {
+      const err = new ComplianceError("blocked", ZaseonErrorCode.JURISDICTION_BLOCKED, {
         policyId: "p1",
         violation: "US",
       });
@@ -152,56 +152,56 @@ describe("errors", () => {
   describe("parseContractError", () => {
     it("should parse NullifierAlreadyConsumed", () => {
       const err = parseContractError(new Error("NullifierAlreadyConsumed()"));
-      expect(err.code).to.equal(SoulErrorCode.NULLIFIER_ALREADY_CONSUMED);
+      expect(err.code).to.equal(ZaseonErrorCode.NULLIFIER_ALREADY_CONSUMED);
     });
 
     it("should parse ContainerNotFound", () => {
       const err = parseContractError(new Error("ContainerNotFound(0x...)"));
-      expect(err.code).to.equal(SoulErrorCode.CONTAINER_NOT_FOUND);
+      expect(err.code).to.equal(ZaseonErrorCode.CONTAINER_NOT_FOUND);
     });
 
     it("should parse PolicyNotFound", () => {
       const err = parseContractError(new Error("PolicyNotFound"));
-      expect(err.code).to.equal(SoulErrorCode.POLICY_NOT_FOUND);
+      expect(err.code).to.equal(ZaseonErrorCode.POLICY_NOT_FOUND);
     });
 
     it("should parse PolicyExpired", () => {
       const err = parseContractError(new Error("PolicyExpired"));
-      expect(err.code).to.equal(SoulErrorCode.POLICY_EXPIRED);
+      expect(err.code).to.equal(ZaseonErrorCode.POLICY_EXPIRED);
     });
 
     it("should parse nonce too low", () => {
       const err = parseContractError(new Error("nonce too low"));
-      expect(err.code).to.equal(SoulErrorCode.NONCE_TOO_LOW);
+      expect(err.code).to.equal(ZaseonErrorCode.NONCE_TOO_LOW);
     });
 
     it("should parse replacement transaction underpriced", () => {
       const err = parseContractError(new Error("replacement transaction underpriced"));
-      expect(err.code).to.equal(SoulErrorCode.REPLACEMENT_UNDERPRICED);
+      expect(err.code).to.equal(ZaseonErrorCode.REPLACEMENT_UNDERPRICED);
     });
 
     it("should default to CONTRACT_CALL_FAILED", () => {
       const err = parseContractError(new Error("something else"));
-      expect(err.code).to.equal(SoulErrorCode.CONTRACT_CALL_FAILED);
+      expect(err.code).to.equal(ZaseonErrorCode.CONTRACT_CALL_FAILED);
     });
   });
 
   // ═══════════════════════════════════════════════════════════════
-  // isSoulError type guard
+  // isZaseonError type guard
   // ═══════════════════════════════════════════════════════════════
-  describe("isSoulError", () => {
-    it("should return true for SoulError instances", () => {
-      expect(isSoulError(new SoulError("x"))).to.be.true;
-      expect(isSoulError(new ValidationError("x"))).to.be.true;
+  describe("isZaseonError", () => {
+    it("should return true for ZaseonError instances", () => {
+      expect(isZaseonError(new ZaseonError("x"))).to.be.true;
+      expect(isZaseonError(new ValidationError("x"))).to.be.true;
     });
 
     it("should return false for plain Error", () => {
-      expect(isSoulError(new Error("x"))).to.be.false;
+      expect(isZaseonError(new Error("x"))).to.be.false;
     });
 
     it("should return false for non-errors", () => {
-      expect(isSoulError("string")).to.be.false;
-      expect(isSoulError(null)).to.be.false;
+      expect(isZaseonError("string")).to.be.false;
+      expect(isZaseonError(null)).to.be.false;
     });
   });
 
@@ -238,8 +238,8 @@ describe("errors", () => {
         );
         expect.fail("should have thrown");
       } catch (e: any) {
-        expect(isSoulError(e)).to.be.true;
-        expect(e.code).to.equal(SoulErrorCode.NETWORK_ERROR);
+        expect(isZaseonError(e)).to.be.true;
+        expect(e.code).to.equal(ZaseonErrorCode.NETWORK_ERROR);
       }
     });
 

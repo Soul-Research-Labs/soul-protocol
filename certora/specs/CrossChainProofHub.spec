@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - CrossChainProofHubV3
+ * ZASEON - CrossChainProofHubV3
  * 
  * This spec verifies critical invariants for the Cross-Chain Proof Hub
  */

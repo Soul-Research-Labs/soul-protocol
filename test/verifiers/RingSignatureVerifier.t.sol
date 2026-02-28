@@ -22,7 +22,7 @@ contract RingSignatureVerifierTest is Test {
     RingSignatureVerifier public verifier;
 
     // Domain separator — must match the verifier contract
-    bytes13 constant DOMAIN = "Soul_CLSAG_v1";
+    bytes13 constant DOMAIN = "Zaseon_CLSAG_v1";
 
     function setUp() public {
         verifier = new RingSignatureVerifier();

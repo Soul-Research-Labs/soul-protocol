@@ -4,7 +4,7 @@
 
 ## Overview
 
-Soul Protocol integrates three compliance features inspired by Tachyon's institutional-grade approach,
+ZASEON integrates three compliance features inspired by Tachyon's institutional-grade approach,
 while preserving ZK-first privacy guarantees — no TEE, no trusted hardware.
 
 | Contract                     | Purpose                                                | Lines | Tests |
@@ -213,7 +213,7 @@ forge script scripts/deploy/DeployComplianceSuite.s.sol:DeployComplianceSuite \
 See [docs/TACHYON_LEARNINGS.md](TACHYON_LEARNINGS.md) for the complete analysis.
 
 **Key insight**: Tachyon's compliance-first design attracts institutions.
-Soul's approach adds compliance as an **optional layer** on top of ZK privacy —
+Zaseon's approach adds compliance as an **optional layer** on top of ZK privacy —
 never compromising the cryptographic foundation.
 
 **Implemented from Tachyon**:
@@ -226,7 +226,7 @@ never compromising the cryptographic foundation.
 6. Dynamic routing orchestration (DynamicRoutingOrchestrator) — **NEW**
 7. Privacy ↔ Compliance bridge (CrossChainPrivacyHub compliance hooks) — **NEW**
 
-All 7 Tachyon learnings are now implemented, wired into SoulProtocolHub (25 components),
+All 7 Tachyon learnings are now implemented, wired into ZaseonProtocolHub (25 components),
 and covered by integration tests, invariant/fuzz tests, and SDK clients.
 
 ---
@@ -249,6 +249,6 @@ forge test --no-match-path "test/stress/*" --summary
 | SelectiveDisclosureManager | 39      | 3          |
 | ConfigurablePrivacyLevels  | 32      | 3          |
 | ComplianceReportingModule  | 31      | 2          |
-| SoulComplianceV2           | 36      | 0          |
+| ZaseonComplianceV2           | 36      | 0          |
 | CrossChainSanctionsOracle  | 10      | 0          |
 | **Total**                  | **148** | **8**      |

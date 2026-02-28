@@ -1,7 +1,7 @@
 {
   "$schema": "https://docs.tenderly.co/web3-gateway/reference/config-schema",
   "version": "1.0.0",
-  "project": "soul-protocol",
+  "project": "zaseon",
   "networks": {
     "mainnet": {
       "chainId": 1,
@@ -27,7 +27,7 @@
           "address": "0xDFBEe5bB4d4943715D4f8539cbad0a18aA75b602"
         },
         {
-          "name": "SoulCrossChainRelay",
+          "name": "ZaseonCrossChainRelay",
           "address": "0x65CDCdA5ba98bB0d784c3a69C826cb3B59C20251"
         },
         {
@@ -57,13 +57,13 @@
     "critical": {
       "contract_paused": {
         "name": "Contract Paused",
-        "description": "Any Soul Protocol contract has been paused",
+        "description": "Any ZASEON contract has been paused",
         "type": "event",
         "event": "Paused(address)",
         "severity": "critical",
         "notification": {
           "pagerduty": true,
-          "slack": "#soul-critical",
+          "slack": "#zaseon-critical",
           "email": true
         }
       },
@@ -75,7 +75,7 @@
         "severity": "critical",
         "notification": {
           "pagerduty": true,
-          "slack": "#soul-critical",
+          "slack": "#zaseon-critical",
           "sms": true
         }
       },
@@ -87,7 +87,7 @@
         "severity": "critical",
         "notification": {
           "pagerduty": true,
-          "slack": "#soul-critical"
+          "slack": "#zaseon-critical"
         }
       },
       "large_value_transfer": {
@@ -99,7 +99,7 @@
         "severity": "critical",
         "notification": {
           "pagerduty": true,
-          "slack": "#soul-security"
+          "slack": "#zaseon-security"
         }
       },
       "duplicate_nullifier": {
@@ -110,7 +110,7 @@
         "severity": "critical",
         "notification": {
           "pagerduty": true,
-          "slack": "#soul-security"
+          "slack": "#zaseon-security"
         }
       }
     },
@@ -126,7 +126,7 @@
           "window": "1h"
         },
         "notification": {
-          "slack": "#soul-alerts",
+          "slack": "#zaseon-alerts",
           "email": true
         }
       },
@@ -137,7 +137,7 @@
         "event": "RelayerSlashed(address,uint256,bytes32)",
         "severity": "high",
         "notification": {
-          "slack": "#soul-security",
+          "slack": "#zaseon-security",
           "email": true
         }
       },
@@ -148,7 +148,7 @@
         "event": "MessageChallenged(bytes32,address,bytes32)",
         "severity": "high",
         "notification": {
-          "slack": "#soul-alerts"
+          "slack": "#zaseon-alerts"
         }
       },
       "admin_function_called": {
@@ -163,7 +163,7 @@
         ],
         "severity": "high",
         "notification": {
-          "slack": "#soul-admin"
+          "slack": "#zaseon-admin"
         }
       }
     },
@@ -179,7 +179,7 @@
           "window": "1h"
         },
         "notification": {
-          "slack": "#soul-alerts"
+          "slack": "#zaseon-alerts"
         }
       },
       "high_gas_usage": {
@@ -189,7 +189,7 @@
         "condition": "gasUsed > 1000000",
         "severity": "medium",
         "notification": {
-          "slack": "#soul-ops"
+          "slack": "#zaseon-ops"
         }
       },
       "pending_proof_queue_full": {
@@ -200,7 +200,7 @@
         "condition": "pendingProofCount > 100",
         "severity": "medium",
         "notification": {
-          "slack": "#soul-ops"
+          "slack": "#zaseon-ops"
         }
       }
     },

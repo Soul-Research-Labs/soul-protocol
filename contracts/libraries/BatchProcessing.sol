@@ -5,8 +5,8 @@ import {GasOptimizations} from "./GasOptimizations.sol";
 
 /**
  * @title BatchProcessing
- * @author Soul Protocol
- * @notice Gas-optimized batch processing utilities for Soul Protocol
+ * @author ZASEON
+ * @notice Gas-optimized batch processing utilities for ZASEON
  * @dev Provides efficient patterns for processing multiple operations
  *
  * BATCH PROCESSING BENEFITS:

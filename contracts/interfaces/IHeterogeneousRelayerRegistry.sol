@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title IHeterogeneousRelayerRegistry
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Interface for role-separated relayer system
  * @dev Inspired by Zero's Block Producer/Validator split: separates relayers
  *      into Proof Generators (high compute), Light Relayers (low compute),

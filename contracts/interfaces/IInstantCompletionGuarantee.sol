@@ -3,10 +3,10 @@ pragma solidity ^0.8.24;
 
 /**
  * @title IInstantCompletionGuarantee
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Interface for bonded proof delivery guarantees
  * @dev Guarantors bond ETH to guarantee that a ZK proof will be verified on the
- *      destination chain within a time window. Soul is proof middleware — the guarantee
+ *      destination chain within a time window. Zaseon is proof middleware — the guarantee
  *      covers proof delivery, not token delivery. If proof delivery fails, the beneficiary
  *      claims compensation from the bond.
  */

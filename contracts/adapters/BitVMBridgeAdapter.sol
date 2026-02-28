@@ -8,7 +8,7 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title BitVMBridgeAdapter
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice IBridgeAdapter for BitVM BTC↔EVM cross-chain operations
  * @dev STUB — BitVM bridge integration is experimental.
  *

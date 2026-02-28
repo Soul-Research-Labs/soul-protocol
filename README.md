@@ -1,4 +1,4 @@
-# Soul Protocol
+# ZASEON
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.24-blue.svg)](https://docs.soliditylang.org/)
@@ -7,12 +7,12 @@
 
 > **Move privately between chains. No metadata. No lock-in.**
 
-Soul Protocol is zero-knowledge middleware for cross-chain confidential state transfer. It solves the privacy lock-in problem that traps users on single chains.
+ZASEON is zero-knowledge middleware for cross-chain confidential state transfer. It solves the privacy lock-in problem that traps users on single chains.
 
 ## Table of Contents
 
 - [The Problem: Privacy Lock-In](#the-problem-privacy-lock-in)
-- [Soul's Solution: Privacy Without Lock-In](#souls-solution-privacy-without-lock-in)
+- [Zaseon's Solution: Privacy Without Lock-In](#zaseons-solution-privacy-without-lock-in)
 - [How It Works](#how-it-works)
 - [Getting Started](#getting-started)
 - [Contributing](#contributing)
@@ -42,12 +42,12 @@ This creates a **winner-take-most dynamic**. A handful of privacy chains will ow
 
 ---
 
-## Soul's Solution: Privacy Without Lock-In
+## Zaseon's Solution: Privacy Without Lock-In
 
-Soul makes **secrets portable** so privacy becomes a feature of the network—not a cage.
+Zaseon makes **secrets portable** so privacy becomes a feature of the network—not a cage.
 
 ```
-WITHOUT Soul:                            WITH Soul:
+WITHOUT Zaseon:                            WITH Zaseon:
 ┌────────────────────────────┐          ┌────────────────────────────┐
 │  Privacy Chain A           │          │  Privacy Chain A           │
 │       ↓                    │          │       ↓                    │
@@ -63,9 +63,9 @@ WITHOUT Soul:                            WITH Soul:
 └────────────────────────────┘          └────────────────────────────┘
 ```
 
-### How Soul Breaks Each Lock-In Mechanism
+### How Zaseon Breaks Each Lock-In Mechanism
 
-| Lock-In Vector         | Soul's Solution                                               |
+| Lock-In Vector         | Zaseon's Solution                                               |
 | ---------------------- | ------------------------------------------------------------- |
 | **Timing correlation** | ZK-SLocks decouple lock/unlock timing—proof generated offline |
 | **Amount correlation** | Pedersen commitments + Bulletproofs hide amounts              |
@@ -75,7 +75,7 @@ WITHOUT Soul:                            WITH Soul:
 ### The Network Effect Reversal
 
 ```
-WITHOUT Soul:                            WITH Soul:
+WITHOUT Zaseon:                            WITH Zaseon:
 More Privacy Users                      More Privacy Users
         ↓                                       ↓
 More Lock-in                           Can Move Freely
@@ -84,7 +84,7 @@ Fewer Chains Win                       Many Chains Coexist
 (winner-take-most)                     (privacy as commodity layer)
 ```
 
-**Soul Protocol is SMTP for private blockchain transactions.** Just as email moved from walled gardens (AOL, CompuServe) to universal interoperability, Soul enables private transactions to flow across any chain.
+**ZASEON is SMTP for private blockchain transactions.** Just as email moved from walled gardens (AOL, CompuServe) to universal interoperability, Zaseon enables private transactions to flow across any chain.
 
 ---
 
@@ -115,7 +115,7 @@ Chain A                              Chain B
 
 ---
 
-## Soul v2 Primitives
+## Zaseon v2 Primitives
 
 The four novel cryptographic primitives that make private interoperability possible:
 
@@ -173,19 +173,19 @@ Same secret key on different chains:
 
 ## Architecture
 
-Soul sits between **privacy chains** and **public chains**, enabling confidential state to flow across both:
+Zaseon sits between **privacy chains** and **public chains**, enabling confidential state to flow across both:
 
 ```
                     ┌─────────────────────────────────────────┐
                     │         PRIVACY INTEROPERABILITY        │
-                    │               LAYER (SOUL)               │
+                    │               LAYER (ZASEON)               │
                     └─────────────────────────────────────────┘
                                        │
         ┌──────────────────────────────┼──────────────────────────────┐
         │                              │                              │
         ▼                              ▼                              ▼
 ┌───────────────┐              ┌───────────────┐              ┌───────────────┐
-│ PRIVACY CHAINS│              │  SOUL PROTOCOL │              │ PUBLIC CHAINS │
+│ PRIVACY CHAINS│              │  ZASEON PROTOCOL │              │ PUBLIC CHAINS │
 │               │              │               │              │               │
 │  Aztec        │◄────────────►│  ZK-SLocks    │◄────────────►│  Ethereum     │
 │  Zcash        │   encrypted  │  PC³          │   encrypted  │  Arbitrum     │
@@ -200,7 +200,7 @@ Soul sits between **privacy chains** and **public chains**, enabling confidentia
                           No address linkage
 ```
 
-### Soul Protocol Stack
+### ZASEON Stack
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -210,7 +210,7 @@ Soul sits between **privacy chains** and **public chains**, enabling confidentia
 │  Layer 5: ZK-Bound State Locks (ZK-SLocks)                  │
 │           Lock on Aztec → Unlock on Ethereum (or reverse)   │
 ├─────────────────────────────────────────────────────────────┤
-│  Layer 4: Soul v2 Primitives                                │
+│  Layer 4: Zaseon v2 Primitives                                │
 │           PC³ │ PBP │ EASC │ CDNA                           │
 ├─────────────────────────────────────────────────────────────┤
 │  Layer 3: Privacy Middleware                                │
@@ -240,8 +240,8 @@ Soul sits between **privacy chains** and **public chains**, enabling confidentia
 1. User on Aztec (private)
    └── Creates encrypted note (UltraPLONK proof)
            │
-2. Soul Bridge receives note
-   └── Converts Aztec note → Soul commitment
+2. Zaseon Bridge receives note
+   └── Converts Aztec note → Zaseon commitment
    └── Generates cross-domain nullifier (CDNA)
            │
 3. Proof Translation
@@ -265,7 +265,7 @@ contracts/           # Production Solidity contracts
 ├── crosschain/      # L2 bridge adapters (Arbitrum, Optimism, Base, zkSync, Scroll, Linea, Polygon zkEVM)
 ├── privacy/         # UniversalShieldedPool, UniversalProofTranslator, Stealth addresses
 ├── compliance/      # CrossChainSanctionsOracle, KYC gating
-├── governance/      # SoulGovernor, SoulUpgradeTimelock
+├── governance/      # ZaseonGovernor, ZaseonUpgradeTimelock
 ├── upgradeable/     # UUPS proxy implementations (ConfidentialState, NullifierRegistry, ProofHub)
 ├── relayer/         # RelayerFeeMarket (incentivized relaying)
 ├── bridge/          # AtomicSwap, CrossChainProofHub
@@ -288,7 +288,7 @@ scripts/             # Deployment + security scripts (storage layout checker, mu
 ## Quick Start
 
 ```bash
-git clone https://github.com/soul-research-labs/Soul.git && cd Soul
+git clone https://github.com/zaseon-research-labs/Zaseon.git && cd Zaseon
 npm install && forge build
 forge test                             # Unit tests
 forge test --match-path "test/fuzz/*"  # Fuzz tests
@@ -306,7 +306,7 @@ npx hardhat run scripts/deploy.js --network localhost
 | ----------------------------- | -------------------------------------------------------------------- |
 | `ConfidentialStateContainer`  | Encrypted state with ZK verification & nullifier protection          |
 | `CrossChainProofHub`          | Proof aggregation & relay with gas-optimized batching                |
-| `SoulAtomicSwap`              | HTLC atomic swaps with stealth address support                       |
+| `ZaseonAtomicSwap`              | HTLC atomic swaps with stealth address support                       |
 | `ProofCarryingContainer`      | PC³ - Self-authenticating containers with embedded proofs            |
 | `ZKBoundStateLocks`           | Cross-chain state locks unlocked by ZK proofs                        |
 | `CrossDomainNullifierAlgebra` | Domain-separated nullifiers with composability                       |
@@ -330,7 +330,7 @@ See [API Reference](docs/API_REFERENCE.md) for full contract documentation.
 
 ## L2 Bridge Adapters
 
-Soul provides adapters for major cross-chain messaging:
+Zaseon provides adapters for major cross-chain messaging:
 
 | Adapter                     | Key Features                          |
 | --------------------------- | ------------------------------------- |
@@ -369,7 +369,7 @@ Soul provides adapters for major cross-chain messaging:
 
 | Module                     | Purpose                          |
 | -------------------------- | -------------------------------- |
-| `SoulUpgradeTimelock.sol`  | Time-delayed admin operations    |
+| `ZaseonUpgradeTimelock.sol`  | Time-delayed admin operations    |
 | `BridgeCircuitBreaker.sol` | Anomaly detection and auto-pause |
 | `BridgeRateLimiter.sol`    | Volume and rate limiting         |
 | `MEVProtection.sol`        | Commit-reveal for MEV resistance |
@@ -419,7 +419,7 @@ cd sdk && npm install && npm run build
 import { createWalletClient, createPublicClient, http } from "viem";
 import { sepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
-import { SoulProtocolClient, NoirProver, SEPOLIA_ADDRESSES } from "@soul/sdk";
+import { ZaseonProtocolClient, NoirProver, SEPOLIA_ADDRESSES } from "@zaseon/sdk";
 
 // Setup clients
 const account = privateKeyToAccount("0x...");
@@ -430,8 +430,8 @@ const walletClient = createWalletClient({
 });
 const publicClient = createPublicClient({ chain: sepolia, transport: http() });
 
-// Initialize Soul Protocol
-const soul = new SoulProtocolClient({
+// Initialize ZASEON
+const zaseon = new ZaseonProtocolClient({
   walletClient,
   publicClient,
   addresses: SEPOLIA_ADDRESSES,
@@ -442,7 +442,7 @@ const stateHash = "0x" + "1234".repeat(16);
 const zkRequirements = "0x" + "abcd".repeat(16);
 const destChainId = 42161n; // Arbitrum
 
-const { lockId, txHash } = await soul.zkLocks.createStateLock(
+const { lockId, txHash } = await zaseon.zkLocks.createStateLock(
   stateHash,
   zkRequirements,
   destChainId,
@@ -454,7 +454,7 @@ console.log(`Lock created: ${lockId}`);
 ### Generate ZK Proofs
 
 ```typescript
-import { NoirProver } from "@soul/sdk";
+import { NoirProver } from "@zaseon/sdk";
 
 const prover = new NoirProver();
 
@@ -473,14 +473,14 @@ const isValid = await prover.verifyProof("balance_proof", proof);
 
 | Method                               | Description                     |
 | ------------------------------------ | ------------------------------- |
-| `soul.zkLocks.createStateLock()`     | Create ZK-bound state lock      |
-| `soul.zkLocks.unlockWithProof()`     | Unlock state with ZK proof      |
-| `soul.zkLocks.getLockDetails()`      | Get lock state and metadata     |
-| `soul.nullifier.registerNullifier()` | Register cross-domain nullifier |
-| `soul.nullifier.isNullifierUsed()`   | Check nullifier status          |
-| `soul.proofHub.submitProof()`        | Submit proof for aggregation    |
-| `soul.atomicSwap.initiateSwap()`     | Start atomic swap               |
-| `soul.getProtocolStats()`            | Get protocol statistics         |
+| `zaseon.zkLocks.createStateLock()`     | Create ZK-bound state lock      |
+| `zaseon.zkLocks.unlockWithProof()`     | Unlock state with ZK proof      |
+| `zaseon.zkLocks.getLockDetails()`      | Get lock state and metadata     |
+| `zaseon.nullifier.registerNullifier()` | Register cross-domain nullifier |
+| `zaseon.nullifier.isNullifierUsed()`   | Check nullifier status          |
+| `zaseon.proofHub.submitProof()`        | Submit proof for aggregation    |
+| `zaseon.atomicSwap.initiateSwap()`     | Start atomic swap               |
+| `zaseon.getProtocolStats()`            | Get protocol statistics         |
 
 ### Privacy Middleware SDK
 
@@ -489,7 +489,7 @@ import {
   PrivacyRouterClient,
   ShieldedPoolClient,
   RelayerFeeMarketClient,
-} from "@soul/sdk";
+} from "@zaseon/sdk";
 
 // Unified privacy router (recommended entry point)
 const router = new PrivacyRouterClient({
@@ -527,7 +527,7 @@ await feeMarket.submitRelayRequest(1, 42161, proofData, deadline, fee);
 | Arbitrum Sepolia | 421614   | 🔄 Planned |
 | Base Sepolia     | 84532    | ✅ Live    |
 
-> **Note:** Experimental modules (`fhe`, `pqc`, `mpc`, `recursive`, `zkSystems`) have been moved to `@soul/sdk/experimental`. Import from `@soul/sdk/experimental` to use them. See [sdk/experimental/README.md](sdk/experimental/README.md) for details.
+> **Note:** Experimental modules (`fhe`, `pqc`, `mpc`, `recursive`, `zkSystems`) have been moved to `@zaseon/sdk/experimental`. Import from `@zaseon/sdk/experimental` to use them. See [sdk/experimental/README.md](sdk/experimental/README.md) for details.
 
 See [sdk/README.md](sdk/README.md) for full documentation.
 
@@ -546,7 +546,7 @@ See [sdk/README.md](sdk/README.md) for full documentation.
 | ProofCarryingContainer (PC³) | [`0x52f8a660ff436c450b5190a84bc2c1a86f1032cc`](https://sepolia.etherscan.io/address/0x52f8a660ff436c450b5190a84bc2c1a86f1032cc) |
 | ZKBoundStateLocks            | [`0xf390ae12c9ce8f546ef7c7adaa6a1ab7768a2c78`](https://sepolia.etherscan.io/address/0xf390ae12c9ce8f546ef7c7adaa6a1ab7768a2c78) |
 | NullifierRegistryV3          | [`0x3e21d559f19c76a0bcec378b10dae2cc0e4c2191`](https://sepolia.etherscan.io/address/0x3e21d559f19c76a0bcec378b10dae2cc0e4c2191) |
-| SoulAtomicSwapV2             | [`0xdefb9a66dc14a6d247b282555b69da7745b0ab57`](https://sepolia.etherscan.io/address/0xdefb9a66dc14a6d247b282555b69da7745b0ab57) |
+| ZaseonAtomicSwapV2             | [`0xdefb9a66dc14a6d247b282555b69da7745b0ab57`](https://sepolia.etherscan.io/address/0xdefb9a66dc14a6d247b282555b69da7745b0ab57) |
 
 **Full deployment:** See [`deployments/`](deployments/)
 
@@ -557,7 +557,7 @@ See [sdk/README.md](sdk/README.md) for full documentation.
 | Contract                     | Address                                                                                                                         |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | PrivacyZoneManager           | [`0xDFBEe5bB4d4943715D4f8539cbad0a18aA75b602`](https://sepolia.basescan.org/address/0xDFBEe5bB4d4943715D4f8539cbad0a18aA75b602) |
-| SoulCrossChainRelay          | [`0x65CDCdA5ba98bB0d784c3a69C826cb3B59C20251`](https://sepolia.basescan.org/address/0x65CDCdA5ba98bB0d784c3a69C826cb3B59C20251) |
+| ZaseonCrossChainRelay          | [`0x65CDCdA5ba98bB0d784c3a69C826cb3B59C20251`](https://sepolia.basescan.org/address/0x65CDCdA5ba98bB0d784c3a69C826cb3B59C20251) |
 | OptimisticBridgeVerifier     | [`0xBA63a3F3C5568eC6447FBe1b852a613743419D9f`](https://sepolia.basescan.org/address/0xBA63a3F3C5568eC6447FBe1b852a613743419D9f) |
 | BridgeRateLimiter            | [`0x23824cDbD8Ca773c5DA0202f8f41083F81aF1135`](https://sepolia.basescan.org/address/0x23824cDbD8Ca773c5DA0202f8f41083F81aF1135) |
 | BridgeWatchtower             | [`0x3E556432Ea021046ad4BE22cB94f713f98f4B76E`](https://sepolia.basescan.org/address/0x3E556432Ea021046ad4BE22cB94f713f98f4B76E) |
@@ -598,4 +598,4 @@ See [SECURITY.md](SECURITY.md) for disclosure policy.
 
 ## License
 
-MIT - [LICENSE](LICENSE) | Built by [Soul Research Labs](https://github.com/soul-research-labs)
+MIT - [LICENSE](LICENSE) | Built by [Zaseon Research Labs](https://github.com/zaseon-research-labs)

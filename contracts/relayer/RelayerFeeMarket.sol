@@ -9,7 +9,7 @@ import {IRelayerFeeMarket} from "../interfaces/IRelayerFeeMarket.sol";
 
 /**
  * @title RelayerFeeMarket
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Dynamic fee market for cross-chain relay pricing
  * @dev Implements an EIP-1559-style base fee mechanism with competitive relay auctions.
  *      Relayers bid to service cross-chain proof relay requests. Fees adjust dynamically
@@ -26,7 +26,7 @@ import {IRelayerFeeMarket} from "../interfaces/IRelayerFeeMarket.sol";
  *   User submits relay request with maxFee → relayer claims request →
  *   relayer completes relay → relayer collects effective fee
  *
- * @custom:security-contact security@soul.network
+ * @custom:security-contact security@zaseon.network
  */
 contract RelayerFeeMarket is AccessControl, ReentrancyGuard, IRelayerFeeMarket {
     using SafeERC20 for IERC20;
@@ -75,7 +75,7 @@ contract RelayerFeeMarket is AccessControl, ReentrancyGuard, IRelayerFeeMarket {
                                STORAGE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Fee token (SOUL token or ETH)
+    /// @notice Fee token (ZASEON token or ETH)
     IERC20 public immutable feeToken;
 
     /// @notice Route fee configurations (sourceChainId => destChainId => config)

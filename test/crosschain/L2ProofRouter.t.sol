@@ -21,7 +21,7 @@ contract L2ProofRouterTest is Test {
         operator = makeAddr("operator");
         user1 = makeAddr("user1");
 
-        router = new L2ProofRouter(admin, makeAddr("soulHub"));
+        router = new L2ProofRouter(admin, makeAddr("zaseonHub"));
         router.grantRole(OPERATOR_ROLE, operator);
     }
 

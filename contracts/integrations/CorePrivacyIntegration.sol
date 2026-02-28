@@ -8,7 +8,7 @@ import {IPrivacyIntegration} from "../interfaces/IPrivacyIntegration.sol";
 
 /**
  * @title CorePrivacyIntegration
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Core implementation of IPrivacyIntegration unifying stealth addresses, ring signatures, and nullifiers
  * @dev Integrates with StealthAddressRegistry, ring signature verification, and UnifiedNullifierManager
  *
@@ -47,11 +47,11 @@ import {IPrivacyIntegration} from "../interfaces/IPrivacyIntegration.sol";
  * │                                                                                  │
  * └─────────────────────────────────────────────────────────────────────────────────┘
  *
- * @custom:security-contact security@soulprotocol.io
+ * @custom:security-contact security@zaseonprotocol.io
  */
 /**
  * @title CorePrivacyIntegration
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice Core Privacy Integration contract
  */
 contract CorePrivacyIntegration is
@@ -88,7 +88,7 @@ contract CorePrivacyIntegration is
     bytes32 public constant VERIFIER_ROLE = keccak256("VERIFIER_ROLE");
 
     /// @notice Domain separator
-    bytes32 public constant PRIVACY_DOMAIN = keccak256("Soul_CORE_PRIVACY_V1");
+    bytes32 public constant PRIVACY_DOMAIN = keccak256("Zaseon_CORE_PRIVACY_V1");
 
     /// @notice secp256k1 curve order
     uint256 public constant CURVE_ORDER =

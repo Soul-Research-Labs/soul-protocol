@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - ViewKeyRegistry
+ * ZASEON - ViewKeyRegistry
  *
  * This spec verifies critical invariants for the View Key Registry
  * which manages cryptographic view keys for selective disclosure,

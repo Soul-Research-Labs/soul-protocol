@@ -10,7 +10,7 @@ Accepted
 
 ## Context
 
-Soul Protocol's codebase includes 100+ contracts spanning production-ready core infrastructure and research-stage experimental features. Mixing experimental code with production code creates risks:
+ZASEON's codebase includes 100+ contracts spanning production-ready core infrastructure and research-stage experimental features. Mixing experimental code with production code creates risks:
 
 1. **Security surface**: Unaudited experimental contracts could introduce vulnerabilities if accidentally enabled
 2. **Complexity creep**: Experimental features add cognitive overhead for auditors and developers

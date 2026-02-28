@@ -95,7 +95,7 @@ contract DeployRiskMitigation is Script {
         console.log("\nNext Steps:");
         console.log("1. Verify contracts on block explorer");
         console.log("2. Configure bridge adapters in MultiBridgeRouter");
-        console.log("3. Integrate with existing Soul Protocol contracts");
+        console.log("3. Integrate with existing ZASEON contracts");
         console.log("4. Run integration tests");
         console.log("5. Update documentation");
     }

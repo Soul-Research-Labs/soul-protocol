@@ -61,15 +61,15 @@ contract ScrollBridgeAdapterTest is Test {
                        CONFIGURATION TESTS
     //////////////////////////////////////////////////////////////*/
 
-    function test_SetSoulHubL2() public {
+    function test_SetZaseonHubL2() public {
         vm.prank(admin);
-        adapter.setSoulHubL2(address(0x1234));
+        adapter.setZaseonHubL2(address(0x1234));
     }
 
-    function test_SetSoulHubL2_RevertNonAdmin() public {
+    function test_SetZaseonHubL2_RevertNonAdmin() public {
         vm.prank(user);
         vm.expectRevert();
-        adapter.setSoulHubL2(address(0x1234));
+        adapter.setZaseonHubL2(address(0x1234));
     }
 
     function test_SetProofRegistry() public {

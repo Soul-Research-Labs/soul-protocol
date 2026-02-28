@@ -1,22 +1,22 @@
 /**
- * Soul SDK - Soul Protocol
+ * Zaseon SDK - ZASEON
  *
  * Optimized exports with tree-shaking support.
  * Use subpath imports for smaller bundles:
- * - @soul/sdk/bridges - Cross-chain bridges
- * - @soul/sdk/privacy - Privacy primitives
+ * - @zaseon/sdk/bridges - Cross-chain bridges
+ * - @zaseon/sdk/privacy - Privacy primitives
  */
 
-import { SoulSDK } from "./client/SoulSDK";
+import { ZaseonSDK } from "./client/ZaseonSDK";
 import { CryptoModule } from "./utils/crypto";
 
-// Soul v2 Primitives
+// Zaseon v2 Primitives
 import {
   ProofCarryingContainerClient,
   PolicyBoundProofsClient,
   ExecutionAgnosticStateCommitmentsClient,
   CrossDomainNullifierAlgebraClient,
-  Soulv2ClientFactory,
+  Zaseonv2ClientFactory,
   // Types
   Container,
   ContainerCreationParams,
@@ -36,10 +36,10 @@ import {
   NullifierRegistrationParams,
   DerivedNullifierParams,
   NullifierStats,
-  Soulv2Config,
+  Zaseonv2Config,
   TransactionOptions,
   ProofBundle,
-} from "./client/Soulv2Primitives";
+} from "./client/Zaseonv2Primitives";
 
 // Bridge Adapters
 import {
@@ -52,17 +52,17 @@ import {
   BridgeTransferResult,
 } from "./bridges";
 
-// Soul Protocol Client (main entry point)
+// ZASEON Client (main entry point)
 export {
-  SoulProtocolClient,
-  createSoulClient,
-  createReadOnlySoulClient,
-  type SoulProtocolConfig,
+  ZaseonProtocolClient,
+  createZaseonClient,
+  createReadOnlyZaseonClient,
+  type ZaseonProtocolConfig,
   type LockParams,
   type UnlockParams,
   type LockInfo,
   type ProtocolStats,
-} from "./client/SoulProtocolClient";
+} from "./client/ZaseonProtocolClient";
 
 // Privacy Middleware Clients
 export {
@@ -99,7 +99,7 @@ export {
   SEPOLIA_ADDRESSES,
   getAddresses,
   SUPPORTED_CHAIN_IDS,
-  type SoulContractAddresses,
+  type ZaseonContractAddresses,
   type SupportedChainId,
 } from "./config/addresses";
 
@@ -142,11 +142,11 @@ export * from "./privacy";
 
 // Compliance
 export {
-  SoulComplianceProvider,
+  ZaseonComplianceProvider,
   type ComplianceConfig,
   type CredentialData,
   type Credential,
-} from "./compliance/SoulComplianceProvider";
+} from "./compliance/ZaseonComplianceProvider";
 
 // Relayer
 export {
@@ -156,9 +156,9 @@ export {
 } from "./relayer/CrossChainProofRelayer";
 
 export {
-  SoulRelayer,
-  type RelayerConfig as SoulRelayerConfig,
-} from "./relayer/SoulRelayer";
+  ZaseonRelayer,
+  type RelayerConfig as ZaseonRelayerConfig,
+} from "./relayer/ZaseonRelayer";
 
 // Decentralized Relayer Registry SDK Client
 export {
@@ -214,7 +214,7 @@ export {
   type BridgeMetrics,
 } from "./client/DynamicRoutingClient";
 
-// Advanced Modules (experimental — import from @soul/sdk/experimental instead)
+// Advanced Modules (experimental — import from @zaseon/sdk/experimental instead)
 // Moved to sdk/experimental/: fhe, pqc, mpc, recursive, zkSystems
 export * as proofTranslator from "./proof-translator/ProofTranslator";
 
@@ -260,22 +260,22 @@ export type {
 
 export {
   // Core SDK
-  SoulSDK,
+  ZaseonSDK,
   CryptoModule,
 
   // Bridge Adapters
   BaseBridgeAdapter,
 
-  // Soul v2 Primitives
+  // Zaseon v2 Primitives
   ProofCarryingContainerClient,
   PolicyBoundProofsClient,
   ExecutionAgnosticStateCommitmentsClient,
   CrossDomainNullifierAlgebraClient,
-  Soulv2ClientFactory,
+  Zaseonv2ClientFactory,
 };
 
 export type {
-  // Soul v2 Types
+  // Zaseon v2 Types
   Container,
   ContainerCreationParams,
   VerificationResult,
@@ -294,7 +294,7 @@ export type {
   NullifierRegistrationParams,
   DerivedNullifierParams,
   NullifierStats,
-  Soulv2Config,
+  Zaseonv2Config,
   TransactionOptions,
   ProofBundle,
 };

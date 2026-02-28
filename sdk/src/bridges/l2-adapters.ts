@@ -1,5 +1,5 @@
 /**
- * @fileoverview L2 bridge utilities (Scroll, Linea, zkSync, Polygon zkEVM) for Soul SDK
+ * @fileoverview L2 bridge utilities (Scroll, Linea, zkSync, Polygon zkEVM) for Zaseon SDK
  * @module bridges/l2-adapters
  */
 
@@ -34,7 +34,7 @@ export interface L2BridgeConfig {
   chainId: number;
   chainName: string;
   messenger: Address;
-  soulHubL2: Address;
+  zaseonHubL2: Address;
   finalityBlocks: number;
   configured: boolean;
 }

@@ -1,5 +1,5 @@
 /**
- * Soul Recursive Proof SDK
+ * Zaseon Recursive Proof SDK
  *
  * Implements:
  * - Nova-style Incremental Verifiable Computation (IVC)
@@ -21,7 +21,7 @@ import {
 // INTERFACES
 // =========================================================================
 
-export interface SoulState {
+export interface ZaseonState {
   merkleRoot: string;
   totalSupply: bigint;
   nonce: bigint;
@@ -37,7 +37,7 @@ export interface FoldedInstance {
 }
 
 export interface IVCProof {
-  currentState: SoulState;
+  currentState: ZaseonState;
   foldedInstance: FoldedInstance;
   stepProof: Uint8Array;
   previousStateHash: string;
@@ -68,18 +68,18 @@ export interface RecursionConfig {
 // IVC MANAGER
 // =========================================================================
 
-export class SoulIVCManager {
-  private currentState: SoulState;
+export class ZaseonIVCManager {
+  private currentState: ZaseonState;
   private foldingHistory: FoldedInstance[];
   private config: RecursionConfig;
 
-  constructor(initialState: SoulState, config?: RecursionConfig) {
+  constructor(initialState: ZaseonState, config?: RecursionConfig) {
     this.currentState = initialState;
     this.foldingHistory = [];
     this.config = config || { maxBatchSize: 16, targetGasSavings: 80 };
   }
 
-  static createGenesis(): SoulState {
+  static createGenesis(): ZaseonState {
     return {
       merkleRoot: keccak256(encodePacked(["string"], ["genesis"])),
       totalSupply: 0n,
@@ -88,11 +88,11 @@ export class SoulIVCManager {
     };
   }
 
-  getState(): SoulState {
+  getState(): ZaseonState {
     return { ...this.currentState };
   }
 
-  hashState(state: SoulState): string {
+  hashState(state: ZaseonState): string {
     return keccak256(
       encodePacked(
         ["bytes32", "uint256", "uint256", "uint256"],
@@ -114,7 +114,7 @@ export class SoulIVCManager {
   ): Promise<IVCProof> {
     const previousStateHash = this.hashState(this.currentState);
 
-    const newState: SoulState = {
+    const newState: ZaseonState = {
       merkleRoot: newMerkleRoot,
       totalSupply: this.currentState.totalSupply + supplyDelta,
       nonce: this.currentState.nonce + 1n,
@@ -173,8 +173,8 @@ export class SoulIVCManager {
   }
 
   private generateStepProof(
-    _oldState: SoulState,
-    _newState: SoulState,
+    _oldState: ZaseonState,
+    _newState: ZaseonState,
     witness: Uint8Array
   ): Uint8Array {
     // Placeholder — in production, generate actual Nova step proof
@@ -214,14 +214,14 @@ export class SoulIVCManager {
     return [...this.foldingHistory];
   }
 
-  export(): { state: SoulState; history: FoldedInstance[] } {
+  export(): { state: ZaseonState; history: FoldedInstance[] } {
     return {
       state: { ...this.currentState },
       history: [...this.foldingHistory],
     };
   }
 
-  import(data: { state: SoulState; history: FoldedInstance[] }): void {
+  import(data: { state: ZaseonState; history: FoldedInstance[] }): void {
     this.currentState = { ...data.state };
     this.foldingHistory = [...data.history];
   }
@@ -231,7 +231,7 @@ export class SoulIVCManager {
 // PROOF AGGREGATOR
 // =========================================================================
 
-export class SoulProofAggregator {
+export class ZaseonProofAggregator {
   private pendingProofs: ProofInput[];
   private config: RecursionConfig;
   private aggregatedProofs: AggregatedProof[];
@@ -440,7 +440,7 @@ export interface CrossSystemProof {
   intermediateHash: string;
 }
 
-export class SoulCrossSystemRecursor {
+export class ZaseonCrossSystemRecursor {
   private wrapperCircuits: Map<string, boolean>;
 
   constructor() {
@@ -532,7 +532,7 @@ export class SoulCrossSystemRecursor {
 // RECURSIVE VERIFIER CLIENT
 // =========================================================================
 
-export class SoulRecursiveVerifierClient {
+export class ZaseonRecursiveVerifierClient {
   private publicClient: PublicClient;
   private walletClient?: WalletClient;
   private verifierContract: ReturnType<typeof getContract>;
@@ -602,23 +602,23 @@ export class SoulRecursiveVerifierClient {
 // =========================================================================
 
 export function createIVCManager(
-  initialState?: SoulState,
+  initialState?: ZaseonState,
   config?: RecursionConfig
-): SoulIVCManager {
-  return new SoulIVCManager(
-    initialState || SoulIVCManager.createGenesis(),
+): ZaseonIVCManager {
+  return new ZaseonIVCManager(
+    initialState || ZaseonIVCManager.createGenesis(),
     config
   );
 }
 
 export function createProofAggregator(
   config?: RecursionConfig
-): SoulProofAggregator {
-  return new SoulProofAggregator(config);
+): ZaseonProofAggregator {
+  return new ZaseonProofAggregator(config);
 }
 
-export function createCrossSystemRecursor(): SoulCrossSystemRecursor {
-  return new SoulCrossSystemRecursor();
+export function createCrossSystemRecursor(): ZaseonCrossSystemRecursor {
+  return new ZaseonCrossSystemRecursor();
 }
 
 export function createVerifierClient(
@@ -626,8 +626,8 @@ export function createVerifierClient(
   verifierAddress: string,
   abi: Abi,
   walletClient?: WalletClient
-): SoulRecursiveVerifierClient {
-  return new SoulRecursiveVerifierClient(
+): ZaseonRecursiveVerifierClient {
+  return new ZaseonRecursiveVerifierClient(
     publicClient,
     verifierAddress,
     abi,
@@ -636,10 +636,10 @@ export function createVerifierClient(
 }
 
 export default {
-  SoulIVCManager,
-  SoulProofAggregator,
-  SoulCrossSystemRecursor,
-  SoulRecursiveVerifierClient,
+  ZaseonIVCManager,
+  ZaseonProofAggregator,
+  ZaseonCrossSystemRecursor,
+  ZaseonRecursiveVerifierClient,
   createIVCManager,
   createProofAggregator,
   createCrossSystemRecursor,

@@ -2,20 +2,20 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import "../../contracts/compliance/SoulComplianceV2.sol";
+import "../../contracts/compliance/ZaseonComplianceV2.sol";
 
 contract ComplianceCoverageTest is Test {
-    SoulComplianceV2 public compliance;
+    ZaseonComplianceV2 public compliance;
 
     address public admin = address(this);
     address public provider = makeAddr("provider");
 
     function setUp() public {
         // Deploy contracts
-        compliance = new SoulComplianceV2();
+        compliance = new ZaseonComplianceV2();
     }
 
-    function test_SoulComplianceV2_Lifecycle() public {
+    function test_ZaseonComplianceV2_Lifecycle() public {
         // Test provider authorization
         compliance.authorizeProvider(provider);
         assertTrue(compliance.authorizedProviders(provider));
@@ -29,7 +29,7 @@ contract ComplianceCoverageTest is Test {
         // compliance.verifyKYC should succeed for valid inputs
         compliance.verifyKYC(
             makeAddr("user"),
-            SoulComplianceV2.KYCTier.Basic,
+            ZaseonComplianceV2.KYCTier.Basic,
             credHash,
             jurisdiction
         );

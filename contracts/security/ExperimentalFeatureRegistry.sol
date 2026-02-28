@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 
 /**
  * @title ExperimentalFeatureRegistry
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Registry for managing experimental features with risk limits
  * @dev Implements feature flags, risk limits, and graduation paths
  *
@@ -148,7 +148,7 @@ contract ExperimentalFeatureRegistry is AccessControl {
             address(0),
             1 ether, // Max 1 ETH for testing
             true,
-            "https://docs.soul.xyz/experimental/fhe"
+            "https://docs.zaseon.xyz/experimental/fhe"
         );
 
         _registerFeature(
@@ -158,7 +158,7 @@ contract ExperimentalFeatureRegistry is AccessControl {
             address(0),
             0.1 ether, // Max 0.1 ETH
             true,
-            "https://docs.soul.xyz/experimental/pqc"
+            "https://docs.zaseon.xyz/experimental/pqc"
         );
 
         _registerFeature(
@@ -168,7 +168,7 @@ contract ExperimentalFeatureRegistry is AccessControl {
             address(0),
             0.5 ether, // Max 0.5 ETH
             true,
-            "https://docs.soul.xyz/experimental/mpc"
+            "https://docs.zaseon.xyz/experimental/mpc"
         );
 
         _registerFeature(
@@ -178,7 +178,7 @@ contract ExperimentalFeatureRegistry is AccessControl {
             address(0),
             0.1 ether,
             true,
-            "https://docs.soul.xyz/experimental/seraphim"
+            "https://docs.zaseon.xyz/experimental/seraphim"
         );
 
         _registerFeature(
@@ -188,7 +188,7 @@ contract ExperimentalFeatureRegistry is AccessControl {
             address(0),
             0.1 ether,
             true,
-            "https://docs.soul.xyz/experimental/triptych"
+            "https://docs.zaseon.xyz/experimental/triptych"
         );
 
         // Register active experimental contracts
@@ -199,7 +199,7 @@ contract ExperimentalFeatureRegistry is AccessControl {
             address(0),
             10 ether,
             true,
-            "https://docs.soul.xyz/experimental/recursive-proofs"
+            "https://docs.zaseon.xyz/experimental/recursive-proofs"
         );
 
         _registerFeature(
@@ -209,7 +209,7 @@ contract ExperimentalFeatureRegistry is AccessControl {
             address(0),
             5 ether,
             true,
-            "https://docs.soul.xyz/experimental/mixnet"
+            "https://docs.zaseon.xyz/experimental/mixnet"
         );
 
         _registerFeature(
@@ -219,7 +219,7 @@ contract ExperimentalFeatureRegistry is AccessControl {
             address(0),
             5 ether,
             true,
-            "https://docs.soul.xyz/experimental/private-relayer"
+            "https://docs.zaseon.xyz/experimental/private-relayer"
         );
 
         _registerFeature(
@@ -229,7 +229,7 @@ contract ExperimentalFeatureRegistry is AccessControl {
             address(0),
             5 ether,
             true,
-            "https://docs.soul.xyz/experimental/relayer-selection"
+            "https://docs.zaseon.xyz/experimental/relayer-selection"
         );
 
         _registerFeature(
@@ -239,7 +239,7 @@ contract ExperimentalFeatureRegistry is AccessControl {
             address(0),
             1 ether,
             true,
-            "https://docs.soul.xyz/experimental/gas-normalizer"
+            "https://docs.zaseon.xyz/experimental/gas-normalizer"
         );
 
         _registerFeature(
@@ -249,7 +249,7 @@ contract ExperimentalFeatureRegistry is AccessControl {
             address(0),
             10 ether,
             true,
-            "https://docs.soul.xyz/experimental/recursive-verifier"
+            "https://docs.zaseon.xyz/experimental/recursive-verifier"
         );
 
         _registerFeature(
@@ -259,7 +259,7 @@ contract ExperimentalFeatureRegistry is AccessControl {
             address(0),
             5 ether,
             true,
-            "https://docs.soul.xyz/experimental/clsag"
+            "https://docs.zaseon.xyz/experimental/clsag"
         );
     }
 

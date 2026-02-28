@@ -6,7 +6,7 @@
   "explorer": "https://sepolia.basescan.org",
   "contracts": {
     "privacyZoneManager": "0xDFBEe5bB4d4943715D4f8539cbad0a18aA75b602",
-    "soulCrossChainRelay": "0x65CDCdA5ba98bB0d784c3a69C826cb3B59C20251",
+    "zaseonCrossChainRelay": "0x65CDCdA5ba98bB0d784c3a69C826cb3B59C20251",
     "optimisticBridgeVerifier": "0xBA63a3F3C5568eC6447FBe1b852a613743419D9f",
     "bridgeRateLimiter": "0x23824cDbD8Ca773c5DA0202f8f41083F81aF1135",
     "bridgeWatchtower": "0x3E556432Ea021046ad4BE22cB94f713f98f4B76E",

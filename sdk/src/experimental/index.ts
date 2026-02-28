@@ -1,9 +1,9 @@
 /**
- * @module @soul/sdk/experimental
- * @description Experimental features for Soul Protocol SDK.
+ * @module @zaseon/sdk/experimental
+ * @description Experimental features for ZASEON SDK.
  *
  * These modules wrap on-chain experimental contracts and are subject to change.
- * Import via: `import { ... } from "@soul/sdk/experimental"`
+ * Import via: `import { ... } from "@zaseon/sdk/experimental"`
  *
  * Graduation pipeline:
  *   experimental → beta → stable (see docs/EXPERIMENTAL_FEATURES_POLICY.md)

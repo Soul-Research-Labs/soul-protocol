@@ -1,4 +1,4 @@
-# Soul SDK — Experimental Modules
+# Zaseon SDK — Experimental Modules
 
 > **⚠️ WARNING:** These modules are experimental/research-tier and NOT production-ready.
 
@@ -16,7 +16,7 @@
 
 ```typescript
 // Import experimental modules separately from the main SDK
-import { fhe, pqc, mpc } from "@soul/sdk/experimental";
+import { fhe, pqc, mpc } from "@zaseon/sdk/experimental";
 ```
 
 ## Promotion Criteria

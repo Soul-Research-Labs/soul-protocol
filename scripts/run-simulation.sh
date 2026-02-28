@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Soul Protocol - Multi-Chain Simulation Runner
+# ZASEON - Multi-Chain Simulation Runner
 # ==============================================================================
 # This script manages the local multi-chain simulation environment for testing
-# cross-chain functionality of the Soul protocol.
+# cross-chain functionality of the Zaseon protocol.
 #
 # Usage:
 #   ./scripts/run-simulation.sh [command] [options]
@@ -14,7 +14,7 @@
 #   restart     Restart the simulation environment
 #   status      Show status of all services
 #   logs        Show logs for a specific service
-#   deploy      Deploy Soul contracts to all chains
+#   deploy      Deploy Zaseon contracts to all chains
 #   test        Run cross-chain integration tests
 #   clean       Remove all containers and volumes
 #   bridge      Test cross-chain bridge functionality
@@ -157,7 +157,7 @@ wait_for_all_chains() {
 # ==============================================================================
 
 cmd_start() {
-    log_header "Starting Soul Multi-Chain Simulation"
+    log_header "Starting Zaseon Multi-Chain Simulation"
     
     check_docker
     check_dependencies
@@ -187,7 +187,7 @@ cmd_start() {
 # ==============================================================================
 
 cmd_start_full() {
-    log_header "Starting Full Soul Stack"
+    log_header "Starting Full Zaseon Stack"
     
     check_docker
     check_dependencies
@@ -201,7 +201,7 @@ cmd_start_full() {
     sleep 10
     
     echo ""
-    log_success "Full Soul stack is running!"
+    log_success "Full Zaseon stack is running!"
     echo ""
     log_info "Services:"
     echo "  • Chains:      localhost:8545-8548"
@@ -216,7 +216,7 @@ cmd_start_full() {
 # ==============================================================================
 
 cmd_stop() {
-    log_header "Stopping Soul Simulation"
+    log_header "Stopping Zaseon Simulation"
     
     log_info "Stopping containers..."
     docker compose -f "$COMPOSE_FILE" down
@@ -239,7 +239,7 @@ cmd_restart() {
 # ==============================================================================
 
 cmd_status() {
-    log_header "Soul Simulation Status"
+    log_header "Zaseon Simulation Status"
     
     echo ""
     log_info "Container Status:"
@@ -272,7 +272,7 @@ cmd_status() {
 # ==============================================================================
 
 cmd_deploy() {
-    log_header "Deploying Soul Contracts"
+    log_header "Deploying Zaseon Contracts"
     
     check_dependencies
     
@@ -304,7 +304,7 @@ cmd_deploy() {
         CHAIN_ID=$chain_id \
         RPC_URL=$rpc \
         PRIVATE_KEY=$PRIVATE_KEY \
-        npx hardhat run scripts/deploy-soul.js --network localhost 2>&1 | tee "deployments/simulation/$chain/deploy.log" || {
+        npx hardhat run scripts/deploy-zaseon.js --network localhost 2>&1 | tee "deployments/simulation/$chain/deploy.log" || {
             log_warning "Deployment to $chain may have issues. Check logs."
         }
         
@@ -335,7 +335,7 @@ cmd_test() {
     
     # Run different test suites
     log_info "Running ZK-SLock tests..."
-    npx hardhat test test/integration/SoulIntegration.test.ts --network localhost 2>&1 || {
+    npx hardhat test test/integration/ZaseonIntegration.test.ts --network localhost 2>&1 || {
         log_warning "Some integration tests may have failed"
     }
     
@@ -396,7 +396,7 @@ cmd_logs() {
     if [ -z "$service" ]; then
         log_info "Available services:"
         echo "  ethereum-l1, arbitrum-l2, optimism-l2, base-l2"
-        echo "  soul-relayer, soul-prover, graph-node, prometheus, grafana"
+        echo "  zaseon-relayer, zaseon-prover, graph-node, prometheus, grafana"
         echo ""
         log_info "Usage: ./scripts/run-simulation.sh logs <service>"
         return
@@ -410,7 +410,7 @@ cmd_logs() {
 # ==============================================================================
 
 cmd_clean() {
-    log_header "Cleaning Soul Simulation Environment"
+    log_header "Cleaning Zaseon Simulation Environment"
     
     log_warning "This will remove all containers, volumes, and cached data."
     read -p "Are you sure? (y/N) " -n 1 -r
@@ -447,7 +447,7 @@ cmd_shell() {
         export CHAIN_ID="${CHAIN_IDS[$chain]}"
         export PRIVATE_KEY="$PRIVATE_KEY"
         
-        PS1="Soul($chain)> " bash --norc
+        PS1="Zaseon($chain)> " bash --norc
     )
 }
 
@@ -475,7 +475,7 @@ cmd_benchmark() {
 
 cmd_help() {
     echo ""
-    echo -e "${CYAN}Soul Protocol - Multi-Chain Simulation Runner${NC}"
+    echo -e "${CYAN}ZASEON - Multi-Chain Simulation Runner${NC}"
     echo ""
     echo "Usage: ./scripts/run-simulation.sh [command] [options]"
     echo ""
@@ -485,7 +485,7 @@ cmd_help() {
     echo "  stop            Stop all simulation services"
     echo "  restart         Restart the simulation environment"
     echo "  status          Show status of all services"
-    echo "  deploy          Deploy Soul contracts to all chains"
+    echo "  deploy          Deploy Zaseon contracts to all chains"
     echo "  test            Run cross-chain integration tests"
     echo "  bridge          Test cross-chain bridge functionality"
     echo "  logs <service>  Show logs for a specific service"

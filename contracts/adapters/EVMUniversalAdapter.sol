@@ -10,9 +10,9 @@ import {UniversalChainRegistry} from "../libraries/UniversalChainRegistry.sol";
 
 /**
  * @title EVMUniversalAdapter
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Universal chain adapter for all EVM-compatible chains (L1 + L2)
- * @dev Deployed on each EVM chain Soul Protocol supports. Handles ZK proof verification,
+ * @dev Deployed on each EVM chain ZASEON supports. Handles ZK proof verification,
  *      encrypted state management, and cross-chain message relay for EVM environments.
  *
  * Supports: Ethereum, Arbitrum, Optimism, Base, zkSync, Scroll, Linea, Polygon zkEVM
@@ -25,7 +25,7 @@ import {UniversalChainRegistry} from "../libraries/UniversalChainRegistry.sol";
  * - Pausable emergency circuit breaker
  * - Role-based access for relayer and admin operations
  *
- * @custom:security-contact security@soul.network
+ * @custom:security-contact security@zaseon.network
  */
 contract EVMUniversalAdapter is
     IUniversalChainAdapter,

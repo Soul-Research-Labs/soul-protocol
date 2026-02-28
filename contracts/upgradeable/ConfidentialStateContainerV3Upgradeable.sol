@@ -10,7 +10,7 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {IConfidentialStateContainerV3, BatchStateInput} from "../interfaces/IConfidentialStateContainerV3.sol";
 
 /// @title ConfidentialStateContainerV3Upgradeable
-/// @author Soul Protocol
+/// @author ZASEON
 /// @notice UUPS-upgradeable version of ConfidentialStateContainerV3
 /// @dev Converts immutables (verifier, CHAIN_ID, DOMAIN_SEPARATOR) to storage variables
 ///      for proxy compatibility. DOMAIN_SEPARATOR is computed in initialize() using
@@ -19,11 +19,11 @@ import {IConfidentialStateContainerV3, BatchStateInput} from "../interfaces/ICon
 ///      Gas optimizations preserved: packed counters, pre-computed role hashes,
 ///      assembly hash operations, unchecked arithmetic.
 ///
-/// @custom:security-contact security@soul.network
+/// @custom:security-contact security@zaseon.network
 /// @custom:oz-upgrades-from ConfidentialStateContainerV3
 /**
  * @title ConfidentialStateContainerV3Upgradeable
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice Confidential State Container V3 Upgradeable contract
  */
 contract ConfidentialStateContainerV3Upgradeable is

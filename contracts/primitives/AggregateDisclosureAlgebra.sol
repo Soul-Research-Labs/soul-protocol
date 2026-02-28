@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title AggregateDisclosureAlgebra
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Research-grade implementation of Aggregate Disclosure Algebra (ADA)
  * @dev Enables flexible, programmable disclosure of attributes with aggregation
  * @custom:graduated Promoted from experimental to production. Formally verified via Certora.

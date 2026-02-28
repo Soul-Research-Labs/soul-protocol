@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - FlashLoanGuard
+ * ZASEON - FlashLoanGuard
  *
  * Verifies safety invariants for flash loan detection and protection,
  * including per-block velocity limits, TVL delta enforcement,

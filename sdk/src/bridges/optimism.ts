@@ -1,5 +1,5 @@
 /**
- * Soul Protocol - Optimism Bridge SDK Module
+ * ZASEON - Optimism Bridge SDK Module
  *
  * TypeScript utilities and types for interacting with the OptimismBridgeAdapter contract.
  * Provides Optimism-specific helpers: wei conversions, address validation,
@@ -394,11 +394,11 @@ export const OPTIMISM_BRIDGE_ABI = [
     'function configure(address optimismBridgeContract, address wrappedOP, address validatorOracle, uint256 minValidatorSignatures, uint256 requiredBlockConfirmations) external',
     'function setTreasury(address _treasury) external',
 
-    // Deposits (Optimism → Soul)
+    // Deposits (Optimism → Zaseon)
     'function initiateOPDeposit(bytes32 l2TxHash, address l2Sender, address evmRecipient, uint256 amountWei, uint256 l2BlockNumber, (bytes32 version, bytes32 stateRoot, bytes32 messagePasserStorageRoot, bytes32 latestBlockhash) txProof, (address validator, bytes signature)[] attestations) external returns (bytes32)',
     'function completeOPDeposit(bytes32 depositId) external',
 
-    // Withdrawals (Soul → Optimism)
+    // Withdrawals (Zaseon → Optimism)
     'function initiateWithdrawal(address l2Recipient, uint256 amountWei) external returns (bytes32)',
     'function completeWithdrawal(bytes32 withdrawalId, bytes32 l2TxHash, (bytes32 version, bytes32 stateRoot, bytes32 messagePasserStorageRoot, bytes32 latestBlockhash) txProof, (address validator, bytes signature)[] attestations) external',
     'function refundWithdrawal(bytes32 withdrawalId) external',

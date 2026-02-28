@@ -8,7 +8,7 @@ import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/ut
 
 /**
  * @title ViewKeyRegistry
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Registry for managing cryptographic view keys for selective disclosure
  * @dev Enables controlled transparency while maintaining default privacy
  *
@@ -25,7 +25,7 @@ import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/ut
  * - Time-bound keys for audits
  * - Revocable access grants
  *
- * @custom:security-contact security@soulprotocol.io
+ * @custom:security-contact security@zaseonprotocol.io
  */
 contract ViewKeyRegistry is
     AccessControlUpgradeable,

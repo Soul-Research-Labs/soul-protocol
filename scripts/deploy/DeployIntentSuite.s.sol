@@ -27,7 +27,7 @@ contract DeployIntentSuite is Script {
         address admin = vm.envOr("INTENT_ADMIN", deployer);
         address verifier = vm.envOr("INTENT_VERIFIER", address(0));
 
-        console.log("=== Soul Protocol Intent Suite Deployment ===");
+        console.log("=== ZASEON Intent Suite Deployment ===");
         console.log("Deployer:", deployer);
         console.log("Admin:", admin);
         console.log("Verifier:", verifier);

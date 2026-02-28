@@ -6,13 +6,13 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 
 /**
  * @title ConfigurablePrivacyLevels
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Per-transaction privacy configuration with fee tiers
  * @dev Allows users to choose privacy level per state registration.
  *      Different levels expose different metadata while maintaining ZK validity.
  *
  * PRIVACY LEVELS:
- *  MAXIMUM    – Full ZK, zero metadata stored (default Soul behavior)
+ *  MAXIMUM    – Full ZK, zero metadata stored (default Zaseon behavior)
  *  HIGH       – ZK with encrypted metadata hash on-chain
  *  MEDIUM     – ZK with selective disclosure enabled
  *  COMPLIANT  – ZK with mandatory auditor access + retention
@@ -23,7 +23,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
  *  during registration to determine what metadata to emit/store.
  *  Off-chain indexers read the events to build privacy-aware views.
  *
- * @custom:security-contact security@soulprotocol.io
+ * @custom:security-contact security@zaseonprotocol.io
  */
 contract ConfigurablePrivacyLevels is AccessControl, ReentrancyGuard {
     /*//////////////////////////////////////////////////////////////

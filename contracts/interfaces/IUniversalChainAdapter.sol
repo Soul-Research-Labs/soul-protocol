@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title IUniversalChainAdapter
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Universal interface for chain-agnostic adapters across all blockchain ecosystems
  * @dev Every chain adapter (EVM, Solana, StarkNet, Aptos, Midnight, Zcash, etc.)
  *      implements the EVM-side of this interface. Non-EVM chains also implement an
@@ -12,7 +12,7 @@ pragma solidity ^0.8.24;
  * ARCHITECTURE:
  *
  *   ┌──────────────────────────────────────────────────────────────────────────┐
- *   │                    Soul Protocol Universal Adapter Layer                 │
+ *   │                    ZASEON Universal Adapter Layer                 │
  *   ├──────────────────────────────────────────────────────────────────────────┤
  *   │                                                                          │
  *   │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  │

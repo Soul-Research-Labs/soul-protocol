@@ -13,7 +13,7 @@ import {UniversalChainRegistry} from "../libraries/UniversalChainRegistry.sol";
 
 /**
  * @title UniversalShieldedPoolUpgradeable
- * @author Soul Protocol
+ * @author ZASEON
  * @notice UUPS-upgradeable multi-asset shielded pool with cross-chain ZK deposits/withdrawals
  * @dev Upgradeable version of UniversalShieldedPool using UUPS proxy pattern.
  *      - Replaces constructor with `initialize()`
@@ -21,7 +21,7 @@ import {UniversalChainRegistry} from "../libraries/UniversalChainRegistry.sol";
  *      - Includes `__gap` for storage layout safety
  *      - `universalChainId` moved from immutable to storage (proxy-safe)
  *
- * @custom:security-contact security@soul.network
+ * @custom:security-contact security@zaseon.network
  * @custom:oz-upgrades-from UniversalShieldedPool
  */
 contract UniversalShieldedPoolUpgradeable is

@@ -8,7 +8,7 @@ import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "../verifiers/VerifierRegistryV2.sol";
 
 /// @title ProofCarryingContainer (PC³)
-/// @author Soul Protocol - Soul v2
+/// @author ZASEON - Zaseon v2
 /// @notice Self-authenticating confidential containers that carry their own correctness and policy proofs
 /// @dev MVP Implementation - Encrypted state that is portable and verifiable without external context
 ///
@@ -25,7 +25,7 @@ import "../verifiers/VerifierRegistryV2.sol";
 /// - Cross-chain imports require source chain proofs
 /**
  * @title ProofCarryingContainer
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice Proof Carrying Container contract
  */
 contract ProofCarryingContainer is AccessControl, ReentrancyGuard, Pausable {

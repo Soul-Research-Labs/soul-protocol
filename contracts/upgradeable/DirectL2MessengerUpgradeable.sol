@@ -11,14 +11,14 @@ import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/Messa
 
 /**
  * @title DirectL2MessengerUpgradeable
- * @author Soul Protocol
+ * @author ZASEON
  * @notice UUPS-upgradeable version of DirectL2Messenger for proxy deployments
  * @dev Direct L2-to-L2 messaging without L1 completion, with UUPS upgrade capability.
  *
  * UPGRADE NOTES:
  * - Immutable `currentChainId` converted to regular storage variable
- * - Immutable `soulHub` converted to regular storage variable
- * - Constructor replaced with `initialize(address admin, address _soulHub)`
+ * - Immutable `zaseonHub` converted to regular storage variable
+ * - Constructor replaced with `initialize(address admin, address _zaseonHub)`
  * - All OZ base contracts replaced with upgradeable variants
  * - UPGRADER_ROLE required for `_authorizeUpgrade`
  * - Storage gap (`__gap[50]`) reserved for future upgrades
@@ -233,8 +233,8 @@ contract DirectL2MessengerUpgradeable is
     /// @notice Current chain ID (storage instead of immutable for proxy compatibility)
     uint256 public currentChainId;
 
-    /// @notice Soul Hub address for nullifier binding (storage instead of immutable)
-    address public soulHub;
+    /// @notice Zaseon Hub address for nullifier binding (storage instead of immutable)
+    address public zaseonHub;
 
     /// @notice Minimum relayer bond
     uint256 public constant MIN_RELAYER_BOND = 1 ether;
@@ -314,18 +314,18 @@ contract DirectL2MessengerUpgradeable is
     /**
      * @notice Initialize the upgradeable DirectL2Messenger
      * @param admin Admin address receiving DEFAULT_ADMIN_ROLE and OPERATOR_ROLE
-     * @param _soulHub Soul Hub address for nullifier binding
+     * @param _zaseonHub Zaseon Hub address for nullifier binding
      */
-    function initialize(address admin, address _soulHub) external initializer {
+    function initialize(address admin, address _zaseonHub) external initializer {
         if (admin == address(0)) revert ZeroAddress();
-        if (_soulHub == address(0)) revert ZeroAddress();
+        if (_zaseonHub == address(0)) revert ZeroAddress();
 
         __ReentrancyGuard_init();
         __AccessControl_init();
         __Pausable_init();
 
         currentChainId = block.chainid;
-        soulHub = _soulHub;
+        zaseonHub = _zaseonHub;
         challengerReward = 0.1 ether;
         requiredConfirmations = 3;
 
@@ -346,7 +346,7 @@ contract DirectL2MessengerUpgradeable is
      * @param recipient Message recipient on destination
      * @param payload Message payload
      * @param path Preferred message path
-     * @param nullifierBinding Optional Soul nullifier for privacy
+     * @param nullifierBinding Optional Zaseon nullifier for privacy
      * @return messageId Unique message identifier
      */
     function sendMessage(

@@ -13,7 +13,7 @@ import {IProtocolEmergencyCoordinator} from "../interfaces/IProtocolEmergencyCoo
 /// @dev Subset of ProtocolHealthAggregator
 /**
  * @title IHealthAggregator
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice I Health Aggregator interface
  */
 interface IHealthAggregator {
@@ -118,7 +118,7 @@ interface ICircuitBreaker {
     function emergencyHalt() external;
 }
 
-/// @dev Subset of SoulProtocolHub
+/// @dev Subset of ZaseonProtocolHub
 interface IProtocolHub {
     /**
      * @notice Pauses the operation
@@ -139,12 +139,12 @@ interface IProtocolHub {
 
 /**
  * @title ProtocolEmergencyCoordinator
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Unified emergency orchestrator that coordinates across
  *         ProtocolHealthAggregator, EmergencyRecovery, EnhancedKillSwitch,
- *         RelayCircuitBreaker, and SoulProtocolHub.
+ *         RelayCircuitBreaker, and ZaseonProtocolHub.
  *
- * @dev Closes the critical gap where Soul Protocol has 4+ independent
+ * @dev Closes the critical gap where ZASEON has 4+ independent
  *      emergency systems that don't communicate. This coordinator:
  *      1. Maintains a single source-of-truth severity level
  *      2. Cascades actions to all subsystems via executeEmergencyPlan()

@@ -10,10 +10,10 @@ import {ExperimentalFeatureRegistry} from "../../security/ExperimentalFeatureReg
 /// @notice Enables privacy-preserving selection of relayers for transaction submission
 /// @dev Uses commitment schemes and VRF for unbiased, private relayer selection
 /// @custom:experimental This contract is research-tier and NOT production-ready. See contracts/experimental/README.md for promotion criteria.
-/// @custom:security-contact security@soulprotocol.io
+/// @custom:security-contact security@zaseonprotocol.io
 /**
  * @title PrivacyPreservingRelayerSelection
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice Privacy Preserving Relayer Selection contract
  */
 contract PrivacyPreservingRelayerSelection is
@@ -29,7 +29,7 @@ contract PrivacyPreservingRelayerSelection is
     bytes32 public constant ORACLE_ROLE = keccak256("ORACLE_ROLE");
 
     /// @notice Domain separator
-    bytes32 public constant DOMAIN = keccak256("Soul_PRIVATE_RELAYER_V1");
+    bytes32 public constant DOMAIN = keccak256("Zaseon_PRIVATE_RELAYER_V1");
 
     /// @notice Minimum stake required for relayers
     uint256 public constant MIN_STAKE = 1 ether;

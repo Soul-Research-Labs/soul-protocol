@@ -10,7 +10,7 @@ import {IL2DirectMessenger} from "../interfaces/IL2DirectMessenger.sol";
 
 /**
  * @title DirectL2Messenger
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Direct L2-to-L2 messaging without L1 completion
  * @dev Enables fast cross-L2 communication via shared sequencers and direct channels
  *
@@ -238,8 +238,8 @@ contract DirectL2Messenger is
     /// @notice Astria sequencer contract
     address public astriaSequencer;
 
-    /// @notice Soul Hub address for nullifier binding
-    address public immutable soulHub;
+    /// @notice Zaseon Hub address for nullifier binding
+    address public immutable zaseonHub;
 
     /// @notice Challenge bonds per message
     mapping(bytes32 => uint256) public challengeBonds;
@@ -251,13 +251,13 @@ contract DirectL2Messenger is
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    constructor(address _admin, address _soulHub) {
+    constructor(address _admin, address _zaseonHub) {
         if (_admin == address(0)) revert ZeroAddress();
-        // M-4: Validate soulHub is not zero - required for nullifier binding
-        if (_soulHub == address(0)) revert ZeroAddress();
+        // M-4: Validate zaseonHub is not zero - required for nullifier binding
+        if (_zaseonHub == address(0)) revert ZeroAddress();
 
         currentChainId = block.chainid;
-        soulHub = _soulHub;
+        zaseonHub = _zaseonHub;
 
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(OPERATOR_ROLE, _admin);
@@ -273,7 +273,7 @@ contract DirectL2Messenger is
      * @param recipient Message recipient on destination
      * @param payload Message payload
      * @param path Preferred message path
-     * @param nullifierBinding Optional Soul nullifier for privacy
+     * @param nullifierBinding Optional Zaseon nullifier for privacy
      * @return messageId Unique message identifier
      */
     function sendMessage(

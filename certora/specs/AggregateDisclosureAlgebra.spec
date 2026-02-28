@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - AggregateDisclosureAlgebra
+ * ZASEON - AggregateDisclosureAlgebra
  * 
  * This spec verifies critical invariants for the Aggregate Disclosure Algebra (ADA)
  * which enables selective and aggregate attribute disclosure

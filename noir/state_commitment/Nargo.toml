@@ -1,7 +1,7 @@
 [package]
 name = "state_commitment"
 type = "bin"
-authors = ["Soul Protocol"]
+authors = ["ZASEON"]
 description = "Optimized circuit for proving knowledge of state preimage using Poseidon hash"
 
 [dependencies]

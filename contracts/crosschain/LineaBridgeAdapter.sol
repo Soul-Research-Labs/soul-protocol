@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title LineaBridgeAdapter
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Bridge adapter for Linea zkEVM integration
  * @dev Enables cross-chain interoperability with Linea L2
  * @custom:graduated Promoted from experimental to production. Formally verified via Certora.
@@ -96,8 +96,8 @@ contract LineaBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     /// @notice Linea Rollup contract (for finalization queries)
     address public rollup;
 
-    /// @notice Soul Hub address on Linea L2
-    address public soulHubL2;
+    /// @notice Zaseon Hub address on Linea L2
+    address public zaseonHubL2;
 
     /// @notice Proof Registry address
     address public proofRegistry;
@@ -131,7 +131,7 @@ contract LineaBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         address tokenBridge,
         address rollup
     );
-    event SoulHubL2Set(address indexed soulHubL2);
+    event ZaseonHubL2Set(address indexed zaseonHubL2);
     event ProofRegistrySet(address indexed proofRegistry);
 
     /*//////////////////////////////////////////////////////////////
@@ -181,15 +181,15 @@ contract LineaBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         emit BridgeConfigured(_messageService, _tokenBridge, _rollup);
     }
 
-    /// @notice Set the Soul Hub L2 contract address deployed on Linea
-    /// @param _soulHubL2 Address of the Soul Hub on Linea L2
+    /// @notice Set the Zaseon Hub L2 contract address deployed on Linea
+    /// @param _zaseonHubL2 Address of the Zaseon Hub on Linea L2
     /// @dev Only callable by DEFAULT_ADMIN_ROLE. Reverts if zero address.
-    function setSoulHubL2(
-        address _soulHubL2
+    function setZaseonHubL2(
+        address _zaseonHubL2
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(_soulHubL2 != address(0), "Invalid address");
-        soulHubL2 = _soulHubL2;
-        emit SoulHubL2Set(_soulHubL2);
+        require(_zaseonHubL2 != address(0), "Invalid address");
+        zaseonHubL2 = _zaseonHubL2;
+        emit ZaseonHubL2Set(_zaseonHubL2);
     }
 
     /// @notice Set the Proof Registry address for proof validation
@@ -220,9 +220,9 @@ contract LineaBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     }
 
     /// @notice Check whether the adapter is fully configured
-    /// @return True if both messageService and soulHubL2 are set to non-zero addresses
+    /// @return True if both messageService and zaseonHubL2 are set to non-zero addresses
     function isConfigured() external view returns (bool) {
-        return messageService != address(0) && soulHubL2 != address(0);
+        return messageService != address(0) && zaseonHubL2 != address(0);
     }
 
     /// @notice Get the number of blocks required for ZK proof finality on Linea

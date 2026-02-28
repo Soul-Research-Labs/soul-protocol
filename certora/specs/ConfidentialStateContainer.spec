@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - ConfidentialStateContainerV3
+ * ZASEON - ConfidentialStateContainerV3
  * Phase 4: Production Readiness — real invariants and rules
  */
 

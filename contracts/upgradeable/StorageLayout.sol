@@ -7,44 +7,44 @@ pragma solidity ^0.8.24;
  * @dev Used to ensure storage slots don't collide between versions
  */
 
-// Storage slot definitions for Soul contracts
+// Storage slot definitions for Zaseon contracts
 // These must remain constant across upgrades
 
 /**
  * @title StorageSlots
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice Storage Slots library
  */
 library StorageSlots {
     // PC³ Storage Slots
     bytes32 public constant PC3_CONTAINERS_SLOT =
-        keccak256("soul.storage.pc3.containers");
+        keccak256("zaseon.storage.pc3.containers");
     bytes32 public constant PC3_NULLIFIERS_SLOT =
-        keccak256("soul.storage.pc3.nullifiers");
+        keccak256("zaseon.storage.pc3.nullifiers");
     bytes32 public constant PC3_TOTAL_CONTAINERS_SLOT =
-        keccak256("soul.storage.pc3.totalContainers");
+        keccak256("zaseon.storage.pc3.totalContainers");
 
     // PBP Storage Slots
-    bytes32 public constant PBP_POLICIES_SLOT = keccak256("soul.storage.pbp.policies");
+    bytes32 public constant PBP_POLICIES_SLOT = keccak256("zaseon.storage.pbp.policies");
     bytes32 public constant PBP_POLICY_COUNT_SLOT =
-        keccak256("soul.storage.pbp.policyCount");
+        keccak256("zaseon.storage.pbp.policyCount");
 
     // EASC Storage Slots
     bytes32 public constant EASC_COMMITMENTS_SLOT =
-        keccak256("soul.storage.easc.commitments");
+        keccak256("zaseon.storage.easc.commitments");
     bytes32 public constant EASC_TRANSITIONS_SLOT =
-        keccak256("soul.storage.easc.transitions");
+        keccak256("zaseon.storage.easc.transitions");
 
     // CDNA Storage Slots
-    bytes32 public constant CDNA_DOMAINS_SLOT = keccak256("soul.storage.cdna.domains");
+    bytes32 public constant CDNA_DOMAINS_SLOT = keccak256("zaseon.storage.cdna.domains");
     bytes32 public constant CDNA_NULLIFIERS_SLOT =
-        keccak256("soul.storage.cdna.nullifiers");
+        keccak256("zaseon.storage.cdna.nullifiers");
 
     // Orchestrator Storage Slots
     bytes32 public constant ORCH_PRIMITIVES_SLOT =
-        keccak256("soul.storage.orchestrator.primitives");
+        keccak256("zaseon.storage.orchestrator.primitives");
     bytes32 public constant ORCH_PAUSED_SLOT =
-        keccak256("soul.storage.orchestrator.paused");
+        keccak256("zaseon.storage.orchestrator.paused");
 }
 
 /**

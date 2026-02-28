@@ -1,10 +1,10 @@
 # Intent Completion Guide
 
-> Tachyon-derived intent-based architecture for Soul Protocol
+> Tachyon-derived intent-based architecture for ZASEON
 
 ## Overview
 
-Soul Protocol's intent completion suite enables users to express **what** they want
+ZASEON's intent completion suite enables users to express **what** they want
 (cross-chain state transfer) without specifying **how** it happens. Solvers compete
 to fulfill intents, providing instant completion with ZK privacy guarantees.
 
@@ -12,7 +12,7 @@ to fulfill intents, providing instant completion with ZK privacy guarantees.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    SoulProtocolHub                           │
+│                    ZaseonProtocolHub                           │
 │  Component 20: IntentCompletionLayer  (CORE)                │
 │  Component 21: InstantCompletionGuarantee (CORE)            │
 │  Component 22: DynamicRoutingOrchestrator (INFRASTRUCTURE)  │
@@ -150,7 +150,7 @@ function predictCompletionTime(uint256 sourceChain, uint256 destChain, uint256 a
 ### Intent Completion
 
 ```typescript
-import { createIntentCompletionClient, IntentStatus } from "@soul/sdk";
+import { createIntentCompletionClient, IntentStatus } from "@zaseon/sdk";
 
 const client = createIntentCompletionClient({
   publicClient,
@@ -182,7 +182,7 @@ const status = await client.waitForStatus(
 ### Dynamic Routing
 
 ```typescript
-import { createDynamicRoutingClient, Urgency } from "@soul/sdk";
+import { createDynamicRoutingClient, Urgency } from "@zaseon/sdk";
 
 const router = createDynamicRoutingClient({
   publicClient,
@@ -201,7 +201,7 @@ const recommendation = await router.getRouteRecommendation(
 ### Compliance
 
 ```typescript
-import { createComplianceClient, DisclosureLevel, FieldType } from "@soul/sdk";
+import { createComplianceClient, DisclosureLevel, FieldType } from "@zaseon/sdk";
 
 const compliance = createComplianceClient({
   publicClient,

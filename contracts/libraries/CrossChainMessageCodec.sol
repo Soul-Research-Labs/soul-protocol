@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title CrossChainMessageCodec
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Standardized cross-chain message encoding/decoding library.
  * @dev Addresses the inconsistency where bridge adapters use mixed `abi.encode`
  *      and `abi.encodePacked` for message ID generation. This library provides:
@@ -27,31 +27,31 @@ library CrossChainMessageCodec {
     /// @dev Domain separator for standard bridge messages
     bytes32 internal constant MESSAGE_TYPEHASH =
         keccak256(
-            "SoulMessage(uint256 sourceChainId,uint256 destChainId,address sender,address recipient,uint256 nonce,bytes32 payloadHash,uint256 timestamp)"
+            "ZaseonMessage(uint256 sourceChainId,uint256 destChainId,address sender,address recipient,uint256 nonce,bytes32 payloadHash,uint256 timestamp)"
         );
 
     /// @dev Domain separator for proof-carrying messages
     bytes32 internal constant PROOF_MESSAGE_TYPEHASH =
         keccak256(
-            "SoulProofMessage(uint256 sourceChainId,uint256 destChainId,address sender,address recipient,uint256 nonce,bytes32 proofHash,bytes32 publicInputsHash,uint256 timestamp)"
+            "ZaseonProofMessage(uint256 sourceChainId,uint256 destChainId,address sender,address recipient,uint256 nonce,bytes32 proofHash,bytes32 publicInputsHash,uint256 timestamp)"
         );
 
     /// @dev Domain separator for deposit messages
     bytes32 internal constant DEPOSIT_TYPEHASH =
         keccak256(
-            "SoulDeposit(uint256 sourceChainId,address depositor,address recipient,address token,uint256 amount,uint256 nonce,uint256 timestamp)"
+            "ZaseonDeposit(uint256 sourceChainId,address depositor,address recipient,address token,uint256 amount,uint256 nonce,uint256 timestamp)"
         );
 
     /// @dev Domain separator for withdrawal messages
     bytes32 internal constant WITHDRAWAL_TYPEHASH =
         keccak256(
-            "SoulWithdrawal(uint256 sourceChainId,address requester,address recipient,address token,uint256 amount,uint256 nonce,uint256 timestamp)"
+            "ZaseonWithdrawal(uint256 sourceChainId,address requester,address recipient,address token,uint256 amount,uint256 nonce,uint256 timestamp)"
         );
 
     /// @dev Domain separator for emergency relay messages
     bytes32 internal constant EMERGENCY_TYPEHASH =
         keccak256(
-            "SoulEmergency(uint256 sourceChainId,uint256 destChainId,uint8 severity,address broadcaster,uint256 nonce,uint256 timestamp)"
+            "ZaseonEmergency(uint256 sourceChainId,uint256 destChainId,uint8 severity,address broadcaster,uint256 nonce,uint256 timestamp)"
         );
 
     /// @dev Protocol version for forward compatibility

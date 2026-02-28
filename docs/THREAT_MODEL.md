@@ -1,4 +1,4 @@
-# Soul Protocol (Soul) Threat Model
+# ZASEON (Zaseon) Threat Model
 
 ## Document Information
 
@@ -13,7 +13,7 @@
 
 ## 1. Executive Summary
 
-This document provides a comprehensive threat model for the Soul Protocol (Soul), a cross-chain privacy infrastructure enabling confidential state management and zero-knowledge proof verification across multiple blockchain networks.
+This document provides a comprehensive threat model for the ZASEON (Zaseon), a cross-chain privacy infrastructure enabling confidential state management and zero-knowledge proof verification across multiple blockchain networks.
 
 ## 2. System Overview
 
@@ -21,7 +21,7 @@ This document provides a comprehensive threat model for the Soul Protocol (Soul)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    Soul Core Infrastructure                       │
+│                    Zaseon Core Infrastructure                       │
 ├─────────────────────────────────────────────────────────────────┤
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  │
 │  │ Confidential    │  │  Nullifier      │  │  ZK-Bound       │  │
@@ -79,12 +79,12 @@ This document provides a comprehensive threat model for the Soul Protocol (Soul)
 
 **Affected Components**:
 
-- `SoulAtomicSwapV2.sol`
+- `ZaseonAtomicSwapV2.sol`
 - `ConfidentialStateContainerV3.sol`
-- `SoulUpgradeTimelock.sol`
+- `ZaseonUpgradeTimelock.sol`
 - `BridgeWatchtower.sol`
-- `SoulProtocolHub.sol`
-- `SoulL2Messenger.sol`
+- `ZaseonProtocolHub.sol`
+- `ZaseonL2Messenger.sol`
 
 **Mitigations**:
 
@@ -142,7 +142,7 @@ function safeBitRotate(uint256 value, uint256 shift) internal pure returns (uint
 
 - ✅ OpenZeppelin AccessControl
 - ✅ Role hierarchy with separation of duties
-- ✅ Time-locked admin operations via SoulTimelock
+- ✅ Time-locked admin operations via ZaseonTimelock
 
 **Role Structure**:
 
@@ -351,7 +351,7 @@ Emergency Action → Guardian Signatures (M of N) → Timelock (24-72h) → Exec
 | ----------------- | --------------- | ---------------------- |
 | Emergency Pause   | Owner-triggered | All pausable contracts |
 | Guardian Recovery | Multi-sig       | Critical operations    |
-| Timelock          | SoulTimelock    | Admin functions        |
+| Timelock          | ZaseonTimelock    | Admin functions        |
 | Upgradability     | UUPS Proxy      | Upgradeable contracts  |
 
 ---
@@ -418,9 +418,9 @@ The following conditions should trigger immediate incident response:
 
 ### 9.2 Contact Information
 
-- **Security Team**: security@soul.network
-- **Bug Bounty**: bounty@soul.network
-- **Emergency**: emergency@soul.network
+- **Security Team**: security@zaseon.network
+- **Bug Bounty**: bounty@zaseon.network
+- **Emergency**: emergency@zaseon.network
 
 ---
 

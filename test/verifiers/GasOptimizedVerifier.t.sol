@@ -254,7 +254,7 @@ contract GasOptimizedVerifierTest is Test {
     // ============= hashToCurve =============
 
     function test_HashToCurve_ResultOnCurve() public view {
-        (uint256 x, uint256 y) = wrapper.hashToCurve(bytes("soul_protocol"));
+        (uint256 x, uint256 y) = wrapper.hashToCurve(bytes("zaseon_protocol"));
         assertTrue(wrapper.isOnCurve(x, y));
     }
 

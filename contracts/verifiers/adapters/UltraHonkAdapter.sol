@@ -23,9 +23,9 @@ function verify(
 
 /**
  * @title UltraHonkAdapter
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Adapter that wraps a bb-generated UltraHonk Solidity verifier
- *         behind the IProofVerifier interface used by Soul Protocol contracts.
+ *         behind the IProofVerifier interface used by ZASEON contracts.
  * @dev The bb-generated verifier expects:
  *      - proof: raw proof bytes
  *      - publicInputs: bytes32[] array

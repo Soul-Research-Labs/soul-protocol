@@ -1,6 +1,6 @@
 /**
- * @title Soul v2 Formal Verification Specifications (DOCUMENTATION ONLY)
- * @author Soul Protocol
+ * @title Zaseon v2 Formal Verification Specifications (DOCUMENTATION ONLY)
+ * @author ZASEON
  * @notice This file documents invariants, pre/post conditions, and safety properties
  *         in Certora-style pseudocode. It is NOT executable CVL — all content is in comments.
  * @dev Executable specifications live in per-contract .spec files under certora/specs/.
@@ -12,7 +12,7 @@
  *   - EASC                     → See certora/specs/EASC.spec
  *   - CDNA                     → See certora/specs/NullifierRegistry.spec
  *   - Orchestrator             → See certora/specs/Orchestrator.spec
- *   - SoulUpgradeTimelock      → See certora/specs/SoulGovernance.spec
+ *   - ZaseonUpgradeTimelock      → See certora/specs/ZaseonGovernance.spec
  */
 
 /*//////////////////////////////////////////////////////////////
@@ -201,11 +201,11 @@
  */
 
 /*//////////////////////////////////////////////////////////////
-                    SoulV2ORCHESTRATOR
+                    ZaseonV2ORCHESTRATOR
 //////////////////////////////////////////////////////////////*/
 
 /**
- * INVARIANTS for Soulv2Orchestrator
+ * INVARIANTS for Zaseonv2Orchestrator
  *
  * INV-ORCH-001: Contract references are immutable
  *   □(pc3 = initial_pc3 ∧ pbp = initial_pbp ∧ 
@@ -222,7 +222,7 @@
  */
 
 /**
- * SAFETY PROPERTIES for Soulv2Orchestrator
+ * SAFETY PROPERTIES for Zaseonv2Orchestrator
  *
  * SAFE-ORCH-001: Atomic transition guarantee
  *   createCoordinatedTransition(t) successful ⟹
@@ -239,11 +239,11 @@
  */
 
 /*//////////////////////////////////////////////////////////////
-                    SoulTIMELOCK
+                    ZaseonTIMELOCK
 //////////////////////////////////////////////////////////////*/
 
 /**
- * INVARIANTS for SoulUpgradeTimelock
+ * INVARIANTS for ZaseonUpgradeTimelock
  *
  * INV-TL-001: Delay bounds
  *   MIN_DELAY_FLOOR ≤ minDelay ≤ MAX_DELAY
@@ -266,7 +266,7 @@
  */
 
 /**
- * SAFETY PROPERTIES for SoulUpgradeTimelock
+ * SAFETY PROPERTIES for ZaseonUpgradeTimelock
  *
  * SAFE-TL-001: Execution requires sufficient delay
  *   ∀ op: execute(op) successful ⟹ 
@@ -331,9 +331,9 @@
  *     "contracts/primitives/PolicyBoundProofs.sol",
  *     "contracts/primitives/ExecutionAgnosticStateCommitments.sol",
  *     "contracts/primitives/CrossDomainNullifierAlgebra.sol",
- *     "contracts/governance/SoulUpgradeTimelock.sol"
+ *     "contracts/governance/ZaseonUpgradeTimelock.sol"
  *   ],
- *   "verify": "ProofCarryingContainer:specs/Soul.spec",
+ *   "verify": "ProofCarryingContainer:specs/Zaseon.spec",
  *   "rule_sanity": "basic",
  *   "multi_assert_check": true,
  *   "optimistic_loop": true,

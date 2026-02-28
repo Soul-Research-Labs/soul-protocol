@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title IMixnetNodeRegistry
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Interface for the Mixnet Node Registry used in onion-routed private relaying
  */
 interface IMixnetNodeRegistry {

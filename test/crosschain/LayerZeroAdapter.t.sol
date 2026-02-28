@@ -497,7 +497,7 @@ contract LayerZeroAdapterTest is Test {
         address hub = makeAddr("hub");
         vm.prank(operator);
         adapter.setPilHub(ARB_EID, hub);
-        assertEq(adapter.soulHubs(ARB_EID), hub);
+        assertEq(adapter.zaseonHubs(ARB_EID), hub);
     }
 
     function test_AddDVN() public {

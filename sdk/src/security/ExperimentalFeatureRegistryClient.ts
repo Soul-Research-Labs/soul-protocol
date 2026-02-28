@@ -2,7 +2,7 @@
  * @title ExperimentalFeatureRegistryClient
  * @description TypeScript SDK client for the ExperimentalFeatureRegistry contract.
  * Provides feature flag management, risk-limit queries, and graduation-pipeline
- * monitoring for Soul Protocol experimental features.
+ * monitoring for ZASEON experimental features.
  */
 
 import {

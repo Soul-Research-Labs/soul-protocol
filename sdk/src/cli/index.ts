@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Soul CLI - Command Line Interface
+ * Zaseon CLI - Command Line Interface
  *
- * Command line tool for Soul privacy and bridge operations
+ * Command line tool for Zaseon privacy and bridge operations
  */
 
 import { Command } from "commander";
@@ -42,7 +42,7 @@ const program = new Command();
 // Configuration Management
 // ============================================
 
-interface SoulConfig {
+interface ZaseonConfig {
   rpcUrls: Record<string, string>;
   privateKey?: string;
   addresses: {
@@ -59,10 +59,10 @@ interface SoulConfig {
   defaultChain: string;
 }
 
-const CONFIG_DIR = path.join(process.env.HOME || "~", ".soul");
+const CONFIG_DIR = path.join(process.env.HOME || "~", ".zaseon");
 const CONFIG_FILE = path.join(CONFIG_DIR, "config.json");
 
-function loadConfig(): SoulConfig {
+function loadConfig(): ZaseonConfig {
   if (fs.existsSync(CONFIG_FILE)) {
     return JSON.parse(fs.readFileSync(CONFIG_FILE, "utf-8"));
   }
@@ -80,7 +80,7 @@ function loadConfig(): SoulConfig {
   };
 }
 
-function saveConfig(config: SoulConfig): void {
+function saveConfig(config: ZaseonConfig): void {
   if (!fs.existsSync(CONFIG_DIR)) {
     fs.mkdirSync(CONFIG_DIR, { recursive: true });
   }
@@ -130,7 +130,7 @@ function getWalletClient(network: string): WalletClient {
     });
   }
 
-  throw new Error("No private key configured. Run `soul config set-key <key>`");
+  throw new Error("No private key configured. Run `zaseon config set-key <key>`");
 }
 
 function printTable(headers: string[], rows: string[][]): void {
@@ -151,7 +151,7 @@ function printTable(headers: string[], rows: string[][]): void {
 // CLI Commands
 // ============================================
 
-program.name("soul").description("Soul Protocol CLI").version("1.0.0");
+program.name("zaseon").description("ZASEON CLI").version("1.0.0");
 
 // Config commands
 const configCmd = program

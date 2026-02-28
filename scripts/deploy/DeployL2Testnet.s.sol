@@ -25,7 +25,7 @@ import {StealthAddressRegistry} from "../../contracts/privacy/StealthAddressRegi
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 /**
- * @title Soul Protocol L2 Testnet Deployment Script
+ * @title ZASEON L2 Testnet Deployment Script
  * @notice Unified Foundry script for deploying to L2 testnets
  *
  * Supported testnets:
@@ -93,7 +93,7 @@ contract DeployL2Testnet is Script {
         // On testnets, admin can be the deployer for simplicity
         address admin = vm.envOr("TESTNET_ADMIN", deployer);
 
-        console.log("=== Soul Protocol L2 Testnet Deployment ===");
+        console.log("=== ZASEON L2 Testnet Deployment ===");
         console.log("Chain ID:", block.chainid);
         console.log("Deployer:", deployer);
         console.log("Admin:", admin);

@@ -1,8 +1,8 @@
-# Soul Protocol - Formal Verification Report
+# ZASEON - Formal Verification Report
 
 ## Overview
 
-This document describes the formal verification setup for the Soul Protocol Soul Protocol using Certora Prover.
+This document describes the formal verification setup for the ZASEON ZASEON using Certora Prover.
 
 ## Verification Jobs Submitted
 
@@ -15,10 +15,10 @@ All verification jobs have been successfully submitted to the Certora cloud.
 | Contract                     | Config                   | Status       |
 | ---------------------------- | ------------------------ | ------------ |
 | ConfidentialStateContainerV3 | `verify.conf`            | ✅ Submitted |
-| SoulAtomicSwapV2             | `verify_atomicswap.conf` | ✅ Submitted |
+| ZaseonAtomicSwapV2             | `verify_atomicswap.conf` | ✅ Submitted |
 | NullifierRegistryV3          | `verify_nullifier.conf`  | ✅ Submitted |
 | CrossChainProofHubV3         | `verify_proofhub.conf`   | ✅ Submitted |
-| SoulTimelock                 | `verify_timelock.conf`   | ✅ Submitted |
+| ZaseonTimelock                 | `verify_timelock.conf`   | ✅ Submitted |
 
 ### Novel Primitives
 
@@ -80,7 +80,7 @@ All verification jobs have been successfully submitted to the Certora cloud.
 
 | Module                       | Spec                                | Config                                   | Status       |
 | ---------------------------- | ----------------------------------- | ---------------------------------------- | ------------ |
-| SoulGovernor                 | `SoulGovernor.spec`                 | `verify_governor.conf`                   | ✅ Submitted |
+| ZaseonGovernor                 | `ZaseonGovernor.spec`                 | `verify_governor.conf`                   | ✅ Submitted |
 | BatchAccumulator             | `BatchAccumulator.spec`             | `verify_batch_accumulator.conf`          | ✅ Submitted |
 | BridgeCircuitBreaker         | `BridgeCircuitBreaker.spec`         | `verify_circuit_breaker.conf`            | ✅ Submitted |
 | BridgeRateLimiter            | `BridgeRateLimiter.spec`            | `verify_rate_limiter.conf`               | ✅ Submitted |
@@ -230,7 +230,7 @@ All verification jobs have been successfully submitted to the Certora cloud.
 - Removing chain makes it unsupported
 - Total proofs and batches are monotonic
 
-#### SoulTimelock Properties
+#### ZaseonTimelock Properties
 
 - Execution requires minimum delay
 - Execution after grace period fails
@@ -370,7 +370,7 @@ certoraRun certora/conf/verify_security.conf
 | ---------------------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | Halmos                 | `test/formal/HalmosCrossChainProofHub.t.sol`, `test/formal/HalmosZKBoundStateLocks.t.sol` | 12 symbolic checks: stake conservation, proof monotonicity, state transitions             |
 | Echidna                | `test/fuzz/EchidnaHarness.sol`                                                            | 6 invariant properties: balance conservation, nullifier uniqueness, LP supply, fee bounds |
-| TLA+                   | `specs/tla/MC_SoulBridge.tla`                                                             | Model checking: TVL conservation, no double-spend, proof-required withdrawal              |
+| TLA+                   | `specs/tla/MC_ZaseonBridge.tla`                                                             | Model checking: TVL conservation, no double-spend, proof-required withdrawal              |
 | K Framework            | `specs/k/*.k`                                                                             | Algebraic specifications of protocol invariants                                           |
 | Storage Layout         | `scripts/check_storage_layout.sh`                                                         | 8 base/upgradeable contract pairs verified for slot compatibility                         |
 | Gambit                 | `scripts/run_gambit.sh`                                                                   | Mutation testing across 8 security-critical contracts                                     |

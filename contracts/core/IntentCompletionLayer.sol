@@ -9,9 +9,9 @@ import {IIntentCompletionLayer} from "../interfaces/IIntentCompletionLayer.sol";
 
 /**
  * @title IntentCompletionLayer
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Proof service marketplace — solvers compete to generate and deliver ZK proofs
- * @dev Soul Protocol is proof middleware, NOT a bridge. This contract does NOT move tokens.
+ * @dev ZASEON is proof middleware, NOT a bridge. This contract does NOT move tokens.
  *      Users submit intents describing desired cross-chain state transitions.
  *      Solvers compete to fulfill intents by generating valid ZK proofs.
  *      The user escrows a service fee (maxFee) — NOT the transfer amount.
@@ -31,7 +31,7 @@ import {IIntentCompletionLayer} from "../interfaces/IIntentCompletionLayer.sol";
  * - Challenge period before finalization
  * - Zero-address validation on all critical params
  *
- * @custom:security-contact security@soulprotocol.io
+ * @custom:security-contact security@zaseonprotocol.io
  */
 contract IntentCompletionLayer is
     AccessControl,

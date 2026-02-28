@@ -6,8 +6,8 @@ import {ProtocolHealthAggregator} from "../../contracts/security/ProtocolHealthA
 import {EmergencyRecovery} from "../../contracts/security/EmergencyRecovery.sol";
 import {ProtocolEmergencyCoordinator} from "../../contracts/security/ProtocolEmergencyCoordinator.sol";
 import {CrossChainEmergencyRelay} from "../../contracts/crosschain/CrossChainEmergencyRelay.sol";
-import {SoulProtocolHub} from "../../contracts/core/SoulProtocolHub.sol";
-import {ISoulProtocolHub} from "../../contracts/interfaces/ISoulProtocolHub.sol";
+import {ZaseonProtocolHub} from "../../contracts/core/ZaseonProtocolHub.sol";
+import {IZaseonProtocolHub} from "../../contracts/interfaces/IZaseonProtocolHub.sol";
 
 /**
  * @title DeploySecurityComponents
@@ -21,13 +21,13 @@ import {ISoulProtocolHub} from "../../contracts/interfaces/ISoulProtocolHub.sol"
  *      4. CrossChainEmergencyRelay  — cross-chain emergency propagation
  *
  * Prerequisites (from Phase 1 of DeployMainnet):
- *      - SoulProtocolHub  is deployed and admin owns DEFAULT_ADMIN_ROLE
+ *      - ZaseonProtocolHub  is deployed and admin owns DEFAULT_ADMIN_ROLE
  *      - EnhancedKillSwitch is deployed
  *      - RelayCircuitBreaker is deployed
  *      - RelayWatchtower is deployed (or will be set later)
  *
  * Usage:
- *   SOUL_HUB=0x...          \
+ *   ZASEON_HUB=0x...          \
  *   KILL_SWITCH=0x...       \
  *   CIRCUIT_BREAKER=0x...   \
  *   RELAY_WATCHTOWER=0x...  \
@@ -40,18 +40,18 @@ contract DeploySecurityComponents is Script {
     uint16 constant CRITICAL_THRESHOLD = 40;
 
     function run() external {
-        address hubAddr = vm.envAddress("SOUL_HUB");
+        address hubAddr = vm.envAddress("ZASEON_HUB");
         address killSwitch = vm.envAddress("KILL_SWITCH");
         address circuitBreaker = vm.envAddress("CIRCUIT_BREAKER");
         address relayWatchtower = _envOr("RELAY_WATCHTOWER");
         address multiProver = _envOr("MULTI_PROVER");
         address admin = msg.sender;
 
-        require(hubAddr != address(0), "SOUL_HUB required");
+        require(hubAddr != address(0), "ZASEON_HUB required");
         require(killSwitch != address(0), "KILL_SWITCH required");
         require(circuitBreaker != address(0), "CIRCUIT_BREAKER required");
 
-        SoulProtocolHub hub = SoulProtocolHub(hubAddr);
+        ZaseonProtocolHub hub = ZaseonProtocolHub(hubAddr);
 
         console.log("=== Deploy Security Components ===");
         console.log("Hub:              ", hubAddr);
@@ -93,7 +93,7 @@ contract DeploySecurityComponents is Script {
         // 5. Wire watchtower + multiProver into Hub (via wireAll for the two missing fields)
         if (relayWatchtower != address(0) || multiProver != address(0)) {
             hub.wireAll(
-                ISoulProtocolHub.WireAllParams({
+                IZaseonProtocolHub.WireAllParams({
                     _verifierRegistry: address(0),
                     _universalVerifier: address(0),
                     _crossChainMessageRelay: address(0),

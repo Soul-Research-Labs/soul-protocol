@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - ExperimentalFeatureRegistry
+ * ZASEON - ExperimentalFeatureRegistry
  *
  * Verifies safety invariants for the feature flag registry including
  * status transition state machine, risk limit enforcement, and

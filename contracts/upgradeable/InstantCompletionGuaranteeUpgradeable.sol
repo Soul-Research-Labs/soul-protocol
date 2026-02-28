@@ -10,7 +10,7 @@ import {IIntentCompletionLayer} from "../interfaces/IIntentCompletionLayer.sol";
 
 /**
  * @title InstantCompletionGuaranteeUpgradeable
- * @author Soul Protocol
+ * @author ZASEON
  * @notice UUPS-upgradeable version of InstantCompletionGuarantee for proxy deployments
  * @dev Bonded guarantees for ZK proof delivery. See InstantCompletionGuarantee for full docs.
  *

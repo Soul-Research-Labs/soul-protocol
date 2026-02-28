@@ -5,7 +5,7 @@ import "../interfaces/IProofVerifier.sol";
 
 /**
  * @title Groth16VerifierBN254
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Production-ready Groth16 verifier for BN254 curve
  * @dev Uses EVM precompiles: bn256Add (0x06), bn256ScalarMul (0x07), bn256Pairing (0x08)
  *

@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title NullifierValidator
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Nullifier validation and management utilities
  * @dev Extracted from UnifiedNullifierManager to reduce stack depth
  *      and enable better test coverage.
@@ -56,15 +56,15 @@ library NullifierValidator {
 
     /// @notice Domain separator for standard nullifiers
     bytes32 public constant STANDARD_DOMAIN =
-        keccak256("Soul_NULLIFIER_STANDARD_V1");
+        keccak256("Zaseon_NULLIFIER_STANDARD_V1");
 
     /// @notice Domain separator for cross-domain nullifiers
     bytes32 public constant CROSS_DOMAIN =
-        keccak256("Soul_NULLIFIER_CROSS_DOMAIN_V1");
+        keccak256("Zaseon_NULLIFIER_CROSS_DOMAIN_V1");
 
     /// @notice Domain separator for time-bound nullifiers
     bytes32 public constant TIME_BOUND_DOMAIN =
-        keccak256("Soul_NULLIFIER_TIME_BOUND_V1");
+        keccak256("Zaseon_NULLIFIER_TIME_BOUND_V1");
 
     /*//////////////////////////////////////////////////////////////
                           COMPUTATION FUNCTIONS
@@ -131,19 +131,19 @@ library NullifierValidator {
     }
 
     /**
-     * @notice Computes a Soul binding nullifier
-     * @dev Unified nullifier that binds across all Soul domains
+     * @notice Computes a Zaseon binding nullifier
+     * @dev Unified nullifier that binds across all Zaseon domains
      * @param sourceNullifier Original nullifier
      * @param domainTag Domain-specific tag
-     * @return soulBinding The Soul-bound nullifier
+     * @return zaseonBinding The Zaseon-bound nullifier
      */
-    function computeSoulBinding(
+    function computeZaseonBinding(
         bytes32 sourceNullifier,
         bytes32 domainTag
-    ) internal pure returns (bytes32 soulBinding) {
+    ) internal pure returns (bytes32 zaseonBinding) {
         return
             keccak256(
-                abi.encodePacked("Soul_BINDING", sourceNullifier, domainTag)
+                abi.encodePacked("Zaseon_BINDING", sourceNullifier, domainTag)
             );
     }
 

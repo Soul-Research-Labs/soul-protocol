@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title IDataAvailabilityOracle
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Interface for SVID-inspired Data Availability Oracle
  * @dev Enables off-chain storage of encrypted payloads with on-chain DA commitments
  *      and a staked attestor/challenge system for availability guarantees.

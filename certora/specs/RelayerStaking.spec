@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - RelayerStaking
+ * ZASEON - RelayerStaking
  *
  * Verifies safety invariants for relayer staking including
  * token conservation, unbonding period enforcement, slashing bounds,

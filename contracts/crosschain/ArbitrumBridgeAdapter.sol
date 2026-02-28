@@ -7,17 +7,17 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title ArbitrumBridgeAdapter
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Bridge adapter for Arbitrum One and Nova integration
  * @dev Enables cross-chain interoperability with Arbitrum L2 rollups
  *
  * ARBITRUM INTEGRATION:
  * ┌─────────────────────────────────────────────────────────────────────────┐
- * │                    Soul <-> Arbitrum Bridge                              │
+ * │                    Zaseon <-> Arbitrum Bridge                              │
  * ├─────────────────────────────────────────────────────────────────────────┤
  * │                                                                         │
  * │  ┌───────────────────┐           ┌───────────────────┐                 │
- * │  │   Soul Protocol    │           │   Arbitrum        │                 │
+ * │  │   ZASEON    │           │   Arbitrum        │                 │
  * │  │  (L1 Ethereum)    │           │   (L2 Rollup)     │                 │
  * │  │  ┌─────────────┐  │           │  ┌─────────────┐  │                 │
  * │  │  │ Delayed     │  │           │  │ ArbOS       │  │                 │
@@ -925,7 +925,7 @@ function unpause() external onlyRole(GUARDIAN_ROLE) {
 
 /**
  * @title IInbox
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice \1 \1nbox interface
  */
 interface IInbox {
@@ -955,7 +955,7 @@ function createRetryableTicket(
 
 /**
  * @title IOutbox
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice \1 \1utbox interface
  */
 interface IOutbox {

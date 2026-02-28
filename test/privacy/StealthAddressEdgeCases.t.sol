@@ -52,7 +52,7 @@ contract StealthAddressEdgeCasesTest is Test {
     bytes32 constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
     bytes32 constant ANNOUNCER_ROLE =
         0x28bf751bc1d0e1ce1e07469dfe6d05c5c0e65f1e92e0f41bfd3cc6c120c1ec3c;
-    bytes32 constant STEALTH_DOMAIN = keccak256("Soul_STEALTH_ADDRESS_V1");
+    bytes32 constant STEALTH_DOMAIN = keccak256("Zaseon_STEALTH_ADDRESS_V1");
 
     bytes internal secp256k1Key33;
 

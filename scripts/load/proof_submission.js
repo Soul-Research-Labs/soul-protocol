@@ -1,7 +1,7 @@
 /**
- * Soul Protocol Load Testing - Proof Submission
+ * ZASEON Load Testing - Proof Submission
  * K6 load test for high-concurrency proof submissions
- * Author: Soul Protocol Team
+ * Author: ZASEON Team
  * Date: January 2026
  */
 
@@ -182,7 +182,7 @@ export default function () {
  * Setup function - runs once before test
  */
 export function setup() {
-  console.log("Starting Soul Proof Submission Load Test");
+  console.log("Starting Zaseon Proof Submission Load Test");
   console.log(`Target: ${BASE_URL}`);
   console.log(`Contract: ${CONTRACT_ADDRESS}`);
 
@@ -231,7 +231,7 @@ export function handleSummary(data) {
 function textSummary(data, options) {
   const metrics = data.metrics;
 
-  let summary = "\n=== Soul Proof Submission Load Test Summary ===\n\n";
+  let summary = "\n=== Zaseon Proof Submission Load Test Summary ===\n\n";
 
   summary += `Total Proof Submissions: ${metrics.proof_submissions?.values?.count || 0}\n`;
   summary += `Successful Proofs: ${metrics.successful_proofs?.values?.count || 0}\n`;

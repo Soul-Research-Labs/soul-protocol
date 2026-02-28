@@ -5,7 +5,7 @@ import {IDynamicRoutingOrchestrator} from "../interfaces/IDynamicRoutingOrchestr
 
 /**
  * @title RouteOptimizer
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Pure math library for multi-factor route scoring and optimization
  * @dev Used by DynamicRoutingOrchestrator and CapacityAwareRouter to calculate
  *      composite route scores from cost, speed, reliability, and security metrics.

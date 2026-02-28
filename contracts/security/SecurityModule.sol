@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title SecurityModule
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Comprehensive security module providing zero-day attack mitigations
  * @dev Inherit this contract to add rate limiting, circuit breakers, flash loan guards,
  *      and withdrawal limits to any contract
@@ -20,11 +20,11 @@ pragma solidity ^0.8.24;
  * - Flash Loan Guard: Prevents same-block deposit/withdrawal attacks
  * - Withdrawal Limits: Caps single and daily withdrawal amounts
  *
- * @custom:security-contact security@soul.network
+ * @custom:security-contact security@zaseon.network
  */
 abstract /**
  * @title SecurityModule
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice Security Module contract
  */
 contract SecurityModule {

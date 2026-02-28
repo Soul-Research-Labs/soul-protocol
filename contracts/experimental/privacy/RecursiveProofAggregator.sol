@@ -10,7 +10,7 @@ import {ExperimentalFeatureRegistry} from "../../security/ExperimentalFeatureReg
 
 /**
  * @title RecursiveProofAggregator
- * @author Soul Protocol
+ * @author ZASEON
  * @notice IVC-based Recursive Proof Aggregation for Cross-Chain Privacy
  * @dev Implements Nova/SuperNova-style folding for proof compression
  * @custom:experimental This contract is research-tier and NOT production-ready. See contracts/experimental/README.md for promotion criteria.
@@ -37,7 +37,7 @@ import {ExperimentalFeatureRegistry} from "../../security/ExperimentalFeatureReg
  * - SUPERNOVA: Multi-folding for different circuits
  * - HALO2: Recursive proofs without pairings
  *
- * @custom:security-contact security@soulprotocol.io
+ * @custom:security-contact security@zaseonprotocol.io
  */
 contract RecursiveProofAggregator is
     AccessControlUpgradeable,

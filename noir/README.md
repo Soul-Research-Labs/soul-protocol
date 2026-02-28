@@ -1,6 +1,6 @@
-# Noir Circuits for Soul Protocol
+# Noir Circuits for ZASEON
 
-This directory contains all Soul ZK circuits implemented in Noir.
+This directory contains all Zaseon ZK circuits implemented in Noir.
 
 ## Poseidon Migration (Feb 2026)
 
@@ -318,5 +318,5 @@ MIT License - see [LICENSE](../LICENSE) for details.
 
 - [Noir Documentation](https://noir-lang.org/docs)
 - [Noir GitHub](https://github.com/noir-lang/noir)
-- [Soul Documentation](../docs/)
+- [Zaseon Documentation](../docs/)
 - [Circuit Documentation](../circuits/README.md)

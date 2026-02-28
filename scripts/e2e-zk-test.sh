@@ -1,5 +1,5 @@
 #!/bin/bash
-# Soul Protocol - End-to-End ZK Proof Verification
+# ZASEON - End-to-End ZK Proof Verification
 #
 # This script generates a real ZK proof using Noir/Barretenberg and verifies it
 # on-chain against the generated Solidity verifier.
@@ -24,7 +24,7 @@ CONTRACTS_DIR="$PROJECT_ROOT/contracts"
 CRS_PATH="${CRS_PATH:-$HOME/.bb/crs}"
 
 echo "=================================================="
-echo "Soul Protocol - E2E ZK Proof Verification"
+echo "ZASEON - E2E ZK Proof Verification"
 echo "=================================================="
 
 # ============================================

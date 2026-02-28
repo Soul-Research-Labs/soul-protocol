@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Soul Protocol — Modular Coverage Runner
+# ZASEON — Modular Coverage Runner
 # Runs forge coverage per-module to avoid stack-too-deep on assembly-heavy contracts
 # Usage: ./scripts/coverage_modular.sh [--report summary|lcov] [--module MODULE]
 set -euo pipefail

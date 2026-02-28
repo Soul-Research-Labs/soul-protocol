@@ -8,8 +8,8 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
  * @title FlashLoanGuard
- * @author Soul Protocol
- * @notice Protection against flash loan attacks on Soul protocol
+ * @author ZASEON
+ * @notice Protection against flash loan attacks on Zaseon protocol
  * @dev Implements multiple defense layers against flash loan exploitation
  *
  * GAS OPTIMIZATIONS APPLIED:

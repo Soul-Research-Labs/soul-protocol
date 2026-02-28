@@ -32,8 +32,8 @@
     ]
   },
   {
-    "filename": "contracts/privacy/SoulAtomicSwapV2.sol",
-    "contract": "SoulAtomicSwapV2",
+    "filename": "contracts/privacy/ZaseonAtomicSwapV2.sol",
+    "contract": "ZaseonAtomicSwapV2",
     "solc_remappings": [
       "@openzeppelin/=node_modules/@openzeppelin/",
       "forge-std/=lib/forge-std/src/"
@@ -64,8 +64,8 @@
     ]
   },
   {
-    "filename": "contracts/core/SoulProtocolHub.sol",
-    "contract": "SoulProtocolHub",
+    "filename": "contracts/core/ZaseonProtocolHub.sol",
+    "contract": "ZaseonProtocolHub",
     "solc_remappings": [
       "@openzeppelin/=node_modules/@openzeppelin/",
       "forge-std/=lib/forge-std/src/"
@@ -136,32 +136,32 @@
     ]
   },
   {
-    "filename": "contracts/governance/SoulGovernor.sol",
-    "contract": "SoulGovernor",
+    "filename": "contracts/governance/ZaseonGovernor.sol",
+    "contract": "ZaseonGovernor",
     "solc_remappings": [
       "@openzeppelin/=node_modules/@openzeppelin/",
       "forge-std/=lib/forge-std/src/"
     ]
   },
   {
-    "filename": "contracts/governance/SoulGovernance.sol",
-    "contract": "SoulGovernance",
+    "filename": "contracts/governance/ZaseonGovernance.sol",
+    "contract": "ZaseonGovernance",
     "solc_remappings": [
       "@openzeppelin/=node_modules/@openzeppelin/",
       "forge-std/=lib/forge-std/src/"
     ]
   },
   {
-    "filename": "contracts/governance/SoulToken.sol",
-    "contract": "SoulToken",
+    "filename": "contracts/governance/ZaseonToken.sol",
+    "contract": "ZaseonToken",
     "solc_remappings": [
       "@openzeppelin/=node_modules/@openzeppelin/",
       "forge-std/=lib/forge-std/src/"
     ]
   },
   {
-    "filename": "contracts/governance/SoulUpgradeTimelock.sol",
-    "contract": "SoulUpgradeTimelock",
+    "filename": "contracts/governance/ZaseonUpgradeTimelock.sol",
+    "contract": "ZaseonUpgradeTimelock",
     "solc_remappings": [
       "@openzeppelin/=node_modules/@openzeppelin/",
       "forge-std/=lib/forge-std/src/"
@@ -208,8 +208,8 @@
     ]
   },
   {
-    "filename": "contracts/compliance/SoulComplianceV2.sol",
-    "contract": "SoulComplianceV2",
+    "filename": "contracts/compliance/ZaseonComplianceV2.sol",
+    "contract": "ZaseonComplianceV2",
     "solc_remappings": [
       "@openzeppelin/=node_modules/@openzeppelin/",
       "forge-std/=lib/forge-std/src/"

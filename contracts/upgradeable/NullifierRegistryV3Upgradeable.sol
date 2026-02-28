@@ -10,17 +10,17 @@ import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {INullifierRegistryV3} from "../interfaces/INullifierRegistryV3.sol";
 
 /// @title NullifierRegistryV3Upgradeable
-/// @author Soul Protocol
+/// @author ZASEON
 /// @notice UUPS-upgradeable version of NullifierRegistryV3 with merkle tree support
 /// @dev Replaces immutable CHAIN_ID with storage variable for proxy compatibility.
 ///      Preserves all gas optimizations: assembly hashing, pre-computed role hashes,
 ///      unchecked arithmetic, packed NullifierData struct.
 ///
-/// @custom:security-contact security@soul.network
+/// @custom:security-contact security@zaseon.network
 /// @custom:oz-upgrades-from NullifierRegistryV3
 /**
  * @title NullifierRegistryV3Upgradeable
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice Nullifier Registry V3 Upgradeable contract
  */
 contract NullifierRegistryV3Upgradeable is

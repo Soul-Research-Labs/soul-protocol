@@ -194,7 +194,7 @@ Most functions use `@inheritdoc IOptimismBridgeAdapter` — those are adequately
 
 ---
 
-## 15. `contracts/crosschain/SoulCrossChainRelay.sol`
+## 15. `contracts/crosschain/ZaseonCrossChainRelay.sol`
 
 | Line | Function                            | Missing                        |
 | ---- | ----------------------------------- | ------------------------------ |
@@ -206,7 +206,7 @@ Most functions use `@inheritdoc IOptimismBridgeAdapter` — those are adequately
 
 ---
 
-## 16. `contracts/crosschain/SoulL2Messenger.sol`
+## 16. `contracts/crosschain/ZaseonL2Messenger.sol`
 
 **All public/external functions have complete NatSpec. No findings.**
 
@@ -248,7 +248,7 @@ The following files have **complete NatSpec coverage** on all public/external fu
 2. `contracts/crosschain/DirectL2Messenger.sol`
 3. `contracts/crosschain/HyperlaneAdapter.sol`
 4. `contracts/crosschain/LayerZeroAdapter.sol`
-5. `contracts/crosschain/SoulL2Messenger.sol`
+5. `contracts/crosschain/ZaseonL2Messenger.sol`
 
 ---
 
@@ -260,7 +260,7 @@ The most common gap is **view functions** that have `@notice` but lack `@param` 
 
 ### 2. `pause()` / `unpause()` often have no NatSpec
 
-Found in: ArbitrumBridgeAdapter, CrossChainCommitmentRelay, CrossChainNullifierSync, L2ProofRouter, SoulCrossChainRelay (5 files, 10 functions).
+Found in: ArbitrumBridgeAdapter, CrossChainCommitmentRelay, CrossChainNullifierSync, L2ProofRouter, ZaseonCrossChainRelay (5 files, 10 functions).
 
 ### 3. Admin setters often missing `@param`
 

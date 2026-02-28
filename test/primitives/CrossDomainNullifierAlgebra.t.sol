@@ -52,8 +52,8 @@ contract CrossDomainNullifierAlgebraTest is Test {
 
     uint64 public constant CHAIN_1 = 1;
     uint64 public constant CHAIN_2 = 42161;
-    bytes32 public constant APP_ID = keccak256("soul-protocol");
-    bytes32 public constant APP_ID_2 = keccak256("soul-swap");
+    bytes32 public constant APP_ID = keccak256("zaseon");
+    bytes32 public constant APP_ID_2 = keccak256("zaseon-swap");
 
     function setUp() public {
         cdna = new CrossDomainNullifierAlgebra();

@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title GasOptimizedVerifier
- * @author Soul Network
+ * @author Zaseon Network
  * @notice Assembly-optimized EC operations for gas-efficient proof verification
  * @dev Reduces verification gas from ~160k to <100k through:
  *      - Inline assembly for EC operations

@@ -6,9 +6,9 @@ export PATH="$(pwd)/tools/nargo:$(pwd)/tools/bb:$HOME/.nargo/bin:$HOME/.bb/bin:$
 # Setup Noir (nargo)
 if ! command -v nargo &> /dev/null; then
     echo "Installing Noir (nargo)..."
-    mkdir -p /tmp/soul_home
+    mkdir -p /tmp/zaseon_home
     # Use custom HOME to avoid permission issues
-    CUSTOM_HOME="/tmp/soul_home"
+    CUSTOM_HOME="/tmp/zaseon_home"
     export HOME=$CUSTOM_HOME
     curl -L https://raw.githubusercontent.com/noir-lang/noirup/main/install | bash
     export PATH="$CUSTOM_HOME/.nargo/bin:$PATH"
@@ -23,8 +23,8 @@ fi
 # Setup Barretenberg (bb)
 if ! command -v bb &> /dev/null; then
     echo "Installing Barretenberg (bb)..."
-    mkdir -p /tmp/soul_home
-    CUSTOM_HOME="/tmp/soul_home"
+    mkdir -p /tmp/zaseon_home
+    CUSTOM_HOME="/tmp/zaseon_home"
     export HOME=$CUSTOM_HOME
     curl -L https://raw.githubusercontent.com/AztecProtocol/aztec-packages/master/barretenberg/cpp/installation/install | bash
     export PATH="$CUSTOM_HOME/.bb/bin:$PATH"

@@ -1,4 +1,4 @@
-# Soul Protocol - Coverage Tracking
+# ZASEON - Coverage Tracking
 
 > **Last Updated:** July 2026  
 > **Coverage Tools:** Forge (modular + stub) · Hardhat 3 (compile + test) · SDK (vitest)
@@ -79,8 +79,8 @@ enough to avoid stack-too-deep errors. CI runs these in parallel via matrix stra
 | Module           | Test Status                                                       | Status        |
 | ---------------- | ----------------------------------------------------------------- | ------------- |
 | `NoirProver`     | ✅ (`sdk/test/NoirProver.test.ts`, `NoirProver.advanced.test.ts`) | 🟢 Tested     |
-| `SoulClient`     | ✅ (`sdk/test/SoulClient.test.ts`, `SoulProtocolClient.test.ts`)  | 🟢 Tested     |
-| `SoulPrivacySDK` | — (deprecated, use `SoulProtocolClient`)                          | ⚪ Deprecated |
+| `ZaseonClient`     | ✅ (`sdk/test/ZaseonClient.test.ts`, `ZaseonProtocolClient.test.ts`)  | 🟢 Tested     |
+| `ZaseonPrivacySDK` | — (deprecated, use `ZaseonProtocolClient`)                          | ⚪ Deprecated |
 
 ---
 
@@ -161,8 +161,8 @@ npm run echidna
 ### 6. K Framework (Algebraic Specs)
 
 ```bash
-kompile specs/kframework/soul-bridge.k --backend haskell
-krun specs/kframework/soul-bridge.k
+kompile specs/kframework/zaseon-bridge.k --backend haskell
+krun specs/kframework/zaseon-bridge.k
 ```
 
 **Specs:** 5 specifications covering bridge state machines and proof verification algebra.
@@ -170,7 +170,7 @@ krun specs/kframework/soul-bridge.k
 ### 7. TLA+ Model Checking
 
 ```bash
-cd specs/tlaplus && java -jar tla2tools.jar MC_SoulBridge.tla
+cd specs/tlaplus && java -jar tla2tools.jar MC_ZaseonBridge.tla
 ```
 
 **Properties:** 4 safety properties — TVL conservation, double-spend prevention, bridge liveness, state consistency.

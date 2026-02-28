@@ -1,5 +1,5 @@
 /**
- * @fileoverview Base (OP Stack) bridge utilities for Soul SDK
+ * @fileoverview Base (OP Stack) bridge utilities for Zaseon SDK
  * @module bridges/base
  */
 

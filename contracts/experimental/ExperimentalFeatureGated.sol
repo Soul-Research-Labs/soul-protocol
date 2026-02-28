@@ -5,7 +5,7 @@ import {ExperimentalFeatureRegistry} from "../security/ExperimentalFeatureRegist
 
 /**
  * @title ExperimentalFeatureGated
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Base mixin that gates experimental contract functions behind ExperimentalFeatureRegistry
  * @dev Inheriting contracts must set the registry and featureId. The `onlyIfFeatureEnabled`
  *      modifier checks the registry before allowing execution.
@@ -20,7 +20,7 @@ import {ExperimentalFeatureRegistry} from "../security/ExperimentalFeatureRegist
  */
 abstract /**
  * @title ExperimentalFeatureGated
- * @author Soul Protocol Team
+ * @author ZASEON Team
  * @notice Experimental Feature Gated contract
  */
 contract ExperimentalFeatureGated {

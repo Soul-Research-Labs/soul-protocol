@@ -7,11 +7,11 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title ZKFraudProof
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Zero-Knowledge Fraud Proofs for optimistic rollup security
  * @dev Implements ZK-based fraud proving for faster finality and reduced gas costs
  *
- * @custom:security-contact security@soulprotocol.io
+ * @custom:security-contact security@zaseonprotocol.io
  */
 contract ZKFraudProof is AccessControl, ReentrancyGuard, Pausable {
     // ============ Roles ============

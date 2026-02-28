@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 
 /**
- * Soul v2 Multi-Chain Deployment Configuration
+ * Zaseon v2 Multi-Chain Deployment Configuration
  * 
  * Chain-specific configurations for L2 deployments:
  * - Arbitrum One / Arbitrum Sepolia

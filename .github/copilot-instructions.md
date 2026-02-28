@@ -1,4 +1,4 @@
-# Soul Project Context
+# Zaseon Project Context
 
 Cross-chain ZK privacy middleware for confidential state transfer across L2 networks.
 
@@ -14,7 +14,7 @@ Cross-chain ZK privacy middleware for confidential state transfer across L2 netw
 
 ```
 contracts/           # Solidity source
-  core/              # SoulProtocolHub, Orchestrator
+  core/              # ZaseonProtocolHub, Orchestrator
   crosschain/        # Bridge adapters, HyperlaneAdapter, DirectL2Messenger
   bridge/            # MultiBridgeRouter, CrossChainProofHubV3
   privacy/           # StealthAddressRegistry, ShieldedPool, BatchAccumulator
@@ -23,12 +23,12 @@ contracts/           # Solidity source
   verifiers/         # Groth16, UltraHonk, Noir adapters + generated verifiers
   relayer/           # DecentralizedRelayerRegistry, RelayerHealthMonitor
   compliance/        # SelectiveDisclosure, ComplianceReporting
-  governance/        # SoulGovernance, Timelock
+  governance/        # ZaseonGovernance, Timelock
   upgradeable/       # Upgradeable variants (UUPS proxies)
   experimental/      # Experimental features (RecursiveProofAggregator, etc.)
 noir/                # Noir ZK circuits (balance_proof, shielded_pool, etc.)
 test/                # Foundry tests (5600+ passing)
-sdk/                 # TypeScript SDK (SoulSDK, StealthAddressClient, etc.)
+sdk/                 # TypeScript SDK (ZaseonSDK, StealthAddressClient, etc.)
 scripts/deploy/      # Foundry deploy scripts
 specs/               # K Framework, TLA+ formal specs
 certora/             # Certora CVL specs
@@ -38,7 +38,7 @@ examples/            # SDK quickstart examples
 
 ## Key Contracts
 
-- `SoulProtocolHub` - Central coordination hub with wireAll() for 17 components
+- `ZaseonProtocolHub` - Central coordination hub with wireAll() for 17 components
 - `CrossChainProofHubV3` - Proof aggregation with optimistic verification
 - `MultiBridgeRouter` - Multi-bridge routing with failover via IBridgeAdapter
 - `ZKBoundStateLocks` - Cross-chain state locks with ZK unlock

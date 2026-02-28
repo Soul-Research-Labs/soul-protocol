@@ -12,7 +12,7 @@ import {PoseidonYul} from "../libraries/PoseidonYul.sol";
 
 /**
  * @title UniversalShieldedPool
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Multi-asset shielded pool with cross-chain ZK deposits and withdrawals
  * @dev Implements the canonical deposit→commitment, withdraw→nullifier+proof pattern
  *      that works across ALL blockchain ecosystems via the Universal Adapter Layer.
@@ -46,7 +46,7 @@ import {PoseidonYul} from "../libraries/PoseidonYul.sol";
  * - Nullifier = H(secret, nullifier_preimage) prevents double-spend
  * - Cross-chain: commitment trees are synced; nullifier sets are unified via CDNA
  *
- * @custom:security-contact security@soul.network
+ * @custom:security-contact security@zaseon.network
  */
 contract UniversalShieldedPool is
     AccessControl,

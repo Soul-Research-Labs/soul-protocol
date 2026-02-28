@@ -9,7 +9,7 @@
     "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
-      "@soul/sdk": ["../../src/index.ts"]
+      "@zaseon/sdk": ["../../src/index.ts"]
     }
   },
   "include": ["src", "../../src"],

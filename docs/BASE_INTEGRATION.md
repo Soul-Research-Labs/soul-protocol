@@ -76,7 +76,7 @@ import {
   BASE_BRIDGE_ABI,
   computeMessageId,
   isWithdrawalReady,
-} from "@soul/sdk/bridges/base";
+} from "@zaseon/sdk/bridges/base";
 
 const msgId = computeMessageId(origin, sender, nonce, target, message);
 const ready = isWithdrawalReady(provenAt, challengePeriod);

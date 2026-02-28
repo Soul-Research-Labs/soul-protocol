@@ -1,7 +1,7 @@
 [package]
 name = "ring_signature"
 type = "bin"
-authors = ["Soul Protocol"]
+authors = ["ZASEON"]
 compiler_version = ">=0.30.0"
 description = "CLSAG-style ring signature circuit for sender anonymity"
 

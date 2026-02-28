@@ -7,7 +7,7 @@ import "../libraries/VerifierGasUtils.sol";
 
 /**
  * @title VerifierRegistryV2
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Centralized registry for all Noir-generated verifiers with versioning and hot-swapping
  * @dev Supports CircuitType enum routing, version history, and emergency rollback
  *

@@ -5,13 +5,13 @@ import {IUniversalChainAdapter} from "../interfaces/IUniversalChainAdapter.sol";
 
 /**
  * @title UniversalChainRegistry
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Library for universal chain identification across all blockchain ecosystems
  * @dev Provides deterministic chain IDs that work across EVM, Solana, StarkNet, Move, and privacy chains
  *
  * DESIGN:
- * EVM chains use keccak256("SOUL_CHAIN" || chainId) for deterministic universal IDs.
- * Non-EVM chains use keccak256("SOUL_CHAIN" || chainName) since they don't share EVM's chainId scheme.
+ * EVM chains use keccak256("ZASEON_CHAIN" || chainId) for deterministic universal IDs.
+ * Non-EVM chains use keccak256("ZASEON_CHAIN" || chainName) since they don't share EVM's chainId scheme.
  * This ensures collision-free identification across all ecosystems.
  *
  * GAS OPTIMIZATIONS:
@@ -23,7 +23,7 @@ library UniversalChainRegistry {
                              EVM L1 CHAINS
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev sha256("SOUL_CHAIN_ETHEREUM_1")
+    /// @dev sha256("ZASEON_CHAIN_ETHEREUM_1")
     bytes32 internal constant ETHEREUM_MAINNET =
         0x6c42dc772e9847aeb2f8cd5abe126847b466ee9eba8e79f171db96881cbc077e;
 
@@ -31,31 +31,31 @@ library UniversalChainRegistry {
                              EVM L2 CHAINS
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev sha256("SOUL_CHAIN_ARBITRUM_42161")
+    /// @dev sha256("ZASEON_CHAIN_ARBITRUM_42161")
     bytes32 internal constant ARBITRUM_ONE =
         0x8b4761d1f1507ea95c40a012681d51bb6df647a419e12d0857536cafc194346d;
 
-    /// @dev sha256("SOUL_CHAIN_OPTIMISM_10")
+    /// @dev sha256("ZASEON_CHAIN_OPTIMISM_10")
     bytes32 internal constant OPTIMISM =
         0x786bb3dfa05a768db1292a1e0fd3d48a4fd1674c0de1542ccdcc3e4b1c5bf3c8;
 
-    /// @dev sha256("SOUL_CHAIN_BASE_8453")
+    /// @dev sha256("ZASEON_CHAIN_BASE_8453")
     bytes32 internal constant BASE =
         0x03300c3d2bd1faf9434500755c973c9849040b8c177e4968baadea1f1efefc48;
 
-    /// @dev sha256("SOUL_CHAIN_ZKSYNC_324")
+    /// @dev sha256("ZASEON_CHAIN_ZKSYNC_324")
     bytes32 internal constant ZKSYNC_ERA =
         0x852342e5961eb3d1b0316caf60206a0cd35e101d5d8b82b4c0dd9e88cca00f12;
 
-    /// @dev sha256("SOUL_CHAIN_SCROLL_534352")
+    /// @dev sha256("ZASEON_CHAIN_SCROLL_534352")
     bytes32 internal constant SCROLL =
         0xe549b543a8278de9f949001ee2977b24a05128e0086eb9b725fa3d2e8d7e60ba;
 
-    /// @dev sha256("SOUL_CHAIN_LINEA_59144")
+    /// @dev sha256("ZASEON_CHAIN_LINEA_59144")
     bytes32 internal constant LINEA =
         0x5b96aeb7d662f01e4b0ba35b75b6e7196746c6d71a03cb9a38c6cd2dcd356d7a;
 
-    /// @dev sha256("SOUL_CHAIN_POLYGON_ZKEVM_1101")
+    /// @dev sha256("ZASEON_CHAIN_POLYGON_ZKEVM_1101")
     bytes32 internal constant POLYGON_ZKEVM =
         0xd08e36ff4b1dbc1d9b38b883a5f915d317184798e7fec4d8efcba32b536b7cb1;
 
@@ -63,35 +63,35 @@ library UniversalChainRegistry {
                          NON-EVM PUBLIC L1 CHAINS
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev sha256("SOUL_CHAIN_SOLANA")
+    /// @dev sha256("ZASEON_CHAIN_SOLANA")
     bytes32 internal constant SOLANA =
         0x15b6a644f9c6a79c7b5e0583dd75f9576b5ed076aa007b4b6a45d7e23b267ab8;
 
-    /// @dev sha256("SOUL_CHAIN_APTOS")
+    /// @dev sha256("ZASEON_CHAIN_APTOS")
     bytes32 internal constant APTOS =
         0x095f5672ea7907c1418a10c6f10a11633fc6dd9bf52c84222fcd73738e354dcb;
 
-    /// @dev sha256("SOUL_CHAIN_SUI")
+    /// @dev sha256("ZASEON_CHAIN_SUI")
     bytes32 internal constant SUI =
         0xa10deca24ecbda9bfbe1ac451b97ce8fa16f65ac27179c42d0f76b334d99a292;
 
-    /// @dev sha256("SOUL_CHAIN_STARKNET")
+    /// @dev sha256("ZASEON_CHAIN_STARKNET")
     bytes32 internal constant STARKNET =
         0x60b3030e41a9b25a876934220e815f780f4e3df0d9b234b242d8bed8aeb4154c;
 
-    /// @dev sha256("SOUL_CHAIN_NEAR")
+    /// @dev sha256("ZASEON_CHAIN_NEAR")
     bytes32 internal constant NEAR =
         0xab820431fb4457f6ee2c77afe9eeb3ede53925f3a71de42855a48f80dccaa008;
 
-    /// @dev sha256("SOUL_CHAIN_TON")
+    /// @dev sha256("ZASEON_CHAIN_TON")
     bytes32 internal constant TON =
         0xe7e69f100af79a1243f3b7b7194ace53bc540400b59e203401ee5f7adb9861e8;
 
-    /// @dev sha256("SOUL_CHAIN_COSMOS")
+    /// @dev sha256("ZASEON_CHAIN_COSMOS")
     bytes32 internal constant COSMOS =
         0xa7bf84d70fbd7923141800f61e72f975bece1f588bb844768dab76af79a0160e;
 
-    /// @dev sha256("SOUL_CHAIN_POLKADOT")
+    /// @dev sha256("ZASEON_CHAIN_POLKADOT")
     bytes32 internal constant POLKADOT =
         0xfdb68cbc0ca03afd7e6dce68a91f8e5cf45d0b82ee85d0ef02af996b2c6a87ec;
 
@@ -99,19 +99,19 @@ library UniversalChainRegistry {
                        PRIVACY-NATIVE L1 CHAINS
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev sha256("SOUL_CHAIN_AZTEC")
+    /// @dev sha256("ZASEON_CHAIN_AZTEC")
     bytes32 internal constant AZTEC =
         0x980be0b60bac1f4968d9b897128012a7c3df208c3c90bbe7d6c86159840892aa;
 
-    /// @dev sha256("SOUL_CHAIN_MIDNIGHT")
+    /// @dev sha256("ZASEON_CHAIN_MIDNIGHT")
     bytes32 internal constant MIDNIGHT =
         0x6d224c583b639af55866e0524ceda8722d3b7e09acad3e62c27af0926030979f;
 
-    /// @dev sha256("SOUL_CHAIN_ZCASH")
+    /// @dev sha256("ZASEON_CHAIN_ZCASH")
     bytes32 internal constant ZCASH =
         0x6dc75ae368ce90054506baacb6b1881959a69b31ee986222d34fac391076fb3e;
 
-    /// @dev sha256("SOUL_CHAIN_ALEO")
+    /// @dev sha256("ZASEON_CHAIN_ALEO")
     bytes32 internal constant ALEO =
         0x82fc4148c040c873f125299bcb93857636f0d25a0b6cda4dce5b742bb1e8387c;
 
@@ -119,15 +119,15 @@ library UniversalChainRegistry {
                         BITCOIN & UTXO CHAINS
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev sha256("SOUL_CHAIN_BITCOIN")
+    /// @dev sha256("ZASEON_CHAIN_BITCOIN")
     bytes32 internal constant BITCOIN =
         0xfec4871c16fa64958a10c2b46979b1c429a0024b760758147720aa2ab533c168;
 
-    /// @dev sha256("SOUL_CHAIN_XRPL")
+    /// @dev sha256("ZASEON_CHAIN_XRPL")
     bytes32 internal constant XRPL =
         0xd76b10eff2886f9f616f998fe9ced5e9835e76494550bea955a51a1a15a8a2be;
 
-    /// @dev sha256("SOUL_CHAIN_CARDANO")
+    /// @dev sha256("ZASEON_CHAIN_CARDANO")
     bytes32 internal constant CARDANO =
         0x03a494a34bfe54aa1a74dff927003d6ce6c7d2a8f2f3da0742d8e22335874423;
 
@@ -188,8 +188,8 @@ library UniversalChainRegistry {
     }
 
     /// @notice Compute universal chain ID for an EVM chain at runtime
-    /// @dev Produces sha256("SOUL_CHAIN_" || chainId). Note: pre-computed constants
-    ///      use descriptive names (e.g. ETHEREUM_MAINNET = sha256("SOUL_CHAIN_ETHEREUM_1"))
+    /// @dev Produces sha256("ZASEON_CHAIN_" || chainId). Note: pre-computed constants
+    ///      use descriptive names (e.g. ETHEREUM_MAINNET = sha256("ZASEON_CHAIN_ETHEREUM_1"))
     ///      and are NOT equal to this output. Use constants for known-chain lookups;
     ///      use this function for dynamic/unknown chain identification.
     /// @param evmChainId The EVM chain ID (e.g. 1, 42161)
@@ -197,11 +197,11 @@ library UniversalChainRegistry {
     function computeEVMChainId(
         uint256 evmChainId
     ) internal pure returns (bytes32 universalId) {
-        return sha256(abi.encodePacked("SOUL_CHAIN_", _uint2str(evmChainId)));
+        return sha256(abi.encodePacked("ZASEON_CHAIN_", _uint2str(evmChainId)));
     }
 
     /// @notice Compute universal chain ID for a non-EVM chain at runtime
-    /// @dev Produces sha256("SOUL_CHAIN_" || chainName). For known non-EVM chains,
+    /// @dev Produces sha256("ZASEON_CHAIN_" || chainName). For known non-EVM chains,
     ///      the output matches the named constant when chainName matches exactly
     ///      (e.g. computeNonEVMChainId("SOLANA") == SOLANA constant).
     /// @param chainName The canonical chain name (e.g. "SOLANA", "APTOS")
@@ -209,7 +209,7 @@ library UniversalChainRegistry {
     function computeNonEVMChainId(
         string memory chainName
     ) internal pure returns (bytes32 universalId) {
-        return sha256(abi.encodePacked("SOUL_CHAIN_", chainName));
+        return sha256(abi.encodePacked("ZASEON_CHAIN_", chainName));
     }
 
     /// @dev Convert uint256 to string for hash computation

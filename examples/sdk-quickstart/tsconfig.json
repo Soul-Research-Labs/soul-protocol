@@ -10,7 +10,7 @@
     "rootDir": ".",
     "baseUrl": ".",
     "paths": {
-      "@soul/sdk/*": ["../../sdk/src/*"]
+      "@zaseon/sdk/*": ["../../sdk/src/*"]
     }
   },
   "include": ["*.ts"],

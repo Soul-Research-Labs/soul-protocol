@@ -54,7 +54,7 @@ contract StealthAddressRegistryTest is Test {
     bytes32 constant DEFAULT_ADMIN_ROLE = 0x00;
 
     // Stealth domain (mirrored from contract)
-    bytes32 constant STEALTH_DOMAIN = keccak256("Soul_STEALTH_ADDRESS_V1");
+    bytes32 constant STEALTH_DOMAIN = keccak256("Zaseon_STEALTH_ADDRESS_V1");
 
     // Helpers: valid key fixtures
     bytes internal secp256k1Key33; // compressed secp256k1 (33 bytes)

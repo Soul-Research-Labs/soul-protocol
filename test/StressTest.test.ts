@@ -1,6 +1,6 @@
 /**
- * @fileoverview Stress Tests for Soul Protocol
- * @description Comprehensive stress testing suite for battle-testing the Soul codebase
+ * @fileoverview Stress Tests for ZASEON
+ * @description Comprehensive stress testing suite for battle-testing the Zaseon codebase
  * @version 1.0.0
  */
 

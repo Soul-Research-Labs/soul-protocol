@@ -1,5 +1,5 @@
 /**
- * @fileoverview Ethereum L1 bridge utilities for Soul SDK
+ * @fileoverview Ethereum L1 bridge utilities for Zaseon SDK
  * @module bridges/ethereum
  */
 

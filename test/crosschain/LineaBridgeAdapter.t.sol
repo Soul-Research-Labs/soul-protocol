@@ -128,7 +128,7 @@ contract LineaBridgeAdapterTest is Test {
 
     function test_isConfigured_true() public {
         vm.prank(admin);
-        adapter.setSoulHubL2(makeAddr("hub"));
+        adapter.setZaseonHubL2(makeAddr("hub"));
         assertTrue(adapter.isConfigured());
     }
 
@@ -183,16 +183,16 @@ contract LineaBridgeAdapterTest is Test {
         );
     }
 
-    function test_setSoulHubL2() public {
+    function test_setZaseonHubL2() public {
         vm.prank(admin);
-        adapter.setSoulHubL2(makeAddr("hub"));
-        assertEq(adapter.soulHubL2(), makeAddr("hub"));
+        adapter.setZaseonHubL2(makeAddr("hub"));
+        assertEq(adapter.zaseonHubL2(), makeAddr("hub"));
     }
 
-    function test_setSoulHubL2_revert_zero() public {
+    function test_setZaseonHubL2_revert_zero() public {
         vm.prank(admin);
         vm.expectRevert("Invalid address");
-        adapter.setSoulHubL2(address(0));
+        adapter.setZaseonHubL2(address(0));
     }
 
     function test_setProofRegistry() public {

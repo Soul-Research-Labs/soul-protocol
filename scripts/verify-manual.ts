@@ -183,7 +183,7 @@ async function main() {
     
     console.log("\n📋 Instructions:");
     console.log("1. First, flatten your contract:");
-    console.log("   npx hardhat flatten contracts/Soul/PC3.sol > flattened/PC3.sol");
+    console.log("   npx hardhat flatten contracts/Zaseon/PC3.sol > flattened/PC3.sol");
     console.log("2. Then run this script");
     
     process.exit(0);

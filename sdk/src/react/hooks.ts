@@ -1,16 +1,16 @@
 /**
- * @module @soul/sdk/react
- * @description React hooks for Soul Protocol integration.
+ * @module @zaseon/sdk/react
+ * @description React hooks for ZASEON integration.
  * @dev These hooks provide ergonomic React bindings around the core SDK client.
  *
  * Usage:
  * ```tsx
- * import { useSoulPrivacy, useSoulBridge, useSoulProver } from '@soul/sdk/react';
+ * import { useZaseonPrivacy, useZaseonBridge, useZaseonProver } from '@zaseon/sdk/react';
  *
  * function MyComponent() {
- *   const { shield, unshield, isShielding } = useSoulPrivacy(config);
- *   const { bridge, status, isBridging } = useSoulBridge(config);
- *   const { prove, isProving } = useSoulProver(config);
+ *   const { shield, unshield, isShielding } = useZaseonPrivacy(config);
+ *   const { bridge, status, isBridging } = useZaseonBridge(config);
+ *   const { prove, isProving } = useZaseonProver(config);
  * }
  * ```
  */
@@ -33,7 +33,7 @@ try {
 } catch {
   // Stubs — will throw at hook call-site if React is truly absent.
   const missing = () => {
-    throw new Error("React is required to use Soul SDK hooks");
+    throw new Error("React is required to use Zaseon SDK hooks");
   };
   React = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -47,13 +47,13 @@ try {
   };
 }
 
-// Soul SDK imports — lazy so the module parses even if SDK isn't installed yet.
+// Zaseon SDK imports — lazy so the module parses even if SDK isn't installed yet.
 import type { Hex } from "viem";
 
 // ─── Types ──────────────────────────────────────────────────
 
-/** Configuration for Soul SDK hooks */
-export interface SoulConfig {
+/** Configuration for Zaseon SDK hooks */
+export interface ZaseonConfig {
   /** RPC URL or viem transport */
   rpcUrl: string;
   /** Chain ID */
@@ -72,7 +72,7 @@ export interface AsyncState<T = unknown> {
 }
 
 /** Privacy hook return type */
-export interface UseSoulPrivacyReturn {
+export interface UseZaseonPrivacyReturn {
   /** Shield (deposit) assets into the shielded pool */
   shield: (params: {
     asset: string;
@@ -95,7 +95,7 @@ export interface UseSoulPrivacyReturn {
 }
 
 /** Bridge hook return type */
-export interface UseSoulBridgeReturn {
+export interface UseZaseonBridgeReturn {
   /** Bridge assets cross-chain */
   bridge: (params: {
     destChainId: number;
@@ -112,7 +112,7 @@ export interface UseSoulBridgeReturn {
 }
 
 /** Prover hook return type */
-export interface UseSoulProverReturn {
+export interface UseZaseonProverReturn {
   /** Generate a ZK proof */
   prove: (
     circuit: string,
@@ -126,16 +126,16 @@ export interface UseSoulProverReturn {
 
 // ─── Internal helpers ───────────────────────────────────────
 
-/** Lazily create a SoulProtocolClient, memoised by rpcUrl+chainId+signer */
-function useSoulClient(config: SoulConfig) {
+/** Lazily create a ZaseonProtocolClient, memoised by rpcUrl+chainId+signer */
+function useZaseonClient(config: ZaseonConfig) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const clientRef = React.useRef<any>(null);
 
   if (!clientRef.current) {
     // Dynamic import at first call — keeps the module tree-shakable.
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { createSoulClient } = require("../client/SoulProtocolClient");
-    clientRef.current = createSoulClient({
+    const { createZaseonClient } = require("../client/ZaseonProtocolClient");
+    clientRef.current = createZaseonClient({
       rpcUrl: config.rpcUrl,
       chainId: config.chainId,
       privateKey: config.signer as Hex | undefined,
@@ -147,14 +147,14 @@ function useSoulClient(config: SoulConfig) {
 // ─── Hooks ──────────────────────────────────────────────────
 
 /**
- * Hook for interacting with Soul Protocol's shielded pool.
+ * Hook for interacting with ZASEON's shielded pool.
  * Provides shield (deposit) and unshield (withdraw) operations.
  *
- * @param config - Soul SDK configuration
+ * @param config - Zaseon SDK configuration
  * @returns Privacy operation methods and loading states
  */
-export function useSoulPrivacy(config: SoulConfig): UseSoulPrivacyReturn {
-  const client = useSoulClient(config);
+export function useZaseonPrivacy(config: ZaseonConfig): UseZaseonPrivacyReturn {
+  const client = useZaseonClient(config);
   const [isShielding, setIsShielding] = React.useState(false);
   const [isUnshielding, setIsUnshielding] = React.useState(false);
   const [error, setError] = React.useState<Error | null>(null);
@@ -164,7 +164,7 @@ export function useSoulPrivacy(config: SoulConfig): UseSoulPrivacyReturn {
       setIsShielding(true);
       setError(null);
       try {
-        // Use SoulProtocolClient.createLock which wraps the shielded deposit flow
+        // Use ZaseonProtocolClient.createLock which wraps the shielded deposit flow
         const result = await client.createLock({
           stateCommitment: params.commitment as Hex,
           predicateHash: params.asset as Hex,
@@ -215,14 +215,14 @@ export function useSoulPrivacy(config: SoulConfig): UseSoulPrivacyReturn {
 }
 
 /**
- * Hook for cross-chain bridging via Soul Protocol.
+ * Hook for cross-chain bridging via ZASEON.
  * Supports multiple bridge adapters (LayerZero, Hyperlane, native L2).
  *
- * @param config - Soul SDK configuration
+ * @param config - Zaseon SDK configuration
  * @returns Bridge operation methods and loading states
  */
-export function useSoulBridge(config: SoulConfig): UseSoulBridgeReturn {
-  const client = useSoulClient(config);
+export function useZaseonBridge(config: ZaseonConfig): UseZaseonBridgeReturn {
+  const client = useZaseonClient(config);
   const [isBridging, setIsBridging] = React.useState(false);
   const [error, setError] = React.useState<Error | null>(null);
 
@@ -279,10 +279,10 @@ export function useSoulBridge(config: SoulConfig): UseSoulBridgeReturn {
  * Hook for generating ZK proofs using Noir circuits.
  * Uses the NoirProver with optional WASM backend.
  *
- * @param config - Soul SDK configuration
+ * @param config - Zaseon SDK configuration
  * @returns Prover methods and loading states
  */
-export function useSoulProver(config: SoulConfig): UseSoulProverReturn {
+export function useZaseonProver(config: ZaseonConfig): UseZaseonProverReturn {
   const [isProving, setIsProving] = React.useState(false);
   const [error, setError] = React.useState<Error | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

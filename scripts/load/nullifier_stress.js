@@ -1,7 +1,7 @@
 /**
- * Soul Protocol Load Testing - Nullifier Stress Test
+ * ZASEON Load Testing - Nullifier Stress Test
  * K6 load test for nullifier registry under extreme load
- * Author: Soul Protocol Team
+ * Author: ZASEON Team
  * Date: January 2026
  */
 
@@ -282,7 +282,7 @@ export function testCollision() {
  * Setup function
  */
 export function setup() {
-  console.log('Starting Soul Nullifier Stress Test');
+  console.log('Starting Zaseon Nullifier Stress Test');
   console.log(`Target: ${BASE_URL}`);
   console.log(`Registry: ${NULLIFIER_REGISTRY}`);
   console.log(`Pre-generated nullifiers: ${preGeneratedNullifiers.length}`);
@@ -332,7 +332,7 @@ function generateSummary(data) {
   const m = data.metrics;
   
   let s = '\n' + '='.repeat(60) + '\n';
-  s += '       Soul NULLIFIER STRESS TEST SUMMARY\n';
+  s += '       Zaseon NULLIFIER STRESS TEST SUMMARY\n';
   s += '='.repeat(60) + '\n\n';
   
   s += '📊 OPERATIONS\n';

@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title HomomorphicHiding
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Implementation of Homomorphic Hiding (HH) for privacy-preserving value operations
  * @dev Enables computations on encrypted/committed values while preserving privacy
  * @custom:graduated Promoted from experimental to production. Formally verified via Certora.

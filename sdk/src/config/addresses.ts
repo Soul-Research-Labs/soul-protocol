@@ -1,12 +1,12 @@
 /**
- * Soul Protocol - Contract Addresses
+ * ZASEON - Contract Addresses
  *
  * Deployed contract addresses per network
  */
 
 import { Hex } from "viem";
 
-export interface SoulContractAddresses {
+export interface ZaseonContractAddresses {
   // Verifiers
   verifier: Hex;
   groth16Verifier: Hex;
@@ -22,7 +22,7 @@ export interface SoulContractAddresses {
   atomicSwap: Hex;
   compliance: Hex;
 
-  // Soul v2 Primitives
+  // Zaseon v2 Primitives
   proofCarryingContainer: Hex;
   policyBoundProofs: Hex;
   easc: Hex;
@@ -54,7 +54,7 @@ export interface SoulContractAddresses {
 
   // L2 Cross-Chain Infrastructure
   privacyZoneManager?: Hex;
-  soulCrossChainRelay?: Hex;
+  zaseonCrossChainRelay?: Hex;
   optimisticBridgeVerifier?: Hex;
   bridgeRateLimiter?: Hex;
   relayWatchtower?: Hex;
@@ -62,7 +62,7 @@ export interface SoulContractAddresses {
 
   // Governance
   governor?: Hex;
-  soulToken?: Hex;
+  zaseonToken?: Hex;
   timelock?: Hex;
 
   // Intent Completion & Dynamic Routing (Tachyon-derived)
@@ -84,7 +84,7 @@ export interface SoulContractAddresses {
 /**
  * Sepolia Testnet - Deployed January 22, 2026
  */
-export const SEPOLIA_ADDRESSES: SoulContractAddresses = {
+export const SEPOLIA_ADDRESSES: ZaseonContractAddresses = {
   // Verifiers
   verifier: "0x1f830a178020d9d9b968b9f4d13e6e4cdbc9fa57",
   groth16Verifier: "0x09cf3f57c213218446aa49d89236247fbe1d08bd",
@@ -100,7 +100,7 @@ export const SEPOLIA_ADDRESSES: SoulContractAddresses = {
   atomicSwap: "0xdefb9a66dc14a6d247b282555b69da7745b0ab57",
   compliance: "0x5d41f63f35babed689a63f7e5c9e2943e1f72067",
 
-  // Soul v2 Primitives
+  // Zaseon v2 Primitives
   proofCarryingContainer: "0x52f8a660ff436c450b5190a84bc2c1a86f1032cc",
   policyBoundProofs: "0x75e86ee654eae62a93c247e4ab9facf63bc4f328",
   easc: "0x77d22cb55253fea1ccc14ffc86a22e4a5a4592c6",
@@ -117,15 +117,15 @@ export const SEPOLIA_ADDRESSES: SoulContractAddresses = {
 /**
  * Arbitrum Sepolia - Not yet deployed
  */
-export const ARBITRUM_SEPOLIA_ADDRESSES: Partial<SoulContractAddresses> = {};
+export const ARBITRUM_SEPOLIA_ADDRESSES: Partial<ZaseonContractAddresses> = {};
 
 /**
  * Base Sepolia - Deployed July 22, 2026
  * L2 cross-chain & relayer infrastructure
  */
-export const BASE_SEPOLIA_ADDRESSES: Partial<SoulContractAddresses> = {
+export const BASE_SEPOLIA_ADDRESSES: Partial<ZaseonContractAddresses> = {
   privacyZoneManager: "0xDFBEe5bB4d4943715D4f8539cbad0a18aA75b602",
-  soulCrossChainRelay: "0x65CDCdA5ba98bB0d784c3a69C826cb3B59C20251",
+  zaseonCrossChainRelay: "0x65CDCdA5ba98bB0d784c3a69C826cb3B59C20251",
   optimisticBridgeVerifier: "0xBA63a3F3C5568eC6447FBe1b852a613743419D9f",
   bridgeRateLimiter: "0x23824cDbD8Ca773c5DA0202f8f41083F81aF1135",
   relayWatchtower: "0x3E556432Ea021046ad4BE22cB94f713f98f4B76E",
@@ -136,12 +136,12 @@ export const BASE_SEPOLIA_ADDRESSES: Partial<SoulContractAddresses> = {
 /**
  * Optimism Sepolia - Not yet deployed
  */
-export const OPTIMISM_SEPOLIA_ADDRESSES: Partial<SoulContractAddresses> = {};
+export const OPTIMISM_SEPOLIA_ADDRESSES: Partial<ZaseonContractAddresses> = {};
 
 /**
- * Localhost (Hardhat/Anvil) - Soul v2 Primitives only
+ * Localhost (Hardhat/Anvil) - Zaseon v2 Primitives only
  */
-export const LOCALHOST_ADDRESSES: Partial<SoulContractAddresses> = {
+export const LOCALHOST_ADDRESSES: Partial<ZaseonContractAddresses> = {
   verifier: "0x67d269191c92Caf3cD7723F116c85e6E9bf55933",
   groth16Verifier: "0xE6E340D132b5f46d1e472DebcD681B2aBc16e57E",
   proofCarryingContainer: "0xa82fF9aFd8f496c3d6ac40E2a0F282E47488CFc9",
@@ -156,7 +156,7 @@ export const LOCALHOST_ADDRESSES: Partial<SoulContractAddresses> = {
  */
 export function getAddresses(
   chainId: number,
-): SoulContractAddresses | Partial<SoulContractAddresses> | null {
+): ZaseonContractAddresses | Partial<ZaseonContractAddresses> | null {
   switch (chainId) {
     case 11155111: // Sepolia
       return SEPOLIA_ADDRESSES;

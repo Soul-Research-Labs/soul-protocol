@@ -1,6 +1,6 @@
 /**
  * Certora Formal Verification Specification
- * Soul Protocol - CrossChainNullifierSync
+ * ZASEON - CrossChainNullifierSync
  *
  * Verifies cross-chain nullifier synchronization integrity.
  * Bugs here could allow double-spends across chains.

@@ -8,7 +8,7 @@ import {IProtocolEmergencyCoordinator} from "../interfaces/IProtocolEmergencyCoo
 
 /**
  * @title CrossChainEmergencyRelay
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Propagates emergency state across L2 deployments by encoding
  *         severity-level messages and fanning them out to all registered
  *         chains via a generic messenger interface.

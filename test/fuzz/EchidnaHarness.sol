@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title EchidnaHarness
- * @notice Echidna-compatible property testing harness for Soul Protocol
+ * @notice Echidna-compatible property testing harness for ZASEON
  * @dev Properties use `echidna_` prefix (required by Echidna's property mode).
  *      Action functions are public for Echidna to call in fuzz sequences.
  *

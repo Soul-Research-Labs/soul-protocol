@@ -1,5 +1,5 @@
 #!/bin/bash
-# Coverage script for Soul project
+# Coverage script for Zaseon project
 # Works around "stack too deep" errors by temporarily using stub verifier contracts
 
 set -e
@@ -23,7 +23,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo -e "${GREEN}=== Soul Coverage Script ===${NC}"
+echo -e "${GREEN}=== Zaseon Coverage Script ===${NC}"
 echo ""
 
 # Function to create backup and use stubs

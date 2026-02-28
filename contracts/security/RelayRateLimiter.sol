@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title RelayRateLimiter
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Rate limiting and circuit breaker for bridge operations
  * @dev Implements economic security controls including:
  *      - Per-user rate limits

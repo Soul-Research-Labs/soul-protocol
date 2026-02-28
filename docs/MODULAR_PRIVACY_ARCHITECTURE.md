@@ -1,8 +1,8 @@
-# Soul Protocol: Modular Privacy Network Architecture
+# ZASEON: Modular Privacy Network Architecture
 
 ## Celestia-Inspired Microservice Decomposition
 
-> **Strategic Insight**: Celestia proved unbundling creates ecosystems. Soul unbundles trust, execution, authority, and disclosure—then re-bundles them cryptographically.
+> **Strategic Insight**: Celestia proved unbundling creates ecosystems. Zaseon unbundles trust, execution, authority, and disclosure—then re-bundles them cryptographically.
 
 ---
 
@@ -13,8 +13,8 @@
 3. [Confidential Data Availability](#3-confidential-data-availability)
 4. [Execution Microservices](#4-execution-microservices)
 5. [Sovereign Privacy Domains](#5-sovereign-privacy-domains)
-6. [Celestia → Soul Mapping](#6-celestia--soul-mapping)
-7. [What Soul Does NOT Copy](#7-what-soul-does-not-copy)
+6. [Celestia → Zaseon Mapping](#6-celestia--zaseon-mapping)
+7. [What Zaseon Does NOT Copy](#7-what-zaseon-does-not-copy)
 
 ---
 
@@ -31,11 +31,11 @@ Blockchains are **composable services**, not monoliths:
 | Data Availability | Core |
 | Completion | External |
 
-### Soul's Reinterpretation
+### Zaseon's Reinterpretation
 
 Apply this insight to **privacy and interoperability**, not just DA:
 
-| Function | Soul Approach |
+| Function | Zaseon Approach |
 |----------|---------------|
 | Confidentiality | Core |
 | Verification | Shared (Inherited) |
@@ -47,11 +47,11 @@ Apply this insight to **privacy and interoperability**, not just DA:
 
 ## 2. Microservice Decomposition
 
-Soul explicitly decomposes into **privacy-native microservices**:
+Zaseon explicitly decomposes into **privacy-native microservices**:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────┐
-│                         SOUL MICROSERVICE ARCHITECTURE                         │
+│                         ZASEON MICROSERVICE ARCHITECTURE                         │
 ├─────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                 │
 │  ┌─────────────────────────────────────────────────────────────────────────┐   │
@@ -103,7 +103,7 @@ Each service is:
 
 ### Evolution from Celestia DA
 
-| Celestia DA | Soul CDA |
+| Celestia DA | Zaseon CDA |
 |-------------|----------|
 | Data is public | Data is **encrypted** |
 | Availability = downloadable | Availability = **recoverable + private** |
@@ -169,9 +169,9 @@ struct ConfidentialBlob {
 
 ## 4. Execution Microservices
 
-### Celestia's Assumption vs Soul's Extension
+### Celestia's Assumption vs Zaseon's Extension
 
-| Aspect | Celestia | Soul |
+| Aspect | Celestia | Zaseon |
 |--------|----------|------|
 | Execution location | Elsewhere | Pluggable microservices |
 | Execution model | Not specified | ZK/TEE/MPC backends |
@@ -271,9 +271,9 @@ interface IExecutionMicroservice {
 
 ## 5. Sovereign Privacy Domains
 
-### Celestia Sovereign Rollups → Soul SPDs
+### Celestia Sovereign Rollups → Zaseon SPDs
 
-| Celestia | Soul |
+| Celestia | Zaseon |
 |----------|------|
 | Sovereign rollups | Sovereign Privacy Domains (SPDs) |
 | Define own execution rules | Define own privacy policies |
@@ -350,11 +350,11 @@ struct PrivacyPolicy {
 
 ---
 
-## 6. Celestia → Soul Mapping
+## 6. Celestia → Zaseon Mapping
 
 ### Complete Mapping Table
 
-| Celestia Concept | Soul Equivalent | Implementation |
+| Celestia Concept | Zaseon Equivalent | Implementation |
 |------------------|-----------------|----------------|
 | Modular blockchain | Modular privacy network | 6 core services |
 | DA layer | Confidential DA | `ConfidentialDataAvailability.sol` |
@@ -407,21 +407,21 @@ struct PrivacyPolicy {
 
 ---
 
-## 7. What Soul Does NOT Copy
+## 7. What Zaseon Does NOT Copy
 
 ### Important Clarity
 
-Soul explicitly rejects:
+Zaseon explicitly rejects:
 
-| Celestia Pattern | Why Soul Rejects |
+| Celestia Pattern | Why Zaseon Rejects |
 |------------------|------------------|
-| DA-first worldview | Soul is privacy-first, not DA-first |
-| Consensus dependency | Soul uses cryptographic verification, not consensus |
-| Public data assumption | Soul assumes data is confidential by default |
-| Execution ignorance of privacy | Soul's execution always produces privacy-preserving receipts |
-| Rollup-centric framing | Soul is a privacy fabric, not a rollup platform |
+| DA-first worldview | Zaseon is privacy-first, not DA-first |
+| Consensus dependency | Zaseon uses cryptographic verification, not consensus |
+| Public data assumption | Zaseon assumes data is confidential by default |
+| Execution ignorance of privacy | Zaseon's execution always produces privacy-preserving receipts |
+| Rollup-centric framing | Zaseon is a privacy fabric, not a rollup platform |
 
-### Soul's Unique Advantages
+### Zaseon's Unique Advantages
 
 Celestia cannot:
 - Hide state
@@ -429,7 +429,7 @@ Celestia cannot:
 - Enforce policy cryptographically
 - Reason about authority
 
-Soul can do all of these, making it:
+Zaseon can do all of these, making it:
 
 > **The modular privacy fabric for blockchains**
 
@@ -458,7 +458,7 @@ SovereignPrivacyDomain
         │
         ├──▶ IExecutionMicroservice (for execution)
         │
-        ├──▶ SoulKernelProof (for verification - INHERITED)
+        ├──▶ ZaseonKernelProof (for verification - INHERITED)
         │
         └──▶ ConfidentialMessageTransport (for cross-domain)
 ```
@@ -470,12 +470,12 @@ SovereignPrivacyDomain
 ### Celestia's Contribution
 > Unbundling creates ecosystems, not just protocols.
 
-### Soul's Extension
+### Zaseon's Extension
 > Unbundle trust, execution, authority, and disclosure—then re-bundle them cryptographically.
 
 ### The Result
 
-Soul becomes:
+Zaseon becomes:
 - **Modular**: Each service independently upgradable/scalable
 - **Private**: Confidentiality by default, disclosure by policy
 - **Verifiable**: Kernel proofs bind everything together

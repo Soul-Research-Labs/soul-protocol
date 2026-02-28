@@ -90,12 +90,12 @@ contract CrossChainIntegrationTest is Test {
     }
 
     function _deployLocalContracts() internal {
-        // Deploy DirectL2Messenger (requires admin and soulHub addresses)
-        address soulHub = makeAddr("soulHub");
-        messengerArbitrum = new DirectL2Messenger(admin, soulHub);
+        // Deploy DirectL2Messenger (requires admin and zaseonHub addresses)
+        address zaseonHub = makeAddr("zaseonHub");
+        messengerArbitrum = new DirectL2Messenger(admin, zaseonHub);
 
         // Deploy L2ProofRouter
-        routerArbitrum = new L2ProofRouter(admin, soulHub);
+        routerArbitrum = new L2ProofRouter(admin, zaseonHub);
     }
 
     /*//////////////////////////////////////////////////////////////

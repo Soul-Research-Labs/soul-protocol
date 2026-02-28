@@ -3,9 +3,9 @@ pragma solidity ^0.8.24;
 
 /**
  * @title IPrivacyRouter
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Interface for the unified privacy middleware entry point
- * @dev This is the primary integration surface for dApps using Soul Protocol
+ * @dev This is the primary integration surface for dApps using ZASEON
  */
 interface IPrivacyRouter {
     /*//////////////////////////////////////////////////////////////

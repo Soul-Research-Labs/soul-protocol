@@ -1,5 +1,5 @@
 # Slither Static Analysis Report
-# Soul Protocol — Per-Contract Analysis
+# ZASEON — Per-Contract Analysis
 # Date: 2026-02-10
 # Slither version: 0.10.4 (crytic-compile 0.3.7)
 # Config: slither.config.json (excludes: naming-convention, dead-code, solc-version, timestamp, constable-states, too-many-digits)
@@ -16,18 +16,18 @@ analysis works correctly and is used here for core contracts.
 
 | Contract                        | Findings | Severity Breakdown                           |
 |---------------------------------|----------|----------------------------------------------|
-| SoulProtocolHub                 |    0     | Clean                                        |
+| ZaseonProtocolHub                 |    0     | Clean                                        |
 | L2ChainAdapter                  |    1     | 1 informational (assembly)                   |
 | DirectL2Messenger               |    5     | 1 optimization (immutable), 4 informational  |
 | CrossChainProofHubV3            |    8     | 2 medium (strict-eq), 1 optimization, 5 info |
 | ConfidentialStateContainerV3    |    4     | 1 medium (strict-eq), 3 informational        |
-| SoulAtomicSwapV2                |    7     | 1 medium (strict-eq), 1 low (reent-events), 5 info |
+| ZaseonAtomicSwapV2                |    7     | 1 medium (strict-eq), 1 low (reent-events), 5 info |
 | NullifierRegistryV3             |    7     | 6 optimization (costly-loop), 1 info         |
 | UniversalShieldedPool           |    9     | 1 high* (arbitrary-send-eth), 1 medium (zero-check), 7 info |
 | StealthAddressRegistry          |    4     | 1 high* (arbitrary-send-eth), 1 medium (strict-eq), 2 info |
 | ViewKeyRegistry                 |    2     | 2 medium (strict-eq)                         |
 | BatchAccumulator                |    2     | 1 medium (strict-eq), 1 informational        |
-| SoulCrossChainRelay             |    3     | 3 informational (low-level-calls)            |
+| ZaseonCrossChainRelay             |    3     | 3 informational (low-level-calls)            |
 | ZKBoundStateLocks               |    4     | 1 optimization (cyclomatic), 3 info          |
 |---------------------------------|----------|----------------------------------------------|
 | TOTAL                           |   56     | 0 critical, 2 high*, 8 medium, 1 low, 45 info/opt |
@@ -98,8 +98,8 @@ analysis works correctly and is used here for core contracts.
 ## LOW Findings (1)
 ================================================================================
 
-### [L-1] SoulAtomicSwapV2.executeFeeWithdrawal — reentrancy-events
-- File: contracts/bridge/SoulAtomicSwapV2.sol#518-540
+### [L-1] ZaseonAtomicSwapV2.executeFeeWithdrawal — reentrancy-events
+- File: contracts/bridge/ZaseonAtomicSwapV2.sol#518-540
 - Detail: Event emitted after external call
 - Impact: Low — state is already updated before the call. Event ordering
   is cosmetic. ReentrancyGuard is applied.
@@ -108,9 +108,9 @@ analysis works correctly and is used here for core contracts.
 ## OPTIMIZATION Findings (8)
 ================================================================================
 
-### [O-1] DirectL2Messenger.soulHub — immutable-states
+### [O-1] DirectL2Messenger.zaseonHub — immutable-states
 - File: contracts/crosschain/DirectL2Messenger.sol#300
-- Detail: `soulHub` should be declared `immutable`
+- Detail: `zaseonHub` should be declared `immutable`
 - Recommendation: Change to `immutable` to save ~2100 gas per read.
 
 ### [O-2..7] NullifierRegistryV3 — costly-loop (x6)
@@ -133,21 +133,21 @@ analysis works correctly and is used here for core contracts.
 Categories:
 - assembly (4): L2ChainAdapter, DirectL2Messenger, ConfidentialStateContainerV3,
   NullifierRegistryV3 — all justified for gas optimization / hash operations
-- low-level-calls (15): Across CrossChainProofHubV3, SoulAtomicSwapV2,
+- low-level-calls (15): Across CrossChainProofHubV3, ZaseonAtomicSwapV2,
   DirectL2Messenger, UniversalShieldedPool, StealthAddressRegistry,
-  BatchAccumulator, SoulCrossChainRelay, ZKBoundStateLocks — necessary for
+  BatchAccumulator, ZaseonCrossChainRelay, ZKBoundStateLocks — necessary for
   ETH transfers and dynamic verifier calls
 - calls-loop (2): ConfidentialStateContainerV3 (verifier in batch),
   StealthAddressRegistry (batchScan) — by design for batch operations
 - costly-loop (4): ConfidentialStateContainerV3, UniversalShieldedPool —
   state updates in batch/insertion loops
-- unindexed-event-address (1): SoulAtomicSwapV2.FeeRecipientUpdated
+- unindexed-event-address (1): ZaseonAtomicSwapV2.FeeRecipientUpdated
 
 ================================================================================
 ## Per-Contract Details
 ================================================================================
 
-### contracts/core/SoulProtocolHub.sol
+### contracts/core/ZaseonProtocolHub.sol
   Analyzed: 7 contracts, 95 detectors
   Results: 0 — CLEAN
 
@@ -161,7 +161,7 @@ Categories:
   Results: 5
   - assembly: configureRoute uses inline assembly
   - low-level-calls: _executeMessage, withdrawRelayerBond, resolveChallenge
-  - immutable-states: soulHub should be immutable
+  - immutable-states: zaseonHub should be immutable
 
 ### contracts/bridge/CrossChainProofHubV3.sol
   Analyzed: 10 contracts, 95 detectors
@@ -179,7 +179,7 @@ Categories:
   - assembly: _recordTransitionHistory
   - costly-loop: _packedCounters in batch loop
 
-### contracts/bridge/SoulAtomicSwapV2.sol
+### contracts/bridge/ZaseonAtomicSwapV2.sol
   Analyzed: 10 contracts, 95 detectors
   Results: 7
   - incorrect-equality: SecurityModule.canWithdrawFlashLoanCheck
@@ -221,7 +221,7 @@ Categories:
   - incorrect-equality: getAnonymitySet bytes32(0) check
   - low-level-calls: _verifyAggregateProof staticcall
 
-### contracts/crosschain/SoulCrossChainRelay.sol
+### contracts/crosschain/ZaseonCrossChainRelay.sol
   Analyzed: (contracts, 95 detectors)
   Results: 3
   - low-level-calls: _sendViaLayerZero, _sendViaHyperlane, _submitToProofHub
@@ -236,10 +236,10 @@ Categories:
 ## Actionable Recommendations
 ================================================================================
 
-1. **[O-1] Make DirectL2Messenger.soulHub immutable** — saves gas, low risk
+1. **[O-1] Make DirectL2Messenger.zaseonHub immutable** — saves gas, low risk
 2. **[M-8] Add zero-check in UniversalShieldedPool.setSanctionsOracle** — defense in depth
 3. **[O-2..7] Cap batch sizes in NullifierRegistryV3** — prevent gas griefing
-4. **[L-1] Move event before external call in SoulAtomicSwapV2.executeFeeWithdrawal** — best practice
+4. **[L-1] Move event before external call in ZaseonAtomicSwapV2.executeFeeWithdrawal** — best practice
 5. **Index address params in FeeRecipientUpdated event** — improves log filtering
 
 ## Excluded from Analysis

@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title CommitmentValidator
- * @author Soul Protocol
+ * @author ZASEON
  * @notice State commitment validation utilities
  * @dev Extracted validation logic for Pedersen and Poseidon commitments
  *      to reduce stack depth in main contracts.

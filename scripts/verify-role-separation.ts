@@ -4,7 +4,7 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 /**
- * Soul Protocol - Role Separation Verification Script
+ * ZASEON - Role Separation Verification Script
  *
  * Verifies that admin roles are properly separated before mainnet deployment.
  * This is a MANDATORY pre-mainnet step.
@@ -49,7 +49,7 @@ async function verifyRoleSeparation(rpcUrl: string, contracts: ContractVerificat
     });
 
     console.log('╔══════════════════════════════════════════════════════════════╗');
-    console.log('║           SOUL PROTOCOL - ROLE SEPARATION AUDIT            ║');
+    console.log('║           ZASEON PROTOCOL - ROLE SEPARATION AUDIT            ║');
     console.log('╚══════════════════════════════════════════════════════════════╝\n');
 
     let allPassed = true;

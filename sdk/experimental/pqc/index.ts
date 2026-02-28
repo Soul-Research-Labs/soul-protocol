@@ -1,7 +1,7 @@
 /**
- * Soul Protocol - Post-Quantum Cryptography SDK
+ * ZASEON - Post-Quantum Cryptography SDK
  *
- * TypeScript bindings for Soul's post-quantum cryptographic primitives,
+ * TypeScript bindings for Zaseon's post-quantum cryptographic primitives,
  * including Dilithium signatures, SPHINCS+, and Kyber key encapsulation.
  */
 import {

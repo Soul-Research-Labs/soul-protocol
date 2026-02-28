@@ -5,7 +5,7 @@ import {PoseidonT3} from "./PoseidonT3.sol";
 
 /**
  * @title PoseidonYul
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Thin wrapper around PoseidonT3 for backward compatibility.
  * @dev DEPRECATED — Use PoseidonT3.hash2() directly in new code.
  *      This library now delegates to the full 65-round Poseidon (PoseidonT3)

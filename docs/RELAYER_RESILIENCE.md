@@ -1,7 +1,7 @@
 # Relayer Network Resilience Strategy
 
 ## Problem Statement
-Soul Protocol depends on relayers for cross-chain message delivery. Single points of failure or relayer unavailability could disrupt service.
+ZASEON depends on relayers for cross-chain message delivery. Single points of failure or relayer unavailability could disrupt service.
 
 ## Multi-Layer Resilience Approach
 
@@ -15,7 +15,7 @@ Soul Protocol depends on relayers for cross-chain message delivery. Single point
 // contracts/relayer/MultiRelayerRouter.sol
 contract MultiRelayerRouter {
     enum RelayerType {
-        SOUL_NATIVE,      // Soul's own relayer network
+        ZASEON_NATIVE,      // Zaseon's own relayer network
         GELATO,           // Gelato Network
         CHAINLINK_CCIP,   // Chainlink CCIP
         LAYERZERO,        // LayerZero relayers

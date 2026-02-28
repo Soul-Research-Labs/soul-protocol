@@ -52,7 +52,7 @@ async function main() {
   }
 
   console.log(`\n${"=".repeat(72)}`);
-  console.log(`Soul Protocol - Post-Deployment Verification`);
+  console.log(`ZASEON - Post-Deployment Verification`);
   console.log(`Network: ${network.name} (chain ${chainId})`);
   console.log(`Deployment: ${deploymentFile}`);
   console.log(`${"=".repeat(72)}\n`);

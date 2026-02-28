@@ -9,7 +9,7 @@ import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 
 /**
  * @title DelayedClaimVault
- * @author Soul Protocol
+ * @author ZASEON
  * @notice Breaks destination timing correlation via delayed claims
  * @dev Phase 5 of Metadata Resistance - decouples receive from claim
  *

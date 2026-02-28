@@ -1,4 +1,4 @@
-# Soul Protocol — Test Coverage Summary
+# ZASEON — Test Coverage Summary
 
 ## Overview
 
@@ -17,7 +17,7 @@
 | Contract          | Test File(s)                      |
 | ----------------- | --------------------------------- |
 | `PrivacyRouter`   | `test/core/PrivacyRouter.t.sol`   |
-| `SoulProtocolHub` | `test/core/SoulProtocolHub.t.sol` |
+| `ZaseonProtocolHub` | `test/core/ZaseonProtocolHub.t.sol` |
 
 ### Cross-Chain ✅
 
@@ -57,8 +57,8 @@
 
 | Contract              | Test File(s)                                     |
 | --------------------- | ------------------------------------------------ |
-| `SoulGovernor`        | `test/governance/SoulGovernor.t.sol` _(batch 2)_ |
-| `SoulUpgradeTimelock` | `test/governance/SoulUpgradeTimelock.t.sol`      |
+| `ZaseonGovernor`        | `test/governance/ZaseonGovernor.t.sol` _(batch 2)_ |
+| `ZaseonUpgradeTimelock` | `test/governance/ZaseonUpgradeTimelock.t.sol`      |
 
 ### Verifiers & Adapters ✅
 

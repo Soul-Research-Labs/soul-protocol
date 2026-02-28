@@ -1,5 +1,5 @@
 #!/bin/bash
-# Soul Watchtower Deployment Script
+# Zaseon Watchtower Deployment Script
 # Deploys the anomaly detection watchtower infrastructure
 
 set -e
@@ -16,7 +16,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}╔═══════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║       Soul Watchtower Deployment Script                    ║${NC}"
+echo -e "${BLUE}║       Zaseon Watchtower Deployment Script                    ║${NC}"
 echo -e "${BLUE}╚═══════════════════════════════════════════════════════════╝${NC}"
 echo ""
 
@@ -89,7 +89,7 @@ step "Directories created"
 # Build watchtower image
 echo ""
 echo -e "${BLUE}Building watchtower image...${NC}"
-docker build -t soul-watchtower:latest -f "$PROJECT_ROOT/docker/Dockerfile.watchtower" "$PROJECT_ROOT"
+docker build -t zaseon-watchtower:latest -f "$PROJECT_ROOT/docker/Dockerfile.watchtower" "$PROJECT_ROOT"
 step "Watchtower image built"
 
 # Stop existing containers
@@ -133,7 +133,7 @@ RETRY_COUNT=0
 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
     HEALTHY=true
     
-    if ! docker ps | grep -q soul-watchtower-1; then
+    if ! docker ps | grep -q zaseon-watchtower-1; then
         HEALTHY=false
     fi
     
@@ -172,6 +172,6 @@ echo -e "${YELLOW}Next steps:${NC}"
 echo -e "  1. Import the Grafana dashboard from:"
 echo -e "     $MONITORING_DIR/config/grafana/dashboards/watchtower.json"
 echo -e "  2. Check watchtower logs:"
-echo -e "     docker logs -f soul-watchtower-1"
+echo -e "     docker logs -f zaseon-watchtower-1"
 echo -e "  3. Verify chain connections in Prometheus targets"
 echo ""
