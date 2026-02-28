@@ -42,7 +42,11 @@ export type PreprocessableCircuit =
   | "balance_proof"
   | "nullifier_check"
   | "shielded_transfer"
-  | "cross_chain_state";
+  | "cross_chain_state"
+  | "ring_signature"
+  | "aggregator"
+  | "private_transfer"
+  | "compliance_proof";
 
 /** Configuration for the preprocessor */
 export interface PreprocessorConfig {

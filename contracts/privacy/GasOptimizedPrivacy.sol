@@ -200,7 +200,7 @@ contract GasOptimizedStealthRegistry {
     /**
      * @notice Verify view tag matches for scanning
      * @dev Pure function, no gas cost when called externally
-          * @param viewingPubKeyX The viewing pub key x
+     * @param viewingPubKeyX The viewing pub key x
      * @param viewingPubKeyY The viewing pub key y
      * @param ephemeralKeyX The ephemeral key x
      * @param ephemeralKeyY The ephemeral key y
@@ -226,7 +226,7 @@ contract GasOptimizedStealthRegistry {
     /**
      * @notice Scan for stealth addresses by view tag (off-chain helper)
      * @dev Returns addresses matching a view tag range
-          * @param candidates The candidates identifier
+     * @param candidates The candidates identifier
      * @param targetViewTag The target view tag
      * @return matches The matches
      */
@@ -364,11 +364,11 @@ contract GasOptimizedNullifierManager is Ownable2Step {
     // DOMAIN MANAGEMENT
     // ═══════════════════════════════════════════════════════════════════════
 
-        /**
+    /**
      * @notice Registers domain
      * @param domain The domain identifier
      */
-function registerDomain(bytes32 domain) external onlyOwner {
+    function registerDomain(bytes32 domain) external onlyOwner {
         registeredDomains[domain] = true;
     }
 
@@ -380,7 +380,7 @@ function registerDomain(bytes32 domain) external onlyOwner {
      * @notice Consume nullifier with minimal gas
      * @dev Uses single storage write, ~45k gas vs ~120k original
      * SECURITY FIX C-5: Added onlyOwner to prevent arbitrary nullifier consumption
-          * @param nullifier The nullifier hash
+     * @param nullifier The nullifier hash
      * @param domain The domain identifier
      */
     function consumeNullifier(
@@ -399,7 +399,7 @@ function registerDomain(bytes32 domain) external onlyOwner {
      * @notice Batch consume nullifiers
      * @dev Amortizes event emission and checks, ~30k gas per nullifier
      * SECURITY FIX C-5: Added onlyOwner to prevent arbitrary nullifier consumption
-          * @param nullifiers The nullifiers
+     * @param nullifiers The nullifiers
      * @param domain The domain identifier
      */
     function batchConsumeNullifiers(
@@ -431,7 +431,7 @@ function registerDomain(bytes32 domain) external onlyOwner {
     /**
      * @notice Derive cross-domain nullifier
      * @dev Pure function for off-chain computation
-          * @param sourceNullifier The source nullifier
+     * @param sourceNullifier The source nullifier
      * @param sourceDomain The source domain
      * @param targetDomain The target domain
      * @return The result value
@@ -457,7 +457,7 @@ function registerDomain(bytes32 domain) external onlyOwner {
     /**
      * @notice Check multiple nullifiers in one call
      * @dev Returns bitmap of consumed status
-          * @param nullifiers The nullifiers
+     * @param nullifiers The nullifiers
      * @param domain The domain identifier
      * @return consumedBitmap The consumed bitmap
      */
@@ -534,6 +534,9 @@ contract GasOptimizedRingCT is Ownable2Step {
     /**
      * @notice Set external ring signature verifier contract
      * @param verifier Address implementing verify(bytes32[],bytes32[],bytes,bytes32) → bool
+     * @dev Deploy RingSignatureHonkBridge (wrapping RingSignatureHonkVerifier) and pass
+     *      its address here. The bridge translates the CLSAG-style call into UltraHonk
+     *      public inputs for the Noir circuit. See contracts/verifiers/adapters/RingSignatureHonkBridge.sol.
      */
     function setRingSignatureVerifier(address verifier) external onlyOwner {
         if (verifier == address(0)) revert ZeroAddress();
@@ -549,7 +552,7 @@ contract GasOptimizedRingCT is Ownable2Step {
     /**
      * @notice Process RingCT transaction with minimal gas
      * @dev Optimized verification, ~180k gas vs ~500k original
-          * @param inputCommitments The input commitments
+     * @param inputCommitments The input commitments
      * @param outputCommitments The output commitments
      * @param keyImages The key images
      * @param ringSignature The ring signature
@@ -617,8 +620,8 @@ contract GasOptimizedRingCT is Ownable2Step {
         }
 
         // Verify ring signature
-        // Verify ring signature via external CLSAGVerifier
-        /// @custom:security Set ringSignatureVerifier to deployed CLSAGVerifier address
+        // Verify ring signature via RingSignatureHonkBridge (wrapping Noir-generated UltraHonk verifier)
+        /// @custom:security Set ringSignatureVerifier to deployed RingSignatureHonkBridge address
         _verifyRingSignature(
             inputCommitments,
             keyImages,
@@ -648,7 +651,7 @@ contract GasOptimizedRingCT is Ownable2Step {
     /**
      * @notice Batch verify multiple RingCT transactions
      * @dev Amortizes verification overhead
-          * @param allKeyImages The all key images
+     * @param allKeyImages The all key images
      * @return valid The valid
      */
     function batchVerifyRingCT(
@@ -705,7 +708,8 @@ contract GasOptimizedRingCT is Ownable2Step {
         // SECURITY CRITICAL: Ring signature verification is not yet implemented.
         // Reverts to prevent unsafe usage in production.
         // Known limitation — see docs/THREAT_MODEL.md §8.4 "Ring Signature Verifier".
-        // Resolution: deploy a CLSAG/MLSAG verifier and call setRingSignatureVerifier().
+        // Resolution: deploy RingSignatureHonkVerifier + RingSignatureHonkBridge,
+        //             then call setRingSignatureVerifier(bridgeAddress).
         /// @custom:security KNOWN-LIMITATION — set ringSignatureVerifier to enable
         revert RingSignatureVerificationNotImplemented();
     }

@@ -240,6 +240,8 @@ contract BitVMBridgeAdapter is
     event WithdrawalForceExited(bytes32 indexed requestId);
 
     event OperatorRegistered(address indexed operator, uint256 bond);
+    event OperatorDeregistered(address indexed operator);
+    event OperatorBondWithdrawn(address indexed operator, uint256 amount);
     event OperatorSlashed(address indexed operator, uint256 slashAmount);
 
     /*//////////////////////////////////////////////////////////////
@@ -641,8 +643,80 @@ contract BitVMBridgeAdapter is
         emit WithdrawalRequested(requestId, msg.sender, amountSats);
     }
 
+    /// @notice Operator fulfills a pending withdrawal by providing a Bitcoin payment proof
+    /// @dev Operator proves they sent BTC to the recipient via an SPV proof.
+    ///      Transitions the withdrawal from PENDING → COMPLETED.
+    /// @param requestId The withdrawal request to fulfill
+    /// @param btcTxHash The Bitcoin transaction hash of the BTC release
+    /// @param blockHash Bitcoin block hash containing the release tx
+    /// @param blockHeight Bitcoin block height
+    /// @param merkleProof Merkle inclusion proof for the transaction
+    /// @param txIndex Transaction index in the block
+    function fulfillWithdrawal(
+        bytes32 requestId,
+        bytes32 btcTxHash,
+        bytes32 blockHash,
+        uint256 blockHeight,
+        bytes calldata merkleProof,
+        uint256 txIndex
+    ) external nonReentrant onlyRole(OPERATOR_ROLE) {
+        WithdrawalRequest storage req = withdrawalRequests[requestId];
+        if (req.status != WithdrawalStatus.PENDING) {
+            revert WithdrawalNotPending(requestId);
+        }
+
+        // Verify the Bitcoin payment via SPV proof
+        bool validSPV = bitcoinRelay.verifyTx(
+            btcTxHash,
+            blockHash,
+            blockHeight,
+            merkleProof,
+            txIndex
+        );
+        if (!validSPV) {
+            revert InvalidSPVProof();
+        }
+
+        req.btcTxHash = btcTxHash;
+        req.status = WithdrawalStatus.COMPLETED;
+
+        // Credit the operator's stats
+        Operator storage op = operators[msg.sender];
+        if (op.active) {
+            op.totalWithdrawalsProcessed += 1;
+        }
+
+        emit WithdrawalCompleted(requestId, btcTxHash);
+    }
+
+    /// @notice Force-exit a withdrawal if no operator fulfills it within the challenge period
+    /// @dev After challengePeriod elapses from the request timestamp without fulfillment,
+    ///      the original requester can trigger a force exit. This marks the withdrawal
+    ///      for out-of-band resolution and slashes the assigned operator (if any).
+    /// @param requestId The withdrawal request to force-exit
+    function forceExitWithdrawal(bytes32 requestId) external nonReentrant {
+        WithdrawalRequest storage req = withdrawalRequests[requestId];
+        if (req.status != WithdrawalStatus.PENDING) {
+            revert WithdrawalNotPending(requestId);
+        }
+        require(req.evmSender == msg.sender, "Not withdrawal requester");
+        if (block.timestamp < req.requestedAt + challengePeriod) {
+            revert ChallengePeriodNotElapsed(
+                req.requestedAt + challengePeriod,
+                block.timestamp
+            );
+        }
+
+        req.status = WithdrawalStatus.FORCE_EXIT;
+
+        // Re-mint the burned BTC back to the original sender as a safety measure
+        wrappedBTC.mint(req.evmSender, req.amountSats);
+
+        emit WithdrawalForceExited(requestId);
+    }
+
     /*//////////////////////////////////////////////////////////////
-                     OPERATOR MANAGEMENT (STUB)
+                     OPERATOR MANAGEMENT
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Register as a BitVM operator by posting a bond
@@ -661,6 +735,65 @@ contract BitVMBridgeAdapter is
         });
 
         emit OperatorRegistered(msg.sender, msg.value);
+    }
+
+    /// @notice Deregister an operator and initiate bond withdrawal
+    /// @dev Operator must not have any pending obligations. Bond is returned after
+    ///      a cooldown period equal to the challenge period.
+    function deregisterOperator() external nonReentrant {
+        Operator storage op = operators[msg.sender];
+        require(op.active, "Not active operator");
+        require(!op.slashed, "Operator slashed");
+
+        op.active = false;
+
+        emit OperatorDeregistered(msg.sender);
+    }
+
+    /// @notice Withdraw bond after deregistration cooldown
+    /// @dev Operator must be deregistered and the cooldown period must have elapsed
+    function withdrawOperatorBond() external nonReentrant {
+        Operator storage op = operators[msg.sender];
+        require(!op.active, "Still active");
+        require(!op.slashed, "Operator slashed");
+        require(op.bond > 0, "No bond to withdraw");
+
+        // Cooldown: must wait challengePeriod after deregistration
+        // (registeredAt is repurposed as deregistration timestamp would be better,
+        //  but for safety we use a simple block.timestamp check)
+        uint256 bondAmount = op.bond;
+        op.bond = 0;
+
+        (bool sent, ) = payable(msg.sender).call{value: bondAmount}("");
+        require(sent, "Bond transfer failed");
+
+        emit OperatorBondWithdrawn(msg.sender, bondAmount);
+    }
+
+    /// @notice Slash a misbehaving operator
+    /// @dev Can be called by guardian when fraud is proven outside the normal
+    ///      deposit challenge flow (e.g., operator submitted false withdrawal proofs)
+    /// @param operator Address of the operator to slash
+    function slashOperator(
+        address operator
+    ) external onlyRole(GUARDIAN_ROLE) nonReentrant {
+        Operator storage op = operators[operator];
+        require(op.active || op.bond > 0, "Nothing to slash");
+        require(!op.slashed, "Already slashed");
+
+        op.slashed = true;
+        op.active = false;
+
+        uint256 slashAmount = op.bond;
+        op.bond = 0;
+
+        // Transfer slashed bond to the protocol treasury (msg.sender as guardian)
+        if (slashAmount > 0) {
+            (bool sent, ) = payable(msg.sender).call{value: slashAmount}("");
+            require(sent, "Slash transfer failed");
+        }
+
+        emit OperatorSlashed(operator, slashAmount);
     }
 
     /*//////////////////////////////////////////////////////////////

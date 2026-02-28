@@ -6,34 +6,38 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
- * @title PolygonZkEVMBridgeAdapter
+ * @title MantaPacificBridgeAdapter
  * @author ZASEON
- * @notice Bridge adapter for Polygon zkEVM L2 integration
- * @dev Enables ZASEON cross-chain interoperability with Polygon zkEVM.
- *      Uses the Polygon zkEVM bridge contract for L1 <-> L2 message passing.
+ * @notice Bridge adapter for Manta Pacific L2 integration
+ * @dev Enables ZASEON cross-chain interoperability with Manta Pacific.
+ *      Manta Pacific is a modular L2 focused on ZK applications,
+ *      with Celestia DA and a Polygon CDK-based ZK proving system.
  *
- * POLYGON ZKEVM INTEGRATION:
- * - Uses PolygonZkEVMBridge for asset/message bridging
- * - GlobalExitRootManager tracks L2 exit roots on L1
- * - networkId distinguishes L1 (0) vs zkEVM (1) messages
+ * MANTA PACIFIC INTEGRATION:
+ * - ZK-rollup (migrated from OP Stack to Polygon CDK / zkEVM)
+ * - Uses PolygonZkEVMBridge for messaging (shared with Polygon CDK ecosystem)
+ * - Data availability via Celestia (modular DA)
+ * - Universal Circuits for cheap ZK proof verification
  * - Proof finality: ~1 block (ZK proof verified on L1)
  *
  * MESSAGE FLOW:
- *   L1 → L2: bridgeMessage() on PolygonZkEVMBridge
- *   L2 → L1: claimMessage() with GlobalExitRoot Merkle proof
+ *   L1 → L2: bridgeMessage() on PolygonZkEVMBridge (CDK variant)
+ *   L2 → L1: claimMessage() with GlobalExitRoot Merkle proof (CDK variant)
  *
- * @custom:graduated Promoted from experimental to production. Formally verified via Certora.
+ * MANTA-SPECIFIC FEATURES:
+ * - Celestia DA reduces data posting costs significantly
+ * - Universal Circuits: pre-deployed circuits for common ZK operations
+ * - Native privacy primitives (aligned with ZASEON's privacy goals)
+ *
  * @custom:security-contact security@zaseonprotocol.io
  */
-contract PolygonZkEVMBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
+contract MantaPacificBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
 
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
     bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE");
-    bytes32 public constant BRIDGE_OPERATOR_ROLE =
-        keccak256("BRIDGE_OPERATOR_ROLE");
     bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
@@ -41,20 +45,20 @@ contract PolygonZkEVMBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
                               CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Polygon zkEVM mainnet chain ID
-    uint256 public constant POLYGON_ZKEVM_MAINNET = 1101;
+    /// @notice Manta Pacific mainnet chain ID
+    uint256 public constant MANTA_PACIFIC_CHAIN_ID = 169;
 
-    /// @notice Polygon zkEVM Cardona testnet chain ID
-    uint256 public constant POLYGON_ZKEVM_TESTNET = 1442;
+    /// @notice Manta Pacific Sepolia testnet chain ID
+    uint256 public constant MANTA_SEPOLIA_CHAIN_ID = 3441006;
 
-    /// @notice Finality blocks (ZK proof finality — instant on L1)
+    /// @notice Finality blocks (ZK proof finality)
     uint256 public constant FINALITY_BLOCKS = 1;
 
-    /// @notice Network ID for L1 mainnet in Polygon bridge
+    /// @notice Network ID for L1 in CDK bridge
     uint32 public constant NETWORK_ID_MAINNET = 0;
 
-    /// @notice Network ID for Polygon zkEVM in Polygon bridge
-    uint32 public constant NETWORK_ID_ZKEVM = 1;
+    /// @notice Network ID for Manta Pacific in CDK bridge
+    uint32 public constant NETWORK_ID_MANTA = 1;
 
     /// @notice Max proof data size
     uint256 public constant MAX_PROOF_SIZE = 32_768;
@@ -74,8 +78,8 @@ contract PolygonZkEVMBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
                               STRUCTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Global Exit Root Merkle proof for claiming L2→L1 messages
-    struct ExitProof {
+    /// @notice CDK Exit proof for claiming L2→L1 messages
+    struct CDKExitProof {
         bytes32[32] smtProof; // Sparse Merkle Tree proof (32 siblings)
         uint32 index; // Leaf index in the exit tree
         bytes32 mainnetExitRoot; // L1 global exit root
@@ -87,7 +91,7 @@ contract PolygonZkEVMBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         MessageStatus status;
         address target;
         uint256 timestamp;
-        uint32 depositCount; // Polygon bridge deposit counter
+        uint32 depositCount;
         bytes payload;
     }
 
@@ -95,23 +99,23 @@ contract PolygonZkEVMBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
                               STORAGE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice PolygonZkEVMBridge contract address
-    address public bridge;
+    /// @notice CDK Bridge contract address (PolygonZkEVMBridge variant)
+    address public cdkBridge;
 
-    /// @notice GlobalExitRootManager address
+    /// @notice Global Exit Root Manager for CDK
     address public globalExitRootManager;
 
-    /// @notice Polygon zkEVM rollup contract address
-    address public polygonZkEVM;
+    /// @notice Manta Pacific rollup contract
+    address public mantaRollup;
 
-    /// @notice Network ID (0 = L1, 1 = zkEVM)
-    uint32 public networkId;
-
-    /// @notice Zaseon Hub address on Polygon zkEVM L2
+    /// @notice Zaseon Hub address on Manta Pacific L2
     address public zaseonHubL2;
 
     /// @notice Proof Registry address
     address public proofRegistry;
+
+    /// @notice Network ID (0 = L1, 1 = Manta Pacific)
+    uint32 public networkId;
 
     /// @notice Message nonce counter
     uint256 public messageNonce;
@@ -138,9 +142,9 @@ contract PolygonZkEVMBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         uint32 index
     );
     event BridgeConfigured(
-        address bridge,
+        address cdkBridge,
         address globalExitRootManager,
-        address polygonZkEVM
+        address mantaRollup
     );
     event ZaseonHubL2Set(address indexed zaseonHubL2);
     event ProofRegistrySet(address indexed proofRegistry);
@@ -149,31 +153,31 @@ contract PolygonZkEVMBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
                             CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Deploy a new PolygonZkEVMBridgeAdapter
-    /// @param _bridge Address of the PolygonZkEVMBridge contract on L1
-    /// @param _globalExitRootManager Address of the GlobalExitRootManager for exit root verification
-    /// @param _polygonZkEVM Address of the Polygon zkEVM rollup contract
-    /// @param _networkId Network identifier (0 for L1 mainnet, 1 for zkEVM)
-    /// @param _admin Address to receive DEFAULT_ADMIN_ROLE and OPERATOR_ROLE
+    /// @param _cdkBridge CDK Bridge contract address
+    /// @param _globalExitRootManager Global Exit Root Manager for CDK
+    /// @param _mantaRollup Manta Pacific rollup contract
+    /// @param _networkId Network ID (0 = L1, 1 = Manta)
+    /// @param _admin Default admin address
     constructor(
-        address _bridge,
+        address _cdkBridge,
         address _globalExitRootManager,
-        address _polygonZkEVM,
+        address _mantaRollup,
         uint32 _networkId,
         address _admin
     ) {
         require(_admin != address(0), "Invalid admin");
-        require(_bridge != address(0), "Invalid bridge");
+        require(_cdkBridge != address(0), "Invalid CDK bridge");
         require(
             _globalExitRootManager != address(0),
             "Invalid exit root manager"
         );
-        require(_polygonZkEVM != address(0), "Invalid polygonZkEVM");
+        require(_mantaRollup != address(0), "Invalid rollup");
 
-        bridge = _bridge;
+        cdkBridge = _cdkBridge;
         globalExitRootManager = _globalExitRootManager;
-        polygonZkEVM = _polygonZkEVM;
+        mantaRollup = _mantaRollup;
         networkId = _networkId;
+
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(OPERATOR_ROLE, _admin);
         _grantRole(GUARDIAN_ROLE, _admin);
@@ -183,29 +187,25 @@ contract PolygonZkEVMBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
                         CONFIGURATION
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Update the Polygon zkEVM bridge infrastructure addresses
-    /// @param _bridge Address of the PolygonZkEVMBridge contract
-    /// @param _globalExitRootManager Address of the GlobalExitRootManager
-    /// @param _polygonZkEVM Address of the Polygon zkEVM rollup contract
-    function configurePolygonBridge(
-        address _bridge,
+    /// @notice Update Manta Pacific bridge infrastructure addresses
+    function configureMantaBridge(
+        address _cdkBridge,
         address _globalExitRootManager,
-        address _polygonZkEVM
+        address _mantaRollup
     ) external onlyRole(OPERATOR_ROLE) {
-        require(_bridge != address(0), "Invalid bridge");
+        require(_cdkBridge != address(0), "Invalid CDK bridge");
         require(
             _globalExitRootManager != address(0),
             "Invalid exit root manager"
         );
-        require(_polygonZkEVM != address(0), "Invalid polygonZkEVM");
-        bridge = _bridge;
+        require(_mantaRollup != address(0), "Invalid rollup");
+        cdkBridge = _cdkBridge;
         globalExitRootManager = _globalExitRootManager;
-        polygonZkEVM = _polygonZkEVM;
-        emit BridgeConfigured(_bridge, _globalExitRootManager, _polygonZkEVM);
+        mantaRollup = _mantaRollup;
+        emit BridgeConfigured(_cdkBridge, _globalExitRootManager, _mantaRollup);
     }
 
-    /// @notice Set the Zaseon Hub L2 contract address on Polygon zkEVM
-    /// @param _zaseonHubL2 The address of the Zaseon Hub deployed on Polygon zkEVM L2
+    /// @notice Set Zaseon Hub L2 address on Manta Pacific
     function setZaseonHubL2(
         address _zaseonHubL2
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -215,7 +215,6 @@ contract PolygonZkEVMBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     }
 
     /// @notice Set Proof Registry address
-    /// @param _proofRegistry Address of the proof registry contract
     function setProofRegistry(
         address _proofRegistry
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -228,26 +227,22 @@ contract PolygonZkEVMBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
                         BRIDGE INTERFACE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Get the Polygon zkEVM mainnet chain ID
-    /// @return The chain ID constant (1101)
+    /// @notice Get the Manta Pacific mainnet chain ID
     function chainId() external pure returns (uint256) {
-        return POLYGON_ZKEVM_MAINNET;
+        return MANTA_PACIFIC_CHAIN_ID;
     }
 
     /// @notice Get the human-readable chain name
-    /// @return The chain name string ("Polygon zkEVM")
     function chainName() external pure returns (string memory) {
-        return "Polygon zkEVM";
+        return "Manta Pacific";
     }
 
     /// @notice Check whether the adapter is fully configured
-    /// @return True if bridge and zaseonHubL2 are set
     function isConfigured() external view returns (bool) {
-        return bridge != address(0) && zaseonHubL2 != address(0);
+        return cdkBridge != address(0) && zaseonHubL2 != address(0);
     }
 
-    /// @notice Get the number of blocks required for finality on Polygon zkEVM
-    /// @return The finality block count (1 — ZK proof provides instant finality)
+    /// @notice Get finality blocks (ZK proof finality)
     function getFinalityBlocks() external pure returns (uint256) {
         return FINALITY_BLOCKS;
     }
@@ -257,13 +252,11 @@ contract PolygonZkEVMBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Send a message to Polygon zkEVM via the PolygonZkEVMBridge
-     * @param target Target address on the destination network
+     * @notice Send a message to Manta Pacific L2 via the CDK Bridge
+     * @param target Target address on Manta Pacific L2
      * @param data Message calldata
      * @param forceUpdateGlobalExitRoot Whether to force a global exit root update
      * @return messageHash Unique hash identifying this message
-     * @dev Calls bridgeMessage on the PolygonZkEVMBridge contract.
-     *      The bridge assigns a depositCount used for exit tree indexing.
      */
     function sendMessage(
         address target,
@@ -278,12 +271,11 @@ contract PolygonZkEVMBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         returns (bytes32)
     {
         require(target != address(0), "Invalid target");
-        require(bridge != address(0), "Bridge not configured");
+        require(cdkBridge != address(0), "Bridge not configured");
         require(data.length <= MAX_PROOF_SIZE, "Data too large");
 
-        // Determine destination network: if we are on L1 (networkId 0) → send to zkEVM (1), and vice versa
         uint32 destinationNetwork = networkId == NETWORK_ID_MAINNET
-            ? NETWORK_ID_ZKEVM
+            ? NETWORK_ID_MANTA
             : NETWORK_ID_MAINNET;
 
         uint256 nonce = messageNonce++;
@@ -294,13 +286,11 @@ contract PolygonZkEVMBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
                 data,
                 nonce,
                 block.timestamp,
-                POLYGON_ZKEVM_MAINNET
+                MANTA_PACIFIC_CHAIN_ID
             )
         );
 
-        // Call bridgeMessage on PolygonZkEVMBridge
-        // Signature: bridgeMessage(uint32 destinationNetwork, address destinationAddress,
-        //            bool forceUpdateGlobalExitRoot, bytes calldata metadata)
+        // Call bridgeMessage on CDK Bridge (same interface as PolygonZkEVMBridge)
         bytes memory bridgeCall = abi.encodeWithSignature(
             "bridgeMessage(uint32,address,bool,bytes)",
             destinationNetwork,
@@ -309,12 +299,11 @@ contract PolygonZkEVMBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
             data
         );
 
-        (bool success, bytes memory result) = bridge.call{value: msg.value}(
+        (bool success, bytes memory result) = cdkBridge.call{value: msg.value}(
             bridgeCall
         );
-        require(success, "Bridge call failed");
+        require(success, "CDK bridge call failed");
 
-        // Extract depositCount from return data (if available)
         uint32 depositCount = result.length >= 32
             ? uint32(uint256(abi.decode(result, (uint256))))
             : uint32(nonce);
@@ -332,31 +321,23 @@ contract PolygonZkEVMBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     }
 
     /**
-     * @notice Claim an L2→L1 message using a GlobalExitRoot Merkle proof
+     * @notice Claim an L2→L1 message using a CDK Exit Root Merkle proof
      * @param messageHash The message hash to claim
-     * @param proof Exit proof with sparse Merkle tree path and exit roots
-     * @dev Calls claimMessage on the PolygonZkEVMBridge which verifies the
-     *      SMT proof against the GlobalExitRootManager's stored roots.
+     * @param proof CDK Exit proof with SMT path and exit roots
      */
     function claimMessage(
         bytes32 messageHash,
-        ExitProof calldata proof
+        CDKExitProof calldata proof
     ) external onlyRole(RELAYER_ROLE) nonReentrant whenNotPaused {
         MessageRecord storage record = messages[messageHash];
         require(record.status == MessageStatus.SENT, "Invalid message state");
         require(!claimedDeposits[proof.index], "Already claimed");
 
-        // Determine origin network (the network that sent the message)
         uint32 originNetwork = networkId == NETWORK_ID_MAINNET
-            ? NETWORK_ID_ZKEVM
+            ? NETWORK_ID_MANTA
             : NETWORK_ID_MAINNET;
 
-        // Call claimMessage on PolygonZkEVMBridge
-        // Signature: claimMessage(bytes32[32] smtProof, uint32 index,
-        //   bytes32 mainnetExitRoot, bytes32 rollupExitRoot,
-        //   uint32 originNetwork, address originAddress,
-        //   uint32 destinationNetwork, address destinationAddress,
-        //   uint256 amount, bytes metadata)
+        // Call claimMessage on CDK Bridge
         bytes memory claimCall = abi.encodeWithSignature(
             "claimMessage(bytes32[32],uint32,bytes32,bytes32,uint32,address,uint32,address,uint256,bytes)",
             proof.smtProof,
@@ -364,14 +345,14 @@ contract PolygonZkEVMBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
             proof.mainnetExitRoot,
             proof.rollupExitRoot,
             originNetwork,
-            address(this), // originAddress (this contract sent it)
-            networkId, // destinationNetwork (us)
-            record.target, // destinationAddress
-            0, // amount (message only, no ETH)
+            address(this),
+            networkId,
+            record.target,
+            0, // message only, no ETH
             record.payload
         );
 
-        (bool success, ) = bridge.call(claimCall);
+        (bool success, ) = cdkBridge.call(claimCall);
         require(success, "Claim failed");
 
         claimedDeposits[proof.index] = true;
@@ -384,7 +365,7 @@ contract PolygonZkEVMBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
      * @notice Verify a message by checking its claim status
      * @param messageHash Hash of the message to verify
      * @param proof Proof data (unused for status-based verification)
-     * @return True if the message has been successfully claimed
+     * @return True if the message has been claimed
      */
     function verifyMessage(
         bytes32 messageHash,
@@ -396,14 +377,14 @@ contract PolygonZkEVMBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     }
 
     /**
-     * @notice Query the latest verified batch number on the zkEVM rollup
+     * @notice Query the latest verified batch on Manta Pacific rollup
      * @return batchNum The last verified batch number
      */
     function getLastVerifiedBatch() external view returns (uint256) {
-        if (polygonZkEVM == address(0)) return 0;
+        if (mantaRollup == address(0)) return 0;
 
         bytes memory call_ = abi.encodeWithSignature("lastVerifiedBatch()");
-        (bool success, bytes memory result) = polygonZkEVM.staticcall(call_);
+        (bool success, bytes memory result) = mantaRollup.staticcall(call_);
         if (success && result.length >= 32) {
             return abi.decode(result, (uint256));
         }
@@ -414,19 +395,17 @@ contract PolygonZkEVMBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
                         ADMIN FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Pause the adapter, blocking all bridge operations
+    /// @notice Pause the adapter
     function pause() external onlyRole(PAUSER_ROLE) {
         _pause();
     }
 
-    /// @notice Resume the adapter after a pause
+    /// @notice Resume the adapter
     function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
 
-    /// @notice Emergency withdrawal of ETH from the adapter
-    /// @param to Recipient address for the withdrawn ETH
-    /// @param amount Amount of ETH (in wei) to withdraw
+    /// @notice Emergency withdrawal of ETH
     function emergencyWithdrawETH(
         address payable to,
         uint256 amount
@@ -437,6 +416,6 @@ contract PolygonZkEVMBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         require(success, "ETH transfer failed");
     }
 
-    /// @notice Allow receiving ETH for fee payments
+    /// @notice Allow receiving ETH
     receive() external payable {}
 }
