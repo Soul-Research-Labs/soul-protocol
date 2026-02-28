@@ -1,5 +1,5 @@
 // K Framework Specification for FHE (Fully Homomorphic Encryption) Operations
-// Soul Protocol
+// Zaseon
 // 
 // This specification formalizes:
 // - FHE type system and ciphertext operations

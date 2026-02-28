@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import "../../contracts/verifiers/OptimizedGroth16Verifier.sol";
+import "../../contracts/verifiers/archived/OptimizedGroth16Verifier.sol";
 
 contract OptimizedGroth16VerifierTest is Test {
     OptimizedGroth16Verifier public verifier;

@@ -1,31 +1,31 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { 
-  Soulv2ClientFactory, 
-  Soulv2Config, 
-  Container, 
+import { useState, useEffect, useCallback, useMemo } from "react";
+import {
+  Soulv2ClientFactory,
+  Soulv2Config,
+  Container,
   ContainerCreationParams,
   DisclosurePolicy,
-  Domain
-} from '../../../src/index';
-import { 
-  createPublicClient, 
-  createWalletClient, 
-  custom, 
-  formatEther, 
-  Hex, 
+  Domain,
+} from "../../../src/index";
+import {
+  createPublicClient,
+  createWalletClient,
+  custom,
+  formatEther,
+  Hex,
   Address,
   zeroAddress,
   PublicClient,
-  WalletClient
-} from 'viem';
+  WalletClient,
+} from "viem";
 
-export type ContainerStatus = 'active' | 'consumed' | 'expired';
+export type ContainerStatus = "active" | "consumed" | "expired";
 
 // ============================================================
 // Context & Provider
 // ============================================================
 
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode } from "react";
 
 interface SoulContextValue {
   client: Soulv2ClientFactory | null;
@@ -58,16 +58,16 @@ function SoulProvider({ children, config }: SoulProviderProps) {
     setError(null);
 
     try {
-      if (typeof window === 'undefined' || !window.ethereum) {
-        throw new Error('No wallet detected');
+      if (typeof window === "undefined" || !window.ethereum) {
+        throw new Error("No wallet detected");
       }
 
       const publicClient = createPublicClient({
-        transport: custom(window.ethereum)
+        transport: custom(window.ethereum),
       });
-      
+
       const walletClient = createWalletClient({
-        transport: custom(window.ethereum)
+        transport: custom(window.ethereum),
       });
 
       const [account] = await walletClient.requestAddresses();
@@ -76,7 +76,7 @@ function SoulProvider({ children, config }: SoulProviderProps) {
       const soulClient = new Soulv2ClientFactory(
         config as Soulv2Config,
         publicClient as any,
-        walletClient as any
+        walletClient as any,
       );
 
       setClient(soulClient);
@@ -99,7 +99,7 @@ function SoulProvider({ children, config }: SoulProviderProps) {
 
   // Listen for account changes
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.ethereum) return;
+    if (typeof window === "undefined" || !window.ethereum) return;
 
     const handleAccountsChanged = (accounts: string[]) => {
       if (accounts.length === 0) {
@@ -115,12 +115,18 @@ function SoulProvider({ children, config }: SoulProviderProps) {
       connect();
     };
 
-    (window.ethereum as any).on('accountsChanged', handleAccountsChanged);
-    (window.ethereum as any).on('chainChanged', handleChainChanged);
+    (window.ethereum as any).on("accountsChanged", handleAccountsChanged);
+    (window.ethereum as any).on("chainChanged", handleChainChanged);
 
     return () => {
-      (window.ethereum as any).removeListener('accountsChanged', handleAccountsChanged);
-      (window.ethereum as any).removeListener('chainChanged', handleChainChanged);
+      (window.ethereum as any).removeListener(
+        "accountsChanged",
+        handleAccountsChanged,
+      );
+      (window.ethereum as any).removeListener(
+        "chainChanged",
+        handleChainChanged,
+      );
     };
   }, [connect, disconnect]);
 
@@ -135,7 +141,16 @@ function SoulProvider({ children, config }: SoulProviderProps) {
       connect,
       disconnect,
     }),
-    [client, isConnected, isLoading, error, address, chainId, connect, disconnect]
+    [
+      client,
+      isConnected,
+      isLoading,
+      error,
+      address,
+      chainId,
+      connect,
+      disconnect,
+    ],
   );
 
   return <SoulContext.Provider value={value}>{children}</SoulContext.Provider>;
@@ -144,7 +159,7 @@ function SoulProvider({ children, config }: SoulProviderProps) {
 function useSoul() {
   const context = useContext(SoulContext);
   if (!context) {
-    throw new Error('useSoul must be used within a SoulProvider');
+    throw new Error("useSoul must be used within a SoulProvider");
   }
   return context;
 }
@@ -167,11 +182,11 @@ interface UseContainerResult {
 
 function useContainer(
   containerId: string | undefined,
-  options: UseContainerOptions = {}
+  options: UseContainerOptions = {},
 ): UseContainerResult {
   const { client } = useSoul();
   const { pollInterval, enabled = true } = options;
-  
+
   const [container, setContainer] = useState<Container | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -221,7 +236,7 @@ interface UseContainersResult {
 }
 
 function useContainers(
-  options: UseContainersOptions = {}
+  options: UseContainersOptions = {},
 ): UseContainersResult {
   const { client } = useSoul();
   const { creator, status, limit = 20, offset = 0 } = options;
@@ -232,32 +247,40 @@ function useContainers(
   const [hasMore, setHasMore] = useState(true);
   const [currentOffset, setCurrentOffset] = useState(offset);
 
-  const fetchContainers = useCallback(async (reset = false) => {
-    if (!client) return;
+  const fetchContainers = useCallback(
+    async (reset = false) => {
+      if (!client) return;
 
-    setIsLoading(true);
-    setError(null);
+      setIsLoading(true);
+      setError(null);
 
-    try {
-      const fetchOffset = reset ? 0 : currentOffset;
-      const containerIds = await client.getPC3().getContainerIds(fetchOffset, limit);
-      const data = (await Promise.all(containerIds.map(id => client.getPC3().getContainer(id))))
-        .filter((c): c is Container => c !== null);
+      try {
+        const fetchOffset = reset ? 0 : currentOffset;
+        const containerIds = await client
+          .getPC3()
+          .getContainerIds(fetchOffset, limit);
+        const data = (
+          await Promise.all(
+            containerIds.map((id) => client.getPC3().getContainer(id)),
+          )
+        ).filter((c): c is Container => c !== null);
 
-      if (reset) {
-        setContainers(data);
-      } else {
-        setContainers(prev => [...prev, ...data]);
+        if (reset) {
+          setContainers(data);
+        } else {
+          setContainers((prev) => [...prev, ...data]);
+        }
+        setCurrentOffset((prev) => prev + limit);
+
+        setHasMore(data.length === limit);
+      } catch (err) {
+        setError(err as Error);
+      } finally {
+        setIsLoading(false);
       }
-      setCurrentOffset((prev) => prev + limit);
-
-      setHasMore(data.length === limit);
-    } catch (err) {
-      setError(err as Error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [client, creator, status, limit, currentOffset]);
+    },
+    [client, creator, status, limit, currentOffset],
+  );
 
   useEffect(() => {
     fetchContainers(true);
@@ -290,7 +313,7 @@ interface UseCreateContainerResult {
 
 function useCreateContainer(): UseCreateContainerResult {
   const { client } = useSoul();
-  
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [containerId, setContainerId] = useState<string | null>(null);
@@ -298,13 +321,15 @@ function useCreateContainer(): UseCreateContainerResult {
 
   const createContainer = useCallback(
     async (params: CreateContainerParams) => {
-      if (!client) throw new Error('Not connected');
+      if (!client) throw new Error("Not connected");
 
       setIsLoading(true);
       setError(null);
 
       try {
-        const { containerId, txHash } = await client.getPC3().createContainer(params as any);
+        const { containerId, txHash } = await client
+          .getPC3()
+          .createContainer(params as any);
         setContainerId(containerId);
         setTxHash(txHash);
         return containerId as Hex;
@@ -315,7 +340,7 @@ function useCreateContainer(): UseCreateContainerResult {
         setIsLoading(false);
       }
     },
-    [client]
+    [client],
   );
 
   const reset = useCallback(() => {
@@ -341,22 +366,30 @@ interface UseConsumeContainerResult {
 
 function useConsumeContainer(): UseConsumeContainerResult {
   const { client } = useSoul();
-  
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
 
   const consumeContainer = useCallback(
     async (containerId: string) => {
-      if (!client) throw new Error('Not connected');
+      if (!client) throw new Error("Not connected");
 
       setIsLoading(true);
       setError(null);
 
       try {
-        await (client.getPC3() as any).consumeContainer(containerId as Hex);
-        setTxHash('0x' as Hex); // Placeholder if txHash not returned
-        return '0x' as Hex;
+        const hash = await (client.getPC3() as any).consumeContainer(
+          containerId as Hex,
+        );
+        const txHash =
+          typeof hash === "string" &&
+          hash.startsWith("0x") &&
+          hash.length === 66
+            ? (hash as Hex)
+            : null;
+        setTxHash(txHash);
+        return txHash ?? ("0x" as Hex);
       } catch (err) {
         setError(err as Error);
         throw err;
@@ -364,7 +397,7 @@ function useConsumeContainer(): UseConsumeContainerResult {
         setIsLoading(false);
       }
     },
-    [client]
+    [client],
   );
 
   const reset = useCallback(() => {
@@ -388,10 +421,10 @@ interface UseNullifierResult {
 
 function useNullifier(
   nullifier: string | undefined,
-  domain: string
+  domain: string,
 ): UseNullifierResult {
   const { client } = useSoul();
-  
+
   const [isSpent, setIsSpent] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -403,7 +436,9 @@ function useNullifier(
     setError(null);
 
     try {
-      const [exists] = await client.getCDNA().batchCheckNullifiers([nullifier as Hex]);
+      const [exists] = await client
+        .getCDNA()
+        .batchCheckNullifiers([nullifier as Hex]);
       setIsSpent(exists);
     } catch (err) {
       setError(err as Error);
@@ -433,14 +468,14 @@ interface UseVerifyPolicyResult {
 
 function useVerifyPolicy(): UseVerifyPolicyResult {
   const { client } = useSoul();
-  
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [result, setResult] = useState<boolean | null>(null);
 
   const verify = useCallback(
     async (proof: Uint8Array, policyId: string) => {
-      if (!client) throw new Error('Not connected');
+      if (!client) throw new Error("Not connected");
 
       setIsLoading(true);
       setError(null);
@@ -451,7 +486,7 @@ function useVerifyPolicy(): UseVerifyPolicyResult {
           policyHash: policyId as Hex,
           domainSeparator: zeroAddress,
           publicInputs: [],
-          expiresAt: 0
+          expiresAt: 0,
         });
         setResult(isValid);
         return isValid;
@@ -462,7 +497,7 @@ function useVerifyPolicy(): UseVerifyPolicyResult {
         setIsLoading(false);
       }
     },
-    [client]
+    [client],
   );
 
   const reset = useCallback(() => {
@@ -486,8 +521,8 @@ type ContainerEventCallback = (event: {
 }) => void;
 
 function useContainerEvents(
-  event: 'ContainerCreated' | 'ContainerConsumed',
-  callback: ContainerEventCallback
+  event: "ContainerCreated" | "ContainerConsumed",
+  callback: ContainerEventCallback,
 ) {
   const { client } = useSoul();
 
@@ -508,7 +543,7 @@ function useContainerEvents(
 // ============================================================
 
 interface UseTransactionResult {
-  status: 'idle' | 'pending' | 'success' | 'error';
+  status: "idle" | "pending" | "success" | "error";
   txHash: string | null;
   error: Error | null;
   confirmations: number;
@@ -517,36 +552,40 @@ interface UseTransactionResult {
 
 function useTransaction(txHash: string | null): UseTransactionResult {
   const { client } = useSoul();
-  
-  const [status, setStatus] = useState<'idle' | 'pending' | 'success' | 'error'>('idle');
+
+  const [status, setStatus] = useState<
+    "idle" | "pending" | "success" | "error"
+  >("idle");
   const [error, setError] = useState<Error | null>(null);
   const [confirmations, setConfirmations] = useState(0);
 
   useEffect(() => {
     if (!client || !txHash) {
-      setStatus('idle');
+      setStatus("idle");
       return;
     }
 
-    setStatus('pending');
+    setStatus("pending");
 
     const checkTransaction = async () => {
       try {
-        const receipt = await client.getPublicClient().waitForTransactionReceipt({ hash: txHash as Hex });
+        const receipt = await client
+          .getPublicClient()
+          .waitForTransactionReceipt({ hash: txHash as Hex });
         if (receipt) {
           const currentBlock = await client.getPublicClient().getBlockNumber();
           const confs = Number(currentBlock - BigInt(receipt.blockNumber) + 1n);
           setConfirmations(confs);
 
-          if (receipt.status === 'success') {
-            setStatus('success');
+          if (receipt.status === "success") {
+            setStatus("success");
           } else {
-            setStatus('error');
-            setError(new Error('Transaction failed'));
+            setStatus("error");
+            setError(new Error("Transaction failed"));
           }
         }
       } catch (err) {
-        setStatus('error');
+        setStatus("error");
         setError(err as Error);
       }
     };
@@ -555,7 +594,7 @@ function useTransaction(txHash: string | null): UseTransactionResult {
   }, [client, txHash]);
 
   const reset = useCallback(() => {
-    setStatus('idle');
+    setStatus("idle");
     setError(null);
     setConfirmations(0);
   }, []);
@@ -577,10 +616,10 @@ interface UseGasEstimateResult {
 
 function useGasEstimate(
   method: string,
-  params: unknown[]
+  params: unknown[],
 ): UseGasEstimateResult {
   const { client } = useSoul();
-  
+
   const [estimate, setEstimate] = useState<bigint | null>(null);
   const [estimateUSD, setEstimateUSD] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -622,23 +661,29 @@ function useGasEstimate(
 
 function getNetworkName(chainId: number): string {
   const networks: Record<number, string> = {
-    1: 'mainnet',
-    11155111: 'sepolia',
-    42161: 'arbitrum',
-    10: 'optimism',
-    8453: 'base',
-    31337: 'localhost',
+    1: "mainnet",
+    11155111: "sepolia",
+    42161: "arbitrum",
+    10: "optimism",
+    8453: "base",
+    31337: "localhost",
   };
-  return networks[chainId] || 'unknown';
+  return networks[chainId] || "unknown";
 }
 
 // Type augmentation for window.ethereum
 declare global {
   interface Window {
     ethereum?: {
-      request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+      request: (args: {
+        method: string;
+        params?: unknown[];
+      }) => Promise<unknown>;
       on: (event: string, callback: (...args: unknown[]) => void) => void;
-      removeListener: (event: string, callback: (...args: unknown[]) => void) => void;
+      removeListener: (
+        event: string,
+        callback: (...args: unknown[]) => void,
+      ) => void;
       selectedAddress: string | null;
     };
   }

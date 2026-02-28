@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Soul Protocol - Contract Complexity Analyzer
+Zaseon - Contract Complexity Analyzer
 
 Analyzes Solidity contracts for:
 - Cyclomatic complexity per function
@@ -160,7 +160,7 @@ def main():
 
     # Print summary
     print("═══════════════════════════════════════════════════════")
-    print("  SOUL PROTOCOL - CONTRACT COMPLEXITY ANALYSIS")
+    print("  ZASEON - CONTRACT COMPLEXITY ANALYSIS")
     print("═══════════════════════════════════════════════════════")
     print(f"  Files analyzed:        {len(results)}")
     print(f"  Total functions:       {total_functions}")

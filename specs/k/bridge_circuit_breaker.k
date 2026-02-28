@@ -2,7 +2,7 @@
  * K Framework Formal Specification for BridgeCircuitBreaker
  *
  * @title Bridge Circuit Breaker State Machine Specification
- * @author Soul Protocol
+ * @author Zaseon
  * @notice Formal verification of the autonomous circuit breaker logic
  */
 

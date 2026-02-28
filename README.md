@@ -65,7 +65,7 @@ WITHOUT Zaseon:                            WITH Zaseon:
 
 ### How Zaseon Breaks Each Lock-In Mechanism
 
-| Lock-In Vector         | Zaseon's Solution                                               |
+| Lock-In Vector         | Zaseon's Solution                                             |
 | ---------------------- | ------------------------------------------------------------- |
 | **Timing correlation** | ZK-SLocks decouple lock/unlock timing—proof generated offline |
 | **Amount correlation** | Pedersen commitments + Bulletproofs hide amounts              |
@@ -306,7 +306,7 @@ npx hardhat run scripts/deploy.js --network localhost
 | ----------------------------- | -------------------------------------------------------------------- |
 | `ConfidentialStateContainer`  | Encrypted state with ZK verification & nullifier protection          |
 | `CrossChainProofHub`          | Proof aggregation & relay with gas-optimized batching                |
-| `ZaseonAtomicSwap`              | HTLC atomic swaps with stealth address support                       |
+| `ZaseonAtomicSwap`            | HTLC atomic swaps with stealth address support                       |
 | `ProofCarryingContainer`      | PC³ - Self-authenticating containers with embedded proofs            |
 | `ZKBoundStateLocks`           | Cross-chain state locks unlocked by ZK proofs                        |
 | `CrossDomainNullifierAlgebra` | Domain-separated nullifiers with composability                       |
@@ -367,19 +367,19 @@ Zaseon provides adapters for major cross-chain messaging:
 
 ### Security Stack
 
-| Module                     | Purpose                          |
-| -------------------------- | -------------------------------- |
-| `ZaseonUpgradeTimelock.sol`  | Time-delayed admin operations    |
-| `BridgeCircuitBreaker.sol` | Anomaly detection and auto-pause |
-| `BridgeRateLimiter.sol`    | Volume and rate limiting         |
-| `MEVProtection.sol`        | Commit-reveal for MEV resistance |
-| `FlashLoanGuard.sol`       | Flash loan attack prevention     |
-| `EmergencyRecovery.sol`    | Emergency pause and recovery     |
-| `SecurityModule.sol`       | Core security primitives         |
-| `BridgeProofValidator.sol` | Cross-chain proof validation     |
-| `BridgeWatchtower.sol`     | Real-time bridge monitoring      |
-| `ZKFraudProof.sol`         | ZK-based fraud proof system      |
-| `GriefingProtection.sol`   | Anti-griefing mechanisms         |
+| Module                      | Purpose                          |
+| --------------------------- | -------------------------------- |
+| `ZaseonUpgradeTimelock.sol` | Time-delayed admin operations    |
+| `BridgeCircuitBreaker.sol`  | Anomaly detection and auto-pause |
+| `BridgeRateLimiter.sol`     | Volume and rate limiting         |
+| `MEVProtection.sol`         | Commit-reveal for MEV resistance |
+| `FlashLoanGuard.sol`        | Flash loan attack prevention     |
+| `EmergencyRecovery.sol`     | Emergency pause and recovery     |
+| `SecurityModule.sol`        | Core security primitives         |
+| `BridgeProofValidator.sol`  | Cross-chain proof validation     |
+| `BridgeWatchtower.sol`      | Real-time bridge monitoring      |
+| `ZKFraudProof.sol`          | ZK-based fraud proof system      |
+| `GriefingProtection.sol`    | Anti-griefing mechanisms         |
 
 ### Testing & Verification
 
@@ -419,7 +419,11 @@ cd sdk && npm install && npm run build
 import { createWalletClient, createPublicClient, http } from "viem";
 import { sepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
-import { ZaseonProtocolClient, NoirProver, SEPOLIA_ADDRESSES } from "@zaseon/sdk";
+import {
+  ZaseonProtocolClient,
+  NoirProver,
+  SEPOLIA_ADDRESSES,
+} from "@zaseon/sdk";
 
 // Setup clients
 const account = privateKeyToAccount("0x...");
@@ -471,8 +475,8 @@ const isValid = await prover.verifyProof("balance_proof", proof);
 
 ### Core API
 
-| Method                               | Description                     |
-| ------------------------------------ | ------------------------------- |
+| Method                                 | Description                     |
+| -------------------------------------- | ------------------------------- |
 | `zaseon.zkLocks.createStateLock()`     | Create ZK-bound state lock      |
 | `zaseon.zkLocks.unlockWithProof()`     | Unlock state with ZK proof      |
 | `zaseon.zkLocks.getLockDetails()`      | Get lock state and metadata     |
@@ -546,7 +550,7 @@ See [sdk/README.md](sdk/README.md) for full documentation.
 | ProofCarryingContainer (PC³) | [`0x52f8a660ff436c450b5190a84bc2c1a86f1032cc`](https://sepolia.etherscan.io/address/0x52f8a660ff436c450b5190a84bc2c1a86f1032cc) |
 | ZKBoundStateLocks            | [`0xf390ae12c9ce8f546ef7c7adaa6a1ab7768a2c78`](https://sepolia.etherscan.io/address/0xf390ae12c9ce8f546ef7c7adaa6a1ab7768a2c78) |
 | NullifierRegistryV3          | [`0x3e21d559f19c76a0bcec378b10dae2cc0e4c2191`](https://sepolia.etherscan.io/address/0x3e21d559f19c76a0bcec378b10dae2cc0e4c2191) |
-| ZaseonAtomicSwapV2             | [`0xdefb9a66dc14a6d247b282555b69da7745b0ab57`](https://sepolia.etherscan.io/address/0xdefb9a66dc14a6d247b282555b69da7745b0ab57) |
+| ZaseonAtomicSwapV2           | [`0xdefb9a66dc14a6d247b282555b69da7745b0ab57`](https://sepolia.etherscan.io/address/0xdefb9a66dc14a6d247b282555b69da7745b0ab57) |
 
 **Full deployment:** See [`deployments/`](deployments/)
 
@@ -557,7 +561,7 @@ See [sdk/README.md](sdk/README.md) for full documentation.
 | Contract                     | Address                                                                                                                         |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | PrivacyZoneManager           | [`0xDFBEe5bB4d4943715D4f8539cbad0a18aA75b602`](https://sepolia.basescan.org/address/0xDFBEe5bB4d4943715D4f8539cbad0a18aA75b602) |
-| ZaseonCrossChainRelay          | [`0x65CDCdA5ba98bB0d784c3a69C826cb3B59C20251`](https://sepolia.basescan.org/address/0x65CDCdA5ba98bB0d784c3a69C826cb3B59C20251) |
+| ZaseonCrossChainRelay        | [`0x65CDCdA5ba98bB0d784c3a69C826cb3B59C20251`](https://sepolia.basescan.org/address/0x65CDCdA5ba98bB0d784c3a69C826cb3B59C20251) |
 | OptimisticBridgeVerifier     | [`0xBA63a3F3C5568eC6447FBe1b852a613743419D9f`](https://sepolia.basescan.org/address/0xBA63a3F3C5568eC6447FBe1b852a613743419D9f) |
 | BridgeRateLimiter            | [`0x23824cDbD8Ca773c5DA0202f8f41083F81aF1135`](https://sepolia.basescan.org/address/0x23824cDbD8Ca773c5DA0202f8f41083F81aF1135) |
 | BridgeWatchtower             | [`0x3E556432Ea021046ad4BE22cB94f713f98f4B76E`](https://sepolia.basescan.org/address/0x3E556432Ea021046ad4BE22cB94f713f98f4B76E) |
@@ -598,4 +602,4 @@ See [SECURITY.md](SECURITY.md) for disclosure policy.
 
 ## License
 
-MIT - [LICENSE](LICENSE) | Built by [Zaseon Research Labs](https://github.com/zaseon-research-labs)
+MIT - [LICENSE](LICENSE) | Built by [Zaseon Research Labs](https://github.com/soul-research-labs)

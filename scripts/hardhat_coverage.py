@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Soul Protocol - Hardhat Coverage Runner
+Zaseon - Hardhat Coverage Runner
 
 Generates test coverage for core contracts using Hardhat's solidity-coverage
 plugin with stack-depth-safe contract wrappers for complex ZK verifiers.
@@ -107,7 +107,7 @@ def run_forge_coverage_targeted(contracts):
 def generate_coverage_report(results, report_type="summary"):
     """Generate coverage report."""
     print(f"\n{'='*60}")
-    print("SOUL PROTOCOL COVERAGE REPORT")
+    print("ZASEON COVERAGE REPORT")
     print(f"{'='*60}\n")
     
     total_passed = sum(r["passed"] for r in results.values())
@@ -160,7 +160,7 @@ def main():
         elif arg == "--core-only":
             core_only = True
     
-    print("Soul Protocol Coverage Analysis")
+    print("Zaseon Coverage Analysis")
     print("=" * 40)
     
     check_prerequisites()

@@ -1,5 +1,5 @@
 // K Framework Formal Specification for Base (OP Stack L2)
-// Soul Protocol (Soul) - Base Bridge Formalization
+// Zaseon - Base Bridge Formalization
 
 module BASE-TYPES
     imports INT

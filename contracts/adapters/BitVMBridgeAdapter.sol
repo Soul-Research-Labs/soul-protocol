@@ -5,14 +5,49 @@ import {IBridgeAdapter} from "../crosschain/IBridgeAdapter.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+/**
+ * @title IBitcoinRelay
+ * @notice Interface for a Bitcoin block header relay (e.g., BTC Relay or tBTC relay).
+ *         The relay maintains a chain of validated Bitcoin block headers on EVM.
+ */
+interface IBitcoinRelay {
+    /// @notice Verify that a Bitcoin transaction was included in a given block
+    /// @param txHash The Bitcoin transaction hash
+    /// @param blockHash The block header hash
+    /// @param blockHeight The block height
+    /// @param merkleProof Concatenated Merkle sibling hashes (32 bytes each)
+    /// @param txIndex The transaction index in the block
+    /// @return valid True if the proof is valid
+    function verifyTx(
+        bytes32 txHash,
+        bytes32 blockHash,
+        uint256 blockHeight,
+        bytes calldata merkleProof,
+        uint256 txIndex
+    ) external view returns (bool valid);
+
+    /// @notice Get the current best known Bitcoin block height
+    function getBestKnownHeight() external view returns (uint256);
+}
+
+/**
+ * @title IWrappedBTC
+ * @notice Minimal interface for a wrapped BTC ERC-20 token that supports
+ *         mint/burn by an authorised bridge.
+ */
+interface IWrappedBTC is IERC20 {
+    function mint(address to, uint256 amount) external;
+
+    function burn(address from, uint256 amount) external;
+}
 
 /**
  * @title BitVMBridgeAdapter
  * @author ZASEON Team
  * @notice IBridgeAdapter for BitVM BTC↔EVM cross-chain operations
- * @dev STUB — BitVM bridge integration is experimental.
- *
- *      BitVM enables trustless BTC→EVM bridging by using fraud proofs to verify
+ * @dev BitVM enables trustless BTC→EVM bridging by using fraud proofs to verify
  *      Bitcoin transaction inclusion. The protocol works as follows:
  *
  *      DEPOSIT FLOW (BTC → EVM):
@@ -38,13 +73,6 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
  *        - Requires active challenger set for security
  *        - Bitcoin SPV proofs are ~500 bytes per proof
  *        - Gas cost for on-chain Bitcoin script verification is high (~500k-1M gas)
- *
- * @custom:experimental This contract is a stub. Production implementation requires:
- *   1. Bitcoin SPV proof verification library (Bitcoin relay or BTC Relay)
- *   2. BitVM fraud proof verification circuit
- *   3. Operator registration and bonding mechanism
- *   4. Challenge/dispute resolution system
- *   5. Wrapped BTC (wBTC) minting/burning
  */
 contract BitVMBridgeAdapter is
     IBridgeAdapter,
@@ -168,6 +196,18 @@ contract BitVMBridgeAdapter is
     /// @notice Challenge period (configurable)
     uint256 public challengePeriod;
 
+    /// @notice Bitcoin block header relay for SPV proof verification
+    IBitcoinRelay public immutable bitcoinRelay;
+
+    /// @notice Wrapped BTC ERC-20 token for minting/burning
+    IWrappedBTC public immutable wrappedBTC;
+
+    /// @notice Challenger bonds held in escrow during disputes
+    mapping(bytes32 => address) public challengeInitiators;
+
+    /// @notice Bond deposited by challenger for each dispute
+    mapping(bytes32 => uint256) public challengeBonds;
+
     /// @notice Nonce for generating unique IDs
     uint256 private _nonce;
 
@@ -213,6 +253,8 @@ contract BitVMBridgeAdapter is
     error DailyLimitExceeded(uint256 requested, uint256 remaining);
     error DepositNotPending(bytes32 claimId);
     error WithdrawalNotPending(bytes32 requestId);
+    error DepositNotChallenged(bytes32 claimId);
+    error ChallengeWindowClosed(bytes32 claimId);
 
     /*//////////////////////////////////////////////////////////////
                             CONSTRUCTOR
@@ -221,13 +263,26 @@ contract BitVMBridgeAdapter is
     /// @notice Initialize the BitVM bridge adapter
     /// @param admin The default admin address
     /// @param _challengePeriod Initial challenge period duration
-    constructor(address admin, uint256 _challengePeriod) {
+    /// @param _bitcoinRelay Address of the Bitcoin block header relay
+    /// @param _wrappedBTC Address of the wrapped BTC ERC-20 token
+    constructor(
+        address admin,
+        uint256 _challengePeriod,
+        address _bitcoinRelay,
+        address _wrappedBTC
+    ) {
+        require(admin != address(0), "BitVM: zero admin");
+        require(_bitcoinRelay != address(0), "BitVM: zero relay");
+        require(_wrappedBTC != address(0), "BitVM: zero wBTC");
+
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(OPERATOR_ROLE, admin);
         _grantRole(GUARDIAN_ROLE, admin);
         challengePeriod = _challengePeriod > 0
             ? _challengePeriod
             : DEFAULT_CHALLENGE_PERIOD;
+        bitcoinRelay = IBitcoinRelay(_bitcoinRelay);
+        wrappedBTC = IWrappedBTC(_wrappedBTC);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -249,7 +304,6 @@ contract BitVMBridgeAdapter is
         whenNotPaused
         returns (bytes32 messageId)
     {
-        // STUB: Generate message ID and mark as pending verification
         messageId = keccak256(
             abi.encodePacked(
                 BITCOIN_CHAIN_ID,
@@ -261,12 +315,68 @@ contract BitVMBridgeAdapter is
             )
         );
 
-        // In production:
-        // 1. Decode payload as (btcTxHash, amountSats, BitcoinSPVProof)
-        // 2. Verify SPV proof against Bitcoin relay
-        // 3. Open challenge window
-        // 4. Create DepositClaim
-        revert NotImplemented();
+        // Decode payload: (btcTxHash, amountSats, evmRecipient, BitcoinSPVProof fields)
+        (
+            bytes32 btcTxHash,
+            uint256 amountSats,
+            bytes32 blockHash,
+            uint256 blockHeight,
+            bytes memory merkleProof,
+            uint256 txIndex
+        ) = abi.decode(
+                payload,
+                (bytes32, uint256, bytes32, uint256, bytes, uint256)
+            );
+
+        // Verify Bitcoin SPV proof against on-chain relay
+        bool validSPV = bitcoinRelay.verifyTx(
+            btcTxHash,
+            blockHash,
+            blockHeight,
+            merkleProof,
+            txIndex
+        );
+        if (!validSPV) {
+            revert InvalidSPVProof();
+        }
+
+        // Ensure sufficient confirmations
+        uint256 bestHeight = bitcoinRelay.getBestKnownHeight();
+        require(
+            bestHeight >= blockHeight + BTC_CONFIRMATIONS,
+            "BitVM: insufficient confirmations"
+        );
+
+        // Verify daily limit
+        uint256 today = block.timestamp / 1 days;
+        if (dailyDeposits[today] + amountSats > MAX_DAILY_DEPOSIT_SATS) {
+            revert DailyLimitExceeded(
+                amountSats,
+                MAX_DAILY_DEPOSIT_SATS - dailyDeposits[today]
+            );
+        }
+
+        // Create deposit claim with challenge window
+        depositClaims[messageId] = DepositClaim({
+            claimId: messageId,
+            btcTxHash: btcTxHash,
+            evmRecipient: targetAddress,
+            amountSats: amountSats,
+            submittedAt: block.timestamp,
+            challengeDeadline: block.timestamp + challengePeriod,
+            operator: msg.sender,
+            status: DepositStatus.PENDING
+        });
+
+        dailyDeposits[today] += amountSats;
+
+        emit DepositClaimSubmitted(
+            messageId,
+            btcTxHash,
+            targetAddress,
+            amountSats,
+            msg.sender
+        );
     }
 
     /// @inheritdoc IBridgeAdapter
@@ -344,8 +454,24 @@ contract BitVMBridgeAdapter is
 
         dailyDeposits[today] += amountSats;
 
-        // TODO: Verify Bitcoin SPV proof against on-chain Bitcoin relay
-        // _verifySPVProof(proof);
+        // Verify Bitcoin SPV proof against on-chain Bitcoin relay
+        bool validSPV = bitcoinRelay.verifyTx(
+            proof.txHash,
+            proof.blockHash,
+            proof.blockHeight,
+            proof.merkleProof,
+            proof.txIndex
+        );
+        if (!validSPV) {
+            revert InvalidSPVProof();
+        }
+
+        // Ensure sufficient Bitcoin confirmations for finality
+        uint256 bestHeight = bitcoinRelay.getBestKnownHeight();
+        require(
+            bestHeight >= proof.blockHeight + BTC_CONFIRMATIONS,
+            "BitVM: insufficient BTC confirmations"
+        );
 
         emit DepositClaimSubmitted(
             claimId,
@@ -367,17 +493,85 @@ contract BitVMBridgeAdapter is
         if (claim.status != DepositStatus.PENDING) {
             revert DepositNotPending(claimId);
         }
+        if (block.timestamp > claim.challengeDeadline) {
+            revert ChallengeWindowClosed(claimId);
+        }
         if (msg.value < MIN_CHALLENGE_BOND) {
             revert InsufficientBond(msg.value, MIN_CHALLENGE_BOND);
         }
 
         claim.status = DepositStatus.CHALLENGED;
-
-        // TODO: Verify fraud proof (BitVM execution trace)
-        // If fraud proven: slash operator, reward challenger, reject deposit
-        // If fraud disproven: slash challenger bond, finalize deposit
+        challengeInitiators[claimId] = msg.sender;
+        challengeBonds[claimId] = msg.value;
 
         emit DepositChallenged(claimId, msg.sender);
+    }
+
+    /// @notice Resolve a disputed deposit. Called by challenger with an SPV proof
+    ///         showing the original claim was fraudulent (e.g. tx doesn't exist
+    ///         at the claimed block height, or amount mismatches).
+    /// @param claimId The challenged deposit claim
+    /// @param proof Counter-proof from the challenger
+    function resolveDispute(
+        bytes32 claimId,
+        BitcoinSPVProof calldata proof
+    ) external nonReentrant {
+        DepositClaim storage claim = depositClaims[claimId];
+        if (claim.status != DepositStatus.CHALLENGED) {
+            revert DepositNotChallenged(claimId);
+        }
+
+        address challenger = challengeInitiators[claimId];
+        uint256 bond = challengeBonds[claimId];
+        Operator storage op = operators[claim.operator];
+
+        // Re-verify the original claim against the relay.
+        // If the relay CANNOT verify the tx, the original claim was fraudulent.
+        bool originalValid = bitcoinRelay.verifyTx(
+            claim.btcTxHash,
+            proof.blockHash,
+            proof.blockHeight,
+            proof.merkleProof,
+            proof.txIndex
+        );
+
+        if (!originalValid) {
+            // Fraud proven — slash operator, reward challenger, reject deposit
+            claim.status = DepositStatus.REJECTED;
+
+            uint256 slashAmount = op.bond;
+            op.bond = 0;
+            op.slashed = true;
+            op.active = false;
+
+            // Return challenger bond + operator slash reward
+            uint256 reward = bond + slashAmount;
+            (bool sent, ) = challenger.call{value: reward}("");
+            require(sent, "BitVM: reward transfer failed");
+
+            emit OperatorSlashed(claim.operator, slashAmount);
+            emit DepositRejected(claimId, challenger);
+        } else {
+            // Fraud disproven — slash challenger bond, finalize deposit
+            claim.status = DepositStatus.FINALIZED;
+            verifiedMessages[claimId] = true;
+
+            // Forfeit challenger bond to operator
+            (bool sent, ) = claim.operator.call{value: bond}("");
+            require(sent, "BitVM: bond transfer failed");
+
+            // Mint wrapped BTC to recipient
+            wrappedBTC.mint(claim.evmRecipient, claim.amountSats);
+
+            emit DepositFinalized(
+                claimId,
+                claim.evmRecipient,
+                claim.amountSats
+            );
+        }
+
+        delete challengeInitiators[claimId];
+        delete challengeBonds[claimId];
     }
 
     /// @notice Finalize a deposit after the challenge period has elapsed
@@ -399,8 +593,8 @@ contract BitVMBridgeAdapter is
         claim.status = DepositStatus.FINALIZED;
         verifiedMessages[claimId] = true;
 
-        // TODO: Mint wrapped BTC to evmRecipient
-        // IWrappedBTC(wrappedBTC).mint(claim.evmRecipient, claim.amountSats);
+        // Mint wrapped BTC to the EVM recipient
+        wrappedBTC.mint(claim.evmRecipient, claim.amountSats);
 
         emit DepositFinalized(claimId, claim.evmRecipient, claim.amountSats);
     }
@@ -441,8 +635,8 @@ contract BitVMBridgeAdapter is
             status: WithdrawalStatus.PENDING
         });
 
-        // TODO: Burn wrapped BTC from msg.sender
-        // IWrappedBTC(wrappedBTC).burn(msg.sender, amountSats);
+        // Burn wrapped BTC from the sender
+        wrappedBTC.burn(msg.sender, amountSats);
 
         emit WithdrawalRequested(requestId, msg.sender, amountSats);
     }

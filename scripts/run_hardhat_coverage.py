@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Soul Protocol - Hardhat Coverage Alternative Pipeline
+Zaseon - Hardhat Coverage Alternative Pipeline
 
 Runs Solidity unit tests via Hardhat with coverage instrumentation,
 avoiding the stack-too-deep errors that plague `forge coverage` with

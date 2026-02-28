@@ -1,7 +1,7 @@
 use poseidon::poseidon::bn254;
 
 /// @title ShieldedPoolCircuit
-/// @author Soul Protocol
+/// @author Zaseon
 /// @notice ZK circuit for private deposits and withdrawals in the Universal Shielded Pool.
 ///
 /// DEPOSIT PROOF:

@@ -1,5 +1,5 @@
 // K Framework Formal Specification for Optimism OP Stack
-// Soul Protocol (Soul) - Optimism Bridge Formalization
+// Zaseon - Optimism Bridge Formalization
 
 module OPTIMISM-TYPES
     imports INT

@@ -1,4 +1,4 @@
-# Soul Protocol — Build & Coverage Automation
+# Zaseon — Build & Coverage Automation
 # Usage: make build | make test | make coverage | make coverage-analyze
 
 SHELL := /bin/bash

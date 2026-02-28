@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Soul Protocol - Contract Dependency Analyzer
+Zaseon - Contract Dependency Analyzer
 
 Generates a dependency graph of Solidity contracts showing:
 - Import relationships
@@ -173,7 +173,7 @@ def main():
 
     # Text output
     print("═══════════════════════════════════════════════════════")
-    print("  SOUL PROTOCOL - DEPENDENCY ANALYSIS")
+    print("  ZASEON - DEPENDENCY ANALYSIS")
     print("═══════════════════════════════════════════════════════")
     print(f"  Files analyzed:     {len(graph)}")
     print(f"  Max depth found:    {max(depths.values()) if depths else 0}")

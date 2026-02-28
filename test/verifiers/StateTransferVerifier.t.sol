@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import "../../contracts/verifiers/StateTransferVerifier.sol";
+import "../../contracts/verifiers/archived/StateTransferVerifier.sol";
 
 /**
  * @title StateTransferVerifier Unit Tests

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Auto NatSpec Documentation Generator for Soul Protocol
+Auto NatSpec Documentation Generator for Zaseon
 
 Automatically adds missing NatSpec documentation to Solidity contracts.
 Adds @title, @author, @notice to contracts and @notice, @param, @return to functions.
@@ -14,7 +14,7 @@ from typing import List, Tuple, Optional
 # Directories to exclude
 EXCLUDES = ['mocks', 'test', 'interfaces', 'verifiers/generated', 'coverage-stubs']
 
-AUTHOR = "Soul Protocol Team"
+AUTHOR = "Zaseon Team"
 
 
 def strip_comments(content: str) -> str:

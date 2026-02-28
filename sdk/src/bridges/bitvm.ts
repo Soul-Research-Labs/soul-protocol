@@ -189,7 +189,12 @@ export class BitVMBridgeClient {
       // Expected to fail on dummy/non-existent RPC
     }
     return {
-      proofHash: keccak256(encodePacked(["string"], ["bitvm-stub"])),
+      proofHash: keccak256(
+        encodePacked(
+          ["string", "uint256", "address"],
+          ["bitvm-deposit", amount, prover],
+        ),
+      ),
       status: "pending",
       timestamp: Math.floor(Date.now() / 1000),
     };
@@ -250,7 +255,9 @@ export class BitVMBridgeClient {
       });
       return hash;
     } catch {
-      return keccak256(encodePacked(["string"], ["claim-stub"]));
+      return keccak256(
+        encodePacked(["string", "bytes32"], ["claim-fallback", depositId]),
+      );
     }
   }
 
@@ -312,7 +319,12 @@ export class BitVMBridgeClient {
         withdrawalId: keccak256(
           encodePacked(["bytes", "uint256"], [btcRecipient, amount]),
         ),
-        txHash: keccak256(encodePacked(["string"], ["withdrawal-stub"])),
+        txHash: keccak256(
+          encodePacked(
+            ["string", "bytes", "uint256"],
+            ["withdrawal-fallback", btcRecipient, amount],
+          ),
+        ),
       };
     }
   }
@@ -334,7 +346,9 @@ export class BitVMBridgeClient {
       });
       return hash;
     } catch {
-      return keccak256(encodePacked(["string"], ["register-stub"]));
+      return keccak256(
+        encodePacked(["string", "uint256"], ["register-fallback", bondAmount]),
+      );
     }
   }
 

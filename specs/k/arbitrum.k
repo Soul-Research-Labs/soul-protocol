@@ -1,5 +1,5 @@
 // K Framework Formal Specification for Arbitrum Nitro
-// Soul Protocol (Soul) - Arbitrum Bridge Formalization
+// Zaseon - Arbitrum Bridge Formalization
 
 module ARBITRUM-TYPES
     imports INT

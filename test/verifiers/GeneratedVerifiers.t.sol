@@ -2,15 +2,18 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-// Import AggregatorVerifier directly (still a stub)
+// Import AggregatorVerifier (configurable — delegates to real verifier when set)
 import "../../contracts/verifiers/generated/AggregatorVerifier.sol";
 
 /// @title GeneratedVerifiers Smoke Tests
 /// @notice Tests for real UltraHonk verifiers (reject invalid proofs)
-///         and AggregatorVerifier (still a stub — recursive circuit)
+///         and AggregatorVerifier (configurable proxy for recursive circuit)
 contract GeneratedVerifiersTest is Test {
-    // AggregatorVerifier is the only remaining stub
+    // AggregatorVerifier — configurable, delegates when implementation set
     AggregatorVerifier public aggregator;
+
+    // Real bb-generated AggregatorHonkVerifier (deployed via vm.getCode)
+    address public aggregatorHonkAddr;
 
     // Real UltraHonk verifiers deployed via vm.getCode to avoid identifier collision
     address public accreditedAddr;
@@ -46,6 +49,11 @@ contract GeneratedVerifiersTest is Test {
 
     function setUp() public {
         aggregator = new AggregatorVerifier();
+
+        // Deploy real bb-generated AggregatorHonkVerifier
+        aggregatorHonkAddr = _deployContract(
+            "AggregatorHonkVerifier.sol:AggregatorHonkVerifier"
+        );
 
         // Real UltraHonk verifiers (generated from VK binaries)
         accreditedAddr = _deployContract(
@@ -93,6 +101,7 @@ contract GeneratedVerifiersTest is Test {
 
     function test_allVerifiersDeployable() public view {
         assertTrue(address(aggregator) != address(0), "aggregator");
+        assertTrue(aggregatorHonkAddr != address(0), "aggregatorHonk");
         assertTrue(accreditedAddr != address(0), "accredited");
         assertTrue(balanceAddr != address(0), "balance");
         assertTrue(complianceAddr != address(0), "compliance");
@@ -111,12 +120,72 @@ contract GeneratedVerifiersTest is Test {
         );
     }
 
-    /* ──── Stub Revert (AggregatorVerifier only — recursive circuit) ──── */
+    /* ──── Stub Revert (AggregatorVerifier — no implementation set) ──── */
 
     function test_aggregator_stubReverts() public {
         bytes32[] memory inputs = new bytes32[](0);
         vm.expectRevert(AggregatorVerifier.StubVerifierNotDeployed.selector);
         aggregator.verify("", inputs);
+    }
+
+    /* ──── AggregatorVerifier delegation and admin controls ──── */
+
+    function test_aggregator_adminCanSetImplementation() public {
+        // Deploy a mock verifier
+        MockVerifier mock = new MockVerifier(true);
+        aggregator.setImplementation(address(mock));
+        assertEq(address(aggregator.implementation()), address(mock));
+    }
+
+    function test_aggregator_nonAdminCannotSetImplementation() public {
+        MockVerifier mock = new MockVerifier(true);
+        vm.prank(address(0xdead));
+        vm.expectRevert(AggregatorVerifier.Unauthorized.selector);
+        aggregator.setImplementation(address(mock));
+    }
+
+    function test_aggregator_cannotSetZeroImplementation() public {
+        vm.expectRevert(AggregatorVerifier.ZeroAddress.selector);
+        aggregator.setImplementation(address(0));
+    }
+
+    function test_aggregator_delegatesToImplementation() public {
+        MockVerifier mock = new MockVerifier(true);
+        aggregator.setImplementation(address(mock));
+
+        bytes32[] memory inputs = new bytes32[](1);
+        inputs[0] = bytes32(uint256(42));
+        bool result = aggregator.verify(hex"aabbccdd", inputs);
+        assertTrue(result);
+    }
+
+    function test_aggregator_delegationReturnsFailure() public {
+        MockVerifier mock = new MockVerifier(false);
+        aggregator.setImplementation(address(mock));
+
+        bytes32[] memory inputs = new bytes32[](1);
+        inputs[0] = bytes32(uint256(42));
+        bool result = aggregator.verify(hex"aabbccdd", inputs);
+        assertFalse(result);
+    }
+
+    function test_aggregator_lockImplementation() public {
+        MockVerifier mock = new MockVerifier(true);
+        aggregator.setImplementation(address(mock));
+        aggregator.lockImplementation();
+        assertTrue(aggregator.locked());
+
+        // Cannot change after lock
+        MockVerifier mock2 = new MockVerifier(false);
+        vm.expectRevert(
+            AggregatorVerifier.ImplementationAlreadyLocked.selector
+        );
+        aggregator.setImplementation(address(mock2));
+    }
+
+    function test_aggregator_cannotLockWithoutImplementation() public {
+        vm.expectRevert(AggregatorVerifier.StubVerifierNotDeployed.selector);
+        aggregator.lockImplementation();
     }
 
     /* ──── Real UltraHonk verifiers: reject invalid proofs ──── */
@@ -239,7 +308,48 @@ contract GeneratedVerifiersTest is Test {
         _callVerifyWrongInputCount(crossDomainNullifierAddr);
     }
 
-    /* ──── Fuzz: AggregatorVerifier stub always reverts ──── */
+    /* ──── AggregatorVerifier + real AggregatorHonkVerifier integration ──── */
+
+    function test_aggregator_wireRealHonkVerifier() public {
+        // Wire the real bb-generated verifier into the proxy
+        aggregator.setImplementation(aggregatorHonkAddr);
+        assertEq(address(aggregator.implementation()), aggregatorHonkAddr);
+
+        // Lock it permanently
+        aggregator.lockImplementation();
+        assertTrue(aggregator.locked());
+    }
+
+    function test_aggregatorHonk_rejectsInvalidProof() public {
+        // The real verifier should reject an invalid proof
+        _callVerifyAndExpectRejection(aggregatorHonkAddr, 34);
+    }
+
+    function test_aggregatorHonk_rejectsWrongInputCount() public {
+        _callVerifyWrongInputCount(aggregatorHonkAddr);
+    }
+
+    function test_aggregator_proxiedRejectsInvalidProof() public {
+        // Wire and test through the proxy
+        aggregator.setImplementation(aggregatorHonkAddr);
+        bytes32[] memory inputs = new bytes32[](34);
+        for (uint256 i = 0; i < 34; i++) {
+            inputs[i] = bytes32(uint256(i + 1));
+        }
+        // Should revert or return false for invalid proof
+        (bool ok, bytes memory ret) = address(aggregator).call(
+            abi.encodeWithSelector(VERIFY_SEL, hex"dead", inputs)
+        );
+        if (ok) {
+            bool verified = abi.decode(ret, (bool));
+            assertFalse(
+                verified,
+                "Should not verify invalid proof through proxy"
+            );
+        }
+    }
+
+    /* ──── Fuzz: AggregatorVerifier stub always reverts when no implementation ──── */
 
     function testFuzz_aggregatorStubAlwaysReverts(bytes calldata proof) public {
         bytes32[] memory inputs = new bytes32[](1);
@@ -247,5 +357,37 @@ contract GeneratedVerifiersTest is Test {
 
         vm.expectRevert(AggregatorVerifier.StubVerifierNotDeployed.selector);
         aggregator.verify(proof, inputs);
+    }
+
+    /* ──── Fuzz: AggregatorVerifier delegates correctly when implementation set ──── */
+
+    function testFuzz_aggregatorDelegatesWhenSet(
+        bytes calldata proof,
+        bool returnVal
+    ) public {
+        MockVerifier mock = new MockVerifier(returnVal);
+        aggregator.setImplementation(address(mock));
+
+        bytes32[] memory inputs = new bytes32[](1);
+        inputs[0] = keccak256(proof);
+
+        bool result = aggregator.verify(proof, inputs);
+        assertEq(result, returnVal);
+    }
+}
+
+/// @notice Mock verifier for testing AggregatorVerifier delegation
+contract MockVerifier is IVerifier {
+    bool private immutable _returnValue;
+
+    constructor(bool returnValue_) {
+        _returnValue = returnValue_;
+    }
+
+    function verify(
+        bytes calldata,
+        bytes32[] calldata
+    ) external view override returns (bool) {
+        return _returnValue;
     }
 }

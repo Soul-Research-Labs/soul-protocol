@@ -2,7 +2,7 @@
  * K Framework Formal Specification for Cross-Chain Privacy
  *
  * @title Cross-Chain Privacy Algebra Specification
- * @author Soul Protocol
+ * @author Zaseon
  * @notice Formal verification of cross-chain privacy primitives
  *
  * MODULES:

@@ -1,5 +1,5 @@
 // K Framework Formal Specification for zkSync Era
-// Soul Protocol (Soul) - zkSync Bridge Formalization
+// Zaseon - zkSync Bridge Formalization
 
 module ZKSYNC-TYPES
     imports INT

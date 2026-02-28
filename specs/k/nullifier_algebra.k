@@ -2,7 +2,7 @@
 // K Framework Specification for Nullifier Algebra
 //
 // This specification formalizes the algebraic properties of nullifiers
-// used in the Soul Protocol for preventing double-spending
+// used in Zaseon for preventing double-spending
 // and replay attacks across domains.
 //
 // NULLIFIER ALGEBRA ARCHITECTURE:

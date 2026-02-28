@@ -45,8 +45,8 @@ def mutate_and_test(file_path, test_path, mutations):
         print(res)
 
 if __name__ == "__main__":
-    file_to_mutate = "/Users/manishghimire/Downloads/Soul Protocol/contracts/primitives/ZKBoundStateLocks.sol"
-    test_to_run = "/Users/manishghimire/Downloads/Soul Protocol/test/security/ZKLockDoSProtection.t.sol"
+    file_to_mutate = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "contracts", "primitives", "ZKBoundStateLocks.sol")
+    test_to_run = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "test", "security", "ZKLockDoSProtection.t.sol")
     
     mutations = [
         # 1. Weaken bond requirement

@@ -1,5 +1,5 @@
 // K Framework Formal Specification for Polygon zkEVM
-// Soul Protocol (Soul) - Polygon zkEVM Bridge Formalization
+// Zaseon - Polygon zkEVM Bridge Formalization
 
 module POLYGON-ZKEVM-TYPES
     imports INT

@@ -2,7 +2,7 @@
 // K Framework Specification for Poseidon Hash Function
 //
 // This specification formalizes the Poseidon hash function used in
-// zero-knowledge circuits for the Soul Protocol.
+// zero-knowledge circuits for Zaseon.
 //
 // POSEIDON HASH ARCHITECTURE:
 // ┌─────────────────────────────────────────────────────────────────┐

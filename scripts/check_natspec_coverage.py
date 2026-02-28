@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-NatSpec Coverage Checker for Soul Protocol
+NatSpec Coverage Checker for Zaseon
 
 Analyzes Solidity contracts for NatSpec documentation coverage.
 Reports on functions missing @notice, @param, @return documentation.
@@ -317,7 +317,7 @@ def calculate_coverage(contracts: List[ContractDoc]) -> dict:
 def print_report(contracts: List[ContractDoc], stats: dict, verbose: bool = False) -> float:
     """Print coverage report."""
     print("\n" + "=" * 70)
-    print("SOUL PROTOCOL - NATSPEC COVERAGE REPORT")
+    print("ZASEON - NATSPEC COVERAGE REPORT")
     print("=" * 70)
 
     tc = stats['total_contracts']

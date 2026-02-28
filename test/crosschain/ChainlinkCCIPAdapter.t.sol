@@ -165,3 +165,195 @@ contract ChainlinkCCIPAdapterTest is Test {
     // Required to receive refunds
     receive() external payable {}
 }
+
+// ═══════════════════════════════════════════════════════════════
+//  TOKEN TRANSFER TESTS
+// ═══════════════════════════════════════════════════════════════
+
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+/// @dev Minimal ERC-20 for testing token transfers
+contract MockToken is ERC20 {
+    constructor() ERC20("Mock", "MCK") {
+        _mint(msg.sender, 1_000_000e18);
+    }
+
+    function mint(address to, uint256 amount) external {
+        _mint(to, amount);
+    }
+}
+
+/**
+ * @title ChainlinkCCIPAdapterTokenTest
+ * @notice Tests for bridgeMessageWithTokens and estimateFeeWithTokens
+ */
+contract ChainlinkCCIPAdapterTokenTest is Test {
+    ChainlinkCCIPAdapter public adapter;
+    MockCCIPRouter public router;
+    MockToken public token;
+
+    address public target = makeAddr("target");
+    address public alice = makeAddr("alice");
+    uint64 public constant DEST_SELECTOR = 5009297550715157269;
+    bytes public constant PAYLOAD = hex"cafebabe";
+
+    function setUp() public {
+        router = new MockCCIPRouter();
+        adapter = new ChainlinkCCIPAdapter(address(router), DEST_SELECTOR);
+
+        token = new MockToken();
+        // Transfer tokens to alice
+        token.transfer(alice, 100e18);
+    }
+
+    // =========== bridgeMessageWithTokens ===========
+
+    function test_bridgeWithTokens_happyPath() public {
+        address[] memory tokens = new address[](1);
+        tokens[0] = address(token);
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = 10e18;
+
+        vm.startPrank(alice);
+        token.approve(address(adapter), 10e18);
+
+        uint256 fee = adapter.estimateFee(target, PAYLOAD);
+        vm.deal(alice, fee);
+
+        bytes32 messageId = adapter.bridgeMessageWithTokens{value: fee}(
+            target,
+            PAYLOAD,
+            tokens,
+            amounts
+        );
+        vm.stopPrank();
+
+        assertTrue(messageId != bytes32(0), "Should return valid messageId");
+        // Tokens should have been pulled from alice
+        assertEq(
+            token.balanceOf(alice),
+            90e18,
+            "Alice balance should decrease by 10 tokens"
+        );
+    }
+
+    function test_bridgeWithTokens_mismatchedArraysReverts() public {
+        address[] memory tokens = new address[](2);
+        tokens[0] = address(token);
+        tokens[1] = address(token);
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = 10e18;
+
+        vm.prank(alice);
+        vm.expectRevert(ChainlinkCCIPAdapter.TokenArrayLengthMismatch.selector);
+        adapter.bridgeMessageWithTokens(target, PAYLOAD, tokens, amounts);
+    }
+
+    function test_bridgeWithTokens_zeroTokenAddressReverts() public {
+        address[] memory tokens = new address[](1);
+        tokens[0] = address(0);
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = 10e18;
+
+        vm.startPrank(alice);
+        vm.expectRevert(ChainlinkCCIPAdapter.ZeroTokenAddress.selector);
+        adapter.bridgeMessageWithTokens(target, PAYLOAD, tokens, amounts);
+        vm.stopPrank();
+    }
+
+    function test_bridgeWithTokens_zeroAmountReverts() public {
+        address[] memory tokens = new address[](1);
+        tokens[0] = address(token);
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = 0;
+
+        vm.startPrank(alice);
+        vm.expectRevert(ChainlinkCCIPAdapter.ZeroTokenAmount.selector);
+        adapter.bridgeMessageWithTokens(target, PAYLOAD, tokens, amounts);
+        vm.stopPrank();
+    }
+
+    function test_bridgeWithTokens_tooManyTokensReverts() public {
+        address[] memory tokens = new address[](6); // MAX_TOKENS_PER_MESSAGE = 5
+        uint256[] memory amounts = new uint256[](6);
+        for (uint256 i = 0; i < 6; i++) {
+            tokens[i] = address(token);
+            amounts[i] = 1e18;
+        }
+
+        vm.startPrank(alice);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ChainlinkCCIPAdapter.MaxTokensExceeded.selector,
+                6,
+                5
+            )
+        );
+        adapter.bridgeMessageWithTokens(target, PAYLOAD, tokens, amounts);
+        vm.stopPrank();
+    }
+
+    // =========== estimateFeeWithTokens ===========
+
+    function test_estimateFeeWithTokens_returnsRouterFee() public view {
+        address[] memory tokens = new address[](1);
+        tokens[0] = address(token);
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = 10e18;
+
+        uint256 fee = adapter.estimateFeeWithTokens(
+            target,
+            PAYLOAD,
+            tokens,
+            amounts
+        );
+        assertEq(fee, router.fixedFee(), "Fee should match router fee");
+    }
+
+    function test_estimateFeeWithTokens_mismatchedArraysReverts() public {
+        address[] memory tokens = new address[](1);
+        tokens[0] = address(token);
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 10e18;
+        amounts[1] = 5e18;
+
+        vm.expectRevert(ChainlinkCCIPAdapter.TokenArrayLengthMismatch.selector);
+        adapter.estimateFeeWithTokens(target, PAYLOAD, tokens, amounts);
+    }
+
+    // =========== Multiple tokens ===========
+
+    function test_bridgeWithTokens_multipleTokens() public {
+        MockToken token2 = new MockToken();
+        token2.transfer(alice, 50e18);
+
+        address[] memory tokens = new address[](2);
+        tokens[0] = address(token);
+        tokens[1] = address(token2);
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 5e18;
+        amounts[1] = 3e18;
+
+        vm.startPrank(alice);
+        token.approve(address(adapter), 5e18);
+        token2.approve(address(adapter), 3e18);
+
+        uint256 fee = adapter.estimateFee(target, PAYLOAD);
+        vm.deal(alice, fee);
+
+        bytes32 messageId = adapter.bridgeMessageWithTokens{value: fee}(
+            target,
+            PAYLOAD,
+            tokens,
+            amounts
+        );
+        vm.stopPrank();
+
+        assertTrue(messageId != bytes32(0));
+        assertEq(token.balanceOf(alice), 95e18);
+        assertEq(token2.balanceOf(alice), 47e18);
+    }
+
+    receive() external payable {}
+}

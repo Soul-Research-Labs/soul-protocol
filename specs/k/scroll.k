@@ -1,5 +1,5 @@
 // K Framework Formal Specification for Scroll zkEVM
-// Soul Protocol (Soul) - Scroll Bridge Formalization
+// Zaseon - Scroll Bridge Formalization
 
 module SCROLL-TYPES
     imports INT

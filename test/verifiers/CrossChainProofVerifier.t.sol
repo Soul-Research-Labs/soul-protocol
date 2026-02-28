@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import "../../contracts/verifiers/CrossChainProofVerifier.sol";
+import "../../contracts/verifiers/archived/CrossChainProofVerifier.sol";
 
 /**
  * @title CrossChainProofVerifier Unit Tests

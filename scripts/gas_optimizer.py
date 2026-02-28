@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Soul Protocol - Gas Optimization Analyzer
+Zaseon - Gas Optimization Analyzer
 
 Profiles gas usage across core operations and identifies optimization opportunities.
 Targets: <500K gas per privacy operation (current ~800K).
@@ -158,7 +158,7 @@ def scan_for_optimizations(contract_path: str) -> list:
 def generate_report(gas_data: dict, detailed: bool = False, save: bool = False):
     """Generate optimization report."""
     print("\n" + "=" * 70)
-    print("SOUL PROTOCOL - GAS OPTIMIZATION REPORT")
+    print("ZASEON - GAS OPTIMIZATION REPORT")
     print("=" * 70)
 
     all_optimizations = {}

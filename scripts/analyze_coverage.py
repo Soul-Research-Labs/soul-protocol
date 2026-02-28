@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Coverage Branch Analysis Tool for Soul Protocol
+Coverage Branch Analysis Tool for Zaseon
 
 Parses Forge LCOV output and identifies uncovered branches,
 generating targeted test recommendations for improving coverage.
@@ -255,7 +255,7 @@ def print_summary(files: Dict[str, FileCoverage], module_filter: Optional[str] =
     total_lf = total_lh = total_bf = total_bh = total_ff = total_fh = 0
 
     print("\n" + "=" * 78)
-    print("SOUL PROTOCOL – COVERAGE BRANCH ANALYSIS")
+    print("ZASEON – COVERAGE BRANCH ANALYSIS")
     print("=" * 78)
 
     ranked = rank_files(filtered)

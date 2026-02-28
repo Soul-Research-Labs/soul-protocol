@@ -1,520 +1,555 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Soul Protocol - ZK-Bound State Locks Demo</title>
-  <style>
-    :root {
-      --primary: #6366f1;
-      --primary-dark: #4f46e5;
-      --bg: #0f0f1a;
-      --card-bg: #1a1a2e;
-      --text: #e2e8f0;
-      --text-muted: #94a3b8;
-      --success: #10b981;
-      --warning: #f59e0b;
-      --error: #ef4444;
-      --border: #334155;
-    }
-    
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      padding: 2rem;
-    }
-    
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-    }
-    
-    header {
-      text-align: center;
-      margin-bottom: 3rem;
-    }
-    
-    h1 {
-      font-size: 2.5rem;
-      background: linear-gradient(135deg, var(--primary), #a855f7);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 0.5rem;
-    }
-    
-    .subtitle {
-      color: var(--text-muted);
-      font-size: 1.1rem;
-    }
-    
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
-    }
-    
-    .card h2 {
-      font-size: 1.25rem;
-      margin-bottom: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    
-    .card h2 .icon {
-      font-size: 1.5rem;
-    }
-    
-    .form-group {
-      margin-bottom: 1rem;
-    }
-    
-    label {
-      display: block;
-      font-size: 0.875rem;
-      color: var(--text-muted);
-      margin-bottom: 0.5rem;
-    }
-    
-    input, select {
-      width: 100%;
-      padding: 0.75rem 1rem;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-size: 1rem;
-      font-family: 'Monaco', 'Menlo', monospace;
-    }
-    
-    input:focus, select:focus {
-      outline: none;
-      border-color: var(--primary);
-    }
-    
-    button {
-      padding: 0.75rem 1.5rem;
-      background: var(--primary);
-      border: none;
-      border-radius: 8px;
-      color: white;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    
-    button:hover {
-      background: var(--primary-dark);
-    }
-    
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    
-    .btn-secondary {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--text);
-    }
-    
-    .btn-secondary:hover {
-      background: var(--border);
-    }
-    
-    .btn-connect {
-      background: linear-gradient(135deg, var(--primary), #a855f7);
-    }
-    
-    .status-bar {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 1rem;
-      background: var(--bg);
-      border-radius: 8px;
-      margin-bottom: 1rem;
-    }
-    
-    .status-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--error);
-    }
-    
-    .status-dot.connected {
-      background: var(--success);
-    }
-    
-    .address {
-      font-family: 'Monaco', 'Menlo', monospace;
-      font-size: 0.875rem;
-      color: var(--text-muted);
-    }
-    
-    .locks-list {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-    
-    .lock-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem;
-      background: var(--bg);
-      border-radius: 8px;
-      border-left: 4px solid var(--warning);
-    }
-    
-    .lock-item.unlocked {
-      border-left-color: var(--success);
-    }
-    
-    .lock-info {
-      flex: 1;
-    }
-    
-    .lock-id {
-      font-family: 'Monaco', 'Menlo', monospace;
-      font-size: 0.875rem;
-      color: var(--primary);
-    }
-    
-    .lock-meta {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-top: 0.25rem;
-    }
-    
-    .lock-status {
-      padding: 0.25rem 0.75rem;
-      border-radius: 20px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-    
-    .lock-status.locked {
-      background: rgba(245, 158, 11, 0.2);
-      color: var(--warning);
-    }
-    
-    .lock-status.unlocked {
-      background: rgba(16, 185, 129, 0.2);
-      color: var(--success);
-    }
-    
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-    }
-    
-    .output {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 1rem;
-      font-family: 'Monaco', 'Menlo', monospace;
-      font-size: 0.875rem;
-      max-height: 200px;
-      overflow-y: auto;
-      white-space: pre-wrap;
-      word-break: break-all;
-    }
-    
-    .output.success {
-      border-color: var(--success);
-    }
-    
-    .output.error {
-      border-color: var(--error);
-    }
-    
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1rem;
-    }
-    
-    .stat-card {
-      text-align: center;
-      padding: 1.5rem;
-      background: var(--bg);
-      border-radius: 8px;
-    }
-    
-    .stat-value {
-      font-size: 2rem;
-      font-weight: 700;
-      color: var(--primary);
-    }
-    
-    .stat-label {
-      font-size: 0.875rem;
-      color: var(--text-muted);
-      margin-top: 0.25rem;
-    }
-    
-    .flex-between {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    
-    .mt-1 { margin-top: 1rem; }
-    .mb-1 { margin-bottom: 1rem; }
-    
-    @media (max-width: 768px) {
-      .grid-2, .stats {
-        grid-template-columns: 1fr;
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zaseon - ZK-Bound State Locks Demo</title>
+    <style>
+      :root {
+        --primary: #6366f1;
+        --primary-dark: #4f46e5;
+        --bg: #0f0f1a;
+        --card-bg: #1a1a2e;
+        --text: #e2e8f0;
+        --text-muted: #94a3b8;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --error: #ef4444;
+        --border: #334155;
       }
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <header>
-      <h1>🔐 Soul Protocol</h1>
-      <p class="subtitle">ZK-Bound State Locks Demo — Cross-chain privacy with zero-knowledge proofs</p>
-    </header>
 
-    <!-- Wallet Connection -->
-    <div class="card">
-      <div class="flex-between">
-        <div class="status-bar">
-          <div class="status-dot" id="statusDot"></div>
-          <span id="connectionStatus">Not Connected</span>
-          <span class="address" id="walletAddress"></span>
-        </div>
-        <button class="btn-connect" id="connectBtn" onclick="connectWallet()">
-          Connect Wallet
-        </button>
-      </div>
-    </div>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-    <!-- Protocol Stats -->
-    <div class="card">
-      <h2><span class="icon">📊</span> Protocol Statistics</h2>
-      <div class="stats">
-        <div class="stat-card">
-          <div class="stat-value" id="totalLocks">-</div>
-          <div class="stat-label">Total Locks</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="activeLocks">-</div>
-          <div class="stat-label">Active Locks</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="proofsVerified">-</div>
-          <div class="stat-label">Proofs Verified</div>
-        </div>
-      </div>
-    </div>
+      body {
+        font-family:
+          "Inter",
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        padding: 2rem;
+      }
 
-    <!-- Create Lock -->
-    <div class="card">
-      <h2><span class="icon">🔒</span> Create ZK-Bound State Lock</h2>
-      <div class="grid-2">
-        <div class="form-group">
-          <label>State Hash (bytes32)</label>
-          <input type="text" id="stateHash" placeholder="0x1234...abcd" 
-                 value="0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef">
-        </div>
-        <div class="form-group">
-          <label>ZK Requirements (bytes32)</label>
-          <input type="text" id="zkRequirements" placeholder="0xabcd...1234"
-                 value="0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890">
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Destination Chain</label>
-        <select id="destChain">
-          <option value="42161">Arbitrum (42161)</option>
-          <option value="10">Optimism (10)</option>
-          <option value="8453">Base (8453)</option>
-          <option value="324">zkSync Era (324)</option>
-          <option value="59144">Linea (59144)</option>
-        </select>
-      </div>
-      <button onclick="createLock()" id="createLockBtn" disabled>Create Lock</button>
-      <div class="output mt-1" id="createOutput" style="display: none;"></div>
-    </div>
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+      }
 
-    <!-- Unlock State -->
-    <div class="card">
-      <h2><span class="icon">🔓</span> Unlock State with ZK Proof</h2>
-      <div class="form-group">
-        <label>Lock ID</label>
-        <input type="text" id="lockId" placeholder="0x...">
-      </div>
-      <div class="form-group">
-        <label>ZK Proof (hex)</label>
-        <input type="text" id="zkProof" placeholder="0x..." 
-               value="0x00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff">
-      </div>
-      <button onclick="unlockState()" id="unlockBtn" disabled>Unlock with Proof</button>
-      <div class="output mt-1" id="unlockOutput" style="display: none;"></div>
-    </div>
+      header {
+        text-align: center;
+        margin-bottom: 3rem;
+      }
 
-    <!-- Your Locks -->
-    <div class="card">
-      <h2><span class="icon">📋</span> Your Locks</h2>
-      <div class="locks-list" id="locksList">
-        <p style="color: var(--text-muted); text-align: center; padding: 2rem;">
-          Connect wallet to view your locks
+      h1 {
+        font-size: 2.5rem;
+        background: linear-gradient(135deg, var(--primary), #a855f7);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 0.5rem;
+      }
+
+      .subtitle {
+        color: var(--text-muted);
+        font-size: 1.1rem;
+      }
+
+      .card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .card h2 {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .card h2 .icon {
+        font-size: 1.5rem;
+      }
+
+      .form-group {
+        margin-bottom: 1rem;
+      }
+
+      label {
+        display: block;
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        margin-bottom: 0.5rem;
+      }
+
+      input,
+      select {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text);
+        font-size: 1rem;
+        font-family: "Monaco", "Menlo", monospace;
+      }
+
+      input:focus,
+      select:focus {
+        outline: none;
+        border-color: var(--primary);
+      }
+
+      button {
+        padding: 0.75rem 1.5rem;
+        background: var(--primary);
+        border: none;
+        border-radius: 8px;
+        color: white;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      button:hover {
+        background: var(--primary-dark);
+      }
+
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .btn-secondary {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text);
+      }
+
+      .btn-secondary:hover {
+        background: var(--border);
+      }
+
+      .btn-connect {
+        background: linear-gradient(135deg, var(--primary), #a855f7);
+      }
+
+      .status-bar {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: var(--bg);
+        border-radius: 8px;
+        margin-bottom: 1rem;
+      }
+
+      .status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--error);
+      }
+
+      .status-dot.connected {
+        background: var(--success);
+      }
+
+      .address {
+        font-family: "Monaco", "Menlo", monospace;
+        font-size: 0.875rem;
+        color: var(--text-muted);
+      }
+
+      .locks-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .lock-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        background: var(--bg);
+        border-radius: 8px;
+        border-left: 4px solid var(--warning);
+      }
+
+      .lock-item.unlocked {
+        border-left-color: var(--success);
+      }
+
+      .lock-info {
+        flex: 1;
+      }
+
+      .lock-id {
+        font-family: "Monaco", "Menlo", monospace;
+        font-size: 0.875rem;
+        color: var(--primary);
+      }
+
+      .lock-meta {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+      }
+
+      .lock-status {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+
+      .lock-status.locked {
+        background: rgba(245, 158, 11, 0.2);
+        color: var(--warning);
+      }
+
+      .lock-status.unlocked {
+        background: rgba(16, 185, 129, 0.2);
+        color: var(--success);
+      }
+
+      .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+      }
+
+      .output {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 1rem;
+        font-family: "Monaco", "Menlo", monospace;
+        font-size: 0.875rem;
+        max-height: 200px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-break: break-all;
+      }
+
+      .output.success {
+        border-color: var(--success);
+      }
+
+      .output.error {
+        border-color: var(--error);
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+      }
+
+      .stat-card {
+        text-align: center;
+        padding: 1.5rem;
+        background: var(--bg);
+        border-radius: 8px;
+      }
+
+      .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--primary);
+      }
+
+      .stat-label {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+      }
+
+      .flex-between {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .mt-1 {
+        margin-top: 1rem;
+      }
+      .mb-1 {
+        margin-bottom: 1rem;
+      }
+
+      @media (max-width: 768px) {
+        .grid-2,
+        .stats {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>🔐 Zaseon</h1>
+        <p class="subtitle">
+          ZK-Bound State Locks Demo — Cross-chain privacy with zero-knowledge
+          proofs
         </p>
+      </header>
+
+      <!-- Wallet Connection -->
+      <div class="card">
+        <div class="flex-between">
+          <div class="status-bar">
+            <div class="status-dot" id="statusDot"></div>
+            <span id="connectionStatus">Not Connected</span>
+            <span class="address" id="walletAddress"></span>
+          </div>
+          <button class="btn-connect" id="connectBtn" onclick="connectWallet()">
+            Connect Wallet
+          </button>
+        </div>
+      </div>
+
+      <!-- Protocol Stats -->
+      <div class="card">
+        <h2><span class="icon">📊</span> Protocol Statistics</h2>
+        <div class="stats">
+          <div class="stat-card">
+            <div class="stat-value" id="totalLocks">-</div>
+            <div class="stat-label">Total Locks</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="activeLocks">-</div>
+            <div class="stat-label">Active Locks</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="proofsVerified">-</div>
+            <div class="stat-label">Proofs Verified</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Create Lock -->
+      <div class="card">
+        <h2><span class="icon">🔒</span> Create ZK-Bound State Lock</h2>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>State Hash (bytes32)</label>
+            <input
+              type="text"
+              id="stateHash"
+              placeholder="0x1234...abcd"
+              value="0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+            />
+          </div>
+          <div class="form-group">
+            <label>ZK Requirements (bytes32)</label>
+            <input
+              type="text"
+              id="zkRequirements"
+              placeholder="0xabcd...1234"
+              value="0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+            />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Destination Chain</label>
+          <select id="destChain">
+            <option value="42161">Arbitrum (42161)</option>
+            <option value="10">Optimism (10)</option>
+            <option value="8453">Base (8453)</option>
+            <option value="324">zkSync Era (324)</option>
+            <option value="59144">Linea (59144)</option>
+          </select>
+        </div>
+        <button onclick="createLock()" id="createLockBtn" disabled>
+          Create Lock
+        </button>
+        <div class="output mt-1" id="createOutput" style="display: none"></div>
+      </div>
+
+      <!-- Unlock State -->
+      <div class="card">
+        <h2><span class="icon">🔓</span> Unlock State with ZK Proof</h2>
+        <div class="form-group">
+          <label>Lock ID</label>
+          <input type="text" id="lockId" placeholder="0x..." />
+        </div>
+        <div class="form-group">
+          <label>ZK Proof (hex)</label>
+          <input
+            type="text"
+            id="zkProof"
+            placeholder="0x..."
+            value="0x00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff"
+          />
+        </div>
+        <button onclick="unlockState()" id="unlockBtn" disabled>
+          Unlock with Proof
+        </button>
+        <div class="output mt-1" id="unlockOutput" style="display: none"></div>
+      </div>
+
+      <!-- Your Locks -->
+      <div class="card">
+        <h2><span class="icon">📋</span> Your Locks</h2>
+        <div class="locks-list" id="locksList">
+          <p
+            style="color: var(--text-muted); text-align: center; padding: 2rem"
+          >
+            Connect wallet to view your locks
+          </p>
+        </div>
+      </div>
+
+      <!-- Contract Info -->
+      <div class="card">
+        <h2><span class="icon">📜</span> Contract Addresses (Sepolia)</h2>
+        <div class="output">
+          ZKBoundStateLocks: 0xf390ae12c9ce8f546ef7c7adaa6a1ab7768a2c78
+          NullifierRegistry: 0x3e21d559f19c76a0bcec378b10dae2cc0e4c2191
+          CrossChainProofHub: 0x40eaa5de0c6497c8943c967b42799cb092c26adc
+          ZaseonAtomicSwapV2: 0xdefb9a66dc14a6d247b282555b69da7745b0ab57
+        </div>
       </div>
     </div>
 
-    <!-- Contract Info -->
-    <div class="card">
-      <h2><span class="icon">📜</span> Contract Addresses (Sepolia)</h2>
-      <div class="output">
-ZKBoundStateLocks:    0xf390ae12c9ce8f546ef7c7adaa6a1ab7768a2c78
-NullifierRegistry:    0x3e21d559f19c76a0bcec378b10dae2cc0e4c2191
-CrossChainProofHub:   0x40eaa5de0c6497c8943c967b42799cb092c26adc
-SoulAtomicSwapV2:     0xdefb9a66dc14a6d247b282555b69da7745b0ab57
-      </div>
-    </div>
-  </div>
+    <script type="module">
+      // Contract addresses (Sepolia)
+      const CONTRACTS = {
+        zkBoundStateLocks: "0xf390ae12c9ce8f546ef7c7adaa6a1ab7768a2c78",
+        nullifierRegistry: "0x3e21d559f19c76a0bcec378b10dae2cc0e4c2191",
+        proofHub: "0x40eaa5de0c6497c8943c967b42799cb092c26adc",
+        atomicSwap: "0xdefb9a66dc14a6d247b282555b69da7745b0ab57",
+      };
 
-  <script type="module">
-    // Contract addresses (Sepolia)
-    const CONTRACTS = {
-      zkBoundStateLocks: '0xf390ae12c9ce8f546ef7c7adaa6a1ab7768a2c78',
-      nullifierRegistry: '0x3e21d559f19c76a0bcec378b10dae2cc0e4c2191',
-      proofHub: '0x40eaa5de0c6497c8943c967b42799cb092c26adc',
-      atomicSwap: '0xdefb9a66dc14a6d247b282555b69da7745b0ab57'
-    };
+      // ABI fragments
+      const ZK_LOCKS_ABI = [
+        "function createStateLock(bytes32 stateHash, bytes32 zkRequirements, uint256 destChainId) external returns (bytes32 lockId)",
+        "function unlockState(bytes32 lockId, bytes calldata zkProof) external",
+        "function getLock(bytes32 lockId) external view returns (tuple(bytes32 stateHash, bytes32 zkRequirements, address creator, uint256 destChainId, uint256 createdAt, bool isUnlocked))",
+        "function userLockCount(address user) external view returns (uint256)",
+        "event StateLockCreated(bytes32 indexed lockId, address indexed creator, bytes32 stateHash, uint256 destChainId)",
+        "event StateUnlocked(bytes32 indexed lockId, address indexed unlocker)",
+      ];
 
-    // ABI fragments
-    const ZK_LOCKS_ABI = [
-      'function createStateLock(bytes32 stateHash, bytes32 zkRequirements, uint256 destChainId) external returns (bytes32 lockId)',
-      'function unlockState(bytes32 lockId, bytes calldata zkProof) external',
-      'function getLock(bytes32 lockId) external view returns (tuple(bytes32 stateHash, bytes32 zkRequirements, address creator, uint256 destChainId, uint256 createdAt, bool isUnlocked))',
-      'function userLockCount(address user) external view returns (uint256)',
-      'event StateLockCreated(bytes32 indexed lockId, address indexed creator, bytes32 stateHash, uint256 destChainId)',
-      'event StateUnlocked(bytes32 indexed lockId, address indexed unlocker)'
-    ];
+      // State
+      let provider = null;
+      let signer = null;
+      let zkLocksContract = null;
+      let userAddress = null;
+      let userLocks = [];
 
-    // State
-    let provider = null;
-    let signer = null;
-    let zkLocksContract = null;
-    let userAddress = null;
-    let userLocks = [];
+      // Import ethers from CDN
+      const { ethers } =
+        await import("https://cdn.jsdelivr.net/npm/ethers@6.11.1/+esm");
 
-    // Import ethers from CDN
-    const { ethers } = await import('https://cdn.jsdelivr.net/npm/ethers@6.11.1/+esm');
-
-    // Connect wallet
-    window.connectWallet = async function() {
-      try {
-        if (!window.ethereum) {
-          alert('Please install MetaMask or another Web3 wallet');
-          return;
-        }
-
-        provider = new ethers.BrowserProvider(window.ethereum);
-        
-        // Request account access
-        const accounts = await provider.send('eth_requestAccounts', []);
-        userAddress = accounts[0];
-        
-        // Check network
-        const network = await provider.getNetwork();
-        if (network.chainId !== 11155111n) {
-          try {
-            await window.ethereum.request({
-              method: 'wallet_switchEthereumChain',
-              params: [{ chainId: '0xaa36a7' }], // Sepolia
-            });
-            provider = new ethers.BrowserProvider(window.ethereum);
-          } catch (e) {
-            console.warn('Could not switch to Sepolia:', e);
+      // Connect wallet
+      window.connectWallet = async function () {
+        try {
+          if (!window.ethereum) {
+            alert("Please install MetaMask or another Web3 wallet");
+            return;
           }
-        }
 
-        signer = await provider.getSigner();
-        zkLocksContract = new ethers.Contract(
-          CONTRACTS.zkBoundStateLocks,
-          ZK_LOCKS_ABI,
-          signer
-        );
+          provider = new ethers.BrowserProvider(window.ethereum);
 
-        // Update UI
-        document.getElementById('statusDot').classList.add('connected');
-        document.getElementById('connectionStatus').textContent = 'Connected to Sepolia';
-        document.getElementById('walletAddress').textContent = 
-          `${userAddress.slice(0, 6)}...${userAddress.slice(-4)}`;
-        document.getElementById('connectBtn').textContent = 'Connected';
-        document.getElementById('connectBtn').disabled = true;
-        document.getElementById('createLockBtn').disabled = false;
-        document.getElementById('unlockBtn').disabled = false;
+          // Request account access
+          const accounts = await provider.send("eth_requestAccounts", []);
+          userAddress = accounts[0];
 
-        // Load data
-        await loadStats();
-        await loadUserLocks();
-
-      } catch (error) {
-        console.error('Connection error:', error);
-        alert('Failed to connect: ' + error.message);
-      }
-    };
-
-    // Load protocol stats
-    async function loadStats() {
-      try {
-        // These would normally call contract methods
-        // For demo, showing placeholder values
-        document.getElementById('totalLocks').textContent = '42';
-        document.getElementById('activeLocks').textContent = '18';
-        document.getElementById('proofsVerified').textContent = '127';
-      } catch (error) {
-        console.error('Failed to load stats:', error);
-      }
-    }
-
-    // Load user's locks
-    async function loadUserLocks() {
-      const locksList = document.getElementById('locksList');
-      
-      try {
-        // For demo, show sample locks
-        userLocks = [
-          {
-            id: '0x1234...abcd',
-            stateHash: '0x1234...5678',
-            destChain: 'Arbitrum',
-            status: 'locked',
-            createdAt: 'Jan 25, 2026'
-          },
-          {
-            id: '0x5678...efgh',
-            stateHash: '0xabcd...ef01',
-            destChain: 'Base',
-            status: 'unlocked',
-            createdAt: 'Jan 24, 2026'
+          // Check network
+          const network = await provider.getNetwork();
+          if (network.chainId !== 11155111n) {
+            try {
+              await window.ethereum.request({
+                method: "wallet_switchEthereumChain",
+                params: [{ chainId: "0xaa36a7" }], // Sepolia
+              });
+              provider = new ethers.BrowserProvider(window.ethereum);
+            } catch (e) {
+              console.warn("Could not switch to Sepolia:", e);
+            }
           }
-        ];
 
-        locksList.innerHTML = userLocks.map(lock => `
+          signer = await provider.getSigner();
+          zkLocksContract = new ethers.Contract(
+            CONTRACTS.zkBoundStateLocks,
+            ZK_LOCKS_ABI,
+            signer,
+          );
+
+          // Update UI
+          document.getElementById("statusDot").classList.add("connected");
+          document.getElementById("connectionStatus").textContent =
+            "Connected to Sepolia";
+          document.getElementById("walletAddress").textContent =
+            `${userAddress.slice(0, 6)}...${userAddress.slice(-4)}`;
+          document.getElementById("connectBtn").textContent = "Connected";
+          document.getElementById("connectBtn").disabled = true;
+          document.getElementById("createLockBtn").disabled = false;
+          document.getElementById("unlockBtn").disabled = false;
+
+          // Load data
+          await loadStats();
+          await loadUserLocks();
+        } catch (error) {
+          console.error("Connection error:", error);
+          alert("Failed to connect: " + error.message);
+        }
+      };
+
+      // Load protocol stats
+      async function loadStats() {
+        try {
+          // These would normally call contract methods
+          // For demo, showing placeholder values
+          document.getElementById("totalLocks").textContent = "42";
+          document.getElementById("activeLocks").textContent = "18";
+          document.getElementById("proofsVerified").textContent = "127";
+        } catch (error) {
+          console.error("Failed to load stats:", error);
+        }
+      }
+
+      // Load user's locks
+      async function loadUserLocks() {
+        const locksList = document.getElementById("locksList");
+
+        try {
+          // For demo, show sample locks
+          userLocks = [
+            {
+              id: "0x1234...abcd",
+              stateHash: "0x1234...5678",
+              destChain: "Arbitrum",
+              status: "locked",
+              createdAt: "Jan 25, 2026",
+            },
+            {
+              id: "0x5678...efgh",
+              stateHash: "0xabcd...ef01",
+              destChain: "Base",
+              status: "unlocked",
+              createdAt: "Jan 24, 2026",
+            },
+          ];
+
+          locksList.innerHTML = userLocks
+            .map(
+              (lock) => `
           <div class="lock-item ${lock.status}">
             <div class="lock-info">
               <div class="lock-id">${lock.id}</div>
@@ -524,120 +559,127 @@ SoulAtomicSwapV2:     0xdefb9a66dc14a6d247b282555b69da7745b0ab57
             </div>
             <span class="lock-status ${lock.status}">${lock.status}</span>
           </div>
-        `).join('');
-
-      } catch (error) {
-        console.error('Failed to load locks:', error);
-        locksList.innerHTML = '<p style="color: var(--error);">Error loading locks</p>';
+        `,
+            )
+            .join("");
+        } catch (error) {
+          console.error("Failed to load locks:", error);
+          locksList.innerHTML =
+            '<p style="color: var(--error);">Error loading locks</p>';
+        }
       }
-    }
 
-    // Create lock
-    window.createLock = async function() {
-      const output = document.getElementById('createOutput');
-      output.style.display = 'block';
-      output.className = 'output mt-1';
-      output.textContent = '⏳ Creating lock...';
+      // Create lock
+      window.createLock = async function () {
+        const output = document.getElementById("createOutput");
+        output.style.display = "block";
+        output.className = "output mt-1";
+        output.textContent = "⏳ Creating lock...";
 
-      try {
-        const stateHash = document.getElementById('stateHash').value;
-        const zkRequirements = document.getElementById('zkRequirements').value;
-        const destChainId = document.getElementById('destChain').value;
+        try {
+          const stateHash = document.getElementById("stateHash").value;
+          const zkRequirements =
+            document.getElementById("zkRequirements").value;
+          const destChainId = document.getElementById("destChain").value;
 
-        // Validate inputs
-        if (!stateHash.match(/^0x[a-fA-F0-9]{64}$/)) {
-          throw new Error('Invalid state hash format (must be 32 bytes)');
-        }
-        if (!zkRequirements.match(/^0x[a-fA-F0-9]{64}$/)) {
-          throw new Error('Invalid ZK requirements format (must be 32 bytes)');
-        }
+          // Validate inputs
+          if (!stateHash.match(/^0x[a-fA-F0-9]{64}$/)) {
+            throw new Error("Invalid state hash format (must be 32 bytes)");
+          }
+          if (!zkRequirements.match(/^0x[a-fA-F0-9]{64}$/)) {
+            throw new Error(
+              "Invalid ZK requirements format (must be 32 bytes)",
+            );
+          }
 
-        // Call contract
-        const tx = await zkLocksContract.createStateLock(
-          stateHash,
-          zkRequirements,
-          destChainId
-        );
+          // Call contract
+          const tx = await zkLocksContract.createStateLock(
+            stateHash,
+            zkRequirements,
+            destChainId,
+          );
 
-        output.textContent = `⏳ Transaction sent: ${tx.hash}\nWaiting for confirmation...`;
+          output.textContent = `⏳ Transaction sent: ${tx.hash}\nWaiting for confirmation...`;
 
-        const receipt = await tx.wait();
-        
-        // Parse event
-        const event = receipt.logs.find(log => {
-          try {
-            const parsed = zkLocksContract.interface.parseLog(log);
-            return parsed.name === 'StateLockCreated';
-          } catch { return false; }
-        });
+          const receipt = await tx.wait();
 
-        let lockId = 'Unknown';
-        if (event) {
-          const parsed = zkLocksContract.interface.parseLog(event);
-          lockId = parsed.args.lockId;
-        }
+          // Parse event
+          const event = receipt.logs.find((log) => {
+            try {
+              const parsed = zkLocksContract.interface.parseLog(log);
+              return parsed.name === "StateLockCreated";
+            } catch {
+              return false;
+            }
+          });
 
-        output.className = 'output mt-1 success';
-        output.textContent = `✅ Lock created successfully!
+          let lockId = "Unknown";
+          if (event) {
+            const parsed = zkLocksContract.interface.parseLog(event);
+            lockId = parsed.args.lockId;
+          }
+
+          output.className = "output mt-1 success";
+          output.textContent = `✅ Lock created successfully!
 
 Lock ID: ${lockId}
 Tx Hash: ${receipt.hash}
 Block: ${receipt.blockNumber}
 Gas Used: ${receipt.gasUsed.toString()}`;
 
-        // Refresh locks
-        await loadUserLocks();
-
-      } catch (error) {
-        console.error('Create lock error:', error);
-        output.className = 'output mt-1 error';
-        output.textContent = `❌ Error: ${error.message}`;
-      }
-    };
-
-    // Unlock state
-    window.unlockState = async function() {
-      const output = document.getElementById('unlockOutput');
-      output.style.display = 'block';
-      output.className = 'output mt-1';
-      output.textContent = '⏳ Unlocking state...';
-
-      try {
-        const lockId = document.getElementById('lockId').value;
-        const zkProof = document.getElementById('zkProof').value;
-
-        if (!lockId.match(/^0x[a-fA-F0-9]{64}$/)) {
-          throw new Error('Invalid lock ID format (must be 32 bytes)');
+          // Refresh locks
+          await loadUserLocks();
+        } catch (error) {
+          console.error("Create lock error:", error);
+          output.className = "output mt-1 error";
+          output.textContent = `❌ Error: ${error.message}`;
         }
+      };
 
-        const tx = await zkLocksContract.unlockState(lockId, zkProof);
-        output.textContent = `⏳ Transaction sent: ${tx.hash}\nWaiting for confirmation...`;
+      // Unlock state
+      window.unlockState = async function () {
+        const output = document.getElementById("unlockOutput");
+        output.style.display = "block";
+        output.className = "output mt-1";
+        output.textContent = "⏳ Unlocking state...";
 
-        const receipt = await tx.wait();
+        try {
+          const lockId = document.getElementById("lockId").value;
+          const zkProof = document.getElementById("zkProof").value;
 
-        output.className = 'output mt-1 success';
-        output.textContent = `✅ State unlocked successfully!
+          if (!lockId.match(/^0x[a-fA-F0-9]{64}$/)) {
+            throw new Error("Invalid lock ID format (must be 32 bytes)");
+          }
+
+          const tx = await zkLocksContract.unlockState(lockId, zkProof);
+          output.textContent = `⏳ Transaction sent: ${tx.hash}\nWaiting for confirmation...`;
+
+          const receipt = await tx.wait();
+
+          output.className = "output mt-1 success";
+          output.textContent = `✅ State unlocked successfully!
 
 Tx Hash: ${receipt.hash}
 Block: ${receipt.blockNumber}
 Gas Used: ${receipt.gasUsed.toString()}`;
 
-        await loadUserLocks();
+          await loadUserLocks();
+        } catch (error) {
+          console.error("Unlock error:", error);
+          output.className = "output mt-1 error";
+          output.textContent = `❌ Error: ${error.message}`;
+        }
+      };
 
-      } catch (error) {
-        console.error('Unlock error:', error);
-        output.className = 'output mt-1 error';
-        output.textContent = `❌ Error: ${error.message}`;
+      // Auto-connect if already authorized
+      if (window.ethereum) {
+        const accounts = await window.ethereum.request({
+          method: "eth_accounts",
+        });
+        if (accounts.length > 0) {
+          await window.connectWallet();
+        }
       }
-    };
-
-    // Auto-connect if already authorized
-    if (window.ethereum) {
-      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-      if (accounts.length > 0) {
-        await window.connectWallet();
-      }
-    }
-  </script>
-</body>
+    </script>
+  </body>
 </html>
