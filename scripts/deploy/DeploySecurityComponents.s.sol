@@ -115,7 +115,8 @@ contract DeploySecurityComponents is Script {
                     _relayWatchtower: relayWatchtower,
                     _intentCompletionLayer: address(0),
                     _instantCompletionGuarantee: address(0),
-                    _dynamicRoutingOrchestrator: address(0)
+                    _dynamicRoutingOrchestrator: address(0),
+                    _crossChainLiquidityVault: address(0)
                 })
             );
             console.log("Hub wired: multiProver + relayWatchtower");

@@ -40,7 +40,7 @@ The ZASEON (Zaseon) is designed as a modular middleware protocol that enables pr
 
 ZASEON does **not** move tokens between chains. It moves **verified cryptographic claims** (ZK proofs) about token ownership across chains. The distinction is critical:
 
-| Aspect            | Traditional Bridge                    | ZASEON                                 |
+| Aspect            | Traditional Bridge                    | ZASEON                                        |
 | ----------------- | ------------------------------------- | --------------------------------------------- |
 | **Moves**         | Tokens (lock/mint or burn/mint)       | ZK proofs of state                            |
 | **Creates**       | Wrapped/synthetic tokens              | Nothing — no new tokens                       |
@@ -101,6 +101,51 @@ ZASEON DOES:
 
 ---
 
+## Cross-Chain Liquidity Layer
+
+While the bridge-wrapped model above covers proof-only relays, some flows require **actual value transfer** across chains (e.g., a user deposits on Chain A and expects to withdraw equivalent tokens on Chain B, possibly before the bridge delivery completes). The `CrossChainLiquidityVault` system addresses this:
+
+```
+Chain A (Source):
+  User deposits → CrossChainPrivacyHub → CrossChainLiquidityVault.lockLiquidity()
+  Tokens locked in the source vault. ZK proof generated.
+
+Proof Relay:
+  MultiBridgeRouter delivers the ZK proof to Chain B via bridge adapters.
+
+Chain B (Destination):
+  Proof verified → CrossChainLiquidityVault.releaseLiquidity()
+  LP-provided funds released to recipient from the destination vault.
+
+Settlement:
+  Periodic batch settlement rebalances net flows between vaults.
+```
+
+### Liquidity Provider (LP) Model
+
+- **LPs deposit** ETH or ERC-20 tokens into per-chain vaults, earning fee share (basis points).
+- **1-hour cooldown** on LP withdrawals prevents front-running of pending locks.
+- **Locks** are created by the `PRIVACY_HUB_ROLE` (only `CrossChainPrivacyHub`) and have a 7-day expiry for safety.
+- **Releases** draw from the available LP pool on the destination chain.
+- **Net settlement** tracks inter-chain flow imbalances; the `SETTLER_ROLE` periodically rebalances.
+
+### Key Contracts
+
+| Contract                    | Purpose                                                                   |
+| --------------------------- | ------------------------------------------------------------------------- |
+| `CrossChainLiquidityVault`  | Per-chain LP vault: deposits, withdrawals, lock/release, settlement       |
+| `ICrossChainLiquidityVault` | Interface with structs (`LPPosition`, `LiquidityLock`, `SettlementBatch`) |
+
+### ZK Liquidity Proof (Noir Circuit)
+
+The `liquidity_proof` Noir circuit proves that a lock on the source chain has sufficient LP backing on the destination chain **without revealing exact amounts or LP identities**. Public inputs are Poseidon commitments; private witnesses include lock details, pool state, and a release nullifier to prevent double-spend.
+
+### Hub Integration
+
+The `CrossChainLiquidityVault` is registered as the 23rd component in `ZaseonProtocolHub.wireAll()` via the `_crossChainLiquidityVault` field in `WireAllParams`. It is also required for `isFullyConfigured()` to return true.
+
+---
+
 ## Core Design Principles
 
 1. **Privacy-First**: All state transfers are encrypted; only commitments are on-chain
@@ -117,7 +162,7 @@ The codebase uses certain terms that map to proof middleware concepts:
 
 | Codebase Term                | Proof Middleware Meaning                                                                                                                                   |
 | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `BridgeCapacity` (struct)    | Oracle-observed throughput capacity of a bridge adapter on a given chain. Zaseon does NOT manage this capacity — it queries it for routing decisions.        |
+| `BridgeCapacity` (struct)    | Oracle-observed throughput capacity of a bridge adapter on a given chain. Zaseon does NOT manage this capacity — it queries it for routing decisions.      |
 | `DynamicRoutingOrchestrator` | Routes **proof relay requests** through optimal bridge adapters based on observed bridge capacity, latency, and success rates.                             |
 | `CapacityAwareRouter`        | Routes proof-carrying transfers through the `DynamicRoutingOrchestrator`, tracking per-pair relay metrics.                                                 |
 | `IntentCompletionLayer`      | Proof service marketplace where solvers compete to generate and deliver ZK proofs for user intents. "Completion" = proof verification, not token delivery. |

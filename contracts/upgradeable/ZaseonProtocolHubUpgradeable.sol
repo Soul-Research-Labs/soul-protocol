@@ -113,6 +113,9 @@ contract ZaseonProtocolHubUpgradeable is
     /// @notice Dynamic routing orchestrator
     address public dynamicRoutingOrchestrator;
 
+    /// @notice Cross-chain liquidity vault
+    address public crossChainLiquidityVault;
+
     // ============ Governance ============
 
     /// @notice Governance addresses
@@ -992,6 +995,18 @@ contract ZaseonProtocolHubUpgradeable is
                 ++updated;
             }
         }
+        if (p._crossChainLiquidityVault != address(0)) {
+            crossChainLiquidityVault = p._crossChainLiquidityVault;
+            emit ComponentRegistered(
+                keccak256("crossChainLiquidityVault"),
+                ComponentCategory.INFRASTRUCTURE,
+                p._crossChainLiquidityVault,
+                1
+            );
+            unchecked {
+                ++updated;
+            }
+        }
 
         emit ProtocolWired(msg.sender, updated);
     }
@@ -1017,7 +1032,8 @@ contract ZaseonProtocolHubUpgradeable is
             proofCarryingContainer != address(0) &&
             stealthAddressRegistry != address(0) &&
             privateRelayerNetwork != address(0) &&
-            complianceOracle != address(0));
+            complianceOracle != address(0) &&
+            crossChainLiquidityVault != address(0));
     }
 
     /// @notice Get a summary of which components are configured
@@ -1031,8 +1047,8 @@ contract ZaseonProtocolHubUpgradeable is
         view
         returns (string[] memory names, address[] memory addresses)
     {
-        names = new string[](25);
-        addresses = new address[](25);
+        names = new string[](26);
+        addresses = new address[](26);
         names[0] = "verifierRegistry";
         addresses[0] = verifierRegistry;
         names[1] = "universalVerifier";
@@ -1083,6 +1099,8 @@ contract ZaseonProtocolHubUpgradeable is
         addresses[23] = timelock;
         names[24] = "upgradeTimelock";
         addresses[24] = upgradeTimelock;
+        names[25] = "crossChainLiquidityVault";
+        addresses[25] = crossChainLiquidityVault;
     }
 
     /*//////////////////////////////////////////////////////////////

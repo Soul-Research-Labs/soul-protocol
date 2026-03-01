@@ -148,6 +148,9 @@ contract ZaseonProtocolHub is
     /// @notice Dynamic routing orchestrator
     address public dynamicRoutingOrchestrator;
 
+    /// @notice Cross-chain liquidity vault
+    address public crossChainLiquidityVault;
+
     // ============ Governance ============
 
     /// @notice Governance addresses
@@ -369,7 +372,7 @@ contract ZaseonProtocolHub is
 
     /**
      * @notice Batch register bridge adapters
-          * @param chainIds The chainIds identifier
+     * @param chainIds The chainIds identifier
      * @param adapters The adapters
      * @param supportsPrivacy The supports privacy
      * @param minConfirmations The minConfirmations bound
@@ -423,7 +426,7 @@ contract ZaseonProtocolHub is
 
     /**
      * @notice Set Stealth Address Registry
-          * @param _module The _module
+     * @param _module The _module
      */
     function setStealthAddressRegistry(
         address _module
@@ -435,7 +438,7 @@ contract ZaseonProtocolHub is
 
     /**
      * @notice Set Private Relayer Network
-          * @param _module The _module
+     * @param _module The _module
      */
     function setPrivateRelayerNetwork(
         address _module
@@ -447,7 +450,7 @@ contract ZaseonProtocolHub is
 
     /**
      * @notice Set View Key Registry
-          * @param _module The _module
+     * @param _module The _module
      */
     function setViewKeyRegistry(
         address _module
@@ -987,6 +990,18 @@ contract ZaseonProtocolHub is
                 ++updated;
             }
         }
+        if (p._crossChainLiquidityVault != address(0)) {
+            crossChainLiquidityVault = p._crossChainLiquidityVault;
+            emit ComponentRegistered(
+                keccak256("crossChainLiquidityVault"),
+                ComponentCategory.INFRASTRUCTURE,
+                p._crossChainLiquidityVault,
+                1
+            );
+            unchecked {
+                ++updated;
+            }
+        }
 
         emit ProtocolWired(msg.sender, updated);
     }
@@ -997,11 +1012,11 @@ contract ZaseonProtocolHub is
     ///      instantCompletionGuarantee, dynamicRoutingOrchestrator, proofTranslator,
     ///      intentCompletionLayer) are not required.
     /// @return configured True if all required components have non-zero addresses
-        /**
+    /**
      * @notice Checks if fully configured
      * @return configured The configured
      */
-function isFullyConfigured() external view returns (bool configured) {
+    function isFullyConfigured() external view returns (bool configured) {
         return (// Core privacy infrastructure
         verifierRegistry != address(0) &&
             universalVerifier != address(0) &&
@@ -1020,24 +1035,26 @@ function isFullyConfigured() external view returns (bool configured) {
             // Privacy features
             stealthAddressRegistry != address(0) &&
             privateRelayerNetwork != address(0) &&
-            complianceOracle != address(0));
+            complianceOracle != address(0) &&
+            // Cross-chain liquidity
+            crossChainLiquidityVault != address(0));
     }
 
     /// @notice Get a summary of which components are configured
     /// @return names Array of component names
     /// @return addresses Array of component addresses
-        /**
+    /**
      * @notice Returns the component status
      * @return names The names
      * @return addresses The addresses
      */
-function getComponentStatus()
+    function getComponentStatus()
         external
         view
         returns (string[] memory names, address[] memory addresses)
     {
-        names = new string[](25);
-        addresses = new address[](25);
+        names = new string[](26);
+        addresses = new address[](26);
         names[0] = "verifierRegistry";
         addresses[0] = verifierRegistry;
         names[1] = "universalVerifier";
@@ -1088,6 +1105,8 @@ function getComponentStatus()
         addresses[23] = timelock;
         names[24] = "upgradeTimelock";
         addresses[24] = upgradeTimelock;
+        names[25] = "crossChainLiquidityVault";
+        addresses[25] = crossChainLiquidityVault;
     }
 
     /*//////////////////////////////////////////////////////////////

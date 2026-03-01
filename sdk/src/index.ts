@@ -247,6 +247,19 @@ export type {
   ProofHubConfig,
 } from "./bridge/CrossChainProofHubV3Client";
 
+// Cross-Chain Liquidity Vault SDK Client
+export {
+  CrossChainLiquidityVaultClient,
+  LIQUIDITY_VAULT_ABI,
+  ETH_ADDRESS as VAULT_ETH_ADDRESS,
+} from "./bridge/CrossChainLiquidityVaultClient";
+export type {
+  LiquidityLockInfo,
+  SettlementInfo,
+  VaultStats,
+  LPPosition,
+} from "./bridge/CrossChainLiquidityVaultClient";
+
 // ZK-Bound State Locks SDK Client
 export { ZKBoundStateLocksClient } from "./primitives/ZKBoundStateLocksClient";
 export type {

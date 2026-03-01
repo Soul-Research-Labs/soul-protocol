@@ -156,7 +156,8 @@ contract FullDeploymentE2E is Test {
                 _relayWatchtower: address(0),
                 _intentCompletionLayer: address(0),
                 _instantCompletionGuarantee: address(0),
-                _dynamicRoutingOrchestrator: address(0)
+                _dynamicRoutingOrchestrator: address(0),
+                _crossChainLiquidityVault: address(0)
             })
         );
 
@@ -196,6 +197,33 @@ contract FullDeploymentE2E is Test {
         hub.setComplianceOracle(address(0xA005));
         hub.setRelayWatchtower(address(0xA006));
         hub.setMultiProver(address(0xA007));
+        hub.wireAll(
+            IZaseonProtocolHub.WireAllParams({
+                _verifierRegistry: address(0),
+                _universalVerifier: address(0),
+                _crossChainMessageRelay: address(0),
+                _crossChainPrivacyHub: address(0),
+                _stealthAddressRegistry: address(0),
+                _privateRelayerNetwork: address(0),
+                _viewKeyRegistry: address(0),
+                _shieldedPool: address(0),
+                _nullifierManager: address(0),
+                _complianceOracle: address(0),
+                _proofTranslator: address(0),
+                _privacyRouter: address(0),
+                _relayProofValidator: address(0),
+                _zkBoundStateLocks: address(0),
+                _proofCarryingContainer: address(0),
+                _crossDomainNullifierAlgebra: address(0),
+                _policyBoundProofs: address(0),
+                _multiProver: address(0),
+                _relayWatchtower: address(0),
+                _intentCompletionLayer: address(0),
+                _instantCompletionGuarantee: address(0),
+                _dynamicRoutingOrchestrator: address(0),
+                _crossChainLiquidityVault: address(0xA008)
+            })
+        );
 
         assertTrue(hub.isFullyConfigured());
     }
@@ -203,8 +231,8 @@ contract FullDeploymentE2E is Test {
     function test_GetComponentStatusReturns17() public view {
         (string[] memory names, address[] memory addrs) = hub
             .getComponentStatus();
-        assertEq(names.length, 25);
-        assertEq(addrs.length, 25);
+        assertEq(names.length, 26);
+        assertEq(addrs.length, 26);
         // First component is verifierRegistry
         assertEq(addrs[0], address(verifierRegistry));
     }
@@ -590,7 +618,8 @@ contract FullDeploymentE2E is Test {
                 _relayWatchtower: address(0),
                 _intentCompletionLayer: address(0),
                 _instantCompletionGuarantee: address(0),
-                _dynamicRoutingOrchestrator: address(0)
+                _dynamicRoutingOrchestrator: address(0),
+                _crossChainLiquidityVault: address(0)
             })
         );
 
@@ -1116,7 +1145,8 @@ contract FullDeploymentE2E is Test {
                 _relayWatchtower: address(0),
                 _intentCompletionLayer: address(0),
                 _instantCompletionGuarantee: address(0),
-                _dynamicRoutingOrchestrator: address(0)
+                _dynamicRoutingOrchestrator: address(0),
+                _crossChainLiquidityVault: address(0)
             })
         );
     }

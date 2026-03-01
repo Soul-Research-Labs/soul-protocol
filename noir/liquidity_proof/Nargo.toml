@@ -1,0 +1,8 @@
+[package]
+name = "liquidity_proof"
+type = "bin"
+authors = ["Zaseon Team"]
+description = "Liquidity backing proof circuit for cross-chain private transfers in Zaseon"
+
+[dependencies]
+poseidon = { tag = "v0.2.3", git = "https://github.com/noir-lang/poseidon" }

@@ -78,6 +78,7 @@ interface IZaseonProtocolHub {
         address _intentCompletionLayer;
         address _instantCompletionGuarantee;
         address _dynamicRoutingOrchestrator;
+        address _crossChainLiquidityVault;
     }
 
     /*//////////////////////////////////////////////////////////////

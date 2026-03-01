@@ -291,7 +291,8 @@ contract DeployMainnet is Script {
                 _relayWatchtower: address(0), // deployed separately
                 _intentCompletionLayer: address(0),
                 _instantCompletionGuarantee: address(0),
-                _dynamicRoutingOrchestrator: address(0)
+                _dynamicRoutingOrchestrator: address(0),
+                _crossChainLiquidityVault: address(0)
             })
         );
         console.log("Hub wired with core components");

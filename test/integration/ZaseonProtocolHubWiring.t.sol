@@ -31,6 +31,7 @@ contract ZaseonProtocolHubWiringTest is Test {
     address constant PBP = address(0x1011);
     address constant MULTI_PROVER = address(0x1012);
     address constant BRIDGE_WATCH = address(0x1013);
+    address constant LIQ_VAULT = address(0x1014);
 
     function setUp() public {
         hub = new ZaseonProtocolHub();
@@ -66,7 +67,8 @@ contract ZaseonProtocolHubWiringTest is Test {
                 _relayWatchtower: address(0),
                 _intentCompletionLayer: address(0),
                 _instantCompletionGuarantee: address(0),
-                _dynamicRoutingOrchestrator: address(0)
+                _dynamicRoutingOrchestrator: address(0),
+                _crossChainLiquidityVault: address(0)
             })
         );
 
@@ -115,7 +117,8 @@ contract ZaseonProtocolHubWiringTest is Test {
                 _relayWatchtower: BRIDGE_WATCH,
                 _intentCompletionLayer: address(0),
                 _instantCompletionGuarantee: address(0),
-                _dynamicRoutingOrchestrator: address(0)
+                _dynamicRoutingOrchestrator: address(0),
+                _crossChainLiquidityVault: LIQ_VAULT
             })
         );
 
@@ -151,7 +154,8 @@ contract ZaseonProtocolHubWiringTest is Test {
                 _relayWatchtower: address(0),
                 _intentCompletionLayer: address(0),
                 _instantCompletionGuarantee: address(0),
-                _dynamicRoutingOrchestrator: address(0)
+                _dynamicRoutingOrchestrator: address(0),
+                _crossChainLiquidityVault: address(0)
             })
         );
 
@@ -186,14 +190,15 @@ contract ZaseonProtocolHubWiringTest is Test {
                 _relayWatchtower: address(0),
                 _intentCompletionLayer: address(0),
                 _instantCompletionGuarantee: address(0),
-                _dynamicRoutingOrchestrator: address(0)
+                _dynamicRoutingOrchestrator: address(0),
+                _crossChainLiquidityVault: address(0)
             })
         );
 
         (string[] memory names, address[] memory addrs) = hub
             .getComponentStatus();
-        assertEq(names.length, 25);
-        assertEq(addrs.length, 25);
+        assertEq(names.length, 26);
+        assertEq(addrs.length, 26);
 
         // Spot check a few
         assertEq(addrs[0], VERIFIER_REG); // verifierRegistry
@@ -229,7 +234,8 @@ contract ZaseonProtocolHubWiringTest is Test {
                 _relayWatchtower: address(0),
                 _intentCompletionLayer: address(0),
                 _instantCompletionGuarantee: address(0),
-                _dynamicRoutingOrchestrator: address(0)
+                _dynamicRoutingOrchestrator: address(0),
+                _crossChainLiquidityVault: address(0)
             })
         );
     }
@@ -279,7 +285,8 @@ contract ZaseonProtocolHubWiringTest is Test {
                 _relayWatchtower: BRIDGE_WATCH,
                 _intentCompletionLayer: ICL,
                 _instantCompletionGuarantee: ICG,
-                _dynamicRoutingOrchestrator: DRO
+                _dynamicRoutingOrchestrator: DRO,
+                _crossChainLiquidityVault: address(0)
             })
         );
 
@@ -339,7 +346,8 @@ contract ZaseonProtocolHubWiringTest is Test {
                 _relayWatchtower: BRIDGE_WATCH,
                 _intentCompletionLayer: address(0),
                 _instantCompletionGuarantee: address(0),
-                _dynamicRoutingOrchestrator: address(0)
+                _dynamicRoutingOrchestrator: address(0),
+                _crossChainLiquidityVault: address(0)
             })
         );
         assertFalse(
@@ -393,7 +401,8 @@ contract ZaseonProtocolHubWiringTest is Test {
                 _relayWatchtower: address(0),
                 _intentCompletionLayer: address(0),
                 _instantCompletionGuarantee: address(0),
-                _dynamicRoutingOrchestrator: address(0)
+                _dynamicRoutingOrchestrator: address(0),
+                _crossChainLiquidityVault: address(0)
             })
         );
 
@@ -440,7 +449,8 @@ contract ZaseonProtocolHubWiringTest is Test {
                 _relayWatchtower: address(0),
                 _intentCompletionLayer: address(0),
                 _instantCompletionGuarantee: address(0),
-                _dynamicRoutingOrchestrator: address(0)
+                _dynamicRoutingOrchestrator: address(0),
+                _crossChainLiquidityVault: address(0)
             })
         );
 
@@ -455,8 +465,8 @@ contract ZaseonProtocolHubWiringTest is Test {
             memory params = _buildFullRequiredParams();
 
         vm.expectEmit(true, false, false, true);
-        // WireAll with 16 non-zero addresses should emit ProtocolWired(admin, 16)
-        emit IZaseonProtocolHub.ProtocolWired(admin, 16);
+        // WireAll with 17 non-zero addresses should emit ProtocolWired(admin, 17)
+        emit IZaseonProtocolHub.ProtocolWired(admin, 17);
         hub.wireAll(params);
     }
 
@@ -516,7 +526,8 @@ contract ZaseonProtocolHubWiringTest is Test {
                 _relayWatchtower: BRIDGE_WATCH,
                 _intentCompletionLayer: address(0),
                 _instantCompletionGuarantee: address(0),
-                _dynamicRoutingOrchestrator: address(0)
+                _dynamicRoutingOrchestrator: address(0),
+                _crossChainLiquidityVault: LIQ_VAULT
             })
         );
 
@@ -578,7 +589,8 @@ contract ZaseonProtocolHubWiringTest is Test {
                 _relayWatchtower: BRIDGE_WATCH,
                 _intentCompletionLayer: address(0), // optional
                 _instantCompletionGuarantee: address(0), // optional
-                _dynamicRoutingOrchestrator: address(0) // optional
+                _dynamicRoutingOrchestrator: address(0), // optional
+                _crossChainLiquidityVault: LIQ_VAULT
             });
     }
 }

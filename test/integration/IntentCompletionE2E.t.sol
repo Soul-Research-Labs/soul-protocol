@@ -441,9 +441,8 @@ contract IntentCompletionE2E is Test {
         router.registerPool(DEST_CHAIN, 500 ether, 0.02 ether);
         vm.stopPrank();
 
-        IDynamicRoutingOrchestrator.AdapterCapacity memory pool = router.getPool(
-            SOURCE_CHAIN
-        );
+        IDynamicRoutingOrchestrator.AdapterCapacity memory pool = router
+            .getPool(SOURCE_CHAIN);
         assertEq(pool.chainId, SOURCE_CHAIN);
         assertEq(pool.totalCapacity, 1000 ether);
         assertEq(pool.availableCapacity, 1000 ether);
@@ -462,9 +461,8 @@ contract IntentCompletionE2E is Test {
         vm.prank(oracle);
         router.updateCapacity(SOURCE_CHAIN, 800 ether);
 
-        IDynamicRoutingOrchestrator.AdapterCapacity memory pool = router.getPool(
-            SOURCE_CHAIN
-        );
+        IDynamicRoutingOrchestrator.AdapterCapacity memory pool = router
+            .getPool(SOURCE_CHAIN);
         assertEq(pool.availableCapacity, 800 ether);
         // Utilization = (1000 - 800) / 1000 = 20% = 2000 bps
         assertEq(pool.utilizationBps, 2000);
@@ -561,7 +559,8 @@ contract IntentCompletionE2E is Test {
                 _relayWatchtower: address(0),
                 _intentCompletionLayer: address(intentLayer),
                 _instantCompletionGuarantee: address(guarantee),
-                _dynamicRoutingOrchestrator: address(router)
+                _dynamicRoutingOrchestrator: address(router),
+                _crossChainLiquidityVault: address(0)
             })
         );
         vm.stopPrank();
@@ -569,7 +568,7 @@ contract IntentCompletionE2E is Test {
         // Verify components are wired
         (string[] memory names, address[] memory addrs) = hub
             .getComponentStatus();
-        assertEq(names.length, 25, "should have 25 components");
+        assertEq(names.length, 26, "should have 26 components");
 
         // Check the 3 new components are set
         bool foundIntent;

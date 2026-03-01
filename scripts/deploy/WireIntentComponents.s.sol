@@ -112,7 +112,8 @@ contract WireIntentComponents is Script {
                 _relayWatchtower: address(0),
                 _intentCompletionLayer: address(intentLayer),
                 _instantCompletionGuarantee: address(guarantee),
-                _dynamicRoutingOrchestrator: address(router)
+                _dynamicRoutingOrchestrator: address(router),
+                _crossChainLiquidityVault: address(0)
             })
         );
 

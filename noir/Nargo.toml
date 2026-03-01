@@ -22,4 +22,5 @@ members = [
     "aggregator",               # 4-proof batch aggregation
     "encrypted_transfer",       # Encrypted transfer proofs
     "ring_signature",           # Ring signature proofs
+    "liquidity_proof",          # Cross-chain liquidity backing proof
 ]
