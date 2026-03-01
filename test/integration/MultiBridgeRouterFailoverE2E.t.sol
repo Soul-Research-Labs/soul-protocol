@@ -111,6 +111,10 @@ contract MultiBridgeRouterFailoverE2E is Test {
             IMultiBridgeRouter.BridgeType.HYPERLANE,
             ARBITRUM_CHAIN_ID
         );
+
+        // Set chain target for destination chain
+        router.setChainTarget(ARBITRUM_CHAIN_ID, makeAddr("arbitrumHub"));
+
         vm.stopPrank();
     }
 

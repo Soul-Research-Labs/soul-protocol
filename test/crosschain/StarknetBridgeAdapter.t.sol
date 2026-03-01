@@ -354,4 +354,25 @@ contract StarknetBridgeAdapterTest is Test {
         assertEq(adapter.RELAYER_ROLE(), RELAYER_ROLE);
         assertEq(adapter.PAUSER_ROLE(), PAUSER_ROLE);
     }
+
+    // ── IBridgeAdapter Compliance ──
+
+    function test_bridgeMessage_revert_notOperator() public {
+        vm.prank(makeAddr("random"));
+        vm.expectRevert();
+        adapter.bridgeMessage(
+            makeAddr("target"),
+            hex"dead",
+            makeAddr("refund")
+        );
+    }
+
+    function test_estimateFee() public {
+        uint256 fee = adapter.estimateFee(makeAddr("target"), hex"dead");
+        assertEq(fee, 0.001 ether);
+    }
+
+    function test_isMessageVerified_unknownId() public {
+        assertFalse(adapter.isMessageVerified(bytes32(uint256(999))));
+    }
 }

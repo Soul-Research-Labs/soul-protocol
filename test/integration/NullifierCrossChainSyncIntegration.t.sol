@@ -41,6 +41,10 @@ contract NullifierCrossChainSyncIntegration is Test {
         registryA.grantRole(REGISTRAR_ROLE, registrar);
         registryB.grantRole(RELAY_ROLE, bridge);
         registryB.grantRole(REGISTRAR_ROLE, registrar);
+
+        // Register cross-chain domains (each registry accepts nullifiers from the other chain)
+        registryA.registerDomain(bytes32(uint256(42161))); // Chain A accepts from Chain B
+        registryB.registerDomain(bytes32(uint256(1))); // Chain B accepts from Chain A
     }
 
     /*//////////////////////////////////////////////////////////////

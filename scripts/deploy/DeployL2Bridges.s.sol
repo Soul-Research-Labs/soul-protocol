@@ -9,6 +9,12 @@ import {ScrollBridgeAdapter} from "../../contracts/crosschain/ScrollBridgeAdapte
 import {LineaBridgeAdapter} from "../../contracts/crosschain/LineaBridgeAdapter.sol";
 import {zkSyncBridgeAdapter} from "../../contracts/crosschain/zkSyncBridgeAdapter.sol";
 import {PolygonZkEVMBridgeAdapter} from "../../contracts/crosschain/PolygonZkEVMBridgeAdapter.sol";
+import {StarknetBridgeAdapter} from "../../contracts/crosschain/StarknetBridgeAdapter.sol";
+import {MantleBridgeAdapter} from "../../contracts/crosschain/MantleBridgeAdapter.sol";
+import {BlastBridgeAdapter} from "../../contracts/crosschain/BlastBridgeAdapter.sol";
+import {TaikoBridgeAdapter} from "../../contracts/crosschain/TaikoBridgeAdapter.sol";
+import {ModeBridgeAdapter} from "../../contracts/crosschain/ModeBridgeAdapter.sol";
+import {MantaPacificBridgeAdapter} from "../../contracts/crosschain/MantaPacificBridgeAdapter.sol";
 
 /**
  * @title ZASEON L2 Bridge Deployment Script
@@ -67,6 +73,30 @@ import {PolygonZkEVMBridgeAdapter} from "../../contracts/crosschain/PolygonZkEVM
  *   # Polygon zkEVM
  *   DEPLOY_TARGET=polygon-zkevm forge script scripts/deploy/DeployL2Bridges.s.sol \
  *     --rpc-url $POLYGON_ZKEVM_RPC --broadcast --verify -vvv
+ *
+ *   # Starknet (requires Starknet RPC)
+ *   DEPLOY_TARGET=starknet forge script scripts/deploy/DeployL2Bridges.s.sol \
+ *     --rpc-url $STARKNET_RPC --broadcast --verify -vvv
+ *
+ *   # Mantle
+ *   DEPLOY_TARGET=mantle forge script scripts/deploy/DeployL2Bridges.s.sol \
+ *     --rpc-url $MANTLE_RPC --broadcast --verify -vvv
+ *
+ *   # Blast
+ *   DEPLOY_TARGET=blast forge script scripts/deploy/DeployL2Bridges.s.sol \
+ *     --rpc-url $BLAST_RPC --broadcast --verify -vvv
+ *
+ *   # Taiko
+ *   DEPLOY_TARGET=taiko forge script scripts/deploy/DeployL2Bridges.s.sol \
+ *     --rpc-url $TAIKO_RPC --broadcast --verify -vvv
+ *
+ *   # Mode
+ *   DEPLOY_TARGET=mode forge script scripts/deploy/DeployL2Bridges.s.sol \
+ *     --rpc-url $MODE_RPC --broadcast --verify -vvv
+ *
+ *   # Manta Pacific
+ *   DEPLOY_TARGET=manta forge script scripts/deploy/DeployL2Bridges.s.sol \
+ *     --rpc-url $MANTA_RPC --broadcast --verify -vvv
  */
 contract DeployL2Bridges is Script {
     function run() external {
@@ -98,6 +128,18 @@ contract DeployL2Bridges is Script {
             _deployZkSync(admin, deployer);
         } else if (_strEq(target, "polygon-zkevm")) {
             _deployPolygonZkEVM(admin, deployer);
+        } else if (_strEq(target, "starknet")) {
+            _deployStarknet(admin, deployer);
+        } else if (_strEq(target, "mantle")) {
+            _deployMantle(admin, deployer);
+        } else if (_strEq(target, "blast")) {
+            _deployBlast(admin, deployer);
+        } else if (_strEq(target, "taiko")) {
+            _deployTaiko(admin, deployer);
+        } else if (_strEq(target, "mode")) {
+            _deployMode(admin, deployer);
+        } else if (_strEq(target, "manta")) {
+            _deployManta(admin, deployer);
         } else {
             revert(string.concat("Unknown deploy target: ", target));
         }
@@ -364,6 +406,210 @@ contract DeployL2Bridges is Script {
         adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
 
         console.log("Polygon zkEVM bridge deployed. Admin:", admin);
+        console.log("  Post-deploy: configure zaseonHubL2 via multisig");
+    }
+
+    function _deployStarknet(address admin, address deployer) internal {
+        address starknetCore = vm.envAddress("STARKNET_CORE");
+
+        StarknetBridgeAdapter adapter = new StarknetBridgeAdapter(
+            starknetCore,
+            deployer
+        );
+        console.log("StarknetBridgeAdapter:", address(adapter));
+
+        adapter.grantRole(adapter.DEFAULT_ADMIN_ROLE(), admin);
+        adapter.grantRole(adapter.OPERATOR_ROLE(), admin);
+        adapter.grantRole(adapter.GUARDIAN_ROLE(), admin);
+
+        address relayer = vm.envOr("RELAYER_ADDRESS", address(0));
+        if (relayer != address(0)) {
+            adapter.grantRole(adapter.RELAYER_ROLE(), relayer);
+            console.log("Relayer granted:", relayer);
+        }
+
+        adapter.renounceRole(adapter.GUARDIAN_ROLE(), deployer);
+        adapter.renounceRole(adapter.OPERATOR_ROLE(), deployer);
+        adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
+
+        console.log("Starknet bridge deployed. Admin:", admin);
+        console.log("  Post-deploy: configure zaseonHubStarknet via multisig");
+    }
+
+    function _deployMantle(address admin, address deployer) internal {
+        require(block.chainid == 5000, "Expected Mantle chainId 5000");
+
+        address crossDomainMessenger = vm.envAddress(
+            "MANTLE_CROSS_DOMAIN_MESSENGER"
+        );
+        address outputOracle = vm.envAddress("MANTLE_OUTPUT_ORACLE");
+        address mantlePortal = vm.envAddress("MANTLE_PORTAL");
+
+        MantleBridgeAdapter adapter = new MantleBridgeAdapter(
+            crossDomainMessenger,
+            outputOracle,
+            mantlePortal,
+            deployer
+        );
+        console.log("MantleBridgeAdapter:", address(adapter));
+
+        adapter.grantRole(adapter.DEFAULT_ADMIN_ROLE(), admin);
+        adapter.grantRole(adapter.OPERATOR_ROLE(), admin);
+        adapter.grantRole(adapter.GUARDIAN_ROLE(), admin);
+
+        address relayer = vm.envOr("RELAYER_ADDRESS", address(0));
+        if (relayer != address(0)) {
+            adapter.grantRole(adapter.RELAYER_ROLE(), relayer);
+            console.log("Relayer granted:", relayer);
+        }
+
+        adapter.renounceRole(adapter.GUARDIAN_ROLE(), deployer);
+        adapter.renounceRole(adapter.OPERATOR_ROLE(), deployer);
+        adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
+
+        console.log("Mantle bridge deployed. Admin:", admin);
+        console.log("  Post-deploy: configure zaseonHubL2 via multisig");
+    }
+
+    function _deployBlast(address admin, address deployer) internal {
+        require(block.chainid == 81457, "Expected Blast chainId 81457");
+
+        address crossDomainMessenger = vm.envAddress(
+            "BLAST_CROSS_DOMAIN_MESSENGER"
+        );
+        address blastPortal = vm.envAddress("BLAST_PORTAL");
+        address outputOracle = vm.envAddress("BLAST_OUTPUT_ORACLE");
+
+        BlastBridgeAdapter adapter = new BlastBridgeAdapter(
+            crossDomainMessenger,
+            blastPortal,
+            outputOracle,
+            deployer
+        );
+        console.log("BlastBridgeAdapter:", address(adapter));
+
+        adapter.grantRole(adapter.DEFAULT_ADMIN_ROLE(), admin);
+        adapter.grantRole(adapter.OPERATOR_ROLE(), admin);
+        adapter.grantRole(adapter.GUARDIAN_ROLE(), admin);
+
+        address relayer = vm.envOr("RELAYER_ADDRESS", address(0));
+        if (relayer != address(0)) {
+            adapter.grantRole(adapter.RELAYER_ROLE(), relayer);
+            console.log("Relayer granted:", relayer);
+        }
+
+        adapter.renounceRole(adapter.GUARDIAN_ROLE(), deployer);
+        adapter.renounceRole(adapter.OPERATOR_ROLE(), deployer);
+        adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
+
+        console.log("Blast bridge deployed. Admin:", admin);
+        console.log(
+            "  Post-deploy: configure yield settings and zaseonHubL2 via multisig"
+        );
+    }
+
+    function _deployTaiko(address admin, address deployer) internal {
+        require(block.chainid == 167000, "Expected Taiko chainId 167000");
+
+        address signalService = vm.envAddress("TAIKO_SIGNAL_SERVICE");
+        address taikoBridge = vm.envAddress("TAIKO_BRIDGE");
+        address taikoL1 = vm.envAddress("TAIKO_L1");
+
+        TaikoBridgeAdapter adapter = new TaikoBridgeAdapter(
+            signalService,
+            taikoBridge,
+            taikoL1,
+            deployer
+        );
+        console.log("TaikoBridgeAdapter:", address(adapter));
+
+        adapter.grantRole(adapter.DEFAULT_ADMIN_ROLE(), admin);
+        adapter.grantRole(adapter.OPERATOR_ROLE(), admin);
+        adapter.grantRole(adapter.GUARDIAN_ROLE(), admin);
+
+        address relayer = vm.envOr("RELAYER_ADDRESS", address(0));
+        if (relayer != address(0)) {
+            adapter.grantRole(adapter.RELAYER_ROLE(), relayer);
+            console.log("Relayer granted:", relayer);
+        }
+
+        adapter.renounceRole(adapter.GUARDIAN_ROLE(), deployer);
+        adapter.renounceRole(adapter.OPERATOR_ROLE(), deployer);
+        adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
+
+        console.log("Taiko bridge deployed. Admin:", admin);
+        console.log("  Post-deploy: configure zaseonHubL2 via multisig");
+    }
+
+    function _deployMode(address admin, address deployer) internal {
+        require(block.chainid == 34443, "Expected Mode chainId 34443");
+
+        address crossDomainMessenger = vm.envAddress(
+            "MODE_CROSS_DOMAIN_MESSENGER"
+        );
+        address modePortal = vm.envAddress("MODE_PORTAL");
+        address outputOracle = vm.envAddress("MODE_OUTPUT_ORACLE");
+
+        ModeBridgeAdapter adapter = new ModeBridgeAdapter(
+            crossDomainMessenger,
+            modePortal,
+            outputOracle,
+            deployer
+        );
+        console.log("ModeBridgeAdapter:", address(adapter));
+
+        adapter.grantRole(adapter.DEFAULT_ADMIN_ROLE(), admin);
+        adapter.grantRole(adapter.OPERATOR_ROLE(), admin);
+        adapter.grantRole(adapter.GUARDIAN_ROLE(), admin);
+
+        address relayer = vm.envOr("RELAYER_ADDRESS", address(0));
+        if (relayer != address(0)) {
+            adapter.grantRole(adapter.RELAYER_ROLE(), relayer);
+            console.log("Relayer granted:", relayer);
+        }
+
+        adapter.renounceRole(adapter.GUARDIAN_ROLE(), deployer);
+        adapter.renounceRole(adapter.OPERATOR_ROLE(), deployer);
+        adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
+
+        console.log("Mode bridge deployed. Admin:", admin);
+        console.log(
+            "  Post-deploy: configure SFS registration and zaseonHubL2 via multisig"
+        );
+    }
+
+    function _deployManta(address admin, address deployer) internal {
+        require(block.chainid == 169, "Expected Manta Pacific chainId 169");
+
+        address cdkBridge = vm.envAddress("MANTA_CDK_BRIDGE");
+        address exitRootManager = vm.envAddress("MANTA_EXIT_ROOT_MANAGER");
+        address mantaRollup = vm.envAddress("MANTA_ROLLUP");
+        uint32 networkId = uint32(vm.envOr("MANTA_NETWORK_ID", uint256(1)));
+
+        MantaPacificBridgeAdapter adapter = new MantaPacificBridgeAdapter(
+            cdkBridge,
+            exitRootManager,
+            mantaRollup,
+            networkId,
+            deployer
+        );
+        console.log("MantaPacificBridgeAdapter:", address(adapter));
+
+        adapter.grantRole(adapter.DEFAULT_ADMIN_ROLE(), admin);
+        adapter.grantRole(adapter.OPERATOR_ROLE(), admin);
+        adapter.grantRole(adapter.GUARDIAN_ROLE(), admin);
+
+        address relayer = vm.envOr("RELAYER_ADDRESS", address(0));
+        if (relayer != address(0)) {
+            adapter.grantRole(adapter.RELAYER_ROLE(), relayer);
+            console.log("Relayer granted:", relayer);
+        }
+
+        adapter.renounceRole(adapter.GUARDIAN_ROLE(), deployer);
+        adapter.renounceRole(adapter.OPERATOR_ROLE(), deployer);
+        adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
+
+        console.log("Manta Pacific bridge deployed. Admin:", admin);
         console.log("  Post-deploy: configure zaseonHubL2 via multisig");
     }
 

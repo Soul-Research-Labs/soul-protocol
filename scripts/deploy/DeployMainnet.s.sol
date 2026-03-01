@@ -72,10 +72,19 @@ contract DeployMainnet is Script {
     uint256 constant RATE_LIMIT_HOURLY = 1000 ether;
     uint256 constant RATE_LIMIT_DAILY = 10000 ether;
 
-    // Production L2 chain IDs (Arbitrum, Optimism, Base)
+    // Production L2 chain IDs
     uint256 constant ARBITRUM_ONE = 42161;
     uint256 constant OPTIMISM = 10;
     uint256 constant BASE = 8453;
+    uint256 constant SCROLL = 534352;
+    uint256 constant LINEA = 59144;
+    uint256 constant ZKSYNC_ERA = 324;
+    uint256 constant POLYGON_ZKEVM = 1101;
+    uint256 constant MANTLE = 5000;
+    uint256 constant BLAST = 81457;
+    uint256 constant TAIKO = 167000;
+    uint256 constant MODE = 34443;
+    uint256 constant MANTA_PACIFIC = 169;
 
     // ========= DEPLOYED CONTRACTS =========
 
@@ -247,6 +256,15 @@ contract DeployMainnet is Script {
         proofHub.addSupportedChain(ARBITRUM_ONE);
         proofHub.addSupportedChain(OPTIMISM);
         proofHub.addSupportedChain(BASE);
+        proofHub.addSupportedChain(SCROLL);
+        proofHub.addSupportedChain(LINEA);
+        proofHub.addSupportedChain(ZKSYNC_ERA);
+        proofHub.addSupportedChain(POLYGON_ZKEVM);
+        proofHub.addSupportedChain(MANTLE);
+        proofHub.addSupportedChain(BLAST);
+        proofHub.addSupportedChain(TAIKO);
+        proofHub.addSupportedChain(MODE);
+        proofHub.addSupportedChain(MANTA_PACIFIC);
         proofHub.setRateLimits(MAX_PROOFS_PER_HOUR, MAX_VALUE_PER_HOUR);
 
         // Wire the Hub with all component addresses
@@ -413,7 +431,7 @@ contract DeployMainnet is Script {
         console.log("\nPost-deploy checklist:");
         console.log("  1. Verify all contracts on Etherscan");
         console.log(
-            "  2. Deploy L2 bridge adapters (DeployL2Bridges.s.sol) on Arbitrum, Optimism, Base"
+            "  2. Deploy L2 bridge adapters (DeployL2Bridges.s.sol) on all supported L2s"
         );
         console.log("  3. Run ConfigureCrossChain.s.sol to link L1<->L2");
         console.log(

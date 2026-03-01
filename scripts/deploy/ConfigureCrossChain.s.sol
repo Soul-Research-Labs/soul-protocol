@@ -27,6 +27,14 @@ import {CrossChainProofHubV3} from "../../contracts/bridge/CrossChainProofHubV3.
  *   OPTIMISM_SEPOLIA_ADAPTER - Bridge adapter on Optimism Sepolia
  *   SCROLL_SEPOLIA_ADAPTER   - Bridge adapter on Scroll Sepolia
  *   LINEA_SEPOLIA_ADAPTER    - Bridge adapter on Linea Sepolia
+ *   ZKSYNC_SEPOLIA_ADAPTER   - Bridge adapter on zkSync Sepolia
+ *   POLYGON_ZKEVM_ADAPTER    - Bridge adapter on Polygon zkEVM Cardona
+ *   STARKNET_ADAPTER         - Bridge adapter for Starknet Goerli
+ *   MANTLE_TESTNET_ADAPTER   - Bridge adapter on Mantle Testnet
+ *   BLAST_SEPOLIA_ADAPTER    - Bridge adapter on Blast Sepolia
+ *   TAIKO_HEKLA_ADAPTER      - Bridge adapter on Taiko Hekla
+ *   MODE_TESTNET_ADAPTER     - Bridge adapter on Mode Testnet
+ *   MANTA_TESTNET_ADAPTER    - Bridge adapter on Manta Testnet
  *
  * Usage (run on Sepolia L1):
  *   forge script scripts/deploy/ConfigureCrossChain.s.sol \
@@ -40,6 +48,14 @@ contract ConfigureCrossChain is Script {
     uint256 constant OPTIMISM_SEPOLIA = 11155420;
     uint256 constant SCROLL_SEPOLIA = 534351;
     uint256 constant LINEA_SEPOLIA = 59141;
+    uint256 constant ZKSYNC_SEPOLIA = 300;
+    uint256 constant POLYGON_ZKEVM_CARDONA = 2442;
+    uint256 constant STARKNET_GOERLI = 1263227476; // SN_GOERLI
+    uint256 constant MANTLE_TESTNET = 5001;
+    uint256 constant BLAST_SEPOLIA = 168587773;
+    uint256 constant TAIKO_HEKLA = 167009;
+    uint256 constant MODE_TESTNET = 919;
+    uint256 constant MANTA_TESTNET = 3441006;
     uint256 constant L1_SEPOLIA = 11155111;
 
     function run() external {
@@ -69,20 +85,34 @@ contract ConfigureCrossChain is Script {
         vm.startBroadcast(deployerPK);
 
         // Register all L2 testnet chains
-        uint256[5] memory chains = [
+        uint256[12] memory chains = [
             ARBITRUM_SEPOLIA,
             BASE_SEPOLIA,
             OPTIMISM_SEPOLIA,
             SCROLL_SEPOLIA,
-            LINEA_SEPOLIA
+            LINEA_SEPOLIA,
+            ZKSYNC_SEPOLIA,
+            POLYGON_ZKEVM_CARDONA,
+            MANTLE_TESTNET,
+            BLAST_SEPOLIA,
+            TAIKO_HEKLA,
+            MODE_TESTNET,
+            MANTA_TESTNET
         ];
 
-        string[5] memory names = [
+        string[12] memory names = [
             "Arbitrum Sepolia",
             "Base Sepolia",
             "Optimism Sepolia",
             "Scroll Sepolia",
-            "Linea Sepolia"
+            "Linea Sepolia",
+            "zkSync Sepolia",
+            "Polygon zkEVM Cardona",
+            "Mantle Testnet",
+            "Blast Sepolia",
+            "Taiko Hekla",
+            "Mode Testnet",
+            "Manta Testnet"
         ];
 
         for (uint256 i; i < chains.length; i++) {
@@ -108,13 +138,20 @@ contract ConfigureCrossChain is Script {
         vm.startBroadcast(deployerPK);
 
         // Register L1 + all L2 peer chains as nullifier sync domains
-        uint256[6] memory peers = [
+        uint256[13] memory peers = [
             L1_SEPOLIA,
             ARBITRUM_SEPOLIA,
             BASE_SEPOLIA,
             OPTIMISM_SEPOLIA,
             SCROLL_SEPOLIA,
-            LINEA_SEPOLIA
+            LINEA_SEPOLIA,
+            ZKSYNC_SEPOLIA,
+            POLYGON_ZKEVM_CARDONA,
+            MANTLE_TESTNET,
+            BLAST_SEPOLIA,
+            TAIKO_HEKLA,
+            MODE_TESTNET,
+            MANTA_TESTNET
         ];
 
         for (uint256 i; i < peers.length; i++) {

@@ -171,6 +171,11 @@ contract CrossChainAdapterRoutingE2E is Test {
             BASE_CHAIN
         );
 
+        // Set chain targets for all destination chains
+        router.setChainTarget(ARB_CHAIN, makeAddr("arbHub"));
+        router.setChainTarget(OP_CHAIN, makeAddr("opHub"));
+        router.setChainTarget(BASE_CHAIN, makeAddr("baseHub"));
+
         vm.stopPrank();
 
         // Fund user for gas

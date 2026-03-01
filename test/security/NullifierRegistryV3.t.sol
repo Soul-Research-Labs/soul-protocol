@@ -15,6 +15,8 @@ contract NullifierRegistryV3Test is Test {
         registry = new NullifierRegistryV3();
         registry.addRegistrar(registrar);
         registry.grantRole(registry.RELAY_ROLE(), bridge);
+        // Register cross-chain domain used in tests
+        registry.registerDomain(bytes32(uint256(42)));
     }
 
     // ======= Core Registration =======

@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import "./IBridgeAdapter.sol";
 
 /**
  * @title BlastBridgeAdapter
@@ -29,7 +30,12 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
  *
  * @custom:security-contact security@zaseonprotocol.io
  */
-contract BlastBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
+contract BlastBridgeAdapter is
+    IBridgeAdapter,
+    AccessControl,
+    ReentrancyGuard,
+    Pausable
+{
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
@@ -146,6 +152,7 @@ contract BlastBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     );
     event ZaseonHubL2Set(address indexed zaseonHubL2);
     event ProofRegistrySet(address indexed proofRegistry);
+    event EmergencyWithdrawal(address indexed to, uint256 amount);
 
     /*//////////////////////////////////////////////////////////////
                             CONSTRUCTOR
@@ -431,6 +438,80 @@ contract BlastBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         require(amount <= address(this).balance, "Insufficient balance");
         (bool success, ) = to.call{value: amount}("");
         require(success, "ETH transfer failed");
+        emit EmergencyWithdrawal(to, amount);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                    IBridgeAdapter COMPLIANCE
+    //////////////////////////////////////////////////////////////*/
+
+    /// @inheritdoc IBridgeAdapter
+    function bridgeMessage(
+        address targetAddress,
+        bytes calldata payload,
+        address /*refundAddress*/
+    )
+        external
+        payable
+        override
+        onlyRole(OPERATOR_ROLE)
+        nonReentrant
+        whenNotPaused
+        returns (bytes32 messageId)
+    {
+        require(targetAddress != address(0), "Invalid target");
+        require(crossDomainMessenger != address(0), "Bridge not configured");
+        require(payload.length <= MAX_MESSAGE_SIZE, "Data too large");
+
+        uint256 nonce = messageNonce++;
+        messageId = keccak256(
+            abi.encode(
+                targetAddress,
+                payload,
+                nonce,
+                block.timestamp,
+                BLAST_CHAIN_ID
+            )
+        );
+
+        bytes memory messengerCall = abi.encodeWithSignature(
+            "sendMessage(address,bytes,uint32)",
+            targetAddress,
+            payload,
+            uint32(DEFAULT_L2_GAS_LIMIT)
+        );
+
+        (bool success, ) = crossDomainMessenger.call{value: msg.value}(
+            messengerCall
+        );
+        require(success, "Messenger call failed");
+
+        messages[messageId] = MessageRecord({
+            status: MessageStatus.SENT,
+            target: targetAddress,
+            timestamp: block.timestamp,
+            gasLimit: DEFAULT_L2_GAS_LIMIT,
+            withdrawalHash: bytes32(0)
+        });
+
+        emit MessageSent(messageId, targetAddress, nonce, DEFAULT_L2_GAS_LIMIT);
+        return messageId;
+    }
+
+    /// @inheritdoc IBridgeAdapter
+    function estimateFee(
+        address /*targetAddress*/,
+        bytes calldata /*payload*/
+    ) external pure override returns (uint256 nativeFee) {
+        return 0;
+    }
+
+    /// @inheritdoc IBridgeAdapter
+    function isMessageVerified(
+        bytes32 messageId
+    ) external view override returns (bool verified) {
+        MessageRecord storage record = messages[messageId];
+        return record.status == MessageStatus.FINALIZED;
     }
 
     /// @notice Allow receiving ETH

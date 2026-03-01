@@ -16,7 +16,14 @@ interface IMultiBridgeRouter {
         LAYERZERO,
         HYPERLANE,
         CHAINLINK_CCIP,
-        AXELAR
+        AXELAR,
+        STARKNET,
+        POLYGON_ZKEVM,
+        MANTLE,
+        BLAST,
+        TAIKO,
+        MODE,
+        MANTA_PACIFIC
     }
 
     enum BridgeStatus {

@@ -69,6 +69,9 @@ contract MultiBridgeRouterInvariant is StdInvariant, Test {
             IMultiBridgeRouter.BridgeType.HYPERLANE,
             42161
         );
+
+        // Set chain target for destination
+        router.setChainTarget(42161, makeAddr("arbitrumHub"));
     }
 
     /// @notice Success + failure counts can only increase, never decrease

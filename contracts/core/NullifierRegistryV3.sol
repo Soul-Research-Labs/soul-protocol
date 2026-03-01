@@ -174,13 +174,13 @@ contract NullifierRegistryV3 is
     /// @param nullifier The nullifier hash to register
     /// @param commitment Associated commitment (optional)
     /// @return index The index in the merkle tree
-        /**
+    /**
      * @notice Registers nullifier
      * @param nullifier The nullifier hash
      * @param commitment The cryptographic commitment
      * @return index The index
      */
-function registerNullifier(
+    function registerNullifier(
         bytes32 nullifier,
         bytes32 commitment
     )
@@ -198,13 +198,13 @@ function registerNullifier(
     /// @param _nullifiers Array of nullifiers to register
     /// @param _commitments Array of associated commitments
     /// @return startIndex The starting index in the merkle tree
-        /**
+    /**
      * @notice Batchs register nullifiers
      * @param _nullifiers The _nullifiers
      * @param _commitments The _commitments
      * @return startIndex The start index
      */
-function batchRegisterNullifiers(
+    function batchRegisterNullifiers(
         bytes32[] calldata _nullifiers,
         bytes32[] calldata _commitments
     )
@@ -250,20 +250,24 @@ function batchRegisterNullifiers(
     /// @param _nullifiers Array of nullifiers
     /// @param _commitments Array of commitments
     /// @param sourceMerkleRoot The merkle root from source chain
-        /**
+    /**
      * @notice Receive cross chain nullifiers
      * @param sourceChainId The source chain identifier
      * @param _nullifiers The _nullifiers
      * @param _commitments The _commitments
      * @param sourceMerkleRoot The source merkle root
      */
-function receiveCrossChainNullifiers(
+    function receiveCrossChainNullifiers(
         uint256 sourceChainId,
         bytes32[] calldata _nullifiers,
         bytes32[] calldata _commitments,
         bytes32 sourceMerkleRoot
     ) external onlyRole(RELAY_ROLE) whenNotPaused nonReentrant {
         if (sourceChainId == CHAIN_ID) revert InvalidChainId();
+        require(
+            registeredDomains[bytes32(sourceChainId)],
+            "Domain not registered"
+        );
 
         uint256 len = _nullifiers.length;
         if (len == 0) revert EmptyBatch();
@@ -542,24 +546,24 @@ function receiveCrossChainNullifiers(
     /// @notice Checks if a nullifier exists
     /// @param nullifier The nullifier to check
     /// @return exists True if the nullifier exists
-        /**
+    /**
      * @notice Exists
      * @param nullifier The nullifier hash
      * @return The result value
      */
-function exists(bytes32 nullifier) external view returns (bool) {
+    function exists(bytes32 nullifier) external view returns (bool) {
         return isNullifierUsed[nullifier];
     }
 
     /// @notice Batch checks if nullifiers exist
     /// @param _nullifiers Array of nullifiers to check
     /// @return results Array of existence results
-        /**
+    /**
      * @notice Batchs exists
      * @param _nullifiers The _nullifiers
      * @return results The results
      */
-function batchExists(
+    function batchExists(
         bytes32[] calldata _nullifiers
     ) external view returns (bool[] memory results) {
         uint256 len = _nullifiers.length;
@@ -577,12 +581,12 @@ function batchExists(
     /// @notice Gets nullifier data
     /// @param nullifier The nullifier to query
     /// @return data The nullifier metadata
-        /**
+    /**
      * @notice Returns the nullifier data
      * @param nullifier The nullifier hash
      * @return data The data
      */
-function getNullifierData(
+    function getNullifierData(
         bytes32 nullifier
     ) external view returns (NullifierData memory data) {
         if (!isNullifierUsed[nullifier]) revert NullifierNotFound(nullifier);
@@ -592,12 +596,12 @@ function getNullifierData(
     /// @notice Checks if a merkle root is valid (current or historical)
     /// @param root The root to check
     /// @return valid True if the root is valid
-        /**
+    /**
      * @notice Checks if valid root
      * @param root The Merkle root
      * @return valid The valid
      */
-function isValidRoot(bytes32 root) external view returns (bool valid) {
+    function isValidRoot(bytes32 root) external view returns (bool valid) {
         return root == merkleRoot || historicalRoots[root];
     }
 
@@ -607,7 +611,7 @@ function isValidRoot(bytes32 root) external view returns (bool valid) {
     /// @param siblings The merkle proof siblings
     /// @param root The merkle root to verify against
     /// @return valid True if the proof is valid
-        /**
+    /**
      * @notice Verifys merkle proof
      * @param nullifier The nullifier hash
      * @param index The index in the collection
@@ -615,7 +619,7 @@ function isValidRoot(bytes32 root) external view returns (bool valid) {
      * @param root The Merkle root
      * @return valid The valid
      */
-function verifyMerkleProof(
+    function verifyMerkleProof(
         bytes32 nullifier,
         uint256 index,
         bytes32[] calldata siblings,
@@ -649,13 +653,13 @@ function verifyMerkleProof(
     /// @return _totalNullifiers Total registered nullifiers
     /// @return _merkleRoot Current merkle root
     /// @return _rootHistorySize Number of valid historical roots
-        /**
+    /**
      * @notice Returns the tree stats
      * @return _totalNullifiers The _total nullifiers
      * @return _merkleRoot The _merkle root
      * @return _rootHistorySize The _root history size
      */
-function getTreeStats()
+    function getTreeStats()
         external
         view
         returns (
@@ -670,12 +674,12 @@ function getTreeStats()
     /// @notice Gets nullifier count for a specific chain
     /// @param chainId The chain ID to query
     /// @return count The number of nullifiers from that chain
-        /**
+    /**
      * @notice Returns the nullifier count by chain
      * @param chainId The chain identifier
      * @return count The count
      */
-function getNullifierCountByChain(
+    function getNullifierCountByChain(
         uint256 chainId
     ) external view returns (uint256 count) {
         return chainNullifierCount[chainId];
@@ -687,11 +691,11 @@ function getNullifierCountByChain(
 
     /// @notice Adds a registrar
     /// @param registrar The address to add
-        /**
+    /**
      * @notice Adds registrar
      * @param registrar The registrar
      */
-function addRegistrar(
+    function addRegistrar(
         address registrar
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         grantRole(REGISTRAR_ROLE, registrar);
@@ -700,11 +704,11 @@ function addRegistrar(
 
     /// @notice Removes a registrar
     /// @param registrar The address to remove
-        /**
+    /**
      * @notice Removes registrar
      * @param registrar The registrar
      */
-function removeRegistrar(
+    function removeRegistrar(
         address registrar
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         revokeRole(REGISTRAR_ROLE, registrar);
@@ -713,11 +717,11 @@ function removeRegistrar(
 
     /// @notice Registers a cross-chain domain for nullifier sync
     /// @param domain The domain identifier (typically bytes32 of chain ID)
-        /**
+    /**
      * @notice Registers domain
      * @param domain The domain identifier
      */
-function registerDomain(
+    function registerDomain(
         bytes32 domain
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (domain == bytes32(0)) revert ZeroDomain();
@@ -728,11 +732,11 @@ function registerDomain(
 
     /// @notice Removes a registered cross-chain domain
     /// @param domain The domain identifier to remove
-        /**
+    /**
      * @notice Removes domain
      * @param domain The domain identifier
      */
-function removeDomain(
+    function removeDomain(
         bytes32 domain
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (!registeredDomains[domain]) revert DomainNotRegistered(domain);
@@ -741,18 +745,18 @@ function removeDomain(
     }
 
     /// @notice Pauses the contract
-        /**
+    /**
      * @notice Pauses the operation
      */
-function pause() external onlyRole(EMERGENCY_ROLE) {
+    function pause() external onlyRole(EMERGENCY_ROLE) {
         _pause();
     }
 
     /// @notice Unpauses the contract
-        /**
+    /**
      * @notice Unpauses the operation
      */
-function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
 }

@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import "./IBridgeAdapter.sol";
 
 /**
  * @title IStarknetCore
@@ -62,7 +63,12 @@ interface IStarknetCore {
  *
  * @custom:security-contact security@zaseonprotocol.io
  */
-contract StarknetBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
+contract StarknetBridgeAdapter is
+    IBridgeAdapter,
+    AccessControl,
+    ReentrancyGuard,
+    Pausable
+{
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
@@ -164,6 +170,7 @@ contract StarknetBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     event ZaseonHubStarknetSet(uint256 indexed zaseonHubStarknet);
     event DefaultSelectorSet(uint256 selector);
     event ProofRegistrySet(address indexed proofRegistry);
+    event EmergencyWithdrawal(address indexed to, uint256 amount);
 
     /*//////////////////////////////////////////////////////////////
                             CONSTRUCTOR
@@ -360,6 +367,11 @@ contract StarknetBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
             starknetSender > 0 && starknetSender < FELT_MAX,
             "Invalid sender"
         );
+        require(
+            zaseonHubStarknet == 0 || starknetSender == zaseonHubStarknet,
+            "Unauthorized sender"
+        );
+        require(payload.length <= MAX_PAYLOAD_LENGTH, "Payload too large");
 
         bytes32 starknetMsgHash = starknetCore.consumeMessageFromL2(
             starknetSender,
@@ -460,6 +472,77 @@ contract StarknetBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         require(amount <= address(this).balance, "Insufficient balance");
         (bool success, ) = to.call{value: amount}("");
         require(success, "ETH transfer failed");
+        emit EmergencyWithdrawal(to, amount);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                    IBridgeAdapter COMPLIANCE
+    //////////////////////////////////////////////////////////////*/
+
+    /// @inheritdoc IBridgeAdapter
+    function bridgeMessage(
+        address targetAddress,
+        bytes calldata payload,
+        address /*refundAddress*/
+    )
+        external
+        payable
+        override
+        onlyRole(OPERATOR_ROLE)
+        nonReentrant
+        whenNotPaused
+        returns (bytes32 messageId)
+    {
+        require(targetAddress != address(0), "Invalid target");
+        require(address(starknetCore) != address(0), "Bridge not configured");
+
+        // Encode the EVM payload as a single felt252 element (keccak hash)
+        uint256[] memory starknetPayload = new uint256[](1);
+        starknetPayload[0] = uint256(keccak256(payload)) % FELT_MAX;
+
+        uint256 target = zaseonHubStarknet > 0
+            ? zaseonHubStarknet
+            : uint256(uint160(targetAddress));
+        uint256 sel = defaultSelector > 0 ? defaultSelector : 1;
+
+        uint256 nonce = messageNonce++;
+        messageId = keccak256(
+            abi.encode(target, sel, starknetPayload, nonce, block.timestamp)
+        );
+
+        (bytes32 starknetMsgHash, uint256 starknetNonce) = starknetCore
+            .sendMessageToL2{value: msg.value}(target, sel, starknetPayload);
+
+        messages[messageId] = MessageRecord({
+            status: MessageStatus.SENT,
+            starknetTarget: target,
+            selector: sel,
+            timestamp: block.timestamp,
+            starknetNonce: starknetNonce,
+            msgHash: starknetMsgHash
+        });
+
+        starknetToInternalHash[starknetMsgHash] = messageId;
+        return messageId;
+    }
+
+    /// @inheritdoc IBridgeAdapter
+    function estimateFee(
+        address /*targetAddress*/,
+        bytes calldata /*payload*/
+    ) external pure override returns (uint256 nativeFee) {
+        // Starknet L1→L2 message fee is paid via msg.value; estimate conservatively
+        return 0.001 ether;
+    }
+
+    /// @inheritdoc IBridgeAdapter
+    function isMessageVerified(
+        bytes32 messageId
+    ) external view override returns (bool verified) {
+        MessageRecord storage record = messages[messageId];
+        return
+            record.status == MessageStatus.SENT ||
+            record.status == MessageStatus.CONSUMED;
     }
 
     /// @notice Allow receiving ETH for L1→L2 message fees

@@ -96,6 +96,10 @@ contract MultiBridgeRouter is
     uint256 public constant DEGRADED_THRESHOLD = 1000; // 10%
     uint256 public constant HEALTH_CHECK_WINDOW = 1 hours;
 
+    /// @notice Destination chain target contract addresses
+    /// @dev Maps chainId → target contract on that chain (e.g., ZaseonProtocolHub L2 deployment)
+    mapping(uint256 => address) public chainTargets;
+
     // Events and errors inherited from IMultiBridgeRouter:
     // AdapterRegistered, BridgeStatusChanged, MessageRouted, MessageVerified, MessageFinalized,
     // BridgeFallback, HealthCheckFailed, SupportedChainAdded, BridgeSuccessRecorded, ThresholdsUpdated,
@@ -290,6 +294,35 @@ contract MultiBridgeRouter is
     ) external onlyRole(BRIDGE_ADMIN) {
         supportedChains[bridgeType][chainId] = true;
         emit SupportedChainAdded(bridgeType, chainId);
+    }
+
+    /**
+     * @notice Set the target contract address for a destination chain
+     * @param chainId The destination chain ID
+     * @param target The target contract address on the destination chain (e.g., ZaseonProtocolHub)
+     */
+    function setChainTarget(
+        uint256 chainId,
+        address target
+    ) external onlyRole(BRIDGE_ADMIN) {
+        require(target != address(0), "Invalid target");
+        chainTargets[chainId] = target;
+    }
+
+    /**
+     * @notice Batch set target contracts for multiple destination chains
+     * @param chainIds Array of destination chain IDs
+     * @param targets Array of target contract addresses
+     */
+    function batchSetChainTargets(
+        uint256[] calldata chainIds,
+        address[] calldata targets
+    ) external onlyRole(BRIDGE_ADMIN) {
+        require(chainIds.length == targets.length, "Length mismatch");
+        for (uint256 i = 0; i < chainIds.length; i++) {
+            require(targets[i] != address(0), "Invalid target");
+            chainTargets[chainIds[i]] = targets[i];
+        }
     }
 
     /**
@@ -569,23 +602,27 @@ contract MultiBridgeRouter is
         }
     }
 
-        /**
+    /**
      * @notice _call bridge
      * @param adapter The bridge adapter address
      * @param message The message data
- */
-function _callBridge(
+     */
+    function _callBridge(
         address adapter,
-        uint256 /* chainId */,
+        uint256 chainId,
         bytes calldata message
     ) external {
         require(msg.sender == address(this), "Internal only");
+        // Look up the target contract on the destination chain.
+        // Each chain must have a registered target (e.g., ZaseonProtocolHub on L2).
+        address target = chainTargets[chainId];
+        require(target != address(0), "No target for chain");
         // Delegate to the registered IBridgeAdapter implementation.
         // The adapter is responsible for encoding the chainId into its own
         // protocol-specific messaging (LayerZero eid, Hyperlane domain, etc.).
         // Refund any excess bridge fees back to this contract.
         IBridgeAdapter(adapter).bridgeMessage(
-            adapter, // targetAddress — adapter on destination chain
+            target, // targetAddress — contract on destination chain
             message,
             address(this) // refundAddress
         );

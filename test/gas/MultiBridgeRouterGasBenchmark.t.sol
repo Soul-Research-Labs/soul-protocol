@@ -92,6 +92,9 @@ contract MultiBridgeRouterGasBenchmark is Test {
             ARBITRUM
         );
 
+        // Set chain target for destination chain
+        router.setChainTarget(ARBITRUM, makeAddr("arbitrumHub"));
+
         vm.stopPrank();
     }
 

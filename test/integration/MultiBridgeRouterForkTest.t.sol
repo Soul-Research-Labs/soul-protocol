@@ -69,6 +69,11 @@ contract MultiBridgeRouterForkTest is ForkTestBase {
                     IMultiBridgeRouter.BridgeType.LAYERZERO,
                     _chainId(destChain)
                 );
+                // Set chain target for destination
+                routers[chain].setChainTarget(
+                    _chainId(destChain),
+                    makeAddr(string.concat("hub_", _chainLabel(destChain)))
+                );
             }
         }
         vm.stopPrank();
