@@ -9,7 +9,7 @@ import "../interfaces/IStealthAddressRegistry.sol";
 
 /**
  * @notice Interface for cross-chain derivation proof verification
-  * @title IDerivationVerifier
+ * @title IDerivationVerifier
  * @author ZASEON Team
  */
 interface IDerivationVerifier {
@@ -174,11 +174,11 @@ contract StealthAddressRegistry is
         _disableInitializers();
     }
 
-        /**
+    /**
      * @notice Initializes the operation
      * @param admin The admin bound
      */
-function initialize(address admin) external override initializer {
+    function initialize(address admin) external override initializer {
         __AccessControl_init();
         __ReentrancyGuard_init();
 
@@ -253,7 +253,7 @@ function initialize(address admin) external override initializer {
     /**
      * @notice Update meta-address status
      * @dev Cannot re-activate a revoked meta-address
-          * @param newStatus The new Status value
+     * @param newStatus The new Status value
      */
     function updateMetaAddressStatus(KeyStatus newStatus) external override {
         StealthMetaAddress storage meta = metaAddresses[msg.sender];
@@ -324,7 +324,7 @@ function initialize(address admin) external override initializer {
     /// @notice Maximum announcements per view tag to prevent unbounded growth
     uint256 public constant MAX_ANNOUNCEMENTS_PER_TAG = 10_000;
 
-        /**
+    /**
      * @notice Computes dual key stealth
      * @param spendingPubKeyHash The spendingPubKeyHash hash value
      * @param viewingPubKeyHash The viewingPubKeyHash hash value
@@ -333,7 +333,7 @@ function initialize(address admin) external override initializer {
      * @return stealthHash The stealth hash
      * @return derivedAddress The derived address
      */
-function computeDualKeyStealth(
+    function computeDualKeyStealth(
         bytes32 spendingPubKeyHash,
         bytes32 viewingPubKeyHash,
         bytes32 ephemeralPrivKeyHash,
@@ -435,7 +435,7 @@ function computeDualKeyStealth(
 
     /**
      * @notice Announce without role (for decentralized usage, with payment)
-          * @param schemeId The schemeId identifier
+     * @param schemeId The schemeId identifier
      * @param stealthAddress The stealthAddress address
      * @param ephemeralPubKey The ephemeral pub key
      * @param viewTag The view tag
@@ -491,7 +491,7 @@ function computeDualKeyStealth(
     /**
      * @notice Get announcements by view tag (for efficient scanning)
      * @param viewTag The first byte of the shared secret
-          * @return The result value
+     * @return The result value
      */
     function getAnnouncementsByViewTag(
         bytes1 viewTag
@@ -505,7 +505,7 @@ function computeDualKeyStealth(
      * @param stealthAddress The stealth address to check
      * @param viewingPrivKeyHash Hash of recipient's viewing private key
      * @param spendingPubKeyHash Hash of recipient's spending public key
-          * @return isOwner The is owner
+     * @return isOwner The is owner
      */
     function checkStealthOwnership(
         address stealthAddress,
@@ -516,17 +516,15 @@ function computeDualKeyStealth(
         if (ann.stealthAddress == address(0)) return false;
 
         // Compute shared secret: S' = viewingPrivKey * R (ephemeral pubkey)
+        // SECURITY FIX M-1: Use abi.encode instead of abi.encodePacked to prevent
+        // hash collisions with variable-length ephemeralPubKey
         bytes32 sharedSecretHash = keccak256(
-            abi.encodePacked(
-                viewingPrivKeyHash,
-                ann.ephemeralPubKey,
-                STEALTH_DOMAIN
-            )
+            abi.encode(viewingPrivKeyHash, ann.ephemeralPubKey, STEALTH_DOMAIN)
         );
 
         // Compute expected stealth address
         bytes32 expectedStealthHash = keccak256(
-            abi.encodePacked(spendingPubKeyHash, sharedSecretHash)
+            abi.encode(spendingPubKeyHash, sharedSecretHash)
         );
 
         address expectedAddress = address(
@@ -541,7 +539,7 @@ function computeDualKeyStealth(
      * @param viewingPrivKeyHash Recipient's viewing private key hash
      * @param spendingPubKeyHash Recipient's spending public key hash
      * @param candidates Candidate stealth addresses to check
-          * @return owned The owned
+     * @return owned The owned
      */
     function batchScan(
         bytes32 viewingPrivKeyHash,
@@ -588,7 +586,7 @@ function computeDualKeyStealth(
      * @param sourceStealthKey Stealth key on source chain
      * @param destChainId Destination chain ID
      * @param derivationProof Proof of valid derivation
-          * @return destStealthKey The dest stealth key
+     * @return destStealthKey The dest stealth key
      */
     function deriveCrossChainStealth(
         bytes32 sourceStealthKey,
@@ -750,58 +748,59 @@ function computeDualKeyStealth(
     // VIEW FUNCTIONS
     // =========================================================================
 
-        /**
+    /**
      * @notice Returns the meta address
      * @param owner The owner address
      * @return The result value
      */
-function getMetaAddress(
+    function getMetaAddress(
         address owner
     ) external view override returns (StealthMetaAddress memory) {
         return metaAddresses[owner];
     }
 
-        /**
+    /**
      * @notice Returns the announcement
      * @param stealthAddress The stealthAddress address
      * @return The result value
      */
-function getAnnouncement(
+    function getAnnouncement(
         address stealthAddress
     ) external view override returns (Announcement memory) {
         return announcements[stealthAddress];
     }
 
-        /**
+    /**
      * @notice Returns the dual key record
      * @param stealthHash The stealthHash hash value
      * @return The result value
      */
-function getDualKeyRecord(
+    function getDualKeyRecord(
         bytes32 stealthHash
     ) external view override returns (DualKeyStealth memory) {
         return dualKeyRecords[stealthHash];
     }
 
-        /**
+    /**
      * @notice Returns the cross chain binding
      * @param sourceKey The source key
      * @param destKey The dest key
      * @return The result value
      */
-function getCrossChainBinding(
+    function getCrossChainBinding(
         bytes32 sourceKey,
         bytes32 destKey
     ) external view override returns (CrossChainStealth memory) {
-        bytes32 bindingId = keccak256(abi.encodePacked(sourceKey, destKey));
+        // SECURITY FIX M-9: Use abi.encode to match deriveCrossChainStealth() encoding
+        bytes32 bindingId = keccak256(abi.encode(sourceKey, destKey));
         return crossChainBindings[bindingId];
     }
 
-        /**
+    /**
      * @notice Returns the registered address count
      * @return The result value
      */
-function getRegisteredAddressCount()
+    function getRegisteredAddressCount()
         external
         view
         override
@@ -810,13 +809,13 @@ function getRegisteredAddressCount()
         return registeredAddresses.length;
     }
 
-        /**
+    /**
      * @notice Returns the stats
      * @return _registeredCount The _registered count
      * @return _announcementCount The _announcement count
      * @return _crossChainCount The _cross chain count
      */
-function getStats()
+    function getStats()
         external
         view
         override

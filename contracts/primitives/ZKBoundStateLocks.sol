@@ -815,6 +815,9 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
         bytes32 verifierKeyHash,
         address verifierContract
     ) external onlyRole(VERIFIER_ADMIN_ROLE) {
+        // SECURITY FIX H-1: Require role separation before critical operations
+        // to prevent a single compromised deployer from registering malicious verifiers
+        if (!rolesSeparated) revert RolesNotSeparated();
         if (verifiers[verifierKeyHash] != address(0)) {
             revert VerifierAlreadyRegistered(verifierKeyHash);
         }

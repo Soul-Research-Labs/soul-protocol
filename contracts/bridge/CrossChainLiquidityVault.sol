@@ -347,9 +347,10 @@ contract CrossChainLiquidityVault is
         returns (bool success)
     {
         if (amount == 0) revert InvalidAmount();
-        if (locks[requestId].amount != 0) revert LockAlreadyReleased(requestId); // Already exists
+        // SECURITY FIX L-3: Use correct error for duplicate lock
+        if (locks[requestId].amount != 0) revert LockAlreadyExists(requestId);
 
-        // Check available liquidity
+        // Check available liquidity (from LP deposits)
         if (token == address(0)) {
             uint256 available = totalETH - totalETHLocked;
             if (amount > available) {
@@ -561,13 +562,16 @@ contract CrossChainLiquidityVault is
         // The operator handles the actual bridge call off-chain and sends
         // the correct ETH via msg.value or approves tokens
         if (batch.isOutflow) {
-            // Funds are released from the vault pool — operator bridges them
+            // SECURITY FIX H-5: ETH outflows must be transferred, not just decremented.
+            // Funds are sent to the msg.sender (settler) who bridges them.
             if (batch.token == address(0)) {
-                // ETH: operator must handle bridging
                 totalETH -= batch.netAmount;
+                // Transfer ETH to settler for bridging
+                (bool sent, ) = msg.sender.call{value: batch.netAmount}("");
+                require(sent, "ETH settlement transfer failed");
             } else {
                 totalTokens[batch.token] -= batch.netAmount;
-                // Transfer tokens to operator for bridging
+                // Transfer tokens to settler for bridging
                 IERC20(batch.token).safeTransfer(msg.sender, batch.netAmount);
             }
         }

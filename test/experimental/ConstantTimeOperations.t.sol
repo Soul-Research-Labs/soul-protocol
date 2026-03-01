@@ -64,7 +64,11 @@ contract ConstantTimeOperationsTest is Test {
         assertEq(ConstantTimeOperations.constantTimeSelect(false, a, b), b);
     }
 
-    function testFuzz_constantTimeSelect(bool cond, bytes32 a, bytes32 b) public pure {
+    function testFuzz_constantTimeSelect(
+        bool cond,
+        bytes32 a,
+        bytes32 b
+    ) public pure {
         bytes32 result = ConstantTimeOperations.constantTimeSelect(cond, a, b);
         assertEq(result, cond ? a : b);
     }
@@ -73,16 +77,30 @@ contract ConstantTimeOperationsTest is Test {
     // constantTimeSelectUint
     // =========================================================================
 
-    function testFuzz_constantTimeSelectUint(bool cond, uint256 a, uint256 b) public pure {
-        assertEq(ConstantTimeOperations.constantTimeSelectUint(cond, a, b), cond ? a : b);
+    function testFuzz_constantTimeSelectUint(
+        bool cond,
+        uint256 a,
+        uint256 b
+    ) public pure {
+        assertEq(
+            ConstantTimeOperations.constantTimeSelectUint(cond, a, b),
+            cond ? a : b
+        );
     }
 
     // =========================================================================
     // constantTimeSelectAddress
     // =========================================================================
 
-    function testFuzz_constantTimeSelectAddress(bool cond, address a, address b) public pure {
-        assertEq(ConstantTimeOperations.constantTimeSelectAddress(cond, a, b), cond ? a : b);
+    function testFuzz_constantTimeSelectAddress(
+        bool cond,
+        address a,
+        address b
+    ) public pure {
+        assertEq(
+            ConstantTimeOperations.constantTimeSelectAddress(cond, a, b),
+            cond ? a : b
+        );
     }
 
     // =========================================================================
@@ -146,7 +164,9 @@ contract ConstantTimeOperationsTest is Test {
 
     function test_constantTimeIsNonZero() public pure {
         assertTrue(ConstantTimeOperations.constantTimeIsNonZero(1));
-        assertTrue(ConstantTimeOperations.constantTimeIsNonZero(type(uint256).max));
+        assertTrue(
+            ConstantTimeOperations.constantTimeIsNonZero(type(uint256).max)
+        );
         assertFalse(ConstantTimeOperations.constantTimeIsNonZero(0));
     }
 
@@ -170,8 +190,16 @@ contract ConstantTimeOperationsTest is Test {
     // constantTimeSwap
     // =========================================================================
 
-    function testFuzz_constantTimeSwap(bool cond, uint256 a, uint256 b) public pure {
-        (uint256 x, uint256 y) = ConstantTimeOperations.constantTimeSwap(cond, a, b);
+    function testFuzz_constantTimeSwap(
+        bool cond,
+        uint256 a,
+        uint256 b
+    ) public pure {
+        (uint256 x, uint256 y) = ConstantTimeOperations.constantTimeSwap(
+            cond,
+            a,
+            b
+        );
         if (cond) {
             assertEq(x, b);
             assertEq(y, a);
@@ -191,10 +219,8 @@ contract ConstantTimeOperationsTest is Test {
         nullifiers[1] = keccak256("n1");
         nullifiers[2] = keccak256("n2");
 
-        (bool found, uint256 index) = ConstantTimePrivacy.constantTimeNullifierLookup(
-            keccak256("n1"),
-            nullifiers
-        );
+        (bool found, uint256 index) = ConstantTimePrivacy
+            .constantTimeNullifierLookup(keccak256("n1"), nullifiers);
         assertTrue(found);
         assertEq(index, 1);
     }
@@ -220,8 +246,18 @@ contract ConstantTimeOperationsTest is Test {
         usedImages[0] = keccak256("img0");
         usedImages[1] = keccak256("img1");
 
-        assertTrue(ConstantTimePrivacy.constantTimeKeyImageLookup(keccak256("img0"), usedImages));
-        assertFalse(ConstantTimePrivacy.constantTimeKeyImageLookup(keccak256("unused"), usedImages));
+        assertTrue(
+            ConstantTimePrivacy.constantTimeKeyImageLookup(
+                keccak256("img0"),
+                usedImages
+            )
+        );
+        assertFalse(
+            ConstantTimePrivacy.constantTimeKeyImageLookup(
+                keccak256("unused"),
+                usedImages
+            )
+        );
     }
 
     // =========================================================================

@@ -748,6 +748,9 @@ contract UniversalShieldedPool is
             require(testMode, "No verifier configured");
             /// @custom:security TEST-ONLY bypass — testMode must be disabled before production.
             /// disableTestMode() is irreversible and enforced by deployment scripts.
+            // SECURITY FIX M-8: Require minimum proof length even in test mode
+            // to prevent trivially bypassing with empty proof data.
+            require(wp.proof.length >= 32, "Test mode: proof too short");
             return true;
         }
 

@@ -94,6 +94,14 @@ contract DirectL2MessengerTest is Test {
 
     // ============ Constructor Tests ============
 
+    /// @dev Helper: register a relayer and approve via operator
+    function _registerAndApprove(address relayer) internal {
+        vm.prank(relayer);
+        messenger.registerRelayer{value: 1 ether}();
+        vm.prank(operator);
+        messenger.approveRelayer(relayer);
+    }
+
     function test_constructor_setsAdmin() public view {
         assertTrue(messenger.hasRole(messenger.DEFAULT_ADMIN_ROLE(), admin));
     }
@@ -301,12 +309,9 @@ contract DirectL2MessengerTest is Test {
         vm.deal(r2, 2 ether);
         vm.deal(r3, 2 ether);
 
-        vm.prank(r1);
-        messenger.registerRelayer{value: 1 ether}();
-        vm.prank(r2);
-        messenger.registerRelayer{value: 1 ether}();
-        vm.prank(r3);
-        messenger.registerRelayer{value: 1 ether}();
+        _registerAndApprove(r1);
+        _registerAndApprove(r2);
+        _registerAndApprove(r3);
 
         // Prepare message hash
         bytes32 messageId = keccak256("msg1");
@@ -375,12 +380,9 @@ contract DirectL2MessengerTest is Test {
         vm.deal(r2, 2 ether);
         vm.deal(r3, 2 ether);
 
-        vm.prank(r1);
-        messenger.registerRelayer{value: 1 ether}();
-        vm.prank(r2);
-        messenger.registerRelayer{value: 1 ether}();
-        vm.prank(r3);
-        messenger.registerRelayer{value: 1 ether}();
+        _registerAndApprove(r1);
+        _registerAndApprove(r2);
+        _registerAndApprove(r3);
 
         bytes32 messageId = keccak256("msg2");
         bytes memory payload = bytes("hello");
@@ -500,12 +502,9 @@ contract DirectL2MessengerTest is Test {
         vm.deal(r2, 2 ether);
         vm.deal(r3, 2 ether);
 
-        vm.prank(r1);
-        messenger.registerRelayer{value: 1 ether}();
-        vm.prank(r2);
-        messenger.registerRelayer{value: 1 ether}();
-        vm.prank(r3);
-        messenger.registerRelayer{value: 1 ether}();
+        _registerAndApprove(r1);
+        _registerAndApprove(r2);
+        _registerAndApprove(r3);
 
         bytes32 messageId = keccak256("challenge_msg");
         bytes memory payload = bytes("data");
@@ -580,12 +579,9 @@ contract DirectL2MessengerTest is Test {
         vm.deal(r2, 2 ether);
         vm.deal(r3, 2 ether);
 
-        vm.prank(r1);
-        messenger.registerRelayer{value: 1 ether}();
-        vm.prank(r2);
-        messenger.registerRelayer{value: 1 ether}();
-        vm.prank(r3);
-        messenger.registerRelayer{value: 1 ether}();
+        _registerAndApprove(r1);
+        _registerAndApprove(r2);
+        _registerAndApprove(r3);
 
         bytes32 messageId = keccak256("resolve_msg");
         bytes memory payload = bytes("data");
@@ -629,7 +625,11 @@ contract DirectL2MessengerTest is Test {
         // Resolve: fraud proven
         uint256 challengerBalBefore = challenger.balance;
         vm.prank(operator);
-        messenger.resolveChallenge(messageId, true);
+        messenger.resolveChallenge(
+            messageId,
+            true,
+            keccak256("fraud_evidence")
+        );
 
         // Challenger should receive bond + reward
         assertTrue(challenger.balance > challengerBalBefore);

@@ -69,9 +69,8 @@ contract GasNormalizerTest is Test {
     }
 
     function test_defaultProfiles() public view {
-        GasNormalizer.GasProfile memory transferProfile = normalizer.getGasProfile(
-            GasNormalizer.OperationType.TRANSFER
-        );
+        GasNormalizer.GasProfile memory transferProfile = normalizer
+            .getGasProfile(GasNormalizer.OperationType.TRANSFER);
         assertTrue(transferProfile.isActive);
         assertGt(transferProfile.targetGas, 0);
     }
@@ -81,7 +80,9 @@ contract GasNormalizerTest is Test {
     // =========================================================================
 
     function test_executeNormalized() public {
-        bytes memory data = abi.encodeWithSelector(GasTarget.increment.selector);
+        bytes memory data = abi.encodeWithSelector(
+            GasTarget.increment.selector
+        );
 
         vm.prank(user);
         (bool success, ) = normalizer.executeNormalized(
@@ -95,7 +96,9 @@ contract GasNormalizerTest is Test {
 
     function test_executeNormalized_unauthorized_reverts() public {
         address rando = makeAddr("rando");
-        bytes memory data = abi.encodeWithSelector(GasTarget.increment.selector);
+        bytes memory data = abi.encodeWithSelector(
+            GasTarget.increment.selector
+        );
 
         vm.prank(rando);
         vm.expectRevert();
@@ -116,7 +119,9 @@ contract GasNormalizerTest is Test {
         vm.prank(admin);
         normalizer.authorizeCaller(newCaller, true);
 
-        bytes memory data = abi.encodeWithSelector(GasTarget.increment.selector);
+        bytes memory data = abi.encodeWithSelector(
+            GasTarget.increment.selector
+        );
         vm.prank(newCaller);
         (bool success, ) = normalizer.executeNormalized(
             address(target),
@@ -183,7 +188,9 @@ contract GasNormalizerTest is Test {
     // =========================================================================
 
     function test_metricsTrack() public {
-        bytes memory data = abi.encodeWithSelector(GasTarget.increment.selector);
+        bytes memory data = abi.encodeWithSelector(
+            GasTarget.increment.selector
+        );
 
         vm.prank(user);
         normalizer.executeNormalized(
@@ -198,7 +205,9 @@ contract GasNormalizerTest is Test {
     }
 
     function test_callerMetrics() public {
-        bytes memory data = abi.encodeWithSelector(GasTarget.increment.selector);
+        bytes memory data = abi.encodeWithSelector(
+            GasTarget.increment.selector
+        );
 
         vm.prank(user);
         normalizer.executeNormalized(
@@ -207,7 +216,9 @@ contract GasNormalizerTest is Test {
             data
         );
 
-        GasNormalizer.ExecutionMetrics memory m = normalizer.getCallerMetrics(user);
+        GasNormalizer.ExecutionMetrics memory m = normalizer.getCallerMetrics(
+            user
+        );
         assertEq(m.totalExecutions, 1);
     }
 
@@ -216,7 +227,9 @@ contract GasNormalizerTest is Test {
     // =========================================================================
 
     function test_getTargetGas() public view {
-        uint256 targetGas = normalizer.getTargetGas(GasNormalizer.OperationType.TRANSFER);
+        uint256 targetGas = normalizer.getTargetGas(
+            GasNormalizer.OperationType.TRANSFER
+        );
         assertGt(targetGas, 0);
     }
 

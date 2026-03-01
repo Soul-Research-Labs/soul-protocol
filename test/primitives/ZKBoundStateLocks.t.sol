@@ -118,10 +118,16 @@ contract ZKBoundStateLocksTest is Test {
 
         zksl = new ZKBoundStateLocks(address(verifier));
 
-        // Grant roles
+        // Grant roles to dedicated addresses
         zksl.grantRole(zksl.OPERATOR_ROLE(), operator);
         zksl.grantRole(zksl.DISPUTE_RESOLVER_ROLE(), disputeResolver);
         zksl.grantRole(zksl.RECOVERY_ROLE(), recovery);
+
+        // Renounce operational roles from admin so role separation can be confirmed
+        zksl.renounceRole(zksl.OPERATOR_ROLE(), admin);
+        zksl.renounceRole(zksl.DISPUTE_RESOLVER_ROLE(), admin);
+        zksl.renounceRole(zksl.RECOVERY_ROLE(), admin);
+        zksl.confirmRoleSeparation();
 
         // Compute Ethereum mainnet domain
         ethDomain = zksl.generateDomainSeparator(1, 0, 0);
@@ -132,13 +138,15 @@ contract ZKBoundStateLocksTest is Test {
     //////////////////////////////////////////////////////////////*/
 
     function test_Constructor_GrantsAllRoles() public view {
+        // After setUp, admin retains admin-level roles but renounced operational roles
         assertTrue(zksl.hasRole(zksl.DEFAULT_ADMIN_ROLE(), admin));
         assertTrue(zksl.hasRole(zksl.LOCK_ADMIN_ROLE(), admin));
         assertTrue(zksl.hasRole(zksl.VERIFIER_ADMIN_ROLE(), admin));
         assertTrue(zksl.hasRole(zksl.DOMAIN_ADMIN_ROLE(), admin));
-        assertTrue(zksl.hasRole(zksl.DISPUTE_RESOLVER_ROLE(), admin));
-        assertTrue(zksl.hasRole(zksl.OPERATOR_ROLE(), admin));
-        assertTrue(zksl.hasRole(zksl.RECOVERY_ROLE(), admin));
+        // Operational roles are held by dedicated addresses (renounced from admin in setUp)
+        assertTrue(zksl.hasRole(zksl.DISPUTE_RESOLVER_ROLE(), disputeResolver));
+        assertTrue(zksl.hasRole(zksl.OPERATOR_ROLE(), operator));
+        assertTrue(zksl.hasRole(zksl.RECOVERY_ROLE(), recovery));
     }
 
     function test_Constructor_SetsProofVerifier() public view {
@@ -1112,9 +1120,11 @@ contract ZKBoundStateLocksTest is Test {
     function test_ConfirmRoleSeparation_RevertIfAdminHoldsOperationalRoles()
         public
     {
-        // Admin still holds DISPUTE_RESOLVER_ROLE
+        // Deploy a fresh instance where admin still holds all roles
+        ZKBoundStateLocks freshZksl = new ZKBoundStateLocks(address(verifier));
+        // Admin still holds DISPUTE_RESOLVER_ROLE, etc.
         vm.expectRevert("Admin must not hold operational roles");
-        zksl.confirmRoleSeparation();
+        freshZksl.confirmRoleSeparation();
     }
 
     /*//////////////////////////////////////////////////////////////

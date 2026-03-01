@@ -395,6 +395,7 @@ contract CrossChainPrivacyHub is
     error RefundFailed();
     error FeeTooHigh();
     error VaultLockFailed(bytes32 requestId);
+    error RefundTooEarly(bytes32 requestId, uint64 expiry);
 
     // =========================================================================
     // COMPLIANCE SETTERS
@@ -681,8 +682,8 @@ contract CrossChainPrivacyHub is
             if (!sent) revert FeePaymentFailed();
         }
 
-        // Lock liquidity on source chain vault (if configured)
-        // This records the pending outflow so the destination vault can release to the recipient
+        // Lock LP liquidity on source chain vault (if configured)
+        // User funds stay in Hub for settlement; vault locks existing LP deposits
         if (address(liquidityVault) != address(0)) {
             bool locked = liquidityVault.lockLiquidity(
                 requestId,
@@ -800,12 +801,14 @@ contract CrossChainPrivacyHub is
             IERC20(token).safeTransfer(feeRecipient, fee);
         }
 
-        // Lock liquidity on source chain vault (if configured)
+        // Lock LP liquidity on source chain vault (if configured)
+        // User funds stay in Hub for settlement; vault locks existing LP deposits
         if (address(liquidityVault) != address(0)) {
+            uint256 netAmount = amount - fee;
             bool locked = liquidityVault.lockLiquidity(
                 requestId,
                 token,
-                amount - fee, // Net amount after fee
+                netAmount,
                 destChainId
             );
             if (!locked) revert VaultLockFailed(requestId);
@@ -937,7 +940,10 @@ contract CrossChainPrivacyHub is
                 (bool sent, ) = recipientAddr.call{value: transfer.amount}("");
                 if (!sent) revert RefundFailed();
             } else {
-                IERC20(transfer.token).safeTransfer(recipientAddr, transfer.amount);
+                IERC20(transfer.token).safeTransfer(
+                    recipientAddr,
+                    transfer.amount
+                );
             }
         }
 
@@ -982,7 +988,8 @@ contract CrossChainPrivacyHub is
             !hasRole(GUARDIAN_ROLE, msg.sender)
         ) {
             if (msg.sender != transfer.sender) revert UnauthorizedCaller();
-            revert RequestExpired(requestId); // Misleading but prevents early refund
+            // SECURITY FIX L-2: Use correct error for early refund attempt
+            revert RefundTooEarly(requestId, transfer.expiry);
         }
 
         transfer.status = RequestStatus.REFUNDED;
@@ -1333,9 +1340,9 @@ contract CrossChainPrivacyHub is
             return _verifyCLSAG(proof);
         }
 
-        // If no proof required or none specified
-        return
-            proof.proof.length == 0 || adapter.proofSystem == ProofSystem.NONE;
+        // SECURITY FIX M-5: Only allow proof bypass when adapter explicitly requires no proofs.
+        // Previously, empty proof + NONE system could bypass verification at any privacy level.
+        return adapter.proofSystem == ProofSystem.NONE;
     }
 
     /// @notice Verify a Groth16 proof via the registered verifier

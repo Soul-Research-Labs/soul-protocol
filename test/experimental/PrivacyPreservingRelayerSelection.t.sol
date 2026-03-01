@@ -32,7 +32,10 @@ contract PrivacyPreservingRelayerSelectionTest is Test {
         featureReg = new ExperimentalFeatureRegistry(admin);
 
         // Deploy selection contract
-        selection = new PrivacyPreservingRelayerSelection(VRF_PUB_KEY, address(featureReg));
+        selection = new PrivacyPreservingRelayerSelection(
+            VRF_PUB_KEY,
+            address(featureReg)
+        );
 
         // Grant oracle role
         selection.grantRole(selection.ORACLE_ROLE(), oracle);
@@ -63,7 +66,8 @@ contract PrivacyPreservingRelayerSelectionTest is Test {
 
         assertEq(selection.getActiveRelayerCount(), 1);
 
-        PrivacyPreservingRelayerSelection.Relayer memory r = selection.getRelayerInfo(relayer1);
+        PrivacyPreservingRelayerSelection.Relayer memory r = selection
+            .getRelayerInfo(relayer1);
         assertEq(r.relayerAddress, relayer1);
         assertEq(r.publicKeyHash, PUB_KEY_HASH_1);
         assertEq(r.stake, 1 ether);
@@ -97,7 +101,8 @@ contract PrivacyPreservingRelayerSelectionTest is Test {
         vm.prank(relayer1);
         selection.addStake{value: 1 ether}();
 
-        PrivacyPreservingRelayerSelection.Relayer memory r = selection.getRelayerInfo(relayer1);
+        PrivacyPreservingRelayerSelection.Relayer memory r = selection
+            .getRelayerInfo(relayer1);
         assertEq(r.stake, 2 ether);
     }
 
@@ -112,7 +117,8 @@ contract PrivacyPreservingRelayerSelectionTest is Test {
         vm.prank(relayer1);
         selection.deactivateRelayer();
 
-        PrivacyPreservingRelayerSelection.Relayer memory r = selection.getRelayerInfo(relayer1);
+        PrivacyPreservingRelayerSelection.Relayer memory r = selection
+            .getRelayerInfo(relayer1);
         assertFalse(r.active);
         assertEq(selection.getActiveRelayerCount(), 0);
     }
@@ -188,7 +194,11 @@ contract PrivacyPreservingRelayerSelectionTest is Test {
     function test_getStats() public {
         _registerThreeRelayers();
 
-        (uint256 relayerCount, uint256 totalStakeAmount, uint256 requests) = selection.getStats();
+        (
+            uint256 relayerCount,
+            uint256 totalStakeAmount,
+            uint256 requests
+        ) = selection.getStats();
         assertEq(relayerCount, 3);
         assertEq(totalStakeAmount, 3 ether);
         assertEq(requests, 0);
@@ -210,7 +220,8 @@ contract PrivacyPreservingRelayerSelectionTest is Test {
         vm.prank(oracle);
         selection.reportRelayCompletion(relayer1, requestId, true);
 
-        PrivacyPreservingRelayerSelection.Relayer memory r = selection.getRelayerInfo(relayer1);
+        PrivacyPreservingRelayerSelection.Relayer memory r = selection
+            .getRelayerInfo(relayer1);
         assertEq(r.successfulRelays, 1);
     }
 
@@ -222,7 +233,8 @@ contract PrivacyPreservingRelayerSelectionTest is Test {
         vm.prank(oracle);
         selection.reportRelayCompletion(relayer1, requestId, false);
 
-        PrivacyPreservingRelayerSelection.Relayer memory r = selection.getRelayerInfo(relayer1);
+        PrivacyPreservingRelayerSelection.Relayer memory r = selection
+            .getRelayerInfo(relayer1);
         assertEq(r.failedRelays, 1);
     }
 

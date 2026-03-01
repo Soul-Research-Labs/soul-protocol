@@ -65,6 +65,12 @@ contract CryptographicAttacksTest is Test {
         // Setup roles
         nullifierRegistry.grantRole(REGISTRAR_ROLE, admin);
 
+        // Confirm role separation before registering verifier (H-1 security fix requires it)
+        stateLocks.renounceRole(keccak256("DISPUTE_RESOLVER_ROLE"), admin);
+        stateLocks.renounceRole(keccak256("RECOVERY_ROLE"), admin);
+        stateLocks.renounceRole(OPERATOR_ROLE, admin);
+        stateLocks.confirmRoleSeparation();
+
         // Register verifier and domain for state locks
         stateLocks.registerVerifier(MOCK_VK_HASH, address(mockVerifier));
         testDomain = stateLocks.registerDomain(

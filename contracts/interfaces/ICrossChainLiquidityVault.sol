@@ -142,6 +142,7 @@ interface ICrossChainLiquidityVault {
     );
     error LockNotFound(bytes32 requestId);
     error LockAlreadyReleased(bytes32 requestId);
+    error LockAlreadyExists(bytes32 requestId);
     error LockAlreadyRefunded(bytes32 requestId);
     error LockNotExpired(bytes32 requestId);
     error InvalidAmount();

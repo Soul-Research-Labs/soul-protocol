@@ -316,7 +316,10 @@ contract DirectL2MessengerUpgradeable is
      * @param admin Admin address receiving DEFAULT_ADMIN_ROLE and OPERATOR_ROLE
      * @param _zaseonHub Zaseon Hub address for nullifier binding
      */
-    function initialize(address admin, address _zaseonHub) external initializer {
+    function initialize(
+        address admin,
+        address _zaseonHub
+    ) external initializer {
         if (admin == address(0)) revert ZeroAddress();
         if (_zaseonHub == address(0)) revert ZeroAddress();
 
@@ -691,9 +694,9 @@ contract DirectL2MessengerUpgradeable is
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Register as a relayer by posting the minimum bond
-     * @dev Caller must send at least MIN_RELAYER_BOND ETH. Grants RELAYER_ROLE
-     *      and adds to the relayer list. Reverts if the caller is already active.
+     * @notice Register as a relayer candidate by posting the minimum bond
+     * @dev SECURITY FIX C-1: Relayers must be approved by OPERATOR_ROLE before they
+     *      can relay messages. Self-granting RELAYER_ROLE is removed.
      */
     function registerRelayer() external payable nonReentrant {
         if (msg.value < MIN_RELAYER_BOND) revert InsufficientBond();
@@ -710,9 +713,20 @@ contract DirectL2MessengerUpgradeable is
         });
 
         relayerList.push(msg.sender);
-        _grantRole(RELAYER_ROLE, msg.sender);
+        // SECURITY FIX C-1: Do NOT self-grant RELAYER_ROLE
 
         emit RelayerRegistered(msg.sender, msg.value);
+    }
+
+    /**
+     * @notice Approve a registered relayer candidate
+     * @param relayer Address of the registered relayer to approve
+     */
+    function approveRelayer(address relayer) external onlyRole(OPERATOR_ROLE) {
+        if (!relayers[relayer].active) revert InvalidRelayer();
+        if (relayers[relayer].bond < MIN_RELAYER_BOND)
+            revert InsufficientBond();
+        _grantRole(RELAYER_ROLE, relayer);
     }
 
     /**
@@ -795,14 +809,19 @@ contract DirectL2MessengerUpgradeable is
     }
 
     /**
-     * @notice Resolve a challenge
+     * @notice Resolve a challenge with fraud evidence
+     * @dev SECURITY FIX C-2: Requires non-zero fraud evidence when proving fraud.
      * @param messageId Message identifier
      * @param fraudProven Whether fraud was proven
+     * @param fraudEvidence Hash of fraud evidence (must be non-zero when fraudProven=true)
      */
     function resolveChallenge(
         bytes32 messageId,
-        bool fraudProven
+        bool fraudProven,
+        bytes32 fraudEvidence
     ) external onlyRole(OPERATOR_ROLE) nonReentrant {
+        // SECURITY FIX C-2: Require evidence when claiming fraud
+        if (fraudProven && fraudEvidence == bytes32(0)) revert InvalidProof();
         address challenger = challengers[messageId];
         if (challenger == address(0)) revert MessageNotFound();
 
@@ -954,19 +973,19 @@ contract DirectL2MessengerUpgradeable is
 
     /// @notice Pause all messaging operations (emergency use)
     /// @dev Only callable by addresses with OPERATOR_ROLE
-        /**
+    /**
      * @notice Pauses the operation
      */
-function pause() external onlyRole(OPERATOR_ROLE) {
+    function pause() external onlyRole(OPERATOR_ROLE) {
         _pause();
     }
 
     /// @notice Resume messaging operations after pause
     /// @dev Only callable by addresses with OPERATOR_ROLE
-        /**
+    /**
      * @notice Unpauses the operation
      */
-function unpause() external onlyRole(OPERATOR_ROLE) {
+    function unpause() external onlyRole(OPERATOR_ROLE) {
         _unpause();
     }
 
@@ -991,35 +1010,35 @@ function unpause() external onlyRole(OPERATOR_ROLE) {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Retrieve a message by its unique identifier
-        /**
+    /**
      * @notice Returns the message
      * @param messageId The message identifier
      * @return The result value
      */
-function getMessage(
+    function getMessage(
         bytes32 messageId
     ) external view returns (L2Message memory) {
         return messages[messageId];
     }
 
     /// @notice Get relayer registration details
-        /**
+    /**
      * @notice Returns the relayer
      * @param addr The target address
      * @return The result value
      */
-function getRelayer(address addr) external view returns (Relayer memory) {
+    function getRelayer(address addr) external view returns (Relayer memory) {
         return relayers[addr];
     }
 
     /// @notice Get the route configuration between two chains
-        /**
+    /**
      * @notice Returns the route
      * @param sourceChainId The source chain identifier
      * @param destChainId The destination chain identifier
      * @return The result value
      */
-function getRoute(
+    function getRoute(
         uint256 sourceChainId,
         uint256 destChainId
     ) external view returns (RouteConfig memory) {
@@ -1027,35 +1046,35 @@ function getRoute(
     }
 
     /// @notice Get the number of relayer confirmations for a message
-        /**
+    /**
      * @notice Returns the confirmation count
      * @param messageId The message identifier
      * @return The result value
      */
-function getConfirmationCount(
+    function getConfirmationCount(
         bytes32 messageId
     ) external view returns (uint256) {
         return messageConfirmations[messageId].length;
     }
 
     /// @notice Check whether a message has already been processed
-        /**
+    /**
      * @notice Checks if message processed
      * @param messageId The message identifier
      * @return The result value
      */
-function isMessageProcessed(
+    function isMessageProcessed(
         bytes32 messageId
     ) external view returns (bool) {
         return processedMessages[messageId];
     }
 
     /// @notice Get the total number of registered relayers
-        /**
+    /**
      * @notice Returns the relayer count
      * @return The result value
      */
-function getRelayerCount() external view returns (uint256) {
+    function getRelayerCount() external view returns (uint256) {
         return relayerList.length;
     }
 
@@ -1067,13 +1086,13 @@ function getRelayerCount() external view returns (uint256) {
 //////////////////////////////////////////////////////////////*/
 
 interface IL2ToL2CrossDomainMessenger {
-        /**
+    /**
      * @notice Send message
      * @param _destination The _destination
      * @param _target The _target
      * @param _message The _message
      */
-function sendMessage(
+    function sendMessage(
         uint256 _destination,
         address _target,
         bytes calldata _message
@@ -1081,25 +1100,25 @@ function sendMessage(
 }
 
 interface ISharedSequencer {
-        /**
+    /**
      * @notice Submits cross chain message
      * @param destChainId The destination chain identifier
      * @param payload The message payload
      */
-function submitCrossChainMessage(
+    function submitCrossChainMessage(
         uint256 destChainId,
         bytes calldata payload
     ) external;
 }
 
 interface IL1BridgeAdapter {
-        /**
+    /**
      * @notice Send message
      * @param destChainId The destination chain identifier
      * @param recipient The recipient address
      * @param payload The message payload
      */
-function sendMessage(
+    function sendMessage(
         uint256 destChainId,
         address recipient,
         bytes calldata payload

@@ -374,19 +374,19 @@ Zaseon provides adapters for major cross-chain messaging:
 
 ### Security Stack
 
-| Module                      | Purpose                          |
-| --------------------------- | -------------------------------- |
-| `ZaseonUpgradeTimelock.sol` | Time-delayed admin operations    |
-| `BridgeCircuitBreaker.sol`  | Anomaly detection and auto-pause |
-| `BridgeRateLimiter.sol`     | Volume and rate limiting         |
-| `MEVProtection.sol`         | Commit-reveal for MEV resistance |
-| `FlashLoanGuard.sol`        | Flash loan attack prevention     |
-| `EmergencyRecovery.sol`     | Emergency pause and recovery     |
-| `SecurityModule.sol`        | Core security primitives         |
-| `BridgeProofValidator.sol`  | Cross-chain proof validation     |
-| `BridgeWatchtower.sol`      | Real-time bridge monitoring      |
-| `ZKFraudProof.sol`          | ZK-based fraud proof system      |
-| `GriefingProtection.sol`    | Anti-griefing mechanisms         |
+| Module                             | Purpose                           |
+| ---------------------------------- | --------------------------------- |
+| `ZaseonUpgradeTimelock.sol`        | Time-delayed admin operations     |
+| `BridgeCircuitBreaker.sol`         | Anomaly detection and auto-pause  |
+| `BridgeRateLimiter.sol`            | Volume and rate limiting          |
+| `MEVProtection.sol`                | Commit-reveal for MEV resistance  |
+| `FlashLoanGuard.sol`               | Flash loan attack prevention      |
+| `EmergencyRecovery.sol`            | Emergency pause and recovery      |
+| `SecurityModule.sol`               | Core security primitives          |
+| `BridgeProofValidator.sol`         | Cross-chain proof validation      |
+| `BridgeWatchtower.sol`             | Real-time bridge monitoring       |
+| `ZKFraudProof.sol`                 | ZK-based fraud proof system       |
+| `GriefingProtection.sol`           | Anti-griefing mechanisms          |
 | `ProtocolEmergencyCoordinator.sol` | Multi-role emergency coordination |
 | `CrossChainEmergencyRelay.sol`     | Cross-chain emergency propagation |
 

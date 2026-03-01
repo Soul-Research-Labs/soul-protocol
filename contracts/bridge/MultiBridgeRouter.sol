@@ -111,6 +111,8 @@ contract MultiBridgeRouter is
     //////////////////////////////////////////////////////////////*/
 
     constructor(address admin) {
+        // SECURITY FIX H-4: Prevent bricking contract with zero-address admin
+        require(admin != address(0), "Zero admin");
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(BRIDGE_ADMIN, admin);
         _grantRole(OPERATOR_ROLE, admin);

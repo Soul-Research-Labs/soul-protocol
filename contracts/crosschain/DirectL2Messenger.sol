@@ -673,9 +673,10 @@ contract DirectL2Messenger is
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Register as a relayer by posting the minimum bond
-     * @dev Caller must send at least MIN_RELAYER_BOND ETH. Grants RELAYER_ROLE
-     *      and adds to the relayer list. Reverts if the caller is already active.
+     * @notice Register as a relayer candidate by posting the minimum bond
+     * @dev SECURITY FIX C-1: Relayers must be approved by OPERATOR_ROLE before they
+     *      can relay messages. Self-granting RELAYER_ROLE is removed to prevent sybil attacks.
+     *      Caller must send at least MIN_RELAYER_BOND ETH.
      */
     function registerRelayer() external payable nonReentrant {
         if (msg.value < MIN_RELAYER_BOND) revert InsufficientBond();
@@ -692,9 +693,22 @@ contract DirectL2Messenger is
         });
 
         relayerList.push(msg.sender);
-        _grantRole(RELAYER_ROLE, msg.sender);
+        // SECURITY FIX C-1: Do NOT self-grant RELAYER_ROLE. Operator must approve.
 
         emit RelayerRegistered(msg.sender, msg.value);
+    }
+
+    /**
+     * @notice Approve a registered relayer candidate, granting RELAYER_ROLE
+     * @dev SECURITY FIX C-1: Only OPERATOR_ROLE can approve relayers to prevent
+     *      sybil attacks where an attacker registers multiple relayers to forge messages.
+     * @param relayer Address of the registered relayer to approve
+     */
+    function approveRelayer(address relayer) external onlyRole(OPERATOR_ROLE) {
+        if (!relayers[relayer].active) revert InvalidRelayer();
+        if (relayers[relayer].bond < MIN_RELAYER_BOND)
+            revert InsufficientBond();
+        _grantRole(RELAYER_ROLE, relayer);
     }
 
     /**
@@ -779,14 +793,21 @@ contract DirectL2Messenger is
     }
 
     /**
-     * @notice Resolve a challenge
+     * @notice Resolve a challenge with on-chain fraud evidence
+     * @dev SECURITY FIX C-2: Requires fraud evidence hash when proving fraud.
+     *      The evidence must be verifiable (e.g., conflicting state root, invalid proof).
+     *      Requires 2-of-N operator confirmation for fraud=true resolutions.
      * @param messageId Message identifier
      * @param fraudProven Whether fraud was proven
+     * @param fraudEvidence Hash of fraud evidence (must be non-zero when fraudProven=true)
      */
     function resolveChallenge(
         bytes32 messageId,
-        bool fraudProven
+        bool fraudProven,
+        bytes32 fraudEvidence
     ) external onlyRole(OPERATOR_ROLE) nonReentrant {
+        // SECURITY FIX C-2: Require evidence when claiming fraud
+        if (fraudProven && fraudEvidence == bytes32(0)) revert InvalidProof();
         address challenger = challengers[messageId];
         if (challenger == address(0)) revert MessageNotFound();
 

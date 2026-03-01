@@ -207,10 +207,10 @@ contract CrossChainProofHubV3 is
     ///      prevention). Verifies that the calling admin does NOT hold RELAYER_ROLE or
     ///      CHALLENGER_ROLE — these must be assigned to independent parties before any proof
     ///      submissions are accepted. Irreversible: once set, `rolesSeparated` cannot be reset.
-        /**
+    /**
      * @notice Confirm role separation
      */
-function confirmRoleSeparation() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function confirmRoleSeparation() external onlyRole(DEFAULT_ADMIN_ROLE) {
         // Verify critical roles are NOT held by admin
         if (hasRole(RELAYER_ROLE, msg.sender)) revert AdminNotAllowed();
         if (hasRole(CHALLENGER_ROLE, msg.sender)) revert AdminNotAllowed();
@@ -225,10 +225,10 @@ function confirmRoleSeparation() external onlyRole(DEFAULT_ADMIN_ROLE) {
     /// @dev Stake can be slashed if submitted proofs are proved invalid via challenge.
     ///      Uses nonReentrant for defense-in-depth. No minimum deposit required, but
     ///      total stake must be >= `minRelayerStake` to submit proofs.
-        /**
+    /**
      * @notice Deposits stake
      */
-function depositStake() external payable nonReentrant {
+    function depositStake() external payable nonReentrant {
         relayerStakes[msg.sender] += msg.value;
         emit RelayerStakeDeposited(msg.sender, msg.value);
     }
@@ -239,11 +239,11 @@ function depositStake() external payable nonReentrant {
     ///      relayers from submitting a bad proof and immediately withdrawing stake before it
     ///      can be slashed. Uses CEI pattern: state updated before ETH transfer.
     /// @param amount Amount of stake to withdraw (must be <= current stake)
-        /**
+    /**
      * @notice Withdraws stake
      * @param amount The amount to process
      */
-function withdrawStake(uint256 amount) external nonReentrant {
+    function withdrawStake(uint256 amount) external nonReentrant {
         if (relayerStakes[msg.sender] < amount)
             revert InsufficientStake(relayerStakes[msg.sender], amount);
 
@@ -267,11 +267,11 @@ function withdrawStake(uint256 amount) external nonReentrant {
     /// @dev Rewards are credited to `claimableRewards` (not `relayerStakes`) so that
     ///      non-relayer challengers can withdraw their winnings independently.
     /// @param amount Amount to withdraw (must be <= claimable balance)
-        /**
+    /**
      * @notice Withdraws rewards
      * @param amount The amount to process
      */
-function withdrawRewards(uint256 amount) external nonReentrant {
+    function withdrawRewards(uint256 amount) external nonReentrant {
         if (claimableRewards[msg.sender] < amount)
             revert InsufficientStake(claimableRewards[msg.sender], amount);
 
@@ -302,7 +302,7 @@ function withdrawRewards(uint256 amount) external nonReentrant {
     /// @param sourceChainId Origin chain ID where the proof was generated
     /// @param destChainId Destination chain ID where the proof will be consumed
     /// @return proofId Unique identifier derived from keccak256(proofHash, commitment, chains)
-        /**
+    /**
      * @notice Submits proof
      * @param proof The ZK proof data
      * @param publicInputs The public inputs
@@ -311,7 +311,7 @@ function withdrawRewards(uint256 amount) external nonReentrant {
      * @param destChainId The destination chain identifier
      * @return proofId The proof id
      */
-function submitProof(
+    function submitProof(
         bytes calldata proof,
         bytes calldata publicInputs,
         bytes32 commitment,
@@ -346,7 +346,7 @@ function submitProof(
     /// @param destChainId Destination chain ID
     /// @param proofType The proof type identifier for verifier selection (e.g., keccak256("groth16"))
     /// @return proofId Unique identifier for the submitted and verified proof
-        /**
+    /**
      * @notice Submits proof instant
      * @param proof The ZK proof data
      * @param publicInputs The public inputs
@@ -356,7 +356,7 @@ function submitProof(
      * @param proofType The proof type
      * @return proofId The proof id
      */
-function submitProofInstant(
+    function submitProofInstant(
         bytes calldata proof,
         bytes calldata publicInputs,
         bytes32 commitment,
@@ -412,13 +412,13 @@ function submitProofInstant(
     /// @param _proofs Array of proof data (proof hash, public inputs hash, commitment, chains)
     /// @param merkleRoot Merkle root of all proof hashes in the batch (for off-chain verification)
     /// @return batchId Unique batch identifier derived from (merkleRoot, relayer, timestamp, batchNum)
-        /**
+    /**
      * @notice Submits batch
      * @param _proofs The _proofs
      * @param merkleRoot The Merkle tree root
      * @return batchId The batch id
      */
-function submitBatch(
+    function submitBatch(
         BatchProofInput[] calldata _proofs,
         bytes32 merkleRoot
     ) external payable nonReentrant whenNotPaused returns (bytes32 batchId) {
@@ -522,12 +522,12 @@ function submitBatch(
     ///      If the relayer wins (proof is valid), the relayer receives the challenger's stake.
     /// @param proofId The proof ID to challenge (must be in `Pending` status)
     /// @param reason Human-readable reason for the challenge (stored on-chain for auditing)
-        /**
+    /**
      * @notice Challenge proof
      * @param proofId The proofId identifier
      * @param reason The reason string
      */
-function challengeProof(
+    function challengeProof(
         bytes32 proofId,
         string calldata reason
     ) external payable nonReentrant {
@@ -575,14 +575,14 @@ function challengeProof(
     /// @param proof The original serialized proof bytes (hash must match submission)
     /// @param publicInputs The original serialized public inputs (hash must match submission)
     /// @param proofType The proof type identifier for verifier selection
-        /**
+    /**
      * @notice Resolves challenge
      * @param proofId The proofId identifier
      * @param proof The ZK proof data
      * @param publicInputs The public inputs
      * @param proofType The proof type
      */
-function resolveChallenge(
+    function resolveChallenge(
         bytes32 proofId,
         bytes calldata proof,
         bytes calldata publicInputs,
@@ -701,11 +701,11 @@ function resolveChallenge(
     ///      for filing a challenge without following through. This incentivizes challengers to
     ///      resolve promptly and prevents griefing via perpetually-open challenges.
     /// @param proofId The proof with an expired, unresolved challenge
-        /**
+    /**
      * @notice Expire challenge
      * @param proofId The proofId identifier
      */
-function expireChallenge(
+    function expireChallenge(
         bytes32 proofId
     ) external nonReentrant whenNotPaused {
         Challenge storage challenge = challenges[proofId];
@@ -740,11 +740,11 @@ function expireChallenge(
     ///      and decrements their pending proof counter. Callable by anyone — no role restriction
     ///      since finalization benefits the relayer and has no economic impact on others.
     /// @param proofId The proof to finalize (must be Pending+past deadline, or Verified)
-        /**
+    /**
      * @notice Finalizes proof
      * @param proofId The proofId identifier
      */
-function finalizeProof(
+    function finalizeProof(
         bytes32 proofId
     ) external nonReentrant whenNotPaused {
         ProofSubmission storage submission = proofs[proofId];
@@ -894,12 +894,12 @@ function finalizeProof(
     /// @notice Gets the full proof submission details including status and stake
     /// @param proofId The unique proof identifier
     /// @return submission The complete ProofSubmission struct (zero relayer = not found)
-        /**
+    /**
      * @notice Returns the proof
      * @param proofId The proofId identifier
      * @return submission The submission
      */
-function getProof(
+    function getProof(
         bytes32 proofId
     ) external view returns (ProofSubmission memory submission) {
         return proofs[proofId];
@@ -908,12 +908,12 @@ function getProof(
     /// @notice Gets the full batch submission details
     /// @param batchId The unique batch identifier
     /// @return batch The complete BatchSubmission struct (zero relayer = not found)
-        /**
+    /**
      * @notice Returns the batch
      * @param batchId The batchId identifier
      * @return batch The batch
      */
-function getBatch(
+    function getBatch(
         bytes32 batchId
     ) external view returns (BatchSubmission memory batch) {
         return batches[batchId];
@@ -922,12 +922,12 @@ function getBatch(
     /// @notice Gets challenge details for a proof
     /// @param proofId The proof that was challenged
     /// @return challenge The Challenge struct (zero challenger = no challenge exists)
-        /**
+    /**
      * @notice Returns the challenge
      * @param proofId The proofId identifier
      * @return The result value
      */
-function getChallenge(
+    function getChallenge(
         bytes32 proofId
     ) external view returns (Challenge memory) {
         return challenges[proofId];
@@ -936,12 +936,12 @@ function getChallenge(
     /// @notice Checks if a proof has completed its full lifecycle (Finalized status)
     /// @param proofId The proof to check
     /// @return finalized True if the proof is in Finalized status and safe to consume
-        /**
+    /**
      * @notice Checks if proof finalized
      * @param proofId The proofId identifier
      * @return finalized The finalized
      */
-function isProofFinalized(
+    function isProofFinalized(
         bytes32 proofId
     ) external view returns (bool finalized) {
         return proofs[proofId].status == ProofStatus.Finalized;
@@ -952,14 +952,14 @@ function isProofFinalized(
     /// @return stake Current deposited stake balance (ETH)
     /// @return successCount Total proofs successfully finalized
     /// @return slashCount Total times the relayer has been slashed via lost challenges
-        /**
+    /**
      * @notice Returns the relayer stats
      * @param relayer The relayer address
      * @return stake The stake
      * @return successCount The success count
      * @return slashCount The slash count
      */
-function getRelayerStats(
+    function getRelayerStats(
         address relayer
     )
         external
@@ -982,12 +982,12 @@ function getRelayerStats(
     ///      Used during both instant verification and challenge resolution.
     /// @param proofType The proof type identifier (e.g., keccak256("groth16"), keccak256("ultraplonk"))
     /// @param _verifier The IProofVerifier contract address (must be non-zero)
-        /**
+    /**
      * @notice Sets the verifier
      * @param proofType The proof type
      * @param _verifier The _verifier
      */
-function setVerifier(
+    function setVerifier(
         bytes32 proofType,
         address _verifier
     ) external onlyRole(VERIFIER_ADMIN_ROLE) {
@@ -1000,11 +1000,11 @@ function setVerifier(
     /// @dev Both source and destination chains must be registered before proof submission.
     ///      The deploying chain is auto-registered in the constructor.
     /// @param chainId The EVM chain ID to register as supported
-        /**
+    /**
      * @notice Adds supported chain
      * @param chainId The chain identifier
      */
-function addSupportedChain(
+    function addSupportedChain(
         uint256 chainId
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         supportedChains[chainId] = true;
@@ -1014,11 +1014,11 @@ function addSupportedChain(
     /// @notice Removes a chain from the supported set, blocking future proof submissions for it
     /// @dev Does not invalidate already-submitted proofs for the chain.
     /// @param chainId The EVM chain ID to remove
-        /**
+    /**
      * @notice Removes supported chain
      * @param chainId The chain identifier
      */
-function removeSupportedChain(
+    function removeSupportedChain(
         uint256 chainId
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         supportedChains[chainId] = false;
@@ -1030,12 +1030,12 @@ function removeSupportedChain(
     ///      Only accepts messages from the registered remote address on each chain.
     /// @param chainId The peer chain's EVM chain ID (must be non-zero)
     /// @param remote The CrossChainProofHubV3 contract address on the peer chain (must be non-zero)
-        /**
+    /**
      * @notice Sets the trusted remote
      * @param chainId The chain identifier
      * @param remote The remote
      */
-function setTrustedRemote(
+    function setTrustedRemote(
         uint256 chainId,
         address remote
     ) external onlyRole(OPERATOR_ROLE) {
@@ -1062,11 +1062,11 @@ function setTrustedRemote(
     /// @dev Bounded to [10 minutes, 30 days] to prevent both griefing (too long) and
     ///      insufficient challenge windows (too short). Does not affect existing proofs.
     /// @param _period New challenge period in seconds (must be >= 10 min, <= 30 days)
-        /**
+    /**
      * @notice Sets the challenge period
      * @param _period The _period
      */
-function setChallengePeriod(
+    function setChallengePeriod(
         uint256 _period
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_period < 10 minutes) revert InvalidChallengePeriod();
@@ -1081,12 +1081,12 @@ function setChallengePeriod(
     ///      original stake amounts. Both values must be non-zero.
     /// @param _relayerStake New minimum relayer stake per proof (in wei)
     /// @param _challengerStake New minimum challenger stake per challenge (in wei)
-        /**
+    /**
      * @notice Sets the min stakes
      * @param _relayerStake The _relayer stake
      * @param _challengerStake The _challenger stake
      */
-function setMinStakes(
+    function setMinStakes(
         uint256 _relayerStake,
         uint256 _challengerStake
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -1102,11 +1102,11 @@ function setMinStakes(
     /// @notice Updates the fee charged per proof submission
     /// @dev Instant submissions are charged 3x this fee. Setting to 0 makes submissions free.
     /// @param _fee New fee per proof in wei
-        /**
+    /**
      * @notice Sets the proof submission fee
      * @param _fee The _fee
      */
-function setProofSubmissionFee(
+    function setProofSubmissionFee(
         uint256 _fee
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         uint256 oldFee = proofSubmissionFee;
@@ -1119,12 +1119,12 @@ function setProofSubmissionFee(
     ///      Counters reset every hour automatically upon the next submission.
     /// @param _maxProofsPerHour Maximum number of proofs allowed per hour (0 = disabled)
     /// @param _maxValuePerHour Maximum cumulative value relayed per hour in wei (0 = disabled)
-        /**
+    /**
      * @notice Sets the rate limits
      * @param _maxProofsPerHour The _maxProofsPerHour bound
      * @param _maxValuePerHour The _maxValuePerHour bound
      */
-function setRateLimits(
+    function setRateLimits(
         uint256 _maxProofsPerHour,
         uint256 _maxValuePerHour
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -1139,16 +1139,21 @@ function setRateLimits(
     /// @param to Recipient address for the accumulated fees (must be non-zero)
     /// @dev Slither: arbitrary-send-eth is expected - admin-only function with role protection
     // slither-disable-next-line arbitrary-send-eth
-        /**
+    /**
      * @notice Withdraws fees
      * @param to The destination address
      */
-function withdrawFees(
+    function withdrawFees(
         address to
     ) external nonReentrant onlyRole(DEFAULT_ADMIN_ROLE) {
         if (to == address(0)) revert ZeroAddress();
         uint256 amount = accumulatedFees;
         if (amount == 0) revert WithdrawFailed();
+
+        // SECURITY FIX H-6: Solvency check — ensure fee withdrawal doesn't eat into
+        // relayer stake or challenger bond pool. The contract must retain enough ETH
+        // to cover all non-fee obligations.
+        if (address(this).balance < amount) revert WithdrawFailed();
 
         // CEI pattern: clear state before external call
         accumulatedFees = 0;
@@ -1159,18 +1164,18 @@ function withdrawFees(
 
     /// @notice Emergency pause — blocks all proof submissions, finalization, and challenges
     /// @dev Only EMERGENCY_ROLE can pause; only DEFAULT_ADMIN_ROLE can unpause.
-        /**
+    /**
      * @notice Pauses the operation
      */
-function pause() external onlyRole(EMERGENCY_ROLE) {
+    function pause() external onlyRole(EMERGENCY_ROLE) {
         _pause();
     }
 
     /// @notice Unpauses the contract, resuming all operations
-        /**
+    /**
      * @notice Unpauses the operation
      */
-function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
 
@@ -1180,12 +1185,12 @@ function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
     /// @dev SecurityModule rate limits apply per-user, while circuit breaker limits are global.
     /// @param window Sliding window duration in seconds
     /// @param maxActions Maximum allowed actions within each window
-        /**
+    /**
      * @notice Sets the security rate limit config
      * @param window The window
      * @param maxActions The maxActions bound
      */
-function setSecurityRateLimitConfig(
+    function setSecurityRateLimitConfig(
         uint256 window,
         uint256 maxActions
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -1196,12 +1201,12 @@ function setSecurityRateLimitConfig(
     /// @dev Separate from the manual `maxProofsPerHour` / `maxValuePerHour` limits.
     /// @param threshold Volume threshold that triggers the circuit breaker
     /// @param cooldown Cooldown period in seconds after the breaker trips
-        /**
+    /**
      * @notice Sets the security circuit breaker config
      * @param threshold The threshold value
      * @param cooldown The cooldown
      */
-function setSecurityCircuitBreakerConfig(
+    function setSecurityCircuitBreakerConfig(
         uint256 threshold,
         uint256 cooldown
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -1213,14 +1218,14 @@ function setSecurityCircuitBreakerConfig(
     /// @param circuitBreakers Enable automatic volume-based circuit breakers
     /// @param flashLoanGuard Enable flash loan detection guard
     /// @param withdrawalLimits Enable per-period withdrawal limits
-        /**
+    /**
      * @notice Sets the security module features
      * @param rateLimiting The rate limiting
      * @param circuitBreakers The circuit breakers
      * @param flashLoanGuard The flash loan guard
      * @param withdrawalLimits The withdrawal limits
      */
-function setSecurityModuleFeatures(
+    function setSecurityModuleFeatures(
         bool rateLimiting,
         bool circuitBreakers,
         bool flashLoanGuard,
@@ -1235,10 +1240,10 @@ function setSecurityModuleFeatures(
     }
 
     /// @notice Emergency reset of the SecurityModule circuit breaker after a false positive
-        /**
+    /**
      * @notice Resets security circuit breaker
      */
-function resetSecurityCircuitBreaker() external onlyRole(EMERGENCY_ROLE) {
+    function resetSecurityCircuitBreaker() external onlyRole(EMERGENCY_ROLE) {
         _resetCircuitBreaker();
     }
 

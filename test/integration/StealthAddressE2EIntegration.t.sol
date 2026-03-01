@@ -383,16 +383,16 @@ contract StealthAddressE2EIntegration is Test {
         bytes32 viewingPrivKeyHash = keccak256("alice-viewing-priv-key");
         bytes32 spendingPubKeyHash = keccak256(ALICE_SPEND_PUB);
 
-        // Compute the shared secret the same way the contract does
+        // Compute the shared secret the same way the contract does (M-1 fix: abi.encode)
         bytes32 sharedSecretHash = keccak256(
-            abi.encodePacked(
+            abi.encode(
                 viewingPrivKeyHash,
                 ephPub,
                 registry.STEALTH_DOMAIN()
             )
         );
         bytes32 expectedStealthHash = keccak256(
-            abi.encodePacked(spendingPubKeyHash, sharedSecretHash)
+            abi.encode(spendingPubKeyHash, sharedSecretHash)
         );
         address expectedStealth = address(
             uint160(uint256(expectedStealthHash))

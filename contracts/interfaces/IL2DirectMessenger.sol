@@ -209,11 +209,16 @@ interface IL2DirectMessenger {
     ) external payable;
 
     /**
-     * @notice Resolve a challenge
+     * @notice Resolve a challenge with fraud evidence
      * @param messageId Message identifier
      * @param fraudProven Whether fraud was proven
+     * @param fraudEvidence Hash of fraud evidence (must be non-zero when fraudProven=true)
      */
-    function resolveChallenge(bytes32 messageId, bool fraudProven) external;
+    function resolveChallenge(
+        bytes32 messageId,
+        bool fraudProven,
+        bytes32 fraudEvidence
+    ) external;
 
     /*//////////////////////////////////////////////////////////////
                          ROUTE CONFIGURATION

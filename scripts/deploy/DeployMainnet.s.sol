@@ -214,11 +214,11 @@ contract DeployMainnet is Script {
         //   1. vault.grantRole(PRIVACY_HUB_ROLE, <privacyHubAddress>)
         //   2. vault.revokeRole(PRIVACY_HUB_ROLE, deployer)
         liquidityVault = new CrossChainLiquidityVault(
-            admin,       // DEFAULT_ADMIN_ROLE
-            admin,       // OPERATOR_ROLE + SETTLER_ROLE
-            guardian1,   // GUARDIAN_ROLE
-            deployer,    // PRIVACY_HUB_ROLE (temporary, re-assign to actual hub later)
-            5000         // 50% of protocol fees go to LPs
+            admin, // DEFAULT_ADMIN_ROLE
+            admin, // OPERATOR_ROLE + SETTLER_ROLE
+            guardian1, // GUARDIAN_ROLE
+            deployer, // PRIVACY_HUB_ROLE (temporary, re-assign to actual hub later)
+            5000 // 50% of protocol fees go to LPs
         );
         console.log("CrossChainLiquidityVault:", address(liquidityVault));
 
@@ -374,6 +374,45 @@ contract DeployMainnet is Script {
         // PRIVACY_HUB_ROLE stays with deployer temporarily until PrivacyHub is deployed
         // Multisig will reassign: vault.grantRole(PRIVACY_HUB_ROLE, privacyHub)
 
+        // SECURITY FIX C-3: Transfer roles for Phase 3 primitives to multisig
+        // Previously these were missing — deployer retained permanent admin control.
+
+        // ZKBoundStateLocks
+        zkBoundStateLocks.grantRole(
+            zkBoundStateLocks.DEFAULT_ADMIN_ROLE(),
+            admin
+        );
+        zkBoundStateLocks.grantRole(zkBoundStateLocks.LOCK_ADMIN_ROLE(), admin);
+        zkBoundStateLocks.grantRole(
+            zkBoundStateLocks.VERIFIER_ADMIN_ROLE(),
+            admin
+        );
+        zkBoundStateLocks.grantRole(
+            zkBoundStateLocks.DOMAIN_ADMIN_ROLE(),
+            admin
+        );
+        zkBoundStateLocks.grantRole(
+            zkBoundStateLocks.DISPUTE_RESOLVER_ROLE(),
+            admin
+        );
+        zkBoundStateLocks.grantRole(zkBoundStateLocks.OPERATOR_ROLE(), admin);
+        zkBoundStateLocks.grantRole(zkBoundStateLocks.RECOVERY_ROLE(), admin);
+
+        // ProofCarryingContainer
+        proofCarryingContainer.grantRole(
+            proofCarryingContainer.DEFAULT_ADMIN_ROLE(),
+            admin
+        );
+
+        // CrossDomainNullifierAlgebra
+        cdna.grantRole(cdna.DEFAULT_ADMIN_ROLE(), admin);
+
+        // PolicyBoundProofs
+        policyBoundProofs.grantRole(
+            policyBoundProofs.DEFAULT_ADMIN_ROLE(),
+            admin
+        );
+
         // ======== PHASE 8: RENOUNCE DEPLOYER ROLES ========
         console.log("\n--- Phase 8: Renounce Deployer ---");
 
@@ -429,6 +468,52 @@ contract DeployMainnet is Script {
         // NOTE: Only do this AFTER the multisig has granted PRIVACY_HUB_ROLE to the real PrivacyHub
         // For safety, we leave the deployer's PRIVACY_HUB_ROLE here and move renounce to
         // ConfigureCrossChain.s.sol which runs after PrivacyHub deployment
+
+        // SECURITY FIX C-3: Renounce deployer roles on Phase 3 primitives
+        // ZKBoundStateLocks
+        zkBoundStateLocks.renounceRole(
+            zkBoundStateLocks.RECOVERY_ROLE(),
+            deployer
+        );
+        zkBoundStateLocks.renounceRole(
+            zkBoundStateLocks.OPERATOR_ROLE(),
+            deployer
+        );
+        zkBoundStateLocks.renounceRole(
+            zkBoundStateLocks.DISPUTE_RESOLVER_ROLE(),
+            deployer
+        );
+        zkBoundStateLocks.renounceRole(
+            zkBoundStateLocks.DOMAIN_ADMIN_ROLE(),
+            deployer
+        );
+        zkBoundStateLocks.renounceRole(
+            zkBoundStateLocks.VERIFIER_ADMIN_ROLE(),
+            deployer
+        );
+        zkBoundStateLocks.renounceRole(
+            zkBoundStateLocks.LOCK_ADMIN_ROLE(),
+            deployer
+        );
+        zkBoundStateLocks.renounceRole(
+            zkBoundStateLocks.DEFAULT_ADMIN_ROLE(),
+            deployer
+        );
+
+        // ProofCarryingContainer
+        proofCarryingContainer.renounceRole(
+            proofCarryingContainer.DEFAULT_ADMIN_ROLE(),
+            deployer
+        );
+
+        // CrossDomainNullifierAlgebra
+        cdna.renounceRole(cdna.DEFAULT_ADMIN_ROLE(), deployer);
+
+        // PolicyBoundProofs
+        policyBoundProofs.renounceRole(
+            policyBoundProofs.DEFAULT_ADMIN_ROLE(),
+            deployer
+        );
 
         vm.stopBroadcast();
 
