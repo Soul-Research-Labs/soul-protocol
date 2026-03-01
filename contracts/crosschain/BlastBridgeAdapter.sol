@@ -40,9 +40,13 @@ contract BlastBridgeAdapter is
                                  ROLES
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Role for operators who can manage bridge operations
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
+    /// @notice Role for guardians who can perform emergency actions
     bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE");
+    /// @notice Role for relayers who can relay cross-chain messages
     bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
+    /// @notice Role for pausers who can pause the adapter
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
     /*//////////////////////////////////////////////////////////////
@@ -134,24 +138,45 @@ contract BlastBridgeAdapter is
                               EVENTS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Emitted when a message is sent to Blast L2
+    /// @param messageHash The unique hash identifying this message
+    /// @param target The target contract address on Blast L2
+    /// @param nonce The message nonce
+    /// @param gasLimit The L2 gas limit for the message
     event MessageSent(
         bytes32 indexed messageHash,
         address indexed target,
         uint256 nonce,
         uint256 gasLimit
     );
+    /// @notice Emitted when a withdrawal is proved against the output oracle
+    /// @param messageHash The unique hash of the proved message
+    /// @param withdrawalHash The hash of the withdrawal transaction
     event WithdrawalProved(
         bytes32 indexed messageHash,
         bytes32 indexed withdrawalHash
     );
+    /// @notice Emitted when a withdrawal is finalized after the challenge period
+    /// @param messageHash The unique hash of the finalized message
     event WithdrawalFinalized(bytes32 indexed messageHash);
+    /// @notice Emitted when the bridge configuration is updated
+    /// @param crossDomainMessenger The new L1CrossDomainMessenger address
+    /// @param blastPortal The new OptimismPortal address for Blast
+    /// @param outputOracle The new L2OutputOracle address
     event BridgeConfigured(
         address crossDomainMessenger,
         address blastPortal,
         address outputOracle
     );
+    /// @notice Emitted when the Zaseon Hub L2 address is set
+    /// @param zaseonHubL2 The new Zaseon Hub address on Blast L2
     event ZaseonHubL2Set(address indexed zaseonHubL2);
+    /// @notice Emitted when the proof registry address is set
+    /// @param proofRegistry The new proof registry address
     event ProofRegistrySet(address indexed proofRegistry);
+    /// @notice Emitted when an emergency ETH withdrawal is performed
+    /// @param to The recipient address
+    /// @param amount The amount of ETH withdrawn
     event EmergencyWithdrawal(address indexed to, uint256 amount);
 
     /*//////////////////////////////////////////////////////////////
@@ -190,6 +215,9 @@ contract BlastBridgeAdapter is
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Update Blast bridge infrastructure addresses
+    /// @param _crossDomainMessenger L1CrossDomainMessenger address for Blast
+    /// @param _blastPortal OptimismPortal address for Blast
+    /// @param _outputOracle L2OutputOracle address for Blast
     function configureBlastBridge(
         address _crossDomainMessenger,
         address _blastPortal,
@@ -212,6 +240,7 @@ contract BlastBridgeAdapter is
     }
 
     /// @notice Set the Zaseon Hub L2 contract address on Blast
+    /// @param _zaseonHubL2 Address of the Zaseon Hub on Blast L2
     function setZaseonHubL2(
         address _zaseonHubL2
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -221,6 +250,7 @@ contract BlastBridgeAdapter is
     }
 
     /// @notice Set Proof Registry address
+    /// @param _proofRegistry Address of the proof registry contract
     function setProofRegistry(
         address _proofRegistry
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -430,6 +460,8 @@ contract BlastBridgeAdapter is
     }
 
     /// @notice Emergency withdrawal of ETH
+    /// @param to The recipient address for the withdrawn ETH
+    /// @param amount The amount of ETH to withdraw
     function emergencyWithdrawETH(
         address payable to,
         uint256 amount

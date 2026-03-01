@@ -42,9 +42,13 @@ contract MantaPacificBridgeAdapter is
                                  ROLES
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Role for operators who can manage bridge operations
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
+    /// @notice Role for guardians who can perform emergency actions
     bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE");
+    /// @notice Role for relayers who can relay cross-chain messages
     bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
+    /// @notice Role for pausers who can pause the adapter
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
     /*//////////////////////////////////////////////////////////////
@@ -136,24 +140,44 @@ contract MantaPacificBridgeAdapter is
                               EVENTS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Emitted when a message is sent to Manta Pacific L2
+    /// @param messageHash The unique hash identifying this message
+    /// @param target The target contract address on Manta Pacific L2
+    /// @param nonce The message nonce
+    /// @param depositCount The CDK bridge deposit count
     event MessageSent(
         bytes32 indexed messageHash,
         address indexed target,
         uint256 nonce,
         uint32 depositCount
     );
+    /// @notice Emitted when an L2→L1 message is claimed via CDK bridge
+    /// @param messageHash The unique hash of the claimed message
+    /// @param claimer The address that claimed the message
+    /// @param index The deposit index in the exit tree
     event MessageClaimed(
         bytes32 indexed messageHash,
         address indexed claimer,
         uint32 index
     );
+    /// @notice Emitted when the bridge configuration is updated
+    /// @param cdkBridge The new CDK Bridge contract address
+    /// @param globalExitRootManager The new Global Exit Root Manager address
+    /// @param mantaRollup The new Manta Pacific rollup contract address
     event BridgeConfigured(
         address cdkBridge,
         address globalExitRootManager,
         address mantaRollup
     );
+    /// @notice Emitted when the Zaseon Hub L2 address is set
+    /// @param zaseonHubL2 The new Zaseon Hub address on Manta Pacific L2
     event ZaseonHubL2Set(address indexed zaseonHubL2);
+    /// @notice Emitted when the proof registry address is set
+    /// @param proofRegistry The new proof registry address
     event ProofRegistrySet(address indexed proofRegistry);
+    /// @notice Emitted when an emergency ETH withdrawal is performed
+    /// @param to The recipient address
+    /// @param amount The amount of ETH withdrawn
     event EmergencyWithdrawal(address indexed to, uint256 amount);
 
     /*//////////////////////////////////////////////////////////////
@@ -195,6 +219,9 @@ contract MantaPacificBridgeAdapter is
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Update Manta Pacific bridge infrastructure addresses
+    /// @param _cdkBridge CDK Bridge contract address
+    /// @param _globalExitRootManager Global Exit Root Manager address
+    /// @param _mantaRollup Manta Pacific rollup contract address
     function configureMantaBridge(
         address _cdkBridge,
         address _globalExitRootManager,
@@ -213,6 +240,7 @@ contract MantaPacificBridgeAdapter is
     }
 
     /// @notice Set Zaseon Hub L2 address on Manta Pacific
+    /// @param _zaseonHubL2 Address of the Zaseon Hub on Manta Pacific L2
     function setZaseonHubL2(
         address _zaseonHubL2
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -222,6 +250,7 @@ contract MantaPacificBridgeAdapter is
     }
 
     /// @notice Set Proof Registry address
+    /// @param _proofRegistry Address of the proof registry contract
     function setProofRegistry(
         address _proofRegistry
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -413,6 +442,8 @@ contract MantaPacificBridgeAdapter is
     }
 
     /// @notice Emergency withdrawal of ETH
+    /// @param to The recipient address for the withdrawn ETH
+    /// @param amount The amount of ETH to withdraw
     function emergencyWithdrawETH(
         address payable to,
         uint256 amount

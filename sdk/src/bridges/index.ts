@@ -7,14 +7,20 @@
 
 export * as ArbitrumBridge from "./arbitrum";
 export * as BaseBridge from "./base";
+export * as BlastBridge from "./blast";
 export * as EthereumBridge from "./ethereum";
 export * as HyperlaneBridge from "./hyperlane";
 export * as L2Adapters from "./l2-adapters";
 export * as LayerZeroBridge from "./layerzero";
 export * as LineaBridge from "./linea";
+export * as MantaPacificBridge from "./manta-pacific";
+export * as MantleBridge from "./mantle";
+export * as ModeBridge from "./mode";
 export * from "./optimism";
 export * as PolygonZkEvmBridge from "./polygon-zkevm";
 export * as ScrollBridge from "./scroll";
+export * as StarknetBridge from "./starknet";
+export * as TaikoBridge from "./taiko";
 export * as ZkSyncBridge from "./zksync";
 
 import {
@@ -36,6 +42,12 @@ import { LINEA_BRIDGE_ADAPTER_ABI } from "./linea";
 import { ZKSYNC_BRIDGE_ADAPTER_ABI } from "./zksync";
 import { POLYGON_ZKEVM_BRIDGE_ADAPTER_ABI } from "./polygon-zkevm";
 import { ETHEREUM_L1_BRIDGE_ABI } from "./ethereum";
+import { STARKNET_BRIDGE_ADAPTER_ABI } from "./starknet";
+import { MANTLE_BRIDGE_ADAPTER_ABI } from "./mantle";
+import { BLAST_BRIDGE_ADAPTER_ABI } from "./blast";
+import { TAIKO_BRIDGE_ADAPTER_ABI } from "./taiko";
+import { MODE_BRIDGE_ADAPTER_ABI } from "./mode";
+import { MANTA_PACIFIC_BRIDGE_ADAPTER_ABI } from "./manta-pacific";
 
 /** Maps chain names to their chain-specific bridge ABIs */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -48,6 +60,12 @@ const CHAIN_ABI_MAP: Record<string, readonly any[]> = {
   linea: LINEA_BRIDGE_ADAPTER_ABI,
   zksync: ZKSYNC_BRIDGE_ADAPTER_ABI,
   "zksync-era": ZKSYNC_BRIDGE_ADAPTER_ABI,
+  starknet: STARKNET_BRIDGE_ADAPTER_ABI,
+  mantle: MANTLE_BRIDGE_ADAPTER_ABI,
+  blast: BLAST_BRIDGE_ADAPTER_ABI,
+  taiko: TAIKO_BRIDGE_ADAPTER_ABI,
+  mode: MODE_BRIDGE_ADAPTER_ABI,
+  "manta-pacific": MANTA_PACIFIC_BRIDGE_ADAPTER_ABI,
   "polygon-zkevm": POLYGON_ZKEVM_BRIDGE_ADAPTER_ABI,
   ethereum: ETHEREUM_L1_BRIDGE_ABI,
 };
@@ -152,11 +170,17 @@ export abstract class BaseBridgeAdapter {
 export type SupportedChain =
   | "arbitrum"
   | "base"
+  | "blast"
   | "ethereum"
   | "linea"
+  | "manta-pacific"
+  | "mantle"
+  | "mode"
   | "optimism"
   | "polygon-zkevm"
   | "scroll"
+  | "starknet"
+  | "taiko"
   | "zksync";
 
 // ============================================
@@ -233,6 +257,54 @@ const CHAIN_CONFIGS: Record<SupportedChain, BridgeAdapterConfig> = {
     chainId: 324,
     nativeToken: "ETH",
     finality: 15,
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  starknet: {
+    name: "Starknet",
+    chainId: 0x534e5f4d41494e,
+    nativeToken: "ETH",
+    finality: 240,
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  mantle: {
+    name: "Mantle",
+    chainId: 5000,
+    nativeToken: "MNT",
+    finality: 10080, // ~7 day challenge window
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  blast: {
+    name: "Blast",
+    chainId: 81457,
+    nativeToken: "ETH",
+    finality: 10080, // ~7 day challenge window
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  taiko: {
+    name: "Taiko",
+    chainId: 167000,
+    nativeToken: "ETH",
+    finality: 120, // ~2 hours for multi-tier ZK proof
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  mode: {
+    name: "Mode",
+    chainId: 34443,
+    nativeToken: "ETH",
+    finality: 10080, // ~7 day challenge window
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  "manta-pacific": {
+    name: "Manta Pacific",
+    chainId: 169,
+    nativeToken: "ETH",
+    finality: 30, // ~30 min ZK proof
     maxAmount: 1_000_000_000_000_000_000_000_000n,
     minAmount: 1_000_000_000_000_000n,
   },

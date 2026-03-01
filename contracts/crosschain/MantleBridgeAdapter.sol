@@ -39,9 +39,13 @@ contract MantleBridgeAdapter is
                                  ROLES
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Role for operators who can manage bridge operations
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
+    /// @notice Role for guardians who can perform emergency actions
     bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE");
+    /// @notice Role for relayers who can relay cross-chain messages
     bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
+    /// @notice Role for pausers who can pause the adapter
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
     /*//////////////////////////////////////////////////////////////
@@ -126,20 +130,39 @@ contract MantleBridgeAdapter is
                               EVENTS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Emitted when a message is sent to Mantle L2
+    /// @param messageHash The unique hash identifying this message
+    /// @param target The target contract address on Mantle L2
+    /// @param nonce The message nonce
+    /// @param gasLimit The L2 gas limit for the message
     event MessageSent(
         bytes32 indexed messageHash,
         address indexed target,
         uint256 nonce,
         uint256 gasLimit
     );
+    /// @notice Emitted when an L2→L1 message is relayed
+    /// @param messageHash The unique hash of the relayed message
+    /// @param relayer The address that relayed the message
     event MessageRelayed(bytes32 indexed messageHash, address indexed relayer);
+    /// @notice Emitted when the bridge configuration is updated
+    /// @param crossDomainMessenger The new L1CrossDomainMessenger address
+    /// @param outputOracle The new L2OutputOracle address
+    /// @param mantlePortal The new MantlePortal address
     event BridgeConfigured(
         address crossDomainMessenger,
         address outputOracle,
         address mantlePortal
     );
+    /// @notice Emitted when the Zaseon Hub L2 address is set
+    /// @param zaseonHubL2 The new Zaseon Hub address on Mantle L2
     event ZaseonHubL2Set(address indexed zaseonHubL2);
+    /// @notice Emitted when the proof registry address is set
+    /// @param proofRegistry The new proof registry address
     event ProofRegistrySet(address indexed proofRegistry);
+    /// @notice Emitted when an emergency ETH withdrawal is performed
+    /// @param to The recipient address
+    /// @param amount The amount of ETH withdrawn
     event EmergencyWithdrawal(address indexed to, uint256 amount);
 
     /*//////////////////////////////////////////////////////////////
@@ -178,6 +201,9 @@ contract MantleBridgeAdapter is
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Update Mantle bridge infrastructure addresses
+    /// @param _crossDomainMessenger L1CrossDomainMessenger address
+    /// @param _outputOracle L2OutputOracle address
+    /// @param _mantlePortal MantlePortal address
     function configureMantleBridge(
         address _crossDomainMessenger,
         address _outputOracle,
@@ -200,6 +226,7 @@ contract MantleBridgeAdapter is
     }
 
     /// @notice Set the Zaseon Hub L2 contract address on Mantle
+    /// @param _zaseonHubL2 Address of the Zaseon Hub on Mantle L2
     function setZaseonHubL2(
         address _zaseonHubL2
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -209,6 +236,7 @@ contract MantleBridgeAdapter is
     }
 
     /// @notice Set Proof Registry address
+    /// @param _proofRegistry Address of the proof registry contract
     function setProofRegistry(
         address _proofRegistry
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -364,6 +392,8 @@ contract MantleBridgeAdapter is
     }
 
     /// @notice Emergency withdrawal of ETH
+    /// @param to The recipient address for the withdrawn ETH
+    /// @param amount The amount of ETH to withdraw
     function emergencyWithdrawETH(
         address payable to,
         uint256 amount

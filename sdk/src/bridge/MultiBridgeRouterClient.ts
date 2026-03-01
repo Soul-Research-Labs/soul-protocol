@@ -100,6 +100,26 @@ const MULTI_BRIDGE_ROUTER_ABI = [
     outputs: [],
   },
   {
+    name: "setChainTarget",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "chainId", type: "uint256" },
+      { name: "target", type: "address" },
+    ],
+    outputs: [],
+  },
+  {
+    name: "batchSetChainTargets",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "chainIds", type: "uint256[]" },
+      { name: "targets", type: "address[]" },
+    ],
+    outputs: [],
+  },
+  {
     name: "pause",
     type: "function",
     stateMutability: "nonpayable",
@@ -284,6 +304,13 @@ export enum BridgeType {
   HYPERLANE = 2,
   CHAINLINK_CCIP = 3,
   AXELAR = 4,
+  STARKNET = 5,
+  POLYGON_ZKEVM = 6,
+  MANTLE = 7,
+  BLAST = 8,
+  TAIKO = 9,
+  MODE = 10,
+  MANTA_PACIFIC = 11,
 }
 
 /** Bridge operational status — mirrors Solidity BridgeStatus enum */
@@ -517,6 +544,46 @@ export class MultiBridgeRouterClient {
   }
 
   /**
+   * Set the target contract address for a destination chain.
+   *
+   * @param chainId - Destination chain ID
+   * @param target - Target contract address on the destination chain
+   */
+  async setChainTarget(chainId: number, target: Hex): Promise<Hex> {
+    if (!this.walletClient)
+      throw new Error("Wallet client required for write operations");
+
+    const hash = await this.contract.write.setChainTarget([
+      BigInt(chainId),
+      target,
+    ]);
+    await this.publicClient.waitForTransactionReceipt({ hash });
+    return hash;
+  }
+
+  /**
+   * Batch set target contract addresses for multiple destination chains.
+   *
+   * @param chainIds - Array of destination chain IDs
+   * @param targets - Array of target contract addresses
+   */
+  async batchSetChainTargets(chainIds: number[], targets: Hex[]): Promise<Hex> {
+    if (!this.walletClient)
+      throw new Error("Wallet client required for write operations");
+
+    if (chainIds.length !== targets.length) {
+      throw new Error("chainIds and targets arrays must have equal length");
+    }
+
+    const hash = await this.contract.write.batchSetChainTargets([
+      chainIds.map(BigInt),
+      targets,
+    ]);
+    await this.publicClient.waitForTransactionReceipt({ hash });
+    return hash;
+  }
+
+  /**
    * Update value thresholds that control routing behavior.
    *
    * @param thresholds - New threshold values
@@ -626,6 +693,13 @@ export class MultiBridgeRouterClient {
       BridgeType.HYPERLANE,
       BridgeType.CHAINLINK_CCIP,
       BridgeType.AXELAR,
+      BridgeType.STARKNET,
+      BridgeType.POLYGON_ZKEVM,
+      BridgeType.MANTLE,
+      BridgeType.BLAST,
+      BridgeType.TAIKO,
+      BridgeType.MODE,
+      BridgeType.MANTA_PACIFIC,
     ];
 
     for (const bt of bridgeTypes) {

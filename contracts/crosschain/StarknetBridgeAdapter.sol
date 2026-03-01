@@ -73,9 +73,13 @@ contract StarknetBridgeAdapter is
                                  ROLES
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Role for operators who can manage bridge operations
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
+    /// @notice Role for guardians who can perform emergency actions
     bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE");
+    /// @notice Role for relayers who can relay cross-chain messages
     bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
+    /// @notice Role for pausers who can pause the adapter
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
     /*//////////////////////////////////////////////////////////////
@@ -154,6 +158,12 @@ contract StarknetBridgeAdapter is
                               EVENTS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Emitted when a message is sent to Starknet L2
+    /// @param messageHash The internal unique hash identifying this message
+    /// @param starknetTarget The Starknet L2 contract address (felt252)
+    /// @param selector The L2 function selector (felt252)
+    /// @param nonce The message nonce
+    /// @param starknetMsgHash The Starknet L1→L2 message hash
     event MessageSentToStarknet(
         bytes32 indexed messageHash,
         uint256 indexed starknetTarget,
@@ -161,15 +171,30 @@ contract StarknetBridgeAdapter is
         uint256 nonce,
         bytes32 starknetMsgHash
     );
+    /// @notice Emitted when a message from Starknet L2 is consumed
+    /// @param messageHash The internal message hash
+    /// @param starknetSender The Starknet L2 contract that sent the message (felt252)
+    /// @param starknetMsgHash The consumed L2→L1 message hash
     event MessageConsumedFromStarknet(
         bytes32 indexed messageHash,
         uint256 indexed starknetSender,
         bytes32 starknetMsgHash
     );
+    /// @notice Emitted when the bridge configuration is updated
+    /// @param starknetCore The new StarknetCore contract address
     event BridgeConfigured(address starknetCore);
+    /// @notice Emitted when the Zaseon Hub address on Starknet is set
+    /// @param zaseonHubStarknet The new Starknet hub contract address (felt252)
     event ZaseonHubStarknetSet(uint256 indexed zaseonHubStarknet);
+    /// @notice Emitted when the default L2 function selector is set
+    /// @param selector The new default selector value
     event DefaultSelectorSet(uint256 selector);
+    /// @notice Emitted when the proof registry address is set
+    /// @param proofRegistry The new proof registry address
     event ProofRegistrySet(address indexed proofRegistry);
+    /// @notice Emitted when an emergency ETH withdrawal is performed
+    /// @param to The recipient address
+    /// @param amount The amount of ETH withdrawn
     event EmergencyWithdrawal(address indexed to, uint256 amount);
 
     /*//////////////////////////////////////////////////////////////
@@ -194,6 +219,7 @@ contract StarknetBridgeAdapter is
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Update the StarknetCore contract address
+    /// @param _starknetCore Address of the new StarknetCore contract
     function configureStarknetBridge(
         address _starknetCore
     ) external onlyRole(OPERATOR_ROLE) {
@@ -226,6 +252,7 @@ contract StarknetBridgeAdapter is
     }
 
     /// @notice Set Proof Registry address
+    /// @param _proofRegistry Address of the proof registry contract
     function setProofRegistry(
         address _proofRegistry
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -464,6 +491,8 @@ contract StarknetBridgeAdapter is
     }
 
     /// @notice Emergency withdrawal of ETH
+    /// @param to The recipient address for the withdrawn ETH
+    /// @param amount The amount of ETH to withdraw
     function emergencyWithdrawETH(
         address payable to,
         uint256 amount
