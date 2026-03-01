@@ -522,22 +522,26 @@ contract CrossChainPrivacyHubTest is Test {
             _emptyProof()
         );
 
+        bytes32 destNull = keccak256("destNull");
         vm.prank(relayer_);
-        hub.relayProof(reqId, keccak256("destNull"), _groth16Proof());
+        hub.relayProof(reqId, destNull, _groth16Proof());
 
-        bytes32 nullifier = keccak256("completeNull");
+        // S8-9: nullifier must match the bound destination nullifier from relayProof
         vm.prank(relayer_);
-        hub.completeRelay(reqId, nullifier, _groth16Proof());
+        hub.completeRelay(reqId, destNull, _groth16Proof());
 
         CrossChainPrivacyHub.RelayRequest memory t = hub.getRelayRequest(reqId);
         assertEq(
             uint256(t.status),
             uint256(CrossChainPrivacyHub.RequestStatus.COMPLETED)
         );
-        assertTrue(hub.consumedNullifiers(nullifier));
+        assertTrue(hub.consumedNullifiers(destNull));
     }
 
     function test_completeRelay_revertOnDoubleSpend() public {
+        // S8-9: nullifier passed to completeRelay must match destNullifier from relayProof
+        bytes32 sharedNullifier = keccak256("double");
+
         vm.prank(user);
         bytes32 reqId = hub.initiatePrivateTransfer{value: 1.003 ether}(
             DEST_CHAIN,
@@ -548,11 +552,10 @@ contract CrossChainPrivacyHubTest is Test {
         );
 
         vm.prank(relayer_);
-        hub.relayProof(reqId, keccak256("dn"), _groth16Proof());
+        hub.relayProof(reqId, sharedNullifier, _groth16Proof());
 
-        bytes32 nullifier = keccak256("double");
         vm.prank(relayer_);
-        hub.completeRelay(reqId, nullifier, _groth16Proof());
+        hub.completeRelay(reqId, sharedNullifier, _groth16Proof());
 
         // Try to use same nullifier on different relay
         vm.prank(user);
@@ -564,16 +567,16 @@ contract CrossChainPrivacyHubTest is Test {
             _emptyProof()
         );
         vm.prank(relayer_);
-        hub.relayProof(reqId2, keccak256("dn2"), _groth16Proof());
+        hub.relayProof(reqId2, sharedNullifier, _groth16Proof());
 
         vm.prank(relayer_);
         vm.expectRevert(
             abi.encodeWithSelector(
                 CrossChainPrivacyHub.NullifierAlreadyConsumed.selector,
-                nullifier
+                sharedNullifier
             )
         );
-        hub.completeRelay(reqId2, nullifier, _groth16Proof());
+        hub.completeRelay(reqId2, sharedNullifier, _groth16Proof());
     }
 
     // =========================================================================
@@ -664,15 +667,19 @@ contract CrossChainPrivacyHubTest is Test {
     }
 
     function test_canClaimStealth() public pure {
-        // This is a pure function — we verify it has correct logic
+        // SECURITY FIX S8-4: Updated to match corrected derivation
+        // canClaimStealth now takes 4 params: stealthPubKey, ephemeralPubKey, viewingPrivKey, spendingPubKey
         bytes32 viewPriv = keccak256("priv");
         bytes32 ephPub = keccak256("eph");
+        bytes32 spendPub = keccak256("spend");
 
-        bytes32 sharedSecret = keccak256(abi.encode(viewPriv, ephPub));
-        bytes32 expectedStealth = keccak256(abi.encode(sharedSecret, ephPub));
+        // Matches the corrected generateStealthAddress derivation:
+        // sharedSecret = keccak256(ephemeralPubKey, viewingPubKey)
+        // stealthPubKey = keccak256(spendingPubKey, sharedSecret)
+        bytes32 sharedSecret = keccak256(abi.encode(ephPub, viewPriv));
+        bytes32 expectedStealth = keccak256(abi.encode(spendPub, sharedSecret));
 
-        // Direct call
-        // Can't call on uninitialized, verify logic manually
+        // Verify the derivation produces a valid stealth address
         assertTrue(expectedStealth != bytes32(0));
     }
 

@@ -268,6 +268,12 @@ contract NullifierRegistryV3 is
             registeredDomains[bytes32(sourceChainId)],
             "Domain not registered"
         );
+        // SECURITY FIX S8-10: Validate source Merkle root is non-zero.
+        // Full cross-chain root verification requires a trusted proof hub
+        // (e.g., CrossChainProofHubV3) to attest the root. Here we enforce
+        // basic validation; the RELAY_ROLE is trusted to only forward
+        // attested nullifiers. A future upgrade should verify root via proof.
+        require(sourceMerkleRoot != bytes32(0), "Zero source root");
 
         uint256 len = _nullifiers.length;
         if (len == 0) revert EmptyBatch();

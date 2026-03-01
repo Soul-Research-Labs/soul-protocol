@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "forge-std/Test.sol";
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "../../contracts/upgradeable/CapacityAwareRouterUpgradeable.sol";
+import {IDynamicRoutingOrchestrator} from "../../contracts/interfaces/IDynamicRoutingOrchestrator.sol";
 
 /**
  * @title MockOrchestratorForRouter
@@ -36,6 +37,30 @@ contract MockOrchestratorForRouter {
     }
 
     function recordAdapterOutcome(address, bool, uint48, uint256) external {}
+
+    function getRoute(
+        bytes32 routeId
+    ) external view returns (IDynamicRoutingOrchestrator.Route memory) {
+        uint256[] memory path = new uint256[](2);
+        path[0] = 1;
+        path[1] = 42161;
+        address[] memory adapters = new address[](1);
+        adapters[0] = address(0xADA);
+
+        return
+            IDynamicRoutingOrchestrator.Route({
+                routeId: routeId,
+                chainPath: path,
+                relayAdapters: adapters,
+                totalCost: 0.001 ether,
+                estimatedTime: 300,
+                successProbabilityBps: 9500,
+                routeScoreBps: 9000,
+                calculatedAt: uint48(block.timestamp),
+                expiresAt: uint48(block.timestamp + 1 hours),
+                status: IDynamicRoutingOrchestrator.RouteStatus.PENDING
+            });
+    }
 }
 
 /**

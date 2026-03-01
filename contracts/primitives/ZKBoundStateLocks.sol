@@ -282,38 +282,38 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
     uint256 private constant _STAT_SHIFT_DISPUTES = 192;
 
     /// @notice Get total locks created
-        /**
+    /**
      * @notice Total locks created
      * @return The result value
      */
-function totalLocksCreated() external view returns (uint256) {
+    function totalLocksCreated() external view returns (uint256) {
         return uint64(_packedStats);
     }
 
     /// @notice Get total locks unlocked
-        /**
+    /**
      * @notice Total locks unlocked
      * @return The result value
      */
-function totalLocksUnlocked() external view returns (uint256) {
+    function totalLocksUnlocked() external view returns (uint256) {
         return uint64(_packedStats >> _STAT_SHIFT_UNLOCKED);
     }
 
     /// @notice Get total optimistic unlocks
-        /**
+    /**
      * @notice Total optimistic unlocks
      * @return The result value
      */
-function totalOptimisticUnlocks() external view returns (uint256) {
+    function totalOptimisticUnlocks() external view returns (uint256) {
         return uint64(_packedStats >> _STAT_SHIFT_OPTIMISTIC);
     }
 
     /// @notice Get total disputes
-        /**
+    /**
      * @notice Total disputes
      * @return The result value
      */
-function totalDisputes() external view returns (uint256) {
+    function totalDisputes() external view returns (uint256) {
         return uint64(_packedStats >> _STAT_SHIFT_DISPUTES);
     }
 
@@ -449,11 +449,11 @@ function totalDisputes() external view returns (uint256) {
     /// @notice Set the canonical nullifier registry for cross-system propagation
     /// @dev ZKBoundStateLocks must be granted REGISTRAR_ROLE on the NullifierRegistryV3
     /// @param _registry Address of NullifierRegistryV3 (address(0) to disable propagation)
-        /**
+    /**
      * @notice Sets the nullifier registry
      * @param _registry The _registry
      */
-function setNullifierRegistry(
+    function setNullifierRegistry(
         address _registry
     ) external onlyRole(VERIFIER_ADMIN_ROLE) {
         nullifierRegistry = _registry;
@@ -737,6 +737,15 @@ function setNullifierRegistry(
         bool challengeSuccessful = false;
         bytes32 evidenceHash = keccak256(abi.encode(evidence));
 
+        // SECURITY FIX S8-13: Ensure a verifier is available for the challenge proof.
+        // If no verifier is registered for the evidence's verifierKeyHash AND no general
+        // proof verifier exists, the challenge cannot meaningfully verify the proof.
+        require(
+            verifiers[evidence.verifierKeyHash] != address(0) ||
+                address(proofVerifier) != address(0),
+            "No verifier for challenge"
+        );
+
         // CASE 1: Fraud Proof (Challenge the validity of the optimistic proof)
         if (evidenceHash == optimistic.proofHash) {
             // If the proof verifies successfully, the challenge FAILS (it's a valid proof)
@@ -827,7 +836,7 @@ function setNullifierRegistry(
      * @param appId The application ID
      * @param epoch The epoch for versioning
      * @param name Human-readable domain name
-          * @return domainSeparator The domain separator
+     * @return domainSeparator The domain separator
      */
     function registerDomain(
         uint64 chainId,
@@ -1052,11 +1061,11 @@ function setNullifierRegistry(
     /// @dev Callable by OPERATOR_ROLE. Processes up to `maxRetries` pending nullifiers.
     ///      Successfully propagated nullifiers are removed from the queue.
     /// @param maxRetries Maximum number of pending nullifiers to retry
-        /**
+    /**
      * @notice Retry nullifier propagation
      * @param maxRetries The maxRetries bound
      */
-function retryNullifierPropagation(
+    function retryNullifierPropagation(
         uint256 maxRetries
     ) external onlyRole(OPERATOR_ROLE) {
         address registry = nullifierRegistry;
@@ -1100,11 +1109,11 @@ function retryNullifierPropagation(
     }
 
     /// @notice Get the number of pending (failed) nullifier propagations
-        /**
+    /**
      * @notice Pending nullifier count
      * @return The result value
      */
-function pendingNullifierCount() external view returns (uint256) {
+    function pendingNullifierCount() external view returns (uint256) {
         return pendingNullifiers.length;
     }
 
@@ -1192,7 +1201,7 @@ function pendingNullifierCount() external view returns (uint256) {
      * SECURITY: This pattern avoids the rotate-left optimization that caused
      * the Aave/ZKsync vulnerability where 64-bit constants were incorrectly
      * used in 256-bit register operations.
-          * @param chainId The chain identifier
+     * @param chainId The chain identifier
      * @param appId The appId identifier
      * @param epoch The epoch
      * @return The result value
@@ -1219,7 +1228,7 @@ function pendingNullifierCount() external view returns (uint256) {
 
     /**
      * @notice Generates domain separator with extended chain ID support
-          * @param chainId The chain identifier
+     * @param chainId The chain identifier
      * @param appId The appId identifier
      * @param epoch The epoch
      * @return The result value
@@ -1234,7 +1243,7 @@ function pendingNullifierCount() external view returns (uint256) {
 
     /**
      * @notice Generates cross-domain nullifier
-          * @param secret The secret value
+     * @param secret The secret value
      * @param lockId The lock identifier
      * @param domainSeparator The domain separator
      * @return The result value
@@ -1262,7 +1271,7 @@ function pendingNullifierCount() external view returns (uint256) {
      * @notice Get active lock IDs with pagination to prevent DoS
      * @param offset Start index
      * @param limit Maximum number of items to return
-          * @return The result value
+     * @return The result value
      */
     function getActiveLockIds(
         uint256 offset,
@@ -1290,7 +1299,7 @@ function pendingNullifierCount() external view returns (uint256) {
 
     /**
      * @notice Returns the number of active locks
-          * @return The result value
+     * @return The result value
      */
     function getActiveLockCount() external view returns (uint256) {
         return _activeLockIds.length;
@@ -1299,7 +1308,7 @@ function pendingNullifierCount() external view returns (uint256) {
     /**
      * @notice Returns all active lock IDs (up to 100)
      * @dev Convenience method for tests - in production use the paginated version
-          * @return The result value
+     * @return The result value
      */
     function getActiveLockIds() external view returns (bytes32[] memory) {
         uint256 count = _activeLockIds.length;
@@ -1318,7 +1327,7 @@ function pendingNullifierCount() external view returns (uint256) {
 
     /**
      * @notice Returns lock details
-          * @param lockId The lock identifier
+     * @param lockId The lock identifier
      * @return The result value
      */
     function getLock(bytes32 lockId) external view returns (ZKSLock memory) {
@@ -1327,7 +1336,7 @@ function pendingNullifierCount() external view returns (uint256) {
 
     /**
      * @notice Checks if lock can be unlocked
-          * @param lockId The lock identifier
+     * @param lockId The lock identifier
      * @return The result value
      */
     function canUnlock(bytes32 lockId) external view returns (bool) {
@@ -1340,7 +1349,7 @@ function pendingNullifierCount() external view returns (uint256) {
 
     /**
      * @notice Returns commitment chain history
-          * @param startCommitment The start commitment
+     * @param startCommitment The start commitment
      * @param maxDepth The maxDepth bound
      * @return chain The chain
      */
@@ -1373,7 +1382,7 @@ function pendingNullifierCount() external view returns (uint256) {
 
     /**
      * @notice Get statistics
-          * @return created The created
+     * @return created The created
      * @return unlocked The unlocked
      * @return active The active
      * @return optimistic The optimistic
@@ -1414,10 +1423,10 @@ function pendingNullifierCount() external view returns (uint256) {
     /// @notice Confirms that critical roles have been separated
     /// @dev M-15: Adds centralization protection - call before mainnet to verify
     ///      different addresses hold different roles
-        /**
+    /**
      * @notice Confirm role separation
      */
-function confirmRoleSeparation() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function confirmRoleSeparation() external onlyRole(DEFAULT_ADMIN_ROLE) {
         address admin = msg.sender;
 
         // Verify admin doesn't hold other critical roles
@@ -1431,17 +1440,17 @@ function confirmRoleSeparation() external onlyRole(DEFAULT_ADMIN_ROLE) {
         rolesSeparated = true;
     }
 
-        /**
+    /**
      * @notice Pauses the operation
      */
-function pause() external onlyRole(LOCK_ADMIN_ROLE) {
+    function pause() external onlyRole(LOCK_ADMIN_ROLE) {
         _pause();
     }
 
-        /**
+    /**
      * @notice Unpauses the operation
      */
-function unpause() external onlyRole(LOCK_ADMIN_ROLE) {
+    function unpause() external onlyRole(LOCK_ADMIN_ROLE) {
         _unpause();
     }
 }

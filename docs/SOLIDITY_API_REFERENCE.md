@@ -618,12 +618,16 @@ function withdraw(WithdrawalProof calldata wp) external nonReentrant whenNotPaus
 
 Withdraw with ZK proof. Marks nullifier as spent, transfers funds minus optional relayer fee.
 
+> **Session 8 Change**: Now includes a solvency check — verifies pool has sufficient ETH or ERC20 balance before transfer.
+
 #### Cross-Chain
 
 ```solidity
 function insertCrossChainCommitments(CrossChainCommitmentBatch calldata batch)
     external nonReentrant whenNotPaused onlyRole(RELAYER_ROLE)
 ```
+
+> **Session 8 Change**: Now requires `batchVerifier != address(0)`. Reverts if no batch verifier is configured.
 
 #### View Functions
 

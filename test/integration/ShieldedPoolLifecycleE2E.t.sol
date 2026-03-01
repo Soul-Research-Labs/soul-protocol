@@ -21,6 +21,22 @@ contract MockShieldedPoolVerifier {
     }
 }
 
+/// @dev Mock batch verifier for cross-chain commitment testing
+contract MockShieldedPoolBatchVerifier {
+    bool public result = true;
+
+    function setResult(bool _result) external {
+        result = _result;
+    }
+
+    function verify(
+        bytes calldata,
+        bytes calldata
+    ) external view returns (bool) {
+        return result;
+    }
+}
+
 /**
  * @title ShieldedPoolLifecycleE2E
  * @notice Full lifecycle E2E test for the UniversalShieldedPool:
@@ -31,6 +47,7 @@ contract MockShieldedPoolVerifier {
 contract ShieldedPoolLifecycleE2E is Test {
     UniversalShieldedPool public pool;
     MockShieldedPoolVerifier public verifier;
+    MockShieldedPoolBatchVerifier public batchVerifier;
 
     address public admin = makeAddr("admin");
     address public user1 = makeAddr("user1");
@@ -57,8 +74,10 @@ contract ShieldedPoolLifecycleE2E is Test {
     function setUp() public {
         vm.startPrank(admin);
         verifier = new MockShieldedPoolVerifier();
+        batchVerifier = new MockShieldedPoolBatchVerifier();
         pool = new UniversalShieldedPool(admin, address(verifier), false);
         pool.grantRole(RELAYER_ROLE, relayer);
+        pool.setBatchVerifier(address(batchVerifier));
         NATIVE_ASSET = pool.NATIVE_ASSET();
         vm.stopPrank();
 

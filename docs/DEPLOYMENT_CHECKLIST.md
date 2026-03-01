@@ -9,11 +9,12 @@
 - [x] No critical Slither findings unaddressed
 - [x] Code coverage >80%
 
-### 2. Security Audit (February 2026) ✅
+### 2. Security Audit (February–March 2026) ✅
 
-- [x] Internal security audit completed (44 vulnerabilities fixed)
+- [x] Internal security audit completed (65 vulnerabilities fixed)
 - [x] Phase 1: 5 Critical, 6 High, 15 Medium resolved
 - [x] Phase 2: 2 Critical, 4 High, 6 Medium, 6 Low resolved
+- [x] Session 8: 4 Critical, 6 High, 7 Medium, 4 Low resolved
 - [x] ReentrancyGuard protection added to governance/security
 - [x] .transfer() DoS vulnerabilities fixed
 - [x] Zero-address validation added
@@ -44,6 +45,17 @@
 - [ ] Configure timelocks for all admin operations
 - [ ] Set up monitoring for critical events
 - [ ] Deploy with optimizer enabled (runs: 200)
+
+### 4a. Session 8 Security Checklist
+
+- [ ] Verify `batchVerifier` is configured on UniversalShieldedPool before enabling cross-chain commitments
+- [ ] Verify `batchVerifier` is configured on UniversalShieldedPoolUpgradeable
+- [ ] Verify MultiBridgeRouter has `receive()` function and `emergencyWithdrawETH()`
+- [ ] Verify all 7 bridge adapters have both `emergencyWithdrawETH()` and `emergencyWithdrawERC20()`
+- [ ] Verify `canClaimStealth()` uses 4 parameters in any SDK/frontend integration
+- [ ] Verify BatchAccumulator routes are pre-configured (no auto-creation)
+- [ ] Verify `testMode` is disabled on UniversalShieldedPool before mainnet
+- [ ] Verify `disableTestMode()` is called (irreversible)
 
 ### 5. Documentation ✅
 
@@ -79,8 +91,8 @@
 
 #### Application Layer
 
-| Contract         | Address                                                                                                                         | Verified |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| Contract           | Address                                                                                                                         | Verified |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------- | -------- |
 | ZaseonAtomicSwapV2 | [`0xdefb9a66dc14a6d247b282555b69da7745b0ab57`](https://sepolia.etherscan.io/address/0xdefb9a66dc14a6d247b282555b69da7745b0ab57) | ✅       |
 | ZaseonComplianceV2 | [`0x5d41f63f35babed689a63f7e5c9e2943e1f72067`](https://sepolia.etherscan.io/address/0x5d41f63f35babed689a63f7e5c9e2943e1f72067) | ✅       |
 

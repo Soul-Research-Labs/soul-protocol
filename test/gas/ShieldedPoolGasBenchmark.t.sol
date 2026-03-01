@@ -15,6 +15,16 @@ contract GasMockVerifier {
     }
 }
 
+/// @dev Mock batch verifier for gas measurement
+contract GasMockBatchVerifier {
+    function verify(
+        bytes calldata,
+        bytes calldata
+    ) external pure returns (bool) {
+        return true;
+    }
+}
+
 /**
  * @title ShieldedPoolGasBenchmark
  * @notice Gas benchmarks for UniversalShieldedPool critical operations
@@ -28,6 +38,7 @@ contract GasMockVerifier {
 contract ShieldedPoolGasBenchmark is Test {
     UniversalShieldedPool public pool;
     GasMockVerifier public verifier;
+    GasMockBatchVerifier public batchVerifier;
 
     address public admin = makeAddr("admin");
     address public relayer = makeAddr("relayer");
@@ -51,8 +62,10 @@ contract ShieldedPoolGasBenchmark is Test {
     function setUp() public {
         vm.startPrank(admin);
         verifier = new GasMockVerifier();
+        batchVerifier = new GasMockBatchVerifier();
         pool = new UniversalShieldedPool(admin, address(verifier), false);
         pool.grantRole(RELAYER_ROLE, relayer);
+        pool.setBatchVerifier(address(batchVerifier));
         NATIVE_ASSET = pool.NATIVE_ASSET();
         vm.stopPrank();
 

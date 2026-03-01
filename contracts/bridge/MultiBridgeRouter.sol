@@ -583,8 +583,12 @@ contract MultiBridgeRouter is
         if (bridge.status != BridgeStatus.ACTIVE) return false;
         if (!supportedChains[bridgeType][chainId]) return false;
 
-        // Call bridge adapter
-        try this._callBridge(bridge.adapter, chainId, message) {
+        // SECURITY FIX S8-6: Forward available ETH balance to adapter for bridge fee payment.
+        // On revert, the ETH returns to this contract and can be used by fallback bridges.
+        uint256 bridgeFee = address(this).balance;
+        try
+            this._callBridge{value: bridgeFee}(bridge.adapter, chainId, message)
+        {
             bridge.successCount++;
             return true;
         } catch (bytes memory returnData) {
@@ -604,6 +608,8 @@ contract MultiBridgeRouter is
 
     /**
      * @notice _call bridge
+     * @dev SECURITY FIX S8-5: Forward msg.value to adapter for bridge fee payment.
+     *      Previously ETH sent to routeMessage() was permanently trapped.
      * @param adapter The bridge adapter address
      * @param message The message data
      */
@@ -611,7 +617,7 @@ contract MultiBridgeRouter is
         address adapter,
         uint256 chainId,
         bytes calldata message
-    ) external {
+    ) external payable {
         require(msg.sender == address(this), "Internal only");
         // Look up the target contract on the destination chain.
         // Each chain must have a registered target (e.g., ZaseonProtocolHub on L2).
@@ -621,7 +627,7 @@ contract MultiBridgeRouter is
         // The adapter is responsible for encoding the chainId into its own
         // protocol-specific messaging (LayerZero eid, Hyperlane domain, etc.).
         // Refund any excess bridge fees back to this contract.
-        IBridgeAdapter(adapter).bridgeMessage(
+        IBridgeAdapter(adapter).bridgeMessage{value: msg.value}(
             target, // targetAddress — contract on destination chain
             message,
             address(this) // refundAddress
@@ -688,5 +694,24 @@ contract MultiBridgeRouter is
         return
             interfaceId == type(IMultiBridgeRouter).interfaceId ||
             super.supportsInterface(interfaceId);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        ETH HANDLING
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice SECURITY FIX S8-15: Accept ETH refunds from bridge adapters
+    receive() external payable {}
+
+    /// @notice Withdraw any stuck ETH (emergency only)
+    /// @param to Recipient address
+    function emergencyWithdrawETH(
+        address to
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(to != address(0), "Zero address");
+        uint256 balance = address(this).balance;
+        require(balance > 0, "No ETH to withdraw");
+        (bool success, ) = to.call{value: balance}("");
+        require(success, "ETH transfer failed");
     }
 }

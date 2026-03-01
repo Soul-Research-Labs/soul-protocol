@@ -24,15 +24,21 @@
 - [x] Cross-chain fork tests: 8 integration tests (chain ID isolation, replay protection)
 - [x] Gambit mutation testing: 8 contracts covered
 
-#### ✅ Internal Security Audit (February 2026)
+#### ✅ Internal Security Audit (February–March 2026)
 
-- [x] **44 vulnerabilities fixed** - see [SECURITY_AUDIT_REPORT.md](./SECURITY_AUDIT_REPORT.md)
+- [x] **65 vulnerabilities fixed** - see [SECURITY_AUDIT_REPORT.md](./SECURITY_AUDIT_REPORT.md)
 - [x] Phase 1: 26 vulnerabilities (5 Critical, 6 High, 15 Medium)
 - [x] Phase 2: 18 vulnerabilities (2 Critical, 4 High, 6 Medium, 6 Low)
+- [x] Phase 3 (Session 8): 21 vulnerabilities (4 Critical, 6 High, 7 Medium, 4 Low)
 - [x] ReentrancyGuard added to governance and security contracts
 - [x] Deprecated .transfer() replaced with .call{}
 - [x] Zero-address validation added to admin setters
 - [x] Missing events added for config changes
+- [x] Batch verifier bypass in ShieldedPool eliminated (require non-zero address)
+- [x] Historical Merkle root eviction on ring buffer overwrite
+- [x] MultiBridgeRouter ETH forwarding and emergency withdrawal
+- [x] NullifierRegistryV3 source Merkle root validation
+- [x] All 7 bridge adapters have ERC20 emergency withdrawal
 
 #### 🔄 Pending Verification
 
@@ -214,12 +220,12 @@ forge verify-check <IMPLEMENTATION_ADDRESS> \
 
 ## Monitoring Dashboard URLs
 
-| Service     | URL                                                      | Purpose                |
-| ----------- | -------------------------------------------------------- | ---------------------- |
-| Dune        | `dune.com/zaseon/mainnet`                                  | Analytics              |
+| Service     | URL                                                          | Purpose                |
+| ----------- | ------------------------------------------------------------ | ---------------------- |
+| Dune        | `dune.com/zaseon/mainnet`                                    | Analytics              |
 | TheGraph    | `thegraph.com/hosted-service/subgraph/zaseon/zaseon-mainnet` | Indexing               |
-| Tenderly    | `dashboard.tenderly.co/zaseon`                             | Transaction simulation |
-| OZ Defender | `defender.openzeppelin.com`                              | Admin operations       |
+| Tenderly    | `dashboard.tenderly.co/zaseon`                               | Transaction simulation |
+| OZ Defender | `defender.openzeppelin.com`                                  | Admin operations       |
 
 ---
 

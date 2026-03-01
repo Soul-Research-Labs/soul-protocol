@@ -409,13 +409,16 @@ contract BatchAccumulatorTest is Test {
         );
     }
 
-    function test_submitToBatch_usesDefaultConfigWhenRouteNotConfigured()
-        public
-    {
-        // Submit without configuring route – contract auto-creates defaults
-        bytes32 batchId = _submitTx(keccak256("c1"), keccak256("n1"), user1);
-        assertNotEq(batchId, bytes32(0));
-        assertEq(accumulator.totalBatches(), 1);
+    function test_submitToBatch_revertsWhenRouteNotConfigured() public {
+        // S8-16: submitToBatch now requires pre-configured routes instead of auto-creating defaults
+        vm.prank(user1);
+        vm.expectRevert("Route not configured by operator");
+        accumulator.submitToBatch(
+            keccak256("c1"),
+            keccak256("n1"),
+            abi.encodePacked(bytes32(0)),
+            TARGET_CHAIN
+        );
     }
 
     function test_submitToBatch_marksBatchReadyWhenSizeReached() public {
@@ -973,7 +976,10 @@ contract BatchAccumulatorTest is Test {
         bytes32 batch1 = _fillBatch(8, 2000);
         (, , IBatchAccumulator.BatchStatus status1, , ) = accumulator
             .getBatchInfo(batch1);
-        assertEq(uint256(status1), uint256(IBatchAccumulator.BatchStatus.READY));
+        assertEq(
+            uint256(status1),
+            uint256(IBatchAccumulator.BatchStatus.READY)
+        );
 
         // Next submission should create a new batch
         bytes32 batch2 = _submitTx(

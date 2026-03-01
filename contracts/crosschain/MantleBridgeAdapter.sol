@@ -4,6 +4,8 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./IBridgeAdapter.sol";
 
 /**
@@ -35,6 +37,8 @@ contract MantleBridgeAdapter is
     ReentrancyGuard,
     Pausable
 {
+    using SafeERC20 for IERC20;
+
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
@@ -403,6 +407,17 @@ contract MantleBridgeAdapter is
         (bool success, ) = to.call{value: amount}("");
         require(success, "ETH transfer failed");
         emit EmergencyWithdrawal(to, amount);
+    }
+
+    /// @notice SECURITY FIX S8-20: Emergency withdraw ERC20 tokens accidentally sent to adapter
+    function emergencyWithdrawERC20(
+        address token,
+        address to
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
+        require(token != address(0) && to != address(0), "Zero address");
+        uint256 balance = IERC20(token).balanceOf(address(this));
+        require(balance > 0, "No tokens");
+        IERC20(token).safeTransfer(to, balance);
     }
 
     /*//////////////////////////////////////////////////////////////

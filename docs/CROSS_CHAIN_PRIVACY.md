@@ -622,16 +622,29 @@ const success = await ringCT.verifyAndExecuteRCT(
 
 ## Security Considerations
 
-| Threat             | Mitigation                                |
-| ------------------ | ----------------------------------------- |
-| Double Spend       | Cross-domain nullifier registry (CDNA)    |
-| Front-running      | Commit-reveal for stealth announcements   |
-| Graph Analysis     | Stealth addresses + CDNA unlinkability    |
-| Amount Correlation | Pedersen commitments with ZK range proofs |
-| Timing Analysis    | Delayed relay + random jitter             |
-| Key Compromise     | Separate view/spending keys               |
+| Threat                | Mitigation                                     |
+| --------------------- | ---------------------------------------------- |
+| Double Spend          | Cross-domain nullifier registry (CDNA)         |
+| Front-running         | Commit-reveal for stealth announcements        |
+| Graph Analysis        | Stealth addresses + CDNA unlinkability         |
+| Amount Correlation    | Pedersen commitments with ZK range proofs      |
+| Timing Analysis       | Delayed relay + random jitter                  |
+| Key Compromise        | Separate view/spending keys                    |
+| Stale Root Exploit    | Merkle root ring buffer eviction (S8-1)        |
+| Batch Verifier Bypass | batchVerifier required for cross-chain (S8-3)  |
+| Stealth Mismatch      | canClaimStealth aligned with generation (S8-4) |
+| Pool Insolvency       | Balance check before withdrawal (S8-12)        |
+| Nullifier Replay      | Binding validation in completeRelay (S8-9)     |
+| Route Injection       | BatchAccumulator requires pre-config (S8-16)   |
 
 **Best Practices:** Use max privacy for high-value • Wait for anonymity set • Fresh addresses per tx • Verify proofs
+
+**Session 8 Security Notes:**
+
+- The `batchVerifier` MUST be configured before enabling cross-chain commitment insertion. Without it, `insertCrossChainCommitments()` will revert.
+- Historical Merkle roots are now evicted from the ring buffer after 100 new roots, limiting the window for stale root attacks.
+- `canClaimStealth()` now requires 4 parameters (`stealthPubKey`, `ephemeralPubKey`, `viewingPrivKey`, `spendingPubKey`).
+- All withdrawals verify pool solvency before transfer.
 
 **Formal Verification:** K Framework • Certora CVL • Halmos symbolic • Echidna fuzz
 

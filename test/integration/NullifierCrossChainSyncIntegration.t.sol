@@ -161,7 +161,7 @@ contract NullifierCrossChainSyncIntegration is Test {
             1,
             nullifiers,
             commitments,
-            bytes32(0)
+            keccak256("testRoot") // S8-10: source Merkle root must be non-zero
         );
 
         // Should still be 1, not 2
@@ -242,7 +242,7 @@ contract NullifierCrossChainSyncIntegration is Test {
             1,
             nullifiers,
             commitments,
-            bytes32(0)
+            keccak256("testRoot") // S8-10: source Merkle root must be non-zero
         );
 
         bytes32 rootAfter = registryB.merkleRoot();
@@ -265,7 +265,7 @@ contract NullifierCrossChainSyncIntegration is Test {
             1,
             nullifiers,
             commitments,
-            bytes32(0)
+            keccak256("testRoot") // S8-10: source Merkle root must be non-zero
         );
 
         // Old root should still be in history

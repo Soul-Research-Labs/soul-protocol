@@ -237,6 +237,8 @@ function submitCrossChainProof(...) external {
 - ✅ Chain ID in proof public inputs
 - ✅ Nonce tracking per user per chain
 - ✅ Nullifier consumption prevents replay
+- ✅ (Session 8) NullifierRegistryV3 requires non-zero `sourceMerkleRoot` for cross-chain nullifiers
+- ✅ (Session 8) `completeRelay()` validates nullifier binding matches relay transfer
 
 ### 4.4 Economic Attacks
 
@@ -351,7 +353,7 @@ Emergency Action → Guardian Signatures (M of N) → Timelock (24-72h) → Exec
 | ----------------- | --------------- | ---------------------- |
 | Emergency Pause   | Owner-triggered | All pausable contracts |
 | Guardian Recovery | Multi-sig       | Critical operations    |
-| Timelock          | ZaseonTimelock    | Admin functions        |
+| Timelock          | ZaseonTimelock  | Admin functions        |
 | Upgradability     | UUPS Proxy      | Upgradeable contracts  |
 
 ---
@@ -398,6 +400,10 @@ The following conditions should trigger immediate incident response:
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | --------------------------------------------- |
 | Ring Signature Verifier  | `RingSignatureVerifier.sol` implements BN254 CLSAG ring signature verification using EVM precompiles (ecAdd, ecMul, modExp). Integrated with `GasOptimizedPrivacy.sol`. Gas cost: ~26k per ring member. | Informational | Resolved — production CLSAG verifier deployed |
 | Noir Circuit Compilation | All 20 Noir circuits compile successfully after February 2026 migration from external `poseidon` crate to `std::hash::poseidon::bn254`. Existing 8 generated Solidity verifiers remain valid.           | Informational | Resolved — see `noir/README.md`               |
+| Batch Verifier Bypass    | `insertCrossChainCommitments()` previously skipped verification when `batchVerifier == address(0)`. Now requires non-zero batch verifier.                                                               | Critical      | Resolved — Session 8 (S8-2/S8-3)              |
+| Historical Root Growth   | `UniversalShieldedPool` Merkle root ring buffer never evicted old roots from `historicalRoots`, allowing unbounded set growth. Now evicts on overwrite.                                                 | Critical      | Resolved — Session 8 (S8-1)                   |
+| ETH Trapped in Router    | `MultiBridgeRouter` accepted `msg.value` but never forwarded to bridge adapters. ETH is now forwarded; emergency withdrawal added.                                                                      | High          | Resolved — Session 8 (S8-5/S8-6)              |
+| Stealth Derivation       | `canClaimStealth()` used different derivation than `generateStealthAddress()`. Now aligned with 4-parameter signature.                                                                                  | Critical      | Resolved — Session 8 (S8-4)                   |
 
 ---
 
@@ -408,13 +414,14 @@ The following conditions should trigger immediate incident response:
 | Tool               | Findings          | Critical | High | Medium | Low |
 | ------------------ | ----------------- | -------- | ---- | ------ | --- |
 | Slither            | 9 (all addressed) | 0        | 0    | 2      | 7   |
-| Foundry Tests      | 4,426/4,426       | N/A      | N/A  | N/A    | N/A |
+| Foundry Tests      | 5,600+            | N/A      | N/A  | N/A    | N/A |
 | Fuzz Tests         | 300+              | N/A      | N/A  | N/A    | N/A |
 | Halmos Symbolic    | 12 checks         | N/A      | N/A  | N/A    | N/A |
 | Echidna Properties | 6 invariants      | N/A      | N/A  | N/A    | N/A |
 | K Framework        | 5 specs           | N/A      | N/A  | N/A    | N/A |
 | TLA+ Model Check   | 4 properties      | N/A      | N/A  | N/A    | N/A |
-| Certora CVL        | 54 specs          | N/A      | N/A  | N/A    | N/A |
+| Certora CVL        | 80+ specs         | N/A      | N/A  | N/A    | N/A |
+| Internal Audit S8  | 21                | 4        | 6    | 7      | 4   |
 
 ### 9.2 Contact Information
 

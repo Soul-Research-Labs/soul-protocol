@@ -120,13 +120,13 @@ contract BatchAccumulator is
         _disableInitializers();
     }
 
-        /**
+    /**
      * @notice Initializes the operation
      * @param admin The admin bound
      * @param _proofVerifier The _proof verifier
      * @param _crossChainHub The _cross chain hub
      */
-function initialize(
+    function initialize(
         address admin,
         address _proofVerifier,
         address _crossChainHub
@@ -183,7 +183,7 @@ function initialize(
 
     /**
      * @notice Deactivate a route
-          * @param sourceChainId The source chain identifier
+     * @param sourceChainId The source chain identifier
      * @param targetChainId The target chain identifier
      */
     function deactivateRoute(
@@ -221,11 +221,11 @@ function initialize(
         bytes32 routeHash = _getRouteHash(sourceChainId, targetChainId);
 
         RouteConfig storage config = routeConfigs[routeHash];
+        // SECURITY FIX S8-16: Require routes to be pre-configured by an operator.
+        // Previously, any user could auto-activate routes to arbitrary chains,
+        // bypassing admin control and potentially locking funds in unprocessable batches.
         if (!config.isActive) {
-            // Use defaults if no config
-            config.minBatchSize = DEFAULT_MIN_BATCH_SIZE;
-            config.maxWaitTime = DEFAULT_MAX_WAIT_TIME;
-            config.isActive = true;
+            revert("Route not configured by operator");
         }
 
         // Get or create batch
@@ -300,7 +300,7 @@ function initialize(
 
     /**
      * @notice Force release a batch (operator only, for emergency)
-          * @param batchId The batchId identifier
+     * @param batchId The batchId identifier
      */
     function forceReleaseBatch(
         bytes32 batchId
@@ -383,7 +383,7 @@ function initialize(
 
     /**
      * @notice Get batch status and info
-          * @param batchId The batchId identifier
+     * @param batchId The batchId identifier
      * @return size The size
      * @return age The age
      * @return status The status
@@ -414,7 +414,7 @@ function initialize(
 
     /**
      * @notice Get active batch for a route
-          * @param sourceChainId The source chain identifier
+     * @param sourceChainId The source chain identifier
      * @param targetChainId The target chain identifier
      * @return batchId The batch id
      * @return currentSize The current size
@@ -454,7 +454,7 @@ function initialize(
 
     /**
      * @notice Get transaction info by commitment
-          * @param commitment The cryptographic commitment
+     * @param commitment The cryptographic commitment
      * @return batchId The batch id
      * @return submittedAt The submitted at
      * @return processed The processed
@@ -497,7 +497,7 @@ function initialize(
 
     /**
      * @notice Calculate anonymity set size for a commitment
-          * @param commitment The cryptographic commitment
+     * @param commitment The cryptographic commitment
      * @return The result value
      */
     function getAnonymitySet(
@@ -650,36 +650,36 @@ function initialize(
     // ADMIN FUNCTIONS
     // =========================================================================
 
-        /**
+    /**
      * @notice Pauses the operation
      */
-function pause() external override onlyRole(OPERATOR_ROLE) {
+    function pause() external override onlyRole(OPERATOR_ROLE) {
         _pause();
     }
 
-        /**
+    /**
      * @notice Unpauses the operation
      */
-function unpause() external override onlyRole(OPERATOR_ROLE) {
+    function unpause() external override onlyRole(OPERATOR_ROLE) {
         _unpause();
     }
 
-        /**
+    /**
      * @notice Sets the proof verifier
      * @param _proofVerifier The _proof verifier
      */
-function setProofVerifier(
+    function setProofVerifier(
         address _proofVerifier
     ) external override onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_proofVerifier == address(0)) revert ZeroAddress();
         proofVerifier = _proofVerifier;
     }
 
-        /**
+    /**
      * @notice Sets the cross chain hub
      * @param _crossChainHub The _cross chain hub
      */
-function setCrossChainHub(
+    function setCrossChainHub(
         address _crossChainHub
     ) external override onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_crossChainHub == address(0)) revert ZeroAddress();

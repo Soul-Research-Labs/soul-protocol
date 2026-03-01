@@ -221,7 +221,12 @@ contract NullifierRegistryV3Test is Test {
         bytes32[] memory empty = new bytes32[](0);
 
         vm.prank(bridge);
-        registry.receiveCrossChainNullifiers(42, nullifiers, empty, bytes32(0));
+        registry.receiveCrossChainNullifiers(
+            42,
+            nullifiers,
+            empty,
+            keccak256("testRoot")
+        ); // S8-10: non-zero root
 
         // Should still be 1, not 2 (duplicate skipped)
         assertEq(registry.totalNullifiers(), 1);

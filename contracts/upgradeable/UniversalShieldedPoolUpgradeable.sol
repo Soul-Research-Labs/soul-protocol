@@ -247,13 +247,13 @@ contract UniversalShieldedPoolUpgradeable is
     /// @param _admin Admin / default-admin address
     /// @param _withdrawalVerifier Address of the ZK withdrawal verifier
     /// @param _testMode Whether test-mode proof bypass is enabled
-        /**
+    /**
      * @notice Initializes the operation
      * @param _admin The _admin bound
      * @param _withdrawalVerifier The _withdrawal verifier
      * @param _testMode The _test mode
      */
-function initialize(
+    function initialize(
         address _admin,
         address _withdrawalVerifier,
         bool _testMode
@@ -315,11 +315,11 @@ function initialize(
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Deposit native ETH into the shielded pool
-        /**
+    /**
      * @notice Deposits e t h
      * @param commitment The cryptographic commitment
      */
-function depositETH(
+    function depositETH(
         bytes32 commitment
     ) external payable nonReentrant whenNotPaused {
         if (commitment == bytes32(0) || uint256(commitment) >= FIELD_SIZE)
@@ -333,13 +333,13 @@ function depositETH(
     }
 
     /// @notice Deposit ERC20 tokens into the shielded pool
-        /**
+    /**
      * @notice Deposits e r c20
      * @param assetId The assetId identifier
      * @param amount The amount to process
      * @param commitment The cryptographic commitment
      */
-function depositERC20(
+    function depositERC20(
         bytes32 assetId,
         uint256 amount,
         bytes32 commitment
@@ -370,11 +370,11 @@ function depositERC20(
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Withdraw from the shielded pool using a ZK proof
-        /**
+    /**
      * @notice Withdraws the operation
      * @param wp The wp
      */
-function withdraw(
+    function withdraw(
         WithdrawalProof calldata wp
     ) external nonReentrant whenNotPaused {
         if (wp.recipient == address(0)) revert InvalidRecipient();
@@ -434,20 +434,23 @@ function withdraw(
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Insert commitments from a remote chain (bridged by relayer)
-        /**
+    /**
      * @notice Insert cross chain commitments
      * @param batch The batch
      */
-function insertCrossChainCommitments(
+    function insertCrossChainCommitments(
         CrossChainCommitmentBatch calldata batch
     ) external nonReentrant whenNotPaused onlyRole(RELAYER_ROLE) {
         if (processedBatches[batch.batchRoot])
             revert BatchAlreadyProcessed(batch.batchRoot);
 
-        if (batchVerifier != address(0)) {
-            bool validBatch = _verifyBatchProof(batch);
-            if (!validBatch) revert BatchProofFailed();
+        // SECURITY FIX S8-3: Require batch verifier to be configured
+        if (batchVerifier == address(0)) {
+            revert("Batch verifier not configured");
         }
+
+        bool validBatch = _verifyBatchProof(batch);
+        if (!validBatch) revert BatchProofFailed();
 
         uint256 count = batch.commitments.length;
         for (uint256 i = 0; i < count; ) {
@@ -483,12 +486,12 @@ function insertCrossChainCommitments(
                           ADMIN FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-        /**
+    /**
      * @notice Registers asset
      * @param assetId The assetId identifier
      * @param tokenAddress The tokenAddress address
      */
-function registerAsset(
+    function registerAsset(
         bytes32 assetId,
         address tokenAddress
     ) external onlyRole(OPERATOR_ROLE) {
@@ -507,11 +510,11 @@ function registerAsset(
         emit AssetRegistered(assetId, tokenAddress);
     }
 
-        /**
+    /**
      * @notice Sets the withdrawal verifier
      * @param _verifier The _verifier
      */
-function setWithdrawalVerifier(
+    function setWithdrawalVerifier(
         address _verifier
     ) external onlyRole(OPERATOR_ROLE) {
         if (_verifier == address(0)) revert ZeroAddress();
@@ -519,10 +522,10 @@ function setWithdrawalVerifier(
         emit VerifierUpdated(_verifier, "withdrawal");
     }
 
-        /**
+    /**
      * @notice Disables test mode
      */
-function disableTestMode() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function disableTestMode() external onlyRole(DEFAULT_ADMIN_ROLE) {
         testMode = false;
         emit TestModeDisabled(msg.sender);
     }
@@ -530,20 +533,20 @@ function disableTestMode() external onlyRole(DEFAULT_ADMIN_ROLE) {
     /// @notice Assert production readiness on-chain (reverts if not ready)
     /// @dev Call after deployment to confirm verifier is set and testMode is off.
     ///      Emits ProductionReadinessConfirmed for off-chain monitoring.
-        /**
+    /**
      * @notice Confirm production ready
      */
-function confirmProductionReady() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function confirmProductionReady() external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(!testMode, "Test mode still enabled");
         require(withdrawalVerifier != address(0), "No withdrawal verifier set");
         emit ProductionReadinessConfirmed(msg.sender, withdrawalVerifier);
     }
 
-        /**
+    /**
      * @notice Sets the batch verifier
      * @param _verifier The _verifier
      */
-function setBatchVerifier(
+    function setBatchVerifier(
         address _verifier
     ) external onlyRole(OPERATOR_ROLE) {
         if (_verifier == address(0)) revert ZeroAddress();
@@ -551,32 +554,32 @@ function setBatchVerifier(
         emit VerifierUpdated(_verifier, "batch");
     }
 
-        /**
+    /**
      * @notice Sets the sanctions oracle
      * @param _oracle The _oracle
      */
-function setSanctionsOracle(
+    function setSanctionsOracle(
         address _oracle
     ) external onlyRole(COMPLIANCE_ROLE) {
         sanctionsOracle = _oracle;
         emit SanctionsOracleUpdated(_oracle);
     }
 
-        /**
+    /**
      * @notice Deactivate asset
      * @param assetId The assetId identifier
      */
-function deactivateAsset(bytes32 assetId) external onlyRole(OPERATOR_ROLE) {
+    function deactivateAsset(bytes32 assetId) external onlyRole(OPERATOR_ROLE) {
         assets[assetId].active = false;
     }
 
     /// @notice Configure deposit rate limiting
-        /**
+    /**
      * @notice Sets the deposit rate limit
      * @param _window The _window
      * @param _maxDeposits The _maxDeposits bound
      */
-function setDepositRateLimit(
+    function setDepositRateLimit(
         uint256 _window,
         uint256 _maxDeposits
     ) external onlyRole(OPERATOR_ROLE) {
@@ -585,12 +588,12 @@ function setDepositRateLimit(
     }
 
     /// @notice Configure circuit breaker threshold
-        /**
+    /**
      * @notice Sets the circuit breaker
      * @param _threshold The _threshold
      * @param _window The _window
      */
-function setCircuitBreaker(
+    function setCircuitBreaker(
         uint256 _threshold,
         uint256 _window
     ) external onlyRole(OPERATOR_ROLE) {
@@ -598,17 +601,17 @@ function setCircuitBreaker(
         withdrawalWindow = _window;
     }
 
-        /**
+    /**
      * @notice Pauses the operation
      */
-function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
 
-        /**
+    /**
      * @notice Unpauses the operation
- */
-function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+     */
+    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
 
@@ -616,33 +619,33 @@ function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
                           VIEW FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-        /**
+    /**
      * @notice Returns the last root
      * @return The result value
      */
-function getLastRoot() external view returns (bytes32) {
+    function getLastRoot() external view returns (bytes32) {
         return currentRoot;
     }
 
-        /**
+    /**
      * @notice Checks if known root
      * @param root The Merkle root
      * @return The result value
      */
-function isKnownRoot(bytes32 root) external view returns (bool) {
+    function isKnownRoot(bytes32 root) external view returns (bool) {
         return _isKnownRoot(root);
     }
 
-        /**
+    /**
      * @notice Checks if spent
      * @param nullifier The nullifier hash
      * @return The result value
      */
-function isSpent(bytes32 nullifier) external view returns (bool) {
+    function isSpent(bytes32 nullifier) external view returns (bool) {
         return nullifiers[nullifier];
     }
 
-        /**
+    /**
      * @notice Returns the pool stats
      * @return deposits The deposits
      * @return withdrawalsCount The withdrawals count
@@ -650,7 +653,7 @@ function isSpent(bytes32 nullifier) external view returns (bool) {
      * @return treeSize The tree size
      * @return root The root
      */
-function getPoolStats()
+    function getPoolStats()
         external
         view
         returns (
@@ -670,11 +673,11 @@ function getPoolStats()
         );
     }
 
-        /**
+    /**
      * @notice Returns the registered assets
      * @return The result value
      */
-function getRegisteredAssets() external view returns (bytes32[] memory) {
+    function getRegisteredAssets() external view returns (bytes32[] memory) {
         return assetIds;
     }
 
@@ -796,12 +799,12 @@ function getRegisteredAssets() external view returns (bytes32[] memory) {
         return success && result.length >= 32 && abi.decode(result, (bool));
     }
 
-        /**
+    /**
      * @notice _verify batch proof
      * @param batch The batch
      * @return The result value
      */
-function _verifyBatchProof(
+    function _verifyBatchProof(
         CrossChainCommitmentBatch calldata batch
     ) internal view returns (bool) {
         bytes memory publicInputs = abi.encode(
