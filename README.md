@@ -259,29 +259,31 @@ Zaseon sits between **privacy chains** and **public chains**, enabling confident
 ## Project Structure
 
 ```
-contracts/           # Production Solidity contracts
-├── core/            # ConfidentialStateContainer, NullifierRegistry, PrivacyRouter
+contracts/           # 242 production Solidity contracts
+├── core/            # ZaseonProtocolHub, ConfidentialStateContainer, NullifierRegistry, PrivacyRouter
 ├── primitives/      # ZK-SLocks, PC³, CDNA, EASC, Orchestrator
-├── crosschain/      # L2 bridge adapters (Arbitrum, Optimism, Base, zkSync, Scroll, Linea, Polygon zkEVM)
-├── privacy/         # UniversalShieldedPool, UniversalProofTranslator, Stealth addresses
-├── compliance/      # CrossChainSanctionsOracle, KYC gating
+├── crosschain/      # 31 L2 bridge adapters (Arbitrum, Optimism, Base, zkSync, Scroll, Linea, Polygon zkEVM)
+├── privacy/         # UniversalShieldedPool, UniversalProofTranslator, Stealth addresses, CrossChainLiquidityVault
+├── compliance/      # CrossChainSanctionsOracle, SelectiveDisclosure, ComplianceReporting
 ├── governance/      # ZaseonGovernor, ZaseonUpgradeTimelock
-├── upgradeable/     # UUPS proxy implementations (ConfidentialState, NullifierRegistry, ProofHub)
-├── relayer/         # RelayerFeeMarket (incentivized relaying)
-├── bridge/          # AtomicSwap, CrossChainProofHub
-├── verifiers/       # 20 UltraHonk verifiers (Noir-generated), CLSAG ring signature, VerifierRegistry
+├── upgradeable/     # 16 UUPS proxy implementations (ConfidentialState, NullifierRegistry, ProofHub, etc.)
+├── relayer/         # DecentralizedRelayerRegistry, RelayerHealthMonitor, RelayerFeeMarket
+├── bridge/          # MultiBridgeRouter, CrossChainProofHubV3, AtomicSwap
+├── verifiers/       # 47 verifier contracts (20 UltraHonk, CLSAG ring signature, VerifierRegistry)
 ├── libraries/       # BN254, CryptoLib, PoseidonYul, GasOptimizations, ValidationLib
-├── interfaces/      # Contract interfaces
+├── interfaces/      # 44 contract interfaces
 ├── adapters/        # External protocol adapters
 ├── integrations/    # Orchestrator, advanced integration contracts
-└── security/        # Timelock, circuit breaker, rate limiter, MEV protection
+├── experimental/    # RecursiveProofAggregator, ConstantTimeOperations, GasNormalizer, MixnetNodeRegistry
+├── security/        # 20 security contracts: Timelock, circuit breaker, rate limiter, MEV protection, emergency coordination
+└── internal/        # Internal helpers and base contracts
 
-noir/                # Noir ZK circuits (20 circuits: shielded_pool, nullifiers, transfers, ring_signature, etc.)
-sdk/                 # TypeScript SDK (viem-based clients, 84 test files)
+noir/                # 21 Noir ZK circuits (shielded_pool, nullifiers, transfers, ring_signature, liquidity_proof, etc.)
+sdk/                 # TypeScript SDK (viem-based clients, 83 test files)
 sdk/experimental/    # Experimental modules (fhe, pqc, mpc, recursive, zkSystems)
-certora/             # Formal verification specs (54 CVL specs)
+certora/             # 81 formal verification specs (CVL)
 specs/               # K Framework + TLA+ formal specifications
-test/                # Foundry + Hardhat tests (4864+ passing, 222 suites)
+test/                # 307 Foundry test files + Hardhat tests (5600+ passing)
 scripts/             # Deployment + security scripts (storage layout checker, mutation testing)
 ```
 
@@ -313,6 +315,8 @@ npx hardhat run scripts/deploy.js --network localhost
 | `VerifierRegistryV2`          | Multi-circuit verifier registry with versioned adapters              |
 | `RingSignatureVerifier`       | BN254 CLSAG ring signature verifier (precompile-optimized)           |
 | `DirectL2Messenger`           | Direct L2-to-L2 messaging with relayer bonds and chain ID validation |
+| `CrossChainLiquidityVault`    | Cross-chain LP-backed liquidity for instant transfers                |
+| `MultiBridgeRouter`           | Multi-bridge routing with failover via IBridgeAdapter                |
 
 ### Privacy Middleware
 
@@ -323,6 +327,8 @@ npx hardhat run scripts/deploy.js --network localhost
 | `UniversalProofTranslator`  | Translate ZK proofs between proof systems (Groth16 ↔ PLONK ↔ STARK)   |
 | `CrossChainSanctionsOracle` | Multi-provider compliance screening with weighted quorum              |
 | `RelayerFeeMarket`          | Incentivized relay marketplace with fee estimation                    |
+| `CrossChainPrivacyHub`      | Unified cross-chain privacy relay with vault-backed liquidity         |
+| `StealthAddressRegistry`    | ERC-5564 stealth addresses (upgradeable)                              |
 
 See [API Reference](docs/API_REFERENCE.md) for full contract documentation.
 
@@ -341,6 +347,7 @@ Zaseon provides adapters for major cross-chain messaging:
 | `ScrollBridgeAdapter`       | Scroll L2 native messaging            |
 | `LineaBridgeAdapter`        | Linea L2 bridge                       |
 | `PolygonZkEVMBridgeAdapter` | Polygon zkEVM bridge                  |
+| `EthereumL1Bridge`          | Ethereum L1 settlement with blob DA   |
 | `LayerZeroAdapter`          | 120+ chains via LayerZero V2          |
 | `HyperlaneAdapter`          | Modular security with ISM             |
 | `DirectL2Messenger`         | Direct L2-to-L2 messaging             |
@@ -357,7 +364,7 @@ Zaseon provides adapters for major cross-chain messaging:
 **Hashing:** Poseidon (ZK-friendly), Keccak256 (EVM-native)  
 **Signatures:** ECDSA with signature malleability protection  
 **Privacy:** Stealth addresses, domain-separated nullifiers (CDNA)  
-**Circuits:** 20 Noir circuits (nullifiers, transfers, commitments, PC³, PBP, EASC, ring signatures, compliance, shielded pool, balance proofs)  
+**Circuits:** 21 Noir circuits (nullifiers, transfers, commitments, PC³, PBP, EASC, ring signatures, compliance, shielded pool, balance proofs, liquidity proofs)  
 **On-chain Verifiers:** 20 of 21 UltraHonk verifiers generated from Noir VKs (AggregatorVerifier pending `bb >= 3.1.0`)  
 **Curve Library:** BN254.sol — compressed points, hash-to-curve, point arithmetic via precompiles
 
@@ -380,26 +387,28 @@ Zaseon provides adapters for major cross-chain messaging:
 | `BridgeWatchtower.sol`      | Real-time bridge monitoring      |
 | `ZKFraudProof.sol`          | ZK-based fraud proof system      |
 | `GriefingProtection.sol`    | Anti-griefing mechanisms         |
+| `ProtocolEmergencyCoordinator.sol` | Multi-role emergency coordination |
+| `CrossChainEmergencyRelay.sol`     | Cross-chain emergency propagation |
 
 ### Testing & Verification
 
-**4864+ Foundry tests + 483 SDK tests passing** across 222 test suites — unit, integration, fuzz, formal, invariant, attack simulation, and stress testing.
+**5600+ Foundry tests + 483 SDK tests passing** across 307 test suites — unit, integration, fuzz, formal, invariant, attack simulation, stress testing, and experimental module tests.
 
 ```bash
-forge test -vv                                          # All tests (4864+ passing)
+forge test -vv                                          # All tests (5600+ passing)
 forge test --match-path "test/fuzz/*" --fuzz-runs 10000  # Fuzz tests
 forge test --match-path "test/formal/*"                  # Halmos symbolic tests
 forge test --match-path "test/verifiers/*"               # Verifier + CLSAG tests
 forge test --match-path "test/upgradeable/*"             # UUPS proxy + storage layout tests
 forge test --match-path "test/integration/*"             # Cross-chain fork integration tests
 forge test --match-path "test/attacks/*"                 # Attack simulation tests
-npm run certora                                          # Formal verification (54 Certora CVL specs)
+npm run certora                                          # Formal verification (81 Certora CVL specs)
 ```
 
 | Tool                   | Purpose                                                                |
 | ---------------------- | ---------------------------------------------------------------------- |
 | Foundry fuzz           | Property-based fuzzing (10k+ runs per test)                            |
-| Certora CVL            | 54 formal verification specs for core/privacy/bridge contracts         |
+| Certora CVL            | 81 formal verification specs for core/privacy/bridge/vault contracts   |
 | Halmos                 | Symbolic execution (CrossChainProofHub, ZKBoundStateLocks — 12 checks) |
 | Echidna                | Stateful property testing (6 invariant properties)                     |
 | Gambit                 | Mutation testing (8 security-critical contracts)                       |

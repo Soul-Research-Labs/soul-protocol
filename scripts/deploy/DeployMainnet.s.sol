@@ -23,6 +23,9 @@ import {ProofCarryingContainer} from "../../contracts/primitives/ProofCarryingCo
 import {CrossDomainNullifierAlgebra} from "../../contracts/primitives/CrossDomainNullifierAlgebra.sol";
 import {PolicyBoundProofs} from "../../contracts/primitives/PolicyBoundProofs.sol";
 
+// ── Phase 3.5: Liquidity ──
+import {CrossChainLiquidityVault} from "../../contracts/bridge/CrossChainLiquidityVault.sol";
+
 // ── Phase 4: Hub ──
 import {ZaseonProtocolHub} from "../../contracts/core/ZaseonProtocolHub.sol";
 import "../../contracts/interfaces/IZaseonProtocolHub.sol";
@@ -106,6 +109,9 @@ contract DeployMainnet is Script {
     ProofCarryingContainer public proofCarryingContainer;
     CrossDomainNullifierAlgebra public cdna;
     PolicyBoundProofs public policyBoundProofs;
+
+    // Phase 3.5: Liquidity
+    CrossChainLiquidityVault public liquidityVault;
 
     // Phase 4: Hub
     ZaseonProtocolHub public hub;
@@ -200,6 +206,22 @@ contract DeployMainnet is Script {
         policyBoundProofs = new PolicyBoundProofs();
         console.log("PolicyBoundProofs:", address(policyBoundProofs));
 
+        // ======== PHASE 3.5: LIQUIDITY VAULT ========
+        console.log("\n--- Phase 3.5: Liquidity ---");
+
+        // Deploy vault with deployer as temporary PRIVACY_HUB_ROLE holder.
+        // After CrossChainPrivacyHub is deployed per-L2, the multisig must:
+        //   1. vault.grantRole(PRIVACY_HUB_ROLE, <privacyHubAddress>)
+        //   2. vault.revokeRole(PRIVACY_HUB_ROLE, deployer)
+        liquidityVault = new CrossChainLiquidityVault(
+            admin,       // DEFAULT_ADMIN_ROLE
+            admin,       // OPERATOR_ROLE + SETTLER_ROLE
+            guardian1,   // GUARDIAN_ROLE
+            deployer,    // PRIVACY_HUB_ROLE (temporary, re-assign to actual hub later)
+            5000         // 50% of protocol fees go to LPs
+        );
+        console.log("CrossChainLiquidityVault:", address(liquidityVault));
+
         // ======== PHASE 4: HUB ========
         console.log("\n--- Phase 4: Hub ---");
 
@@ -292,7 +314,7 @@ contract DeployMainnet is Script {
                 _intentCompletionLayer: address(0),
                 _instantCompletionGuarantee: address(0),
                 _dynamicRoutingOrchestrator: address(0),
-                _crossChainLiquidityVault: address(0)
+                _crossChainLiquidityVault: address(liquidityVault)
             })
         );
         console.log("Hub wired with core components");
@@ -348,6 +370,10 @@ contract DeployMainnet is Script {
         // ZKFraudProof
         zkFraudProof.grantRole(zkFraudProof.DEFAULT_ADMIN_ROLE(), admin);
 
+        // CrossChainLiquidityVault — admin already set via constructor
+        // PRIVACY_HUB_ROLE stays with deployer temporarily until PrivacyHub is deployed
+        // Multisig will reassign: vault.grantRole(PRIVACY_HUB_ROLE, privacyHub)
+
         // ======== PHASE 8: RENOUNCE DEPLOYER ROLES ========
         console.log("\n--- Phase 8: Renounce Deployer ---");
 
@@ -399,6 +425,11 @@ contract DeployMainnet is Script {
         zkFraudProof.renounceRole(zkFraudProof.OPERATOR_ROLE(), deployer);
         zkFraudProof.renounceRole(zkFraudProof.DEFAULT_ADMIN_ROLE(), deployer);
 
+        // CrossChainLiquidityVault — renounce deployer's temporary PRIVACY_HUB_ROLE
+        // NOTE: Only do this AFTER the multisig has granted PRIVACY_HUB_ROLE to the real PrivacyHub
+        // For safety, we leave the deployer's PRIVACY_HUB_ROLE here and move renounce to
+        // ConfigureCrossChain.s.sol which runs after PrivacyHub deployment
+
         vm.stopBroadcast();
 
         // ========= LOG =========
@@ -423,6 +454,8 @@ contract DeployMainnet is Script {
         console.log("ProofCarryingContainer:", address(proofCarryingContainer));
         console.log("CrossDomainNullifierAlgebra:", address(cdna));
         console.log("PolicyBoundProofs:", address(policyBoundProofs));
+        console.log("\n-- Liquidity --");
+        console.log("CrossChainLiquidityVault:", address(liquidityVault));
         console.log("\n-- Hub --");
         console.log("ZaseonProtocolHub:", address(hub));
         console.log("\n-- Governance --");
@@ -441,7 +474,10 @@ contract DeployMainnet is Script {
         console.log(
             "  5. Wire remaining Hub components (shieldedPool, privacyRouter, etc.) via multisig"
         );
-        console.log("  6. Run verify-deployment.ts");
+        console.log(
+            "  6. Grant PRIVACY_HUB_ROLE to deployed CrossChainPrivacyHub on LiquidityVault"
+        );
+        console.log("  7. Run verify-deployment.ts");
         console.log(
             "  7. CRITICAL: Run ConfirmRoleSeparation.s.sol from multisig"
         );

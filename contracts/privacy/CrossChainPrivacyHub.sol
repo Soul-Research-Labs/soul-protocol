@@ -10,6 +10,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {SelectiveDisclosureManager} from "../compliance/SelectiveDisclosureManager.sol";
 import {ComplianceReportingModule} from "../compliance/ComplianceReportingModule.sol";
+import {ICrossChainLiquidityVault} from "../interfaces/ICrossChainLiquidityVault.sol";
 
 /**
  * @title CrossChainPrivacyHub
@@ -262,8 +263,13 @@ contract CrossChainPrivacyHub is
     /// @notice Optional compliance reporting module for aggregate reporting
     ComplianceReportingModule public complianceReporting;
 
-    /// @dev Gap for future compliance storage upgrades
-    uint256[48] private __complianceGap;
+    /// @notice Liquidity vault for backing cross-chain transfers with real token value
+    /// @dev On source chain: lockLiquidity() during initiatePrivateTransfer
+    ///      On dest chain: releaseLiquidity() during completeRelay
+    ICrossChainLiquidityVault public liquidityVault;
+
+    /// @dev Gap for future compliance storage upgrades (reduced by 1 for liquidityVault)
+    uint256[47] private __complianceGap;
 
     // =========================================================================
     // EVENTS
@@ -344,6 +350,11 @@ contract CrossChainPrivacyHub is
 
     event ComplianceHookFailed(bytes32 indexed requestId, string reason);
 
+    event LiquidityVaultUpdated(
+        address indexed oldVault,
+        address indexed newVault
+    );
+
     event ProtocolFeeUpdated(uint256 oldFeeBps, uint256 newFeeBps);
     event FeeRecipientUpdated(
         address indexed oldRecipient,
@@ -383,6 +394,7 @@ contract CrossChainPrivacyHub is
     error FeePaymentFailed();
     error RefundFailed();
     error FeeTooHigh();
+    error VaultLockFailed(bytes32 requestId);
 
     // =========================================================================
     // COMPLIANCE SETTERS
@@ -412,6 +424,21 @@ contract CrossChainPrivacyHub is
         address old = address(complianceReporting);
         complianceReporting = ComplianceReportingModule(_module);
         emit ComplianceReportingUpdated(old, _module);
+    }
+
+    /**
+     * @notice Set the CrossChainLiquidityVault for backing cross-chain transfers
+     * @dev On source chain: `lockLiquidity()` is called during initiatePrivateTransfer
+     *      On dest chain: `releaseLiquidity()` is called during completeRelay
+     *      Setting to address(0) reverts to the legacy escrow-from-hub-balance mode.
+     * @param _vault Address of the ICrossChainLiquidityVault implementation
+     */
+    function setLiquidityVault(
+        address _vault
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        address old = address(liquidityVault);
+        liquidityVault = ICrossChainLiquidityVault(_vault);
+        emit LiquidityVaultUpdated(old, _vault);
     }
 
     // =========================================================================
@@ -654,6 +681,18 @@ contract CrossChainPrivacyHub is
             if (!sent) revert FeePaymentFailed();
         }
 
+        // Lock liquidity on source chain vault (if configured)
+        // This records the pending outflow so the destination vault can release to the recipient
+        if (address(liquidityVault) != address(0)) {
+            bool locked = liquidityVault.lockLiquidity(
+                requestId,
+                address(0), // ETH
+                amount,
+                destChainId
+            );
+            if (!locked) revert VaultLockFailed(requestId);
+        }
+
         emit RelayInitiated(
             requestId,
             msg.sender,
@@ -759,6 +798,17 @@ contract CrossChainPrivacyHub is
         // Send fee to recipient
         if (fee > 0 && feeRecipient != address(0)) {
             IERC20(token).safeTransfer(feeRecipient, fee);
+        }
+
+        // Lock liquidity on source chain vault (if configured)
+        if (address(liquidityVault) != address(0)) {
+            bool locked = liquidityVault.lockLiquidity(
+                requestId,
+                token,
+                amount - fee, // Net amount after fee
+                destChainId
+            );
+            if (!locked) revert VaultLockFailed(requestId);
         }
 
         userRequests[msg.sender].push(requestId);
@@ -869,15 +919,26 @@ contract CrossChainPrivacyHub is
 
         transfer.status = RequestStatus.COMPLETED;
 
-        // SECURITY FIX C-2: Actually deliver escrowed value to the recipient
+        // Deliver value to recipient — via liquidity vault (preferred) or direct escrow (fallback)
         address recipientAddr = address(uint160(uint256(transfer.recipient)));
-        if (transfer.token == address(0)) {
-            // ETH delivery
-            (bool sent, ) = recipientAddr.call{value: transfer.amount}("");
-            if (!sent) revert RefundFailed();
+        if (address(liquidityVault) != address(0)) {
+            // VAULT PATH: Release liquidity from the destination chain vault's LP pool
+            // The vault tracks settlement obligations back to the source chain
+            liquidityVault.releaseLiquidity(
+                requestId,
+                transfer.token,
+                recipientAddr,
+                transfer.amount,
+                transfer.sourceChainId
+            );
         } else {
-            // ERC20 delivery
-            IERC20(transfer.token).safeTransfer(recipientAddr, transfer.amount);
+            // LEGACY PATH: Direct transfer from hub balance (requires hub to hold funds)
+            if (transfer.token == address(0)) {
+                (bool sent, ) = recipientAddr.call{value: transfer.amount}("");
+                if (!sent) revert RefundFailed();
+            } else {
+                IERC20(transfer.token).safeTransfer(recipientAddr, transfer.amount);
+            }
         }
 
         emit RelayCompleted(requestId, transfer.recipient, transfer.amount);
@@ -925,6 +986,11 @@ contract CrossChainPrivacyHub is
         }
 
         transfer.status = RequestStatus.REFUNDED;
+
+        // Refund the vault lock (if configured) — releases the locked liquidity back to LP pool
+        if (address(liquidityVault) != address(0)) {
+            try liquidityVault.refundExpiredLock(requestId) {} catch {}
+        }
 
         // Refund the stored amount
         uint256 refundAmount = transfer.amount;

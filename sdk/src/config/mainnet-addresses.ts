@@ -36,6 +36,9 @@ export const MAINNET_ADDRESSES = {
   // Security
   emergencyRecovery: "0x0000000000000000000000000000000000000000",
 
+  // Cross-Chain Liquidity
+  crossChainLiquidityVault: "0x0000000000000000000000000000000000000000",
+
   // Governance
   timelock: "0x0000000000000000000000000000000000000000",
   multisig: "0x0000000000000000000000000000000000000000",
@@ -56,6 +59,7 @@ export const ARBITRUM_ADDRESSES = {
   noirVerifier: ZERO_ADDRESS,
   ultraHonkVerifier: ZERO_ADDRESS,
   emergencyRecovery: ZERO_ADDRESS,
+  crossChainLiquidityVault: ZERO_ADDRESS,
   timelock: ZERO_ADDRESS,
   multisig: ZERO_ADDRESS,
 };
@@ -73,6 +77,7 @@ export const BASE_ADDRESSES = {
   noirVerifier: ZERO_ADDRESS,
   ultraHonkVerifier: ZERO_ADDRESS,
   emergencyRecovery: ZERO_ADDRESS,
+  crossChainLiquidityVault: ZERO_ADDRESS,
   timelock: ZERO_ADDRESS,
   multisig: ZERO_ADDRESS,
 };
@@ -90,6 +95,7 @@ export const OPTIMISM_ADDRESSES = {
   noirVerifier: ZERO_ADDRESS,
   ultraHonkVerifier: ZERO_ADDRESS,
   emergencyRecovery: ZERO_ADDRESS,
+  crossChainLiquidityVault: ZERO_ADDRESS,
   timelock: ZERO_ADDRESS,
   multisig: ZERO_ADDRESS,
 };

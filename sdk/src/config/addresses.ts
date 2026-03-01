@@ -71,6 +71,9 @@ export interface ZaseonContractAddresses {
   dynamicRoutingOrchestrator?: Hex;
   capacityAwareRouter?: Hex;
 
+  // Cross-Chain Liquidity
+  crossChainLiquidityVault?: Hex;
+
   // Compliance
   selectiveDisclosureManager?: Hex;
   complianceReportingModule?: Hex;
