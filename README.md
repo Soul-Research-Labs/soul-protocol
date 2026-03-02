@@ -264,7 +264,7 @@ Zaseon sits between **privacy chains** and **public chains**, enabling confident
 contracts/           # 242 production Solidity contracts
 ├── core/            # ZaseonProtocolHub, ConfidentialStateContainer, NullifierRegistry, PrivacyRouter
 ├── primitives/      # ZK-SLocks, PC³, CDNA, EASC, Orchestrator
-├── crosschain/      # 48 bridge adapters (Arbitrum, Optimism, Base, zkSync, Scroll, Linea, Polygon zkEVM, Solana, Cardano, Midnight, Railgun, Aztec, Secret, Polkadot, Cosmos, Zcash, Penumbra, NEAR, Avalanche, Axelar, Wormhole, Sui, Aptos, TON)
+├── crosschain/      # 51 bridge adapters (Arbitrum, Optimism, Base, zkSync, Scroll, Linea, Polygon zkEVM, Solana, Cardano, Midnight, Railgun, Aztec, Secret, Polkadot, Cosmos, Zcash, Penumbra, NEAR, Avalanche, Axelar, Wormhole, Sui, Aptos, TON, Aleo, XRPL, Bitcoin)
 ├── privacy/         # UniversalShieldedPool, UniversalProofTranslator, Stealth addresses, CrossChainLiquidityVault
 ├── compliance/      # CrossChainSanctionsOracle, SelectiveDisclosure, ComplianceReporting
 ├── governance/      # ZaseonGovernor, ZaseonUpgradeTimelock
@@ -372,6 +372,9 @@ Zaseon provides adapters for major cross-chain messaging:
 | `SuiBridgeAdapter`          | Sui Native Bridge, committee BLS sigs  |
 | `AptosBridgeAdapter`        | LayerZero DVN, JMT state proofs        |
 | `TONBridgeAdapter`          | TON Bridge relay, Catchain BFT proofs  |
+| `AleoBridgeAdapter`         | Marlin SNARKs, AleoBFT committee certs |
+| `XRPLBridgeAdapter`         | Witness attestation, FBA consensus     |
+| `BitcoinBridgeAdapter`      | SPV proofs, PoW header relay           |
 
 ---
 

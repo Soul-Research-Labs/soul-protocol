@@ -318,11 +318,7 @@ contract TONBridgeAdapterTest is Test {
     function test_sendMessage_revertsEmptyPayload() public {
         vm.prank(operator);
         vm.expectRevert(TONBridgeAdapter.InvalidPayload.selector);
-        adapter.sendMessage{value: 0.1 ether}(
-            WORKCHAIN_0,
-            TON_CONTRACT,
-            hex""
-        );
+        adapter.sendMessage{value: 0.1 ether}(WORKCHAIN_0, TON_CONTRACT, hex"");
     }
 
     function test_sendMessage_revertsPayloadTooLong() public {
@@ -427,23 +423,13 @@ contract TONBridgeAdapterTest is Test {
                 int8(5)
             )
         );
-        adapter.receiveMessage(
-            TON_CONTRACT,
-            5,
-            hex"deadbeef",
-            new bytes(64)
-        );
+        adapter.receiveMessage(TON_CONTRACT, 5, hex"deadbeef", new bytes(64));
     }
 
     function test_receiveMessage_revertsEmptyPayload() public {
         vm.prank(relayer);
         vm.expectRevert(TONBridgeAdapter.InvalidPayload.selector);
-        adapter.receiveMessage(
-            TON_CONTRACT,
-            WORKCHAIN_0,
-            hex"",
-            new bytes(64)
-        );
+        adapter.receiveMessage(TON_CONTRACT, WORKCHAIN_0, hex"", new bytes(64));
     }
 
     function test_receiveMessage_revertsShortProof() public {
@@ -671,10 +657,7 @@ contract TONBridgeAdapterTest is Test {
         fee = bound(fee, 101, type(uint256).max);
         vm.prank(admin);
         vm.expectRevert(
-            abi.encodeWithSelector(
-                TONBridgeAdapter.FeeTooHigh.selector,
-                fee
-            )
+            abi.encodeWithSelector(TONBridgeAdapter.FeeTooHigh.selector, fee)
         );
         adapter.setBridgeFee(fee);
     }

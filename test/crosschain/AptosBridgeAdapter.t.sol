@@ -89,7 +89,8 @@ contract AptosBridgeAdapterTest is Test {
     address public guardian = address(0xEF);
 
     uint16 constant LZ_APTOS = 108;
-    bytes constant TRUSTED_REMOTE = hex"0000000000000000000000000000000000000000000000000000000000CAFE";
+    bytes constant TRUSTED_REMOTE =
+        hex"0000000000000000000000000000000000000000000000000000000000CAFE";
 
     function setUp() public {
         endpoint = new MockAptosLZEndpoint();
@@ -227,10 +228,7 @@ contract AptosBridgeAdapterTest is Test {
     function test_setBridgeFee_revertsAboveMax() public {
         vm.prank(admin);
         vm.expectRevert(
-            abi.encodeWithSelector(
-                AptosBridgeAdapter.FeeTooHigh.selector,
-                101
-            )
+            abi.encodeWithSelector(AptosBridgeAdapter.FeeTooHigh.selector, 101)
         );
         adapter.setBridgeFee(101);
     }
@@ -246,7 +244,8 @@ contract AptosBridgeAdapterTest is Test {
     //////////////////////////////////////////////////////////////*/
 
     function test_sendMessage_success() public {
-        bytes memory aptosTarget = hex"0000000000000000000000000000000000000000000000000000000000CAFE";
+        bytes
+            memory aptosTarget = hex"0000000000000000000000000000000000000000000000000000000000CAFE";
         vm.prank(operator);
         bytes32 hash = adapter.sendMessage{value: 0.01 ether}(
             aptosTarget,
@@ -533,10 +532,7 @@ contract AptosBridgeAdapterTest is Test {
         fee = bound(fee, 101, type(uint256).max);
         vm.prank(admin);
         vm.expectRevert(
-            abi.encodeWithSelector(
-                AptosBridgeAdapter.FeeTooHigh.selector,
-                fee
-            )
+            abi.encodeWithSelector(AptosBridgeAdapter.FeeTooHigh.selector, fee)
         );
         adapter.setBridgeFee(fee);
     }

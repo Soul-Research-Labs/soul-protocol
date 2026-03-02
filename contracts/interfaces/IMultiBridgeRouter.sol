@@ -38,7 +38,11 @@ interface IMultiBridgeRouter {
         AVALANCHE,
         SUI,
         APTOS,
-        TON
+        TON,
+        SOLANA,
+        ALEO,
+        XRPL,
+        BITCOIN
     }
 
     enum BridgeStatus {

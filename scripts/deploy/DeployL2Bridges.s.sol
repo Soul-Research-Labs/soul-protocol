@@ -32,6 +32,9 @@ import {WormholeBridgeAdapter} from "../../contracts/crosschain/WormholeBridgeAd
 import {SuiBridgeAdapter} from "../../contracts/crosschain/SuiBridgeAdapter.sol";
 import {AptosBridgeAdapter} from "../../contracts/crosschain/AptosBridgeAdapter.sol";
 import {TONBridgeAdapter} from "../../contracts/crosschain/TONBridgeAdapter.sol";
+import {AleoBridgeAdapter} from "../../contracts/crosschain/AleoBridgeAdapter.sol";
+import {XRPLBridgeAdapter} from "../../contracts/crosschain/XRPLBridgeAdapter.sol";
+import {BitcoinBridgeAdapter} from "../../contracts/crosschain/BitcoinBridgeAdapter.sol";
 
 /**
  * @title ZASEON L2 Bridge Deployment Script
@@ -211,6 +214,12 @@ contract DeployL2Bridges is Script {
             _deployAptos(admin, deployer);
         } else if (_strEq(target, "ton")) {
             _deployTON(admin, deployer);
+        } else if (_strEq(target, "aleo")) {
+            _deployAleo(admin, deployer);
+        } else if (_strEq(target, "xrpl")) {
+            _deployXRPL(admin, deployer);
+        } else if (_strEq(target, "bitcoin")) {
+            _deployBitcoin(admin, deployer);
         } else {
             revert(string.concat("Unknown deploy target: ", target));
         }
@@ -1197,6 +1206,89 @@ contract DeployL2Bridges is Script {
         console.log("TON bridge deployed. Admin:", admin);
         console.log(
             "  Post-deploy: whitelist TON contracts via whitelistContract(), then register in MultiBridgeRouter with BridgeType.TON"
+        );
+    }
+
+    function _deployAleo(address admin, address deployer) internal {
+        address aleoRelay = vm.envAddress("ALEO_RELAY");
+
+        AleoBridgeAdapter adapter = new AleoBridgeAdapter(aleoRelay, deployer);
+        console.log("AleoBridgeAdapter:", address(adapter));
+
+        adapter.grantRole(adapter.DEFAULT_ADMIN_ROLE(), admin);
+        adapter.grantRole(adapter.OPERATOR_ROLE(), admin);
+        adapter.grantRole(adapter.GUARDIAN_ROLE(), admin);
+
+        address relayer = vm.envOr("RELAYER_ADDRESS", address(0));
+        if (relayer != address(0)) {
+            adapter.grantRole(adapter.RELAYER_ROLE(), relayer);
+            console.log("Relayer granted:", relayer);
+        }
+
+        adapter.renounceRole(adapter.GUARDIAN_ROLE(), deployer);
+        adapter.renounceRole(adapter.OPERATOR_ROLE(), deployer);
+        adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
+
+        console.log("Aleo bridge deployed. Admin:", admin);
+        console.log(
+            "  Post-deploy: whitelist programs via whitelistProgram(), then register in MultiBridgeRouter with BridgeType.ALEO"
+        );
+    }
+
+    function _deployXRPL(address admin, address deployer) internal {
+        address xrplBridge = vm.envAddress("XRPL_BRIDGE");
+
+        XRPLBridgeAdapter adapter = new XRPLBridgeAdapter(xrplBridge, deployer);
+        console.log("XRPLBridgeAdapter:", address(adapter));
+
+        adapter.grantRole(adapter.DEFAULT_ADMIN_ROLE(), admin);
+        adapter.grantRole(adapter.OPERATOR_ROLE(), admin);
+        adapter.grantRole(adapter.GUARDIAN_ROLE(), admin);
+
+        address relayer = vm.envOr("RELAYER_ADDRESS", address(0));
+        if (relayer != address(0)) {
+            adapter.grantRole(adapter.RELAYER_ROLE(), relayer);
+            console.log("Relayer granted:", relayer);
+        }
+
+        adapter.renounceRole(adapter.GUARDIAN_ROLE(), deployer);
+        adapter.renounceRole(adapter.OPERATOR_ROLE(), deployer);
+        adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
+
+        console.log("XRPL bridge deployed. Admin:", admin);
+        console.log(
+            "  Post-deploy: whitelist accounts via whitelistAccount(), then register in MultiBridgeRouter with BridgeType.XRPL"
+        );
+    }
+
+    function _deployBitcoin(address admin, address deployer) internal {
+        address bitcoinBridge = vm.envAddress("BITCOIN_BRIDGE");
+        address bitcoinRelay = vm.envOr("BITCOIN_RELAY", address(0));
+
+        BitcoinBridgeAdapter adapter = new BitcoinBridgeAdapter(
+            bitcoinBridge,
+            bitcoinRelay,
+            deployer
+        );
+        console.log("BitcoinBridgeAdapter:", address(adapter));
+
+        adapter.grantRole(adapter.DEFAULT_ADMIN_ROLE(), admin);
+        adapter.grantRole(adapter.OPERATOR_ROLE(), admin);
+        adapter.grantRole(adapter.GUARDIAN_ROLE(), admin);
+
+        address relayer = vm.envOr("RELAYER_ADDRESS", address(0));
+        if (relayer != address(0)) {
+            adapter.grantRole(adapter.RELAYER_ROLE(), relayer);
+            console.log("Relayer granted:", relayer);
+        }
+
+        adapter.renounceRole(adapter.GUARDIAN_ROLE(), deployer);
+        adapter.renounceRole(adapter.OPERATOR_ROLE(), deployer);
+        adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
+
+        console.log("Bitcoin bridge deployed. Admin:", admin);
+        console.log(
+            "  Post-deploy: whitelist addresses via whitelistAddress(), then register in MultiBridgeRouter with BridgeType.BITCOIN"
         );
     }
 

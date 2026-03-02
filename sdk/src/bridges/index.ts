@@ -39,6 +39,9 @@ export * as WormholeBridge from "./wormhole";
 export * as SuiBridge from "./sui";
 export * as AptosBridge from "./aptos";
 export * as TONBridge from "./ton";
+export * as AleoBridge from "./aleo";
+export * as XRPLBridge from "./xrpl";
+export * as BitcoinBridge from "./bitcoin";
 
 import {
   type PublicClient,
@@ -82,6 +85,9 @@ import { WormholeBridgeAdapterABI as WORMHOLE_BRIDGE_ADAPTER_ABI } from "./wormh
 import { SuiBridgeAdapterABI as SUI_BRIDGE_ADAPTER_ABI } from "./sui";
 import { AptosBridgeAdapterABI as APTOS_BRIDGE_ADAPTER_ABI } from "./aptos";
 import { TONBridgeAdapterABI as TON_BRIDGE_ADAPTER_ABI } from "./ton";
+import { ALEO_BRIDGE_ADAPTER_ABI } from "./aleo";
+import { XRPL_BRIDGE_ADAPTER_ABI } from "./xrpl";
+import { BITCOIN_BRIDGE_ADAPTER_ABI } from "./bitcoin";
 
 /** Maps chain names to their chain-specific bridge ABIs */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -119,6 +125,9 @@ const CHAIN_ABI_MAP: Record<string, readonly any[]> = {
   sui: SUI_BRIDGE_ADAPTER_ABI,
   aptos: APTOS_BRIDGE_ADAPTER_ABI,
   ton: TON_BRIDGE_ADAPTER_ABI,
+  aleo: ALEO_BRIDGE_ADAPTER_ABI,
+  xrpl: XRPL_BRIDGE_ADAPTER_ABI,
+  bitcoin: BITCOIN_BRIDGE_ADAPTER_ABI,
 };
 
 // ============================================
@@ -249,7 +258,10 @@ export type SupportedChain =
   | "wormhole"
   | "sui"
   | "aptos"
-  | "ton";
+  | "ton"
+  | "aleo"
+  | "xrpl"
+  | "bitcoin";
 
 // ============================================
 // Bridge Factory
@@ -509,6 +521,30 @@ const CHAIN_CONFIGS: Record<SupportedChain, BridgeAdapterConfig> = {
     chainId: 16100,
     nativeToken: "TON",
     finality: 1,
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  aleo: {
+    name: "Aleo",
+    chainId: 17100,
+    nativeToken: "ALEO",
+    finality: 1, // ~15s AleoBFT committee round
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  xrpl: {
+    name: "XRP Ledger",
+    chainId: 18100,
+    nativeToken: "XRP",
+    finality: 1, // ~3-5s FBA consensus
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  bitcoin: {
+    name: "Bitcoin",
+    chainId: 19100,
+    nativeToken: "BTC",
+    finality: 60, // 6 confirmations × 10 min
     maxAmount: 1_000_000_000_000_000_000_000_000n,
     minAmount: 1_000_000_000_000_000n,
   },

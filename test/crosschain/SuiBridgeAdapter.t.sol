@@ -24,15 +24,9 @@ contract MockSuiBridge {
         lastAmount = amount;
     }
 
-    function executeMessage(
-        bytes calldata,
-        bytes[] calldata
-    ) external {}
+    function executeMessage(bytes calldata, bytes[] calldata) external {}
 
-    function isMessageProcessed(
-        uint8,
-        uint64
-    ) external pure returns (bool) {
+    function isMessageProcessed(uint8, uint64) external pure returns (bool) {
         return false;
     }
 }

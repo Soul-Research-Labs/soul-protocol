@@ -260,7 +260,11 @@ contract WormholeBridgeAdapterTest is Test {
         bytes memory longPayload = new bytes(10_001);
         vm.prank(operator);
         vm.expectRevert(WormholeBridgeAdapter.InvalidPayload.selector);
-        adapter.sendMessage{value: 0.01 ether}(WORMHOLE_ETH_CHAIN, longPayload, 1);
+        adapter.sendMessage{value: 0.01 ether}(
+            WORMHOLE_ETH_CHAIN,
+            longPayload,
+            1
+        );
     }
 
     function test_sendMessage_revertsNonOperator() public {
@@ -353,12 +357,7 @@ contract WormholeBridgeAdapterTest is Test {
                 unknownChain
             )
         );
-        adapter.receiveMessage(
-            vaaHash,
-            unknownChain,
-            wrongEmitter,
-            payload
-        );
+        adapter.receiveMessage(vaaHash, unknownChain, wrongEmitter, payload);
     }
 
     function test_receiveMessage_revertsEmptyPayload() public {
@@ -518,9 +517,7 @@ contract WormholeBridgeAdapterTest is Test {
                         FUZZ TESTS
     //////////////////////////////////////////////////////////////*/
 
-    function testFuzz_sendMessage(
-        bytes calldata payload
-    ) public {
+    function testFuzz_sendMessage(bytes calldata payload) public {
         vm.assume(payload.length > 0 && payload.length <= 10_000);
 
         vm.prank(operator);
