@@ -28,6 +28,10 @@ import {PenumbraBridgeAdapter} from "../../contracts/crosschain/PenumbraBridgeAd
 import {NEARBridgeAdapter} from "../../contracts/crosschain/NEARBridgeAdapter.sol";
 import {AvalancheBridgeAdapter} from "../../contracts/crosschain/AvalancheBridgeAdapter.sol";
 import {AxelarBridgeAdapter} from "../../contracts/crosschain/AxelarBridgeAdapter.sol";
+import {WormholeBridgeAdapter} from "../../contracts/crosschain/WormholeBridgeAdapter.sol";
+import {SuiBridgeAdapter} from "../../contracts/crosschain/SuiBridgeAdapter.sol";
+import {AptosBridgeAdapter} from "../../contracts/crosschain/AptosBridgeAdapter.sol";
+import {TONBridgeAdapter} from "../../contracts/crosschain/TONBridgeAdapter.sol";
 
 /**
  * @title ZASEON L2 Bridge Deployment Script
@@ -199,6 +203,14 @@ contract DeployL2Bridges is Script {
             _deployAvalanche(admin, deployer);
         } else if (_strEq(target, "axelar")) {
             _deployAxelar(admin, deployer);
+        } else if (_strEq(target, "wormhole")) {
+            _deployWormhole(admin, deployer);
+        } else if (_strEq(target, "sui")) {
+            _deploySui(admin, deployer);
+        } else if (_strEq(target, "aptos")) {
+            _deployAptos(admin, deployer);
+        } else if (_strEq(target, "ton")) {
+            _deployTON(admin, deployer);
         } else {
             revert(string.concat("Unknown deploy target: ", target));
         }
@@ -1070,6 +1082,121 @@ contract DeployL2Bridges is Script {
         console.log("Axelar bridge deployed. Admin:", admin);
         console.log(
             "  Post-deploy: register chains via registerChain(), then register in MultiBridgeRouter with BridgeType.AXELAR"
+        );
+    }
+
+    function _deployWormhole(address admin, address deployer) internal {
+        address wormholeCore = vm.envAddress("WORMHOLE_CORE_BRIDGE");
+
+        WormholeBridgeAdapter adapter = new WormholeBridgeAdapter(
+            wormholeCore,
+            deployer
+        );
+        console.log("WormholeBridgeAdapter:", address(adapter));
+
+        adapter.grantRole(adapter.DEFAULT_ADMIN_ROLE(), admin);
+        adapter.grantRole(adapter.OPERATOR_ROLE(), admin);
+        adapter.grantRole(adapter.GUARDIAN_ROLE(), admin);
+
+        address relayer = vm.envOr("RELAYER_ADDRESS", address(0));
+        if (relayer != address(0)) {
+            adapter.grantRole(adapter.RELAYER_ROLE(), relayer);
+            console.log("Relayer granted:", relayer);
+        }
+
+        adapter.renounceRole(adapter.GUARDIAN_ROLE(), deployer);
+        adapter.renounceRole(adapter.OPERATOR_ROLE(), deployer);
+        adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
+
+        console.log("Wormhole bridge deployed. Admin:", admin);
+        console.log(
+            "  Post-deploy: register emitters via registerEmitter(), then register in MultiBridgeRouter with BridgeType.WORMHOLE"
+        );
+    }
+
+    function _deploySui(address admin, address deployer) internal {
+        address suiBridge = vm.envAddress("SUI_BRIDGE");
+        address suiLightClient = vm.envAddress("SUI_LIGHT_CLIENT");
+
+        SuiBridgeAdapter adapter = new SuiBridgeAdapter(
+            suiBridge,
+            suiLightClient,
+            deployer
+        );
+        console.log("SuiBridgeAdapter:", address(adapter));
+
+        adapter.grantRole(adapter.DEFAULT_ADMIN_ROLE(), admin);
+        adapter.grantRole(adapter.OPERATOR_ROLE(), admin);
+        adapter.grantRole(adapter.GUARDIAN_ROLE(), admin);
+
+        address relayer = vm.envOr("RELAYER_ADDRESS", address(0));
+        if (relayer != address(0)) {
+            adapter.grantRole(adapter.RELAYER_ROLE(), relayer);
+            console.log("Relayer granted:", relayer);
+        }
+
+        adapter.renounceRole(adapter.GUARDIAN_ROLE(), deployer);
+        adapter.renounceRole(adapter.OPERATOR_ROLE(), deployer);
+        adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
+
+        console.log("Sui bridge deployed. Admin:", admin);
+        console.log(
+            "  Post-deploy: whitelist Sui programs via whitelistProgram(), then register in MultiBridgeRouter with BridgeType.SUI"
+        );
+    }
+
+    function _deployAptos(address admin, address deployer) internal {
+        address lzEndpoint = vm.envAddress("APTOS_LZ_ENDPOINT");
+
+        AptosBridgeAdapter adapter = new AptosBridgeAdapter(
+            lzEndpoint,
+            deployer
+        );
+        console.log("AptosBridgeAdapter:", address(adapter));
+
+        adapter.grantRole(adapter.DEFAULT_ADMIN_ROLE(), admin);
+        adapter.grantRole(adapter.OPERATOR_ROLE(), admin);
+        adapter.grantRole(adapter.GUARDIAN_ROLE(), admin);
+
+        address relayer = vm.envOr("RELAYER_ADDRESS", address(0));
+        if (relayer != address(0)) {
+            adapter.grantRole(adapter.RELAYER_ROLE(), relayer);
+            console.log("Relayer granted:", relayer);
+        }
+
+        adapter.renounceRole(adapter.GUARDIAN_ROLE(), deployer);
+        adapter.renounceRole(adapter.OPERATOR_ROLE(), deployer);
+        adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
+
+        console.log("Aptos bridge deployed. Admin:", admin);
+        console.log(
+            "  Post-deploy: set trusted remotes via setTrustedRemote(), then register in MultiBridgeRouter with BridgeType.APTOS"
+        );
+    }
+
+    function _deployTON(address admin, address deployer) internal {
+        address tonBridge = vm.envAddress("TON_BRIDGE");
+
+        TONBridgeAdapter adapter = new TONBridgeAdapter(tonBridge, deployer);
+        console.log("TONBridgeAdapter:", address(adapter));
+
+        adapter.grantRole(adapter.DEFAULT_ADMIN_ROLE(), admin);
+        adapter.grantRole(adapter.OPERATOR_ROLE(), admin);
+        adapter.grantRole(adapter.GUARDIAN_ROLE(), admin);
+
+        address relayer = vm.envOr("RELAYER_ADDRESS", address(0));
+        if (relayer != address(0)) {
+            adapter.grantRole(adapter.RELAYER_ROLE(), relayer);
+            console.log("Relayer granted:", relayer);
+        }
+
+        adapter.renounceRole(adapter.GUARDIAN_ROLE(), deployer);
+        adapter.renounceRole(adapter.OPERATOR_ROLE(), deployer);
+        adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
+
+        console.log("TON bridge deployed. Admin:", admin);
+        console.log(
+            "  Post-deploy: whitelist TON contracts via whitelistContract(), then register in MultiBridgeRouter with BridgeType.TON"
         );
     }
 

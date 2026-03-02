@@ -35,7 +35,10 @@ interface IMultiBridgeRouter {
         ZCASH,
         PENUMBRA,
         NEAR,
-        AVALANCHE
+        AVALANCHE,
+        SUI,
+        APTOS,
+        TON
     }
 
     enum BridgeStatus {

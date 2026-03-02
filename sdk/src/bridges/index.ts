@@ -35,6 +35,10 @@ export * as PenumbraBridge from "./penumbra";
 export * as NEARBridge from "./near";
 export * as AvalancheBridge from "./avalanche";
 export * as AxelarBridge from "./axelar";
+export * as WormholeBridge from "./wormhole";
+export * as SuiBridge from "./sui";
+export * as AptosBridge from "./aptos";
+export * as TONBridge from "./ton";
 
 import {
   type PublicClient,
@@ -74,6 +78,10 @@ import { PENUMBRA_BRIDGE_ADAPTER_ABI } from "./penumbra";
 import { NEAR_BRIDGE_ADAPTER_ABI } from "./near";
 import { AVALANCHE_BRIDGE_ADAPTER_ABI } from "./avalanche";
 import { AXELAR_BRIDGE_ADAPTER_ABI } from "./axelar";
+import { WormholeBridgeAdapterABI as WORMHOLE_BRIDGE_ADAPTER_ABI } from "./wormhole";
+import { SuiBridgeAdapterABI as SUI_BRIDGE_ADAPTER_ABI } from "./sui";
+import { AptosBridgeAdapterABI as APTOS_BRIDGE_ADAPTER_ABI } from "./aptos";
+import { TONBridgeAdapterABI as TON_BRIDGE_ADAPTER_ABI } from "./ton";
 
 /** Maps chain names to their chain-specific bridge ABIs */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -107,6 +115,10 @@ const CHAIN_ABI_MAP: Record<string, readonly any[]> = {
   near: NEAR_BRIDGE_ADAPTER_ABI,
   avalanche: AVALANCHE_BRIDGE_ADAPTER_ABI,
   axelar: AXELAR_BRIDGE_ADAPTER_ABI,
+  wormhole: WORMHOLE_BRIDGE_ADAPTER_ABI,
+  sui: SUI_BRIDGE_ADAPTER_ABI,
+  aptos: APTOS_BRIDGE_ADAPTER_ABI,
+  ton: TON_BRIDGE_ADAPTER_ABI,
 };
 
 // ============================================
@@ -233,7 +245,11 @@ export type SupportedChain =
   | "penumbra"
   | "near"
   | "avalanche"
-  | "axelar";
+  | "axelar"
+  | "wormhole"
+  | "sui"
+  | "aptos"
+  | "ton";
 
 // ============================================
 // Bridge Factory
@@ -461,6 +477,38 @@ const CHAIN_CONFIGS: Record<SupportedChain, BridgeAdapterConfig> = {
     chainId: 12100,
     nativeToken: "AXL",
     finality: 28,
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  wormhole: {
+    name: "Wormhole",
+    chainId: 13100,
+    nativeToken: "ETH",
+    finality: 1,
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  sui: {
+    name: "Sui",
+    chainId: 14100,
+    nativeToken: "SUI",
+    finality: 1,
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  aptos: {
+    name: "Aptos",
+    chainId: 15100,
+    nativeToken: "APT",
+    finality: 1,
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  ton: {
+    name: "TON",
+    chainId: 16100,
+    nativeToken: "TON",
+    finality: 1,
     maxAmount: 1_000_000_000_000_000_000_000_000n,
     minAmount: 1_000_000_000_000_000n,
   },

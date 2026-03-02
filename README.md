@@ -264,7 +264,7 @@ Zaseon sits between **privacy chains** and **public chains**, enabling confident
 contracts/           # 242 production Solidity contracts
 ├── core/            # ZaseonProtocolHub, ConfidentialStateContainer, NullifierRegistry, PrivacyRouter
 ├── primitives/      # ZK-SLocks, PC³, CDNA, EASC, Orchestrator
-├── crosschain/      # 44 bridge adapters (Arbitrum, Optimism, Base, zkSync, Scroll, Linea, Polygon zkEVM, Solana, Cardano, Midnight, Railgun, Aztec, Secret, Polkadot, Cosmos, Zcash, Penumbra, NEAR, Avalanche, Axelar)
+├── crosschain/      # 48 bridge adapters (Arbitrum, Optimism, Base, zkSync, Scroll, Linea, Polygon zkEVM, Solana, Cardano, Midnight, Railgun, Aztec, Secret, Polkadot, Cosmos, Zcash, Penumbra, NEAR, Avalanche, Axelar, Wormhole, Sui, Aptos, TON)
 ├── privacy/         # UniversalShieldedPool, UniversalProofTranslator, Stealth addresses, CrossChainLiquidityVault
 ├── compliance/      # CrossChainSanctionsOracle, SelectiveDisclosure, ComplianceReporting
 ├── governance/      # ZaseonGovernor, ZaseonUpgradeTimelock
@@ -340,34 +340,38 @@ See [API Reference](docs/API_REFERENCE.md) for full contract documentation.
 
 Zaseon provides adapters for major cross-chain messaging:
 
-| Adapter                     | Key Features                          |
-| --------------------------- | ------------------------------------- |
-| `ArbitrumBridgeAdapter`     | Arbitrum Nitro, Retryable Tickets     |
-| `OptimismBridgeAdapter`     | OP Stack, L2OutputOracle verification |
-| `BaseBridgeAdapter`         | OP Stack, CCTP support                |
-| `zkSyncBridgeAdapter`       | zkSync Era native bridge              |
-| `ScrollBridgeAdapter`       | Scroll L2 native messaging            |
-| `LineaBridgeAdapter`        | Linea L2 bridge                       |
-| `PolygonZkEVMBridgeAdapter` | Polygon zkEVM bridge                  |
-| `EthereumL1Bridge`          | Ethereum L1 settlement with blob DA   |
-| `LayerZeroAdapter`          | 120+ chains via LayerZero V2          |
-| `HyperlaneAdapter`          | Modular security with ISM             |
-| `DirectL2Messenger`         | Direct L2-to-L2 messaging             |
-| `EthereumL1Bridge`          | Ethereum L1 settlement bridge         |
-| `CrossChainMessageRelay`    | General message relay                 |
-| `SolanaBridgeAdapter`       | Wormhole VAA, Ed25519 programs        |
-| `CardanoBridgeAdapter`      | Wormhole VAA, Plutus validators       |
-| `MidnightBridgeAdapter`     | PLONK proofs, Compact contracts       |
-| `RailgunBridgeAdapter`      | Groth16 SNARKs, shielded UTXO pool    |
-| `AztecBridgeAdapter`        | UltraHonk proofs, encrypted note tree |
-| `SecretBridgeAdapter`       | TEE attestation, Secret Gateway       |
-| `PolkadotBridgeAdapter`     | Snowbridge, BEEFY finality proofs     |
-| `CosmosBridgeAdapter`       | Gravity Bridge, IBC light client      |
-| `ZcashBridgeAdapter`        | Halo 2 Orchard proofs, shielded UTXO  |
-| `PenumbraBridgeAdapter`     | Groth16 decaf377 proofs, shielded SCT |
-| `NEARBridgeAdapter`         | Rainbow Bridge, light client proofs   |
-| `AvalancheBridgeAdapter`    | AWM warp messages, BLS multi-sig      |
-| `AxelarBridgeAdapter`       | Axelar GMP, threshold ECDSA multi-sig |
+| Adapter                     | Key Features                           |
+| --------------------------- | -------------------------------------- |
+| `ArbitrumBridgeAdapter`     | Arbitrum Nitro, Retryable Tickets      |
+| `OptimismBridgeAdapter`     | OP Stack, L2OutputOracle verification  |
+| `BaseBridgeAdapter`         | OP Stack, CCTP support                 |
+| `zkSyncBridgeAdapter`       | zkSync Era native bridge               |
+| `ScrollBridgeAdapter`       | Scroll L2 native messaging             |
+| `LineaBridgeAdapter`        | Linea L2 bridge                        |
+| `PolygonZkEVMBridgeAdapter` | Polygon zkEVM bridge                   |
+| `EthereumL1Bridge`          | Ethereum L1 settlement with blob DA    |
+| `LayerZeroAdapter`          | 120+ chains via LayerZero V2           |
+| `HyperlaneAdapter`          | Modular security with ISM              |
+| `DirectL2Messenger`         | Direct L2-to-L2 messaging              |
+| `EthereumL1Bridge`          | Ethereum L1 settlement bridge          |
+| `CrossChainMessageRelay`    | General message relay                  |
+| `SolanaBridgeAdapter`       | Wormhole VAA, Ed25519 programs         |
+| `CardanoBridgeAdapter`      | Wormhole VAA, Plutus validators        |
+| `MidnightBridgeAdapter`     | PLONK proofs, Compact contracts        |
+| `RailgunBridgeAdapter`      | Groth16 SNARKs, shielded UTXO pool     |
+| `AztecBridgeAdapter`        | UltraHonk proofs, encrypted note tree  |
+| `SecretBridgeAdapter`       | TEE attestation, Secret Gateway        |
+| `PolkadotBridgeAdapter`     | Snowbridge, BEEFY finality proofs      |
+| `CosmosBridgeAdapter`       | Gravity Bridge, IBC light client       |
+| `ZcashBridgeAdapter`        | Halo 2 Orchard proofs, shielded UTXO   |
+| `PenumbraBridgeAdapter`     | Groth16 decaf377 proofs, shielded SCT  |
+| `NEARBridgeAdapter`         | Rainbow Bridge, light client proofs    |
+| `AvalancheBridgeAdapter`    | AWM warp messages, BLS multi-sig       |
+| `AxelarBridgeAdapter`       | Axelar GMP, threshold ECDSA multi-sig  |
+| `WormholeBridgeAdapter`     | Wormhole VAA, Guardian 13/19 multi-sig |
+| `SuiBridgeAdapter`          | Sui Native Bridge, committee BLS sigs  |
+| `AptosBridgeAdapter`        | LayerZero DVN, JMT state proofs        |
+| `TONBridgeAdapter`          | TON Bridge relay, Catchain BFT proofs  |
 
 ---
 
