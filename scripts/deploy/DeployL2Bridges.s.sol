@@ -24,6 +24,9 @@ import {SecretBridgeAdapter} from "../../contracts/crosschain/SecretBridgeAdapte
 import {PolkadotBridgeAdapter} from "../../contracts/crosschain/PolkadotBridgeAdapter.sol";
 import {CosmosBridgeAdapter} from "../../contracts/crosschain/CosmosBridgeAdapter.sol";
 import {ZcashBridgeAdapter} from "../../contracts/crosschain/ZcashBridgeAdapter.sol";
+import {PenumbraBridgeAdapter} from "../../contracts/crosschain/PenumbraBridgeAdapter.sol";
+import {NEARBridgeAdapter} from "../../contracts/crosschain/NEARBridgeAdapter.sol";
+import {AvalancheBridgeAdapter} from "../../contracts/crosschain/AvalancheBridgeAdapter.sol";
 
 /**
  * @title ZASEON L2 Bridge Deployment Script
@@ -187,6 +190,12 @@ contract DeployL2Bridges is Script {
             _deployCosmos(admin, deployer);
         } else if (_strEq(target, "zcash")) {
             _deployZcash(admin, deployer);
+        } else if (_strEq(target, "penumbra")) {
+            _deployPenumbra(admin, deployer);
+        } else if (_strEq(target, "near")) {
+            _deployNEAR(admin, deployer);
+        } else if (_strEq(target, "avalanche")) {
+            _deployAvalanche(admin, deployer);
         } else {
             revert(string.concat("Unknown deploy target: ", target));
         }
@@ -934,6 +943,99 @@ contract DeployL2Bridges is Script {
         console.log("Zcash bridge deployed. Admin:", admin);
         console.log(
             "  Post-deploy: register in MultiBridgeRouter with BridgeType.ZCASH"
+        );
+    }
+
+    function _deployPenumbra(address admin, address deployer) internal {
+        address penumbraBridge = vm.envAddress("PENUMBRA_BRIDGE");
+        address penumbraVerifier = vm.envAddress("PENUMBRA_VERIFIER");
+
+        PenumbraBridgeAdapter adapter = new PenumbraBridgeAdapter(
+            penumbraBridge,
+            penumbraVerifier,
+            deployer
+        );
+        console.log("PenumbraBridgeAdapter:", address(adapter));
+
+        adapter.grantRole(adapter.DEFAULT_ADMIN_ROLE(), admin);
+        adapter.grantRole(adapter.OPERATOR_ROLE(), admin);
+        adapter.grantRole(adapter.GUARDIAN_ROLE(), admin);
+
+        address relayer = vm.envOr("RELAYER_ADDRESS", address(0));
+        if (relayer != address(0)) {
+            adapter.grantRole(adapter.RELAYER_ROLE(), relayer);
+            console.log("Relayer granted:", relayer);
+        }
+
+        adapter.renounceRole(adapter.GUARDIAN_ROLE(), deployer);
+        adapter.renounceRole(adapter.OPERATOR_ROLE(), deployer);
+        adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
+
+        console.log("Penumbra bridge deployed. Admin:", admin);
+        console.log(
+            "  Post-deploy: register in MultiBridgeRouter with BridgeType.PENUMBRA"
+        );
+    }
+
+    function _deployNEAR(address admin, address deployer) internal {
+        address nearBridge = vm.envAddress("NEAR_BRIDGE");
+        address nearLightClient = vm.envAddress("NEAR_LIGHT_CLIENT");
+
+        NEARBridgeAdapter adapter = new NEARBridgeAdapter(
+            nearBridge,
+            nearLightClient,
+            deployer
+        );
+        console.log("NEARBridgeAdapter:", address(adapter));
+
+        adapter.grantRole(adapter.DEFAULT_ADMIN_ROLE(), admin);
+        adapter.grantRole(adapter.OPERATOR_ROLE(), admin);
+        adapter.grantRole(adapter.GUARDIAN_ROLE(), admin);
+
+        address relayer = vm.envOr("RELAYER_ADDRESS", address(0));
+        if (relayer != address(0)) {
+            adapter.grantRole(adapter.RELAYER_ROLE(), relayer);
+            console.log("Relayer granted:", relayer);
+        }
+
+        adapter.renounceRole(adapter.GUARDIAN_ROLE(), deployer);
+        adapter.renounceRole(adapter.OPERATOR_ROLE(), deployer);
+        adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
+
+        console.log("NEAR bridge deployed. Admin:", admin);
+        console.log(
+            "  Post-deploy: register in MultiBridgeRouter with BridgeType.NEAR"
+        );
+    }
+
+    function _deployAvalanche(address admin, address deployer) internal {
+        address avalancheBridge = vm.envAddress("AVALANCHE_BRIDGE");
+        address warpVerifier = vm.envAddress("WARP_VERIFIER");
+
+        AvalancheBridgeAdapter adapter = new AvalancheBridgeAdapter(
+            avalancheBridge,
+            warpVerifier,
+            deployer
+        );
+        console.log("AvalancheBridgeAdapter:", address(adapter));
+
+        adapter.grantRole(adapter.DEFAULT_ADMIN_ROLE(), admin);
+        adapter.grantRole(adapter.OPERATOR_ROLE(), admin);
+        adapter.grantRole(adapter.GUARDIAN_ROLE(), admin);
+
+        address relayer = vm.envOr("RELAYER_ADDRESS", address(0));
+        if (relayer != address(0)) {
+            adapter.grantRole(adapter.RELAYER_ROLE(), relayer);
+            console.log("Relayer granted:", relayer);
+        }
+
+        adapter.renounceRole(adapter.GUARDIAN_ROLE(), deployer);
+        adapter.renounceRole(adapter.OPERATOR_ROLE(), deployer);
+        adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
+
+        console.log("Avalanche bridge deployed. Admin:", admin);
+        console.log(
+            "  Post-deploy: register in MultiBridgeRouter with BridgeType.AVALANCHE"
         );
     }
 

@@ -31,6 +31,9 @@ export * as SecretBridge from "./secret";
 export * as PolkadotBridge from "./polkadot";
 export * as CosmosBridge from "./cosmos";
 export * as ZcashBridge from "./zcash";
+export * as PenumbraBridge from "./penumbra";
+export * as NEARBridge from "./near";
+export * as AvalancheBridge from "./avalanche";
 
 import {
   type PublicClient,
@@ -66,6 +69,9 @@ import { SECRET_BRIDGE_ADAPTER_ABI } from "./secret";
 import { POLKADOT_BRIDGE_ADAPTER_ABI } from "./polkadot";
 import { COSMOS_BRIDGE_ADAPTER_ABI } from "./cosmos";
 import { ZCASH_BRIDGE_ADAPTER_ABI } from "./zcash";
+import { PENUMBRA_BRIDGE_ADAPTER_ABI } from "./penumbra";
+import { NEAR_BRIDGE_ADAPTER_ABI } from "./near";
+import { AVALANCHE_BRIDGE_ADAPTER_ABI } from "./avalanche";
 
 /** Maps chain names to their chain-specific bridge ABIs */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -95,6 +101,9 @@ const CHAIN_ABI_MAP: Record<string, readonly any[]> = {
   polkadot: POLKADOT_BRIDGE_ADAPTER_ABI,
   cosmos: COSMOS_BRIDGE_ADAPTER_ABI,
   zcash: ZCASH_BRIDGE_ADAPTER_ABI,
+  penumbra: PENUMBRA_BRIDGE_ADAPTER_ABI,
+  near: NEAR_BRIDGE_ADAPTER_ABI,
+  avalanche: AVALANCHE_BRIDGE_ADAPTER_ABI,
 };
 
 // ============================================
@@ -217,7 +226,10 @@ export type SupportedChain =
   | "secret"
   | "polkadot"
   | "cosmos"
-  | "zcash";
+  | "zcash"
+  | "penumbra"
+  | "near"
+  | "avalanche";
 
 // ============================================
 // Bridge Factory
@@ -413,6 +425,30 @@ const CHAIN_CONFIGS: Record<SupportedChain, BridgeAdapterConfig> = {
     chainId: 8100, // ZASEON internal virtual chain ID
     nativeToken: "ZEC",
     finality: 10, // ~10 blocks (~12.5 min at 75s)
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  penumbra: {
+    name: "Penumbra",
+    chainId: 9100,
+    nativeToken: "UM",
+    finality: 1,
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  near: {
+    name: "NEAR Protocol",
+    chainId: 10100,
+    nativeToken: "NEAR",
+    finality: 4,
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  avalanche: {
+    name: "Avalanche",
+    chainId: 11100,
+    nativeToken: "AVAX",
+    finality: 1,
     maxAmount: 1_000_000_000_000_000_000_000_000n,
     minAmount: 1_000_000_000_000_000n,
   },
