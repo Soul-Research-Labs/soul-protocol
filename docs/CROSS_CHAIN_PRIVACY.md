@@ -29,7 +29,8 @@ The following sections document cryptographic primitives. Some have been impleme
 - Ring Signatures (CLSAG) - **Production** (`RingSignatureVerifier.sol` + `BN254.sol` library, ~26k gas/ring member)
 - Bulletproof Range Proofs - Reference only
 - Ring Confidential Transactions (RingCT) - Uses CLSAG verifier for ring signatures
-- Privacy chain adapters (Monero, Zcash, Secret, etc.) - Planned for future
+- Privacy chain adapters (Zcash, Secret, Railgun) - **Production** (see adapter contracts)
+- Privacy chain research (Monero Seraphis) - Planned for future
 
 ---
 
@@ -511,26 +512,32 @@ Source Chain                    Zaseon                      Destination Chain
 | Any (LayerZero) | `LayerZeroAdapter`      | Various  | ✅ Production |
 | Direct L2       | `DirectL2Messenger`     | Various  | ✅ Production |
 
-### Planned Adapters (Q2-Q3 2026)
+### Additional Production Adapters
 
-| Chain         | Adapter                     | Chain ID | Status     |
-| ------------- | --------------------------- | -------- | ---------- |
-| Optimism      | `OptimismBridgeAdapter`     | 10       | 🔄 Q2 2026 |
-| Base          | `BaseBridgeAdapter`         | 8453     | 🔄 Q2 2026 |
-| zkSync Era    | `zkSyncBridgeAdapter`       | 324      | 🔄 Q3 2026 |
-| Scroll        | `ScrollBridgeAdapter`       | 534352   | 🔄 Q3 2026 |
-| Linea         | `LineaBridgeAdapter`        | 59144    | 🔄 Q3 2026 |
-| Polygon zkEVM | `PolygonZkEVMBridgeAdapter` | 1101     | 🔄 Q3 2026 |
+| Chain         | Adapter                     | Chain ID | Status        |
+| ------------- | --------------------------- | -------- | ------------- |
+| Optimism      | `OptimismBridgeAdapter`     | 10       | ✅ Production |
+| Base          | `BaseBridgeAdapter`         | 8453     | ✅ Production |
+| zkSync Era    | `zkSyncBridgeAdapter`       | 324      | ✅ Production |
+| Scroll        | `ScrollBridgeAdapter`       | 534352   | ✅ Production |
+| Linea         | `LineaBridgeAdapter`        | 59144    | ✅ Production |
+| Polygon zkEVM | `PolygonZkEVMBridgeAdapter` | 1101     | ✅ Production |
 
-### Research Roadmap (Privacy Chains)
+### Privacy Chain Adapters (Production)
 
-> **Note:** The following adapters are part of the long-term research roadmap for interoperability with native privacy chains. These are **not currently implemented**.
+| Chain          | Adapter                 | Notes                                 |
+| -------------- | ----------------------- | ------------------------------------- |
+| Zcash          | `ZcashBridgeAdapter`    | Halo 2 Orchard proofs, shielded UTXO  |
+| Secret Network | `SecretBridgeAdapter`   | TEE attestation, Secret Gateway       |
+| Railgun        | `RailgunBridgeAdapter`  | Groth16 SNARKs, shielded UTXO pool    |
+| Penumbra       | `PenumbraBridgeAdapter` | Groth16 decaf377, shielded SCT        |
+| Aztec          | `AztecBridgeAdapter`    | UltraHonk proofs, encrypted note tree |
 
-| Chain          | Notes                                 |
-| -------------- | ------------------------------------- |
-| Zcash          | Sapling/Orchard nullifier translation |
-| Secret Network | TEE-based confidential compute        |
-| Railgun        | EVM privacy layer integration         |
+### Research Roadmap
+
+| Chain  | Notes                         |
+| ------ | ----------------------------- |
+| Monero | Seraphis protocol integration |
 
 ---
 

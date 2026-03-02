@@ -34,6 +34,7 @@ export * as ZcashBridge from "./zcash";
 export * as PenumbraBridge from "./penumbra";
 export * as NEARBridge from "./near";
 export * as AvalancheBridge from "./avalanche";
+export * as AxelarBridge from "./axelar";
 
 import {
   type PublicClient,
@@ -72,6 +73,7 @@ import { ZCASH_BRIDGE_ADAPTER_ABI } from "./zcash";
 import { PENUMBRA_BRIDGE_ADAPTER_ABI } from "./penumbra";
 import { NEAR_BRIDGE_ADAPTER_ABI } from "./near";
 import { AVALANCHE_BRIDGE_ADAPTER_ABI } from "./avalanche";
+import { AXELAR_BRIDGE_ADAPTER_ABI } from "./axelar";
 
 /** Maps chain names to their chain-specific bridge ABIs */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -104,6 +106,7 @@ const CHAIN_ABI_MAP: Record<string, readonly any[]> = {
   penumbra: PENUMBRA_BRIDGE_ADAPTER_ABI,
   near: NEAR_BRIDGE_ADAPTER_ABI,
   avalanche: AVALANCHE_BRIDGE_ADAPTER_ABI,
+  axelar: AXELAR_BRIDGE_ADAPTER_ABI,
 };
 
 // ============================================
@@ -229,7 +232,8 @@ export type SupportedChain =
   | "zcash"
   | "penumbra"
   | "near"
-  | "avalanche";
+  | "avalanche"
+  | "axelar";
 
 // ============================================
 // Bridge Factory
@@ -449,6 +453,14 @@ const CHAIN_CONFIGS: Record<SupportedChain, BridgeAdapterConfig> = {
     chainId: 11100,
     nativeToken: "AVAX",
     finality: 1,
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  axelar: {
+    name: "Axelar Network",
+    chainId: 12100,
+    nativeToken: "AXL",
+    finality: 28,
     maxAmount: 1_000_000_000_000_000_000_000_000n,
     minAmount: 1_000_000_000_000_000n,
   },

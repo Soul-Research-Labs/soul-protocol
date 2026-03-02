@@ -27,6 +27,7 @@ import {ZcashBridgeAdapter} from "../../contracts/crosschain/ZcashBridgeAdapter.
 import {PenumbraBridgeAdapter} from "../../contracts/crosschain/PenumbraBridgeAdapter.sol";
 import {NEARBridgeAdapter} from "../../contracts/crosschain/NEARBridgeAdapter.sol";
 import {AvalancheBridgeAdapter} from "../../contracts/crosschain/AvalancheBridgeAdapter.sol";
+import {AxelarBridgeAdapter} from "../../contracts/crosschain/AxelarBridgeAdapter.sol";
 
 /**
  * @title ZASEON L2 Bridge Deployment Script
@@ -196,6 +197,8 @@ contract DeployL2Bridges is Script {
             _deployNEAR(admin, deployer);
         } else if (_strEq(target, "avalanche")) {
             _deployAvalanche(admin, deployer);
+        } else if (_strEq(target, "axelar")) {
+            _deployAxelar(admin, deployer);
         } else {
             revert(string.concat("Unknown deploy target: ", target));
         }
@@ -1036,6 +1039,37 @@ contract DeployL2Bridges is Script {
         console.log("Avalanche bridge deployed. Admin:", admin);
         console.log(
             "  Post-deploy: register in MultiBridgeRouter with BridgeType.AVALANCHE"
+        );
+    }
+
+    function _deployAxelar(address admin, address deployer) internal {
+        address axelarGateway = vm.envAddress("AXELAR_GATEWAY");
+        address axelarGasService = vm.envAddress("AXELAR_GAS_SERVICE");
+
+        AxelarBridgeAdapter adapter = new AxelarBridgeAdapter(
+            axelarGateway,
+            axelarGasService,
+            deployer
+        );
+        console.log("AxelarBridgeAdapter:", address(adapter));
+
+        adapter.grantRole(adapter.DEFAULT_ADMIN_ROLE(), admin);
+        adapter.grantRole(adapter.OPERATOR_ROLE(), admin);
+        adapter.grantRole(adapter.GUARDIAN_ROLE(), admin);
+
+        address relayer = vm.envOr("RELAYER_ADDRESS", address(0));
+        if (relayer != address(0)) {
+            adapter.grantRole(adapter.RELAYER_ROLE(), relayer);
+            console.log("Relayer granted:", relayer);
+        }
+
+        adapter.renounceRole(adapter.GUARDIAN_ROLE(), deployer);
+        adapter.renounceRole(adapter.OPERATOR_ROLE(), deployer);
+        adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
+
+        console.log("Axelar bridge deployed. Admin:", admin);
+        console.log(
+            "  Post-deploy: register chains via registerChain(), then register in MultiBridgeRouter with BridgeType.AXELAR"
         );
     }
 

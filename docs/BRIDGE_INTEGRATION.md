@@ -140,15 +140,25 @@ const messageId = await messenger.sendMessage({
 
 ---
 
-## Future Integrations
+## Additional Integrations
 
-The following chains are planned for future releases:
+The following chains have production adapters:
 
-| Chain      | Status     | Expected |
-| ---------- | ---------- | -------- |
-| zkSync Era | 📋 Planned | Q3 2026  |
-| Scroll     | 📋 Planned | Q3 2026  |
-| Linea      | 📋 Planned | Q3 2026  |
+| Chain      | Status        | Adapter                  |
+| ---------- | ------------- | ------------------------ |
+| zkSync Era | ✅ Production | `zkSyncBridgeAdapter`    |
+| Scroll     | ✅ Production | `ScrollBridgeAdapter`    |
+| Linea      | ✅ Production | `LineaBridgeAdapter`     |
+| Axelar     | ✅ Production | `AxelarBridgeAdapter`    |
+| Solana     | ✅ Production | `SolanaBridgeAdapter`    |
+| Cardano    | ✅ Production | `CardanoBridgeAdapter`   |
+| Zcash      | ✅ Production | `ZcashBridgeAdapter`     |
+| Secret     | ✅ Production | `SecretBridgeAdapter`    |
+| Polkadot   | ✅ Production | `PolkadotBridgeAdapter`  |
+| Cosmos     | ✅ Production | `CosmosBridgeAdapter`    |
+| NEAR       | ✅ Production | `NEARBridgeAdapter`      |
+| Avalanche  | ✅ Production | `AvalancheBridgeAdapter` |
+| Penumbra   | ✅ Production | `PenumbraBridgeAdapter`  |
 
 ---
 
