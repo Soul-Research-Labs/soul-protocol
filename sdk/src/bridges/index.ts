@@ -42,6 +42,7 @@ export * as TONBridge from "./ton";
 export * as AleoBridge from "./aleo";
 export * as XRPLBridge from "./xrpl";
 export * as BitcoinBridge from "./bitcoin";
+export * as ChainlinkCCIPBridge from "./chainlink-ccip";
 
 import {
   type PublicClient,
@@ -88,6 +89,7 @@ import { TONBridgeAdapterABI as TON_BRIDGE_ADAPTER_ABI } from "./ton";
 import { ALEO_BRIDGE_ADAPTER_ABI } from "./aleo";
 import { XRPL_BRIDGE_ADAPTER_ABI } from "./xrpl";
 import { BITCOIN_BRIDGE_ADAPTER_ABI } from "./bitcoin";
+import { CHAINLINK_CCIP_BRIDGE_ADAPTER_ABI } from "./chainlink-ccip";
 
 /** Maps chain names to their chain-specific bridge ABIs */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -128,6 +130,7 @@ const CHAIN_ABI_MAP: Record<string, readonly any[]> = {
   aleo: ALEO_BRIDGE_ADAPTER_ABI,
   xrpl: XRPL_BRIDGE_ADAPTER_ABI,
   bitcoin: BITCOIN_BRIDGE_ADAPTER_ABI,
+  "chainlink-ccip": CHAINLINK_CCIP_BRIDGE_ADAPTER_ABI,
 };
 
 // ============================================

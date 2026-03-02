@@ -349,11 +349,17 @@ Zaseon provides adapters for major cross-chain messaging:
 | `ScrollBridgeAdapter`       | Scroll L2 native messaging             |
 | `LineaBridgeAdapter`        | Linea L2 bridge                        |
 | `PolygonZkEVMBridgeAdapter` | Polygon zkEVM bridge                   |
+| `StarknetBridgeAdapter`     | Starknet Core, felt252 messaging       |
+| `MantleBridgeAdapter`       | OP Stack + EigenDA, MNT gas token      |
+| `BlastBridgeAdapter`        | OP Stack, native yield bridge          |
+| `TaikoBridgeAdapter`        | Based contestable rollup, ZK proofs    |
+| `ModeBridgeAdapter`         | OP Stack, SFS fee sharing              |
+| `MantaPacificBridgeAdapter` | Celestia DA, Universal Circuits        |
 | `EthereumL1Bridge`          | Ethereum L1 settlement with blob DA    |
+| `ChainlinkCCIPAdapter`      | CCIP Router, chain-selector routing    |
 | `LayerZeroAdapter`          | 120+ chains via LayerZero V2           |
 | `HyperlaneAdapter`          | Modular security with ISM              |
 | `DirectL2Messenger`         | Direct L2-to-L2 messaging              |
-| `EthereumL1Bridge`          | Ethereum L1 settlement bridge          |
 | `CrossChainMessageRelay`    | General message relay                  |
 | `SolanaBridgeAdapter`       | Wormhole VAA, Ed25519 programs         |
 | `CardanoBridgeAdapter`      | Wormhole VAA, Plutus validators        |
