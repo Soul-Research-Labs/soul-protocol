@@ -30,7 +30,8 @@ interface IMultiBridgeRouter {
         RAILGUN,
         AZTEC,
         SECRET,
-        POLKADOT
+        POLKADOT,
+        COSMOS
     }
 
     enum BridgeStatus {

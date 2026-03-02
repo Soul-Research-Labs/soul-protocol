@@ -326,8 +326,6 @@ export function isPolkadotDeployed(hostChainId: number): boolean {
 /**
  * Look up a well-known parachain by ID.
  */
-export function getParachainInfo(
-  paraId: number,
-): ParachainRef | undefined {
+export function getParachainInfo(paraId: number): ParachainRef | undefined {
   return WELL_KNOWN_PARACHAINS.find((p) => p.paraId === paraId);
 }

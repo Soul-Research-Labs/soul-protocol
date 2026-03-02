@@ -22,6 +22,7 @@ import {RailgunBridgeAdapter} from "../../contracts/crosschain/RailgunBridgeAdap
 import {AztecBridgeAdapter} from "../../contracts/crosschain/AztecBridgeAdapter.sol";
 import {SecretBridgeAdapter} from "../../contracts/crosschain/SecretBridgeAdapter.sol";
 import {PolkadotBridgeAdapter} from "../../contracts/crosschain/PolkadotBridgeAdapter.sol";
+import {CosmosBridgeAdapter} from "../../contracts/crosschain/CosmosBridgeAdapter.sol";
 
 /**
  * @title ZASEON L2 Bridge Deployment Script
@@ -181,6 +182,8 @@ contract DeployL2Bridges is Script {
             _deploySecret(admin, deployer);
         } else if (_strEq(target, "polkadot")) {
             _deployPolkadot(admin, deployer);
+        } else if (_strEq(target, "cosmos")) {
+            _deployCosmos(admin, deployer);
         } else {
             revert(string.concat("Unknown deploy target: ", target));
         }
@@ -866,6 +869,37 @@ contract DeployL2Bridges is Script {
         console.log("Polkadot bridge deployed. Admin:", admin);
         console.log(
             "  Post-deploy: register in MultiBridgeRouter with BridgeType.POLKADOT"
+        );
+    }
+
+    function _deployCosmos(address admin, address deployer) internal {
+        address gravityBridge = vm.envAddress("GRAVITY_BRIDGE");
+        address ibcLightClient = vm.envAddress("IBC_LIGHT_CLIENT");
+
+        CosmosBridgeAdapter adapter = new CosmosBridgeAdapter(
+            gravityBridge,
+            ibcLightClient,
+            deployer
+        );
+        console.log("CosmosBridgeAdapter:", address(adapter));
+
+        adapter.grantRole(adapter.DEFAULT_ADMIN_ROLE(), admin);
+        adapter.grantRole(adapter.OPERATOR_ROLE(), admin);
+        adapter.grantRole(adapter.GUARDIAN_ROLE(), admin);
+
+        address relayer = vm.envOr("RELAYER_ADDRESS", address(0));
+        if (relayer != address(0)) {
+            adapter.grantRole(adapter.RELAYER_ROLE(), relayer);
+            console.log("Relayer granted:", relayer);
+        }
+
+        adapter.renounceRole(adapter.GUARDIAN_ROLE(), deployer);
+        adapter.renounceRole(adapter.OPERATOR_ROLE(), deployer);
+        adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
+
+        console.log("Cosmos bridge deployed. Admin:", admin);
+        console.log(
+            "  Post-deploy: register in MultiBridgeRouter with BridgeType.COSMOS"
         );
     }
 

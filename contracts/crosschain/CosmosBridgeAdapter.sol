@@ -9,84 +9,89 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./IBridgeAdapter.sol";
 
 /**
- * @title ISnowbridge
- * @notice Minimal interface for the Snowbridge Ethereum↔Polkadot bridge
- * @dev Snowbridge is the trustless bridge between Ethereum and Polkadot,
- *      using BEEFY (Bridge Efficiency Enabling Finality Yielder) light client
- *      proofs to verify Polkadot relay chain finality on Ethereum and
- *      Ethereum beacon chain sync committee proofs on Polkadot.
+ * @title IGravityBridge
+ * @notice Minimal interface for the Gravity Bridge Ethereum↔Cosmos contract
+ * @dev Gravity Bridge enables trustless transfers between Ethereum and Cosmos Hub
+ *      by relaying CometBFT validator set attestations (signatures) on chain.
+ *      Validators on Cosmos sign batches of outgoing transfers; those signatures
+ *      are verified on the Ethereum side by the Gravity contract.
  */
-interface ISnowbridge {
-    /// @notice Send a message from Ethereum to a Polkadot parachain
-    /// @param paraId The target parachain ID
-    /// @param payload The XCM-encoded message body
-    /// @return messageId Unique message identifier
-    function sendMessage(
-        uint32 paraId,
-        bytes calldata payload
-    ) external payable returns (bytes32 messageId);
+interface IGravityBridge {
+    /// @notice Send tokens from Ethereum to a Cosmos destination address
+    /// @param cosmosDestination The bech32-encoded Cosmos destination
+    /// @param amount The token amount to send
+    /// @param token The ERC-20 token address (address(0) for native ETH wrapping)
+    /// @return transferId Unique transfer identifier
+    function sendToCosmos(
+        bytes calldata cosmosDestination,
+        uint256 amount,
+        address token
+    ) external payable returns (bytes32 transferId);
 
-    /// @notice Estimate the delivery fee for a cross-chain message
-    /// @param paraId The destination parachain ID
-    /// @return fee The estimated delivery fee in wei
-    function quoteSendFee(uint32 paraId) external view returns (uint256 fee);
+    /// @notice Estimate the relay fee for a transfer
+    /// @return fee The estimated relay fee in wei
+    function estimateRelayFee() external view returns (uint256 fee);
 
-    /// @notice Get the current BEEFY validator set commitment
-    /// @return commitment The Merkle root of the active BEEFY authority set
-    function currentBeefyCommitment()
+    /// @notice Get the current Cosmos validator set nonce
+    /// @return nonce The current valset nonce
+    function state_lastValsetNonce() external view returns (uint256 nonce);
+
+    /// @notice Get the hash of the current validator power set
+    /// @return checkpoint The valset checkpoint hash
+    function state_lastValsetCheckpoint()
         external
         view
-        returns (bytes32 commitment);
+        returns (bytes32 checkpoint);
 }
 
 /**
- * @title IBeefyVerifier
- * @notice Interface for verifying BEEFY (Polkadot finality gadget) proofs
- * @dev BEEFY proofs attest to Polkadot relay chain finality, signed by
- *      the active BEEFY authority set. The verifier validates these proofs on chain.
+ * @title IIBCLightClient
+ * @notice Interface for verifying IBC (Inter-Blockchain Communication) light client proofs
+ * @dev IBC light clients verify CometBFT consensus state transitions, including
+ *      validator set changes and committed blocks. Proofs consist of signed headers
+ *      plus IAVL Merkle proofs against the application state root.
  */
-interface IBeefyVerifier {
-    /// @notice Verify a BEEFY finality proof from Polkadot validators
-    /// @param proof The BEEFY signed commitment proof
-    /// @param data The payload data being attested
+interface IIBCLightClient {
+    /// @notice Verify a Tendermint/CometBFT light client proof
+    /// @param proof The IBC light client proof (signed header + IAVL proof)
+    /// @param data The state data being proven
     /// @return valid Whether the proof is valid
-    function verifyBeefyProof(
+    function verifyIBCProof(
         bytes calldata proof,
         bytes calldata data
     ) external returns (bool valid);
 
-    /// @notice Get the current BEEFY authority set hash
-    /// @return hash The hash of the active BEEFY authority set
-    function authoritySetHash() external view returns (bytes32 hash);
+    /// @notice Get the latest verified consensus state height
+    /// @return height The latest verified block height
+    function latestHeight() external view returns (uint64 height);
 }
 
 /**
- * @title PolkadotBridgeAdapter
+ * @title CosmosBridgeAdapter
  * @author ZASEON
- * @notice Bridge adapter for Polkadot — heterogeneous multi-chain via Snowbridge
- * @dev Enables ZASEON cross-chain interoperability with Polkadot's parachain
- *      ecosystem via the Snowbridge trustless bridge and BEEFY finality proofs.
+ * @notice Bridge adapter for Cosmos Hub — IBC ecosystem via Gravity Bridge
+ * @dev Enables ZASEON cross-chain interoperability with the Cosmos Hub and
+ *      IBC-connected chains via Gravity Bridge and CometBFT light client verification.
  *
- * POLKADOT INTEGRATION:
- * - Heterogeneous multi-chain protocol (relay chain + parachains)
- * - Consensus: GRANDPA (deterministic finality) + BABE (block production)
- * - Finality gadget: BEEFY (Bridge Efficiency Enabling Finality Yielder)
- * - Native token: DOT
- * - Smart contracts: ink! (Rust eDSL for Wasm) on contract parachains
- * - Cross-chain: XCM (Cross-Consensus Messaging) for inter-parachain comms
- * - EVM bridge: Snowbridge (trustless, uses BEEFY light client proofs)
+ * COSMOS INTEGRATION:
+ * - Independent Proof-of-Stake L1 (Cosmos SDK + CometBFT consensus)
+ * - Consensus: CometBFT (formerly Tendermint BFT), instant finality
+ * - Cross-chain: IBC (Inter-Blockchain Communication) protocol
+ * - Native token: ATOM
+ * - Smart contracts: CosmWasm (Rust → Wasm) on enabled chains
+ * - EVM bridge: Gravity Bridge (validator-attested, decentralized)
  *
  * MESSAGE FLOW:
- * - ZASEON→Polkadot: sendMessage() → Snowbridge → relay chain → parachain via XCM
- * - Polkadot→ZASEON: BEEFY proof generated → relayer submits → verifier validates
+ * - ZASEON→Cosmos: sendMessage() → Gravity Bridge → Cosmos Hub → IBC relay
+ * - Cosmos→ZASEON: IBC light client proof → verifier validates → message delivered
  *
  * SECURITY NOTES:
- * - BEEFY finality proofs verified on-chain by BeefyVerifier contract
- * - Nullifier-based replay protection
- * - Snowbridge is the canonical trustless bridge (no third-party trust assumptions)
- * - GRANDPA provides deterministic finality (~12–60 second finalization)
+ * - IBC light client proofs verified on-chain by IBCLightClient contract
+ * - Gravity Bridge uses CometBFT validator set attestations (≥2/3 voting power)
+ * - Nullifier-based replay protection (integrates with ZASEON's CDNA)
+ * - CometBFT provides instant deterministic finality (~6 second blocks)
  */
-contract PolkadotBridgeAdapter is
+contract CosmosBridgeAdapter is
     IBridgeAdapter,
     AccessControl,
     ReentrancyGuard,
@@ -107,16 +112,13 @@ contract PolkadotBridgeAdapter is
                            CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice ZASEON virtual chain ID for Polkadot (not an EVM chain ID)
-    uint16 public constant POLKADOT_CHAIN_ID = 6100;
+    /// @notice ZASEON virtual chain ID for Cosmos (not an EVM chain ID)
+    uint16 public constant COSMOS_CHAIN_ID = 7100;
 
-    /// @notice Default parachain target (AssetHub, parachain ID 1000)
-    uint32 public constant DEFAULT_PARA_ID = 1000;
+    /// @notice CometBFT instant finality (~6 second blocks)
+    uint256 public constant FINALITY_BLOCKS = 1;
 
-    /// @notice GRANDPA finality blocks (~2 epochs, deterministic)
-    uint256 public constant FINALITY_BLOCKS = 30;
-
-    /// @notice Minimum BEEFY proof size in bytes
+    /// @notice Minimum IBC proof size in bytes
     uint256 public constant MIN_PROOF_SIZE = 64;
 
     /// @notice Maximum bridge fee (1% = 100 basis points)
@@ -125,18 +127,22 @@ contract PolkadotBridgeAdapter is
     /// @notice Maximum payload length in bytes
     uint256 public constant MAX_PAYLOAD_LENGTH = 10_000;
 
+    /// @notice Default Cosmos Hub IBC channel (channel-0 for most IBC connections)
+    bytes32 public constant DEFAULT_IBC_CHANNEL =
+        keccak256("channel-0");
+
     /*//////////////////////////////////////////////////////////////
                            STORAGE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Snowbridge gateway contract
-    ISnowbridge public snowbridge;
+    /// @notice Gravity Bridge contract
+    IGravityBridge public gravityBridge;
 
-    /// @notice BEEFY finality proof verifier
-    IBeefyVerifier public beefyVerifier;
+    /// @notice IBC light client verifier
+    IIBCLightClient public ibcLightClient;
 
-    /// @notice Default target parachain ID
-    uint32 public targetParaId;
+    /// @notice Default Cosmos destination (bech32 bytes)
+    bytes public defaultCosmosDestination;
 
     /// @notice Bridge fee in basis points (0–100)
     uint256 public bridgeFee;
@@ -147,10 +153,10 @@ contract PolkadotBridgeAdapter is
     /// @notice Accumulated protocol fees available for withdrawal
     uint256 public accumulatedFees;
 
-    /// @notice Total messages sent to Polkadot
+    /// @notice Total messages sent to Cosmos
     uint256 public totalMessagesSent;
 
-    /// @notice Total messages received from Polkadot
+    /// @notice Total messages received from Cosmos
     uint256 public totalMessagesReceived;
 
     /// @notice Total value bridged (wei)
@@ -169,6 +175,9 @@ contract PolkadotBridgeAdapter is
     /// @notice Per-sender nonce counter
     mapping(address => uint256) public senderNonces;
 
+    /// @notice Registered IBC channel IDs for valid source chains
+    mapping(bytes32 => bool) public registeredChannels;
+
     /*//////////////////////////////////////////////////////////////
                           ENUMS & STRUCTS
     //////////////////////////////////////////////////////////////*/
@@ -183,8 +192,8 @@ contract PolkadotBridgeAdapter is
 
     struct MessageRecord {
         MessageStatus status;
-        uint32 paraId;
-        bytes32 beefyCommitment;
+        bytes32 ibcChannel;
+        bytes32 consensusStateHash;
         bytes32 nullifier;
         uint256 timestamp;
     }
@@ -193,11 +202,12 @@ contract PolkadotBridgeAdapter is
                            ERRORS
     //////////////////////////////////////////////////////////////*/
 
-    error InvalidSnowbridge();
-    error InvalidVerifier();
+    error InvalidGravityBridge();
+    error InvalidLightClient();
     error InvalidTarget();
     error InvalidPayload();
     error InvalidProof();
+    error InvalidChannel();
     error NullifierAlreadyUsed(bytes32 nullifier);
     error InsufficientFee(uint256 required, uint256 provided);
     error FeeTooHigh(uint256 fee);
@@ -210,46 +220,53 @@ contract PolkadotBridgeAdapter is
     event MessageSent(
         bytes32 indexed messageHash,
         address indexed sender,
-        uint32 paraId,
-        bytes32 snowbridgeMessageId,
+        bytes32 gravityTransferId,
         uint256 value
     );
 
     event MessageReceived(
         bytes32 indexed messageHash,
-        uint32 paraId,
+        bytes32 ibcChannel,
         bytes32 indexed nullifier,
         bytes payload
     );
 
-    event SnowbridgeUpdated(
+    event GravityBridgeUpdated(
         address indexed oldBridge,
         address indexed newBridge
     );
-    event BeefyVerifierUpdated(
-        address indexed oldVerifier,
-        address indexed newVerifier
+    event IBCLightClientUpdated(
+        address indexed oldClient,
+        address indexed newClient
     );
-    event TargetParaIdUpdated(uint32 oldParaId, uint32 newParaId);
     event BridgeFeeUpdated(uint256 oldFee, uint256 newFee);
     event MinMessageFeeUpdated(uint256 oldFee, uint256 newFee);
     event FeesWithdrawn(address indexed recipient, uint256 amount);
+    event IBCChannelRegistered(bytes32 indexed channel);
+    event IBCChannelDeregistered(bytes32 indexed channel);
+    event DefaultDestinationUpdated(bytes oldDest, bytes newDest);
 
     /*//////////////////////////////////////////////////////////////
                          CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    /// @param _snowbridge Snowbridge gateway contract address
-    /// @param _beefyVerifier BEEFY finality proof verifier address
+    /// @param _gravityBridge Gravity Bridge contract address
+    /// @param _ibcLightClient IBC light client verifier address
     /// @param _admin Admin address (receives all initial roles)
-    constructor(address _snowbridge, address _beefyVerifier, address _admin) {
-        if (_snowbridge == address(0)) revert InvalidSnowbridge();
-        if (_beefyVerifier == address(0)) revert InvalidVerifier();
+    constructor(
+        address _gravityBridge,
+        address _ibcLightClient,
+        address _admin
+    ) {
+        if (_gravityBridge == address(0)) revert InvalidGravityBridge();
+        if (_ibcLightClient == address(0)) revert InvalidLightClient();
         if (_admin == address(0)) revert InvalidTarget();
 
-        snowbridge = ISnowbridge(_snowbridge);
-        beefyVerifier = IBeefyVerifier(_beefyVerifier);
-        targetParaId = DEFAULT_PARA_ID;
+        gravityBridge = IGravityBridge(_gravityBridge);
+        ibcLightClient = IIBCLightClient(_ibcLightClient);
+
+        // Register default IBC channel
+        registeredChannels[DEFAULT_IBC_CHANNEL] = true;
 
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(OPERATOR_ROLE, _admin);
@@ -260,45 +277,55 @@ contract PolkadotBridgeAdapter is
                        VIEW FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice ZASEON virtual chain ID for Polkadot
+    /// @notice ZASEON virtual chain ID for Cosmos
     function chainId() external pure returns (uint16) {
-        return POLKADOT_CHAIN_ID;
+        return COSMOS_CHAIN_ID;
     }
 
     /// @notice Human-readable chain name
     function chainName() external pure returns (string memory) {
-        return "Polkadot";
+        return "Cosmos";
     }
 
     /// @notice Whether the adapter is fully configured
     function isConfigured() external view returns (bool) {
         return
-            address(snowbridge) != address(0) &&
-            address(beefyVerifier) != address(0);
+            address(gravityBridge) != address(0) &&
+            address(ibcLightClient) != address(0);
     }
 
-    /// @notice Number of blocks for finality
+    /// @notice Number of blocks for finality (CometBFT = instant)
     function getFinalityBlocks() external pure returns (uint256) {
         return FINALITY_BLOCKS;
     }
 
-    /// @notice Get the current BEEFY authority set commitment
-    function getBeefyCommitment() external view returns (bytes32) {
-        return snowbridge.currentBeefyCommitment();
+    /// @notice Get the current Cosmos validator set checkpoint
+    function getValsetCheckpoint() external view returns (bytes32) {
+        return gravityBridge.state_lastValsetCheckpoint();
+    }
+
+    /// @notice Get the current Cosmos validator set nonce
+    function getValsetNonce() external view returns (uint256) {
+        return gravityBridge.state_lastValsetNonce();
+    }
+
+    /// @notice Get the latest verified IBC height
+    function getLatestIBCHeight() external view returns (uint64) {
+        return ibcLightClient.latestHeight();
     }
 
     /*//////////////////////////////////////////////////////////////
-                 SEND MESSAGE (ZASEON → POLKADOT)
+                 SEND MESSAGE (ZASEON → COSMOS)
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Send a cross-chain message from ZASEON to a Polkadot parachain
-     * @param paraId Target parachain ID (e.g. 1000 for AssetHub)
-     * @param payload The message payload (XCM-compatible)
+     * @notice Send a cross-chain message from ZASEON to Cosmos Hub
+     * @param cosmosDestination The bech32-encoded Cosmos address (as bytes)
+     * @param payload The message payload (IBC-compatible)
      * @return messageHash The unique message hash
      */
     function sendMessage(
-        uint32 paraId,
+        bytes calldata cosmosDestination,
         bytes calldata payload
     )
         external
@@ -308,13 +335,13 @@ contract PolkadotBridgeAdapter is
         whenNotPaused
         returns (bytes32 messageHash)
     {
-        if (paraId == 0) revert InvalidTarget();
+        if (cosmosDestination.length == 0) revert InvalidTarget();
         if (payload.length == 0 || payload.length > MAX_PAYLOAD_LENGTH)
             revert InvalidPayload();
 
         // Enforce minimum fee
-        uint256 gatewayFee = snowbridge.quoteSendFee(paraId);
-        uint256 requiredFee = gatewayFee + minMessageFee;
+        uint256 relayFee = gravityBridge.estimateRelayFee();
+        uint256 requiredFee = relayFee + minMessageFee;
         if (msg.value < requiredFee)
             revert InsufficientFee(requiredFee, msg.value);
 
@@ -325,18 +352,21 @@ contract PolkadotBridgeAdapter is
             accumulatedFees += protocolFee;
         }
 
-        // Forward to Snowbridge
-        bytes32 snowbridgeId = snowbridge.sendMessage{
+        // Forward via Gravity Bridge
+        bytes memory fullPayload = abi.encodePacked(
+            cosmosDestination,
+            payload
+        );
+        bytes32 gravityId = gravityBridge.sendToCosmos{
             value: msg.value - protocolFee
-        }(paraId, payload);
+        }(fullPayload, 0, address(0));
 
         // Build message record
         uint256 nonce = senderNonces[msg.sender]++;
         messageHash = keccak256(
             abi.encodePacked(
-                POLKADOT_CHAIN_ID,
+                COSMOS_CHAIN_ID,
                 msg.sender,
-                paraId,
                 nonce,
                 block.timestamp,
                 keccak256(payload)
@@ -345,8 +375,8 @@ contract PolkadotBridgeAdapter is
 
         messages[messageHash] = MessageRecord({
             status: MessageStatus.SENT,
-            paraId: paraId,
-            beefyCommitment: bytes32(0),
+            ibcChannel: DEFAULT_IBC_CHANNEL,
+            consensusStateHash: bytes32(0),
             nullifier: bytes32(0),
             timestamp: block.timestamp
         });
@@ -354,23 +384,17 @@ contract PolkadotBridgeAdapter is
         totalMessagesSent++;
         totalValueBridged += msg.value;
 
-        emit MessageSent(
-            messageHash,
-            msg.sender,
-            paraId,
-            snowbridgeId,
-            msg.value
-        );
+        emit MessageSent(messageHash, msg.sender, gravityId, msg.value);
     }
 
     /*//////////////////////////////////////////////////////////////
-              RECEIVE MESSAGE (POLKADOT → ZASEON)
+              RECEIVE MESSAGE (COSMOS → ZASEON)
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Receive and verify a cross-chain message from Polkadot
-     * @param proof BEEFY finality proof from Polkadot validators
-     * @param publicInputs [beefyCommitment, nullifier, paraId, payloadHash]
+     * @notice Receive and verify a cross-chain message from Cosmos
+     * @param proof IBC light client proof (signed header + IAVL Merkle proof)
+     * @param publicInputs [consensusStateHash, nullifier, ibcChannelHash, payloadHash]
      * @param payload The original message payload
      * @return messageHash The unique message hash
      */
@@ -385,15 +409,18 @@ contract PolkadotBridgeAdapter is
         whenNotPaused
         returns (bytes32 messageHash)
     {
-        // Verify BEEFY finality proof
-        bool valid = beefyVerifier.verifyBeefyProof(proof, payload);
+        // Verify IBC light client proof
+        bool valid = ibcLightClient.verifyIBCProof(proof, payload);
         if (!valid) revert InvalidProof();
 
         // Extract public inputs
-        bytes32 beefyCommitment = bytes32(publicInputs[0]);
+        bytes32 consensusStateHash = bytes32(publicInputs[0]);
         bytes32 nullifier = bytes32(publicInputs[1]);
-        uint32 paraId = uint32(publicInputs[2]);
+        bytes32 ibcChannel = bytes32(publicInputs[2]);
         bytes32 payloadHash = bytes32(publicInputs[3]);
+
+        // Validate IBC channel is registered
+        if (!registeredChannels[ibcChannel]) revert InvalidChannel();
 
         // Replay protection
         if (usedNullifiers[nullifier]) revert NullifierAlreadyUsed(nullifier);
@@ -402,25 +429,25 @@ contract PolkadotBridgeAdapter is
         // Build message hash
         messageHash = keccak256(
             abi.encodePacked(
-                POLKADOT_CHAIN_ID,
-                beefyCommitment,
+                COSMOS_CHAIN_ID,
+                consensusStateHash,
                 nullifier,
-                paraId,
+                ibcChannel,
                 payloadHash
             )
         );
 
         messages[messageHash] = MessageRecord({
             status: MessageStatus.DELIVERED,
-            paraId: paraId,
-            beefyCommitment: beefyCommitment,
+            ibcChannel: ibcChannel,
+            consensusStateHash: consensusStateHash,
             nullifier: nullifier,
             timestamp: block.timestamp
         });
 
         totalMessagesReceived++;
 
-        emit MessageReceived(messageHash, paraId, nullifier, payload);
+        emit MessageReceived(messageHash, ibcChannel, nullifier, payload);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -445,18 +472,19 @@ contract PolkadotBridgeAdapter is
         if (payload.length == 0 || payload.length > MAX_PAYLOAD_LENGTH)
             revert InvalidPayload();
 
-        // Wrap as XCM-compatible payload
-        bytes memory xcmPayload = abi.encodePacked(targetAddress, payload);
+        // Wrap address + payload as Gravity Bridge transfer
+        bytes memory cosmosPayload = abi.encodePacked(targetAddress, payload);
 
-        bytes32 snowbridgeId = snowbridge.sendMessage{value: msg.value}(
-            targetParaId,
-            xcmPayload
+        bytes32 gravityId = gravityBridge.sendToCosmos{value: msg.value}(
+            cosmosPayload,
+            0,
+            address(0)
         );
 
         uint256 nonce = senderNonces[msg.sender]++;
         messageId = keccak256(
             abi.encodePacked(
-                POLKADOT_CHAIN_ID,
+                COSMOS_CHAIN_ID,
                 msg.sender,
                 targetAddress,
                 nonce,
@@ -467,8 +495,8 @@ contract PolkadotBridgeAdapter is
 
         messages[messageId] = MessageRecord({
             status: MessageStatus.SENT,
-            paraId: targetParaId,
-            beefyCommitment: bytes32(0),
+            ibcChannel: DEFAULT_IBC_CHANNEL,
+            consensusStateHash: bytes32(0),
             nullifier: bytes32(0),
             timestamp: block.timestamp
         });
@@ -476,13 +504,7 @@ contract PolkadotBridgeAdapter is
         totalMessagesSent++;
         totalValueBridged += msg.value;
 
-        emit MessageSent(
-            messageId,
-            msg.sender,
-            targetParaId,
-            snowbridgeId,
-            msg.value
-        );
+        emit MessageSent(messageId, msg.sender, gravityId, msg.value);
     }
 
     /// @inheritdoc IBridgeAdapter
@@ -490,8 +512,8 @@ contract PolkadotBridgeAdapter is
         address /* targetAddress */,
         bytes calldata /* payload */
     ) external view override returns (uint256 nativeFee) {
-        uint256 gatewayFee = snowbridge.quoteSendFee(targetParaId);
-        return gatewayFee + minMessageFee;
+        uint256 relayFee = gravityBridge.estimateRelayFee();
+        return relayFee + minMessageFee;
     }
 
     /// @inheritdoc IBridgeAdapter
@@ -507,34 +529,50 @@ contract PolkadotBridgeAdapter is
                     ADMIN CONFIGURATION
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Update the Snowbridge gateway address
-    function setSnowbridge(
-        address _snowbridge
+    /// @notice Update the Gravity Bridge address
+    function setGravityBridge(
+        address _gravityBridge
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_snowbridge == address(0)) revert InvalidSnowbridge();
-        address old = address(snowbridge);
-        snowbridge = ISnowbridge(_snowbridge);
-        emit SnowbridgeUpdated(old, _snowbridge);
+        if (_gravityBridge == address(0)) revert InvalidGravityBridge();
+        address old = address(gravityBridge);
+        gravityBridge = IGravityBridge(_gravityBridge);
+        emit GravityBridgeUpdated(old, _gravityBridge);
     }
 
-    /// @notice Update the BEEFY verifier address
-    function setBeefyVerifier(
-        address _verifier
+    /// @notice Update the IBC light client verifier address
+    function setIBCLightClient(
+        address _client
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_verifier == address(0)) revert InvalidVerifier();
-        address old = address(beefyVerifier);
-        beefyVerifier = IBeefyVerifier(_verifier);
-        emit BeefyVerifierUpdated(old, _verifier);
+        if (_client == address(0)) revert InvalidLightClient();
+        address old = address(ibcLightClient);
+        ibcLightClient = IIBCLightClient(_client);
+        emit IBCLightClientUpdated(old, _client);
     }
 
-    /// @notice Update the default target parachain ID
-    function setTargetParaId(
-        uint32 _paraId
+    /// @notice Set the default Cosmos destination address
+    function setDefaultCosmosDestination(
+        bytes calldata _dest
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_paraId == 0) revert InvalidTarget();
-        uint32 old = targetParaId;
-        targetParaId = _paraId;
-        emit TargetParaIdUpdated(old, _paraId);
+        if (_dest.length == 0) revert InvalidTarget();
+        bytes memory old = defaultCosmosDestination;
+        defaultCosmosDestination = _dest;
+        emit DefaultDestinationUpdated(old, _dest);
+    }
+
+    /// @notice Register an IBC channel as a valid incoming source
+    function registerIBCChannel(
+        bytes32 _channel
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        registeredChannels[_channel] = true;
+        emit IBCChannelRegistered(_channel);
+    }
+
+    /// @notice Deregister an IBC channel
+    function deregisterIBCChannel(
+        bytes32 _channel
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        registeredChannels[_channel] = false;
+        emit IBCChannelDeregistered(_channel);
     }
 
     /// @notice Set the bridge fee in basis points (max 100 = 1%)

@@ -21,11 +21,17 @@ contract MockSnowbridge is ISnowbridge {
         return mockMessageId;
     }
 
-    function quoteSendFee(uint32 /* paraId */) external view returns (uint256 fee) {
+    function quoteSendFee(
+        uint32 /* paraId */
+    ) external view returns (uint256 fee) {
         return mockFee;
     }
 
-    function currentBeefyCommitment() external view returns (bytes32 commitment) {
+    function currentBeefyCommitment()
+        external
+        view
+        returns (bytes32 commitment)
+    {
         return mockCommitment;
     }
 
@@ -86,7 +92,11 @@ contract MockERC20Polkadot {
         return true;
     }
 
-    function transferFrom(address from, address to, uint256 amount) external returns (bool) {
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) external returns (bool) {
         allowance[from][msg.sender] -= amount;
         balanceOf[from] -= amount;
         balanceOf[to] += amount;
@@ -266,7 +276,10 @@ contract PolkadotBridgeAdapterTest is Test {
     function test_setBridgeFee_revert_tooHigh() public {
         vm.prank(admin);
         vm.expectRevert(
-            abi.encodeWithSelector(PolkadotBridgeAdapter.FeeTooHigh.selector, 101)
+            abi.encodeWithSelector(
+                PolkadotBridgeAdapter.FeeTooHigh.selector,
+                101
+            )
         );
         adapter.setBridgeFee(101);
     }
@@ -394,7 +407,11 @@ contract PolkadotBridgeAdapterTest is Test {
         pubInputs[3] = uint256(payloadHash);
 
         vm.prank(relayer);
-        bytes32 msgHash = adapter.receiveMessage(DUMMY_PROOF, pubInputs, DUMMY_PAYLOAD);
+        bytes32 msgHash = adapter.receiveMessage(
+            DUMMY_PROOF,
+            pubInputs,
+            DUMMY_PAYLOAD
+        );
 
         assertTrue(msgHash != bytes32(0));
         assertTrue(adapter.usedNullifiers(nullifier));
@@ -544,7 +561,11 @@ contract PolkadotBridgeAdapterTest is Test {
         pubInputs[3] = uint256(payloadHash);
 
         vm.prank(relayer);
-        bytes32 hash = adapter.receiveMessage(DUMMY_PROOF, pubInputs, DUMMY_PAYLOAD);
+        bytes32 hash = adapter.receiveMessage(
+            DUMMY_PROOF,
+            pubInputs,
+            DUMMY_PAYLOAD
+        );
         assertTrue(adapter.isMessageVerified(hash));
     }
 
@@ -680,12 +701,17 @@ contract PolkadotBridgeAdapterTest is Test {
                         FUZZ TESTS
     //////////////////////////////////////////////////////////////*/
 
-    function testFuzz_sendMessage_anyValidPayload(bytes calldata payload) public {
+    function testFuzz_sendMessage_anyValidPayload(
+        bytes calldata payload
+    ) public {
         vm.assume(payload.length > 0 && payload.length <= 10_000);
 
         vm.deal(operator, 10 ether);
         vm.prank(operator);
-        bytes32 hash = adapter.sendMessage{value: 0.01 ether}(ASSET_HUB, payload);
+        bytes32 hash = adapter.sendMessage{value: 0.01 ether}(
+            ASSET_HUB,
+            payload
+        );
         assertTrue(hash != bytes32(0));
     }
 
@@ -700,7 +726,10 @@ contract PolkadotBridgeAdapterTest is Test {
         fee = bound(fee, 101, type(uint256).max);
         vm.prank(admin);
         vm.expectRevert(
-            abi.encodeWithSelector(PolkadotBridgeAdapter.FeeTooHigh.selector, fee)
+            abi.encodeWithSelector(
+                PolkadotBridgeAdapter.FeeTooHigh.selector,
+                fee
+            )
         );
         adapter.setBridgeFee(fee);
     }

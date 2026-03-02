@@ -30,6 +30,7 @@ ZASEON integrates with Polkadot via the **PolkadotBridgeAdapter**, using **Snowb
 ### Message Flow
 
 **ZASEON → Polkadot (sendMessage)**
+
 1. Operator calls `sendMessage(paraId, payload)` with ETH for fees
 2. Adapter validates payload, deducts protocol fee, forwards to Snowbridge
 3. Snowbridge relays message to BridgeHub parachain on Polkadot
@@ -37,6 +38,7 @@ ZASEON integrates with Polkadot via the **PolkadotBridgeAdapter**, using **Snowb
 5. Target parachain processes the message
 
 **Polkadot → ZASEON (receiveMessage)**
+
 1. Source parachain generates an XCM message routed to BridgeHub
 2. BEEFY finality proof is created from Polkadot validator signatures
 3. Relayer calls `receiveMessage(proof, publicInputs, payload)`
@@ -47,18 +49,18 @@ ZASEON integrates with Polkadot via the **PolkadotBridgeAdapter**, using **Snowb
 
 ## Comparison with Other Bridge Chains
 
-| Feature | Polkadot | Solana | Cardano | Secret Network |
-| --- | --- | --- | --- | --- |
-| **Type** | Multi-chain relay | Monolithic L1 | EUTXO L1 | Privacy L1 |
-| **Consensus** | GRANDPA/BABE | Tower BFT | Ouroboros Praos | Tendermint BFT |
-| **Finality** | ~12–60s (deterministic) | ~0.4s (optimistic) | ~20 blocks | ~6s |
-| **Bridge** | Snowbridge (trustless) | Wormhole | Wormhole | Gateway |
-| **Verification** | BEEFY light client | VAA Guardian sigs | VAA Guardian sigs | TEE attestation |
-| **Native Token** | DOT | SOL | ADA | SCRT |
-| **Smart Contracts** | ink! (Wasm) | Solana Programs | Plutus (Haskell) | CosmWasm (Rust) |
-| **Cross-chain** | XCM (native) | Wormhole | Wormhole | IBC + Gateway |
-| **ZASEON Chain ID** | 6100 | 1 (Wormhole) | 15 (Wormhole) | 5100 |
-| **BridgeType Enum** | POLKADOT (19) | WORMHOLE (12) | CARDANO (13) | SECRET (18) |
+| Feature             | Polkadot                | Solana             | Cardano           | Secret Network  |
+| ------------------- | ----------------------- | ------------------ | ----------------- | --------------- |
+| **Type**            | Multi-chain relay       | Monolithic L1      | EUTXO L1          | Privacy L1      |
+| **Consensus**       | GRANDPA/BABE            | Tower BFT          | Ouroboros Praos   | Tendermint BFT  |
+| **Finality**        | ~12–60s (deterministic) | ~0.4s (optimistic) | ~20 blocks        | ~6s             |
+| **Bridge**          | Snowbridge (trustless)  | Wormhole           | Wormhole          | Gateway         |
+| **Verification**    | BEEFY light client      | VAA Guardian sigs  | VAA Guardian sigs | TEE attestation |
+| **Native Token**    | DOT                     | SOL                | ADA               | SCRT            |
+| **Smart Contracts** | ink! (Wasm)             | Solana Programs    | Plutus (Haskell)  | CosmWasm (Rust) |
+| **Cross-chain**     | XCM (native)            | Wormhole           | Wormhole          | IBC + Gateway   |
+| **ZASEON Chain ID** | 6100                    | 1 (Wormhole)       | 15 (Wormhole)     | 5100            |
+| **BridgeType Enum** | POLKADOT (19)           | WORMHOLE (12)      | CARDANO (13)      | SECRET (18)     |
 
 ---
 
@@ -78,42 +80,42 @@ constructor(
 
 ### Key Functions
 
-| Function | Access | Description |
-| --- | --- | --- |
-| `sendMessage(paraId, payload)` | OPERATOR | Send message to a Polkadot parachain via Snowbridge |
-| `receiveMessage(proof, publicInputs, payload)` | RELAYER | Receive message with BEEFY finality proof |
-| `bridgeMessage(target, payload, refund)` | OPERATOR | IBridgeAdapter-compliant cross-chain send |
-| `estimateFee(target, payload)` | View | Estimate Snowbridge fee + protocol minimum fee |
-| `isMessageVerified(messageId)` | View | Check if message is verified (SENT or DELIVERED) |
-| `setSnowbridge(bridge)` | ADMIN | Update Snowbridge gateway address |
-| `setBeefyVerifier(verifier)` | ADMIN | Update BEEFY verifier address |
-| `setTargetParaId(paraId)` | ADMIN | Set default target parachain |
-| `setBridgeFee(bps)` | ADMIN | Set protocol fee (max 100 bps) |
-| `setMinMessageFee(fee)` | ADMIN | Set minimum per-message fee |
-| `withdrawFees(recipient)` | ADMIN | Withdraw accumulated protocol fees |
-| `emergencyWithdrawETH(to, amount)` | ADMIN | Emergency ETH withdrawal |
-| `emergencyWithdrawERC20(token, to)` | ADMIN | Emergency ERC20 withdrawal |
+| Function                                       | Access   | Description                                         |
+| ---------------------------------------------- | -------- | --------------------------------------------------- |
+| `sendMessage(paraId, payload)`                 | OPERATOR | Send message to a Polkadot parachain via Snowbridge |
+| `receiveMessage(proof, publicInputs, payload)` | RELAYER  | Receive message with BEEFY finality proof           |
+| `bridgeMessage(target, payload, refund)`       | OPERATOR | IBridgeAdapter-compliant cross-chain send           |
+| `estimateFee(target, payload)`                 | View     | Estimate Snowbridge fee + protocol minimum fee      |
+| `isMessageVerified(messageId)`                 | View     | Check if message is verified (SENT or DELIVERED)    |
+| `setSnowbridge(bridge)`                        | ADMIN    | Update Snowbridge gateway address                   |
+| `setBeefyVerifier(verifier)`                   | ADMIN    | Update BEEFY verifier address                       |
+| `setTargetParaId(paraId)`                      | ADMIN    | Set default target parachain                        |
+| `setBridgeFee(bps)`                            | ADMIN    | Set protocol fee (max 100 bps)                      |
+| `setMinMessageFee(fee)`                        | ADMIN    | Set minimum per-message fee                         |
+| `withdrawFees(recipient)`                      | ADMIN    | Withdraw accumulated protocol fees                  |
+| `emergencyWithdrawETH(to, amount)`             | ADMIN    | Emergency ETH withdrawal                            |
+| `emergencyWithdrawERC20(token, to)`            | ADMIN    | Emergency ERC20 withdrawal                          |
 
 ### Constants
 
-| Constant | Value | Description |
-| --- | --- | --- |
-| `POLKADOT_CHAIN_ID` | 6100 | ZASEON-internal chain identifier |
-| `DEFAULT_PARA_ID` | 1000 | AssetHub parachain ID |
-| `FINALITY_BLOCKS` | 30 | ~2 GRANDPA epochs, deterministic finality |
-| `MIN_PROOF_SIZE` | 64 bytes | Minimum valid BEEFY proof |
-| `MAX_BRIDGE_FEE_BPS` | 100 | Maximum bridge fee (1%) |
-| `MAX_PAYLOAD_LENGTH` | 10,000 bytes | Maximum payload size |
+| Constant             | Value        | Description                               |
+| -------------------- | ------------ | ----------------------------------------- |
+| `POLKADOT_CHAIN_ID`  | 6100         | ZASEON-internal chain identifier          |
+| `DEFAULT_PARA_ID`    | 1000         | AssetHub parachain ID                     |
+| `FINALITY_BLOCKS`    | 30           | ~2 GRANDPA epochs, deterministic finality |
+| `MIN_PROOF_SIZE`     | 64 bytes     | Minimum valid BEEFY proof                 |
+| `MAX_BRIDGE_FEE_BPS` | 100          | Maximum bridge fee (1%)                   |
+| `MAX_PAYLOAD_LENGTH` | 10,000 bytes | Maximum payload size                      |
 
 ### Roles
 
-| Role | Purpose |
-| --- | --- |
+| Role                 | Purpose                                 |
+| -------------------- | --------------------------------------- |
 | `DEFAULT_ADMIN_ROLE` | Grant/revoke roles, admin configuration |
-| `OPERATOR_ROLE` | Send messages to Polkadot parachains |
-| `GUARDIAN_ROLE` | Emergency operations |
-| `RELAYER_ROLE` | Deliver messages from Polkadot |
-| `PAUSER_ROLE` | Pause/unpause the adapter |
+| `OPERATOR_ROLE`      | Send messages to Polkadot parachains    |
+| `GUARDIAN_ROLE`      | Emergency operations                    |
+| `RELAYER_ROLE`       | Deliver messages from Polkadot          |
+| `PAUSER_ROLE`        | Pause/unpause the adapter               |
 
 ### Events
 
@@ -200,9 +202,9 @@ DEPLOYER_PRIVATE_KEY=0x... # Deployer key
 import { PolkadotBridge } from "@zaseon/sdk/bridges";
 
 // Constants
-console.log(PolkadotBridge.POLKADOT_CHAIN_ID);    // 6100
-console.log(PolkadotBridge.POLKADOT_BRIDGE_TYPE);  // "Snowbridge-BEEFY"
-console.log(PolkadotBridge.DEFAULT_PARA_ID);        // 1000
+console.log(PolkadotBridge.POLKADOT_CHAIN_ID); // 6100
+console.log(PolkadotBridge.POLKADOT_BRIDGE_TYPE); // "Snowbridge-BEEFY"
+console.log(PolkadotBridge.DEFAULT_PARA_ID); // 1000
 
 // Check deployment
 if (PolkadotBridge.isPolkadotDeployed(1)) {
@@ -216,14 +218,14 @@ console.log(moonbeam?.name); // "Moonbeam"
 // Estimate fees
 const fee = PolkadotBridge.estimateTotalFee(
   1000000000000000000n, // 1 ETH
-  50,    // 0.5% bridge fee
-  1000000000000000n,    // 0.001 ETH min fee
+  50, // 0.5% bridge fee
+  1000000000000000n, // 0.001 ETH min fee
 );
 
 // Encode payload for a specific parachain
 const payload = PolkadotBridge.encodeZaseonPayload(
-  1,      // source chain ID (Ethereum)
-  2004,   // target parachain (Moonbeam)
+  1, // source chain ID (Ethereum)
+  2004, // target parachain (Moonbeam)
   new Uint8Array([0x01, 0x02]),
 );
 
