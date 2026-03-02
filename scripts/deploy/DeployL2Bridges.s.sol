@@ -21,6 +21,7 @@ import {MidnightBridgeAdapter} from "../../contracts/crosschain/MidnightBridgeAd
 import {RailgunBridgeAdapter} from "../../contracts/crosschain/RailgunBridgeAdapter.sol";
 import {AztecBridgeAdapter} from "../../contracts/crosschain/AztecBridgeAdapter.sol";
 import {SecretBridgeAdapter} from "../../contracts/crosschain/SecretBridgeAdapter.sol";
+import {PolkadotBridgeAdapter} from "../../contracts/crosschain/PolkadotBridgeAdapter.sol";
 
 /**
  * @title ZASEON L2 Bridge Deployment Script
@@ -178,6 +179,8 @@ contract DeployL2Bridges is Script {
             _deployAztec(admin, deployer);
         } else if (_strEq(target, "secret")) {
             _deploySecret(admin, deployer);
+        } else if (_strEq(target, "polkadot")) {
+            _deployPolkadot(admin, deployer);
         } else {
             revert(string.concat("Unknown deploy target: ", target));
         }
@@ -832,6 +835,37 @@ contract DeployL2Bridges is Script {
         console.log("Secret bridge deployed. Admin:", admin);
         console.log(
             "  Post-deploy: register in MultiBridgeRouter with BridgeType.SECRET"
+        );
+    }
+
+    function _deployPolkadot(address admin, address deployer) internal {
+        address snowbridgeGateway = vm.envAddress("SNOWBRIDGE_GATEWAY");
+        address beefyVerifier = vm.envAddress("BEEFY_VERIFIER");
+
+        PolkadotBridgeAdapter adapter = new PolkadotBridgeAdapter(
+            snowbridgeGateway,
+            beefyVerifier,
+            deployer
+        );
+        console.log("PolkadotBridgeAdapter:", address(adapter));
+
+        adapter.grantRole(adapter.DEFAULT_ADMIN_ROLE(), admin);
+        adapter.grantRole(adapter.OPERATOR_ROLE(), admin);
+        adapter.grantRole(adapter.GUARDIAN_ROLE(), admin);
+
+        address relayer = vm.envOr("RELAYER_ADDRESS", address(0));
+        if (relayer != address(0)) {
+            adapter.grantRole(adapter.RELAYER_ROLE(), relayer);
+            console.log("Relayer granted:", relayer);
+        }
+
+        adapter.renounceRole(adapter.GUARDIAN_ROLE(), deployer);
+        adapter.renounceRole(adapter.OPERATOR_ROLE(), deployer);
+        adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
+
+        console.log("Polkadot bridge deployed. Admin:", admin);
+        console.log(
+            "  Post-deploy: register in MultiBridgeRouter with BridgeType.POLKADOT"
         );
     }
 

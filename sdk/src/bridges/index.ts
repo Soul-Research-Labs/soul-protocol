@@ -28,6 +28,7 @@ export * as MidnightBridge from "./midnight";
 export * as RailgunBridge from "./railgun";
 export * as AztecBridge from "./aztec";
 export * as SecretBridge from "./secret";
+export * as PolkadotBridge from "./polkadot";
 
 import {
   type PublicClient,
@@ -60,6 +61,7 @@ import { MIDNIGHT_BRIDGE_ADAPTER_ABI } from "./midnight";
 import { RAILGUN_BRIDGE_ADAPTER_ABI } from "./railgun";
 import { AZTEC_BRIDGE_ADAPTER_ABI } from "./aztec";
 import { SECRET_BRIDGE_ADAPTER_ABI } from "./secret";
+import { POLKADOT_BRIDGE_ADAPTER_ABI } from "./polkadot";
 
 /** Maps chain names to their chain-specific bridge ABIs */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -86,6 +88,7 @@ const CHAIN_ABI_MAP: Record<string, readonly any[]> = {
   railgun: RAILGUN_BRIDGE_ADAPTER_ABI,
   aztec: AZTEC_BRIDGE_ADAPTER_ABI,
   secret: SECRET_BRIDGE_ADAPTER_ABI,
+  polkadot: POLKADOT_BRIDGE_ADAPTER_ABI,
 };
 
 // ============================================
@@ -205,7 +208,8 @@ export type SupportedChain =
   | "midnight"
   | "railgun"
   | "aztec"
-  | "secret";
+  | "secret"
+  | "polkadot";
 
 // ============================================
 // Bridge Factory
@@ -377,6 +381,14 @@ const CHAIN_CONFIGS: Record<SupportedChain, BridgeAdapterConfig> = {
     chainId: 5100, // ZASEON internal virtual chain ID
     nativeToken: "SCRT",
     finality: 1, // Instant Tendermint finality
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  polkadot: {
+    name: "Polkadot",
+    chainId: 6100, // ZASEON internal virtual chain ID
+    nativeToken: "DOT",
+    finality: 30, // ~2 GRANDPA epochs, deterministic finality
     maxAmount: 1_000_000_000_000_000_000_000_000n,
     minAmount: 1_000_000_000_000_000n,
   },
