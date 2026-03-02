@@ -30,6 +30,7 @@ export * as AztecBridge from "./aztec";
 export * as SecretBridge from "./secret";
 export * as PolkadotBridge from "./polkadot";
 export * as CosmosBridge from "./cosmos";
+export * as ZcashBridge from "./zcash";
 
 import {
   type PublicClient,
@@ -64,6 +65,7 @@ import { AZTEC_BRIDGE_ADAPTER_ABI } from "./aztec";
 import { SECRET_BRIDGE_ADAPTER_ABI } from "./secret";
 import { POLKADOT_BRIDGE_ADAPTER_ABI } from "./polkadot";
 import { COSMOS_BRIDGE_ADAPTER_ABI } from "./cosmos";
+import { ZCASH_BRIDGE_ADAPTER_ABI } from "./zcash";
 
 /** Maps chain names to their chain-specific bridge ABIs */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -92,6 +94,7 @@ const CHAIN_ABI_MAP: Record<string, readonly any[]> = {
   secret: SECRET_BRIDGE_ADAPTER_ABI,
   polkadot: POLKADOT_BRIDGE_ADAPTER_ABI,
   cosmos: COSMOS_BRIDGE_ADAPTER_ABI,
+  zcash: ZCASH_BRIDGE_ADAPTER_ABI,
 };
 
 // ============================================
@@ -213,7 +216,8 @@ export type SupportedChain =
   | "aztec"
   | "secret"
   | "polkadot"
-  | "cosmos";
+  | "cosmos"
+  | "zcash";
 
 // ============================================
 // Bridge Factory
@@ -401,6 +405,14 @@ const CHAIN_CONFIGS: Record<SupportedChain, BridgeAdapterConfig> = {
     chainId: 7100, // ZASEON internal virtual chain ID
     nativeToken: "ATOM",
     finality: 1, // CometBFT instant finality
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  zcash: {
+    name: "Zcash",
+    chainId: 8100, // ZASEON internal virtual chain ID
+    nativeToken: "ZEC",
+    finality: 10, // ~10 blocks (~12.5 min at 75s)
     maxAmount: 1_000_000_000_000_000_000_000_000n,
     minAmount: 1_000_000_000_000_000n,
   },

@@ -31,7 +31,8 @@ interface IMultiBridgeRouter {
         AZTEC,
         SECRET,
         POLKADOT,
-        COSMOS
+        COSMOS,
+        ZCASH
     }
 
     enum BridgeStatus {

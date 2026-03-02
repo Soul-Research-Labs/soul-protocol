@@ -319,6 +319,7 @@ export enum BridgeType {
   SECRET = 17,
   POLKADOT = 18,
   COSMOS = 19,
+  ZCASH = 20,
 }
 
 /** Bridge operational status — mirrors Solidity BridgeStatus enum */

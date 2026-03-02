@@ -9,89 +9,81 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./IBridgeAdapter.sol";
 
 /**
- * @title IGravityBridge
- * @notice Minimal interface for the Gravity Bridge Ethereum↔Cosmos contract
- * @dev Gravity Bridge enables trustless transfers between Ethereum and Cosmos Hub
- *      by relaying CometBFT validator set attestations (signatures) on chain.
- *      Validators on Cosmos sign batches of outgoing transfers; those signatures
- *      are verified on the Ethereum side by the Gravity contract.
+ * @title IZcashBridge
+ * @notice Minimal interface for the Zcash–Ethereum bridge relay contract
+ * @dev Zcash uses the Halo 2 proof system (Orchard shielded pool) with the
+ *      Pallas/Vesta curve cycle. The bridge relay aggregates Zcash shielded
+ *      transaction proofs and submits them to Ethereum for verification.
+ *      Messages flow via a wrapped-ZEC custodian contract on Ethereum.
  */
-interface IGravityBridge {
-    /// @notice Send tokens from Ethereum to a Cosmos destination address
-    /// @param cosmosDestination The bech32-encoded Cosmos destination
-    /// @param amount The token amount to send
-    /// @param token The ERC-20 token address (address(0) for native ETH wrapping)
-    /// @return transferId Unique transfer identifier
-    function sendToCosmos(
-        bytes calldata cosmosDestination,
-        uint256 amount,
-        address token
-    ) external payable returns (bytes32 transferId);
+interface IZcashBridge {
+    /// @notice Submit a shielded note commitment for bridging
+    /// @param noteCommitment The Orchard note commitment (Pallas point hash)
+    /// @param payload The bridge payload (recipient, amount commitment, memo)
+    /// @return bridgeId Unique bridge operation identifier
+    function bridgeShieldedNote(
+        bytes32 noteCommitment,
+        bytes calldata payload
+    ) external payable returns (bytes32 bridgeId);
 
-    /// @notice Estimate the relay fee for a transfer
-    /// @return fee The estimated relay fee in wei
+    /// @notice Estimate the relay fee for a bridge operation
+    /// @return fee The estimated fee in wei
     function estimateRelayFee() external view returns (uint256 fee);
 
-    /// @notice Get the current Cosmos validator set nonce
-    /// @return nonce The current valset nonce
-    function state_lastValsetNonce() external view returns (uint256 nonce);
-
-    /// @notice Get the hash of the current validator power set
-    /// @return checkpoint The valset checkpoint hash
-    function state_lastValsetCheckpoint()
-        external
-        view
-        returns (bytes32 checkpoint);
+    /// @notice Get the latest Zcash block height synced by the relay
+    /// @return height The latest synced Zcash block height
+    function latestSyncedHeight() external view returns (uint256 height);
 }
 
 /**
- * @title IIBCLightClient
- * @notice Interface for verifying IBC (Inter-Blockchain Communication) light client proofs
- * @dev IBC light clients verify CometBFT consensus state transitions, including
- *      validator set changes and committed blocks. Proofs consist of signed headers
- *      plus IAVL Merkle proofs against the application state root.
+ * @title IOrchardVerifier
+ * @notice Interface for verifying Zcash Orchard (Halo 2) shielded proofs on EVM
+ * @dev Orchard proofs use the Halo 2 proof system with the Pallas/Vesta curve
+ *      cycle. The verifier checks recursive Halo 2 proofs that have been
+ *      translated to a BN254-friendly representation for EVM verification.
  */
-interface IIBCLightClient {
-    /// @notice Verify a Tendermint/CometBFT light client proof
-    /// @param proof The IBC light client proof (signed header + IAVL proof)
-    /// @param data The state data being proven
+interface IOrchardVerifier {
+    /// @notice Verify a translated Orchard proof (Halo 2 → BN254 wrapper)
+    /// @param proof The proof data (BN254-wrapped Halo 2 proof)
+    /// @param publicInputs The public inputs (nullifiers, commitments, anchors)
     /// @return valid Whether the proof is valid
-    function verifyIBCProof(
+    function verifyOrchardProof(
         bytes calldata proof,
-        bytes calldata data
+        bytes calldata publicInputs
     ) external returns (bool valid);
 
-    /// @notice Get the latest verified consensus state height
-    /// @return height The latest verified block height
-    function latestHeight() external view returns (uint64 height);
+    /// @notice Get the current Orchard commitment tree anchor
+    /// @return anchor The latest verified commitment tree root
+    function currentAnchor() external view returns (bytes32 anchor);
 }
 
 /**
- * @title CosmosBridgeAdapter
+ * @title ZcashBridgeAdapter
  * @author ZASEON
- * @notice Bridge adapter for Cosmos Hub — IBC ecosystem via Gravity Bridge
- * @dev Enables ZASEON cross-chain interoperability with the Cosmos Hub and
- *      IBC-connected chains via Gravity Bridge and CometBFT light client verification.
+ * @notice Bridge adapter for Zcash — shielded UTXO chain with Halo 2 proofs
+ * @dev Enables ZASEON cross-chain interoperability with Zcash's shielded pool
+ *      via a bridge relay and Orchard proof verification on Ethereum.
  *
- * COSMOS INTEGRATION:
- * - Independent Proof-of-Stake L1 (Cosmos SDK + CometBFT consensus)
- * - Consensus: CometBFT (formerly Tendermint BFT), instant finality
- * - Cross-chain: IBC (Inter-Blockchain Communication) protocol
- * - Native token: ATOM
- * - Smart contracts: CosmWasm (Rust → Wasm) on enabled chains
- * - EVM bridge: Gravity Bridge (validator-attested, decentralized)
+ * ZCASH INTEGRATION:
+ * - Independent PoW/PoS hybrid L1 (Nu5 network upgrade, Orchard shielded pool)
+ * - Privacy model: Orchard shielded pool with Halo 2 recursive proofs
+ * - Proof system: Halo 2 on Pallas/Vesta curve cycle (no trusted setup)
+ * - Native token: ZEC
+ * - Address types: transparent (t-addr) and shielded (z-addr, unified addresses)
+ * - Consensus: Proof-of-Work (Equihash) transitioning to Proof-of-Stake
+ * - Block time: ~75 seconds
  *
  * MESSAGE FLOW:
- * - ZASEON→Cosmos: sendMessage() → Gravity Bridge → Cosmos Hub → IBC relay
- * - Cosmos→ZASEON: IBC light client proof → verifier validates → message delivered
+ * - ZASEON→Zcash: bridgeMessage() → relay → shielded note on Zcash
+ * - Zcash→ZASEON: Orchard proof generated → relay → verifier validates on EVM
  *
  * SECURITY NOTES:
- * - IBC light client proofs verified on-chain by IBCLightClient contract
- * - Gravity Bridge uses CometBFT validator set attestations (≥2/3 voting power)
- * - Nullifier-based replay protection (integrates with ZASEON's CDNA)
- * - CometBFT provides instant deterministic finality (~6 second blocks)
+ * - Orchard proofs verified on-chain via translated BN254-wrapped Halo 2 proofs
+ * - Nullifier-based replay protection (integrates with Zcash native nullifiers)
+ * - Note commitments verified against Orchard Merkle tree anchor
+ * - ~75 second block time, 10-block finality (~12.5 minutes)
  */
-contract CosmosBridgeAdapter is
+contract ZcashBridgeAdapter is
     IBridgeAdapter,
     AccessControl,
     ReentrancyGuard,
@@ -112,13 +104,13 @@ contract CosmosBridgeAdapter is
                            CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice ZASEON virtual chain ID for Cosmos (not an EVM chain ID)
-    uint16 public constant COSMOS_CHAIN_ID = 7100;
+    /// @notice ZASEON virtual chain ID for Zcash (not an EVM chain ID)
+    uint16 public constant ZCASH_CHAIN_ID = 8100;
 
-    /// @notice CometBFT instant finality (~6 second blocks)
-    uint256 public constant FINALITY_BLOCKS = 1;
+    /// @notice Zcash finality blocks (~10 blocks, ~12.5 minutes)
+    uint256 public constant FINALITY_BLOCKS = 10;
 
-    /// @notice Minimum IBC proof size in bytes
+    /// @notice Minimum Orchard proof size in bytes
     uint256 public constant MIN_PROOF_SIZE = 64;
 
     /// @notice Maximum bridge fee (1% = 100 basis points)
@@ -127,21 +119,15 @@ contract CosmosBridgeAdapter is
     /// @notice Maximum payload length in bytes
     uint256 public constant MAX_PAYLOAD_LENGTH = 10_000;
 
-    /// @notice Default Cosmos Hub IBC channel (channel-0 for most IBC connections)
-    bytes32 public constant DEFAULT_IBC_CHANNEL = keccak256("channel-0");
-
     /*//////////////////////////////////////////////////////////////
                            STORAGE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Gravity Bridge contract
-    IGravityBridge public gravityBridge;
+    /// @notice Zcash bridge relay contract
+    IZcashBridge public zcashBridge;
 
-    /// @notice IBC light client verifier
-    IIBCLightClient public ibcLightClient;
-
-    /// @notice Default Cosmos destination (bech32 bytes)
-    bytes public defaultCosmosDestination;
+    /// @notice Orchard proof verifier (Halo 2 → BN254 wrapper)
+    IOrchardVerifier public orchardVerifier;
 
     /// @notice Bridge fee in basis points (0–100)
     uint256 public bridgeFee;
@@ -152,10 +138,10 @@ contract CosmosBridgeAdapter is
     /// @notice Accumulated protocol fees available for withdrawal
     uint256 public accumulatedFees;
 
-    /// @notice Total messages sent to Cosmos
+    /// @notice Total messages sent to Zcash
     uint256 public totalMessagesSent;
 
-    /// @notice Total messages received from Cosmos
+    /// @notice Total messages received from Zcash
     uint256 public totalMessagesReceived;
 
     /// @notice Total value bridged (wei)
@@ -174,8 +160,8 @@ contract CosmosBridgeAdapter is
     /// @notice Per-sender nonce counter
     mapping(address => uint256) public senderNonces;
 
-    /// @notice Registered IBC channel IDs for valid source chains
-    mapping(bytes32 => bool) public registeredChannels;
+    /// @notice Verified Orchard anchors (commitment tree roots)
+    mapping(bytes32 => bool) public verifiedAnchors;
 
     /*//////////////////////////////////////////////////////////////
                           ENUMS & STRUCTS
@@ -191,8 +177,8 @@ contract CosmosBridgeAdapter is
 
     struct MessageRecord {
         MessageStatus status;
-        bytes32 ibcChannel;
-        bytes32 consensusStateHash;
+        bytes32 noteCommitment;
+        bytes32 orchardAnchor;
         bytes32 nullifier;
         uint256 timestamp;
     }
@@ -201,12 +187,12 @@ contract CosmosBridgeAdapter is
                            ERRORS
     //////////////////////////////////////////////////////////////*/
 
-    error InvalidGravityBridge();
-    error InvalidLightClient();
+    error InvalidBridge();
+    error InvalidVerifier();
     error InvalidTarget();
     error InvalidPayload();
     error InvalidProof();
-    error InvalidChannel();
+    error InvalidAnchor();
     error NullifierAlreadyUsed(bytes32 nullifier);
     error InsufficientFee(uint256 required, uint256 provided);
     error FeeTooHigh(uint256 fee);
@@ -219,53 +205,49 @@ contract CosmosBridgeAdapter is
     event MessageSent(
         bytes32 indexed messageHash,
         address indexed sender,
-        bytes32 gravityTransferId,
+        bytes32 noteCommitment,
+        bytes32 bridgeId,
         uint256 value
     );
 
     event MessageReceived(
         bytes32 indexed messageHash,
-        bytes32 ibcChannel,
+        bytes32 orchardAnchor,
         bytes32 indexed nullifier,
         bytes payload
     );
 
-    event GravityBridgeUpdated(
+    event ZcashBridgeUpdated(
         address indexed oldBridge,
         address indexed newBridge
     );
-    event IBCLightClientUpdated(
-        address indexed oldClient,
-        address indexed newClient
+    event OrchardVerifierUpdated(
+        address indexed oldVerifier,
+        address indexed newVerifier
     );
     event BridgeFeeUpdated(uint256 oldFee, uint256 newFee);
     event MinMessageFeeUpdated(uint256 oldFee, uint256 newFee);
     event FeesWithdrawn(address indexed recipient, uint256 amount);
-    event IBCChannelRegistered(bytes32 indexed channel);
-    event IBCChannelDeregistered(bytes32 indexed channel);
-    event DefaultDestinationUpdated(bytes oldDest, bytes newDest);
+    event AnchorRegistered(bytes32 indexed anchor);
 
     /*//////////////////////////////////////////////////////////////
                          CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    /// @param _gravityBridge Gravity Bridge contract address
-    /// @param _ibcLightClient IBC light client verifier address
+    /// @param _zcashBridge Zcash bridge relay contract address
+    /// @param _orchardVerifier Orchard proof verifier contract address
     /// @param _admin Admin address (receives all initial roles)
     constructor(
-        address _gravityBridge,
-        address _ibcLightClient,
+        address _zcashBridge,
+        address _orchardVerifier,
         address _admin
     ) {
-        if (_gravityBridge == address(0)) revert InvalidGravityBridge();
-        if (_ibcLightClient == address(0)) revert InvalidLightClient();
+        if (_zcashBridge == address(0)) revert InvalidBridge();
+        if (_orchardVerifier == address(0)) revert InvalidVerifier();
         if (_admin == address(0)) revert InvalidTarget();
 
-        gravityBridge = IGravityBridge(_gravityBridge);
-        ibcLightClient = IIBCLightClient(_ibcLightClient);
-
-        // Register default IBC channel
-        registeredChannels[DEFAULT_IBC_CHANNEL] = true;
+        zcashBridge = IZcashBridge(_zcashBridge);
+        orchardVerifier = IOrchardVerifier(_orchardVerifier);
 
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(OPERATOR_ROLE, _admin);
@@ -276,55 +258,50 @@ contract CosmosBridgeAdapter is
                        VIEW FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice ZASEON virtual chain ID for Cosmos
+    /// @notice ZASEON virtual chain ID for Zcash
     function chainId() external pure returns (uint16) {
-        return COSMOS_CHAIN_ID;
+        return ZCASH_CHAIN_ID;
     }
 
     /// @notice Human-readable chain name
     function chainName() external pure returns (string memory) {
-        return "Cosmos";
+        return "Zcash";
     }
 
     /// @notice Whether the adapter is fully configured
     function isConfigured() external view returns (bool) {
         return
-            address(gravityBridge) != address(0) &&
-            address(ibcLightClient) != address(0);
+            address(zcashBridge) != address(0) &&
+            address(orchardVerifier) != address(0);
     }
 
-    /// @notice Number of blocks for finality (CometBFT = instant)
+    /// @notice Number of blocks for finality
     function getFinalityBlocks() external pure returns (uint256) {
         return FINALITY_BLOCKS;
     }
 
-    /// @notice Get the current Cosmos validator set checkpoint
-    function getValsetCheckpoint() external view returns (bytes32) {
-        return gravityBridge.state_lastValsetCheckpoint();
+    /// @notice Get the current Orchard commitment tree anchor
+    function getOrchardAnchor() external view returns (bytes32) {
+        return orchardVerifier.currentAnchor();
     }
 
-    /// @notice Get the current Cosmos validator set nonce
-    function getValsetNonce() external view returns (uint256) {
-        return gravityBridge.state_lastValsetNonce();
-    }
-
-    /// @notice Get the latest verified IBC height
-    function getLatestIBCHeight() external view returns (uint64) {
-        return ibcLightClient.latestHeight();
+    /// @notice Get the latest synced Zcash block height
+    function getLatestSyncedHeight() external view returns (uint256) {
+        return zcashBridge.latestSyncedHeight();
     }
 
     /*//////////////////////////////////////////////////////////////
-                 SEND MESSAGE (ZASEON → COSMOS)
+                 SEND MESSAGE (ZASEON → ZCASH)
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Send a cross-chain message from ZASEON to Cosmos Hub
-     * @param cosmosDestination The bech32-encoded Cosmos address (as bytes)
-     * @param payload The message payload (IBC-compatible)
+     * @notice Send a cross-chain message from ZASEON to Zcash
+     * @param noteCommitment The Orchard note commitment for the destination
+     * @param payload The message payload (shielded transfer data)
      * @return messageHash The unique message hash
      */
     function sendMessage(
-        bytes calldata cosmosDestination,
+        bytes32 noteCommitment,
         bytes calldata payload
     )
         external
@@ -334,12 +311,12 @@ contract CosmosBridgeAdapter is
         whenNotPaused
         returns (bytes32 messageHash)
     {
-        if (cosmosDestination.length == 0) revert InvalidTarget();
+        if (noteCommitment == bytes32(0)) revert InvalidTarget();
         if (payload.length == 0 || payload.length > MAX_PAYLOAD_LENGTH)
             revert InvalidPayload();
 
         // Enforce minimum fee
-        uint256 relayFee = gravityBridge.estimateRelayFee();
+        uint256 relayFee = zcashBridge.estimateRelayFee();
         uint256 requiredFee = relayFee + minMessageFee;
         if (msg.value < requiredFee)
             revert InsufficientFee(requiredFee, msg.value);
@@ -351,18 +328,18 @@ contract CosmosBridgeAdapter is
             accumulatedFees += protocolFee;
         }
 
-        // Forward via Gravity Bridge
-        bytes memory fullPayload = abi.encodePacked(cosmosDestination, payload);
-        bytes32 gravityId = gravityBridge.sendToCosmos{
+        // Forward to Zcash bridge relay
+        bytes32 bridgeId = zcashBridge.bridgeShieldedNote{
             value: msg.value - protocolFee
-        }(fullPayload, 0, address(0));
+        }(noteCommitment, payload);
 
         // Build message record
         uint256 nonce = senderNonces[msg.sender]++;
         messageHash = keccak256(
             abi.encodePacked(
-                COSMOS_CHAIN_ID,
+                ZCASH_CHAIN_ID,
                 msg.sender,
+                noteCommitment,
                 nonce,
                 block.timestamp,
                 keccak256(payload)
@@ -371,8 +348,8 @@ contract CosmosBridgeAdapter is
 
         messages[messageHash] = MessageRecord({
             status: MessageStatus.SENT,
-            ibcChannel: DEFAULT_IBC_CHANNEL,
-            consensusStateHash: bytes32(0),
+            noteCommitment: noteCommitment,
+            orchardAnchor: bytes32(0),
             nullifier: bytes32(0),
             timestamp: block.timestamp
         });
@@ -380,17 +357,23 @@ contract CosmosBridgeAdapter is
         totalMessagesSent++;
         totalValueBridged += msg.value;
 
-        emit MessageSent(messageHash, msg.sender, gravityId, msg.value);
+        emit MessageSent(
+            messageHash,
+            msg.sender,
+            noteCommitment,
+            bridgeId,
+            msg.value
+        );
     }
 
     /*//////////////////////////////////////////////////////////////
-              RECEIVE MESSAGE (COSMOS → ZASEON)
+              RECEIVE MESSAGE (ZCASH → ZASEON)
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Receive and verify a cross-chain message from Cosmos
-     * @param proof IBC light client proof (signed header + IAVL Merkle proof)
-     * @param publicInputs [consensusStateHash, nullifier, ibcChannelHash, payloadHash]
+     * @notice Receive and verify a cross-chain message from Zcash
+     * @param proof Orchard proof (BN254-wrapped Halo 2 proof)
+     * @param publicInputs [orchardAnchor, nullifier, noteCommitment, payloadHash]
      * @param payload The original message payload
      * @return messageHash The unique message hash
      */
@@ -405,18 +388,15 @@ contract CosmosBridgeAdapter is
         whenNotPaused
         returns (bytes32 messageHash)
     {
-        // Verify IBC light client proof
-        bool valid = ibcLightClient.verifyIBCProof(proof, payload);
+        // Verify Orchard proof via translated verifier
+        bool valid = orchardVerifier.verifyOrchardProof(proof, payload);
         if (!valid) revert InvalidProof();
 
         // Extract public inputs
-        bytes32 consensusStateHash = bytes32(publicInputs[0]);
+        bytes32 orchardAnchor = bytes32(publicInputs[0]);
         bytes32 nullifier = bytes32(publicInputs[1]);
-        bytes32 ibcChannel = bytes32(publicInputs[2]);
+        bytes32 noteCommitment = bytes32(publicInputs[2]);
         bytes32 payloadHash = bytes32(publicInputs[3]);
-
-        // Validate IBC channel is registered
-        if (!registeredChannels[ibcChannel]) revert InvalidChannel();
 
         // Replay protection
         if (usedNullifiers[nullifier]) revert NullifierAlreadyUsed(nullifier);
@@ -425,25 +405,25 @@ contract CosmosBridgeAdapter is
         // Build message hash
         messageHash = keccak256(
             abi.encodePacked(
-                COSMOS_CHAIN_ID,
-                consensusStateHash,
+                ZCASH_CHAIN_ID,
+                orchardAnchor,
                 nullifier,
-                ibcChannel,
+                noteCommitment,
                 payloadHash
             )
         );
 
         messages[messageHash] = MessageRecord({
             status: MessageStatus.DELIVERED,
-            ibcChannel: ibcChannel,
-            consensusStateHash: consensusStateHash,
+            noteCommitment: noteCommitment,
+            orchardAnchor: orchardAnchor,
             nullifier: nullifier,
             timestamp: block.timestamp
         });
 
         totalMessagesReceived++;
 
-        emit MessageReceived(messageHash, ibcChannel, nullifier, payload);
+        emit MessageReceived(messageHash, orchardAnchor, nullifier, payload);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -468,19 +448,20 @@ contract CosmosBridgeAdapter is
         if (payload.length == 0 || payload.length > MAX_PAYLOAD_LENGTH)
             revert InvalidPayload();
 
-        // Wrap address + payload as Gravity Bridge transfer
-        bytes memory cosmosPayload = abi.encodePacked(targetAddress, payload);
+        // Derive note commitment from target address for bridge relay
+        bytes32 noteCommitment = keccak256(
+            abi.encodePacked(targetAddress, payload)
+        );
 
-        bytes32 gravityId = gravityBridge.sendToCosmos{value: msg.value}(
-            cosmosPayload,
-            0,
-            address(0)
+        bytes32 bridgeId = zcashBridge.bridgeShieldedNote{value: msg.value}(
+            noteCommitment,
+            payload
         );
 
         uint256 nonce = senderNonces[msg.sender]++;
         messageId = keccak256(
             abi.encodePacked(
-                COSMOS_CHAIN_ID,
+                ZCASH_CHAIN_ID,
                 msg.sender,
                 targetAddress,
                 nonce,
@@ -491,8 +472,8 @@ contract CosmosBridgeAdapter is
 
         messages[messageId] = MessageRecord({
             status: MessageStatus.SENT,
-            ibcChannel: DEFAULT_IBC_CHANNEL,
-            consensusStateHash: bytes32(0),
+            noteCommitment: noteCommitment,
+            orchardAnchor: bytes32(0),
             nullifier: bytes32(0),
             timestamp: block.timestamp
         });
@@ -500,7 +481,13 @@ contract CosmosBridgeAdapter is
         totalMessagesSent++;
         totalValueBridged += msg.value;
 
-        emit MessageSent(messageId, msg.sender, gravityId, msg.value);
+        emit MessageSent(
+            messageId,
+            msg.sender,
+            noteCommitment,
+            bridgeId,
+            msg.value
+        );
     }
 
     /// @inheritdoc IBridgeAdapter
@@ -508,7 +495,7 @@ contract CosmosBridgeAdapter is
         address /* targetAddress */,
         bytes calldata /* payload */
     ) external view override returns (uint256 nativeFee) {
-        uint256 relayFee = gravityBridge.estimateRelayFee();
+        uint256 relayFee = zcashBridge.estimateRelayFee();
         return relayFee + minMessageFee;
     }
 
@@ -525,50 +512,33 @@ contract CosmosBridgeAdapter is
                     ADMIN CONFIGURATION
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Update the Gravity Bridge address
-    function setGravityBridge(
-        address _gravityBridge
+    /// @notice Update the Zcash bridge relay address
+    function setZcashBridge(
+        address _bridge
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_gravityBridge == address(0)) revert InvalidGravityBridge();
-        address old = address(gravityBridge);
-        gravityBridge = IGravityBridge(_gravityBridge);
-        emit GravityBridgeUpdated(old, _gravityBridge);
+        if (_bridge == address(0)) revert InvalidBridge();
+        address old = address(zcashBridge);
+        zcashBridge = IZcashBridge(_bridge);
+        emit ZcashBridgeUpdated(old, _bridge);
     }
 
-    /// @notice Update the IBC light client verifier address
-    function setIBCLightClient(
-        address _client
+    /// @notice Update the Orchard verifier address
+    function setOrchardVerifier(
+        address _verifier
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_client == address(0)) revert InvalidLightClient();
-        address old = address(ibcLightClient);
-        ibcLightClient = IIBCLightClient(_client);
-        emit IBCLightClientUpdated(old, _client);
+        if (_verifier == address(0)) revert InvalidVerifier();
+        address old = address(orchardVerifier);
+        orchardVerifier = IOrchardVerifier(_verifier);
+        emit OrchardVerifierUpdated(old, _verifier);
     }
 
-    /// @notice Set the default Cosmos destination address
-    function setDefaultCosmosDestination(
-        bytes calldata _dest
+    /// @notice Register a verified Orchard anchor
+    function registerAnchor(
+        bytes32 _anchor
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_dest.length == 0) revert InvalidTarget();
-        bytes memory old = defaultCosmosDestination;
-        defaultCosmosDestination = _dest;
-        emit DefaultDestinationUpdated(old, _dest);
-    }
-
-    /// @notice Register an IBC channel as a valid incoming source
-    function registerIBCChannel(
-        bytes32 _channel
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        registeredChannels[_channel] = true;
-        emit IBCChannelRegistered(_channel);
-    }
-
-    /// @notice Deregister an IBC channel
-    function deregisterIBCChannel(
-        bytes32 _channel
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        registeredChannels[_channel] = false;
-        emit IBCChannelDeregistered(_channel);
+        if (_anchor == bytes32(0)) revert InvalidAnchor();
+        verifiedAnchors[_anchor] = true;
+        emit AnchorRegistered(_anchor);
     }
 
     /// @notice Set the bridge fee in basis points (max 100 = 1%)

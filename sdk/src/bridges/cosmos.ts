@@ -383,8 +383,6 @@ export function isCosmosDeployed(address: string): boolean {
  * @param chainId The Cosmos SDK chain ID (e.g., "cosmoshub-4")
  * @returns The chain info or undefined
  */
-export function getIBCChainInfo(
-  chainId: string,
-): IBCChainInfo | undefined {
+export function getIBCChainInfo(chainId: string): IBCChainInfo | undefined {
   return WELL_KNOWN_IBC_CHAINS.find((c) => c.chainId === chainId);
 }

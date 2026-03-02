@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import {CosmosBridgeAdapter, IGravityBridge, IIBCLightClient} from "../../contracts/crosschain/CosmosBridgeAdapter.sol";
+import {ZcashBridgeAdapter, IZcashBridge, IOrchardVerifier} from "../../contracts/crosschain/ZcashBridgeAdapter.sol";
 import {IBridgeAdapter} from "../../contracts/crosschain/IBridgeAdapter.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
@@ -10,49 +10,38 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
                         MOCK CONTRACTS
 //////////////////////////////////////////////////////////////*/
 
-contract MockGravityBridge {
-    bytes32 public nextTransferId = keccak256("gravity-transfer-1");
+contract MockZcashBridge {
+    bytes32 public nextBridgeId = keccak256("zcash-bridge-1");
     uint256 public relayFee = 0.001 ether;
-    uint256 public valsetNonce = 42;
-    bytes32 public valsetCheckpoint = keccak256("valset-checkpoint-42");
+    uint256 public syncedHeight = 2_000_000;
     bool public shouldRevert;
 
-    function sendToCosmos(
-        bytes calldata,
-        uint256,
-        address
+    function bridgeShieldedNote(
+        bytes32,
+        bytes calldata
     ) external payable returns (bytes32) {
-        require(!shouldRevert, "MockGravityBridge: reverted");
-        return nextTransferId;
+        require(!shouldRevert, "MockZcashBridge: reverted");
+        return nextBridgeId;
     }
 
     function estimateRelayFee() external view returns (uint256) {
         return relayFee;
     }
 
-    function state_lastValsetNonce() external view returns (uint256) {
-        return valsetNonce;
+    function latestSyncedHeight() external view returns (uint256) {
+        return syncedHeight;
     }
 
-    function state_lastValsetCheckpoint() external view returns (bytes32) {
-        return valsetCheckpoint;
-    }
-
-    // Test helpers
-    function setNextTransferId(bytes32 _id) external {
-        nextTransferId = _id;
+    function setNextBridgeId(bytes32 _id) external {
+        nextBridgeId = _id;
     }
 
     function setRelayFee(uint256 _fee) external {
         relayFee = _fee;
     }
 
-    function setValsetNonce(uint256 _nonce) external {
-        valsetNonce = _nonce;
-    }
-
-    function setValsetCheckpoint(bytes32 _cp) external {
-        valsetCheckpoint = _cp;
+    function setSyncedHeight(uint256 _height) external {
+        syncedHeight = _height;
     }
 
     function setShouldRevert(bool _revert) external {
@@ -60,31 +49,31 @@ contract MockGravityBridge {
     }
 }
 
-contract MockIBCLightClient {
+contract MockOrchardVerifier {
     bool public shouldVerify = true;
-    uint64 public currentHeight = 100;
+    bytes32 public anchor = keccak256("orchard-anchor-1");
 
-    function verifyIBCProof(
+    function verifyOrchardProof(
         bytes calldata,
         bytes calldata
     ) external returns (bool) {
         return shouldVerify;
     }
 
-    function latestHeight() external view returns (uint64) {
-        return currentHeight;
+    function currentAnchor() external view returns (bytes32) {
+        return anchor;
     }
 
     function setShouldVerify(bool _verify) external {
         shouldVerify = _verify;
     }
 
-    function setLatestHeight(uint64 _height) external {
-        currentHeight = _height;
+    function setAnchor(bytes32 _anchor) external {
+        anchor = _anchor;
     }
 }
 
-contract MockERC20Cosmos is ERC20 {
+contract MockERC20Zcash is ERC20 {
     constructor() ERC20("Mock Token", "MOCK") {
         _mint(msg.sender, 1_000_000 ether);
     }
@@ -98,11 +87,11 @@ contract MockERC20Cosmos is ERC20 {
                         TEST CONTRACT
 //////////////////////////////////////////////////////////////*/
 
-contract CosmosBridgeAdapterTest is Test {
-    CosmosBridgeAdapter public adapter;
-    MockGravityBridge public gravity;
-    MockIBCLightClient public ibcClient;
-    MockERC20Cosmos public token;
+contract ZcashBridgeAdapterTest is Test {
+    ZcashBridgeAdapter public adapter;
+    MockZcashBridge public bridge;
+    MockOrchardVerifier public verifier;
+    MockERC20Zcash public token;
 
     address public admin = address(0xAD);
     address public operator = address(0x0B);
@@ -110,20 +99,17 @@ contract CosmosBridgeAdapterTest is Test {
     address public user = address(0xDE);
     address public guardian = address(0xEF);
 
-    bytes32 public constant DEFAULT_IBC_CHANNEL = keccak256("channel-0");
-
     function setUp() public {
-        gravity = new MockGravityBridge();
-        ibcClient = new MockIBCLightClient();
-        token = new MockERC20Cosmos();
+        bridge = new MockZcashBridge();
+        verifier = new MockOrchardVerifier();
+        token = new MockERC20Zcash();
 
-        adapter = new CosmosBridgeAdapter(
-            address(gravity),
-            address(ibcClient),
+        adapter = new ZcashBridgeAdapter(
+            address(bridge),
+            address(verifier),
             admin
         );
 
-        // Grant roles
         vm.startPrank(admin);
         adapter.grantRole(adapter.OPERATOR_ROLE(), operator);
         adapter.grantRole(adapter.RELAYER_ROLE(), relayer);
@@ -131,7 +117,6 @@ contract CosmosBridgeAdapterTest is Test {
         adapter.grantRole(adapter.PAUSER_ROLE(), admin);
         vm.stopPrank();
 
-        // Fund accounts
         vm.deal(operator, 100 ether);
         vm.deal(relayer, 100 ether);
         vm.deal(admin, 100 ether);
@@ -142,12 +127,12 @@ contract CosmosBridgeAdapterTest is Test {
                           CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    function test_constructor_setsGravityBridge() public view {
-        assertEq(address(adapter.gravityBridge()), address(gravity));
+    function test_constructor_setsBridge() public view {
+        assertEq(address(adapter.zcashBridge()), address(bridge));
     }
 
-    function test_constructor_setsIBCLightClient() public view {
-        assertEq(address(adapter.ibcLightClient()), address(ibcClient));
+    function test_constructor_setsVerifier() public view {
+        assertEq(address(adapter.orchardVerifier()), address(verifier));
     }
 
     function test_constructor_setsRoles() public view {
@@ -156,27 +141,19 @@ contract CosmosBridgeAdapterTest is Test {
         assertTrue(adapter.hasRole(adapter.GUARDIAN_ROLE(), admin));
     }
 
-    function test_constructor_registersDefaultChannel() public view {
-        assertTrue(adapter.registeredChannels(DEFAULT_IBC_CHANNEL));
+    function test_constructor_revertsZeroBridge() public {
+        vm.expectRevert(ZcashBridgeAdapter.InvalidBridge.selector);
+        new ZcashBridgeAdapter(address(0), address(verifier), admin);
     }
 
-    function test_constructor_revertsZeroGravity() public {
-        vm.expectRevert(CosmosBridgeAdapter.InvalidGravityBridge.selector);
-        new CosmosBridgeAdapter(address(0), address(ibcClient), admin);
-    }
-
-    function test_constructor_revertsZeroLightClient() public {
-        vm.expectRevert(CosmosBridgeAdapter.InvalidLightClient.selector);
-        new CosmosBridgeAdapter(address(gravity), address(0), admin);
+    function test_constructor_revertsZeroVerifier() public {
+        vm.expectRevert(ZcashBridgeAdapter.InvalidVerifier.selector);
+        new ZcashBridgeAdapter(address(bridge), address(0), admin);
     }
 
     function test_constructor_revertsZeroAdmin() public {
-        vm.expectRevert(CosmosBridgeAdapter.InvalidTarget.selector);
-        new CosmosBridgeAdapter(
-            address(gravity),
-            address(ibcClient),
-            address(0)
-        );
+        vm.expectRevert(ZcashBridgeAdapter.InvalidTarget.selector);
+        new ZcashBridgeAdapter(address(bridge), address(verifier), address(0));
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -184,8 +161,8 @@ contract CosmosBridgeAdapterTest is Test {
     //////////////////////////////////////////////////////////////*/
 
     function test_constants() public view {
-        assertEq(adapter.COSMOS_CHAIN_ID(), 7100);
-        assertEq(adapter.FINALITY_BLOCKS(), 1);
+        assertEq(adapter.ZCASH_CHAIN_ID(), 8100);
+        assertEq(adapter.FINALITY_BLOCKS(), 10);
         assertEq(adapter.MIN_PROOF_SIZE(), 64);
         assertEq(adapter.MAX_BRIDGE_FEE_BPS(), 100);
         assertEq(adapter.MAX_PAYLOAD_LENGTH(), 10_000);
@@ -196,11 +173,11 @@ contract CosmosBridgeAdapterTest is Test {
     //////////////////////////////////////////////////////////////*/
 
     function test_chainId() public view {
-        assertEq(adapter.chainId(), 7100);
+        assertEq(adapter.chainId(), 8100);
     }
 
     function test_chainName() public view {
-        assertEq(adapter.chainName(), "Cosmos");
+        assertEq(adapter.chainName(), "Zcash");
     }
 
     function test_isConfigured() public view {
@@ -208,58 +185,64 @@ contract CosmosBridgeAdapterTest is Test {
     }
 
     function test_getFinalityBlocks() public view {
-        assertEq(adapter.getFinalityBlocks(), 1);
+        assertEq(adapter.getFinalityBlocks(), 10);
     }
 
-    function test_getValsetCheckpoint() public view {
-        assertEq(
-            adapter.getValsetCheckpoint(),
-            keccak256("valset-checkpoint-42")
-        );
+    function test_getOrchardAnchor() public view {
+        assertEq(adapter.getOrchardAnchor(), keccak256("orchard-anchor-1"));
     }
 
-    function test_getValsetNonce() public view {
-        assertEq(adapter.getValsetNonce(), 42);
-    }
-
-    function test_getLatestIBCHeight() public view {
-        assertEq(adapter.getLatestIBCHeight(), 100);
+    function test_getLatestSyncedHeight() public view {
+        assertEq(adapter.getLatestSyncedHeight(), 2_000_000);
     }
 
     /*//////////////////////////////////////////////////////////////
                       ADMIN CONFIGURATION
     //////////////////////////////////////////////////////////////*/
 
-    function test_setGravityBridge() public {
-        address newGravity = address(0x999);
+    function test_setZcashBridge() public {
+        address newBridge = address(0x999);
         vm.prank(admin);
-        adapter.setGravityBridge(newGravity);
-        assertEq(address(adapter.gravityBridge()), newGravity);
+        adapter.setZcashBridge(newBridge);
+        assertEq(address(adapter.zcashBridge()), newBridge);
     }
 
-    function test_setGravityBridge_revertsZero() public {
+    function test_setZcashBridge_revertsZero() public {
         vm.prank(admin);
-        vm.expectRevert(CosmosBridgeAdapter.InvalidGravityBridge.selector);
-        adapter.setGravityBridge(address(0));
+        vm.expectRevert(ZcashBridgeAdapter.InvalidBridge.selector);
+        adapter.setZcashBridge(address(0));
     }
 
-    function test_setGravityBridge_revertsNonAdmin() public {
+    function test_setZcashBridge_revertsNonAdmin() public {
         vm.prank(user);
         vm.expectRevert();
-        adapter.setGravityBridge(address(0x999));
+        adapter.setZcashBridge(address(0x999));
     }
 
-    function test_setIBCLightClient() public {
-        address newClient = address(0x888);
+    function test_setOrchardVerifier() public {
+        address newVerifier = address(0x888);
         vm.prank(admin);
-        adapter.setIBCLightClient(newClient);
-        assertEq(address(adapter.ibcLightClient()), newClient);
+        adapter.setOrchardVerifier(newVerifier);
+        assertEq(address(adapter.orchardVerifier()), newVerifier);
     }
 
-    function test_setIBCLightClient_revertsZero() public {
+    function test_setOrchardVerifier_revertsZero() public {
         vm.prank(admin);
-        vm.expectRevert(CosmosBridgeAdapter.InvalidLightClient.selector);
-        adapter.setIBCLightClient(address(0));
+        vm.expectRevert(ZcashBridgeAdapter.InvalidVerifier.selector);
+        adapter.setOrchardVerifier(address(0));
+    }
+
+    function test_registerAnchor() public {
+        bytes32 anchor = keccak256("test-anchor");
+        vm.prank(admin);
+        adapter.registerAnchor(anchor);
+        assertTrue(adapter.verifiedAnchors(anchor));
+    }
+
+    function test_registerAnchor_revertsZero() public {
+        vm.prank(admin);
+        vm.expectRevert(ZcashBridgeAdapter.InvalidAnchor.selector);
+        adapter.registerAnchor(bytes32(0));
     }
 
     function test_setBridgeFee() public {
@@ -271,7 +254,7 @@ contract CosmosBridgeAdapterTest is Test {
     function test_setBridgeFee_revertsAboveMax() public {
         vm.prank(admin);
         vm.expectRevert(
-            abi.encodeWithSelector(CosmosBridgeAdapter.FeeTooHigh.selector, 101)
+            abi.encodeWithSelector(ZcashBridgeAdapter.FeeTooHigh.selector, 101)
         );
         adapter.setBridgeFee(101);
     }
@@ -282,45 +265,19 @@ contract CosmosBridgeAdapterTest is Test {
         assertEq(adapter.minMessageFee(), 0.01 ether);
     }
 
-    function test_setDefaultCosmosDestination() public {
-        bytes memory dest = bytes("cosmos1abc123");
-        vm.prank(admin);
-        adapter.setDefaultCosmosDestination(dest);
-        assertEq(adapter.defaultCosmosDestination(), dest);
-    }
-
-    function test_setDefaultCosmosDestination_revertsEmpty() public {
-        vm.prank(admin);
-        vm.expectRevert(CosmosBridgeAdapter.InvalidTarget.selector);
-        adapter.setDefaultCosmosDestination(bytes(""));
-    }
-
-    function test_registerIBCChannel() public {
-        bytes32 channel = keccak256("channel-42");
-        vm.prank(admin);
-        adapter.registerIBCChannel(channel);
-        assertTrue(adapter.registeredChannels(channel));
-    }
-
-    function test_deregisterIBCChannel() public {
-        bytes32 channel = keccak256("channel-42");
-        vm.startPrank(admin);
-        adapter.registerIBCChannel(channel);
-        adapter.deregisterIBCChannel(channel);
-        vm.stopPrank();
-        assertFalse(adapter.registeredChannels(channel));
-    }
-
     /*//////////////////////////////////////////////////////////////
-                   SEND MESSAGE (ZASEON → COSMOS)
+                   SEND MESSAGE (ZASEON → ZCASH)
     //////////////////////////////////////////////////////////////*/
 
     function test_sendMessage_success() public {
-        bytes memory dest = bytes("cosmos1abc123");
+        bytes32 noteCommitment = keccak256("note-1");
         bytes memory payload = hex"deadbeef";
 
         vm.prank(operator);
-        bytes32 hash = adapter.sendMessage{value: 0.01 ether}(dest, payload);
+        bytes32 hash = adapter.sendMessage{value: 0.01 ether}(
+            noteCommitment,
+            payload
+        );
 
         assertTrue(hash != bytes32(0));
         assertEq(adapter.totalMessagesSent(), 1);
@@ -328,12 +285,11 @@ contract CosmosBridgeAdapterTest is Test {
     }
 
     function test_sendMessage_incrementsNonce() public {
-        bytes memory dest = bytes("cosmos1abc123");
-        bytes memory payload = hex"deadbeef";
+        bytes32 noteCommitment = keccak256("note-1");
 
         vm.startPrank(operator);
-        adapter.sendMessage{value: 0.01 ether}(dest, payload);
-        adapter.sendMessage{value: 0.01 ether}(dest, payload);
+        adapter.sendMessage{value: 0.01 ether}(noteCommitment, hex"aa");
+        adapter.sendMessage{value: 0.01 ether}(noteCommitment, hex"bb");
         vm.stopPrank();
 
         assertEq(adapter.senderNonces(operator), 2);
@@ -343,59 +299,52 @@ contract CosmosBridgeAdapterTest is Test {
         vm.prank(admin);
         adapter.setBridgeFee(50); // 0.5%
 
-        bytes memory dest = bytes("cosmos1abc123");
-        bytes memory payload = hex"deadbeef";
-
         vm.prank(operator);
-        adapter.sendMessage{value: 1 ether}(dest, payload);
+        adapter.sendMessage{value: 1 ether}(keccak256("note"), hex"beef");
 
-        // 50/10000 * 1 ether = 0.005 ether
         assertEq(adapter.accumulatedFees(), 0.005 ether);
     }
 
-    function test_sendMessage_revertsEmptyDestination() public {
+    function test_sendMessage_revertsZeroCommitment() public {
         vm.prank(operator);
-        vm.expectRevert(CosmosBridgeAdapter.InvalidTarget.selector);
-        adapter.sendMessage{value: 0.01 ether}(bytes(""), hex"deadbeef");
+        vm.expectRevert(ZcashBridgeAdapter.InvalidTarget.selector);
+        adapter.sendMessage{value: 0.01 ether}(bytes32(0), hex"deadbeef");
     }
 
     function test_sendMessage_revertsEmptyPayload() public {
         vm.prank(operator);
-        vm.expectRevert(CosmosBridgeAdapter.InvalidPayload.selector);
-        adapter.sendMessage{value: 0.01 ether}(bytes("cosmos1abc"), hex"");
+        vm.expectRevert(ZcashBridgeAdapter.InvalidPayload.selector);
+        adapter.sendMessage{value: 0.01 ether}(keccak256("note"), hex"");
     }
 
     function test_sendMessage_revertsPayloadTooLong() public {
         bytes memory longPayload = new bytes(10_001);
         vm.prank(operator);
-        vm.expectRevert(CosmosBridgeAdapter.InvalidPayload.selector);
-        adapter.sendMessage{value: 0.01 ether}(
-            bytes("cosmos1abc"),
-            longPayload
-        );
+        vm.expectRevert(ZcashBridgeAdapter.InvalidPayload.selector);
+        adapter.sendMessage{value: 0.01 ether}(keccak256("note"), longPayload);
     }
 
     function test_sendMessage_revertsInsufficientFee() public {
-        gravity.setRelayFee(1 ether);
+        bridge.setRelayFee(1 ether);
         vm.prank(admin);
         adapter.setMinMessageFee(0.5 ether);
 
         vm.prank(operator);
         vm.expectRevert(
             abi.encodeWithSelector(
-                CosmosBridgeAdapter.InsufficientFee.selector,
+                ZcashBridgeAdapter.InsufficientFee.selector,
                 1.5 ether,
                 0.1 ether
             )
         );
-        adapter.sendMessage{value: 0.1 ether}(bytes("cosmos1abc"), hex"beef");
+        adapter.sendMessage{value: 0.1 ether}(keccak256("note"), hex"beef");
     }
 
     function test_sendMessage_revertsNonOperator() public {
         vm.prank(user);
         vm.expectRevert();
         adapter.sendMessage{value: 0.01 ether}(
-            bytes("cosmos1abc"),
+            keccak256("note"),
             hex"deadbeef"
         );
     }
@@ -407,22 +356,22 @@ contract CosmosBridgeAdapterTest is Test {
         vm.prank(operator);
         vm.expectRevert();
         adapter.sendMessage{value: 0.01 ether}(
-            bytes("cosmos1abc"),
+            keccak256("note"),
             hex"deadbeef"
         );
     }
 
     /*//////////////////////////////////////////////////////////////
-              RECEIVE MESSAGE (COSMOS → ZASEON)
+              RECEIVE MESSAGE (ZCASH → ZASEON)
     //////////////////////////////////////////////////////////////*/
 
     function test_receiveMessage_success() public {
         bytes memory proof = new bytes(128);
         bytes32 nullifier = keccak256("nullifier-1");
         uint256[] memory inputs = new uint256[](4);
-        inputs[0] = uint256(keccak256("consensus-state"));
+        inputs[0] = uint256(keccak256("orchard-anchor"));
         inputs[1] = uint256(nullifier);
-        inputs[2] = uint256(DEFAULT_IBC_CHANNEL);
+        inputs[2] = uint256(keccak256("note-commitment"));
         inputs[3] = uint256(keccak256(hex"deadbeef"));
 
         vm.prank(relayer);
@@ -434,30 +383,16 @@ contract CosmosBridgeAdapterTest is Test {
     }
 
     function test_receiveMessage_revertsInvalidProof() public {
-        ibcClient.setShouldVerify(false);
+        verifier.setShouldVerify(false);
         bytes memory proof = new bytes(128);
         uint256[] memory inputs = new uint256[](4);
-        inputs[0] = uint256(keccak256("cs"));
+        inputs[0] = uint256(keccak256("anchor"));
         inputs[1] = uint256(keccak256("null"));
-        inputs[2] = uint256(DEFAULT_IBC_CHANNEL);
+        inputs[2] = uint256(keccak256("note"));
         inputs[3] = uint256(keccak256(hex"beef"));
 
         vm.prank(relayer);
-        vm.expectRevert(CosmosBridgeAdapter.InvalidProof.selector);
-        adapter.receiveMessage(proof, inputs, hex"beef");
-    }
-
-    function test_receiveMessage_revertsInvalidChannel() public {
-        bytes memory proof = new bytes(128);
-        bytes32 unregisteredChannel = keccak256("channel-999");
-        uint256[] memory inputs = new uint256[](4);
-        inputs[0] = uint256(keccak256("cs"));
-        inputs[1] = uint256(keccak256("null"));
-        inputs[2] = uint256(unregisteredChannel);
-        inputs[3] = uint256(keccak256(hex"beef"));
-
-        vm.prank(relayer);
-        vm.expectRevert(CosmosBridgeAdapter.InvalidChannel.selector);
+        vm.expectRevert(ZcashBridgeAdapter.InvalidProof.selector);
         adapter.receiveMessage(proof, inputs, hex"beef");
     }
 
@@ -465,9 +400,9 @@ contract CosmosBridgeAdapterTest is Test {
         bytes memory proof = new bytes(128);
         bytes32 nullifier = keccak256("nullifier-dup");
         uint256[] memory inputs = new uint256[](4);
-        inputs[0] = uint256(keccak256("cs"));
+        inputs[0] = uint256(keccak256("anchor"));
         inputs[1] = uint256(nullifier);
-        inputs[2] = uint256(DEFAULT_IBC_CHANNEL);
+        inputs[2] = uint256(keccak256("note"));
         inputs[3] = uint256(keccak256(hex"beef"));
 
         vm.startPrank(relayer);
@@ -475,7 +410,7 @@ contract CosmosBridgeAdapterTest is Test {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                CosmosBridgeAdapter.NullifierAlreadyUsed.selector,
+                ZcashBridgeAdapter.NullifierAlreadyUsed.selector,
                 nullifier
             )
         );
@@ -509,7 +444,7 @@ contract CosmosBridgeAdapterTest is Test {
 
     function test_bridgeMessage_revertsZeroTarget() public {
         vm.prank(operator);
-        vm.expectRevert(CosmosBridgeAdapter.InvalidTarget.selector);
+        vm.expectRevert(ZcashBridgeAdapter.InvalidTarget.selector);
         adapter.bridgeMessage{value: 0.01 ether}(
             address(0),
             hex"deadbeef",
@@ -519,7 +454,7 @@ contract CosmosBridgeAdapterTest is Test {
 
     function test_bridgeMessage_revertsEmptyPayload() public {
         vm.prank(operator);
-        vm.expectRevert(CosmosBridgeAdapter.InvalidPayload.selector);
+        vm.expectRevert(ZcashBridgeAdapter.InvalidPayload.selector);
         adapter.bridgeMessage{value: 0.01 ether}(
             address(0xBEEF),
             hex"",
@@ -529,7 +464,7 @@ contract CosmosBridgeAdapterTest is Test {
 
     function test_estimateFee() public view {
         uint256 fee = adapter.estimateFee(address(0xBEEF), hex"deadbeef");
-        assertEq(fee, 0.001 ether); // MockGravityBridge relayFee + 0 minMessageFee
+        assertEq(fee, 0.001 ether);
     }
 
     function test_estimateFee_includesMinMessageFee() public {
@@ -553,9 +488,9 @@ contract CosmosBridgeAdapterTest is Test {
         bytes memory proof = new bytes(128);
         bytes32 nullifier = keccak256("null-verified");
         uint256[] memory inputs = new uint256[](4);
-        inputs[0] = uint256(keccak256("cs"));
+        inputs[0] = uint256(keccak256("anchor"));
         inputs[1] = uint256(nullifier);
-        inputs[2] = uint256(DEFAULT_IBC_CHANNEL);
+        inputs[2] = uint256(keccak256("note"));
         inputs[3] = uint256(keccak256(hex"beef"));
 
         vm.prank(relayer);
@@ -568,7 +503,6 @@ contract CosmosBridgeAdapterTest is Test {
     }
 
     function test_implementsIBridgeAdapter() public view {
-        // Verify the contract satisfies IBridgeAdapter
         IBridgeAdapter iBridge = IBridgeAdapter(address(adapter));
         assertEq(address(iBridge), address(adapter));
     }
@@ -597,7 +531,7 @@ contract CosmosBridgeAdapterTest is Test {
         adapter.pause();
     }
 
-    function test_sendMessage_revertsWhenPaused2() public {
+    function test_bridgeMessage_revertsWhenPaused() public {
         vm.prank(admin);
         adapter.pause();
 
@@ -619,7 +553,7 @@ contract CosmosBridgeAdapterTest is Test {
         adapter.setBridgeFee(50);
 
         vm.prank(operator);
-        adapter.sendMessage{value: 1 ether}(bytes("cosmos1abc"), hex"deadbeef");
+        adapter.sendMessage{value: 1 ether}(keccak256("note"), hex"beef");
 
         uint256 fees = adapter.accumulatedFees();
         assertGt(fees, 0);
@@ -634,7 +568,7 @@ contract CosmosBridgeAdapterTest is Test {
 
     function test_withdrawFees_revertsZeroRecipient() public {
         vm.prank(admin);
-        vm.expectRevert(CosmosBridgeAdapter.InvalidTarget.selector);
+        vm.expectRevert(ZcashBridgeAdapter.InvalidTarget.selector);
         adapter.withdrawFees(payable(address(0)));
     }
 
@@ -649,7 +583,7 @@ contract CosmosBridgeAdapterTest is Test {
 
     function test_emergencyWithdrawETH_revertsZero() public {
         vm.prank(admin);
-        vm.expectRevert(CosmosBridgeAdapter.InvalidTarget.selector);
+        vm.expectRevert(ZcashBridgeAdapter.InvalidTarget.selector);
         adapter.emergencyWithdrawETH(payable(address(0)), 1 ether);
     }
 
@@ -664,7 +598,7 @@ contract CosmosBridgeAdapterTest is Test {
 
     function test_emergencyWithdrawERC20_revertsZeroToken() public {
         vm.prank(admin);
-        vm.expectRevert(CosmosBridgeAdapter.InvalidTarget.selector);
+        vm.expectRevert(ZcashBridgeAdapter.InvalidTarget.selector);
         adapter.emergencyWithdrawERC20(address(0), address(0x456));
     }
 
@@ -701,7 +635,7 @@ contract CosmosBridgeAdapterTest is Test {
         vm.assume(payload.length > 0 && payload.length <= 10_000);
         vm.prank(operator);
         bytes32 hash = adapter.sendMessage{value: 0.01 ether}(
-            bytes("cosmos1abc"),
+            keccak256("note"),
             payload
         );
         assertTrue(hash != bytes32(0));
@@ -716,7 +650,7 @@ contract CosmosBridgeAdapterTest is Test {
             vm.prank(admin);
             vm.expectRevert(
                 abi.encodeWithSelector(
-                    CosmosBridgeAdapter.FeeTooHigh.selector,
+                    ZcashBridgeAdapter.FeeTooHigh.selector,
                     fee
                 )
             );
@@ -732,15 +666,15 @@ contract CosmosBridgeAdapterTest is Test {
 
         bytes memory proof = new bytes(128);
         uint256[] memory inputs1 = new uint256[](4);
-        inputs1[0] = uint256(keccak256("cs"));
+        inputs1[0] = uint256(keccak256("anchor"));
         inputs1[1] = uint256(nullifier1);
-        inputs1[2] = uint256(DEFAULT_IBC_CHANNEL);
+        inputs1[2] = uint256(keccak256("note1"));
         inputs1[3] = uint256(keccak256(hex"beef"));
 
         uint256[] memory inputs2 = new uint256[](4);
-        inputs2[0] = uint256(keccak256("cs"));
+        inputs2[0] = uint256(keccak256("anchor"));
         inputs2[1] = uint256(nullifier2);
-        inputs2[2] = uint256(DEFAULT_IBC_CHANNEL);
+        inputs2[2] = uint256(keccak256("note2"));
         inputs2[3] = uint256(keccak256(hex"cafe"));
 
         vm.startPrank(relayer);

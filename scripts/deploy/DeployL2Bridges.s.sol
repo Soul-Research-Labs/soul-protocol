@@ -23,6 +23,7 @@ import {AztecBridgeAdapter} from "../../contracts/crosschain/AztecBridgeAdapter.
 import {SecretBridgeAdapter} from "../../contracts/crosschain/SecretBridgeAdapter.sol";
 import {PolkadotBridgeAdapter} from "../../contracts/crosschain/PolkadotBridgeAdapter.sol";
 import {CosmosBridgeAdapter} from "../../contracts/crosschain/CosmosBridgeAdapter.sol";
+import {ZcashBridgeAdapter} from "../../contracts/crosschain/ZcashBridgeAdapter.sol";
 
 /**
  * @title ZASEON L2 Bridge Deployment Script
@@ -184,6 +185,8 @@ contract DeployL2Bridges is Script {
             _deployPolkadot(admin, deployer);
         } else if (_strEq(target, "cosmos")) {
             _deployCosmos(admin, deployer);
+        } else if (_strEq(target, "zcash")) {
+            _deployZcash(admin, deployer);
         } else {
             revert(string.concat("Unknown deploy target: ", target));
         }
@@ -900,6 +903,37 @@ contract DeployL2Bridges is Script {
         console.log("Cosmos bridge deployed. Admin:", admin);
         console.log(
             "  Post-deploy: register in MultiBridgeRouter with BridgeType.COSMOS"
+        );
+    }
+
+    function _deployZcash(address admin, address deployer) internal {
+        address zcashBridge = vm.envAddress("ZCASH_BRIDGE");
+        address orchardVerifier = vm.envAddress("ORCHARD_VERIFIER");
+
+        ZcashBridgeAdapter adapter = new ZcashBridgeAdapter(
+            zcashBridge,
+            orchardVerifier,
+            deployer
+        );
+        console.log("ZcashBridgeAdapter:", address(adapter));
+
+        adapter.grantRole(adapter.DEFAULT_ADMIN_ROLE(), admin);
+        adapter.grantRole(adapter.OPERATOR_ROLE(), admin);
+        adapter.grantRole(adapter.GUARDIAN_ROLE(), admin);
+
+        address relayer = vm.envOr("RELAYER_ADDRESS", address(0));
+        if (relayer != address(0)) {
+            adapter.grantRole(adapter.RELAYER_ROLE(), relayer);
+            console.log("Relayer granted:", relayer);
+        }
+
+        adapter.renounceRole(adapter.GUARDIAN_ROLE(), deployer);
+        adapter.renounceRole(adapter.OPERATOR_ROLE(), deployer);
+        adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
+
+        console.log("Zcash bridge deployed. Admin:", admin);
+        console.log(
+            "  Post-deploy: register in MultiBridgeRouter with BridgeType.ZCASH"
         );
     }
 
