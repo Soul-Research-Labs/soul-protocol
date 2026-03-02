@@ -19,6 +19,7 @@ import {SolanaBridgeAdapter} from "../../contracts/crosschain/SolanaBridgeAdapte
 import {CardanoBridgeAdapter} from "../../contracts/crosschain/CardanoBridgeAdapter.sol";
 import {MidnightBridgeAdapter} from "../../contracts/crosschain/MidnightBridgeAdapter.sol";
 import {RailgunBridgeAdapter} from "../../contracts/crosschain/RailgunBridgeAdapter.sol";
+import {AztecBridgeAdapter} from "../../contracts/crosschain/AztecBridgeAdapter.sol";
 
 /**
  * @title ZASEON L2 Bridge Deployment Script
@@ -117,6 +118,10 @@ import {RailgunBridgeAdapter} from "../../contracts/crosschain/RailgunBridgeAdap
  *   # Railgun (EVM-native privacy protocol)
  *   DEPLOY_TARGET=railgun forge script scripts/deploy/DeployL2Bridges.s.sol \
  *     --rpc-url $ETH_RPC --broadcast --verify -vvv
+ *
+ *   # Aztec (privacy ZK-rollup on Ethereum)
+ *   DEPLOY_TARGET=aztec forge script scripts/deploy/DeployL2Bridges.s.sol \
+ *     --rpc-url $ETH_RPC --broadcast --verify -vvv
  */
 contract DeployL2Bridges is Script {
     function run() external {
@@ -168,6 +173,8 @@ contract DeployL2Bridges is Script {
             _deployMidnight(admin, deployer);
         } else if (_strEq(target, "railgun")) {
             _deployRailgun(admin, deployer);
+        } else if (_strEq(target, "aztec")) {
+            _deployAztec(admin, deployer);
         } else {
             revert(string.concat("Unknown deploy target: ", target));
         }
@@ -761,6 +768,37 @@ contract DeployL2Bridges is Script {
 
         console.log("Railgun bridge deployed. Admin:", admin);
         console.log("  Post-deploy: grantRole(RELAYER_ROLE) via multisig");
+    }
+
+    function _deployAztec(address admin, address deployer) internal {
+        address rollupProcessor = vm.envAddress("AZTEC_ROLLUP_PROCESSOR");
+        address defiBridge = vm.envAddress("AZTEC_DEFI_BRIDGE");
+
+        AztecBridgeAdapter adapter = new AztecBridgeAdapter(
+            rollupProcessor,
+            defiBridge,
+            deployer
+        );
+        console.log("AztecBridgeAdapter:", address(adapter));
+
+        adapter.grantRole(adapter.DEFAULT_ADMIN_ROLE(), admin);
+        adapter.grantRole(adapter.OPERATOR_ROLE(), admin);
+        adapter.grantRole(adapter.GUARDIAN_ROLE(), admin);
+
+        address relayer = vm.envOr("RELAYER_ADDRESS", address(0));
+        if (relayer != address(0)) {
+            adapter.grantRole(adapter.RELAYER_ROLE(), relayer);
+            console.log("Relayer granted:", relayer);
+        }
+
+        adapter.renounceRole(adapter.GUARDIAN_ROLE(), deployer);
+        adapter.renounceRole(adapter.OPERATOR_ROLE(), deployer);
+        adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
+
+        console.log("Aztec bridge deployed. Admin:", admin);
+        console.log(
+            "  Post-deploy: register in MultiBridgeRouter with BridgeType.AZTEC"
+        );
     }
 
     function _strEq(

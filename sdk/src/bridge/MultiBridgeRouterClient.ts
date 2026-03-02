@@ -315,6 +315,7 @@ export enum BridgeType {
   CARDANO = 13,
   MIDNIGHT = 14,
   RAILGUN = 15,
+  AZTEC = 16,
 }
 
 /** Bridge operational status — mirrors Solidity BridgeStatus enum */

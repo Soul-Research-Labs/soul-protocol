@@ -27,7 +27,8 @@ interface IMultiBridgeRouter {
         WORMHOLE,
         CARDANO,
         MIDNIGHT,
-        RAILGUN
+        RAILGUN,
+        AZTEC
     }
 
     enum BridgeStatus {

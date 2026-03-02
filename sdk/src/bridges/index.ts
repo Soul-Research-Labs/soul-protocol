@@ -26,6 +26,7 @@ export * as ZkSyncBridge from "./zksync";
 export * as CardanoBridge from "./cardano";
 export * as MidnightBridge from "./midnight";
 export * as RailgunBridge from "./railgun";
+export * as AztecBridge from "./aztec";
 
 import {
   type PublicClient,
@@ -56,6 +57,7 @@ import { MANTA_PACIFIC_BRIDGE_ADAPTER_ABI } from "./manta-pacific";
 import { CARDANO_BRIDGE_ADAPTER_ABI } from "./cardano";
 import { MIDNIGHT_BRIDGE_ADAPTER_ABI } from "./midnight";
 import { RAILGUN_BRIDGE_ADAPTER_ABI } from "./railgun";
+import { AZTEC_BRIDGE_ADAPTER_ABI } from "./aztec";
 
 /** Maps chain names to their chain-specific bridge ABIs */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -80,6 +82,7 @@ const CHAIN_ABI_MAP: Record<string, readonly any[]> = {
   cardano: CARDANO_BRIDGE_ADAPTER_ABI,
   midnight: MIDNIGHT_BRIDGE_ADAPTER_ABI,
   railgun: RAILGUN_BRIDGE_ADAPTER_ABI,
+  aztec: AZTEC_BRIDGE_ADAPTER_ABI,
 };
 
 // ============================================
@@ -197,7 +200,8 @@ export type SupportedChain =
   | "zksync"
   | "cardano"
   | "midnight"
-  | "railgun";
+  | "railgun"
+  | "aztec";
 
 // ============================================
 // Bridge Factory
@@ -353,6 +357,14 @@ const CHAIN_CONFIGS: Record<SupportedChain, BridgeAdapterConfig> = {
     chainId: 3100, // ZASEON internal virtual chain ID
     nativeToken: "ETH",
     finality: 12, // Follows host chain (Ethereum)
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  aztec: {
+    name: "Aztec",
+    chainId: 4100, // ZASEON internal virtual chain ID
+    nativeToken: "ETH",
+    finality: 15, // L1 finality for posted rollup proofs
     maxAmount: 1_000_000_000_000_000_000_000_000n,
     minAmount: 1_000_000_000_000_000n,
   },
