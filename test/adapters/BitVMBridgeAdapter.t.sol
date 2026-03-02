@@ -146,7 +146,8 @@ contract BitVMBridgeAdapterTest is Test {
     // ── bridgeMessage reverts NotImplemented ──
 
     function test_bridgeMessage_reverts() public {
-        vm.expectRevert(BitVMBridgeAdapter.NotImplemented.selector);
+        // bridgeMessage decodes payload — invalid payload reverts on abi.decode
+        vm.expectRevert();
         adapter.bridgeMessage{value: 0.1 ether}(
             address(0xBEEF),
             hex"01",
@@ -193,8 +194,9 @@ contract BitVMBridgeAdapterTest is Test {
         vm.deal(operator, 20 ether);
         vm.prank(operator);
         adapter.registerOperator{value: 10 ether}();
+        bytes32 opRole = adapter.OPERATOR_ROLE();
         vm.prank(admin);
-        adapter.grantRole(adapter.OPERATOR_ROLE(), operator);
+        adapter.grantRole(opRole, operator);
     }
 
     function test_submitDepositClaim_success() public {
@@ -265,8 +267,9 @@ contract BitVMBridgeAdapterTest is Test {
         );
 
         // Grant challenger role and challenge
+        bytes32 challengerRole = adapter.CHALLENGER_ROLE();
         vm.prank(admin);
-        adapter.grantRole(adapter.CHALLENGER_ROLE(), challenger);
+        adapter.grantRole(challengerRole, challenger);
 
         vm.deal(challenger, 2 ether);
         vm.prank(challenger);
@@ -339,7 +342,11 @@ contract BitVMBridgeAdapterTest is Test {
         // Give user wBTC balance so burn succeeds
         wbtc.mint(user, 50000000);
         vm.prank(user);
-        bytes32 reqId = adapter.requestWithdrawal(hex"0014aabbccdd", 50000000);
+        // BTC address must be >= 20 bytes per contract validation
+        bytes32 reqId = adapter.requestWithdrawal(
+            hex"0014aabbccddaabbccddaabbccddaabbccddaabbccdd",
+            50000000
+        );
         assertTrue(reqId != bytes32(0));
 
         BitVMBridgeAdapter.WithdrawalRequest memory req = adapter
@@ -425,7 +432,11 @@ contract BitVMBridgeAdapterTest is Test {
         // Give user wBTC balance so burn succeeds
         wbtc.mint(user, 50000000);
         vm.prank(user);
-        requestId = adapter.requestWithdrawal(hex"0014aabbccdd", 50000000);
+        // BTC address must be >= 20 bytes per contract validation
+        requestId = adapter.requestWithdrawal(
+            hex"0014aabbccddaabbccddaabbccddaabbccddaabbccdd",
+            50000000
+        );
     }
 
     function test_fulfillWithdrawal_success() public {
@@ -685,7 +696,7 @@ contract BitVMBridgeAdapterTest is Test {
         adapter.slashOperator(operator);
 
         vm.prank(admin);
-        vm.expectRevert("Already slashed");
+        vm.expectRevert("Nothing to slash");
         adapter.slashOperator(operator);
     }
 

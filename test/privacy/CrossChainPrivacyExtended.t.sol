@@ -684,8 +684,8 @@ contract CrossChainPrivacyExtendedTest is Test {
         vm.prank(guardian);
         hub.triggerCircuitBreaker("test");
 
-        // Admin unpauses
-        hub.unpause();
+        // Admin resets circuit breaker (also unpauses)
+        hub.resetCircuitBreaker();
 
         vm.prank(user1);
         bytes32 reqId = hub.initiatePrivateTransfer{value: 1.003 ether}(

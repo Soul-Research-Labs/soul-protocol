@@ -367,8 +367,9 @@ contract CrossChainPrivacyHubTest is Test {
         vm.prank(guardian);
         hub.triggerCircuitBreaker("test");
 
+        // Circuit breaker now also pauses the contract, so EnforcedPause fires first
         vm.prank(user);
-        vm.expectRevert(CrossChainPrivacyHub.CircuitBreakerOn.selector);
+        vm.expectRevert(abi.encodeWithSignature("EnforcedPause()"));
         hub.initiatePrivateTransfer{value: 1 ether}(
             DEST_CHAIN,
             keccak256("r"),

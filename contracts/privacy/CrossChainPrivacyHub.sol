@@ -557,7 +557,9 @@ contract CrossChainPrivacyHub is
         bool isActive,
         uint256 maxRelayAmount,
         uint256 dailyLimit
-    ) external onlyRole(OPERATOR_ROLE) validChain(chainId) {
+    ) external onlyRole(OPERATOR_ROLE) {
+        if (adapters[chainId].adapter == address(0))
+            revert AdapterNotFound(chainId);
         AdapterConfig storage config = adapters[chainId];
         config.isActive = isActive;
         config.maxRelayAmount = maxRelayAmount;
@@ -1461,6 +1463,7 @@ contract CrossChainPrivacyHub is
         circuitBreakerActive = true;
         lastCircuitBreakerTimestamp = block.timestamp;
         circuitBreakerReason = reason;
+        _pause();
 
         emit CircuitBreakerTriggered(msg.sender, reason, block.timestamp);
     }
@@ -1470,6 +1473,7 @@ contract CrossChainPrivacyHub is
      */
     function resetCircuitBreaker() external onlyRole(DEFAULT_ADMIN_ROLE) {
         circuitBreakerActive = false;
+        _unpause();
 
         emit CircuitBreakerReset(msg.sender, block.timestamp);
     }

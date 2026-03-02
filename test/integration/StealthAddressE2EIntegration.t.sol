@@ -88,7 +88,10 @@ contract StealthAddressE2EIntegration is Test {
             uint8(curve),
             uint8(IStealthAddressRegistry.CurveType.SECP256K1)
         );
-        assertEq(uint8(status), uint8(IStealthAddressRegistry.KeyStatus.ACTIVE));
+        assertEq(
+            uint8(status),
+            uint8(IStealthAddressRegistry.KeyStatus.ACTIVE)
+        );
         assertEq(schemeId, 1);
         assertGt(registeredAt, 0);
 
@@ -385,11 +388,7 @@ contract StealthAddressE2EIntegration is Test {
 
         // Compute the shared secret the same way the contract does (M-1 fix: abi.encode)
         bytes32 sharedSecretHash = keccak256(
-            abi.encode(
-                viewingPrivKeyHash,
-                ephPub,
-                registry.STEALTH_DOMAIN()
-            )
+            abi.encode(viewingPrivKeyHash, ephPub, registry.STEALTH_DOMAIN())
         );
         bytes32 expectedStealthHash = keccak256(
             abi.encode(spendingPubKeyHash, sharedSecretHash)
@@ -453,8 +452,14 @@ contract StealthAddressE2EIntegration is Test {
             ,
 
         ) = registry.metaAddresses(carol);
-        assertEq(uint8(curve), uint8(IStealthAddressRegistry.CurveType.ED25519));
-        assertEq(uint8(status), uint8(IStealthAddressRegistry.KeyStatus.ACTIVE));
+        assertEq(
+            uint8(curve),
+            uint8(IStealthAddressRegistry.CurveType.ED25519)
+        );
+        assertEq(
+            uint8(status),
+            uint8(IStealthAddressRegistry.KeyStatus.ACTIVE)
+        );
     }
 
     function test_E2E_BLS12_381Keys() public {

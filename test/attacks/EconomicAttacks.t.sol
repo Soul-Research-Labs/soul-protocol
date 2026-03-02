@@ -83,6 +83,9 @@ contract EconomicAttacks is Test {
         messageExecutor = new MockMessageExecutor();
         batchProcessor = new MockBatchProcessor();
 
+        // Fund batch processor for rewards
+        vm.deal(address(batchProcessor), 1 ether);
+
         // Fund accounts
         vm.deal(attacker, 100 ether);
         vm.deal(victim, 100 ether);

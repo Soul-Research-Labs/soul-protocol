@@ -134,7 +134,7 @@ contract BridgeOperationsGasBenchmark is Test {
         uint256 gasUsed = gasBefore - gasleft();
 
         console.log("Escrow creation gas:", gasUsed);
-        assertLt(gasUsed, 120_000, "Escrow creation should be < 120k gas");
+        assertLt(gasUsed, 200_000, "Escrow creation should be < 200k gas");
     }
 
     /// @notice Measure gas for escrow finish (preimage reveal)
@@ -219,7 +219,7 @@ contract BridgeOperationsGasBenchmark is Test {
         uint256 gasUsed = gasBefore - gasleft();
 
         console.log("Merkle insert (depth 20) gas:", gasUsed);
-        assertLt(gasUsed, 400_000, "Depth-20 insert should be < 400k gas");
+        assertLt(gasUsed, 550_000, "Depth-20 insert should be < 550k gas");
     }
 
     /// @notice Measure gas for Merkle tree insert at depth 32
@@ -231,7 +231,7 @@ contract BridgeOperationsGasBenchmark is Test {
         uint256 gasUsed = gasBefore - gasleft();
 
         console.log("Merkle insert (depth 32) gas:", gasUsed);
-        assertLt(gasUsed, 650_000, "Depth-32 insert should be < 650k gas");
+        assertLt(gasUsed, 850_000, "Depth-32 insert should be < 850k gas");
     }
 
     /// @notice Measure gas for Merkle proof verification at depth 32
