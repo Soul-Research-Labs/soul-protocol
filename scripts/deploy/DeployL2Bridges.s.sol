@@ -20,6 +20,7 @@ import {CardanoBridgeAdapter} from "../../contracts/crosschain/CardanoBridgeAdap
 import {MidnightBridgeAdapter} from "../../contracts/crosschain/MidnightBridgeAdapter.sol";
 import {RailgunBridgeAdapter} from "../../contracts/crosschain/RailgunBridgeAdapter.sol";
 import {AztecBridgeAdapter} from "../../contracts/crosschain/AztecBridgeAdapter.sol";
+import {SecretBridgeAdapter} from "../../contracts/crosschain/SecretBridgeAdapter.sol";
 
 /**
  * @title ZASEON L2 Bridge Deployment Script
@@ -175,6 +176,8 @@ contract DeployL2Bridges is Script {
             _deployRailgun(admin, deployer);
         } else if (_strEq(target, "aztec")) {
             _deployAztec(admin, deployer);
+        } else if (_strEq(target, "secret")) {
+            _deploySecret(admin, deployer);
         } else {
             revert(string.concat("Unknown deploy target: ", target));
         }
@@ -798,6 +801,37 @@ contract DeployL2Bridges is Script {
         console.log("Aztec bridge deployed. Admin:", admin);
         console.log(
             "  Post-deploy: register in MultiBridgeRouter with BridgeType.AZTEC"
+        );
+    }
+
+    function _deploySecret(address admin, address deployer) internal {
+        address secretGateway = vm.envAddress("SECRET_GATEWAY");
+        address secretVerifier = vm.envAddress("SECRET_VERIFIER");
+
+        SecretBridgeAdapter adapter = new SecretBridgeAdapter(
+            secretGateway,
+            secretVerifier,
+            deployer
+        );
+        console.log("SecretBridgeAdapter:", address(adapter));
+
+        adapter.grantRole(adapter.DEFAULT_ADMIN_ROLE(), admin);
+        adapter.grantRole(adapter.OPERATOR_ROLE(), admin);
+        adapter.grantRole(adapter.GUARDIAN_ROLE(), admin);
+
+        address relayer = vm.envOr("RELAYER_ADDRESS", address(0));
+        if (relayer != address(0)) {
+            adapter.grantRole(adapter.RELAYER_ROLE(), relayer);
+            console.log("Relayer granted:", relayer);
+        }
+
+        adapter.renounceRole(adapter.GUARDIAN_ROLE(), deployer);
+        adapter.renounceRole(adapter.OPERATOR_ROLE(), deployer);
+        adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
+
+        console.log("Secret bridge deployed. Admin:", admin);
+        console.log(
+            "  Post-deploy: register in MultiBridgeRouter with BridgeType.SECRET"
         );
     }
 
