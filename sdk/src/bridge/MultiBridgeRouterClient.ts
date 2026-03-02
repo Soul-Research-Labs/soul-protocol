@@ -311,6 +311,8 @@ export enum BridgeType {
   TAIKO = 9,
   MODE = 10,
   MANTA_PACIFIC = 11,
+  WORMHOLE = 12,
+  CARDANO = 13,
 }
 
 /** Bridge operational status — mirrors Solidity BridgeStatus enum */

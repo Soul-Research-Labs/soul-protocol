@@ -15,6 +15,8 @@ import {BlastBridgeAdapter} from "../../contracts/crosschain/BlastBridgeAdapter.
 import {TaikoBridgeAdapter} from "../../contracts/crosschain/TaikoBridgeAdapter.sol";
 import {ModeBridgeAdapter} from "../../contracts/crosschain/ModeBridgeAdapter.sol";
 import {MantaPacificBridgeAdapter} from "../../contracts/crosschain/MantaPacificBridgeAdapter.sol";
+import {SolanaBridgeAdapter} from "../../contracts/crosschain/SolanaBridgeAdapter.sol";
+import {CardanoBridgeAdapter} from "../../contracts/crosschain/CardanoBridgeAdapter.sol";
 
 /**
  * @title ZASEON L2 Bridge Deployment Script
@@ -97,6 +99,14 @@ import {MantaPacificBridgeAdapter} from "../../contracts/crosschain/MantaPacific
  *   # Manta Pacific
  *   DEPLOY_TARGET=manta forge script scripts/deploy/DeployL2Bridges.s.sol \
  *     --rpc-url $MANTA_RPC --broadcast --verify -vvv
+ *
+ *   # Solana (Wormhole bridge on EVM)
+ *   DEPLOY_TARGET=solana forge script scripts/deploy/DeployL2Bridges.s.sol \
+ *     --rpc-url $ETH_RPC --broadcast --verify -vvv
+ *
+ *   # Cardano (Wormhole bridge on EVM)
+ *   DEPLOY_TARGET=cardano forge script scripts/deploy/DeployL2Bridges.s.sol \
+ *     --rpc-url $ETH_RPC --broadcast --verify -vvv
  */
 contract DeployL2Bridges is Script {
     function run() external {
@@ -140,6 +150,10 @@ contract DeployL2Bridges is Script {
             _deployMode(admin, deployer);
         } else if (_strEq(target, "manta")) {
             _deployManta(admin, deployer);
+        } else if (_strEq(target, "solana")) {
+            _deploySolana(admin, deployer);
+        } else if (_strEq(target, "cardano")) {
+            _deployCardano(admin, deployer);
         } else {
             revert(string.concat("Unknown deploy target: ", target));
         }
@@ -611,6 +625,68 @@ contract DeployL2Bridges is Script {
 
         console.log("Manta Pacific bridge deployed. Admin:", admin);
         console.log("  Post-deploy: configure zaseonHubL2 via multisig");
+    }
+
+    function _deploySolana(address admin, address deployer) internal {
+        address wormholeCore = vm.envAddress("WORMHOLE_CORE");
+        address wormholeTokenBridge = vm.envAddress("WORMHOLE_TOKEN_BRIDGE");
+
+        SolanaBridgeAdapter adapter = new SolanaBridgeAdapter(
+            wormholeCore,
+            wormholeTokenBridge,
+            deployer
+        );
+        console.log("SolanaBridgeAdapter:", address(adapter));
+
+        adapter.grantRole(adapter.DEFAULT_ADMIN_ROLE(), admin);
+        adapter.grantRole(adapter.OPERATOR_ROLE(), admin);
+        adapter.grantRole(adapter.GUARDIAN_ROLE(), admin);
+
+        address relayer = vm.envOr("RELAYER_ADDRESS", address(0));
+        if (relayer != address(0)) {
+            adapter.grantRole(adapter.RELAYER_ROLE(), relayer);
+            console.log("Relayer granted:", relayer);
+        }
+
+        adapter.renounceRole(adapter.GUARDIAN_ROLE(), deployer);
+        adapter.renounceRole(adapter.OPERATOR_ROLE(), deployer);
+        adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
+
+        console.log("Solana bridge deployed. Admin:", admin);
+        console.log(
+            "  Post-deploy: setZaseonSolanaProgram() + setWhitelistedProgram() via multisig"
+        );
+    }
+
+    function _deployCardano(address admin, address deployer) internal {
+        address wormholeCore = vm.envAddress("WORMHOLE_CORE");
+        address wormholeTokenBridge = vm.envAddress("WORMHOLE_TOKEN_BRIDGE");
+
+        CardanoBridgeAdapter adapter = new CardanoBridgeAdapter(
+            wormholeCore,
+            wormholeTokenBridge,
+            deployer
+        );
+        console.log("CardanoBridgeAdapter:", address(adapter));
+
+        adapter.grantRole(adapter.DEFAULT_ADMIN_ROLE(), admin);
+        adapter.grantRole(adapter.OPERATOR_ROLE(), admin);
+        adapter.grantRole(adapter.GUARDIAN_ROLE(), admin);
+
+        address relayer = vm.envOr("RELAYER_ADDRESS", address(0));
+        if (relayer != address(0)) {
+            adapter.grantRole(adapter.RELAYER_ROLE(), relayer);
+            console.log("Relayer granted:", relayer);
+        }
+
+        adapter.renounceRole(adapter.GUARDIAN_ROLE(), deployer);
+        adapter.renounceRole(adapter.OPERATOR_ROLE(), deployer);
+        adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
+
+        console.log("Cardano bridge deployed. Admin:", admin);
+        console.log(
+            "  Post-deploy: setZaseonCardanoValidator() + setWhitelistedValidator() via multisig"
+        );
     }
 
     function _strEq(

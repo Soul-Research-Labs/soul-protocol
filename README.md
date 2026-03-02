@@ -231,7 +231,9 @@ Zaseon sits between **privacy chains** and **public chains**, enabling confident
 │     PRIVACY CHAINS          │    │      PUBLIC L2s             │
 │  Aztec │ Secret │ Midnight  │    │  Arbitrum │ Optimism │ Base │
 │  Zcash │ Railgun │ Penumbra │    │  zkSync │ Scroll │ Linea   │
-└─────────────────────────────┘    └─────────────────────────────┘
+└─────────────────────────────┘    │  Solana (via Wormhole)      │
+│  Cardano (via Wormhole)     │
+                                   └─────────────────────────────┘
 ```
 
 ### How Data Flows: Aztec → Ethereum Example
@@ -262,7 +264,7 @@ Zaseon sits between **privacy chains** and **public chains**, enabling confident
 contracts/           # 242 production Solidity contracts
 ├── core/            # ZaseonProtocolHub, ConfidentialStateContainer, NullifierRegistry, PrivacyRouter
 ├── primitives/      # ZK-SLocks, PC³, CDNA, EASC, Orchestrator
-├── crosschain/      # 31 L2 bridge adapters (Arbitrum, Optimism, Base, zkSync, Scroll, Linea, Polygon zkEVM)
+├── crosschain/      # 33 bridge adapters (Arbitrum, Optimism, Base, zkSync, Scroll, Linea, Polygon zkEVM, Solana, Cardano)
 ├── privacy/         # UniversalShieldedPool, UniversalProofTranslator, Stealth addresses, CrossChainLiquidityVault
 ├── compliance/      # CrossChainSanctionsOracle, SelectiveDisclosure, ComplianceReporting
 ├── governance/      # ZaseonGovernor, ZaseonUpgradeTimelock
@@ -353,6 +355,8 @@ Zaseon provides adapters for major cross-chain messaging:
 | `DirectL2Messenger`         | Direct L2-to-L2 messaging             |
 | `EthereumL1Bridge`          | Ethereum L1 settlement bridge         |
 | `CrossChainMessageRelay`    | General message relay                 |
+| `SolanaBridgeAdapter`       | Wormhole VAA, Ed25519 programs        |
+| `CardanoBridgeAdapter`      | Wormhole VAA, Plutus validators       |
 
 ---
 

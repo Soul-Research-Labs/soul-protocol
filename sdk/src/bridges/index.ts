@@ -19,9 +19,11 @@ export * as ModeBridge from "./mode";
 export * from "./optimism";
 export * as PolygonZkEvmBridge from "./polygon-zkevm";
 export * as ScrollBridge from "./scroll";
+export * as SolanaBridge from "./solana";
 export * as StarknetBridge from "./starknet";
 export * as TaikoBridge from "./taiko";
 export * as ZkSyncBridge from "./zksync";
+export * as CardanoBridge from "./cardano";
 
 import {
   type PublicClient,
@@ -42,12 +44,14 @@ import { LINEA_BRIDGE_ADAPTER_ABI } from "./linea";
 import { ZKSYNC_BRIDGE_ADAPTER_ABI } from "./zksync";
 import { POLYGON_ZKEVM_BRIDGE_ADAPTER_ABI } from "./polygon-zkevm";
 import { ETHEREUM_L1_BRIDGE_ABI } from "./ethereum";
+import { SOLANA_BRIDGE_ADAPTER_ABI } from "./solana";
 import { STARKNET_BRIDGE_ADAPTER_ABI } from "./starknet";
 import { MANTLE_BRIDGE_ADAPTER_ABI } from "./mantle";
 import { BLAST_BRIDGE_ADAPTER_ABI } from "./blast";
 import { TAIKO_BRIDGE_ADAPTER_ABI } from "./taiko";
 import { MODE_BRIDGE_ADAPTER_ABI } from "./mode";
 import { MANTA_PACIFIC_BRIDGE_ADAPTER_ABI } from "./manta-pacific";
+import { CARDANO_BRIDGE_ADAPTER_ABI } from "./cardano";
 
 /** Maps chain names to their chain-specific bridge ABIs */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -60,6 +64,7 @@ const CHAIN_ABI_MAP: Record<string, readonly any[]> = {
   linea: LINEA_BRIDGE_ADAPTER_ABI,
   zksync: ZKSYNC_BRIDGE_ADAPTER_ABI,
   "zksync-era": ZKSYNC_BRIDGE_ADAPTER_ABI,
+  solana: SOLANA_BRIDGE_ADAPTER_ABI,
   starknet: STARKNET_BRIDGE_ADAPTER_ABI,
   mantle: MANTLE_BRIDGE_ADAPTER_ABI,
   blast: BLAST_BRIDGE_ADAPTER_ABI,
@@ -68,6 +73,7 @@ const CHAIN_ABI_MAP: Record<string, readonly any[]> = {
   "manta-pacific": MANTA_PACIFIC_BRIDGE_ADAPTER_ABI,
   "polygon-zkevm": POLYGON_ZKEVM_BRIDGE_ADAPTER_ABI,
   ethereum: ETHEREUM_L1_BRIDGE_ABI,
+  cardano: CARDANO_BRIDGE_ADAPTER_ABI,
 };
 
 // ============================================
@@ -179,9 +185,11 @@ export type SupportedChain =
   | "optimism"
   | "polygon-zkevm"
   | "scroll"
+  | "solana"
   | "starknet"
   | "taiko"
-  | "zksync";
+  | "zksync"
+  | "cardano";
 
 // ============================================
 // Bridge Factory
@@ -305,6 +313,22 @@ const CHAIN_CONFIGS: Record<SupportedChain, BridgeAdapterConfig> = {
     chainId: 169,
     nativeToken: "ETH",
     finality: 30, // ~30 min ZK proof
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  solana: {
+    name: "Solana",
+    chainId: 1, // Wormhole chain ID for Solana
+    nativeToken: "SOL",
+    finality: 1, // Wormhole guardian finality ~13 seconds
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  cardano: {
+    name: "Cardano",
+    chainId: 15, // Wormhole chain ID for Cardano
+    nativeToken: "ADA",
+    finality: 20, // ~20 blocks (~400s)
     maxAmount: 1_000_000_000_000_000_000_000_000n,
     minAmount: 1_000_000_000_000_000n,
   },
