@@ -313,6 +313,8 @@ export enum BridgeType {
   MANTA_PACIFIC = 11,
   WORMHOLE = 12,
   CARDANO = 13,
+  MIDNIGHT = 14,
+  RAILGUN = 15,
 }
 
 /** Bridge operational status — mirrors Solidity BridgeStatus enum */

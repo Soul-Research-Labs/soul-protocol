@@ -25,7 +25,9 @@ interface IMultiBridgeRouter {
         MODE,
         MANTA_PACIFIC,
         WORMHOLE,
-        CARDANO
+        CARDANO,
+        MIDNIGHT,
+        RAILGUN
     }
 
     enum BridgeStatus {

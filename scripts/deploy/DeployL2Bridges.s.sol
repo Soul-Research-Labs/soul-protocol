@@ -17,6 +17,8 @@ import {ModeBridgeAdapter} from "../../contracts/crosschain/ModeBridgeAdapter.so
 import {MantaPacificBridgeAdapter} from "../../contracts/crosschain/MantaPacificBridgeAdapter.sol";
 import {SolanaBridgeAdapter} from "../../contracts/crosschain/SolanaBridgeAdapter.sol";
 import {CardanoBridgeAdapter} from "../../contracts/crosschain/CardanoBridgeAdapter.sol";
+import {MidnightBridgeAdapter} from "../../contracts/crosschain/MidnightBridgeAdapter.sol";
+import {RailgunBridgeAdapter} from "../../contracts/crosschain/RailgunBridgeAdapter.sol";
 
 /**
  * @title ZASEON L2 Bridge Deployment Script
@@ -107,6 +109,14 @@ import {CardanoBridgeAdapter} from "../../contracts/crosschain/CardanoBridgeAdap
  *   # Cardano (Wormhole bridge on EVM)
  *   DEPLOY_TARGET=cardano forge script scripts/deploy/DeployL2Bridges.s.sol \
  *     --rpc-url $ETH_RPC --broadcast --verify -vvv
+ *
+ *   # Midnight (native bridge on EVM)
+ *   DEPLOY_TARGET=midnight forge script scripts/deploy/DeployL2Bridges.s.sol \
+ *     --rpc-url $ETH_RPC --broadcast --verify -vvv
+ *
+ *   # Railgun (EVM-native privacy protocol)
+ *   DEPLOY_TARGET=railgun forge script scripts/deploy/DeployL2Bridges.s.sol \
+ *     --rpc-url $ETH_RPC --broadcast --verify -vvv
  */
 contract DeployL2Bridges is Script {
     function run() external {
@@ -154,6 +164,10 @@ contract DeployL2Bridges is Script {
             _deploySolana(admin, deployer);
         } else if (_strEq(target, "cardano")) {
             _deployCardano(admin, deployer);
+        } else if (_strEq(target, "midnight")) {
+            _deployMidnight(admin, deployer);
+        } else if (_strEq(target, "railgun")) {
+            _deployRailgun(admin, deployer);
         } else {
             revert(string.concat("Unknown deploy target: ", target));
         }
@@ -687,6 +701,66 @@ contract DeployL2Bridges is Script {
         console.log(
             "  Post-deploy: setZaseonCardanoValidator() + setWhitelistedValidator() via multisig"
         );
+    }
+
+    function _deployMidnight(address admin, address deployer) internal {
+        address midnightBridge = vm.envAddress("MIDNIGHT_BRIDGE");
+        address proofVerifier = vm.envAddress("MIDNIGHT_PROOF_VERIFIER");
+
+        MidnightBridgeAdapter adapter = new MidnightBridgeAdapter(
+            midnightBridge,
+            proofVerifier,
+            deployer
+        );
+        console.log("MidnightBridgeAdapter:", address(adapter));
+
+        adapter.grantRole(adapter.DEFAULT_ADMIN_ROLE(), admin);
+        adapter.grantRole(adapter.OPERATOR_ROLE(), admin);
+        adapter.grantRole(adapter.GUARDIAN_ROLE(), admin);
+
+        address relayer = vm.envOr("RELAYER_ADDRESS", address(0));
+        if (relayer != address(0)) {
+            adapter.grantRole(adapter.RELAYER_ROLE(), relayer);
+            console.log("Relayer granted:", relayer);
+        }
+
+        adapter.renounceRole(adapter.GUARDIAN_ROLE(), deployer);
+        adapter.renounceRole(adapter.OPERATOR_ROLE(), deployer);
+        adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
+
+        console.log("Midnight bridge deployed. Admin:", admin);
+        console.log(
+            "  Post-deploy: setZaseonMidnightContract() + setWhitelistedContract() via multisig"
+        );
+    }
+
+    function _deployRailgun(address admin, address deployer) internal {
+        address railgunWallet = vm.envAddress("RAILGUN_SMART_WALLET");
+        address railgunRelay = vm.envAddress("RAILGUN_RELAY_ADAPT");
+
+        RailgunBridgeAdapter adapter = new RailgunBridgeAdapter(
+            railgunWallet,
+            railgunRelay,
+            deployer
+        );
+        console.log("RailgunBridgeAdapter:", address(adapter));
+
+        adapter.grantRole(adapter.DEFAULT_ADMIN_ROLE(), admin);
+        adapter.grantRole(adapter.OPERATOR_ROLE(), admin);
+        adapter.grantRole(adapter.GUARDIAN_ROLE(), admin);
+
+        address relayer = vm.envOr("RELAYER_ADDRESS", address(0));
+        if (relayer != address(0)) {
+            adapter.grantRole(adapter.RELAYER_ROLE(), relayer);
+            console.log("Relayer granted:", relayer);
+        }
+
+        adapter.renounceRole(adapter.GUARDIAN_ROLE(), deployer);
+        adapter.renounceRole(adapter.OPERATOR_ROLE(), deployer);
+        adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
+
+        console.log("Railgun bridge deployed. Admin:", admin);
+        console.log("  Post-deploy: grantRole(RELAYER_ROLE) via multisig");
     }
 
     function _strEq(

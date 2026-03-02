@@ -264,7 +264,7 @@ Zaseon sits between **privacy chains** and **public chains**, enabling confident
 contracts/           # 242 production Solidity contracts
 ├── core/            # ZaseonProtocolHub, ConfidentialStateContainer, NullifierRegistry, PrivacyRouter
 ├── primitives/      # ZK-SLocks, PC³, CDNA, EASC, Orchestrator
-├── crosschain/      # 33 bridge adapters (Arbitrum, Optimism, Base, zkSync, Scroll, Linea, Polygon zkEVM, Solana, Cardano)
+├── crosschain/      # 35 bridge adapters (Arbitrum, Optimism, Base, zkSync, Scroll, Linea, Polygon zkEVM, Solana, Cardano, Midnight, Railgun)
 ├── privacy/         # UniversalShieldedPool, UniversalProofTranslator, Stealth addresses, CrossChainLiquidityVault
 ├── compliance/      # CrossChainSanctionsOracle, SelectiveDisclosure, ComplianceReporting
 ├── governance/      # ZaseonGovernor, ZaseonUpgradeTimelock
@@ -357,6 +357,8 @@ Zaseon provides adapters for major cross-chain messaging:
 | `CrossChainMessageRelay`    | General message relay                 |
 | `SolanaBridgeAdapter`       | Wormhole VAA, Ed25519 programs        |
 | `CardanoBridgeAdapter`      | Wormhole VAA, Plutus validators       |
+| `MidnightBridgeAdapter`     | PLONK proofs, Compact contracts       |
+| `RailgunBridgeAdapter`      | Groth16 SNARKs, shielded UTXO pool    |
 
 ---
 

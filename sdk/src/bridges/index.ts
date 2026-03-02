@@ -24,6 +24,8 @@ export * as StarknetBridge from "./starknet";
 export * as TaikoBridge from "./taiko";
 export * as ZkSyncBridge from "./zksync";
 export * as CardanoBridge from "./cardano";
+export * as MidnightBridge from "./midnight";
+export * as RailgunBridge from "./railgun";
 
 import {
   type PublicClient,
@@ -52,6 +54,8 @@ import { TAIKO_BRIDGE_ADAPTER_ABI } from "./taiko";
 import { MODE_BRIDGE_ADAPTER_ABI } from "./mode";
 import { MANTA_PACIFIC_BRIDGE_ADAPTER_ABI } from "./manta-pacific";
 import { CARDANO_BRIDGE_ADAPTER_ABI } from "./cardano";
+import { MIDNIGHT_BRIDGE_ADAPTER_ABI } from "./midnight";
+import { RAILGUN_BRIDGE_ADAPTER_ABI } from "./railgun";
 
 /** Maps chain names to their chain-specific bridge ABIs */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -74,6 +78,8 @@ const CHAIN_ABI_MAP: Record<string, readonly any[]> = {
   "polygon-zkevm": POLYGON_ZKEVM_BRIDGE_ADAPTER_ABI,
   ethereum: ETHEREUM_L1_BRIDGE_ABI,
   cardano: CARDANO_BRIDGE_ADAPTER_ABI,
+  midnight: MIDNIGHT_BRIDGE_ADAPTER_ABI,
+  railgun: RAILGUN_BRIDGE_ADAPTER_ABI,
 };
 
 // ============================================
@@ -189,7 +195,9 @@ export type SupportedChain =
   | "starknet"
   | "taiko"
   | "zksync"
-  | "cardano";
+  | "cardano"
+  | "midnight"
+  | "railgun";
 
 // ============================================
 // Bridge Factory
@@ -329,6 +337,22 @@ const CHAIN_CONFIGS: Record<SupportedChain, BridgeAdapterConfig> = {
     chainId: 15, // Wormhole chain ID for Cardano
     nativeToken: "ADA",
     finality: 20, // ~20 blocks (~400s)
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  midnight: {
+    name: "Midnight",
+    chainId: 2100, // ZASEON internal chain ID
+    nativeToken: "tDUST",
+    finality: 10, // ~10 blocks (~120s)
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  railgun: {
+    name: "Railgun",
+    chainId: 3100, // ZASEON internal virtual chain ID
+    nativeToken: "ETH",
+    finality: 12, // Follows host chain (Ethereum)
     maxAmount: 1_000_000_000_000_000_000_000_000n,
     minAmount: 1_000_000_000_000_000n,
   },

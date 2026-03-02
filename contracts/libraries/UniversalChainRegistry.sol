@@ -182,6 +182,8 @@ library UniversalChainRegistry {
             return IUniversalChainAdapter.ProofSystem.GROTH16;
         } else if (vm == IUniversalChainAdapter.ChainVM.MOVE_SUI) {
             return IUniversalChainAdapter.ProofSystem.GROTH16;
+        } else if (vm == IUniversalChainAdapter.ChainVM.MIDNIGHT) {
+            return IUniversalChainAdapter.ProofSystem.PLONK;
         } else {
             return IUniversalChainAdapter.ProofSystem.GROTH16;
         }
