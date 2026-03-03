@@ -64,7 +64,11 @@ interface IUniversalChainAdapter {
         SUBSTRATE, // Polkadot/Substrate (ink!/Rust)
         BITCOIN, // Bitcoin (Script/BitVM)
         XRPL, // XRP Ledger (Hooks)
-        PLUTUS // Cardano (Plutus/Haskell)
+        PLUTUS, // Cardano (Plutus/Haskell)
+        TVM, // Tron Virtual Machine (Solidity-compatible)
+        AVM_ALGORAND, // Algorand Virtual Machine (TEAL/PyTeal)
+        SOROBAN, // Stellar Soroban (Rust/WASM)
+        HASHGRAPH // Hedera Hashgraph (EVM-compatible via relay)
     }
 
     /// @notice Proof system classification for cross-VM proof translation

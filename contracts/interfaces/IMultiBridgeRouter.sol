@@ -42,7 +42,18 @@ interface IMultiBridgeRouter {
         SOLANA,
         ALEO,
         XRPL,
-        BITCOIN
+        BITCOIN,
+        TRON,
+        CELO,
+        FILECOIN,
+        FANTOM_SONIC,
+        OASIS,
+        HEDERA,
+        ALGORAND,
+        STELLAR,
+        ACROSS,
+        STARGATE,
+        DEBRIDGE
     }
 
     enum BridgeStatus {

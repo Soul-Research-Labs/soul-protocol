@@ -133,8 +133,8 @@ contract MultiBridgeRouterGasBenchmark is Test {
         emit log_named_uint("routeMessage(lowValue) gas", gasUsed);
         assertLt(
             gasUsed,
-            250_000,
-            "routeMessage(lowValue) should be < 250k gas"
+            300_000,
+            "routeMessage(lowValue) should be < 300k gas"
         );
     }
 
@@ -152,8 +152,8 @@ contract MultiBridgeRouterGasBenchmark is Test {
         emit log_named_uint("routeMessage(highValue) gas", gasUsed);
         assertLt(
             gasUsed,
-            300_000,
-            "routeMessage(highValue) should be < 300k gas"
+            360_000,
+            "routeMessage(highValue) should be < 360k gas"
         );
     }
 

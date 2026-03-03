@@ -43,6 +43,17 @@ export * as AleoBridge from "./aleo";
 export * as XRPLBridge from "./xrpl";
 export * as BitcoinBridge from "./bitcoin";
 export * as ChainlinkCCIPBridge from "./chainlink-ccip";
+export * as TronBridge from "./tron";
+export * as CeloBridge from "./celo";
+export * as FilecoinBridge from "./filecoin";
+export * as FantomSonicBridge from "./fantom-sonic";
+export * as OasisBridge from "./oasis";
+export * as HederaBridge from "./hedera";
+export * as AlgorandBridge from "./algorand";
+export * as StellarBridge from "./stellar";
+export * as AcrossBridge from "./across";
+export * as StargateBridge from "./stargate";
+export * as DeBridgeBridge from "./debridge";
 
 import {
   type PublicClient,
@@ -90,6 +101,17 @@ import { ALEO_BRIDGE_ADAPTER_ABI } from "./aleo";
 import { XRPL_BRIDGE_ADAPTER_ABI } from "./xrpl";
 import { BITCOIN_BRIDGE_ADAPTER_ABI } from "./bitcoin";
 import { CHAINLINK_CCIP_BRIDGE_ADAPTER_ABI } from "./chainlink-ccip";
+import { TRON_BRIDGE_ADAPTER_ABI } from "./tron";
+import { CELO_BRIDGE_ADAPTER_ABI } from "./celo";
+import { FILECOIN_BRIDGE_ADAPTER_ABI } from "./filecoin";
+import { FANTOM_SONIC_BRIDGE_ADAPTER_ABI } from "./fantom-sonic";
+import { OASIS_BRIDGE_ADAPTER_ABI } from "./oasis";
+import { HEDERA_BRIDGE_ADAPTER_ABI } from "./hedera";
+import { ALGORAND_BRIDGE_ADAPTER_ABI } from "./algorand";
+import { STELLAR_BRIDGE_ADAPTER_ABI } from "./stellar";
+import { ACROSS_BRIDGE_ADAPTER_ABI } from "./across";
+import { STARGATE_BRIDGE_ADAPTER_ABI } from "./stargate";
+import { DEBRIDGE_BRIDGE_ADAPTER_ABI } from "./debridge";
 
 /** Maps chain names to their chain-specific bridge ABIs */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -131,6 +153,17 @@ const CHAIN_ABI_MAP: Record<string, readonly any[]> = {
   xrpl: XRPL_BRIDGE_ADAPTER_ABI,
   bitcoin: BITCOIN_BRIDGE_ADAPTER_ABI,
   "chainlink-ccip": CHAINLINK_CCIP_BRIDGE_ADAPTER_ABI,
+  tron: TRON_BRIDGE_ADAPTER_ABI,
+  celo: CELO_BRIDGE_ADAPTER_ABI,
+  filecoin: FILECOIN_BRIDGE_ADAPTER_ABI,
+  "fantom-sonic": FANTOM_SONIC_BRIDGE_ADAPTER_ABI,
+  oasis: OASIS_BRIDGE_ADAPTER_ABI,
+  hedera: HEDERA_BRIDGE_ADAPTER_ABI,
+  algorand: ALGORAND_BRIDGE_ADAPTER_ABI,
+  stellar: STELLAR_BRIDGE_ADAPTER_ABI,
+  across: ACROSS_BRIDGE_ADAPTER_ABI,
+  stargate: STARGATE_BRIDGE_ADAPTER_ABI,
+  debridge: DEBRIDGE_BRIDGE_ADAPTER_ABI,
 };
 
 // ============================================
@@ -264,7 +297,18 @@ export type SupportedChain =
   | "ton"
   | "aleo"
   | "xrpl"
-  | "bitcoin";
+  | "bitcoin"
+  | "tron"
+  | "celo"
+  | "filecoin"
+  | "fantom-sonic"
+  | "oasis"
+  | "hedera"
+  | "algorand"
+  | "stellar"
+  | "across"
+  | "stargate"
+  | "debridge";
 
 // ============================================
 // Bridge Factory
@@ -548,6 +592,94 @@ const CHAIN_CONFIGS: Record<SupportedChain, BridgeAdapterConfig> = {
     chainId: 19100,
     nativeToken: "BTC",
     finality: 60, // 6 confirmations × 10 min
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  tron: {
+    name: "Tron",
+    chainId: 20100,
+    nativeToken: "TRX",
+    finality: 1, // DPoS instant finality
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  celo: {
+    name: "Celo",
+    chainId: 21100,
+    nativeToken: "CELO",
+    finality: 1, // BFT instant finality
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  filecoin: {
+    name: "Filecoin",
+    chainId: 22100,
+    nativeToken: "FIL",
+    finality: 900, // ~7.5 hours EC finality
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  "fantom-sonic": {
+    name: "Fantom/Sonic",
+    chainId: 23100,
+    nativeToken: "FTM",
+    finality: 1, // DAG aBFT instant finality
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  oasis: {
+    name: "Oasis Sapphire",
+    chainId: 24100,
+    nativeToken: "ROSE",
+    finality: 1, // CometBFT instant finality
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  hedera: {
+    name: "Hedera",
+    chainId: 25100,
+    nativeToken: "HBAR",
+    finality: 1, // Hashgraph aBFT instant finality
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  algorand: {
+    name: "Algorand",
+    chainId: 26100,
+    nativeToken: "ALGO",
+    finality: 1, // Pure PoS instant finality
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  stellar: {
+    name: "Stellar",
+    chainId: 27100,
+    nativeToken: "XLM",
+    finality: 1, // SCP/FBA instant finality
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  across: {
+    name: "Across Protocol",
+    chainId: 28100,
+    nativeToken: "ETH",
+    finality: 120, // UMA optimistic verification ~2h
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  stargate: {
+    name: "Stargate",
+    chainId: 29100,
+    nativeToken: "ETH",
+    finality: 1, // LayerZero OFT
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  debridge: {
+    name: "deBridge",
+    chainId: 30100,
+    nativeToken: "ETH",
+    finality: 12, // Intent-based DLN verification
     maxAmount: 1_000_000_000_000_000_000_000_000n,
     minAmount: 1_000_000_000_000_000n,
   },

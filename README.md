@@ -264,7 +264,7 @@ Zaseon sits between **privacy chains** and **public chains**, enabling confident
 contracts/           # 242 production Solidity contracts
 ├── core/            # ZaseonProtocolHub, ConfidentialStateContainer, NullifierRegistry, PrivacyRouter
 ├── primitives/      # ZK-SLocks, PC³, CDNA, EASC, Orchestrator
-├── crosschain/      # 51 bridge adapters (Arbitrum, Optimism, Base, zkSync, Scroll, Linea, Polygon zkEVM, Solana, Cardano, Midnight, Railgun, Aztec, Secret, Polkadot, Cosmos, Zcash, Penumbra, NEAR, Avalanche, Axelar, Wormhole, Sui, Aptos, TON, Aleo, XRPL, Bitcoin)
+├── crosschain/      # 62 bridge adapters (Arbitrum, Optimism, Base, zkSync, Scroll, Linea, Polygon zkEVM, Solana, Cardano, Midnight, Railgun, Aztec, Secret, Polkadot, Cosmos, Zcash, Penumbra, NEAR, Avalanche, Axelar, Wormhole, Sui, Aptos, TON, Aleo, XRPL, Bitcoin, Tron, Celo, Filecoin, Fantom/Sonic, Oasis, Hedera, Algorand, Stellar, Across, Stargate, deBridge)
 ├── privacy/         # UniversalShieldedPool, UniversalProofTranslator, Stealth addresses, CrossChainLiquidityVault
 ├── compliance/      # CrossChainSanctionsOracle, SelectiveDisclosure, ComplianceReporting
 ├── governance/      # ZaseonGovernor, ZaseonUpgradeTimelock
@@ -381,6 +381,17 @@ Zaseon provides adapters for major cross-chain messaging:
 | `AleoBridgeAdapter`         | Marlin SNARKs, AleoBFT committee certs |
 | `XRPLBridgeAdapter`         | Witness attestation, FBA consensus     |
 | `BitcoinBridgeAdapter`      | SPV proofs, PoW header relay           |
+| `TronBridgeAdapter`         | SR committee attestation, TVM DPoS     |
+| `CeloBridgeAdapter`         | Plumo SNARK proofs, BFT PoS            |
+| `FilecoinBridgeAdapter`     | EC consensus, power table proofs       |
+| `FantomSonicBridgeAdapter`  | DAG aBFT Lachesis, instant finality    |
+| `OasisBridgeAdapter`        | TEE attestation, confidential EVM      |
+| `HederaBridgeAdapter`       | Hashgraph aBFT, node set verification  |
+| `AlgorandBridgeAdapter`     | Falcon state proofs, Pure PoS          |
+| `StellarBridgeAdapter`      | SCP/FBA quorum proofs, Soroban         |
+| `AcrossBridgeAdapter`       | UMA optimistic oracle, fast relay      |
+| `StargateBridgeAdapter`     | LayerZero OFT, unified liquidity       |
+| `DeBridgeBridgeAdapter`     | Intent-based DLN, claim verification   |
 
 ---
 
