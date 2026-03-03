@@ -1,8 +1,8 @@
 # Post-Quantum Cryptography (PQC) Migration Guide
 
-> **Status**: Phase 1 — Foundation  
-> **Version**: 1.0.0  
-> **Last Updated**: 2025-01-15
+> **Status**: Phase 3 — Full PQC  
+> **Version**: 3.0.0  
+> **Last Updated**: 2025-01-20
 
 ## Table of Contents
 
@@ -123,12 +123,14 @@ ZASEON protocol relies on elliptic curve cryptography (secp256k1, BN254 pairings
 
 ### Phase 3: Full PQC (Q4 2025 — Q1 2026)
 
-- [ ] EVM PQC precompile integration (when available)
-- [ ] Replace oracle-delegated verification with on-chain
-- [ ] Migrate all verifiers to STARK-compatible circuits
-- [ ] Poseidon commitment migration (replace Pedersen)
-- [ ] Graduate `PQC_SIGNATURES` to BETA → PRODUCTION
-- [ ] PQC-native stealth address scheme
+**Status: ✅ Complete**
+
+- [x] EVM PQC precompile integration (PQCPrecompileRouter — 3-level fallback chain: PRECOMPILE → ZK_PROOF → ORACLE)
+- [x] Replace oracle-delegated verification with on-chain (OnChainPQCVerifier — 4-stage oracle deprecation lifecycle)
+- [x] Migrate all verifiers to STARK-compatible circuits (STARKVerifierRouter — 5-stage domain migration)
+- [x] Poseidon commitment migration (PoseidonCommitmentManager — Pedersen → Poseidon circuit migration)
+- [x] Graduate `PQC_SIGNATURES` to BETA → PRODUCTION (PQCGraduationManager — attestation-based graduation pipeline)
+- [x] PQC-native stealth address scheme (PQCNativeStealth — fully quantum-safe with ZK ownership proofs)
 
 ### Phase 4: Classical Deprecation (Q2-Q4 2026)
 
@@ -176,6 +178,49 @@ PQCBridgeAttestation (Phase 2)
 ├── Oracle-Verified Quorum (configurable threshold)
 ├── Attestation Expiry (24-hour TTL)
 └── Integration with MultiBridgeRouter / IBridgeAdapter
+
+PQCPrecompileRouter (Phase 3)
+├── 3-Level Fallback Chain (PRECOMPILE → ZK_PROOF → ORACLE)
+├── Precompile Liveness Probing (1-hour cache TTL)
+├── Gas-Bounded Staticcalls (500k max per precompile)
+├── Algorithm-Specific Routing Config
+└── Integration with HybridPQCVerifier + FalconZKVerifier
+
+OnChainPQCVerifier (Phase 3)
+├── Direct On-Chain PQC Verification (precompile + ZK proof)
+├── Oracle Deprecation Lifecycle (ACTIVE → SHADOWED → DEPRECATED → SUNSET)
+├── Shadow Mode Comparison (on-chain vs oracle)
+├── Batch Verification (up to 32 requests)
+└── Auto-Submit to HybridPQCVerifier
+
+STARKVerifierRouter (Phase 3)
+├── Domain-Based Proof Routing (classical ↔ STARK)
+├── 5-Stage Migration (NOT_STARTED → PARALLEL → STARK_PRIMARY → STARK_ONLY → COMPLETE)
+├── Parallel Dual-Verification (classical + STARK mismatch tracking)
+├── STARK Structure Validation (FRI layers, blowup factor, field prime)
+└── Goldilocks / BN254 Field Support
+
+PoseidonCommitmentManager (Phase 3)
+├── Circuit Registration (Pedersen verifier)
+├── Poseidon Verifier Addition (enters DUAL_ACCEPTANCE)
+├── 5-Stage Migration (PEDERSEN_ONLY → DUAL → PRIMARY → ONLY → COMPLETE)
+├── Batch Circuit Migration (up to 20 circuits)
+└── Sunset Period Enforcement
+
+PQCGraduationManager (Phase 3)
+├── Attestation Collection (8 attestation types)
+├── Stage-Specific Criteria Enforcement
+├── Time-In-Stage Requirements (30d experimental, 90d beta)
+├── Risk Limit Escalation (1 ETH → 100 ETH → 10k ETH)
+└── Integration with ExperimentalFeatureRegistry
+
+PQCNativeStealth (Phase 3)
+├── Fully PQC-Native Meta-Addresses (Falcon + ML-KEM)
+├── ZK-Proven Ownership Claims (FalconZKVerifier verification)
+├── Cross-Chain Stealth Transfers (proof of derivation)
+├── View Tag Scanning Optimization
+├── Legacy Migration (from Phase 2 PQCStealthIntegration)
+└── Multi-Backend Verification (precompile → ZK → oracle)
 ```
 
 ### Verification Flow (Phase 1)
