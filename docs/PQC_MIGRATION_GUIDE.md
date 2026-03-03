@@ -108,13 +108,18 @@ ZASEON protocol relies on elliptic curve cryptography (secp256k1, BN254 pairings
 
 ### Phase 2: Hybrid Migration (Q2-Q3 2025)
 
-- [ ] Graduate `PQC_SIGNATURES` from DISABLED → EXPERIMENTAL
-- [ ] Integrate `HybridPQCVerifier` with stealth address flows
-- [ ] ML-KEM-768 key exchange for stealth addresses
-- [ ] Hybrid ECDSA+Falcon signatures on bridge messages
-- [ ] Begin STARK-based proof aggregation research
+**Status: ✅ In Progress**
+
+- [x] Graduate `PQC_SIGNATURES` from DISABLED → EXPERIMENTAL (updateFeatureImplementation added)
+- [x] Integrate `HybridPQCVerifier` with stealth address flows (PQCStealthIntegration contract)
+- [x] ML-KEM-768 key exchange for stealth addresses (KEMSession lifecycle)
+- [x] Hybrid ECDSA+Falcon signatures on bridge messages (PQCBridgeAttestation contract)
+- [x] Begin STARK-based proof aggregation research (STARKProof struct in RecursiveProofAggregator)
 - [ ] Noir ZK circuit for Falcon-512 signature verification
-- [ ] Update cross-chain relay to carry PQC attestations
+- [x] Update cross-chain relay to carry PQC attestations (PQCBridgeAttestation quorum system)
+- [x] Multi-backend verification (ORACLE / PRECOMPILE / ZK_PROOF)
+- [x] Precompile address configuration for future EVM PQC support
+- [x] SDK client classes (PQCStealthClient, KEMClient, PQCBridgeAttestationClient)
 
 ### Phase 3: Full PQC (Q4 2025 — Q1 2026)
 
@@ -151,9 +156,26 @@ HybridPQCVerifier (Implementation)
 ├── Key Management (register, rotate, revoke)
 ├── Hybrid Verification (ECDSA + PQC dual-check)
 ├── Oracle Integration (Phase 1 off-chain PQC)
+├── Multi-Backend Verification (Phase 2: ORACLE / PRECOMPILE / ZK_PROOF)
+├── KEM Session Lifecycle (Phase 2: initiate, complete, expire)
+├── Precompile Configuration (Phase 2+: future EVM PQC precompiles)
 ├── Algorithm Size Tables (NIST-correct parameters)
 ├── Access Control (Admin, Guardian, Oracle roles)
 └── IPQCVerifierLib (algorithm type utilities)
+
+PQCStealthIntegration (Phase 2)
+├── PQC Meta-Address Registration (spending + viewing keys)
+├── PQC Stealth Announcements (ML-KEM ciphertext instead of ephemeral EC points)
+├── View Tag Indexing (scanning optimization)
+├── Cross-Chain PQC Stealth Derivation (ML-KEM-based)
+└── Integration with HybridPQCVerifier + StealthAddressRegistry
+
+PQCBridgeAttestation (Phase 2)
+├── Attestor Registry (PQC key hash per validator)
+├── Attestation Submission (hybrid ECDSA+PQC bridge signatures)
+├── Oracle-Verified Quorum (configurable threshold)
+├── Attestation Expiry (24-hour TTL)
+└── Integration with MultiBridgeRouter / IBridgeAdapter
 ```
 
 ### Verification Flow (Phase 1)

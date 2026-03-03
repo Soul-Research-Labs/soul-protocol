@@ -668,6 +668,28 @@ contract StealthAddressRegistry is
             curveType == CurveType.PALLAS || curveType == CurveType.VESTA
         ) {
             if (pubKey.length != 32) revert InvalidPallasVestaKey();
+        } else if (curveType == CurveType.DILITHIUM) {
+            // ML-DSA: 1312 (Level 1), 1952 (Level 3), 2592 (Level 5)
+            if (
+                pubKey.length != 1312 &&
+                pubKey.length != 1952 &&
+                pubKey.length != 2592
+            ) revert InvalidDilithiumKey();
+        } else if (curveType == CurveType.KYBER) {
+            // ML-KEM: 800 (512), 1184 (768), 1568 (1024)
+            if (
+                pubKey.length != 800 &&
+                pubKey.length != 1184 &&
+                pubKey.length != 1568
+            ) revert InvalidKyberKey();
+        } else if (curveType == CurveType.FALCON) {
+            // FN-DSA: 897 (512), 1793 (1024)
+            if (pubKey.length != 897 && pubKey.length != 1793)
+                revert InvalidFalconKey();
+        } else if (curveType == CurveType.SPHINCS_PLUS) {
+            // SLH-DSA: 32 (128s/128f), 64 (256s)
+            if (pubKey.length != 32 && pubKey.length != 64)
+                revert InvalidSphincsPlusKey();
         }
     }
 

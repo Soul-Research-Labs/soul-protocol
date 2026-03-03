@@ -134,6 +134,10 @@ interface IStealthAddressRegistry {
     error InvalidBLSKey();
     error InvalidBN254Key();
     error InvalidPallasVestaKey();
+    error InvalidDilithiumKey();
+    error InvalidKyberKey();
+    error InvalidFalconKey();
+    error InvalidSphincsPlusKey();
     error ViewTagIndexFull();
 
     /*//////////////////////////////////////////////////////////////

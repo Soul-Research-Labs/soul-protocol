@@ -459,3 +459,480 @@ export const HYBRID_PQC_VERIFIER_ABI = [
     outputs: [{ name: "size", type: "uint256" }],
   },
 ] as const;
+
+// ═══════════════════════════════════════════════════════════════
+//               PHASE 2: KEM VARIANT TYPES
+// ═══════════════════════════════════════════════════════════════
+
+/** ML-KEM variant for stealth address key exchange */
+export enum KEMVariant {
+  ML_KEM_512 = 0,
+  ML_KEM_768 = 1, // recommended
+  ML_KEM_1024 = 2,
+}
+
+/** KEM ciphertext sizes (bytes) per variant */
+export const KEM_CIPHERTEXT_SIZES: Record<KEMVariant, number> = {
+  [KEMVariant.ML_KEM_512]: 768,
+  [KEMVariant.ML_KEM_768]: 1088,
+  [KEMVariant.ML_KEM_1024]: 1568,
+};
+
+/** Verification backend for PQC signature verification */
+export enum VerificationBackend {
+  ORACLE = 0,
+  PRECOMPILE = 1,
+  ZK_PROOF = 2,
+}
+
+/** PQC stealth meta-address */
+export interface PQCStealthMeta {
+  pqcSpendingPubKey: Uint8Array;
+  pqcViewingPubKey: Uint8Array;
+  sigAlgorithm: PQCAlgorithm;
+  kemVariant: KEMVariant;
+  spendingKeyHash: `0x${string}`;
+  viewingKeyHash: `0x${string}`;
+  registeredAt: bigint;
+  active: boolean;
+}
+
+/** PQC stealth announcement */
+export interface PQCAnnouncement {
+  schemeId: `0x${string}`;
+  stealthAddress: `0x${string}`;
+  kemCiphertext: Uint8Array;
+  ciphertextHash: `0x${string}`;
+  viewTag: Uint8Array;
+  metadata: Uint8Array;
+  timestamp: bigint;
+  chainId: bigint;
+  kemVariant: KEMVariant;
+}
+
+/** KEM session state */
+export interface KEMSession {
+  sessionId: `0x${string}`;
+  initiator: `0x${string}`;
+  responder: `0x${string}`;
+  kemAlgorithm: PQCAlgorithm;
+  ciphertextHash: `0x${string}`;
+  sharedSecretHash: `0x${string}`;
+  createdAt: bigint;
+  expiresAt: bigint;
+  completed: boolean;
+}
+
+/** Bridge attestation status */
+export interface BridgeAttestationStatus {
+  messageHash: `0x${string}`;
+  totalAttestations: bigint;
+  verifiedAttestations: bigint;
+  firstAttestedAt: bigint;
+  lastAttestedAt: bigint;
+  quorumReached: boolean;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//         PHASE 2: PQC STEALTH ADDRESS CLIENT
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * PQC Stealth Address client for Phase 2 integration.
+ * Manages PQC meta-addresses, stealth announcements, and scanning.
+ *
+ * Usage:
+ *   const client = new PQCStealthClient(walletClient, publicClient, contractAddress);
+ *   await client.registerPQCMetaAddress(spendingKey, viewingKey, PQCAlgorithm.FN_DSA_512, KEMVariant.ML_KEM_768);
+ *   await client.announceStealth(schemeId, stealthAddr, kemCiphertext, viewTag, KEMVariant.ML_KEM_768);
+ */
+export class PQCStealthClient {
+  constructor(
+    private readonly walletClient: any,
+    private readonly publicClient: any,
+    private readonly contractAddress: `0x${string}`,
+  ) {}
+
+  /** Register a PQC stealth meta-address */
+  async registerPQCMetaAddress(
+    spendingKey: Uint8Array,
+    viewingKey: Uint8Array,
+    sigAlgorithm: PQCAlgorithm,
+    kemVariant: KEMVariant,
+  ): Promise<`0x${string}`> {
+    const expectedSpendingSize = PQC_PUBLIC_KEY_SIZES[sigAlgorithm];
+    if (spendingKey.length !== expectedSpendingSize) {
+      throw new Error(
+        `Invalid spending key size: expected ${expectedSpendingSize}, got ${spendingKey.length}`,
+      );
+    }
+
+    const expectedViewingSize =
+      PQC_PUBLIC_KEY_SIZES[
+        kemVariant === KEMVariant.ML_KEM_512
+          ? PQCAlgorithm.ML_KEM_512
+          : kemVariant === KEMVariant.ML_KEM_768
+            ? PQCAlgorithm.ML_KEM_768
+            : PQCAlgorithm.ML_KEM_1024
+      ];
+    if (viewingKey.length !== expectedViewingSize) {
+      throw new Error(
+        `Invalid viewing key size: expected ${expectedViewingSize}, got ${viewingKey.length}`,
+      );
+    }
+
+    return this.walletClient.writeContract({
+      address: this.contractAddress,
+      abi: PQC_STEALTH_ABI,
+      functionName: "registerPQCMetaAddress",
+      args: [
+        `0x${Buffer.from(spendingKey).toString("hex")}`,
+        `0x${Buffer.from(viewingKey).toString("hex")}`,
+        sigAlgorithm,
+        kemVariant,
+      ],
+    });
+  }
+
+  /** Revoke PQC meta-address */
+  async revokePQCMetaAddress(): Promise<`0x${string}`> {
+    return this.walletClient.writeContract({
+      address: this.contractAddress,
+      abi: PQC_STEALTH_ABI,
+      functionName: "revokePQCMetaAddress",
+    });
+  }
+
+  /** Announce a PQC stealth address payment */
+  async announceStealth(
+    schemeId: `0x${string}`,
+    stealthAddress: `0x${string}`,
+    kemCiphertext: Uint8Array,
+    viewTag: Uint8Array,
+    kemVariant: KEMVariant,
+    metadata: Uint8Array = new Uint8Array(),
+  ): Promise<`0x${string}`> {
+    const expectedCTSize = KEM_CIPHERTEXT_SIZES[kemVariant];
+    if (kemCiphertext.length !== expectedCTSize) {
+      throw new Error(
+        `Invalid ciphertext size: expected ${expectedCTSize}, got ${kemCiphertext.length}`,
+      );
+    }
+
+    return this.walletClient.writeContract({
+      address: this.contractAddress,
+      abi: PQC_STEALTH_ABI,
+      functionName: "announcePQCStealth",
+      args: [
+        schemeId,
+        stealthAddress,
+        `0x${Buffer.from(kemCiphertext).toString("hex")}`,
+        `0x${Buffer.from(viewTag).toString("hex")}`,
+        `0x${Buffer.from(metadata).toString("hex")}`,
+        kemVariant,
+      ],
+    });
+  }
+
+  /** Get PQC meta-address for an owner */
+  async getPQCMetaAddress(owner: `0x${string}`): Promise<PQCStealthMeta> {
+    return this.publicClient.readContract({
+      address: this.contractAddress,
+      abi: PQC_STEALTH_ABI,
+      functionName: "getPQCMetaAddress",
+      args: [owner],
+    });
+  }
+
+  /** Scan announcements by view tag */
+  async scanByViewTag(viewTag: number): Promise<`0x${string}`[]> {
+    return this.publicClient.readContract({
+      address: this.contractAddress,
+      abi: PQC_STEALTH_ABI,
+      functionName: "getPQCAnnouncementsByViewTag",
+      args: [`0x${viewTag.toString(16).padStart(2, "0")}`],
+    });
+  }
+
+  /** Get statistics */
+  async getStats(): Promise<{
+    metaAddressCount: bigint;
+    announcementCount: bigint;
+    crossChainCount: bigint;
+  }> {
+    return this.publicClient.readContract({
+      address: this.contractAddress,
+      abi: PQC_STEALTH_ABI,
+      functionName: "getStats",
+    });
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//            PHASE 2: KEM SESSION CLIENT
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * KEM Session client for managing ML-KEM key exchange sessions.
+ *
+ * Usage:
+ *   const client = new KEMClient(walletClient, publicClient, verifierAddress);
+ *   const sessionId = await client.initiateSession(responder, PQCAlgorithm.ML_KEM_768, ctHash, 3600);
+ *   await client.completeSession(sessionId, sharedSecretHash); // responder calls this
+ */
+export class KEMClient {
+  constructor(
+    private readonly walletClient: any,
+    private readonly publicClient: any,
+    private readonly verifierAddress: `0x${string}`,
+  ) {}
+
+  /** Initiate a KEM session */
+  async initiateSession(
+    responder: `0x${string}`,
+    kemAlgorithm: PQCAlgorithm,
+    ciphertextHash: `0x${string}`,
+    durationSeconds: number,
+  ): Promise<`0x${string}`> {
+    if (!isKEMAlgorithm(kemAlgorithm)) {
+      throw new Error(
+        `Algorithm ${PQCAlgorithm[kemAlgorithm]} is not a KEM algorithm`,
+      );
+    }
+
+    return this.walletClient.writeContract({
+      address: this.verifierAddress,
+      abi: HYBRID_PQC_VERIFIER_ABI,
+      functionName: "initiateKEMSession",
+      args: [responder, kemAlgorithm, ciphertextHash, BigInt(durationSeconds)],
+    });
+  }
+
+  /** Complete a KEM session (called by responder) */
+  async completeSession(
+    sessionId: `0x${string}`,
+    sharedSecretHash: `0x${string}`,
+  ): Promise<`0x${string}`> {
+    return this.walletClient.writeContract({
+      address: this.verifierAddress,
+      abi: HYBRID_PQC_VERIFIER_ABI,
+      functionName: "completeKEMSession",
+      args: [sessionId, sharedSecretHash],
+    });
+  }
+
+  /** Get KEM session details */
+  async getSession(sessionId: `0x${string}`): Promise<KEMSession> {
+    return this.publicClient.readContract({
+      address: this.verifierAddress,
+      abi: HYBRID_PQC_VERIFIER_ABI,
+      functionName: "kemSessions",
+      args: [sessionId],
+    });
+  }
+
+  /** Get total KEM sessions */
+  async getTotalSessions(): Promise<bigint> {
+    return this.publicClient.readContract({
+      address: this.verifierAddress,
+      abi: HYBRID_PQC_VERIFIER_ABI,
+      functionName: "totalKEMSessions",
+    });
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//         PHASE 2: BRIDGE ATTESTATION CLIENT
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * PQC Bridge Attestation client for querying bridge message attestation status.
+ *
+ * Usage:
+ *   const client = new PQCBridgeAttestationClient(publicClient, attestationAddress);
+ *   const { hasQuorum } = await client.checkQuorum(messageHash);
+ */
+export class PQCBridgeAttestationClient {
+  constructor(
+    private readonly publicClient: any,
+    private readonly contractAddress: `0x${string}`,
+  ) {}
+
+  /** Check if a message has reached PQC attestation quorum */
+  async checkQuorum(
+    messageHash: `0x${string}`,
+  ): Promise<{ hasQuorum: boolean; verifiedCount: bigint }> {
+    return this.publicClient.readContract({
+      address: this.contractAddress,
+      abi: PQC_BRIDGE_ATTESTATION_ABI,
+      functionName: "checkQuorum",
+      args: [messageHash],
+    });
+  }
+
+  /** Check if attestation is still valid (not expired) */
+  async isValid(messageHash: `0x${string}`): Promise<boolean> {
+    return this.publicClient.readContract({
+      address: this.contractAddress,
+      abi: PQC_BRIDGE_ATTESTATION_ABI,
+      functionName: "isAttestationValid",
+      args: [messageHash],
+    });
+  }
+
+  /** Get attestation status */
+  async getStatus(
+    messageHash: `0x${string}`,
+  ): Promise<BridgeAttestationStatus> {
+    return this.publicClient.readContract({
+      address: this.contractAddress,
+      abi: PQC_BRIDGE_ATTESTATION_ABI,
+      functionName: "getAttestationStatus",
+      args: [messageHash],
+    });
+  }
+
+  /** Get statistics */
+  async getStats(): Promise<{
+    totalAttestations: bigint;
+    totalQuorum: bigint;
+  }> {
+    return this.publicClient.readContract({
+      address: this.contractAddress,
+      abi: PQC_BRIDGE_ATTESTATION_ABI,
+      functionName: "getStats",
+    });
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//              PHASE 2: MINIMAL ABIs
+// ═══════════════════════════════════════════════════════════════
+
+/** PQCStealthIntegration ABI (minimal for SDK) */
+const PQC_STEALTH_ABI = [
+  {
+    name: "registerPQCMetaAddress",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "pqcSpendingPubKey", type: "bytes" },
+      { name: "pqcViewingPubKey", type: "bytes" },
+      { name: "sigAlgorithm", type: "uint8" },
+      { name: "kemVariant", type: "uint8" },
+    ],
+    outputs: [],
+  },
+  {
+    name: "revokePQCMetaAddress",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [],
+    outputs: [],
+  },
+  {
+    name: "announcePQCStealth",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "schemeId", type: "bytes32" },
+      { name: "stealthAddress", type: "address" },
+      { name: "kemCiphertext", type: "bytes" },
+      { name: "viewTag", type: "bytes" },
+      { name: "metadata", type: "bytes" },
+      { name: "kemVariant", type: "uint8" },
+    ],
+    outputs: [],
+  },
+  {
+    name: "getPQCMetaAddress",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "owner", type: "address" }],
+    outputs: [
+      {
+        name: "meta",
+        type: "tuple",
+        components: [
+          { name: "pqcSpendingPubKey", type: "bytes" },
+          { name: "pqcViewingPubKey", type: "bytes" },
+          { name: "sigAlgorithm", type: "uint8" },
+          { name: "kemVariant", type: "uint8" },
+          { name: "spendingKeyHash", type: "bytes32" },
+          { name: "viewingKeyHash", type: "bytes32" },
+          { name: "registeredAt", type: "uint256" },
+          { name: "active", type: "bool" },
+        ],
+      },
+    ],
+  },
+  {
+    name: "getPQCAnnouncementsByViewTag",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "viewTag", type: "bytes1" }],
+    outputs: [{ name: "addresses", type: "address[]" }],
+  },
+  {
+    name: "getStats",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [
+      { name: "metaAddressCount", type: "uint256" },
+      { name: "announcementCount", type: "uint256" },
+      { name: "crossChainCount", type: "uint256" },
+    ],
+  },
+] as const;
+
+/** PQCBridgeAttestation ABI (minimal for SDK) */
+const PQC_BRIDGE_ATTESTATION_ABI = [
+  {
+    name: "checkQuorum",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "messageHash", type: "bytes32" }],
+    outputs: [
+      { name: "hasQuorum", type: "bool" },
+      { name: "verifiedCount", type: "uint256" },
+    ],
+  },
+  {
+    name: "isAttestationValid",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "messageHash", type: "bytes32" }],
+    outputs: [{ name: "valid", type: "bool" }],
+  },
+  {
+    name: "getAttestationStatus",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "messageHash", type: "bytes32" }],
+    outputs: [
+      {
+        name: "status",
+        type: "tuple",
+        components: [
+          { name: "messageHash", type: "bytes32" },
+          { name: "totalAttestations", type: "uint256" },
+          { name: "verifiedAttestations", type: "uint256" },
+          { name: "firstAttestedAt", type: "uint256" },
+          { name: "lastAttestedAt", type: "uint256" },
+          { name: "quorumReached", type: "bool" },
+        ],
+      },
+    ],
+  },
+  {
+    name: "getStats",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [
+      { name: "_totalAttestations", type: "uint256" },
+      { name: "_totalQuorum", type: "uint256" },
+    ],
+  },
+] as const;

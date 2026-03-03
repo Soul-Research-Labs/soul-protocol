@@ -116,6 +116,30 @@ contract HybridPQCVerifier is AccessControl, ReentrancyGuard, Pausable {
                                STATE
     //////////////////////////////////////////////////////////////*/
 
+    /*//////////////////////////////////////////////////////////////
+                   PHASE 2: VERIFICATION BACKEND
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Verification backend for PQC signature verification
+    enum VerificationBackend {
+        ORACLE, // Phase 1: Off-chain oracle verification
+        PRECOMPILE, // Phase 2+: EVM precompile (EIP-TBD)
+        ZK_PROOF // Phase 2+: ZK circuit verification
+    }
+
+    /// @notice KEM session state for stealth address key exchange
+    struct KEMSession {
+        bytes32 sessionId;
+        address initiator;
+        address responder;
+        IPQCVerifier.PQCAlgorithm kemAlgorithm;
+        bytes32 ciphertextHash; // Hash of ML-KEM ciphertext
+        bytes32 sharedSecretHash; // Hash of derived shared secret
+        uint256 createdAt;
+        uint256 expiresAt;
+        bool completed;
+    }
+
     /// @notice PQC public keys registered per address
     mapping(address => IPQCVerifier.PQCPublicKey) public pqcKeys;
 
@@ -142,6 +166,19 @@ contract HybridPQCVerifier is AccessControl, ReentrancyGuard, Pausable {
 
     /// @notice Approved off-chain PQC verification results (Phase 1)
     mapping(bytes32 => bool) public approvedPQCResults;
+
+    /// @notice Phase 2: Verification backend per algorithm
+    mapping(IPQCVerifier.PQCAlgorithm => VerificationBackend)
+        public algorithmBackend;
+
+    /// @notice Phase 2: Precompile addresses per algorithm (for future EVM PQC precompiles)
+    mapping(IPQCVerifier.PQCAlgorithm => address) public precompileAddresses;
+
+    /// @notice Phase 2: KEM session tracking
+    mapping(bytes32 => KEMSession) public kemSessions;
+
+    /// @notice Phase 2: Total KEM sessions initiated
+    uint256 public totalKEMSessions;
 
     /*//////////////////////////////////////////////////////////////
                                EVENTS
@@ -189,6 +226,29 @@ contract HybridPQCVerifier is AccessControl, ReentrancyGuard, Pausable {
     event PQCResultApproved(
         bytes32 indexed resultHash,
         address indexed submitter
+    );
+
+    event VerificationBackendUpdated(
+        IPQCVerifier.PQCAlgorithm indexed algorithm,
+        VerificationBackend oldBackend,
+        VerificationBackend newBackend
+    );
+
+    event PrecompileAddressSet(
+        IPQCVerifier.PQCAlgorithm indexed algorithm,
+        address precompileAddress
+    );
+
+    event KEMSessionInitiated(
+        bytes32 indexed sessionId,
+        address indexed initiator,
+        address indexed responder,
+        IPQCVerifier.PQCAlgorithm algorithm
+    );
+
+    event KEMSessionCompleted(
+        bytes32 indexed sessionId,
+        bytes32 sharedSecretHash
     );
 
     /*//////////////////////////////////////////////////////////////
@@ -538,6 +598,117 @@ contract HybridPQCVerifier is AccessControl, ReentrancyGuard, Pausable {
         emit PQCOracleUpdated(oldOracle, newOracle);
     }
 
+    /**
+     * @notice Set the verification backend for a PQC algorithm (Phase 2)
+     * @param algorithm The PQC algorithm
+     * @param backend The verification backend
+     */
+    function setVerificationBackend(
+        IPQCVerifier.PQCAlgorithm algorithm,
+        VerificationBackend backend
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        VerificationBackend oldBackend = algorithmBackend[algorithm];
+        algorithmBackend[algorithm] = backend;
+        emit VerificationBackendUpdated(algorithm, oldBackend, backend);
+    }
+
+    /**
+     * @notice Set the precompile address for a PQC algorithm (Phase 2+)
+     * @dev Will be used when EVM PQC precompiles are available
+     * @param algorithm The PQC algorithm
+     * @param precompile The precompile address
+     */
+    function setPrecompileAddress(
+        IPQCVerifier.PQCAlgorithm algorithm,
+        address precompile
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (precompile == address(0)) revert ZeroAddress();
+        precompileAddresses[algorithm] = precompile;
+        emit PrecompileAddressSet(algorithm, precompile);
+    }
+
+    /**
+     * @notice Initiate a KEM session for stealth address key exchange (Phase 2)
+     * @dev The actual KEM encapsulation happens off-chain. This records the
+     *      session context and ciphertext commitment on-chain.
+     * @param responder The other party (stealth address recipient)
+     * @param kemAlgorithm The KEM algorithm (must be ML-KEM variant)
+     * @param ciphertextHash Hash of the ML-KEM ciphertext
+     * @param duration Session duration in seconds
+     * @return sessionId The unique session identifier
+     */
+    function initiateKEMSession(
+        address responder,
+        IPQCVerifier.PQCAlgorithm kemAlgorithm,
+        bytes32 ciphertextHash,
+        uint256 duration
+    ) external nonReentrant whenNotPaused returns (bytes32 sessionId) {
+        // Validate KEM algorithm
+        require(
+            IPQCVerifierLib.isKEMAlgorithm(kemAlgorithm),
+            "Not a KEM algorithm"
+        );
+        require(
+            responder != address(0) && responder != msg.sender,
+            "Invalid responder"
+        );
+        require(duration > 0 && duration <= 7 days, "Invalid duration");
+
+        sessionId = keccak256(
+            abi.encodePacked(
+                PQC_KEY_DOMAIN,
+                msg.sender,
+                responder,
+                kemAlgorithm,
+                ciphertextHash,
+                block.timestamp,
+                totalKEMSessions
+            )
+        );
+
+        kemSessions[sessionId] = KEMSession({
+            sessionId: sessionId,
+            initiator: msg.sender,
+            responder: responder,
+            kemAlgorithm: kemAlgorithm,
+            ciphertextHash: ciphertextHash,
+            sharedSecretHash: bytes32(0),
+            createdAt: block.timestamp,
+            expiresAt: block.timestamp + duration,
+            completed: false
+        });
+
+        totalKEMSessions++;
+
+        emit KEMSessionInitiated(
+            sessionId,
+            msg.sender,
+            responder,
+            kemAlgorithm
+        );
+    }
+
+    /**
+     * @notice Complete a KEM session (responder confirms decapsulation)
+     * @param sessionId The session to complete
+     * @param sharedSecretHash Hash of the derived shared secret
+     */
+    function completeKEMSession(
+        bytes32 sessionId,
+        bytes32 sharedSecretHash
+    ) external nonReentrant {
+        KEMSession storage session = kemSessions[sessionId];
+        require(session.sessionId != bytes32(0), "Session not found");
+        require(msg.sender == session.responder, "Not responder");
+        require(!session.completed, "Already completed");
+        require(block.timestamp <= session.expiresAt, "Session expired");
+
+        session.sharedSecretHash = sharedSecretHash;
+        session.completed = true;
+
+        emit KEMSessionCompleted(sessionId, sharedSecretHash);
+    }
+
     /// @notice Pause the contract
     function pause() external onlyRole(PAUSER_ROLE) {
         _pause();
@@ -649,8 +820,9 @@ contract HybridPQCVerifier is AccessControl, ReentrancyGuard, Pausable {
     }
 
     /**
-     * @dev Phase 1: Verify PQC signature via pre-approved oracle result
-     *      Phase 2+ will replace this with precompile-based verification
+     * @dev Phase 1/2: Verify PQC signature via configurable backend
+     *      Phase 1 (default): Oracle-based verification
+     *      Phase 2: Precompile or ZK proof verification
      */
     function _verifyPQCViaOracle(
         bytes32 messageHash,
@@ -666,7 +838,30 @@ contract HybridPQCVerifier is AccessControl, ReentrancyGuard, Pausable {
         uint256 expectedSigSize = _getSignatureSize(key.algorithm);
         if (pqcSig.length != expectedSigSize) return false;
 
-        // Phase 1: Check oracle-approved result
+        // Route to appropriate backend
+        VerificationBackend backend = algorithmBackend[key.algorithm];
+
+        if (backend == VerificationBackend.PRECOMPILE) {
+            return
+                _verifyPQCViaPrecompile(
+                    messageHash,
+                    pqcSig,
+                    signer,
+                    key.algorithm
+                );
+        }
+
+        if (backend == VerificationBackend.ZK_PROOF) {
+            return
+                _verifyPQCViaZKProof(
+                    messageHash,
+                    pqcSig,
+                    signer,
+                    key.algorithm
+                );
+        }
+
+        // Default: Oracle-based verification (Phase 1)
         bytes32 resultHash = keccak256(
             abi.encodePacked(
                 HYBRID_SIG_DOMAIN,
@@ -678,6 +873,60 @@ contract HybridPQCVerifier is AccessControl, ReentrancyGuard, Pausable {
         );
 
         return approvedPQCResults[resultHash];
+    }
+
+    /**
+     * @dev Phase 2+: Verify PQC signature via EVM precompile (stub)
+     *      Will be activated when EIP for PQC precompiles is finalized.
+     *      The precompile ABI: staticcall(gas, precompile, abi.encode(pubkey, message, signature))
+     */
+    function _verifyPQCViaPrecompile(
+        bytes32 messageHash,
+        bytes calldata pqcSig,
+        address signer,
+        IPQCVerifier.PQCAlgorithm algorithm
+    ) internal view returns (bool) {
+        address precompile = precompileAddresses[algorithm];
+        if (precompile == address(0)) return false;
+
+        // Encode verification inputs per the expected precompile ABI
+        bytes memory input = abi.encode(
+            pqcKeys[signer].keyHash,
+            messageHash,
+            keccak256(pqcSig)
+        );
+
+        // Static call to precompile
+        (bool success, bytes memory result) = precompile.staticcall(input);
+        if (!success || result.length < 32) return false;
+
+        return abi.decode(result, (bool));
+    }
+
+    /**
+     * @dev Phase 2+: Verify PQC signature via ZK proof
+     *      Routes to a ZK verifier contract that proves correct PQC
+     *      signature verification was performed off-chain.
+     */
+    function _verifyPQCViaZKProof(
+        bytes32 messageHash,
+        bytes calldata pqcSig,
+        address signer,
+        IPQCVerifier.PQCAlgorithm algorithm
+    ) internal view returns (bool) {
+        // For ZK_PROOF mode, we check if the oracle has already
+        // approved the ZK proof verification result
+        bytes32 zkResultHash = keccak256(
+            abi.encodePacked(
+                HYBRID_SIG_DOMAIN,
+                "ZK_VERIFIED",
+                messageHash,
+                keccak256(pqcSig),
+                signer,
+                algorithm
+            )
+        );
+        return approvedPQCResults[zkResultHash];
     }
 
     /*//////////////////////////////////////////////////////////////

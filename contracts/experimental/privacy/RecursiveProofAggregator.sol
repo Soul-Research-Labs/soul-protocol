@@ -167,6 +167,20 @@ contract RecursiveProofAggregator is
         bytes evaluation;
     }
 
+    /// @notice STARK proof structure (hash-based, post-quantum)
+    struct STARKProof {
+        bytes32[] friCommitments; // FRI layer commitments
+        bytes32 constraintPolyHash; // Hash of constraint polynomial composition
+        bytes32 traceCommitment; // Merkle root of execution trace
+        bytes32 compositionRoot; // Composition polynomial root
+        uint256[] evaluationPoints; // Out-of-domain evaluation points
+        bytes32[] decommitmentPaths; // Merkle decommitment paths (serialized)
+        uint256 numFriLayers; // Number of FRI folding layers
+        uint256 blowupFactor; // Trace expansion factor (typically 2-8)
+        uint256 fieldPrime; // Field prime (for Goldilocks: 2^64 - 2^32 + 1)
+        bool verified;
+    }
+
     /// @notice Cross-chain proof bundle
     struct CrossChainProofBundle {
         bytes32 bundleId;
@@ -320,7 +334,7 @@ contract RecursiveProofAggregator is
     /**
      * @notice Initialize the aggregator
      * @param admin Admin address
-          * @param _featureRegistry The _feature registry
+     * @param _featureRegistry The _feature registry
      */
     function initialize(
         address admin,
@@ -802,12 +816,12 @@ contract RecursiveProofAggregator is
     }
 
     /// @notice Get parallel group details
-        /**
+    /**
      * @notice Returns the parallel group
      * @param groupId The groupId identifier
      * @return The result value
      */
-function getParallelGroup(
+    function getParallelGroup(
         bytes32 groupId
     ) external view returns (ParallelGroup memory) {
         return _parallelGroups[groupId];
@@ -842,7 +856,7 @@ function getParallelGroup(
      * @param proofSystem The proof system
      * @param proof The proof bytes
      * @param publicInputs Public inputs
-          * @return The result value
+     * @return The result value
      */
     function verifyAggregatedProof(
         ProofSystem proofSystem,
@@ -874,60 +888,60 @@ function getParallelGroup(
     // ============================================
 
     /// @notice Get batch details
-        /**
+    /**
      * @notice Returns the batch
      * @param batchId The batchId identifier
      * @return The result value
      */
-function getBatch(
+    function getBatch(
         bytes32 batchId
     ) external view returns (AggregationBatch memory) {
         return _batches[batchId];
     }
 
     /// @notice Get proof submission details
-        /**
+    /**
      * @notice Returns the proof submission
      * @param proofId The proofId identifier
      * @return The result value
      */
-function getProofSubmission(
+    function getProofSubmission(
         bytes32 proofId
     ) external view returns (ProofSubmission memory) {
         return proofSubmissions[proofId];
     }
 
     /// @notice Get cross-chain bundle details
-        /**
+    /**
      * @notice Returns the cross chain bundle
      * @param bundleId The bundleId identifier
      * @return The result value
      */
-function getCrossChainBundle(
+    function getCrossChainBundle(
         bytes32 bundleId
     ) external view returns (CrossChainProofBundle memory) {
         return crossChainBundles[bundleId];
     }
 
     /// @notice Get Nova folding state
-        /**
+    /**
      * @notice Returns the nova state
      * @param batchId The batchId identifier
      * @return The result value
      */
-function getNovaState(
+    function getNovaState(
         bytes32 batchId
     ) external view returns (NovaProof memory) {
         return novaStates[batchId];
     }
 
     /// @notice Check if a root is verified
-        /**
+    /**
      * @notice Checks if root verified
      * @param root The Merkle root
      * @return The result value
      */
-function isRootVerified(bytes32 root) external view returns (bool) {
+    function isRootVerified(bytes32 root) external view returns (bool) {
         return verifiedRoots[root];
     }
 
@@ -937,7 +951,7 @@ function isRootVerified(bytes32 root) external view returns (bool) {
 
     /**
      * @notice Set verifier for a proof system
-          * @param system The system
+     * @param system The system
      * @param verifier The verifier contract address
      */
     function setVerifier(

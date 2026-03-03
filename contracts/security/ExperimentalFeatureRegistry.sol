@@ -117,6 +117,12 @@ contract ExperimentalFeatureRegistry is AccessControl {
         uint256 newLimit
     );
 
+    event FeatureImplementationUpdated(
+        bytes32 indexed featureId,
+        address indexed oldImplementation,
+        address indexed newImplementation
+    );
+
     /*//////////////////////////////////////////////////////////////
                                 ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -396,6 +402,29 @@ contract ExperimentalFeatureRegistry is AccessControl {
         feature.lastStatusChange = block.timestamp;
 
         emit FeatureStatusUpdated(featureId, oldStatus, FeatureStatus.DISABLED);
+    }
+
+    /**
+     * @notice Update implementation address for a feature
+     * @param featureId The feature
+     * @param newImplementation The new implementation contract address
+     */
+    function updateFeatureImplementation(
+        bytes32 featureId,
+        address newImplementation
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        Feature storage feature = features[featureId];
+
+        if (feature.createdAt == 0) revert FeatureNotFound(featureId);
+
+        address oldImplementation = feature.implementation;
+        feature.implementation = newImplementation;
+
+        emit FeatureImplementationUpdated(
+            featureId,
+            oldImplementation,
+            newImplementation
+        );
     }
 
     /**
