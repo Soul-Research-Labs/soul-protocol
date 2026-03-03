@@ -104,18 +104,18 @@ ZASEON protocol relies on elliptic curve cryptography (secp256k1, BN254 pairings
 - [x] Comprehensive test harness (35+ test cases)
 - [x] SDK TypeScript types and utilities
 - [ ] Off-chain PQC oracle service (relayer-integrated)
-- [ ] Noir circuit for PQC signature commitment proofs
+- [x] Noir circuit for PQC signature commitment proofs (falcon_signature circuit)
 
 ### Phase 2: Hybrid Migration (Q2-Q3 2025)
 
-**Status: ✅ In Progress**
+**Status: ✅ Complete**
 
 - [x] Graduate `PQC_SIGNATURES` from DISABLED → EXPERIMENTAL (updateFeatureImplementation added)
 - [x] Integrate `HybridPQCVerifier` with stealth address flows (PQCStealthIntegration contract)
 - [x] ML-KEM-768 key exchange for stealth addresses (KEMSession lifecycle)
 - [x] Hybrid ECDSA+Falcon signatures on bridge messages (PQCBridgeAttestation contract)
 - [x] Begin STARK-based proof aggregation research (STARKProof struct in RecursiveProofAggregator)
-- [ ] Noir ZK circuit for Falcon-512 signature verification
+- [x] Noir ZK circuit for Falcon-512 signature verification (falcon_signature circuit + FalconZKVerifier bridge)
 - [x] Update cross-chain relay to carry PQC attestations (PQCBridgeAttestation quorum system)
 - [x] Multi-backend verification (ORACLE / PRECOMPILE / ZK_PROOF)
 - [x] Precompile address configuration for future EVM PQC support
