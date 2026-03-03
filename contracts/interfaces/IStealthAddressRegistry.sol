@@ -17,7 +17,12 @@ interface IStealthAddressRegistry {
         BLS12_381,
         PALLAS,
         VESTA,
-        BN254
+        BN254,
+        // Post-Quantum Cryptographic (PQC) curve types — Phase 1 migration
+        DILITHIUM, // ML-DSA lattice-based (NIST FIPS 204)
+        KYBER, // ML-KEM lattice-based key encapsulation (NIST FIPS 203)
+        FALCON, // FN-DSA NTRU lattice-based (NIST FIPS 206)
+        SPHINCS_PLUS // SLH-DSA hash-based stateless (NIST FIPS 205)
     }
 
     enum KeyStatus {

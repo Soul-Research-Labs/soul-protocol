@@ -322,7 +322,7 @@ Emergency Action → Guardian Signatures (M of N) → Timelock (24-72h) → Exec
 | Bridge Exploitation   | Medium     | Critical | High       | ✅ Mitigated            |
 | Key Compromise        | Medium     | Critical | Critical   | ✅ Mitigated            |
 | Griefing/DoS          | High       | Low      | Medium     | ✅ Mitigated            |
-| Quantum Attack        | Very Low   | Critical | Low        | ⚠️ Future Consideration |
+| Quantum Attack        | Low        | Critical | Medium     | 🔄 PQC Migration Active |
 
 ---
 

@@ -64,7 +64,7 @@ contract VerifierRegistryV2 is AccessControl {
         PEDERSEN_COMMITMENT, // 16
         // Phase 3 circuits (P2)
         AGGREGATOR, // 17
-        RESERVED_18, // 18 (formerly PQC_VERIFIER, removed)
+        PQC_VERIFIER, // 18 — Re-enabled for post-quantum cryptographic verifiers
         INVARIANT_CHECKER, // 19
         // Phase 4 circuits (P3) — Noir/UltraHonk-generated verifiers
         ACCREDITED_INVESTOR, // 20
