@@ -105,7 +105,7 @@ registry.requireProductionReady(featureId);
 
 ### Graduation criteria
 
-Per `EXPERIMENTAL_FEATURES_POLICY.md`:
+Per the graduation criteria defined in the `ExperimentalFeatureRegistry`:
 
 | Transition              | Requirements                                                                                      |
 | ----------------------- | ------------------------------------------------------------------------------------------------- |
@@ -145,6 +145,5 @@ Seven contracts have completed the full pipeline:
 ## References
 
 - [ExperimentalFeatureRegistry.sol](../../contracts/security/ExperimentalFeatureRegistry.sol)
-- [EXPERIMENTAL_FEATURES_POLICY.md](../EXPERIMENTAL_FEATURES_POLICY.md)
 - [COMPLEXITY_MANAGEMENT.md](../COMPLEXITY_MANAGEMENT.md)
 - LaunchDarkly feature flag patterns (adapted for on-chain)

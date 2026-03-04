@@ -187,17 +187,14 @@ forge inspect <Contract> storage-layout > layout.json
 
 ## Running Coverage
 
-### With Stubs (Partial Coverage)
+### With Foundry
 
 ```bash
-# Run coverage with stub replacement
-python scripts/run_coverage.py --report=summary
+# Run coverage with summary output
+FOUNDRY_PROFILE=coverage forge coverage --ir-minimum --report summary
 
 # Generate LCOV report
-python scripts/run_coverage.py --report=lcov
-
-# Restore contracts if interrupted
-python scripts/run_coverage.py --restore
+FOUNDRY_PROFILE=coverage forge coverage --ir-minimum --report lcov
 ```
 
 ### Stubbed Contracts

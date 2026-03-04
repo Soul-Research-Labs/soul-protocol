@@ -185,14 +185,14 @@ const unlockTx = await client.unlockWithProof({
 
 ### V2 Additions
 
-| Component                 | Contract                      | Purpose                                                           |
-| ------------------------- | ----------------------------- | ----------------------------------------------------------------- |
-| **Intent Completion**     | `IntentCompletionLayer`       | Solver marketplace for cross-chain intent fulfillment             |
-| **Instant Completion**    | `InstantCompletionGuarantee`  | Collateralized guarantees for sub-block completion                |
-| **Dynamic Routing**       | `DynamicRoutingOrchestrator`  | Optimal cross-chain path selection based on bridge capacity/cost/speed  |
-| **Capacity Router**      | `CapacityAwareRouter`        | Capacity-aware proof relay routing with bridge metric tracking             |
-| **Compliance**            | `SelectiveDisclosureManager`  | Privacy-preserving compliance with selective attribute disclosure |
-| **Experimental Registry** | `ExperimentalFeatureRegistry` | Feature flags with risk limits and graduation pipeline            |
+| Component                 | Contract                      | Purpose                                                                |
+| ------------------------- | ----------------------------- | ---------------------------------------------------------------------- |
+| **Intent Completion**     | `IntentCompletionLayer`       | Solver marketplace for cross-chain intent fulfillment                  |
+| **Instant Completion**    | `InstantCompletionGuarantee`  | Collateralized guarantees for sub-block completion                     |
+| **Dynamic Routing**       | `DynamicRoutingOrchestrator`  | Optimal cross-chain path selection based on bridge capacity/cost/speed |
+| **Capacity Router**       | `CapacityAwareRouter`         | Capacity-aware proof relay routing with bridge metric tracking         |
+| **Compliance**            | `SelectiveDisclosureManager`  | Privacy-preserving compliance with selective attribute disclosure      |
+| **Experimental Registry** | `ExperimentalFeatureRegistry` | Feature flags with risk limits and graduation pipeline                 |
 
 ### ZK Backend: Noir + UltraHonk
 
@@ -308,12 +308,12 @@ SCROLLSCAN_API_KEY=your_key
 
 ## Next Steps
 
-| Resource                                      | Description                                 |
-| --------------------------------------------- | ------------------------------------------- |
-| **[Integration Guide](INTEGRATION_GUIDE.md)** | Deep-dive into SDK usage with v2 primitives |
-| **[API Reference](API_REFERENCE.md)**         | Complete function documentation             |
-| **[Architecture](architecture.md)**           | System design and components                |
-| **[Deployment Guide](DEPLOYMENT.md)**         | Testnet and mainnet deployment              |
+| Resource                                       | Description                                 |
+| ---------------------------------------------- | ------------------------------------------- |
+| **[Integration Guide](INTEGRATION_GUIDE.md)**  | Deep-dive into SDK usage with v2 primitives |
+| **[API Reference](SOLIDITY_API_REFERENCE.md)** | Complete function documentation             |
+| **[Architecture](architecture.md)**            | System design and components                |
+| **[Deployment Guide](DEPLOYMENT.md)**          | Testnet and mainnet deployment              |
 
 ---
 

@@ -25,19 +25,19 @@
 
 ## Supported Networks
 
-| Network | Chain ID | Type | Adapter Contract |
-|---------|----------|------|------------------|
-| Arbitrum One | 42161 | Optimistic Rollup | `ArbitrumBridgeAdapter.sol` |
-| Arbitrum Nova | 42170 | AnyTrust | `ArbitrumBridgeAdapter.sol` |
-| Arbitrum Sepolia | 421614 | Testnet | `ArbitrumBridgeAdapter.sol` |
-| Optimism | 10 | OP Stack | `OptimismBridgeAdapter.sol` |
-| Optimism Sepolia | 11155420 | Testnet | `OptimismBridgeAdapter.sol` |
-| Base | 8453 | OP Stack | `BaseBridgeAdapter.sol` |
-| Base Sepolia | 84532 | Testnet | `BaseBridgeAdapter.sol` |
-| zkSync Era | 324 | ZK Rollup | `L2ChainAdapter.sol` |
-| Scroll | 534352 | zkEVM | `L2ChainAdapter.sol` |
-| Linea | 59144 | zkEVM | `L2ChainAdapter.sol` |
-| Polygon zkEVM | 1101 | zkEVM | `L2ChainAdapter.sol` |
+| Network          | Chain ID | Type              | Adapter Contract            |
+| ---------------- | -------- | ----------------- | --------------------------- |
+| Arbitrum One     | 42161    | Optimistic Rollup | `ArbitrumBridgeAdapter.sol` |
+| Arbitrum Nova    | 42170    | AnyTrust          | `ArbitrumBridgeAdapter.sol` |
+| Arbitrum Sepolia | 421614   | Testnet           | `ArbitrumBridgeAdapter.sol` |
+| Optimism         | 10       | OP Stack          | `OptimismBridgeAdapter.sol` |
+| Optimism Sepolia | 11155420 | Testnet           | `OptimismBridgeAdapter.sol` |
+| Base             | 8453     | OP Stack          | `BaseBridgeAdapter.sol`     |
+| Base Sepolia     | 84532    | Testnet           | `BaseBridgeAdapter.sol`     |
+| zkSync Era       | 324      | ZK Rollup         | `L2ChainAdapter.sol`        |
+| Scroll           | 534352   | zkEVM             | `L2ChainAdapter.sol`        |
+| Linea            | 59144    | zkEVM             | `L2ChainAdapter.sol`        |
+| Polygon zkEVM    | 1101     | zkEVM             | `L2ChainAdapter.sol`        |
 
 ## Architecture
 
@@ -65,6 +65,7 @@
 ```
 
 **Key Features:**
+
 - Retryable Tickets for guaranteed L1→L2 delivery
 - Outbox Merkle proofs for L2→L1 verification
 - ~7 day challenge period for withdrawals
@@ -95,6 +96,7 @@
 ```
 
 **Key Features:**
+
 - CrossDomainMessenger for bidirectional messaging
 - Bedrock upgrade with modular architecture
 - Fault proofs for dispute resolution
@@ -121,6 +123,7 @@
 ```
 
 **Key Features:**
+
 - Same OP Stack as Optimism
 - CCTP for native USDC (no wrapped tokens)
 - Coinbase Verifications (on-chain attestations)
@@ -250,7 +253,7 @@ import { ethers } from "ethers";
 const l1Adapter = new ethers.Contract(
   ARBITRUM_BRIDGE_ADAPTER_L1,
   ArbitrumBridgeAdapterABI,
-  l1Signer
+  l1Signer,
 );
 
 // Prepare proof
@@ -269,7 +272,7 @@ const tx = await l1Adapter.sendProofToL2(
   publicInputs,
   gasLimit,
   maxSubmissionCost,
-  { value: totalValue }
+  { value: totalValue },
 );
 
 const receipt = await tx.wait();
@@ -283,7 +286,7 @@ console.log("Retryable ticket created:", receipt.hash);
 const baseAdapter = new ethers.Contract(
   BASE_BRIDGE_ADAPTER_L1,
   BaseBridgeAdapterABI,
-  l1Signer
+  l1Signer,
 );
 
 // Send proof
@@ -292,7 +295,7 @@ const tx = await baseAdapter.sendProofToL2(
   proof,
   publicInputs,
   1_000_000n,
-  { value: ethers.parseEther("0.001") }
+  { value: ethers.parseEther("0.001") },
 );
 
 await tx.wait();
@@ -309,7 +312,7 @@ await usdc.approve(BASE_BRIDGE_ADAPTER, amount);
 const tx = await baseAdapter.initiateUSDCTransfer(
   recipientOnBase,
   amount,
-  6 // Base CCTP domain
+  6, // Base CCTP domain
 );
 
 const receipt = await tx.wait();
@@ -319,7 +322,7 @@ const transferId = receipt.logs[0].args.transferId;
 await baseAdapterL2.completeCCTPTransfer(
   transferId,
   cctpMessage,
-  circleAttestation
+  circleAttestation,
 );
 ```
 
@@ -331,7 +334,7 @@ await baseAdapterL2.completeCCTPTransfer(
 # Deploy to Arbitrum Sepolia
 npx hardhat run scripts/deploy-l2-adapters.ts --network arbitrumSepolia
 
-# Deploy to Base Sepolia  
+# Deploy to Base Sepolia
 npx hardhat run scripts/deploy-l2-adapters.ts --network baseSepolia
 
 # Deploy to Optimism Sepolia
@@ -342,19 +345,19 @@ npx hardhat run scripts/deploy-l2-adapters.ts --network optimismSepolia
 
 Each adapter needs to be configured with the correct messenger addresses:
 
-| Network | L1 CrossDomainMessenger | L2 CrossDomainMessenger |
-|---------|-------------------------|-------------------------|
-| Arbitrum | `0x4Dbd4fc535Ac27206064B68FfCf827b0A60BAB3f` | (ArbSys) |
+| Network  | L1 CrossDomainMessenger                      | L2 CrossDomainMessenger                      |
+| -------- | -------------------------------------------- | -------------------------------------------- |
+| Arbitrum | `0x4Dbd4fc535Ac27206064B68FfCf827b0A60BAB3f` | (ArbSys)                                     |
 | Optimism | `0x25ace71c97B33Cc4729CF772ae268934F7ab5fA1` | `0x4200000000000000000000000000000000000007` |
-| Base | `0x866E82a600A1414e583f7F13623F1aC5d58b0Afa` | `0x4200000000000000000000000000000000000007` |
+| Base     | `0x866E82a600A1414e583f7F13623F1aC5d58b0Afa` | `0x4200000000000000000000000000000000000007` |
 
 ## Security Considerations
 
-| Aspect | Details |
-|--------|--------|
-| **Challenge Period** | All optimistic rollups: ~7 days for L2→L1 messages |
-| **Message Verification** | Always verify `msg.sender == l2CrossDomainMessenger` |
-| **Gas Limits** | Proof relay: 500K-1M gas • State sync: 200K-500K • Simple ops: 100K-200K |
+| Aspect                   | Details                                                                  |
+| ------------------------ | ------------------------------------------------------------------------ |
+| **Challenge Period**     | All optimistic rollups: ~7 days for L2→L1 messages                       |
+| **Message Verification** | Always verify `msg.sender == l2CrossDomainMessenger`                     |
+| **Gas Limits**           | Proof relay: 500K-1M gas • State sync: 200K-500K • Simple ops: 100K-200K |
 
 ## Testnet Faucets
 
@@ -362,4 +365,4 @@ Arbitrum/Optimism/Base Sepolia: [Alchemy Faucets](https://www.alchemy.com/faucet
 
 ## See Also
 
-[BRIDGE_INTEGRATION.md](./BRIDGE_INTEGRATION.md) • [ETHEREUM_INTEROPERABILITY.md](./ETHEREUM_INTEROPERABILITY.md) • [DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md)
+[BRIDGE_INTEGRATION.md](./BRIDGE_INTEGRATION.md) • [DEPLOYMENT.md](./DEPLOYMENT.md)

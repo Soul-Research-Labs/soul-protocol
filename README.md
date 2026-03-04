@@ -330,7 +330,7 @@ npx hardhat run scripts/deploy.js --network localhost
 | `CrossChainPrivacyHub`      | Unified cross-chain privacy relay with vault-backed liquidity         |
 | `StealthAddressRegistry`    | ERC-5564 stealth addresses (upgradeable)                              |
 
-See [API Reference](docs/API_REFERENCE.md) for full contract documentation.
+See [API Reference](docs/SOLIDITY_API_REFERENCE.md) for full contract documentation.
 
 ---
 
@@ -630,7 +630,7 @@ npx hardhat run scripts/deploy/deploy-l2-bridges.ts --network base-sepolia
 
 ## Documentation
 
-[Architecture](docs/architecture.md) • [API Reference](docs/API_REFERENCE.md) • [Integration Guide](docs/INTEGRATION_GUIDE.md) • [L2 Bridges](docs/L2_INTEROPERABILITY.md) • [Security](docs/THREAT_MODEL.md)
+[Architecture](docs/architecture.md) • [API Reference](docs/SOLIDITY_API_REFERENCE.md) • [Integration Guide](docs/INTEGRATION_GUIDE.md) • [L2 Bridges](docs/L2_INTEROPERABILITY.md) • [Security](docs/THREAT_MODEL.md)
 
 ---
 

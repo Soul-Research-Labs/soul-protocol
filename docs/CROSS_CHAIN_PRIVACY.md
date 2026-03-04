@@ -659,7 +659,7 @@ const success = await ringCT.verifyAndExecuteRCT(
 
 ## Contract Addresses
 
-**Mainnet:** Not yet deployed — see [DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md) | **Sepolia:** Deploy pending (see [DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md))
+**Mainnet:** Not yet deployed — see [DEPLOYMENT.md](./DEPLOYMENT.md) | **Sepolia:** Deploy pending (see [DEPLOYMENT.md](./DEPLOYMENT.md))
 
 ## References
 

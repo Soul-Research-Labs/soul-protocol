@@ -210,7 +210,7 @@ forge script scripts/deploy/DeployComplianceSuite.s.sol:DeployComplianceSuite \
 
 ## What Was Learned From Tachyon (Reference)
 
-See [docs/TACHYON_LEARNINGS.md](TACHYON_LEARNINGS.md) for the complete analysis.
+See the key insights below from the Tachyon competitive analysis.
 
 **Key insight**: Tachyon's compliance-first design attracts institutions.
 Zaseon's approach adds compliance as an **optional layer** on top of ZK privacy —
@@ -249,6 +249,6 @@ forge test --no-match-path "test/stress/*" --summary
 | SelectiveDisclosureManager | 39      | 3          |
 | ConfigurablePrivacyLevels  | 32      | 3          |
 | ComplianceReportingModule  | 31      | 2          |
-| ZaseonComplianceV2           | 36      | 0          |
+| ZaseonComplianceV2         | 36      | 0          |
 | CrossChainSanctionsOracle  | 10      | 0          |
 | **Total**                  | **148** | **8**      |

@@ -174,4 +174,4 @@ const payload = ZcashBridge.encodeZaseonPayload(
 - [Cross-Chain Privacy](CROSS_CHAIN_PRIVACY.md) — Nullifier translation, Pallas/Vesta handling
 - [Bridge Security Framework](BRIDGE_SECURITY_FRAMEWORK.md) — Security requirements for adapters
 - [Integration Guide](INTEGRATION_GUIDE.md) — SDK usage patterns
-- [Deployment Checklist](DEPLOYMENT_CHECKLIST.md) — Pre-mainnet verification steps
+- [Deployment Guide](DEPLOYMENT.md) — Testnet and mainnet deployment

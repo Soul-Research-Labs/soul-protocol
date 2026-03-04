@@ -22,15 +22,15 @@ clean:
 	rm -f lcov.info .gas-snapshot
 
 # ─── Coverage ─────────────────────────────────────
-.PHONY: coverage coverage-lcov coverage-analyze coverage-ci coverage-restore coverage-forge
+.PHONY: coverage coverage-lcov coverage-analyze coverage-ci
 
-## Run coverage with summary output (uses stub-swap)
+## Run Foundry coverage (memory-safe assembly required, ~30 min)
 coverage:
-	$(PYTHON) scripts/run_coverage.py --report=summary
+	FOUNDRY_PROFILE=coverage $(FORGE) coverage --ir-minimum --report summary
 
-## Run coverage and produce lcov.info (uses stub-swap)
+## Run coverage and produce lcov.info
 coverage-lcov:
-	$(PYTHON) scripts/run_coverage.py --report=lcov
+	FOUNDRY_PROFILE=coverage $(FORGE) coverage --ir-minimum --report lcov
 
 ## Analyze existing lcov.info and print per-module report
 coverage-analyze:
@@ -38,21 +38,8 @@ coverage-analyze:
 
 ## Full CI coverage pipeline: generate lcov → analyze → enforce threshold
 coverage-ci:
-	$(PYTHON) scripts/run_coverage.py --report=lcov
+	FOUNDRY_PROFILE=coverage $(FORGE) coverage --ir-minimum --report lcov
 	$(PYTHON) scripts/analyze_coverage.py --lcov lcov.info --threshold 85
-
-## Emergency restore after interrupted coverage run
-coverage-restore:
-	$(PYTHON) scripts/run_coverage.py --restore
-
-## Direct Foundry coverage (memory-safe assembly required, ~30 min)
-coverage-forge:
-	FOUNDRY_PROFILE=coverage $(FORGE) coverage --ir-minimum --report summary
-
-# ─── Validate stubs match production ABIs ─────────
-.PHONY: validate-stubs
-validate-stubs:
-	$(PYTHON) scripts/validate_stubs.py
 
 # ─── Security ─────────────────────────────────────
 .PHONY: lint slither security-quick

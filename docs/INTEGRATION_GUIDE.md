@@ -776,8 +776,8 @@ registry.watchStatusChanges((id, oldStatus, newStatus) => {
 | `BETA`         | Limited mainnet, audited but unproven     | Medium        |
 | `PRODUCTION`   | Full mainnet, fully audited and graduated | High          |
 
-See [Experimental Features Policy](EXPERIMENTAL_FEATURES_POLICY.md) for graduation criteria.
+See the `ExperimentalFeatureRegistry` contract for graduation criteria.
 
 ---
 
-**Next:** [API Reference](API_REFERENCE.md) | [Deployment Guide](DEPLOYMENT.md) | [Architecture](architecture.md)
+**Next:** [API Reference](SOLIDITY_API_REFERENCE.md) | [Deployment Guide](DEPLOYMENT.md) | [Architecture](architecture.md)

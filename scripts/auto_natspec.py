@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import List, Tuple, Optional
 
 # Directories to exclude
-EXCLUDES = ['mocks', 'test', 'interfaces', 'verifiers/generated', 'coverage-stubs']
+EXCLUDES = ['mocks', 'test', 'interfaces', 'verifiers/generated']
 
 AUTHOR = "Zaseon Team"
 

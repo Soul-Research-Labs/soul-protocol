@@ -201,7 +201,11 @@ const recommendation = await router.getRouteRecommendation(
 ### Compliance
 
 ```typescript
-import { createComplianceClient, DisclosureLevel, FieldType } from "@zaseon/sdk";
+import {
+  createComplianceClient,
+  DisclosureLevel,
+  FieldType,
+} from "@zaseon/sdk";
 
 const compliance = createComplianceClient({
   publicClient,
@@ -260,4 +264,4 @@ forge test --no-match-path "test/stress/*" -vvv
 
 ---
 
-**See also**: [TACHYON_LEARNINGS.md](TACHYON_LEARNINGS.md) | [TACHYON_COMPLIANCE_INTEGRATION.md](TACHYON_COMPLIANCE_INTEGRATION.md)
+**See also**: [TACHYON_COMPLIANCE_INTEGRATION.md](TACHYON_COMPLIANCE_INTEGRATION.md)

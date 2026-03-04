@@ -406,7 +406,6 @@ DEFAULT_EXCLUDES = [
     'test',
     'interfaces',
     'verifiers/generated',
-    'coverage-stubs',
 ]
 
 
