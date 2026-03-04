@@ -52,11 +52,8 @@ const CONTRACTS: Record<string, string> = {
   // Cross-chain adapters
   ArbitrumBridgeAdapter: "ArbitrumBridgeAdapter",
   OptimismBridgeAdapter: "OptimismBridgeAdapter",
-  BaseBridgeAdapter: "BaseBridgeAdapter",
-  ScrollBridgeAdapter: "ScrollBridgeAdapter",
-  LineaBridgeAdapter: "LineaBridgeAdapter",
-  zkSyncBridgeAdapter: "ZkSyncBridgeAdapter",
-  PolygonZkEVMBridgeAdapter: "PolygonZkEVMBridgeAdapter",
+  AztecBridgeAdapter: "AztecBridgeAdapter",
+  EthereumL1Bridge: "EthereumL1Bridge",
 
   // Relayer
   DecentralizedRelayerRegistry: "DecentralizedRelayerRegistry",

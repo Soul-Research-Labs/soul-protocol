@@ -195,28 +195,6 @@ describe("ZASEON Integration Tests", function () {
         expect(fee).to.be.gte(0n);
       });
     });
-
-    describe("Hyperlane Bridge (MockMailbox)", function () {
-      let mockMailbox: GetContractReturnType<any>;
-
-      before(async function () {
-        mockMailbox = await viem.deployContract("MockHyperlaneMailbox", [
-          31337, // local domain = hardhat chain id
-        ]);
-      });
-
-      it("should dispatch a message to a remote domain", async function () {
-        const remoteDomain = 42161; // Arbitrum
-        const recipient = keccak256(toBytes("remote-recipient"));
-        const body = toBytes("cross-chain-payload");
-
-        const messageId = await mockMailbox.write.dispatch(
-          [remoteDomain, recipient, body],
-          { account: deployer.account },
-        );
-        expect(messageId).to.not.be.undefined;
-      });
-    });
   });
 
   describe("Multi-Contract Flows", function () {

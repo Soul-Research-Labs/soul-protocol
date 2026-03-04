@@ -2,22 +2,16 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import "../../contracts/crosschain/LayerZeroBridgeAdapter.sol";
 import "../../contracts/crosschain/EthereumL1Bridge.sol";
 
 contract BridgeCoverageTest is Test {
-    LayerZeroBridgeAdapter public lzAdapter;
     EthereumL1Bridge public ethBridge;
 
     address public admin = address(this);
-    address public mockLzEndpoint = makeAddr("lzEndpoint");
 
     function setUp() public {
         // Deploy EthereumL1Bridge
         ethBridge = new EthereumL1Bridge();
-
-        // Deploy LayerZeroBridgeAdapter
-        lzAdapter = new LayerZeroBridgeAdapter();
     }
 
     function test_EthereumL1Bridge_Lifecycle() public {
@@ -29,12 +23,5 @@ contract BridgeCoverageTest is Test {
         // Test deposit
         bytes32 commitment = keccak256("commitment");
         ethBridge.depositETH{value: 1 ether}(10, commitment);
-    }
-
-    function test_LayerZeroBridgeAdapter_Config() public {
-        // Setup endpoint
-        lzAdapter.setEndpoint(mockLzEndpoint, 1);
-        assertEq(lzAdapter.lzEndpoint(), mockLzEndpoint);
-        assertEq(lzAdapter.localEid(), 1);
     }
 }

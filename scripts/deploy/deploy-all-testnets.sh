@@ -21,7 +21,6 @@ DEPLOYMENTS_DIR="$PROJECT_ROOT/deployments"
 NETWORKS=(
     "sepolia"
     "arbitrumSepolia"
-    "baseSepolia"
     "optimismSepolia"
 )
 
