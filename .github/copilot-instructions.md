@@ -25,7 +25,6 @@ contracts/           # Solidity source
   compliance/        # SelectiveDisclosure, ComplianceReporting
   governance/        # ZaseonGovernance, Timelock
   upgradeable/       # Upgradeable variants (UUPS proxies)
-  experimental/      # Experimental features (RecursiveProofAggregator, etc.)
 noir/                # Noir ZK circuits (balance_proof, shielded_pool, etc.)
 test/                # Foundry tests (5600+ passing)
 sdk/                 # TypeScript SDK (ZaseonSDK, StealthAddressClient, etc.)

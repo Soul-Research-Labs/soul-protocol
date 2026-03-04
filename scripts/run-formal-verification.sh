@@ -174,7 +174,6 @@ run_all_verifications() {
         "verify_homomorphic_hiding.conf:HomomorphicHiding"
         "verify_aggregate_disclosure.conf:AggregateDisclosureAlgebra"
         "verify_crp.conf:ComposableRevocationProofs"
-        "verify_gas_normalizer.conf:GasNormalizer"
     )
     
     for v in "${advanced_verifications[@]}"; do

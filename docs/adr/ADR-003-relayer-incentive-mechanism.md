@@ -110,7 +110,7 @@ Per-relayer stats: `totalRewards`, `totalRelays`, `ultraFastCount`, `fastCount`,
 
 - Insufficient relayer participation at launch → mitigated by SelfRelayAdapter and GelatoRelayAdapter
 - Collusion between relayers to inflate base fees → mitigated by 50% target utilization and max base fee cap
-- MEV extraction by relayers during relay → future mitigation via PrivateRelayerNetwork (experimental)
+- MEV extraction by relayers during relay → future mitigation via private relay infrastructure
 
 ## References
 

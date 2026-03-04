@@ -9,6 +9,7 @@ This directory contains comprehensive formal verification specifications for ZAS
 ### Prerequisites
 
 1. Install Certora CLI:
+
 ```bash
 pip install certora-cli
 ```
@@ -43,6 +44,7 @@ certoraRun certora/conf/verify_jam.conf
 #### PC3.spec - Proof Carrying Container
 
 Key properties verified:
+
 1. **No Double Consumption**: A container can only be consumed once
 2. **Creator Immutability**: Container creator cannot change after creation
 3. **State Consistency**: Container state transitions are valid
@@ -63,6 +65,7 @@ Key properties verified:
 #### JoinableConfidentialComputation.spec - JAM Core
 
 Key properties verified:
+
 1. **Fragment Lifecycle**: Valid Pending → Verified → Joined transitions
 2. **Join Integrity**: Only verified fragments can be joined
 3. **Fragment Uniqueness**: Fragments cannot be in multiple active joins
@@ -72,6 +75,7 @@ Key properties verified:
 #### ZaseonControlPlane.spec - 5-Stage Message Lifecycle
 
 Key properties verified:
+
 1. **Stage Progression**: IntentCommitted → Executed → ProofGenerated → Verified → Materialized
 2. **No Stage Skipping**: Must progress through each stage in order
 3. **Nullifier Uniqueness**: No message nullifier reuse
@@ -83,22 +87,16 @@ Key properties verified:
 #### MixnetReceiptProofs.spec
 
 Key properties verified:
+
 1. **Nullifier Uniqueness**: No receipt nullifier reuse
 2. **Hop Chain Integrity**: Valid hop chain structure
 3. **Batch Size Enforcement**: Minimum batch size requirements
 4. **Challenge Stake Requirements**: Proper stake for challenges
 
-#### MixnetNodeRegistry.spec
-
-Key properties verified:
-1. **Stake Requirements**: Minimum stake enforced
-2. **Node State Machine**: Valid registration/activation/exit transitions
-3. **Slashing Bounds**: Slashing cannot exceed stake
-4. **Active Nodes Bounded**: Active ≤ Total nodes
-
 #### AnonymousDeliveryVerifier.spec
 
 Key properties verified:
+
 1. **Claim Integrity**: Delivery claims cannot be modified
 2. **Verification Timing**: Proper verification delay enforcement
 3. **Nullifier Uniqueness**: No claim nullifier reuse
@@ -108,6 +106,7 @@ Key properties verified:
 #### SPTC.spec - Semantic Proof Translation Certificate
 
 Key properties verified:
+
 1. **Certificate Immutability**: Issued certificates cannot be modified
 2. **Translation Validity**: Valid proof system translations
 3. **Fee Accounting**: Proper fee collection and distribution
@@ -115,6 +114,7 @@ Key properties verified:
 #### NetworkWideInvariants.spec - Cross-Contract Properties
 
 Key properties verified:
+
 1. **Global Nullifier Uniqueness**: Nullifiers unique across all contracts
 2. **Message Flow Consistency**: Cross-contract message integrity
 3. **Economic Bounds**: Fees, stakes, slashing within bounds
@@ -181,10 +181,10 @@ methods {
 rule myRule {
     // Setup
     uint256 x;
-    
+
     // Action
     bool result = myFunction(x);
-    
+
     // Assertion
     assert result == true;
 }
@@ -213,23 +213,23 @@ on:
     branches: [main]
   pull_request:
     paths:
-      - 'contracts/**'
-      - 'specs/**'
+      - "contracts/**"
+      - "specs/**"
 
 jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-          
+          python-version: "3.11"
+
       - name: Install Certora
         run: pip install certora-cli
-        
+
       - name: Run Verification
         env:
           CERTORAKEY: ${{ secrets.CERTORAKEY }}

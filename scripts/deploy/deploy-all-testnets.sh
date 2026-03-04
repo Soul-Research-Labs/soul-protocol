@@ -129,25 +129,21 @@ verify_contracts() {
     echo "Verifying contracts on $network..."
     
     # Read contract addresses from deployment file
-    local dilithium_addr=$(jq -r '.contracts.DilithiumVerifier' "$deployment_file")
-    local sphincs_addr=$(jq -r '.contracts.SPHINCSPlusVerifier' "$deployment_file")
-    local kyber_addr=$(jq -r '.contracts.KyberKEM' "$deployment_file")
-    local registry_addr=$(jq -r '.contracts.PQCRegistry' "$deployment_file")
+    local zk_addr=$(jq -r '.contracts.ZKVerifier' "$deployment_file")
+    local token_addr=$(jq -r '.contracts.ZaseonToken' "$deployment_file")
     
     # Verify each contract
     cd "$PROJECT_ROOT"
     
-    echo "  Verifying DilithiumVerifier..."
-    npx hardhat verify --network "$network" "$dilithium_addr" 2>/dev/null || true
+    if [ "$zk_addr" != "null" ] && [ -n "$zk_addr" ]; then
+        echo "  Verifying ZKVerifier..."
+        npx hardhat verify --network "$network" "$zk_addr" 2>/dev/null || true
+    fi
     
-    echo "  Verifying SPHINCSPlusVerifier..."
-    npx hardhat verify --network "$network" "$sphincs_addr" 2>/dev/null || true
-    
-    echo "  Verifying KyberKEM..."
-    npx hardhat verify --network "$network" "$kyber_addr" 2>/dev/null || true
-    
-    echo "  Verifying PQCRegistry..."
-    npx hardhat verify --network "$network" "$registry_addr" "$dilithium_addr" "$sphincs_addr" "$kyber_addr" 2>/dev/null || true
+    if [ "$token_addr" != "null" ] && [ -n "$token_addr" ]; then
+        echo "  Verifying ZaseonToken..."
+        npx hardhat verify --network "$network" "$token_addr" 2>/dev/null || true
+    fi
     
     print_success "Verification complete for $network"
 }

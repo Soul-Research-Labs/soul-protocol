@@ -296,28 +296,17 @@ Total: ~15 contracts (vs. 100+)
 - [ ] Research gas optimization
 - [ ] Timeline: 12-18 months to production
 
-**PQC** (See [PQC_MIGRATION_GUIDE.md](./PQC_MIGRATION_GUIDE.md) for full details):
+**PQC** (experimental PQC contracts have been removed; future implementations pending EVM precompile support):
 
 - [x] Vulnerability assessment and algorithm inventory
-- [x] `IPQCVerifier` interface (NIST FIPS 203/204/205/206)
-- [x] `HybridPQCVerifier` contract (hybrid ECDSA + PQC oracle-delegated)
-- [x] PQC curve types added to `IStealthAddressRegistry` (DILITHIUM, KYBER, FALCON, SPHINCS_PLUS)
-- [x] `PQC_VERIFIER` circuit type re-enabled in `VerifierRegistryV2`
-- [x] SDK PQC module with types, constants, and ABI
-- [x] Comprehensive test harness (35+ test cases, fuzz tests)
 - [ ] Off-chain PQC oracle service (relayer-integrated)
-- [ ] Graduate `PQC_SIGNATURES` from DISABLED → EXPERIMENTAL
-- [ ] ML-KEM-768 stealth address key exchange integration
-- [ ] Noir circuit for Falcon-512 signature commitment proofs
-- [ ] STARK-based proof aggregation for quantum resistance
 - [ ] EVM PQC precompile integration (when available, EIP-TBD)
-- [ ] Timeline: 24 months to full production (Phase 1 foundation complete)
+- [ ] Timeline: 24 months to full production
 
 **Success Metrics**:
 
 - FHE gas costs < 1M per operation
-- PQC signatures < 1KB (✅ Falcon-512 = 690B)
-- Hybrid system tested (✅ HybridPQCVerifier deployed)
+- PQC signatures < 1KB
 
 ### 4.3 Custom Bridge Development (P3)
 

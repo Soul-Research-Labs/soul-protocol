@@ -130,11 +130,11 @@ if [ "$RUN_ALL" = true ]; then
     # 3. Network-Wide Invariants
     run_verification "certora/conf/verify_network_invariants.conf" "Network-Wide Cross-Contract Invariants"
     
-    # 4. HomomorphicHiding (experimental)
-    run_verification "certora/conf/verify_homomorphic_hiding.conf" "HomomorphicHiding (experimental)"
+    # 4. HomomorphicHiding
+    run_verification "certora/conf/verify_homomorphic_hiding.conf" "HomomorphicHiding"
     
-    # 5. AggregateDisclosureAlgebra (experimental)
-    run_verification "certora/conf/verify_aggregate_disclosure.conf" "AggregateDisclosureAlgebra (experimental)"
+    # 5. AggregateDisclosureAlgebra
+    run_verification "certora/conf/verify_aggregate_disclosure.conf" "AggregateDisclosureAlgebra"
     
 else
     run_verification "$SPECIFIC_CONFIG" "Specific Verification"

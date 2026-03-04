@@ -6,7 +6,7 @@ repos:
         entry: bash -c 'forge fmt'
         language: system
         files: '\.sol$'
-        exclude: "(lib/|node_modules/|coverage-stubs/|contracts/verifiers/generated/)"
+        exclude: "(lib/|node_modules/|contracts/verifiers/generated/)"
 
       - id: solhint
         name: Solhint Linter
@@ -14,7 +14,7 @@ repos:
         language: system
         files: '\.sol$'
         args: ["--max-warnings", "0"]
-        exclude: "(lib/|node_modules/|coverage-stubs/|contracts/mocks/|test/)"
+        exclude: "(lib/|node_modules/|contracts/mocks/|test/)"
 
       - id: typescript-check
         name: TypeScript Check

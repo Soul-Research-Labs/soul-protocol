@@ -38,15 +38,13 @@ export interface Feature {
   lastStatusChange: bigint;
 }
 
-/** Well-known feature IDs (keccak256 hashes) */
+/** Well-known feature IDs (keccak256 hashes) — legacy placeholders */
 export const FEATURE_IDS = {
-  RECURSIVE_PROOF_AGGREGATION: "0x" as Hash, // Computed at runtime via keccak256("RECURSIVE_PROOF_AGGREGATION")
-  MIXNET_NODE_REGISTRY: "0x" as Hash,
-  PRIVATE_RELAYER_NETWORK: "0x" as Hash,
-  PRIVACY_PRESERVING_RELAYER_SELECTION: "0x" as Hash,
-  GAS_NORMALIZATION: "0x" as Hash,
-  RECURSIVE_VERIFIER: "0x" as Hash,
-  CLSAG_VERIFICATION: "0x" as Hash,
+  FHE_OPERATIONS: "0x" as Hash,
+  PQC_SIGNATURES: "0x" as Hash,
+  MPC_THRESHOLD: "0x" as Hash,
+  SERAPHIM_PRIVACY: "0x" as Hash,
+  TRIPTYCH_SIGNATURES: "0x" as Hash,
 } as const;
 
 // ────────────────────────────────────────────────────────

@@ -171,18 +171,6 @@ mutate:
   - filename: contracts/crosschain/L2ProofRouter.sol
     contract: L2ProofRouter
 
-  # ── Experimental privacy ──
-  - filename: contracts/experimental/privacy/RecursiveProofAggregator.sol
-    contract: RecursiveProofAggregator
-  - filename: contracts/experimental/privacy/MixnetNodeRegistry.sol
-    contract: MixnetNodeRegistry
-  - filename: contracts/experimental/privacy/PrivacyPreservingRelayerSelection.sol
-    contract: PrivacyPreservingRelayerSelection
-  - filename: contracts/experimental/privacy/PrivateRelayerNetwork.sol
-    contract: PrivateRelayerNetwork
-  - filename: contracts/experimental/privacy/GasNormalizer.sol
-    contract: GasNormalizer
-
   # ── Verifiers (non-generated) ──
   - filename: contracts/verifiers/ZaseonUniversalVerifier.sol
     contract: ZaseonUniversalVerifier

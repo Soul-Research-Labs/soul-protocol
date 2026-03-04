@@ -35,7 +35,6 @@ contract DeployRiskMitigation is Script {
             address(featureRegistry)
         );
         console.log("- FHE_OPERATIONS: DISABLED (max 1 ETH)");
-        console.log("- PQC_SIGNATURES: DISABLED (max 0.1 ETH)");
         console.log("- MPC_THRESHOLD: DISABLED (max 0.5 ETH)");
 
         // 2. Deploy MultiBridgeRouter

@@ -28,13 +28,6 @@ interface DeployedContracts {
     ZKVerifier?: string;
     ComplianceOracle?: string;
 
-    // PQC
-    DilithiumVerifier?: string;
-    SPHINCSPlusVerifier?: string;
-    KyberKEM?: string;
-    PQCRegistry?: string;
-    PQCProtectedLock?: string;
-
     // Governance
     ZaseonToken?: string;
     ZaseonGovernor?: string;
@@ -124,70 +117,9 @@ async function main() {
   };
 
   // ==========================================================================
-  // PHASE 1: Deploy PQC Contracts (Optional — contracts not yet implemented)
+  // PHASE 1: Deploy Core Zaseon Contracts
   // ==========================================================================
-  console.log("📦 Phase 1: Deploying PQC Contracts (if available)...\n");
-
-  let dilithiumAddr = "";
-  let sphincsAddr = "";
-  let kyberAddr = "";
-  let registryAddr = "";
-
-  try {
-    const DilithiumVerifier =
-      await ethers.getContractFactory("DilithiumVerifier");
-    const dilithiumVerifier = await DilithiumVerifier.deploy();
-    await dilithiumVerifier.waitForDeployment();
-    dilithiumAddr = await dilithiumVerifier.getAddress();
-    deployment.contracts.DilithiumVerifier = dilithiumAddr;
-    deployment.txHashes.DilithiumVerifier =
-      dilithiumVerifier.deploymentTransaction()?.hash || "";
-    console.log(`    ✅ DilithiumVerifier: ${dilithiumAddr}`);
-
-    const SPHINCSPlusVerifier = await ethers.getContractFactory(
-      "SPHINCSPlusVerifier",
-    );
-    const sphincsVerifier = await SPHINCSPlusVerifier.deploy();
-    await sphincsVerifier.waitForDeployment();
-    sphincsAddr = await sphincsVerifier.getAddress();
-    deployment.contracts.SPHINCSPlusVerifier = sphincsAddr;
-    deployment.txHashes.SPHINCSPlusVerifier =
-      sphincsVerifier.deploymentTransaction()?.hash || "";
-    console.log(`    ✅ SPHINCSPlusVerifier: ${sphincsAddr}`);
-
-    const KyberKEM = await ethers.getContractFactory("KyberKEM");
-    const kyberKEM = await KyberKEM.deploy();
-    await kyberKEM.waitForDeployment();
-    kyberAddr = await kyberKEM.getAddress();
-    deployment.contracts.KyberKEM = kyberAddr;
-    deployment.txHashes.KyberKEM = kyberKEM.deploymentTransaction()?.hash || "";
-    console.log(`    ✅ KyberKEM: ${kyberAddr}`);
-
-    const PQCRegistry = await ethers.getContractFactory("PQCRegistry");
-    const pqcRegistry = await PQCRegistry.deploy(
-      dilithiumAddr,
-      sphincsAddr,
-      kyberAddr,
-    );
-    await pqcRegistry.waitForDeployment();
-    registryAddr = await pqcRegistry.getAddress();
-    deployment.contracts.PQCRegistry = registryAddr;
-    deployment.txHashes.PQCRegistry =
-      pqcRegistry.deploymentTransaction()?.hash || "";
-    console.log(`    ✅ PQCRegistry: ${registryAddr}`);
-  } catch (e: any) {
-    console.log(
-      "    ⚠️  PQC contracts not found in source tree — skipping Phase 1",
-    );
-    console.log(
-      "       (DilithiumVerifier, SPHINCSPlusVerifier, KyberKEM, PQCRegistry are not yet implemented)",
-    );
-  }
-
-  // ==========================================================================
-  // PHASE 2: Deploy Core Zaseon Contracts
-  // ==========================================================================
-  console.log("\n📦 Phase 2: Deploying Core Contracts...\n");
+  console.log("📦 Phase 1: Deploying Core Contracts...\n");
 
   // ZKVerifier (if exists)
   try {
@@ -204,28 +136,10 @@ async function main() {
     console.log("    ⚠️ ZKVerifier not found, skipping...");
   }
 
-  // TokenLocker with PQC (if exists and PQC was deployed)
-  if (registryAddr) {
-    try {
-      console.log("  Deploying PQCProtectedLock...");
-      const PQCProtectedLock =
-        await ethers.getContractFactory("PQCProtectedLock");
-      const pqcLock = await PQCProtectedLock.deploy(registryAddr);
-      await pqcLock.waitForDeployment();
-      const lockAddr = await pqcLock.getAddress();
-      deployment.contracts.PQCProtectedLock = lockAddr;
-      deployment.txHashes.PQCProtectedLock =
-        pqcLock.deploymentTransaction()?.hash || "";
-      console.log(`    ✅ PQCProtectedLock: ${lockAddr}`);
-    } catch (e) {
-      console.log("    ⚠️ PQCProtectedLock deployment issue, skipping...");
-    }
-  }
-
   // ==========================================================================
-  // PHASE 3: Deploy Governance Contracts
+  // PHASE 2: Deploy Governance Contracts
   // ==========================================================================
-  console.log("\n📦 Phase 3: Deploying Governance Contracts...\n");
+  console.log("\n📦 Phase 2: Deploying Governance Contracts...\n");
 
   // ZaseonToken
   try {

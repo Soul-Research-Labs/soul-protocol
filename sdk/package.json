@@ -43,11 +43,6 @@
       "import": "./dist/esm/relayer/CrossChainProofRelayer.js",
       "require": "./dist/relayer/CrossChainProofRelayer.js",
       "types": "./dist/relayer/CrossChainProofRelayer.d.ts"
-    },
-    "./experimental": {
-      "import": "./dist/esm/experimental/index.js",
-      "require": "./dist/experimental/index.js",
-      "types": "./dist/experimental/index.d.ts"
     }
   },
   "scripts": {

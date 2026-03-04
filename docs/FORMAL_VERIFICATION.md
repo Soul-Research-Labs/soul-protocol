@@ -15,10 +15,10 @@ All verification jobs have been successfully submitted to the Certora cloud.
 | Contract                     | Config                   | Status       |
 | ---------------------------- | ------------------------ | ------------ |
 | ConfidentialStateContainerV3 | `verify.conf`            | ✅ Submitted |
-| ZaseonAtomicSwapV2             | `verify_atomicswap.conf` | ✅ Submitted |
+| ZaseonAtomicSwapV2           | `verify_atomicswap.conf` | ✅ Submitted |
 | NullifierRegistryV3          | `verify_nullifier.conf`  | ✅ Submitted |
 | CrossChainProofHubV3         | `verify_proofhub.conf`   | ✅ Submitted |
-| ZaseonTimelock                 | `verify_timelock.conf`   | ✅ Submitted |
+| ZaseonTimelock               | `verify_timelock.conf`   | ✅ Submitted |
 
 ### Novel Primitives
 
@@ -35,14 +35,11 @@ All verification jobs have been successfully submitted to the Certora cloud.
 
 ### Infrastructure Components
 
-| Component                                     | Config                                   | Status       |
-| --------------------------------------------- | ---------------------------------------- | ------------ |
-| SPTC (Semantic Proof Translation Certificate) | `verify_sptc.conf`                       | ✅ Submitted |
-| NetworkWideInvariants                         | `verify_network_invariants.conf`         | ✅ Submitted |
-| GasNormalizer                                 | `verify_gas_normalizer.conf`             | ✅ Submitted |
-| PrivateRelayerNetwork                         | `verify_private_relayer_network.conf`    | ✅ Submitted |
-| RecursiveProofAggregator                      | `verify_recursive_proof_aggregator.conf` | ✅ Submitted |
-| RingSignature                                 | `verify_ring_signature.conf`             | ✅ Submitted |
+| Component                                     | Config                           | Status       |
+| --------------------------------------------- | -------------------------------- | ------------ |
+| SPTC (Semantic Proof Translation Certificate) | `verify_sptc.conf`               | ✅ Submitted |
+| NetworkWideInvariants                         | `verify_network_invariants.conf` | ✅ Submitted |
+| RingSignature                                 | `verify_ring_signature.conf`     | ✅ Submitted |
 
 ### Bridge Adapters (per-chain)
 
@@ -78,24 +75,21 @@ All verification jobs have been successfully submitted to the Certora cloud.
 
 ### Governance, Relayer & Infrastructure
 
-| Module                       | Spec                                | Config                                   | Status       |
-| ---------------------------- | ----------------------------------- | ---------------------------------------- | ------------ |
-| ZaseonGovernor                 | `ZaseonGovernor.spec`                 | `verify_governor.conf`                   | ✅ Submitted |
-| BatchAccumulator             | `BatchAccumulator.spec`             | `verify_batch_accumulator.conf`          | ✅ Submitted |
-| BridgeCircuitBreaker         | `BridgeCircuitBreaker.spec`         | `verify_circuit_breaker.conf`            | ✅ Submitted |
-| BridgeRateLimiter            | `BridgeRateLimiter.spec`            | `verify_rate_limiter.conf`               | ✅ Submitted |
-| DataAvailabilityOracle       | `DataAvailabilityOracle.spec`       | `verify_da_oracle.conf`                  | ✅ Submitted |
-| DirectL2Messenger            | `DirectL2Messenger.spec`            | `verify_direct_l2_messenger.conf`        | ✅ Submitted |
-| EnhancedKillSwitch           | `EnhancedKillSwitch.spec`           | `verify_killswitch.conf`                 | ✅ Submitted |
-| GasNormalizer                | `GasNormalizer.spec`                | `verify_gas_normalizer.conf`             | ✅ Submitted |
-| HeterogeneousRelayerRegistry | `HeterogeneousRelayerRegistry.spec` | `verify_heterogeneous_relayer.conf`      | ✅ Submitted |
-| PrivateRelayerNetwork        | `PrivateRelayerNetwork.spec`        | `verify_private_relayer_network.conf`    | ✅ Submitted |
-| RecursiveProofAggregator     | `RecursiveProofAggregator.spec`     | `verify_recursive_proof_aggregator.conf` | ✅ Submitted |
-| RelayerFeeMarket             | `RelayerFeeMarket.spec`             | `verify_relayer_fee_market.conf`         | ✅ Submitted |
-| VerifierRegistryV2           | `VerifierRegistryV2.spec`           | `verify_verifier_registry_v2.conf`       | ✅ Submitted |
-| UpgradeableContracts         | `UpgradeableContracts.spec`         | `verify_upgradeable.conf`                | ✅ Submitted |
-| ZKFraudProof                 | `ZKFraudProof.spec`                 | `verify_fraud_proof.conf`                | ✅ Submitted |
-| FormalVerification           | `FormalVerification.spec`           | `verify_formal.conf`                     | ✅ Submitted |
+| Module                       | Spec                                | Config                              | Status       |
+| ---------------------------- | ----------------------------------- | ----------------------------------- | ------------ |
+| ZaseonGovernor               | `ZaseonGovernor.spec`               | `verify_governor.conf`              | ✅ Submitted |
+| BatchAccumulator             | `BatchAccumulator.spec`             | `verify_batch_accumulator.conf`     | ✅ Submitted |
+| BridgeCircuitBreaker         | `BridgeCircuitBreaker.spec`         | `verify_circuit_breaker.conf`       | ✅ Submitted |
+| BridgeRateLimiter            | `BridgeRateLimiter.spec`            | `verify_rate_limiter.conf`          | ✅ Submitted |
+| DataAvailabilityOracle       | `DataAvailabilityOracle.spec`       | `verify_da_oracle.conf`             | ✅ Submitted |
+| DirectL2Messenger            | `DirectL2Messenger.spec`            | `verify_direct_l2_messenger.conf`   | ✅ Submitted |
+| EnhancedKillSwitch           | `EnhancedKillSwitch.spec`           | `verify_killswitch.conf`            | ✅ Submitted |
+| HeterogeneousRelayerRegistry | `HeterogeneousRelayerRegistry.spec` | `verify_heterogeneous_relayer.conf` | ✅ Submitted |
+| RelayerFeeMarket             | `RelayerFeeMarket.spec`             | `verify_relayer_fee_market.conf`    | ✅ Submitted |
+| VerifierRegistryV2           | `VerifierRegistryV2.spec`           | `verify_verifier_registry_v2.conf`  | ✅ Submitted |
+| UpgradeableContracts         | `UpgradeableContracts.spec`         | `verify_upgradeable.conf`           | ✅ Submitted |
+| ZKFraudProof                 | `ZKFraudProof.spec`                 | `verify_fraud_proof.conf`           | ✅ Submitted |
+| FormalVerification           | `FormalVerification.spec`           | `verify_formal.conf`                | ✅ Submitted |
 
 ## Verified Properties
 
@@ -370,7 +364,7 @@ certoraRun certora/conf/verify_security.conf
 | ---------------------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | Halmos                 | `test/formal/HalmosCrossChainProofHub.t.sol`, `test/formal/HalmosZKBoundStateLocks.t.sol` | 12 symbolic checks: stake conservation, proof monotonicity, state transitions             |
 | Echidna                | `test/fuzz/EchidnaHarness.sol`                                                            | 6 invariant properties: balance conservation, nullifier uniqueness, LP supply, fee bounds |
-| TLA+                   | `specs/tla/MC_ZaseonBridge.tla`                                                             | Model checking: TVL conservation, no double-spend, proof-required withdrawal              |
+| TLA+                   | `specs/tla/MC_ZaseonBridge.tla`                                                           | Model checking: TVL conservation, no double-spend, proof-required withdrawal              |
 | K Framework            | `specs/k/*.k`                                                                             | Algebraic specifications of protocol invariants                                           |
 | Storage Layout         | `scripts/check_storage_layout.sh`                                                         | 8 base/upgradeable contract pairs verified for slot compatibility                         |
 | Gambit                 | `scripts/run_gambit.sh`                                                                   | Mutation testing across 8 security-critical contracts                                     |

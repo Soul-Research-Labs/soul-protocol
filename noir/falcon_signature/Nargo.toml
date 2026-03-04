@@ -1,8 +1,0 @@
-[package]
-name = "falcon_signature"
-type = "bin"
-authors = ["ZASEON"]
-compiler_version = ">=0.36.0"
-description = "Falcon-512 (FN-DSA-512) signature commitment verification circuit for PQC Phase 2"
-
-[dependencies]

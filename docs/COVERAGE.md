@@ -76,11 +76,11 @@ enough to avoid stack-too-deep errors. CI runs these in parallel via matrix stra
 
 ### SDK (Target: 80%)
 
-| Module           | Test Status                                                       | Status        |
-| ---------------- | ----------------------------------------------------------------- | ------------- |
-| `NoirProver`     | ✅ (`sdk/test/NoirProver.test.ts`, `NoirProver.advanced.test.ts`) | 🟢 Tested     |
-| `ZaseonClient`     | ✅ (`sdk/test/ZaseonClient.test.ts`, `ZaseonProtocolClient.test.ts`)  | 🟢 Tested     |
-| `ZaseonPrivacySDK` | — (deprecated, use `ZaseonProtocolClient`)                          | ⚪ Deprecated |
+| Module             | Test Status                                                          | Status        |
+| ------------------ | -------------------------------------------------------------------- | ------------- |
+| `NoirProver`       | ✅ (`sdk/test/NoirProver.test.ts`, `NoirProver.advanced.test.ts`)    | 🟢 Tested     |
+| `ZaseonClient`     | ✅ (`sdk/test/ZaseonClient.test.ts`, `ZaseonProtocolClient.test.ts`) | 🟢 Tested     |
+| `ZaseonPrivacySDK` | — (deprecated, use `ZaseonProtocolClient`)                           | ⚪ Deprecated |
 
 ---
 
@@ -204,24 +204,22 @@ python scripts/run_coverage.py --restore
 
 The following contracts are replaced with simplified stubs during coverage:
 
-| Category   | Stub File                      | Contract(s) Stubbed                             | Rationale                                           |
-| ---------- | ------------------------------ | ----------------------------------------------- | --------------------------------------------------- |
-| Verifiers  | `Groth16VerifierBN254.sol`     | `Groth16VerifierBN254`                          | Heavy BN254 assembly (pairing precompiles)          |
-| Verifiers  | `GasOptimizedVerifier.sol`     | `GasOptimizedVerifier`, `BatchProofVerifier`    | Inline assembly BN254 ops + batch proof aggregation |
-| Verifiers  | `OptimizedGroth16Verifier.sol` | `OptimizedGroth16Verifier`                      | Assembly-optimized Groth16 verification             |
-| Verifiers  | `ProofAggregator.sol`          | `ProofAggregator`                               | Complex proof aggregation with assembly             |
-| Verifiers  | `StateCommitmentVerifier.sol`  | `StateCommitmentVerifier`                       | Returns true for 3 public signals (stub-safe)       |
-| Verifiers  | `StateTransferVerifier.sol`    | `StateTransferVerifier`                         | Returns true for 7 public signals (stub-safe)       |
-| Verifiers  | `CrossChainProofVerifier.sol`  | `CrossChainProofVerifier`                       | Returns true for 7 public signals (stub-safe)       |
-| Verifiers  | `VerifierRegistry.sol`         | `VerifierRegistry`                              | Assembly in verifier dispatch logic                 |
-| Crosschain | `CrossChainMessageRelay.sol`   | `CrossChainMessageRelay`                        | Assembly-free cross-chain message relay             |
-| Crosschain | `L2ChainAdapter.sol`           | `L2ChainAdapter`                                | Assembly-free L2 chain adapter                      |
-| Crosschain | `L2ProofRouter.sol`            | `L2ProofRouter`                                 | Assembly-free L2 proof router                       |
-| Libraries  | `CryptoLib.sol`                | `CryptoLib`                                     | BN254 FR/FQ modular arithmetic in assembly          |
-| Libraries  | `GasOptimizations.sol`         | `GasOptimizations`                              | Gas-optimized utility routines (assembly)           |
-| Privacy    | `GasOptimizedPrivacy.sol`      | `GasOptimizedStealthRegistry` + 2 others        | Assembly in stealth address generation              |
-| Privacy    | `ConstantTimeOperations.sol`   | `ConstantTimeOperations`, `ConstantTimePrivacy` | Assembly constant-time comparisons (side-channel)   |
-| Privacy    | `RecursiveProofAggregator.sol` | `RecursiveProofAggregator` (UUPS)               | Complex recursive proof verification in assembly    |
+| Category   | Stub File                      | Contract(s) Stubbed                          | Rationale                                           |
+| ---------- | ------------------------------ | -------------------------------------------- | --------------------------------------------------- |
+| Verifiers  | `Groth16VerifierBN254.sol`     | `Groth16VerifierBN254`                       | Heavy BN254 assembly (pairing precompiles)          |
+| Verifiers  | `GasOptimizedVerifier.sol`     | `GasOptimizedVerifier`, `BatchProofVerifier` | Inline assembly BN254 ops + batch proof aggregation |
+| Verifiers  | `OptimizedGroth16Verifier.sol` | `OptimizedGroth16Verifier`                   | Assembly-optimized Groth16 verification             |
+| Verifiers  | `ProofAggregator.sol`          | `ProofAggregator`                            | Complex proof aggregation with assembly             |
+| Verifiers  | `StateCommitmentVerifier.sol`  | `StateCommitmentVerifier`                    | Returns true for 3 public signals (stub-safe)       |
+| Verifiers  | `StateTransferVerifier.sol`    | `StateTransferVerifier`                      | Returns true for 7 public signals (stub-safe)       |
+| Verifiers  | `CrossChainProofVerifier.sol`  | `CrossChainProofVerifier`                    | Returns true for 7 public signals (stub-safe)       |
+| Verifiers  | `VerifierRegistry.sol`         | `VerifierRegistry`                           | Assembly in verifier dispatch logic                 |
+| Crosschain | `CrossChainMessageRelay.sol`   | `CrossChainMessageRelay`                     | Assembly-free cross-chain message relay             |
+| Crosschain | `L2ChainAdapter.sol`           | `L2ChainAdapter`                             | Assembly-free L2 chain adapter                      |
+| Crosschain | `L2ProofRouter.sol`            | `L2ProofRouter`                              | Assembly-free L2 proof router                       |
+| Libraries  | `CryptoLib.sol`                | `CryptoLib`                                  | BN254 FR/FQ modular arithmetic in assembly          |
+| Libraries  | `GasOptimizations.sol`         | `GasOptimizations`                           | Gas-optimized utility routines (assembly)           |
+| Privacy    | `GasOptimizedPrivacy.sol`      | `GasOptimizedStealthRegistry` + 2 others     | Assembly in stealth address generation              |
 
 ---
 

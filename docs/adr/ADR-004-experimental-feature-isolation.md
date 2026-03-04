@@ -101,20 +101,7 @@ registry.requireProductionReady(featureId);
 
 ### Physical isolation
 
-Experimental contracts live in a separate directory tree:
-
-```
-contracts/experimental/
-├── interfaces/        # Interfaces for experimental contracts
-├── privacy/           # Research-grade privacy modules (6 contracts)
-└── verifiers/         # Superseded/research verifiers (4 contracts)
-```
-
-This separation ensures:
-
-- Auditors can scope reviews to `contracts/` (excluding `experimental/`)
-- CI can run different test thresholds for experimental vs. production
-- Import dependencies flow one way: experimental imports core, never vice versa
+> **Note:** The `contracts/experimental/` directory has been removed. The feature registry system in `contracts/security/ExperimentalFeatureRegistry.sol` continues to serve as the graduation pipeline for any future experimental features. Seven contracts graduated to production before the experimental directory was cleaned up.
 
 ### Graduation criteria
 
@@ -158,7 +145,6 @@ Seven contracts have completed the full pipeline:
 ## References
 
 - [ExperimentalFeatureRegistry.sol](../../contracts/security/ExperimentalFeatureRegistry.sol)
-- [contracts/experimental/README.md](../../contracts/experimental/README.md)
 - [EXPERIMENTAL_FEATURES_POLICY.md](../EXPERIMENTAL_FEATURES_POLICY.md)
 - [COMPLEXITY_MANAGEMENT.md](../COMPLEXITY_MANAGEMENT.md)
 - LaunchDarkly feature flag patterns (adapted for on-chain)

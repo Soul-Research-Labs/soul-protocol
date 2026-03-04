@@ -24,7 +24,6 @@ done
 # Contracts that cause stack-too-deep during coverage instrumentation
 EXCLUDE_CONTRACTS="UltraHonk|Groth16|SolverLib|MockEthereumL1Bridge"
 EXCLUDE_CONTRACTS+="|GasOptimizedVerifier|OptimizedGroth16Verifier"
-EXCLUDE_CONTRACTS+="|RecursiveProofAggregator|ConstantTimeOperations"
 EXCLUDE_CONTRACTS+="|GasOptimizedPrivacy|CryptoLib"
 
 mkdir -p "$LCOV_DIR"

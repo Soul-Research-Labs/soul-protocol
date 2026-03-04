@@ -55,8 +55,12 @@ collect.json
 # Slither (Static Analysis)
 slither-report.txt
 slither-report.json
+slither-latest.txt
 slither.db.json
 crytic-export/
+
+# Coverage stubs (regenerable)
+coverage-stubs/
 
 # Certora
 .certora_internal/

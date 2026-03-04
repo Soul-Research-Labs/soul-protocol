@@ -14,9 +14,9 @@
 
 ### Core Contracts ✅
 
-| Contract          | Test File(s)                      |
-| ----------------- | --------------------------------- |
-| `PrivacyRouter`   | `test/core/PrivacyRouter.t.sol`   |
+| Contract            | Test File(s)                        |
+| ------------------- | ----------------------------------- |
+| `PrivacyRouter`     | `test/core/PrivacyRouter.t.sol`     |
 | `ZaseonProtocolHub` | `test/core/ZaseonProtocolHub.t.sol` |
 
 ### Cross-Chain ✅
@@ -38,7 +38,6 @@
 | Contract                | Test File(s)                                       |
 | ----------------------- | -------------------------------------------------- |
 | `UniversalShieldedPool` | `test/privacy/UniversalShieldedPool.t.sol`         |
-| `MixnetNodeRegistry`    | `test/privacy/MixnetNodeRegistry.t.sol`            |
 | `DelayedClaimVault`     | `test/privacy/DelayedClaimVault.t.sol` _(batch 3)_ |
 
 ### Security ✅
@@ -55,8 +54,8 @@
 
 ### Governance ✅
 
-| Contract              | Test File(s)                                     |
-| --------------------- | ------------------------------------------------ |
+| Contract                | Test File(s)                                       |
+| ----------------------- | -------------------------------------------------- |
 | `ZaseonGovernor`        | `test/governance/ZaseonGovernor.t.sol` _(batch 2)_ |
 | `ZaseonUpgradeTimelock` | `test/governance/ZaseonUpgradeTimelock.t.sol`      |
 
@@ -109,7 +108,6 @@ These contracts lack dedicated test files but are either:
 | `contracts/libraries/BN254.sol`                 | ✅ **Production** — tested in `test/verifiers/`, `test/security/`, Certora CVL  |
 | `contracts/integrations/*` (8 files)            | Integration facades; core logic tested in underlying contracts                  |
 | `contracts/primitives/*` (4 files)              | Complex algebraic/homomorphic primitives; partially covered by invariant tests  |
-| `contracts/experimental/*`                      | Experimental features gated by ExperimentalFeatureRegistry; not mainnet-ready   |
 
 ## Lint Warnings
 

@@ -214,8 +214,6 @@ export {
   type BridgeMetrics,
 } from "./client/DynamicRoutingClient";
 
-// Advanced Modules (experimental — import from @zaseon/sdk/experimental instead)
-// Moved to sdk/experimental/: fhe, pqc, mpc, recursive, zkSystems
 export * as proofTranslator from "./proof-translator/ProofTranslator";
 
 // Bridge SDK Client

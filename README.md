@@ -276,13 +276,11 @@ contracts/           # 242 production Solidity contracts
 ├── interfaces/      # 44 contract interfaces
 ├── adapters/        # External protocol adapters
 ├── integrations/    # Orchestrator, advanced integration contracts
-├── experimental/    # RecursiveProofAggregator, ConstantTimeOperations, GasNormalizer, MixnetNodeRegistry
 ├── security/        # 20 security contracts: Timelock, circuit breaker, rate limiter, MEV protection, emergency coordination
 └── internal/        # Internal helpers and base contracts
 
 noir/                # 21 Noir ZK circuits (shielded_pool, nullifiers, transfers, ring_signature, liquidity_proof, etc.)
 sdk/                 # TypeScript SDK (viem-based clients, 83 test files)
-sdk/experimental/    # Experimental modules (fhe, pqc, mpc, recursive, zkSystems)
 certora/             # 81 formal verification specs (CVL)
 specs/               # K Framework + TLA+ formal specifications
 test/                # 307 Foundry test files + Hardhat tests (5600+ passing)
@@ -431,7 +429,7 @@ Zaseon provides adapters for major cross-chain messaging:
 
 ### Testing & Verification
 
-**5600+ Foundry tests + 483 SDK tests passing** across 307 test suites — unit, integration, fuzz, formal, invariant, attack simulation, stress testing, and experimental module tests.
+**5600+ Foundry tests + 483 SDK tests passing** across 307 test suites — unit, integration, fuzz, formal, invariant, attack simulation, and stress testing.
 
 ```bash
 forge test -vv                                          # All tests (5600+ passing)
@@ -578,8 +576,6 @@ await feeMarket.submitRelayRequest(1, 42161, proofData, deadline, fee);
 | Sepolia          | 11155111 | ✅ Live    |
 | Arbitrum Sepolia | 421614   | 🔄 Planned |
 | Base Sepolia     | 84532    | ✅ Live    |
-
-> **Note:** Experimental modules (`fhe`, `pqc`, `mpc`, `recursive`, `zkSystems`) have been moved to `@zaseon/sdk/experimental`. Import from `@zaseon/sdk/experimental` to use them. See [sdk/experimental/README.md](sdk/experimental/README.md) for details.
 
 See [sdk/README.md](sdk/README.md) for full documentation.
 
