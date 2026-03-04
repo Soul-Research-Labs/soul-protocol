@@ -1,0 +1,33 @@
+{
+  "name": "@zaseon/relayer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "ZASEON Decentralized Relayer Node - Cross-chain proof relay and privacy event processing",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "lint": "eslint src/ --ext .ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "docker:build": "docker build -t zaseon-relayer .",
+    "docker:run": "docker-compose up -d"
+  },
+  "dependencies": {
+    "viem": "^2.30.0",
+    "pino": "^9.0.0",
+    "bullmq": "^5.0.0",
+    "ioredis": "^5.4.0",
+    "prom-client": "^15.0.0",
+    "dotenv": "^17.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "tsx": "^4.0.0",
+    "vitest": "^2.0.0",
+    "@types/node": "^22.0.0",
+    "eslint": "^9.0.0"
+  }
+}

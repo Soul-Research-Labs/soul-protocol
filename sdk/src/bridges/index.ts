@@ -2,12 +2,13 @@
  * Zaseon SDK - Bridge Adapters Module
  *
  * Provides TypeScript interfaces and implementations for supported bridge adapters.
- * Supported chains: Ethereum, Arbitrum, Optimism, Aztec.
+ * Supported chains: Ethereum, Arbitrum, Optimism, Base, Aztec.
  */
 
 export * as ArbitrumBridge from "./arbitrum";
 export * as EthereumBridge from "./ethereum";
 export * from "./optimism";
+export * as BaseBridge from "./base";
 export * as AztecBridge from "./aztec";
 
 import {
@@ -25,6 +26,7 @@ import {
 import { OPTIMISM_BRIDGE_ABI } from "./optimism";
 import { ETHEREUM_L1_BRIDGE_ABI } from "./ethereum";
 import { AZTEC_BRIDGE_ADAPTER_ABI } from "./aztec";
+import { BASE_BRIDGE_ADAPTER_ABI } from "./base";
 
 /** Maps chain names to their chain-specific bridge ABIs */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -33,6 +35,7 @@ const CHAIN_ABI_MAP: Record<string, readonly any[]> = {
   "arbitrum-one": ARBITRUM_BRIDGE_ADAPTER_ABI,
   optimism: OPTIMISM_BRIDGE_ABI,
   ethereum: ETHEREUM_L1_BRIDGE_ABI,
+  base: BASE_BRIDGE_ADAPTER_ABI,
   aztec: AZTEC_BRIDGE_ADAPTER_ABI,
 };
 
@@ -133,11 +136,7 @@ export abstract class BaseBridgeAdapter {
 // Supported Chains
 // ============================================
 
-export type SupportedChain =
-  | "arbitrum"
-  | "ethereum"
-  | "optimism"
-  | "aztec";
+export type SupportedChain = "arbitrum" | "ethereum" | "optimism" | "base" | "aztec";
 
 // ============================================
 // Bridge Factory
@@ -173,6 +172,14 @@ const CHAIN_CONFIGS: Record<SupportedChain, BridgeAdapterConfig> = {
     chainId: 10,
     nativeToken: "ETH",
     finality: 20,
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  base: {
+    name: "Base",
+    chainId: 8453,
+    nativeToken: "ETH",
+    finality: 20, // ~7 day fault proof window, same as Optimism (OP Stack)
     maxAmount: 1_000_000_000_000_000_000_000_000n,
     minAmount: 1_000_000_000_000_000n,
   },

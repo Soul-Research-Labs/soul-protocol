@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+  relayer:
+    build: .
+    ports:
+      - "9090:9090"
+    environment:
+      - NODE_ENV=production
+      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=info
+      - CHAINS=ethereum,arbitrum,optimism,base,aztec
+      - ETHEREUM_RPC_URL=${ETHEREUM_RPC_URL}
+      - ARBITRUM_RPC_URL=${ARBITRUM_RPC_URL}
+      - OPTIMISM_RPC_URL=${OPTIMISM_RPC_URL}
+      - BASE_RPC_URL=${BASE_RPC_URL}
+      - RELAYER_PRIVATE_KEY=${RELAYER_PRIVATE_KEY}
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  redis-data:

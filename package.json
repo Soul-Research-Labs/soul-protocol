@@ -108,9 +108,19 @@
     "typescript": "^5.9.3",
     "viem": "^2.30.0"
   },
+  "exports": {
+    ".": "./dist/index.js",
+    "./bridges": "./dist/bridges/index.js",
+    "./bridges/*": "./dist/bridges/*.js",
+    "./privacy": "./dist/privacy/index.js",
+    "./cli": "./dist/cli/index.js"
+  },
   "dependencies": {
+    "@aztec/bb.js": "^0.82.0",
+    "@noir-lang/noir_js": "^1.0.0",
     "@openzeppelin/contracts": "^5.4.0",
     "@openzeppelin/contracts-upgradeable": "^5.4.0",
+    "commander": "^13.0.0",
     "poseidon-lite": "^0.3.0"
   },
   "overrides": {

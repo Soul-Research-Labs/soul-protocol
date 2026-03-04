@@ -62,13 +62,13 @@ User Intent (encrypted)
 
 ### ZASEON Components Used
 
-| Component | Purpose |
-|---|---|
-| **ShieldedPool** | Pool deposits/withdrawals with commitment trees |
-| **NullifierRegistryV3** | Prevent double-spend across L2s via CDNA |
+| Component                  | Purpose                                                  |
+| -------------------------- | -------------------------------------------------------- |
+| **ShieldedPool**           | Pool deposits/withdrawals with commitment trees          |
+| **NullifierRegistryV3**    | Prevent double-spend across L2s via CDNA                 |
 | **ProofCarryingContainer** | Bundle trade state + ZK proof for cross-chain settlement |
-| **StealthAddressRegistry** | Generate one-time recipient addresses for each trade |
-| **CrossChainProofHubV3** | Verify trade proofs across Arbitrum ↔ Optimism |
+| **StealthAddressRegistry** | Generate one-time recipient addresses for each trade     |
+| **CrossChainProofHubV3**   | Verify trade proofs across Arbitrum ↔ Optimism           |
 
 ### Key Features
 
@@ -80,20 +80,20 @@ User Intent (encrypted)
 ### Integration Example
 
 ```typescript
-import { ZaseonSDK } from '@zaseon/sdk';
+import { ZaseonSDK } from "@zaseon/sdk";
 
 const sdk = new ZaseonSDK({ provider, signer });
 
 // 1. Shield funds
 const deposit = await sdk.shieldedPool.deposit({
-  amount: parseEther('10'),
-  chain: 'arbitrum',
+  amount: parseEther("10"),
+  chain: "arbitrum",
 });
 
 // 2. Create private swap order
 const order = await sdk.zkDex.createOrder({
-  sellToken: 'ETH',
-  buyToken: 'USDC',
+  sellToken: "ETH",
+  buyToken: "USDC",
   amount: deposit.commitment,
   proof: await sdk.prover.generateBalanceProof(deposit),
 });
@@ -101,8 +101,8 @@ const order = await sdk.zkDex.createOrder({
 // 3. Execute cross-chain atomic swap
 const result = await sdk.crossChain.atomicSwap({
   order,
-  sourceChain: 'arbitrum',
-  destChain: 'optimism',
+  sourceChain: "arbitrum",
+  destChain: "optimism",
 });
 ```
 
@@ -153,13 +153,13 @@ Treasury (Multisig)
 
 ### ZASEON Components Used
 
-| Component | Purpose |
-|---|---|
-| **StealthAddressRegistry** | One-time payment addresses per pay period |
-| **BatchAccumulator** | Batch salary commitments for gas-efficient distribution |
-| **NullifierRegistryV3** | Prevent double-claiming across chains |
-| **SelectiveDisclosure** | Prove salary range for mortgage/loan applications |
-| **ZKBoundStateLocks** | Lock treasury funds until payroll proof is verified |
+| Component                  | Purpose                                                 |
+| -------------------------- | ------------------------------------------------------- |
+| **StealthAddressRegistry** | One-time payment addresses per pay period               |
+| **BatchAccumulator**       | Batch salary commitments for gas-efficient distribution |
+| **NullifierRegistryV3**    | Prevent double-claiming across chains                   |
+| **SelectiveDisclosure**    | Prove salary range for mortgage/loan applications       |
+| **ZKBoundStateLocks**      | Lock treasury funds until payroll proof is verified     |
 
 ### Key Features
 
@@ -210,13 +210,13 @@ A lending protocol where collateral positions, borrow amounts, and liquidation t
 
 ### ZASEON Components Used
 
-| Component | Purpose |
-|---|---|
-| **ShieldedPool** | Private collateral deposits |
-| **ProofCarryingContainer** | Bundle solvency proof + borrow request |
-| **CrossChainProofHubV3** | Verify collateral on one chain, borrow on another |
-| **NullifierRegistryV3** | Prevent double-borrow against same collateral |
-| **ComplianceReporting** | Aggregated TVL reporting without individual exposure |
+| Component                  | Purpose                                              |
+| -------------------------- | ---------------------------------------------------- |
+| **ShieldedPool**           | Private collateral deposits                          |
+| **ProofCarryingContainer** | Bundle solvency proof + borrow request               |
+| **CrossChainProofHubV3**   | Verify collateral on one chain, borrow on another    |
+| **NullifierRegistryV3**    | Prevent double-borrow against same collateral        |
+| **ComplianceReporting**    | Aggregated TVL reporting without individual exposure |
 
 ### Key Features
 
@@ -267,13 +267,13 @@ Governance system where vote weights, voter identities, and delegation chains re
 
 ### ZASEON Components Used
 
-| Component | Purpose |
-|---|---|
-| **NullifierRegistryV3** | One vote per token holder, cross-chain |
-| **ZKBoundStateLocks** | Lock tokens during voting period without revealing amount |
-| **BatchAccumulator** | Batch vote commitments for efficient tallying |
-| **SelectiveDisclosure** | Prove "I voted" to claim participation rewards without revealing direction |
-| **CrossChainProofHubV3** | Aggregate votes cast across multiple L2s |
+| Component                | Purpose                                                                    |
+| ------------------------ | -------------------------------------------------------------------------- |
+| **NullifierRegistryV3**  | One vote per token holder, cross-chain                                     |
+| **ZKBoundStateLocks**    | Lock tokens during voting period without revealing amount                  |
+| **BatchAccumulator**     | Batch vote commitments for efficient tallying                              |
+| **SelectiveDisclosure**  | Prove "I voted" to claim participation rewards without revealing direction |
+| **CrossChainProofHubV3** | Aggregate votes cast across multiple L2s                                   |
 
 ### Key Features
 
@@ -328,13 +328,13 @@ NFT marketplace where ownership, bid amounts, and sale prices remain confidentia
 
 ### ZASEON Components Used
 
-| Component | Purpose |
-|---|---|
-| **StealthAddressRegistry** | One-time addresses for NFT receipt |
-| **ShieldedPool** | Shielded payment for NFT purchases |
-| **ZKBoundStateLocks** | Escrow NFT + payment with ZK unlock |
-| **NullifierRegistryV3** | Prevent double-spend of NFT commitments |
-| **SelectiveDisclosure** | Prove "I own a Bored Ape" without revealing which one |
+| Component                  | Purpose                                               |
+| -------------------------- | ----------------------------------------------------- |
+| **StealthAddressRegistry** | One-time addresses for NFT receipt                    |
+| **ShieldedPool**           | Shielded payment for NFT purchases                    |
+| **ZKBoundStateLocks**      | Escrow NFT + payment with ZK unlock                   |
+| **NullifierRegistryV3**    | Prevent double-spend of NFT commitments               |
+| **SelectiveDisclosure**    | Prove "I own a Bored Ape" without revealing which one |
 
 ### Key Features
 
@@ -386,14 +386,14 @@ Payment rail that combines strong transaction privacy with regulatory compliance
 
 ### ZASEON Components Used
 
-| Component | Purpose |
-|---|---|
-| **ShieldedPool** | Private balance management |
-| **StealthAddressRegistry** | One-time recipient addresses (ERC-5564) |
-| **SelectiveDisclosure** | Regulator-visible proofs without public disclosure |
-| **ComplianceReporting** | Aggregate compliance metrics |
-| **NullifierRegistryV3** | Cross-chain double-spend prevention |
-| **MultiBridgeRouter** | Route payments across L2s via optimal bridge |
+| Component                  | Purpose                                            |
+| -------------------------- | -------------------------------------------------- |
+| **ShieldedPool**           | Private balance management                         |
+| **StealthAddressRegistry** | One-time recipient addresses (ERC-5564)            |
+| **SelectiveDisclosure**    | Regulator-visible proofs without public disclosure |
+| **ComplianceReporting**    | Aggregate compliance metrics                       |
+| **NullifierRegistryV3**    | Cross-chain double-spend prevention                |
+| **MultiBridgeRouter**      | Route payments across L2s via optimal bridge       |
 
 ### Key Features
 
@@ -404,12 +404,12 @@ Payment rail that combines strong transaction privacy with regulatory compliance
 
 ### Regulatory Frameworks Supported
 
-| Framework | ZASEON Feature |
-|---|---|
-| EU MiCA | SelectiveDisclosure for obliged entities |
-| US BSA/AML | ComplianceReporting aggregate summaries |
-| FATF Travel Rule | StealthAddressRegistry + selective identity disclosure |
-| GDPR | ZK proofs as privacy-preserving compliance (data minimization) |
+| Framework        | ZASEON Feature                                                 |
+| ---------------- | -------------------------------------------------------------- |
+| EU MiCA          | SelectiveDisclosure for obliged entities                       |
+| US BSA/AML       | ComplianceReporting aggregate summaries                        |
+| FATF Travel Rule | StealthAddressRegistry + selective identity disclosure         |
+| GDPR             | ZK proofs as privacy-preserving compliance (data minimization) |
 
 ---
 
@@ -454,13 +454,13 @@ Automated portfolio management system that rebalances holdings across multiple L
 
 ### ZASEON Components Used
 
-| Component | Purpose |
-|---|---|
+| Component                  | Purpose                                        |
+| -------------------------- | ---------------------------------------------- |
 | **ProofCarryingContainer** | Bundle multi-leg rebalance as atomic operation |
-| **CrossL2Atomicity** | Ensure all-or-nothing execution across chains |
-| **ZKBoundStateLocks** | Lock positions during rebalance window |
-| **CrossChainProofHubV3** | Verify position commitments across L2s |
-| **ShieldedPool** | Private intermediate holding during rebalance |
+| **CrossL2Atomicity**       | Ensure all-or-nothing execution across chains  |
+| **ZKBoundStateLocks**      | Lock positions during rebalance window         |
+| **CrossChainProofHubV3**   | Verify position commitments across L2s         |
+| **ShieldedPool**           | Private intermediate holding during rebalance  |
 
 ### Key Features
 
@@ -510,13 +510,13 @@ Prediction markets where bet amounts, positions, and market-maker strategies rem
 
 ### ZASEON Components Used
 
-| Component | Purpose |
-|---|---|
-| **ShieldedPool** | Private collateral and payouts |
-| **NullifierRegistryV3** | One settlement per position |
-| **StealthAddressRegistry** | Private payout addresses |
-| **ZKBoundStateLocks** | Lock collateral until market resolution |
-| **BatchAccumulator** | Efficient batch settlement of many positions |
+| Component                  | Purpose                                      |
+| -------------------------- | -------------------------------------------- |
+| **ShieldedPool**           | Private collateral and payouts               |
+| **NullifierRegistryV3**    | One settlement per position                  |
+| **StealthAddressRegistry** | Private payout addresses                     |
+| **ZKBoundStateLocks**      | Lock collateral until market resolution      |
+| **BatchAccumulator**       | Efficient batch settlement of many positions |
 
 ### Key Features
 
@@ -566,13 +566,13 @@ Decentralized identity system where users hold encrypted credentials (KYC status
 
 ### ZASEON Components Used
 
-| Component | Purpose |
-|---|---|
-| **SelectiveDisclosure** | Prove credential attributes in ZK |
-| **CrossChainProofHubV3** | Verify credentials across L2s |
-| **StealthAddressRegistry** | Pseudonymous credential binding |
-| **NullifierRegistryV3** | One-time-use credential proofs (anti-replay) |
-| **ProofCarryingContainer** | Portable credential proofs across chains |
+| Component                  | Purpose                                      |
+| -------------------------- | -------------------------------------------- |
+| **SelectiveDisclosure**    | Prove credential attributes in ZK            |
+| **CrossChainProofHubV3**   | Verify credentials across L2s                |
+| **StealthAddressRegistry** | Pseudonymous credential binding              |
+| **NullifierRegistryV3**    | One-time-use credential proofs (anti-replay) |
+| **ProofCarryingContainer** | Portable credential proofs across chains     |
 
 ### Key Features
 
@@ -583,14 +583,14 @@ Decentralized identity system where users hold encrypted credentials (KYC status
 
 ### Credential Types
 
-| Credential | Disclosure Example |
-|---|---|
-| Age Verification | "Over 18" without revealing date of birth |
-| Accredited Investor | "Net worth > $1M" without revealing exact amount |
-| KYC Status | "KYC verified by provider X" without revealing identity documents |
-| Professional License | "Licensed in jurisdiction Y" without revealing license number |
-| Credit Score | "Score > 700" without revealing exact score |
-| Sanctions Clearance | "Not on OFAC SDN list" via set non-membership proof |
+| Credential           | Disclosure Example                                                |
+| -------------------- | ----------------------------------------------------------------- |
+| Age Verification     | "Over 18" without revealing date of birth                         |
+| Accredited Investor  | "Net worth > $1M" without revealing exact amount                  |
+| KYC Status           | "KYC verified by provider X" without revealing identity documents |
+| Professional License | "Licensed in jurisdiction Y" without revealing license number     |
+| Credit Score         | "Score > 700" without revealing exact score                       |
+| Sanctions Clearance  | "Not on OFAC SDN list" via set non-membership proof               |
 
 ---
 
@@ -639,13 +639,13 @@ Decentralized insurance platform where policy terms, claim amounts, and risk ass
 
 ### ZASEON Components Used
 
-| Component | Purpose |
-|---|---|
-| **ShieldedPool** | Private premium and payout management |
-| **NullifierRegistryV3** | Prevent duplicate claims |
-| **SelectiveDisclosure** | Prove claim validity without revealing details |
-| **BatchAccumulator** | Aggregate actuarial statistics privately |
-| **CrossChainProofHubV3** | Cross-chain reinsurance proof verification |
+| Component                | Purpose                                        |
+| ------------------------ | ---------------------------------------------- |
+| **ShieldedPool**         | Private premium and payout management          |
+| **NullifierRegistryV3**  | Prevent duplicate claims                       |
+| **SelectiveDisclosure**  | Prove claim validity without revealing details |
+| **BatchAccumulator**     | Aggregate actuarial statistics privately       |
+| **CrossChainProofHubV3** | Cross-chain reinsurance proof verification     |
 
 ### Key Features
 
@@ -697,13 +697,13 @@ Institutional-grade OTC trading platform where counterparties negotiate and sett
 
 ### ZASEON Components Used
 
-| Component | Purpose |
-|---|---|
-| **ZKBoundStateLocks** | Atomic escrow with ZK-verified terms |
-| **StealthAddressRegistry** | Pseudonymous counterparty addresses |
-| **SelectiveDisclosure** | Post-trade reporting to prime brokers |
-| **CrossL2Atomicity** | Cross-chain atomic settlement |
-| **ComplianceReporting** | Aggregate OTC volume reporting |
+| Component                  | Purpose                               |
+| -------------------------- | ------------------------------------- |
+| **ZKBoundStateLocks**      | Atomic escrow with ZK-verified terms  |
+| **StealthAddressRegistry** | Pseudonymous counterparty addresses   |
+| **SelectiveDisclosure**    | Post-trade reporting to prime brokers |
+| **CrossL2Atomicity**       | Cross-chain atomic settlement         |
+| **ComplianceReporting**    | Aggregate OTC volume reporting        |
 
 ### Key Features
 
@@ -722,13 +722,13 @@ Supply chain finance platform where invoices, payment terms, and supplier relati
 
 ### ZASEON Components Used
 
-| Component | Purpose |
-|---|---|
-| **ProofCarryingContainer** | Bundle invoice proof + payment request |
-| **SelectiveDisclosure** | Prove invoice validity to lender without revealing buyer |
-| **ZKBoundStateLocks** | Lock invoice payment until delivery is confirmed |
-| **CrossChainProofHubV3** | Verify invoices across chains |
-| **NullifierRegistryV3** | Prevent double-factoring of invoices |
+| Component                  | Purpose                                                  |
+| -------------------------- | -------------------------------------------------------- |
+| **ProofCarryingContainer** | Bundle invoice proof + payment request                   |
+| **SelectiveDisclosure**    | Prove invoice validity to lender without revealing buyer |
+| **ZKBoundStateLocks**      | Lock invoice payment until delivery is confirmed         |
+| **CrossChainProofHubV3**   | Verify invoices across chains                            |
+| **NullifierRegistryV3**    | Prevent double-factoring of invoices                     |
 
 ### Key Features
 
@@ -747,22 +747,22 @@ A general-purpose auction platform supporting multiple auction types (English, D
 
 ### ZASEON Components Used
 
-| Component | Purpose |
-|---|---|
-| **ShieldedPool** | Escrow bid deposits privately |
-| **ZKBoundStateLocks** | Lock bids until auction closes |
-| **NullifierRegistryV3** | One bid per participant per auction |
-| **BatchAccumulator** | Efficient batch reveal and settlement |
-| **StealthAddressRegistry** | Anonymous bidder addresses |
+| Component                  | Purpose                               |
+| -------------------------- | ------------------------------------- |
+| **ShieldedPool**           | Escrow bid deposits privately         |
+| **ZKBoundStateLocks**      | Lock bids until auction closes        |
+| **NullifierRegistryV3**    | One bid per participant per auction   |
+| **BatchAccumulator**       | Efficient batch reveal and settlement |
+| **StealthAddressRegistry** | Anonymous bidder addresses            |
 
 ### Auction Types
 
-| Type | Privacy Feature |
-|---|---|
-| **Vickrey (sealed second-price)** | Winner pays second-highest bid; ZK proof of correct winner determination |
-| **Dutch** | Private reserve prices; ZK proof that acceptance price matches the decrement schedule |
-| **Combinatorial** | Multi-item bids remain private; ZK proof of allocation optimality |
-| **NFT Drops** | Fair launch — no whale detection; random selection with VRF + ZK |
+| Type                              | Privacy Feature                                                                       |
+| --------------------------------- | ------------------------------------------------------------------------------------- |
+| **Vickrey (sealed second-price)** | Winner pays second-highest bid; ZK proof of correct winner determination              |
+| **Dutch**                         | Private reserve prices; ZK proof that acceptance price matches the decrement schedule |
+| **Combinatorial**                 | Multi-item bids remain private; ZK proof of allocation optimality                     |
+| **NFT Drops**                     | Fair launch — no whale detection; random selection with VRF + ZK                      |
 
 ### Key Features
 
@@ -781,13 +781,13 @@ Anonymous reporting platform where whistleblowers can submit evidence and prove 
 
 ### ZASEON Components Used
 
-| Component | Purpose |
-|---|---|
-| **StealthAddressRegistry** | Anonymous reporter addresses |
-| **NullifierRegistryV3** | Prevent duplicate report submission |
-| **ProofCarryingContainer** | Bundle evidence hash + authenticity proof |
-| **SelectiveDisclosure** | Prove "I am an employee of company X" without revealing who |
-| **CrossChainProofHubV3** | Submit reports from any chain, verify on any chain |
+| Component                  | Purpose                                                     |
+| -------------------------- | ----------------------------------------------------------- |
+| **StealthAddressRegistry** | Anonymous reporter addresses                                |
+| **NullifierRegistryV3**    | Prevent duplicate report submission                         |
+| **ProofCarryingContainer** | Bundle evidence hash + authenticity proof                   |
+| **SelectiveDisclosure**    | Prove "I am an employee of company X" without revealing who |
+| **CrossChainProofHubV3**   | Submit reports from any chain, verify on any chain          |
 
 ### Key Features
 
@@ -830,14 +830,14 @@ Source Chain (e.g., Ethereum L1)          Destination Chain (e.g., Arbitrum)
 
 ### ZASEON Components Used
 
-| Component | Purpose |
-|---|---|
-| **ShieldedPool** | Private deposit on source, private withdrawal on destination |
-| **CrossChainProofHubV3** | Relay deposit proofs across chains |
-| **NullifierRegistryV3** | Cross-domain nullifier tracking (CDNA) prevents double-withdrawal |
-| **MultiBridgeRouter** | Route proof messages via optimal bridge path |
-| **ZaseonCrossChainRelay** | Dispatch proofs via LayerZero/Hyperlane |
-| **StealthAddressRegistry** | One-time withdrawal addresses |
+| Component                  | Purpose                                                           |
+| -------------------------- | ----------------------------------------------------------------- |
+| **ShieldedPool**           | Private deposit on source, private withdrawal on destination      |
+| **CrossChainProofHubV3**   | Relay deposit proofs across chains                                |
+| **NullifierRegistryV3**    | Cross-domain nullifier tracking (CDNA) prevents double-withdrawal |
+| **MultiBridgeRouter**      | Route proof messages via optimal bridge path                      |
+| **ZaseonCrossChainRelay**  | Dispatch proofs via LayerZero/Hyperlane                           |
+| **StealthAddressRegistry** | One-time withdrawal addresses                                     |
 
 ### Key Features
 
@@ -852,47 +852,47 @@ Source Chain (e.g., Ethereum L1)          Destination Chain (e.g., Arbitrum)
 
 ### Choosing the Right Components
 
-| If You Need... | Use These Components |
-|---|---|
-| Private balances | `ShieldedPool` + `NullifierRegistryV3` |
-| Anonymous recipients | `StealthAddressRegistry` (ERC-5564) |
-| Cross-chain proofs | `CrossChainProofHubV3` + `MultiBridgeRouter` |
-| Atomic cross-chain ops | `CrossL2Atomicity` + `ZKBoundStateLocks` |
-| Regulatory compliance | `SelectiveDisclosure` + `ComplianceReporting` |
-| Proof bundling | `ProofCarryingContainer` |
-| Batch operations | `BatchAccumulator` |
-| Emergency controls | `ProtocolEmergencyCoordinator` |
+| If You Need...         | Use These Components                          |
+| ---------------------- | --------------------------------------------- |
+| Private balances       | `ShieldedPool` + `NullifierRegistryV3`        |
+| Anonymous recipients   | `StealthAddressRegistry` (ERC-5564)           |
+| Cross-chain proofs     | `CrossChainProofHubV3` + `MultiBridgeRouter`  |
+| Atomic cross-chain ops | `CrossL2Atomicity` + `ZKBoundStateLocks`      |
+| Regulatory compliance  | `SelectiveDisclosure` + `ComplianceReporting` |
+| Proof bundling         | `ProofCarryingContainer`                      |
+| Batch operations       | `BatchAccumulator`                            |
+| Emergency controls     | `ProtocolEmergencyCoordinator`                |
 
 ### Supported Chains
 
-| Chain | Type | Bridge Adapter |
-|---|---|---|
-| Ethereum L1 | Settlement layer | `EthereumL1Bridge` |
-| Arbitrum | Optimistic rollup | `ArbitrumBridgeAdapter` |
-| Optimism | Optimistic rollup | `OptimismBridgeAdapter` |
-| Aztec | ZK rollup (privacy-native) | `AztecBridgeAdapter` |
+| Chain       | Type                       | Bridge Adapter          |
+| ----------- | -------------------------- | ----------------------- |
+| Ethereum L1 | Settlement layer           | `EthereumL1Bridge`      |
+| Arbitrum    | Optimistic rollup          | `ArbitrumBridgeAdapter` |
+| Optimism    | Optimistic rollup          | `OptimismBridgeAdapter` |
+| Aztec       | ZK rollup (privacy-native) | `AztecBridgeAdapter`    |
 
 ### SDK Quick Start
 
 ```typescript
-import { ZaseonSDK } from '@zaseon/sdk';
-import { createPublicClient, createWalletClient, http } from 'viem';
-import { arbitrum } from 'viem/chains';
+import { ZaseonSDK } from "@zaseon/sdk";
+import { createPublicClient, createWalletClient, http } from "viem";
+import { arbitrum } from "viem/chains";
 
 // Initialize SDK
 const sdk = new ZaseonSDK({
   publicClient: createPublicClient({ chain: arbitrum, transport: http() }),
   walletClient: createWalletClient({ chain: arbitrum, transport: http() }),
   contracts: {
-    shieldedPool: '0x...',
-    nullifierRegistry: '0x...',
-    stealthRegistry: '0x...',
-    proofHub: '0x...',
+    shieldedPool: "0x...",
+    nullifierRegistry: "0x...",
+    stealthRegistry: "0x...",
+    proofHub: "0x...",
   },
 });
 
 // Shield funds
-const deposit = await sdk.shield({ amount: parseEther('1') });
+const deposit = await sdk.shield({ amount: parseEther("1") });
 
 // Generate stealth address for recipient
 const stealth = await sdk.stealth.generateAddress(recipientPubKey);
@@ -906,8 +906,8 @@ const tx = await sdk.transfer({
 
 // Cross-chain transfer
 const ccTx = await sdk.crossChain.transfer({
-  sourceChain: 'arbitrum',
-  destChain: 'optimism',
+  sourceChain: "arbitrum",
+  destChain: "optimism",
   commitment: deposit.commitment,
   proof: await sdk.prover.generateBridgeProof(deposit),
 });
@@ -917,12 +917,12 @@ const ccTx = await sdk.crossChain.transfer({
 
 Applications built on ZASEON need ZK circuits for their domain-specific proofs. ZASEON provides base circuits (balance proof, transfer proof, bridge proof) that can be composed:
 
-| Base Circuit | Purpose | Framework |
-|---|---|---|
-| `balance_proof` | Prove balance ≥ amount | Noir |
-| `shielded_pool` | Prove valid deposit/withdrawal | Noir |
-| `nullifier_check` | Prove nullifier not spent | Noir |
-| `selective_disclosure` | Prove credential attribute | Noir |
+| Base Circuit           | Purpose                        | Framework |
+| ---------------------- | ------------------------------ | --------- |
+| `balance_proof`        | Prove balance ≥ amount         | Noir      |
+| `shielded_pool`        | Prove valid deposit/withdrawal | Noir      |
+| `nullifier_check`      | Prove nullifier not spent      | Noir      |
+| `selective_disclosure` | Prove credential attribute     | Noir      |
 
 Custom circuits should be written in **Noir** and can import ZASEON's library circuits for commitment schemes, Merkle tree verification, and nullifier generation.
 
