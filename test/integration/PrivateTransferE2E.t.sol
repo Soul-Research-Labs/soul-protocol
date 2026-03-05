@@ -19,7 +19,10 @@ contract MockProofVerifier {
         result = _r;
     }
 
-    function verifyProof(bytes calldata, bytes calldata) external view returns (bool) {
+    function verifyProof(
+        bytes calldata,
+        bytes calldata
+    ) external view returns (bool) {
         return result;
     }
 }
@@ -98,7 +101,9 @@ contract PrivateTransferE2E is Test {
     //  HELPERS
     // ═══════════════════════════════════════════════════════════
 
-    function _validCommitment(bytes memory seed) internal pure returns (bytes32) {
+    function _validCommitment(
+        bytes memory seed
+    ) internal pure returns (bytes32) {
         return bytes32((uint256(keccak256(seed)) % (FIELD_SIZE - 1)) + 1);
     }
 
@@ -125,10 +130,18 @@ contract PrivateTransferE2E is Test {
         mockAdapter = new MockBridgeAdapter();
 
         // --- Source chain contracts ---
-        srcPool = new UniversalShieldedPool(admin, address(mockVerifier), false);
+        srcPool = new UniversalShieldedPool(
+            admin,
+            address(mockVerifier),
+            false
+        );
 
         // --- Destination chain contracts ---
-        destPool = new UniversalShieldedPool(admin, address(mockVerifier), false);
+        destPool = new UniversalShieldedPool(
+            admin,
+            address(mockVerifier),
+            false
+        );
         destProofHub = new CrossChainProofHubV3();
         destNullifierRegistry = new NullifierRegistryV3();
 
@@ -191,11 +204,17 @@ contract PrivateTransferE2E is Test {
 
     function test_E2E_PrivateCrossChainTransfer() public {
         uint256 depositAmount = 1 ether;
-        bytes32 commitment = _validCommitment(abi.encodePacked("secret", depositAmount));
+        bytes32 commitment = _validCommitment(
+            abi.encodePacked("secret", depositAmount)
+        );
         bytes32 nullifier = keccak256(abi.encodePacked("nullifier-1"));
         bytes32 proofType = keccak256("balance_proof");
         bytes memory proof = hex"deadbeef0123456789abcdef";
-        bytes memory publicInputs = abi.encode(commitment, SOURCE_CHAIN_ID, DEST_CHAIN_ID);
+        bytes memory publicInputs = abi.encode(
+            commitment,
+            SOURCE_CHAIN_ID,
+            DEST_CHAIN_ID
+        );
         bytes32 proofId = keccak256(abi.encodePacked(proof, commitment));
 
         // ═══ Phase 1: Deposit on Source Chain ═══
@@ -205,8 +224,15 @@ contract PrivateTransferE2E is Test {
         srcPool.depositETH{value: depositAmount}(commitment);
 
         assertEq(srcPool.totalDeposits(), 1, "Source should have 1 deposit");
-        assertTrue(srcPool.commitmentExists(commitment), "Commitment should exist");
-        assertEq(address(srcPool).balance, depositAmount, "Source pool should hold deposit");
+        assertTrue(
+            srcPool.commitmentExists(commitment),
+            "Commitment should exist"
+        );
+        assertEq(
+            address(srcPool).balance,
+            depositAmount,
+            "Source pool should hold deposit"
+        );
 
         bytes32 srcRoot = srcPool.currentRoot();
         assertTrue(srcPool.isKnownRoot(srcRoot), "Merkle root should be known");
@@ -265,8 +291,8 @@ contract PrivateTransferE2E is Test {
 
         uint256 recipientBalBefore = recipient.balance;
 
-        IUniversalShieldedPool.WithdrawalProof memory wp = IUniversalShieldedPool
-            .WithdrawalProof({
+        IUniversalShieldedPool.WithdrawalProof
+            memory wp = IUniversalShieldedPool.WithdrawalProof({
                 proof: proof,
                 merkleRoot: merkleRoot,
                 nullifier: nullifier,
@@ -284,7 +310,10 @@ contract PrivateTransferE2E is Test {
         console2.log("=== Phase 4: Verify Privacy Properties ===");
 
         // Nullifier is spent
-        assertTrue(destPool.isSpent(nullifier), "Nullifier should be spent on destination");
+        assertTrue(
+            destPool.isSpent(nullifier),
+            "Nullifier should be spent on destination"
+        );
 
         // Recipient received funds
         assertEq(
@@ -297,10 +326,16 @@ contract PrivateTransferE2E is Test {
         assertEq(destPool.totalWithdrawals(), 1, "Should have 1 withdrawal");
 
         // Source depositor and dest recipient have no on-chain link
-        assertTrue(depositor != recipient, "Depositor and recipient are different addresses");
+        assertTrue(
+            depositor != recipient,
+            "Depositor and recipient are different addresses"
+        );
         // In production: depositor address never appears on dest chain
 
-        console2.log("  Recipient balance increase:", recipient.balance - recipientBalBefore);
+        console2.log(
+            "  Recipient balance increase:",
+            recipient.balance - recipientBalBefore
+        );
         console2.log("  Nullifier spent: true");
         console2.log("  Depositor == Recipient:", depositor == recipient);
 
@@ -326,7 +361,9 @@ contract PrivateTransferE2E is Test {
     function test_E2E_CrossChainWithRelayerFee() public {
         uint256 depositAmount = 5 ether;
         uint256 relayerFee = 0.05 ether;
-        bytes32 commitment = _validCommitment(abi.encodePacked("relayer-fee-test"));
+        bytes32 commitment = _validCommitment(
+            abi.encodePacked("relayer-fee-test")
+        );
         bytes32 nullifier = keccak256(abi.encodePacked("null-relayer-fee"));
 
         // Deposit on source
@@ -344,8 +381,8 @@ contract PrivateTransferE2E is Test {
         uint256 relayerBalBefore = relayerAddr.balance;
 
         // Withdraw with relayer fee
-        IUniversalShieldedPool.WithdrawalProof memory wp = IUniversalShieldedPool
-            .WithdrawalProof({
+        IUniversalShieldedPool.WithdrawalProof
+            memory wp = IUniversalShieldedPool.WithdrawalProof({
                 proof: hex"cafe",
                 merkleRoot: merkleRoot,
                 nullifier: nullifier,
@@ -384,7 +421,9 @@ contract PrivateTransferE2E is Test {
         relayerRegistry.register{value: minStake}();
 
         // Verify registration
-        (uint256 stake, , , bool isRegistered) = relayerRegistry.relayers(relayerAddr);
+        (uint256 stake, , , bool isRegistered) = relayerRegistry.relayers(
+            relayerAddr
+        );
         assertTrue(isRegistered, "Relayer should be registered");
         assertEq(stake, minStake, "Stake should equal MIN_STAKE");
     }
@@ -396,8 +435,12 @@ contract PrivateTransferE2E is Test {
     function test_E2E_MultiDepositCrossChainWithdraw() public {
         uint256 amount1 = 1 ether;
         uint256 amount2 = 2 ether;
-        bytes32 commit1 = _validCommitment(abi.encodePacked("multi-1", amount1));
-        bytes32 commit2 = _validCommitment(abi.encodePacked("multi-2", amount2));
+        bytes32 commit1 = _validCommitment(
+            abi.encodePacked("multi-1", amount1)
+        );
+        bytes32 commit2 = _validCommitment(
+            abi.encodePacked("multi-2", amount2)
+        );
         bytes32 null1 = keccak256(abi.encodePacked("multi-null-1"));
 
         // Two deposits on source
@@ -407,7 +450,11 @@ contract PrivateTransferE2E is Test {
         vm.stopPrank();
 
         assertEq(srcPool.totalDeposits(), 2, "Source should have 2 deposits");
-        assertEq(address(srcPool).balance, amount1 + amount2, "Source holds both deposits");
+        assertEq(
+            address(srcPool).balance,
+            amount1 + amount2,
+            "Source holds both deposits"
+        );
 
         // Mirror commit1 to dest for tree
         vm.deal(admin, amount1);
@@ -417,8 +464,8 @@ contract PrivateTransferE2E is Test {
         bytes32 nativeAsset = destPool.NATIVE_ASSET();
 
         // Withdraw only deposit 1 on destination
-        IUniversalShieldedPool.WithdrawalProof memory wp = IUniversalShieldedPool
-            .WithdrawalProof({
+        IUniversalShieldedPool.WithdrawalProof
+            memory wp = IUniversalShieldedPool.WithdrawalProof({
                 proof: hex"abcd",
                 merkleRoot: merkleRoot,
                 nullifier: null1,
@@ -436,6 +483,10 @@ contract PrivateTransferE2E is Test {
         assertEq(recipient.balance, amount1, "Recipient should have amount1");
 
         // Source still holds both deposits (no linkage)
-        assertEq(address(srcPool).balance, amount1 + amount2, "Source untouched");
+        assertEq(
+            address(srcPool).balance,
+            amount1 + amount2,
+            "Source untouched"
+        );
     }
 }

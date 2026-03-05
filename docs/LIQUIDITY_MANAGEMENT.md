@@ -890,11 +890,11 @@ CrossChainLiquidityVault:
 │  (Token Custody)  │  │  (Proof Routing)                          │
 │                   │  │                                           │
 │  LP deposits ──┐  │  │  routeMessage() ──→ IBridgeAdapter        │
-│  Lock/Release  │  │  │    ├── HyperlaneAdapter                   │
-│  Settlement    │  │  │    ├── LayerZeroAdapter                   │
-│  Net flow track│  │  │    ├── CCIPAdapter                        │
-└────────────────┘  │  │    ├── WormholeAdapter                    │
-                    │  │    └── ... (42 adapters)                   │
+│  Lock/Release  │  │  │    ├── ArbitrumBridgeAdapter              │
+│  Settlement    │  │  │    ├── OptimismBridgeAdapter              │
+│  Net flow track│  │  │    ├── BaseBridgeAdapter                  │
+└────────────────┘  │  │    ├── EthereumL1Bridge                   │
+                    │  │    └── ... (+ planned adapters)            │
                     │  └───────────────────────────────────────────┘
                     │
                     ▼

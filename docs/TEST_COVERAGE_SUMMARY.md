@@ -45,7 +45,6 @@
 | `CrossChainCommitmentRelay` | `test/crosschain/CrossChainCommitmentRelay.t.sol` _(batch 3)_ |
 | `ArbitrumBridgeAdapter`     | `test/crosschain/ArbitrumBridgeAdapter.t.sol`                 |
 | `OptimismBridgeAdapter`     | `test/crosschain/OptimismBridgeAdapter.t.sol`                 |
-| `ScrollBridgeAdapter`       | `test/crosschain/ScrollBridgeAdapter.t.sol`                   |
 | `BaseBridgeAdapter`         | `test/crosschain/BaseBridgeAdapter.t.sol`                     |
 | `CrossL2Atomicity`          | `test/crosschain/CrossL2Atomicity.t.sol`                      |
 

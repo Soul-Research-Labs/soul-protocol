@@ -8,8 +8,8 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /**
- * @title ZaseonAtomicSwapSecurityIntegration
- * @author ZASEON
+ * @title SoulAtomicSwapSecurityIntegration
+ * @author Soul Protocol
  * @notice Integrates MEV protection and flash loan guards with atomic swaps
  * @dev Extends atomic swap functionality with commit-reveal and flash loan detection
  *
@@ -47,7 +47,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
  * │   └──────────────────────────────────────────────────────────┘  │
  * └─────────────────────────────────────────────────────────────────┘
  */
-contract ZaseonAtomicSwapSecurityIntegration is
+contract SoulAtomicSwapSecurityIntegration is
     ReentrancyGuard,
     AccessControl,
     Pausable
@@ -74,6 +74,7 @@ contract ZaseonAtomicSwapSecurityIntegration is
     error PriceDeviationTooHigh();
     error IncorrectETHAmount();
     error ETHTransferFailed();
+
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -290,7 +291,6 @@ contract ZaseonAtomicSwapSecurityIntegration is
      * @param hashLock HTLC hash lock
      * @param timeLock HTLC time lock
      * @param salt Random salt used in commitment
-          * @return swapId The swap id
      */
     function revealSwap(
         bytes32 commitmentId,
@@ -301,41 +301,16 @@ contract ZaseonAtomicSwapSecurityIntegration is
         uint256 timeLock,
         bytes32 salt
     ) external payable nonReentrant whenNotPaused returns (bytes32 swapId) {
-        // Phase 1: Validate commitment (scoped to release storage pointer)
-        {
-            Commitment storage commitment = commitments[commitmentId];
+        // Validate and verify commitment
+        _validateAndRevealCommitment(commitmentId, recipient, token, amount, hashLock, timeLock, salt);
 
-            if (commitment.initiator == address(0)) revert CommitmentNotFound();
-            if (commitment.revealed) revert CommitmentNotFound();
-            if (block.number < commitment.readyBlock)
-                revert CommitmentNotReady();
-            if (block.number > commitment.expiresBlock)
-                revert CommitmentExpired();
-            if (commitment.initiator != msg.sender) revert InvalidRevealData();
-
-            // Verify commitment hash
-            bytes32 expectedHash = keccak256(
-                abi.encodePacked(
-                    recipient,
-                    token,
-                    amount,
-                    hashLock,
-                    timeLock,
-                    salt
-                )
-            );
-            if (commitment.commitHash != expectedHash)
-                revert InvalidRevealData();
-
-            // Mark commitment as revealed
-            commitment.revealed = true;
-        }
-
-        // Phase 2: Security checks
+        // Flash loan check
         _checkFlashLoanGuard(msg.sender);
+
+        // Rate limit check
         _checkRateLimits(msg.sender, amount, token);
 
-        // Phase 3: Create the swap
+        // Create the swap
         swapId = _createSwap(
             msg.sender,
             recipient,
@@ -347,6 +322,37 @@ contract ZaseonAtomicSwapSecurityIntegration is
         );
 
         emit SwapRevealed(commitmentId, swapId, msg.sender, recipient, amount);
+    }
+
+    /**
+     * @dev Validate commitment state and verify reveal data
+     */
+    function _validateAndRevealCommitment(
+        bytes32 commitmentId,
+        address recipient,
+        address token,
+        uint256 amount,
+        bytes32 hashLock,
+        uint256 timeLock,
+        bytes32 salt
+    ) internal {
+        Commitment storage commitment = commitments[commitmentId];
+
+        // Validate commitment
+        if (commitment.initiator == address(0)) revert CommitmentNotFound();
+        if (commitment.revealed) revert CommitmentNotFound();
+        if (block.number < commitment.readyBlock) revert CommitmentNotReady();
+        if (block.number > commitment.expiresBlock) revert CommitmentExpired();
+        if (commitment.initiator != msg.sender) revert InvalidRevealData();
+
+        // Verify commitment hash
+        bytes32 expectedHash = keccak256(
+            abi.encodePacked(recipient, token, amount, hashLock, timeLock, salt)
+        );
+        if (commitment.commitHash != expectedHash) revert InvalidRevealData();
+
+        // Mark commitment as revealed
+        commitment.revealed = true;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -376,7 +382,7 @@ contract ZaseonAtomicSwapSecurityIntegration is
         address user,
         address[] calldata tokens
     ) external {
-        for (uint256 i = 0; i < tokens.length; ) {
+        for (uint256 i = 0; i < tokens.length; i++) {
             uint256 balance;
             if (tokens[i] == address(0)) {
                 balance = user.balance;
@@ -384,9 +390,6 @@ contract ZaseonAtomicSwapSecurityIntegration is
                 balance = IERC20(tokens[i]).balanceOf(user);
             }
             balanceSnapshots[user][block.number][tokens[i]] = balance;
-            unchecked {
-                ++i;
-            }
         }
     }
 
@@ -395,7 +398,6 @@ contract ZaseonAtomicSwapSecurityIntegration is
      * @param user User to validate
      * @param token Token to check
      * @param expectedBalance Expected balance (used for validation threshold)
-          * @return The result value
      */
     function validateBalance(
         address user,
@@ -718,7 +720,6 @@ contract ZaseonAtomicSwapSecurityIntegration is
     /**
      * @notice Get swap details
      * @param swapId Swap identifier
-          * @return The result value
      */
     function getSwap(
         bytes32 swapId
@@ -729,7 +730,6 @@ contract ZaseonAtomicSwapSecurityIntegration is
     /**
      * @notice Get commitment details
      * @param commitmentId Commitment identifier
-          * @return The result value
      */
     function getCommitment(
         bytes32 commitmentId
@@ -740,7 +740,6 @@ contract ZaseonAtomicSwapSecurityIntegration is
     /**
      * @notice Get user limits
      * @param user User address
-          * @return The result value
      */
     function getUserLimits(
         address user
@@ -753,8 +752,6 @@ contract ZaseonAtomicSwapSecurityIntegration is
      * @param user User address
      * @param amount Swap amount
      * @param token Token address
-          * @return The result value
-     * @return The result value at index 1
      */
     function canSwap(
         address user,

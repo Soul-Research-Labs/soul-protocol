@@ -1,0 +1,63 @@
+name: Nightly Fuzz
+
+permissions:
+  contents: read
+
+on:
+  schedule:
+    # 3:00 AM UTC every day
+    - cron: "0 3 * * *"
+  workflow_dispatch: # allow manual trigger
+
+concurrency:
+  group: nightly-fuzz
+  cancel-in-progress: true
+
+env:
+  FOUNDRY_PROFILE: nightly
+
+jobs:
+  nightly-fuzz:
+    name: Extended Fuzz & Invariant Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Cache Foundry compilation
+        uses: actions/cache@v4
+        with:
+          path: |
+            forge-cache
+            out
+          key: foundry-${{ runner.os }}-${{ hashFiles('contracts/**/*.sol', 'foundry.toml') }}
+          restore-keys: |
+            foundry-${{ runner.os }}-
+
+      - name: Build contracts
+        run: forge build --skip AggregatorHonkVerifier
+
+      - name: Run fuzz tests (10,000 runs)
+        run: forge test --match-path "test/fuzz/*" --skip AggregatorHonkVerifier -vvv
+
+      - name: Run invariant tests (256 runs, depth 128)
+        run: forge test --match-path "test/invariant/*" --skip AggregatorHonkVerifier -vvv
+
+      - name: Run attack simulation tests
+        run: forge test --match-path "test/attacks/*" --skip AggregatorHonkVerifier -vvv
+
+      - name: Run security tests
+        run: forge test --match-path "test/security/*" --skip AggregatorHonkVerifier -vvv
+
+      - name: Run stress tests
+        run: forge test --match-path "test/stress/*" --skip AggregatorHonkVerifier -vvv
+
+      - name: Run all remaining tests
+        run: forge test --skip AggregatorHonkVerifier --no-match-path "test/(fuzz|invariant|attacks|security|stress)/*" -vvv

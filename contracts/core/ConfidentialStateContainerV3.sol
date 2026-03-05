@@ -1,16 +1,14 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.20;
 
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import {IProofVerifier} from "../interfaces/IProofVerifier.sol";
-import {IConfidentialStateContainerV3, BatchStateInput} from "../interfaces/IConfidentialStateContainerV3.sol";
-import {SelectiveDisclosureManager} from "../compliance/SelectiveDisclosureManager.sol";
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 /// @title ConfidentialStateContainerV3
-/// @author ZASEON
+/// @author Soul Protocol
 /// @notice Production-ready confidential state management with enhanced security
 /// @dev Gas-optimized with storage packing, assembly, and immutable variables
 ///
@@ -20,18 +18,13 @@ import {SelectiveDisclosureManager} from "../compliance/SelectiveDisclosureManag
 /// - Immutable chain ID and domain separator (saves ~2100 gas per access)
 /// - Assembly for hash operations (saves ~500 gas)
 /// - Unchecked arithmetic in safe contexts (saves ~40 gas per operation)
-/**
- * @title ConfidentialStateContainerV3
- * @author ZASEON Team
- * @notice Confidential State Container V3 contract
- */
 contract ConfidentialStateContainerV3 is
     AccessControl,
     ReentrancyGuard,
-    Pausable,
-    IConfidentialStateContainerV3
+    Pausable
 {
     using ECDSA for bytes32;
+    using MessageHashUtils for bytes32;
 
     /*//////////////////////////////////////////////////////////////
                                  ROLES
@@ -53,6 +46,40 @@ contract ConfidentialStateContainerV3 is
                                  TYPES
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice State status enum
+    enum StateStatus {
+        Active, // Normal active state
+        Locked, // Temporarily locked (e.g., during dispute)
+        Frozen, // Frozen by compliance
+        Retired // State has been consumed/transferred
+    }
+
+    /// @notice Encrypted state structure with gas-optimized packing
+    /// @dev Packed to minimize storage slots: slot1=commitment, slot2=nullifier,
+    ///      slot3=owner+version+status+createdAt, slot4=updatedAt+metadata(partial),
+    ///      slot5+=encryptedState (dynamic)
+    struct EncryptedState {
+        bytes32 commitment; // slot 0
+        bytes32 nullifier; // slot 1
+        bytes32 metadata; // slot 2
+        address owner; // slot 3 (20 bytes)
+        uint48 createdAt; // slot 3 (6 bytes) - supports dates until year 8.9M
+        uint48 updatedAt; // slot 3 (6 bytes)
+        uint32 version; // slot 4 (4 bytes) - 4B+ versions
+        StateStatus status; // slot 4 (1 byte)
+        bytes encryptedState; // slot 5+ (dynamic)
+    }
+
+    /// @notice State transition record for auditing
+    struct StateTransition {
+        bytes32 fromCommitment;
+        bytes32 toCommitment;
+        address fromOwner;
+        address toOwner;
+        uint256 timestamp;
+        bytes32 transactionHash;
+    }
+
     /// @notice Parameters for creating a new state (reduces stack depth)
     struct NewStateParams {
         bytes32 commitment;
@@ -63,25 +90,12 @@ contract ConfidentialStateContainerV3 is
         uint32 version;
     }
 
-    /// @notice Parameters for state transfer (reduces stack depth)
-    struct TransferStateParams {
-        bytes32 oldCommitment;
-        bytes32 newCommitment;
-        bytes32 newNullifier;
-        bytes32 spendingNullifier;
-        address newOwner;
-        address caller;
-    }
-
     /*//////////////////////////////////////////////////////////////
                                 STORAGE
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Verifier interface (immutable saves ~2100 gas per call)
     IProofVerifier public immutable verifier;
-
-    /// @notice Optional selective disclosure manager for compliance integration
-    SelectiveDisclosureManager public disclosureManager;
 
     /// @notice Mapping from commitment to encrypted state
     mapping(bytes32 => EncryptedState) internal _states;
@@ -122,6 +136,94 @@ contract ConfidentialStateContainerV3 is
 
     /// @notice Chain ID for this deployment (immutable for gas savings)
     uint256 public immutable CHAIN_ID;
+
+    /*//////////////////////////////////////////////////////////////
+                                EVENTS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Emitted when a new confidential state is registered
+    /// @param commitment The unique commitment hash identifying this state
+    /// @param owner The address that owns this state
+    /// @param nullifier The nullifier associated with this state for spend tracking
+    /// @param timestamp Block timestamp when the state was registered
+    event StateRegistered(
+        bytes32 indexed commitment,
+        address indexed owner,
+        bytes32 nullifier,
+        uint256 timestamp
+    );
+
+    /// @notice Emitted when a state is transferred to a new owner
+    /// @param fromCommitment The old state commitment being consumed
+    /// @param toCommitment The new state commitment being created
+    /// @param newOwner The address of the new state owner
+    /// @param version The version number of the new state
+    event StateTransferred(
+        bytes32 indexed fromCommitment,
+        bytes32 indexed toCommitment,
+        address indexed newOwner,
+        uint256 version
+    );
+
+    /// @notice Emitted when a state's status is updated (Active, Locked, Frozen, Retired)
+    /// @param commitment The state commitment whose status changed
+    /// @param oldStatus The previous status
+    /// @param newStatus The new status
+    event StateStatusChanged(
+        bytes32 indexed commitment,
+        StateStatus oldStatus,
+        StateStatus newStatus
+    );
+
+    /// @notice Emitted when multiple states are registered in a single batch
+    /// @param commitments Array of commitment hashes for the registered states
+    /// @param owner The address that owns all states in this batch
+    /// @param count Number of states registered
+    event StateBatchRegistered(
+        bytes32[] commitments,
+        address indexed owner,
+        uint256 count
+    );
+
+    /// @notice Emitted when the proof validity window configuration is changed
+    /// @param oldWindow The previous validity window in seconds
+    /// @param newWindow The new validity window in seconds
+    event ProofValidityWindowUpdated(uint256 oldWindow, uint256 newWindow);
+    /// @notice Emitted when the maximum encrypted state size configuration is changed
+    /// @param oldSize The previous maximum size in bytes
+    /// @param newSize The new maximum size in bytes
+    event MaxStateSizeUpdated(uint256 oldSize, uint256 newSize);
+
+    /*//////////////////////////////////////////////////////////////
+                              CUSTOM ERRORS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Thrown when a nullifier has already been consumed
+    error NullifierAlreadyUsed(bytes32 nullifier);
+    /// @notice Thrown when a ZK proof fails verification
+    error InvalidProof();
+    /// @notice Thrown when the caller does not own the referenced state
+    error NotStateOwner(address caller, address owner);
+    /// @notice Thrown when a zero address is provided for a required parameter
+    error ZeroAddress();
+    /// @notice Thrown when encrypted state data has zero length
+    error EmptyEncryptedState();
+    /// @notice Thrown when a commitment hash is already registered
+    error CommitmentAlreadyExists(bytes32 commitment);
+    /// @notice Thrown when a commitment hash is not present in the registry
+    error CommitmentNotFound(bytes32 commitment);
+    /// @notice Thrown when encrypted state data exceeds the configured maxStateSize
+    error StateSizeTooLarge(uint256 size, uint256 maxSize);
+    /// @notice Thrown when a state is not in Active status
+    error StateNotActive(bytes32 commitment, StateStatus status);
+    /// @notice Thrown when EIP-712 signature verification fails or chain ID mismatches
+    error InvalidSignature();
+    /// @notice Thrown when the signature deadline has passed
+    error SignatureExpired();
+    /// @notice Thrown when the provided nonce does not match the expected value
+    error InvalidNonce();
+    /// @notice Thrown when batch size exceeds MAX_BATCH_SIZE
+    error BatchTooLarge(uint256 size, uint256 maxSize);
 
     /*//////////////////////////////////////////////////////////////
                               CONSTANTS
@@ -184,83 +286,46 @@ contract ConfidentialStateContainerV3 is
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Total states registered
-        /**
-     * @notice Total states
-     * @return The result value
-     */
-function totalStates() external view returns (uint256) {
+    function totalStates() external view returns (uint256) {
         return _packedCounters >> _COUNTER_SHIFT;
     }
 
     /// @notice Total active states
-        /**
-     * @notice Active states
-     * @return The result value
-     */
-function activeStates() external view returns (uint256) {
+    function activeStates() external view returns (uint256) {
         return uint128(_packedCounters);
     }
 
     /// @notice Minimum proof validity window
-        /**
-     * @notice Proof validity window
-     * @return The result value
-     */
-function proofValidityWindow() external view returns (uint256) {
+    function proofValidityWindow() external view returns (uint256) {
         return _packedConfig >> _COUNTER_SHIFT;
     }
 
     /// @notice Maximum encrypted state size
-        /**
-     * @notice Max state size
-     * @return The result value
-     */
-function maxStateSize() public view returns (uint256) {
+    function maxStateSize() public view returns (uint256) {
         return uint128(_packedConfig);
     }
 
     /// @notice Public getter for states mapping
-        /**
-     * @notice States
-     * @param commitment The cryptographic commitment
-     * @return The result value
-     */
-function states(
+    function states(
         bytes32 commitment
     ) external view returns (EncryptedState memory) {
         return _states[commitment];
     }
 
     /// @notice Public getter for nullifiers
-        /**
-     * @notice Nullifiers
-     * @param nullifier The nullifier hash
-     * @return The result value
-     */
-function nullifiers(bytes32 nullifier) external view returns (bool) {
+    function nullifiers(bytes32 nullifier) external view returns (bool) {
         return _nullifiers[nullifier];
     }
 
     /// @notice Public getter for nullifier to commitment
-        /**
-     * @notice Nullifier to commitment
-     * @param nullifier The nullifier hash
-     * @return The result value
-     */
-function nullifierToCommitment(
+    function nullifierToCommitment(
         bytes32 nullifier
     ) external view returns (bytes32) {
         return _nullifierToCommitment[nullifier];
     }
 
     /// @notice Public getter for owner commitments
-        /**
-     * @notice Owner commitments
-     * @param owner The owner address
-     * @param index The index in the collection
-     * @return The result value
-     */
-function ownerCommitments(
+    function ownerCommitments(
         address owner,
         uint256 index
     ) external view returns (bytes32) {
@@ -277,15 +342,7 @@ function ownerCommitments(
     /// @param nullifier The nullifier for double-spend prevention
     /// @param proof The ZK proof bytes
     /// @param metadata Optional metadata hash
-        /**
-     * @notice Registers state
-     * @param encryptedState The encrypted state
-     * @param commitment The cryptographic commitment
-     * @param nullifier The nullifier hash
-     * @param proof The ZK proof data
-     * @param metadata The metadata bytes
-     */
-function registerState(
+    function registerState(
         bytes calldata encryptedState,
         bytes32 commitment,
         bytes32 nullifier,
@@ -313,18 +370,7 @@ function registerState(
     /// @param owner The intended owner
     /// @param deadline Signature deadline
     /// @param signature Owner's signature
-        /**
-     * @notice Registers state with signature
-     * @param encryptedState The encrypted state
-     * @param commitment The cryptographic commitment
-     * @param nullifier The nullifier hash
-     * @param proof The ZK proof data
-     * @param metadata The metadata bytes
-     * @param owner The owner address
-     * @param deadline The deadline timestamp
-     * @param signature The cryptographic signature
-     */
-function registerStateWithSignature(
+    function registerStateWithSignature(
         bytes calldata encryptedState,
         bytes32 commitment,
         bytes32 nullifier,
@@ -340,29 +386,10 @@ function registerStateWithSignature(
         // Verify chain ID matches to prevent cross-chain replay
         if (block.chainid != CHAIN_ID) revert InvalidSignature();
 
-        // EIP-712 compliant struct hash with chain ID
-        // HIGH SEVERITY FIX: Include encryptedStateHash and metadata to prevent
-        // attackers from reusing signature with different state data
-        bytes32 structHash = keccak256(
-            abi.encode(
-                REGISTER_STATE_TYPEHASH,
-                commitment,
-                nullifier,
-                owner,
-                keccak256(encryptedState), // Bind to actual state data
-                metadata, // Bind to metadata
-                nonces[owner]++,
-                deadline,
-                block.chainid
-            )
+        // Verify EIP-712 signature — digest computed in helper to avoid stack-too-deep
+        address signer = _recoverRegistrationSigner(
+            commitment, nullifier, owner, encryptedState, metadata, deadline, signature
         );
-
-        // Create EIP-712 digest
-        bytes32 digest = keccak256(
-            abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, structHash)
-        );
-        address signer = digest.recover(signature);
-
         if (signer != owner) revert InvalidSignature();
 
         _validateAndRegisterState(
@@ -377,11 +404,7 @@ function registerStateWithSignature(
 
     /// @notice Batch registers multiple states
     /// @param stateInputs Array of state data to register
-        /**
-     * @notice Batchs register states
-     * @param stateInputs The state inputs
-     */
-function batchRegisterStates(
+    function batchRegisterStates(
         BatchStateInput[] calldata stateInputs
     ) external nonReentrant whenNotPaused {
         uint256 len = stateInputs.length;
@@ -415,17 +438,7 @@ function batchRegisterStates(
     /// @param newNullifier The new nullifier
     /// @param proof The ZK proof
     /// @param newOwner The new owner address
-        /**
-     * @notice Transfers state
-     * @param oldCommitment The old commitment
-     * @param newEncryptedState The new EncryptedState value
-     * @param newCommitment The new Commitment value
-     * @param newNullifier The new Nullifier value
-     * @param spendingNullifier The spending nullifier
-     * @param proof The ZK proof data
-     * @param newOwner The new Owner value
-     */
-function transferState(
+    function transferState(
         bytes32 oldCommitment,
         bytes calldata newEncryptedState,
         bytes32 newCommitment,
@@ -435,22 +448,61 @@ function transferState(
         address newOwner
     ) external nonReentrant whenNotPaused {
         _transferState(
-            TransferStateParams({
-                oldCommitment: oldCommitment,
-                newCommitment: newCommitment,
-                newNullifier: newNullifier,
-                spendingNullifier: spendingNullifier,
-                newOwner: newOwner,
-                caller: msg.sender
-            }),
+            oldCommitment,
             newEncryptedState,
-            proof
+            newCommitment,
+            newNullifier,
+            spendingNullifier,
+            proof,
+            newOwner,
+            msg.sender
         );
     }
 
     /*//////////////////////////////////////////////////////////////
                         INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
+
+    /// @dev Computes EIP-712 digest and recovers signer to avoid stack-too-deep
+    ///      in registerStateWithSignature.
+    function _recoverRegistrationSigner(
+        bytes32 commitment,
+        bytes32 nullifier,
+        address owner,
+        bytes calldata encryptedState,
+        bytes32 metadata,
+        uint256 deadline,
+        bytes calldata signature
+    ) internal returns (address) {
+        // Pre-compute derived values to reduce live stack slots during abi.encode
+        bytes32 encryptedStateHash = keccak256(encryptedState);
+        uint256 nonce = nonces[owner]++;
+
+        bytes32 structHash;
+        {
+            // EIP-712 compliant struct hash with chain ID
+            // HIGH SEVERITY FIX: Include encryptedStateHash and metadata to prevent
+            // attackers from reusing signature with different state data
+            structHash = keccak256(
+                abi.encode(
+                    REGISTER_STATE_TYPEHASH,
+                    commitment,
+                    nullifier,
+                    owner,
+                    encryptedStateHash,
+                    metadata,
+                    nonce,
+                    deadline,
+                    block.chainid
+                )
+            );
+        }
+
+        bytes32 digest = keccak256(
+            abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, structHash)
+        );
+        return digest.recover(signature);
+    }
 
     function _validateAndRegisterState(
         bytes calldata encryptedState,
@@ -516,9 +568,6 @@ function transferState(
         }
 
         emit StateRegistered(commitment, owner, nullifier, block.timestamp);
-
-        // Optional: register with disclosure manager for compliance tracking
-        _registerWithDisclosureManager(commitment, owner);
     }
 
     /// @dev Validates transfer parameters and state
@@ -549,16 +598,7 @@ function transferState(
     }
 
     /// @dev Verifies transfer proof
-        /**
-     * @notice _verify transfer proof
-     * @param oldCommitment The old commitment
-     * @param newCommitment The new Commitment value
-     * @param newNullifier The new Nullifier value
-     * @param spendingNullifier The spending nullifier
-     * @param newOwner The new Owner value
-     * @param proof The ZK proof data
-     */
-function _verifyTransferProof(
+    function _verifyTransferProof(
         bytes32 oldCommitment,
         bytes32 newCommitment,
         bytes32 newNullifier,
@@ -578,57 +618,75 @@ function _verifyTransferProof(
     }
 
     function _transferState(
-        TransferStateParams memory p,
+        bytes32 oldCommitment,
         bytes calldata newEncryptedState,
-        bytes calldata proof
+        bytes32 newCommitment,
+        bytes32 newNullifier,
+        bytes32 spendingNullifier,
+        bytes calldata proof,
+        address newOwner,
+        address caller
     ) internal {
         // Phase 1: Validation
-        address oldOwner = _validateTransferParams(
-            p.oldCommitment,
-            newEncryptedState,
-            p.newNullifier,
-            p.spendingNullifier,
-            p.newOwner,
-            p.caller
-        );
+        address oldOwner;
+        {
+            oldOwner = _validateTransferParams(
+                oldCommitment,
+                newEncryptedState,
+                newNullifier,
+                spendingNullifier,
+                newOwner,
+                caller
+            );
 
-        // SECURITY: Prevent overwriting existing states
-        if (_states[p.newCommitment].owner != address(0))
-            revert CommitmentAlreadyExists(p.newCommitment);
+            // SECURITY: Prevent overwriting existing states
+            if (_states[newCommitment].owner != address(0))
+                revert CommitmentAlreadyExists(newCommitment);
 
-        // Consume spending nullifier AFTER validation but BEFORE proof verification
-        // to prevent race conditions within the same block
-        _nullifiers[p.spendingNullifier] = true;
-        _nullifierToCommitment[p.spendingNullifier] = p.oldCommitment;
+            // Consume spending nullifier AFTER validation but BEFORE proof verification
+            _nullifiers[spendingNullifier] = true;
+            _nullifierToCommitment[spendingNullifier] = oldCommitment;
+        }
 
-        // Phase 2: Proof verification
+        // Phase 2: Proof verification (scoped — frees proof and spendingNullifier from stack)
         _verifyTransferProof(
-            p.oldCommitment,
-            p.newCommitment,
-            p.newNullifier,
-            p.spendingNullifier,
-            p.newOwner,
+            oldCommitment,
+            newCommitment,
+            newNullifier,
+            spendingNullifier,
+            newOwner,
             proof
         );
 
-        // Phase 3: State updates
-        _executeTransferStateUpdate(p, oldOwner, newEncryptedState);
+        // Phase 3: State updates — extracted to separate function to reduce stack depth
+        _applyStateTransfer(
+            oldCommitment,
+            newEncryptedState,
+            newCommitment,
+            newNullifier,
+            oldOwner,
+            newOwner
+        );
     }
 
-    /// @dev Executes the state update portion of a transfer (separated to reduce stack depth)
-    function _executeTransferStateUpdate(
-        TransferStateParams memory p,
+    /// @dev Applies state transition: records history, creates new state, emits event.
+    ///      Extracted from _transferState to stay within stack limits.
+    function _applyStateTransfer(
+        bytes32 oldCommitment,
+        bytes calldata newEncryptedState,
+        bytes32 newCommitment,
+        bytes32 newNullifier,
         address oldOwner,
-        bytes calldata newEncryptedState
-    ) private {
+        address newOwner
+    ) internal {
         _recordTransitionHistory(
-            p.oldCommitment,
-            p.newCommitment,
+            oldCommitment,
+            newCommitment,
             oldOwner,
-            p.newOwner
+            newOwner
         );
 
-        EncryptedState storage oldState = _states[p.oldCommitment];
+        EncryptedState storage oldState = _states[oldCommitment];
         uint48 timestamp = uint48(block.timestamp);
         uint32 newVersion = oldState.version + 1;
         bytes32 oldMetadata = oldState.metadata;
@@ -638,10 +696,10 @@ function _verifyTransferProof(
 
         _createNewState(
             NewStateParams({
-                commitment: p.newCommitment,
-                nullifier: p.newNullifier,
+                commitment: newCommitment,
+                nullifier: newNullifier,
                 metadata: oldMetadata,
-                owner: p.newOwner,
+                owner: newOwner,
                 timestamp: timestamp,
                 version: newVersion
             }),
@@ -649,9 +707,9 @@ function _verifyTransferProof(
         );
 
         emit StateTransferred(
-            p.oldCommitment,
-            p.newCommitment,
-            p.newOwner,
+            oldCommitment,
+            newCommitment,
+            newOwner,
             newVersion
         );
     }
@@ -719,12 +777,7 @@ function _verifyTransferProof(
     /// @notice Checks if a state exists and is active
     /// @param commitment The commitment to check
     /// @return exists True if exists and active
-        /**
-     * @notice Checks if state active
-     * @param commitment The cryptographic commitment
-     * @return exists The exists
-     */
-function isStateActive(
+    function isStateActive(
         bytes32 commitment
     ) external view returns (bool exists) {
         return _states[commitment].status == StateStatus.Active;
@@ -733,12 +786,7 @@ function isStateActive(
     /// @notice Gets full state details
     /// @param commitment The commitment to query
     /// @return state The encrypted state struct
-        /**
-     * @notice Returns the state
-     * @param commitment The cryptographic commitment
-     * @return state The state
-     */
-function getState(
+    function getState(
         bytes32 commitment
     ) external view returns (EncryptedState memory state) {
         return _states[commitment];
@@ -748,12 +796,7 @@ function getState(
     /// @param owner The owner address
     /// @return commitments Array of commitment hashes
     /// @dev WARNING: This may run out of gas for owners with many commitments. Use paginated version for large sets.
-        /**
-     * @notice Returns the owner commitments
-     * @param owner The owner address
-     * @return commitments The commitments
-     */
-function getOwnerCommitments(
+    function getOwnerCommitments(
         address owner
     ) external view returns (bytes32[] memory commitments) {
         return _ownerCommitments[owner];
@@ -766,15 +809,7 @@ function getOwnerCommitments(
     /// @return commitments Array of commitment hashes
     /// @return total Total number of commitments for this owner
     /// @dev M-14: Added pagination to prevent out-of-gas for large arrays
-        /**
-     * @notice Returns the owner commitments paginated
-     * @param owner The owner address
-     * @param offset The offset
-     * @param limit The limit value
-     * @return commitments The commitments
-     * @return total The total
-     */
-function getOwnerCommitmentsPaginated(
+    function getOwnerCommitmentsPaginated(
         address owner,
         uint256 offset,
         uint256 limit
@@ -801,12 +836,7 @@ function getOwnerCommitmentsPaginated(
     /// @notice Gets state transition history
     /// @param commitment The commitment to query
     /// @return transitions Array of state transitions
-        /**
-     * @notice Returns the state history
-     * @param commitment The cryptographic commitment
-     * @return transitions The transitions
-     */
-function getStateHistory(
+    function getStateHistory(
         bytes32 commitment
     ) external view returns (StateTransition[] memory transitions) {
         return _stateHistory[commitment];
@@ -815,12 +845,7 @@ function getStateHistory(
     /// @notice Gets current nonce for an address
     /// @param account The account to query
     /// @return nonce The current nonce
-        /**
-     * @notice Returns the nonce
-     * @param account The account address
-     * @return nonce The nonce
-     */
-function getNonce(address account) external view returns (uint256 nonce) {
+    function getNonce(address account) external view returns (uint256 nonce) {
         return nonces[account];
     }
 
@@ -830,11 +855,7 @@ function getNonce(address account) external view returns (uint256 nonce) {
 
     /// @notice Updates proof validity window
     /// @param _window The new window in seconds
-        /**
-     * @notice Sets the proof validity window
-     * @param _window The _window
-     */
-function setProofValidityWindow(
+    function setProofValidityWindow(
         uint256 _window
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         uint256 packed = _packedConfig;
@@ -846,14 +867,9 @@ function setProofValidityWindow(
 
     /// @notice Updates maximum state size
     /// @param _maxSize The new maximum size in bytes
-        /**
-     * @notice Sets the max state size
-     * @param _maxSize The _maxSize bound
-     */
-function setMaxStateSize(
+    function setMaxStateSize(
         uint256 _maxSize
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(_maxSize <= type(uint128).max, "Size exceeds uint128");
         uint256 packed = _packedConfig;
         uint256 oldSize = uint128(packed);
         // Keep window (upper 128 bits), update maxStateSize (lower 128 bits)
@@ -864,128 +880,80 @@ function setMaxStateSize(
     }
 
     /// @notice Locks a state (e.g., during dispute resolution)
-    /// @dev Only Active states can be locked
     /// @param commitment The commitment to lock
-        /**
-     * @notice Locks state
-     * @param commitment The cryptographic commitment
-     */
-function lockState(bytes32 commitment) external onlyRole(OPERATOR_ROLE) {
-        EncryptedState storage state = _states[commitment];
-        if (state.owner == address(0)) revert CommitmentNotFound(commitment);
-        if (state.status != StateStatus.Active)
-            revert StateNotActive(commitment, state.status);
-
-        state.status = StateStatus.Locked;
-        state.updatedAt = uint48(block.timestamp);
-
-        emit StateStatusChanged(
-            commitment,
-            StateStatus.Active,
-            StateStatus.Locked
-        );
-    }
-
-    /// @notice Unlocks a previously locked state
-    /// @dev Only Locked states can be unlocked
-    /// @param commitment The commitment to unlock
-        /**
-     * @notice Unlocks state
-     * @param commitment The cryptographic commitment
-     */
-function unlockState(bytes32 commitment) external onlyRole(OPERATOR_ROLE) {
-        EncryptedState storage state = _states[commitment];
-        if (state.owner == address(0)) revert CommitmentNotFound(commitment);
-        if (state.status != StateStatus.Locked)
-            revert StateNotActive(commitment, state.status);
-
-        state.status = StateStatus.Active;
-        state.updatedAt = uint48(block.timestamp);
-
-        emit StateStatusChanged(
-            commitment,
-            StateStatus.Locked,
-            StateStatus.Active
-        );
-    }
-
-    /// @notice Freezes a state (compliance action)
-    /// @dev Only Active or Locked states can be frozen; counter only decremented for Active
-    /// @param commitment The commitment to freeze
-        /**
-     * @notice Freeze state
-     * @param commitment The cryptographic commitment
-     */
-function freezeState(bytes32 commitment) external onlyRole(EMERGENCY_ROLE) {
+    function lockState(bytes32 commitment) external onlyRole(OPERATOR_ROLE) {
         EncryptedState storage state = _states[commitment];
         if (state.owner == address(0)) revert CommitmentNotFound(commitment);
 
         StateStatus oldStatus = state.status;
-        if (oldStatus != StateStatus.Active && oldStatus != StateStatus.Locked)
-            revert StateNotActive(commitment, oldStatus);
+        state.status = StateStatus.Locked;
+        state.updatedAt = uint48(block.timestamp);
 
+        emit StateStatusChanged(commitment, oldStatus, StateStatus.Locked);
+    }
+
+    /// @notice Unlocks a previously locked state
+    /// @param commitment The commitment to unlock
+    function unlockState(bytes32 commitment) external onlyRole(OPERATOR_ROLE) {
+        EncryptedState storage state = _states[commitment];
+        if (state.owner == address(0)) revert CommitmentNotFound(commitment);
+
+        StateStatus oldStatus = state.status;
+        state.status = StateStatus.Active;
+        state.updatedAt = uint48(block.timestamp);
+
+        emit StateStatusChanged(commitment, oldStatus, StateStatus.Active);
+    }
+
+    /// @notice Freezes a state (compliance action)
+    /// @param commitment The commitment to freeze
+    function freezeState(bytes32 commitment) external onlyRole(EMERGENCY_ROLE) {
+        EncryptedState storage state = _states[commitment];
+        if (state.owner == address(0)) revert CommitmentNotFound(commitment);
+
+        StateStatus oldStatus = state.status;
         state.status = StateStatus.Frozen;
         state.updatedAt = uint48(block.timestamp);
 
-        // Only decrement active counter if the state was Active
-        if (oldStatus == StateStatus.Active) {
-            uint128 activeCount = uint128(_packedCounters);
-            if (activeCount > 0) {
-                unchecked {
-                    --_packedCounters;
-                }
+        // Decrement active states (lower 128 bits) with underflow protection
+        uint128 activeCount = uint128(_packedCounters);
+        if (activeCount > 0) {
+            unchecked {
+                --_packedCounters;
             }
         }
 
         emit StateStatusChanged(commitment, oldStatus, StateStatus.Frozen);
     }
 
-    /// @notice Set the disclosure manager for compliance integration
-    /// @param _disclosureManager Address of the SelectiveDisclosureManager (address(0) to disable)
-        /**
-     * @notice Sets the disclosure manager
-     * @param _disclosureManager The _disclosure manager
-     */
-function setDisclosureManager(
-        address _disclosureManager
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        disclosureManager = SelectiveDisclosureManager(_disclosureManager);
-        emit DisclosureManagerUpdated(_disclosureManager);
-    }
-
     /// @notice Pauses the contract
-        /**
-     * @notice Pauses the operation
-     */
-function pause() external onlyRole(EMERGENCY_ROLE) {
+    function pause() external onlyRole(EMERGENCY_ROLE) {
         _pause();
     }
 
     /// @notice Unpauses the contract
-        /**
-     * @notice Unpauses the operation
-     */
-function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
+}
 
-    /// @dev Register state with disclosure manager if configured (non-reverting)
-    function _registerWithDisclosureManager(
-        bytes32 commitment,
-        address owner
-    ) internal {
-        SelectiveDisclosureManager dm = disclosureManager;
-        if (address(dm) == address(0)) return;
+/*//////////////////////////////////////////////////////////////
+                          INTERFACES
+//////////////////////////////////////////////////////////////*/
 
-        // Build txId from commitment + chain ID for uniqueness
-        bytes32 txId = keccak256(abi.encodePacked(commitment, block.chainid));
+interface IProofVerifier {
+    function verifyProof(
+        bytes calldata proof,
+        bytes calldata publicInputs
+    ) external view returns (bool);
+}
 
-        // Register with user's configured default level (non-reverting try/catch)
-        SelectiveDisclosureManager.DisclosureLevel level = dm.userDefaultLevel(
-            owner
-        );
-        try dm.registerTransactionFor(txId, commitment, owner, level) {} catch {
-            // Disclosure registration failure must not block state registration
-        }
-    }
+/// @notice Batch input structure
+struct BatchStateInput {
+    bytes encryptedState;
+    bytes32 commitment;
+    bytes32 nullifier;
+    bytes proof;
+    // bytes publicInputs; // Removed: constructed internally
+    bytes32 metadata;
 }

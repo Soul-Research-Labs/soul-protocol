@@ -103,7 +103,7 @@ contract WireRemainingComponents is Script {
                 _crossDomainNullifierAlgebra: address(0), // already set
                 _policyBoundProofs: address(0), // already set
                 _multiProver: multiProver,
-                _relayWatchtower: relayWatchtower
+                _relayWatchtower: relayWatchtower,
                 _intentCompletionLayer: address(0),
                 _instantCompletionGuarantee: address(0),
                 _dynamicRoutingOrchestrator: address(0),

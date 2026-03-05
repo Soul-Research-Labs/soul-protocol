@@ -80,12 +80,12 @@ enough to avoid stack-too-deep errors. CI runs these in parallel via matrix stra
 
 ### Bridge Adapters (Target: 85%)
 
-| Contract                 | Integration Tests                                        | Status    |
-| ------------------------ | -------------------------------------------------------- | --------- |
-| `ArbitrumBridgeAdapter`  | ✅                                                       | 🟢        |
-| `OptimismBridgeAdapter`  | ✅                                                       | 🟢        |
-| `ScrollBridgeAdapter`    | ✅ (`test/crosschain/ScrollBridgeAdapterExtended.t.sol`) | 🟢 Tested |
-| `LayerZeroBridgeAdapter` | ✅                                                       | 🟢        |
+| Contract                 | Integration Tests                | Status |
+| ------------------------ | -------------------------------- | ------ |
+| `ArbitrumBridgeAdapter`  | ✅                               | 🟢     |
+| `OptimismBridgeAdapter`  | ✅                               | 🟢     |
+| `ScrollBridgeAdapter`    | 🔮 Planned (not yet implemented) | 🟡     |
+| `LayerZeroBridgeAdapter` | ✅                               | 🟢     |
 
 ### SDK (Target: 80%)
 

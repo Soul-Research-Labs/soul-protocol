@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -8,9 +8,7 @@ import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 /**
  * @title L2ChainAdapter
- * @author ZASEON
- * @notice Adapter for connecting Zaseon to Layer 2 networks
- * @custom:security-contact security@zaseonprotocol.io
+ * @notice Adapter for connecting Soul to Layer 2 networks
  * @dev Handles chain-specific messaging and proof verification with full
  *      Merkle proof validation and oracle signature verification
  */
@@ -87,51 +85,23 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
     mapping(uint256 => uint256) public minOracleSignatures;
 
     // Events
-    /// @notice Emitted when a new L2 chain is registered
-    /// @param chainId The chain identifier
-    /// @param name The human-readable chain name
-    /// @param bridge The bridge contract address for this chain
     event ChainAdded(uint256 indexed chainId, string name, address bridge);
-    /// @notice Emitted when a chain's enabled status is updated
-    /// @param chainId The chain identifier
-    /// @param enabled Whether the chain is enabled
     event ChainUpdated(uint256 indexed chainId, bool enabled);
-    /// @notice Emitted when a verified state root is recorded for a chain
-    /// @param chainId The chain identifier
-    /// @param blockNumber The block number for this state root
-    /// @param stateRoot The verified state root hash
     event StateRootUpdated(
         uint256 indexed chainId,
         uint256 indexed blockNumber,
         bytes32 stateRoot
     );
-    /// @notice Emitted when an oracle is authorized for a chain
-    /// @param chainId The chain identifier
-    /// @param oracle The oracle address
     event OracleAdded(uint256 indexed chainId, address indexed oracle);
-    /// @notice Emitted when an oracle is deauthorized for a chain
-    /// @param chainId The chain identifier
-    /// @param oracle The oracle address
     event OracleRemoved(uint256 indexed chainId, address indexed oracle);
-    /// @notice Emitted when a cross-chain message is sent
-    /// @param messageId The unique message identifier
-    /// @param sourceChain The source chain identifier
-    /// @param targetChain The destination chain identifier
     event MessageSent(
         bytes32 indexed messageId,
         uint256 sourceChain,
         uint256 targetChain
     );
-    /// @notice Emitted when a cross-chain message is received
-    /// @param messageId The unique message identifier
-    /// @param sourceChain The originating chain identifier
     event MessageReceived(bytes32 indexed messageId, uint256 sourceChain);
-    /// @notice Emitted when a received message is confirmed by sufficient oracles
-    /// @param messageId The unique message identifier
     event MessageConfirmed(bytes32 indexed messageId);
 
-    /// @notice Initializes the adapter with default L2 chain configurations
-    /// @param admin Address to receive admin and default admin roles
     constructor(address admin) {
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(ADMIN_ROLE, admin);
@@ -241,12 +211,6 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Add a new L2 chain configuration
-     * @param chainId The chain ID of the new L2 network to register
-     * @param name Human-readable name of the chain (e.g., "Arbitrum One")
-     * @param bridge Address of the canonical bridge contract on the chain
-     * @param messenger Address of the cross-chain messenger contract
-     * @param confirmations Number of block confirmations required for finality
-     * @param gasLimit Default gas limit for cross-chain messages to this chain
      */
     function addChain(
         uint256 chainId,
@@ -275,12 +239,6 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Update chain configuration
-     * @param chainId The chain ID of the L2 network to update
-     * @param bridge New bridge contract address
-     * @param messenger New messenger contract address
-     * @param confirmations New finality confirmation count
-     * @param gasLimit New default gas limit for messages
-     * @param enabled Whether the chain should be enabled for messaging
      */
     function updateChain(
         uint256 chainId,
@@ -308,9 +266,6 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Send a message to another chain
-     * @param targetChain The chain ID of the destination network
-     * @param payload ABI-encoded message payload to deliver
-     * @return messageId Unique identifier for tracking the cross-chain message
      */
     function sendMessage(
         uint256 targetChain,
@@ -347,10 +302,6 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Receive a message from another chain
-     * @param messageId Unique identifier of the incoming message
-     * @param sourceChain Chain ID of the network the message originated from
-     * @param payload ABI-encoded message payload
-     * @param proof Cryptographic proof of message validity (Merkle proof + oracle signatures)
      */
     function receiveMessage(
         bytes32 messageId,
@@ -378,7 +329,6 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Confirm message delivery
-     * @param messageId Unique identifier of the relayed message to confirm
      */
     function confirmMessage(bytes32 messageId) external onlyRole(RELAYER_ROLE) {
         if (messages[messageId].status != MessageStatus.RELAYED)
@@ -426,33 +376,12 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
         ) = _decodeProof(proof);
 
         // 1. Verify state root is known and matches
-        _verifyStateRoot(
-            sourceChain,
-            blockNumber,
-            claimedStateRoot,
-            oracleSignatures
-        );
+        _verifyStateRoot(sourceChain, blockNumber, claimedStateRoot, oracleSignatures);
 
         // 2. Compute message leaf and verify Merkle proof
-        {
-            bytes32 messageLeaf = keccak256(
-                abi.encodePacked(
-                    sourceChain,
-                    block.chainid,
-                    messageId,
-                    keccak256(payload)
-                )
-            );
+        _verifyMerkleInclusion(sourceChain, messageId, payload, claimedStateRoot, merkleProof);
 
-            // 3. Verify Merkle proof against state root
-            if (
-                !MerkleProof.verify(merkleProof, claimedStateRoot, messageLeaf)
-            ) {
-                revert InvalidMerkleProof();
-            }
-        }
-
-        // 4. Verify block is not too old (prevent replay of ancient proofs)
+        // 3. Verify block is not too old (prevent replay of ancient proofs)
         if (
             latestBlockNumber[sourceChain] > 0 &&
             blockNumber + config.confirmations <
@@ -464,15 +393,18 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
         return true;
     }
 
-    /// @dev Verifies state root validity (separated to reduce stack depth)
+    /**
+     * @dev Verify claimed state root against known roots or oracle signatures
+     */
     function _verifyStateRoot(
         uint256 sourceChain,
         uint256 blockNumber,
         bytes32 claimedStateRoot,
         bytes[] memory oracleSignatures
-    ) private view {
+    ) internal view {
         bytes32 knownStateRoot = stateRoots[sourceChain][blockNumber];
         if (knownStateRoot == bytes32(0)) {
+            // State root not yet submitted - verify via oracle signatures
             if (
                 !_verifyStateRootWithOracles(
                     sourceChain,
@@ -485,6 +417,30 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
             }
         } else if (knownStateRoot != claimedStateRoot) {
             revert InvalidProof();
+        }
+    }
+
+    /**
+     * @dev Compute message leaf and verify Merkle inclusion proof
+     */
+    function _verifyMerkleInclusion(
+        uint256 sourceChain,
+        bytes32 messageId,
+        bytes calldata payload,
+        bytes32 claimedStateRoot,
+        bytes32[] memory merkleProof
+    ) internal view {
+        bytes32 messageLeaf = keccak256(
+            abi.encodePacked(
+                sourceChain,
+                block.chainid,
+                messageId,
+                keccak256(payload)
+            )
+        );
+
+        if (!MerkleProof.verify(merkleProof, claimedStateRoot, messageLeaf)) {
+            revert InvalidMerkleProof();
         }
     }
 
@@ -512,12 +468,9 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
         merkleProof = new bytes32[](merkleProofLength);
 
         uint256 offset = 66;
-        for (uint256 i = 0; i < merkleProofLength; ) {
+        for (uint256 i = 0; i < merkleProofLength; i++) {
             merkleProof[i] = bytes32(proof[offset:offset + 32]);
             offset += 32;
-            unchecked {
-                ++i;
-            }
         }
 
         // Remaining bytes are oracle signatures (each 65 bytes)
@@ -525,12 +478,9 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
         uint256 numSignatures = remainingBytes / 65;
         oracleSignatures = new bytes[](numSignatures);
 
-        for (uint256 i = 0; i < numSignatures; ) {
+        for (uint256 i = 0; i < numSignatures; i++) {
             oracleSignatures[i] = proof[offset:offset + 65];
             offset += 65;
-            unchecked {
-                ++i;
-            }
         }
     }
 
@@ -565,21 +515,15 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
         address[] memory oracles = chainOracles[sourceChain];
         uint256 validSignatures = 0;
 
-        for (uint256 i = 0; i < signatures.length; ) {
+        for (uint256 i = 0; i < signatures.length; i++) {
             address signer = _recoverSigner(messageHash, signatures[i]);
 
             // Check if signer is a registered oracle for this chain
-            for (uint256 j = 0; j < oracles.length; ) {
+            for (uint256 j = 0; j < oracles.length; j++) {
                 if (oracles[j] == signer) {
                     validSignatures++;
                     break;
                 }
-                unchecked {
-                    ++j;
-                }
-            }
-            unchecked {
-                ++i;
             }
         }
 
@@ -658,15 +602,12 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
         address oracle
     ) external onlyRole(ADMIN_ROLE) {
         address[] storage oracles = chainOracles[chainId];
-        for (uint256 i = 0; i < oracles.length; ) {
+        for (uint256 i = 0; i < oracles.length; i++) {
             if (oracles[i] == oracle) {
                 oracles[i] = oracles[oracles.length - 1];
                 oracles.pop();
                 emit OracleRemoved(chainId, oracle);
                 break;
-            }
-            unchecked {
-                ++i;
             }
         }
     }
@@ -685,7 +626,6 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Get all supported chains
-     * @return Array of supported chain IDs
      */
     function getSupportedChains() external view returns (uint256[] memory) {
         return supportedChains;
@@ -693,8 +633,6 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Get chain configuration
-     * @param chainId The chain ID to query
-     * @return The ChainConfig struct for the given chain
      */
     function getChainConfig(
         uint256 chainId
@@ -704,8 +642,6 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Check if a chain is supported and enabled
-     * @param chainId The chain ID to check
-     * @return True if the chain is supported and enabled
      */
     function isChainSupported(uint256 chainId) external view returns (bool) {
         return chainConfigs[chainId].enabled;
@@ -713,8 +649,6 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Get message status
-     * @param messageId The unique message identifier
-     * @return The current MessageStatus of the message
      */
     function getMessageStatus(
         bytes32 messageId

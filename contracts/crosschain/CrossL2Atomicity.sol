@@ -7,9 +7,9 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title CrossL2Atomicity
- * @author ZASEON
+ * @author Soul Protocol
  * @notice Cross-L2 atomic operations with Superchain interop and Arbitrum Nitro
- * @dev Implements atomic cross-L2 transactions without L1 completion
+ * @dev Implements atomic cross-L2 transactions without L1 settlement
  *
  * CROSS-L2 ATOMICITY ARCHITECTURE:
  * ┌─────────────────────────────────────────────────────────────────┐
@@ -231,8 +231,6 @@ contract CrossL2Atomicity is ReentrancyGuard, AccessControl, Pausable {
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Initializes the atomic coordinator with the current chain ID and admin roles
-    /// @param _admin Address to receive all administrative roles
     constructor(address _admin) {
         currentChainId = block.chainid;
 
@@ -281,11 +279,8 @@ contract CrossL2Atomicity is ReentrancyGuard, AccessControl, Pausable {
         // Calculate total required value
         {
             uint256 totalRequiredValue = 0;
-            for (uint256 i = 0; i < chainCount; ) {
+            for (uint256 i = 0; i < chainCount; i++) {
                 totalRequiredValue += values[i];
-                unchecked {
-                    ++i;
-                }
             }
             if (msg.value < totalRequiredValue) revert InsufficientValue();
         }
@@ -301,26 +296,8 @@ contract CrossL2Atomicity is ReentrancyGuard, AccessControl, Pausable {
 
         if (_bundles[bundleId].createdAt != 0) revert BundleAlreadyExists();
 
-        // Initialize bundle
-        {
-            AtomicBundle storage bundle = _bundles[bundleId];
-            bundle.bundleId = bundleId;
-            bundle.initiator = msg.sender;
-            bundle.phase = BundlePhase.CREATED;
-            bundle.createdAt = block.timestamp;
-            bundle.timeout = timeout > 0 ? timeout : DEFAULT_TIMEOUT;
-            bundle.chainCount = chainCount;
-            bundle.chainIds = chainIds;
-        }
-
-        _populateBundleOperations(
-            bundleId,
-            chainIds,
-            chainTypes,
-            targets,
-            datas,
-            values
-        );
+        // Initialize and populate bundle — extracted to reduce stack depth
+        _initializeBundle(bundleId, chainIds, chainTypes, targets, datas, values, timeout);
 
         bundleIds.push(bundleId);
 
@@ -334,6 +311,36 @@ contract CrossL2Atomicity is ReentrancyGuard, AccessControl, Pausable {
         return bundleId;
     }
 
+    /// @dev Initializes an AtomicBundle and populates its operations.
+    ///      Extracted from createAtomicBundle to reduce stack depth.
+    function _initializeBundle(
+        bytes32 bundleId,
+        uint256[] calldata chainIds,
+        ChainType[] calldata chainTypes,
+        address[] calldata targets,
+        bytes[] calldata datas,
+        uint256[] calldata values,
+        uint256 timeout
+    ) internal {
+        uint256 chainCount = chainIds.length;
+
+        // Phase 1: Initialize bundle header
+        {
+            AtomicBundle storage bundle = _bundles[bundleId];
+            bundle.bundleId = bundleId;
+            bundle.initiator = msg.sender;
+            bundle.phase = BundlePhase.CREATED;
+            bundle.createdAt = block.timestamp;
+            bundle.timeout = timeout > 0 ? timeout : DEFAULT_TIMEOUT;
+            bundle.chainCount = chainCount;
+            bundle.chainIds = chainIds;
+        }
+
+        // Phase 2: Add operations (with duplicate chainId check)
+        _populateBundleOperations(bundleId, chainIds, chainTypes, targets, datas, values);
+    }
+
+    /// @dev Populates operations for a bundle. Extracted to reduce stack depth in _initializeBundle.
     function _populateBundleOperations(
         bytes32 bundleId,
         uint256[] calldata chainIds,
@@ -341,18 +348,14 @@ contract CrossL2Atomicity is ReentrancyGuard, AccessControl, Pausable {
         address[] calldata targets,
         bytes[] calldata datas,
         uint256[] calldata values
-    ) private {
+    ) internal {
         AtomicBundle storage bundle = _bundles[bundleId];
         uint256 chainCount = chainIds.length;
 
-        for (uint256 i = 0; i < chainCount; ) {
-            // Check for duplicate chainIds
-            for (uint256 j = 0; j < i; ) {
+        for (uint256 i = 0; i < chainCount; i++) {
+            for (uint256 j = 0; j < i; j++) {
                 if (chainIds[j] == chainIds[i])
                     revert DuplicateChainId(chainIds[i]);
-                unchecked {
-                    ++j;
-                }
             }
             bundle.operations[chainIds[i]] = ChainOperation({
                 chainId: chainIds[i],
@@ -364,9 +367,6 @@ contract CrossL2Atomicity is ReentrancyGuard, AccessControl, Pausable {
                 prepared: false,
                 executed: false
             });
-            unchecked {
-                ++i;
-            }
         }
     }
 

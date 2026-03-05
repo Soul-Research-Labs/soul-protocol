@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -7,17 +7,17 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title ArbitrumBridgeAdapter
- * @author ZASEON
+ * @author Soul Protocol
  * @notice Bridge adapter for Arbitrum One and Nova integration
  * @dev Enables cross-chain interoperability with Arbitrum L2 rollups
  *
  * ARBITRUM INTEGRATION:
  * ┌─────────────────────────────────────────────────────────────────────────┐
- * │                    Zaseon <-> Arbitrum Bridge                              │
+ * │                    Soul <-> Arbitrum Bridge                              │
  * ├─────────────────────────────────────────────────────────────────────────┤
  * │                                                                         │
  * │  ┌───────────────────┐           ┌───────────────────┐                 │
- * │  │   ZASEON    │           │   Arbitrum        │                 │
+ * │  │   Soul Protocol    │           │   Arbitrum        │                 │
  * │  │  (L1 Ethereum)    │           │   (L2 Rollup)     │                 │
  * │  │  ┌─────────────┐  │           │  ┌─────────────┐  │                 │
  * │  │  │ Delayed     │  │           │  │ ArbOS       │  │                 │
@@ -207,7 +207,7 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     /// @notice Treasury address
     address public treasury;
 
-    /// @notice Fast exit enabled (with exit funding providers)
+    /// @notice Fast exit enabled (with liquidity providers)
     bool public fastExitEnabled;
 
     /*//////////////////////////////////////////////////////////////
@@ -239,8 +239,8 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     /// @notice Processed outbox outputs
     mapping(bytes32 => bool) public processedOutputs;
 
-    /// @notice Fast exit exit funding providers
-    mapping(address => uint256) public exitFundingProviders;
+    /// @notice Fast exit liquidity providers
+    mapping(address => uint256) public liquidityProviders;
 
     /*//////////////////////////////////////////////////////////////
                               STATISTICS
@@ -279,7 +279,7 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     event WithdrawalClaimed(bytes32 indexed withdrawalId);
     event FastExitExecuted(
         bytes32 indexed withdrawalId,
-        address exitFundingProvider
+        address liquidityProvider
     );
 
     event TokenMapped(
@@ -287,8 +287,8 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         address l2Token,
         uint256 chainId
     );
-    event ExitFundingProvided(address indexed provider, uint256 amount);
-    event ExitFundingWithdrawn(address indexed provider, uint256 amount);
+    event LiquidityProvided(address indexed provider, uint256 amount);
+    event LiquidityWithdrawn(address indexed provider, uint256 amount);
 
     /*//////////////////////////////////////////////////////////////
                                ERRORS
@@ -306,7 +306,7 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     error InvalidProof();
     error OutputAlreadyProcessed();
     error InsufficientFee();
-    error InsufficientCapacity();
+    error InsufficientLiquidity();
     error FastExitDisabled();
     error TransferFailed();
     error FeeTooHigh();
@@ -332,12 +332,6 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Configure an Arbitrum rollup
-     * @param chainId The Arbitrum chain ID to configure (e.g., 42161 for Arbitrum One)
-     * @param inbox Address of the Arbitrum Inbox contract for retryable tickets
-     * @param outbox Address of the Arbitrum Outbox contract for L2-to-L1 withdrawals
-     * @param bridge Address of the Arbitrum Bridge contract
-     * @param rollup Address of the Arbitrum Rollup contract for state validation
-     * @param rollupType Type of rollup (Classic or Nitro)
      */
     function configureRollup(
         uint256 chainId,
@@ -364,16 +358,6 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
                     L1 -> L2 DEPOSITS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Deposit parameters (reduces stack depth)
-    struct DepositParams {
-        uint256 chainId;
-        address l2Recipient;
-        address l1Token;
-        uint256 amount;
-        uint256 l2GasLimit;
-        uint256 l2GasPrice;
-    }
-
     /**
      * @notice Deposit tokens from L1 to Arbitrum L2 via the Inbox retryable ticket system
      * @dev Calculates submission cost, applies bridge fee, and creates a retryable ticket.
@@ -395,163 +379,83 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         uint256 l2GasLimit,
         uint256 l2GasPrice
     ) external payable nonReentrant whenNotPaused returns (bytes32 depositId) {
-        DepositParams memory p = DepositParams({
-            chainId: chainId,
-            l2Recipient: l2Recipient,
-            l1Token: l1Token,
-            amount: amount,
-            l2GasLimit: l2GasLimit == 0 ? DEFAULT_L2_GAS_LIMIT : l2GasLimit,
-            l2GasPrice: l2GasPrice
-        });
-        depositId = _executeDeposit(p);
-    }
-
-    function _executeDeposit(
-        DepositParams memory p
-    ) internal returns (bytes32 depositId) {
-        RollupConfig storage config = rollupConfigs[p.chainId];
+        RollupConfig storage config = rollupConfigs[chainId];
         if (!config.active) revert RollupNotConfigured();
 
-        {
-            bytes32 mappingKey = keccak256(
-                abi.encodePacked(p.l1Token, p.chainId)
-            );
-            if (!tokenMappings[mappingKey].active) revert TokenNotMapped();
-        }
+        bytes32 mappingKey = keccak256(abi.encodePacked(l1Token, chainId));
+        TokenMapping storage mapping_ = tokenMappings[mappingKey];
+        if (!mapping_.active) revert TokenNotMapped();
 
-        if (p.amount < minDepositAmount) revert AmountTooLow();
-        if (p.amount > maxDepositAmount) revert AmountTooHigh();
+        if (amount < minDepositAmount) revert AmountTooLow();
+        if (amount > maxDepositAmount) revert AmountTooHigh();
+
+        if (l2GasLimit == 0) l2GasLimit = DEFAULT_L2_GAS_LIMIT;
 
         // Calculate submission cost and fee
         uint256 submissionCost = DEFAULT_MAX_SUBMISSION_COST;
-        uint256 fee;
         {
-            fee = (p.amount * bridgeFee) / 10000;
+            uint256 fee = (amount * bridgeFee) / 10000;
             uint256 totalRequired = submissionCost +
-                (p.l2GasLimit * p.l2GasPrice) +
+                (l2GasLimit * l2GasPrice) +
                 fee;
             if (msg.value < totalRequired) revert InsufficientFee();
+            totalFeesCollected += fee;
         }
 
-        uint256 ticketId = uint256(
-            keccak256(
-                abi.encodePacked(
-                    block.timestamp,
-                    transferNonce,
-                    msg.sender,
-                    blockhash(block.number - 1)
-                )
-            )
-        );
-
-        depositId = keccak256(
-            abi.encodePacked(
-                msg.sender,
-                p.l2Recipient,
-                p.l1Token,
-                p.amount,
-                p.chainId,
-                transferNonce++,
-                block.timestamp
-            )
-        );
-
-        _storeDeposit(p, depositId, submissionCost, ticketId);
-
+        // Compute IDs (scoped to free stack)
+        uint256 ticketId;
         {
-            bytes32 mappingKey = keccak256(
-                abi.encodePacked(p.l1Token, p.chainId)
+            ticketId = uint256(
+                keccak256(
+                    abi.encodePacked(
+                        block.timestamp,
+                        transferNonce,
+                        msg.sender,
+                        blockhash(block.number - 1)
+                    )
+                )
             );
-            tokenMappings[mappingKey].totalDeposited += p.amount;
-        }
-        totalDeposits++;
-        totalValueDeposited += p.amount;
-        totalFeesCollected += fee;
 
-        _callInbox(p, config.inbox, submissionCost);
+            depositId = keccak256(
+                abi.encodePacked(
+                    msg.sender,
+                    l2Recipient,
+                    l1Token,
+                    amount,
+                    chainId,
+                    transferNonce++,
+                    block.timestamp
+                )
+            );
+        }
+
+        // Store deposit and ticket — extracted to reduce stack depth
+        _storeDepositAndTicket(
+            depositId, ticketId, l2Recipient, l1Token,
+            mapping_, amount, submissionCost, l2GasLimit, l2GasPrice
+        );
+
+        mapping_.totalDeposited += amount;
+        totalDeposits++;
+        totalValueDeposited += amount;
+
+        // Create retryable ticket on Arbitrum Inbox — extracted to reduce stack depth
+        _createRetryableTicket(
+            config.inbox, l2Recipient, l1Token,
+            amount, submissionCost, l2GasLimit, l2GasPrice
+        );
 
         emit DepositInitiated(
             depositId,
             msg.sender,
-            p.l2Recipient,
-            p.amount,
+            l2Recipient,
+            amount,
             ticketId
         );
     }
 
-    function _callInbox(
-        DepositParams memory p,
-        address inbox,
-        uint256 submissionCost
-    ) private {
-        IInbox(inbox).createRetryableTicket{value: msg.value}(
-            p.l2Recipient,
-            p.amount,
-            submissionCost,
-            msg.sender,
-            msg.sender,
-            p.l2GasLimit,
-            p.l2GasPrice,
-            abi.encode(p.l1Token, p.amount)
-        );
-    }
-
-    function _storeDeposit(
-        DepositParams memory p,
-        bytes32 depositId,
-        uint256 submissionCost,
-        uint256 ticketId
-    ) private {
-        {
-            bytes32 mappingKey = keccak256(
-                abi.encodePacked(p.l1Token, p.chainId)
-            );
-            address l2Token = tokenMappings[mappingKey].l2Token;
-
-            deposits[depositId] = L1ToL2Deposit({
-                depositId: depositId,
-                sender: msg.sender,
-                l2Recipient: p.l2Recipient,
-                l1Token: p.l1Token,
-                l2Token: l2Token,
-                amount: p.amount,
-                maxSubmissionCost: submissionCost,
-                l2GasLimit: p.l2GasLimit,
-                l2GasPrice: p.l2GasPrice,
-                ticketId: ticketId,
-                status: TransferStatus.RETRYABLE_CREATED,
-                initiatedAt: block.timestamp,
-                executedAt: 0
-            });
-        }
-
-        userDeposits[msg.sender].push(depositId);
-
-        _storeRetryableTicket(p, submissionCost, ticketId);
-    }
-
-    function _storeRetryableTicket(
-        DepositParams memory p,
-        uint256 submissionCost,
-        uint256 ticketId
-    ) private {
-        retryableTickets[ticketId] = RetryableTicket({
-            ticketId: ticketId,
-            from: msg.sender,
-            to: p.l2Recipient,
-            value: p.amount,
-            data: abi.encode(p.l1Token, p.amount),
-            maxSubmissionCost: submissionCost,
-            l2GasLimit: p.l2GasLimit,
-            l2GasPrice: p.l2GasPrice,
-            redeemed: false,
-            createdAt: block.timestamp
-        });
-    }
-
     /**
      * @notice Confirm deposit execution on L2
-     * @param depositId Unique identifier of the deposit to confirm
      */
     function confirmDeposit(
         bytes32 depositId
@@ -573,16 +477,6 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Register a withdrawal from L2
-     * @param l2Sender Address of the sender on Arbitrum L2
-     * @param l1Recipient Address of the recipient on L1 who will claim the withdrawal
-     * @param l2Token Address of the token on L2 being withdrawn
-     * @param amount Amount of tokens being withdrawn
-     * @param l2BlockNumber L2 block number at which the withdrawal was initiated
-     * @param l1BatchNumber L1 batch number containing the L2 block
-     * @param l2Timestamp Timestamp of the withdrawal on L2
-     * @param outputId Unique output identifier from the Arbitrum Outbox
-     * @return withdrawalId Unique identifier for tracking this withdrawal
-     * @dev The last parameter (chainId) is reserved for multi-rollup support
      */
     function registerWithdrawal(
         address l2Sender,
@@ -597,14 +491,11 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     ) external onlyRole(EXECUTOR_ROLE) returns (bytes32 withdrawalId) {
         // Find L1 token
         address l1Token = address(0);
-        for (uint256 i = 0; i < tokenMappingKeys.length; ) {
+        for (uint256 i = 0; i < tokenMappingKeys.length; i++) {
             TokenMapping storage m = tokenMappings[tokenMappingKeys[i]];
             if (m.l2Token == l2Token && m.active) {
                 l1Token = m.l1Token;
                 break;
-            }
-            unchecked {
-                ++i;
             }
         }
         if (l1Token == address(0)) revert TokenNotMapped();
@@ -637,9 +528,6 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Claim a withdrawal after challenge period
-     * @param withdrawalId Unique identifier of the withdrawal to claim
-     * @dev The proof (bytes32[]) and index (uint256) parameters are reserved for
-     *      Outbox merkle verification but currently unnamed in the signature
      */
     function claimWithdrawal(
         bytes32 withdrawalId,
@@ -660,7 +548,7 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         // a message from the expected L2 sender. This works when called within
         // the Outbox.executeTransaction() callback, OR when called by a relayer
         // with appropriate proof.
-        // For relayer-initiated claims, verify the caller has OPERATOR_ROLE
+        // For relayer-initiated claims, verify the caller has RELAYER_ROLE
         // or is the withdrawal recipient.
         if (
             msg.sender != address(outbox) &&
@@ -690,9 +578,9 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     }
 
     /**
-     * @notice Execute instant withdrawal using exit funding provider funds (bypasses challenge period)
-     * @dev The caller must be a registered exit funding provider with sufficient balance.
-     *      Their exit funding is consumed to fund the instant exit. The original withdrawal
+     * @notice Execute instant withdrawal using liquidity provider funds (bypasses challenge period)
+     * @dev The caller must be a registered liquidity provider with sufficient balance.
+     *      Their liquidity is consumed to fund the instant exit. The original withdrawal
      *      is marked as finalized, with the LP effectively taking over the pending withdrawal.
      * @param withdrawalId The withdrawal to fast-exit (must be in PENDING status)
      */
@@ -704,12 +592,12 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         if (withdrawal.status != TransferStatus.PENDING)
             revert WithdrawalNotFound();
 
-        // Find exit funding provider (simplified - just check caller)
-        if (exitFundingProviders[msg.sender] < withdrawal.amount) {
-            revert InsufficientCapacity();
+        // Find liquidity provider (simplified - just check caller)
+        if (liquidityProviders[msg.sender] < withdrawal.amount) {
+            revert InsufficientLiquidity();
         }
 
-        exitFundingProviders[msg.sender] -= withdrawal.amount;
+        liquidityProviders[msg.sender] -= withdrawal.amount;
         withdrawal.status = TransferStatus.FINALIZED;
         withdrawal.claimedAt = block.timestamp;
 
@@ -719,32 +607,32 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
     }
 
     /*//////////////////////////////////////////////////////////////
-                    BRIDGE EXIT FUNDING
+                    LIQUIDITY PROVISION
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Provide exit funding for fast exits
+     * @notice Provide liquidity for fast exits
      */
-    function provideExitFunding() external payable {
-        exitFundingProviders[msg.sender] += msg.value;
-        emit ExitFundingProvided(msg.sender, msg.value);
+    function provideLiquidity() external payable {
+        liquidityProviders[msg.sender] += msg.value;
+        emit LiquidityProvided(msg.sender, msg.value);
     }
 
     /**
-     * @notice Withdraw previously provided exit funding from the fast-exit pool
+     * @notice Withdraw previously provided liquidity from the fast-exit pool
      * @dev Sends native ETH to caller. Reverts if balance insufficient.
-     * @param amount The amount of capacity to withdraw (in wei)
+     * @param amount The amount of liquidity to withdraw (in wei)
      */
-    function withdrawExitFunding(uint256 amount) external nonReentrant {
-        if (exitFundingProviders[msg.sender] < amount)
-            revert InsufficientCapacity();
+    function withdrawLiquidity(uint256 amount) external nonReentrant {
+        if (liquidityProviders[msg.sender] < amount)
+            revert InsufficientLiquidity();
 
-        exitFundingProviders[msg.sender] -= amount;
+        liquidityProviders[msg.sender] -= amount;
 
         (bool success, ) = msg.sender.call{value: amount}("");
         if (!success) revert TransferFailed();
 
-        emit ExitFundingWithdrawn(msg.sender, amount);
+        emit LiquidityWithdrawn(msg.sender, amount);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -833,19 +721,11 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
                            PAUSABLE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Pause all bridge operations (emergency use)
-        /**
-     * @notice Pauses the operation
-     */
-function pause() external onlyRole(GUARDIAN_ROLE) {
+    function pause() external onlyRole(GUARDIAN_ROLE) {
         _pause();
     }
 
-    /// @notice Unpause bridge operations
-        /**
-     * @notice Unpauses the operation
-     */
-function unpause() external onlyRole(GUARDIAN_ROLE) {
+    function unpause() external onlyRole(GUARDIAN_ROLE) {
         _unpause();
     }
 
@@ -888,6 +768,74 @@ function unpause() external onlyRole(GUARDIAN_ROLE) {
                         INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
+    /// @dev Creates a retryable ticket on the Arbitrum Inbox. Extracted from
+    ///      deposit() to keep the parent function within EVM stack limits.
+    function _createRetryableTicket(
+        address inbox,
+        address l2Recipient,
+        address l1Token,
+        uint256 amount,
+        uint256 submissionCost,
+        uint256 l2GasLimit,
+        uint256 l2GasPrice
+    ) internal {
+        IInbox(inbox).createRetryableTicket{value: msg.value}(
+            l2Recipient,
+            amount,
+            submissionCost,
+            msg.sender,
+            msg.sender,
+            l2GasLimit,
+            l2GasPrice,
+            abi.encode(l1Token, amount)
+        );
+    }
+
+    /// @dev Stores L1ToL2Deposit and RetryableTicket structs. Extracted from
+    ///      deposit() to stay within EVM stack limits.
+    function _storeDepositAndTicket(
+        bytes32 depositId,
+        uint256 ticketId,
+        address l2Recipient,
+        address l1Token,
+        TokenMapping storage mapping_,
+        uint256 amount,
+        uint256 submissionCost,
+        uint256 l2GasLimit,
+        uint256 l2GasPrice
+    ) internal {
+        deposits[depositId] = L1ToL2Deposit({
+            depositId: depositId,
+            sender: msg.sender,
+            l2Recipient: l2Recipient,
+            l1Token: l1Token,
+            l2Token: mapping_.l2Token,
+            amount: amount,
+            maxSubmissionCost: submissionCost,
+            l2GasLimit: l2GasLimit,
+            l2GasPrice: l2GasPrice,
+            ticketId: ticketId,
+            status: TransferStatus.RETRYABLE_CREATED,
+            initiatedAt: block.timestamp,
+            executedAt: 0
+        });
+
+        userDeposits[msg.sender].push(depositId);
+
+        retryableTickets[ticketId] = RetryableTicket({
+            ticketId: ticketId,
+            from: msg.sender,
+            to: l2Recipient,
+            value: amount,
+            data: abi.encode(l1Token, amount),
+            maxSubmissionCost: submissionCost,
+            l2GasLimit: l2GasLimit,
+            l2GasPrice: l2GasPrice,
+            redeemed: false,
+            createdAt: block.timestamp
+        });
+    }
+
     function _verifyOutboxProof(
         bytes32 outputId,
         bytes32[] calldata proof,
@@ -898,7 +846,7 @@ function unpause() external onlyRole(GUARDIAN_ROLE) {
 
         bytes32 computedHash = outputId;
 
-        for (uint256 i = 0; i < proof.length; ) {
+        for (uint256 i = 0; i < proof.length; i++) {
             if (index % 2 == 0) {
                 computedHash = keccak256(
                     abi.encodePacked(computedHash, proof[i])
@@ -909,9 +857,6 @@ function unpause() external onlyRole(GUARDIAN_ROLE) {
                 );
             }
             index = index / 2;
-            unchecked {
-                ++i;
-            }
         }
 
         // Note: In production, full verification happens via IOutbox.executeTransaction()
@@ -923,25 +868,8 @@ function unpause() external onlyRole(GUARDIAN_ROLE) {
     receive() external payable {}
 }
 
-/**
- * @title IInbox
- * @author ZASEON Team
- * @notice \1 \1nbox interface
- */
 interface IInbox {
-        /**
-     * @notice Creates retryable ticket
-     * @param to The destination address
-     * @param l2CallValue The l2 call value
-     * @param maxSubmissionCost The maxSubmissionCost bound
-     * @param excessFeeRefundAddress The excessFeeRefundAddress address
-     * @param callValueRefundAddress The callValueRefundAddress address
-     * @param gasLimit The gas limit
-     * @param maxFeePerGas The maxFeePerGas bound
-     * @param data The calldata payload
-     * @return The result value
-     */
-function createRetryableTicket(
+    function createRetryableTicket(
         address to,
         uint256 l2CallValue,
         uint256 maxSubmissionCost,
@@ -953,43 +881,14 @@ function createRetryableTicket(
     ) external payable returns (uint256);
 }
 
-/**
- * @title IOutbox
- * @author ZASEON Team
- * @notice \1 \1utbox interface
- */
 interface IOutbox {
-        /**
-     * @notice L2 to l1 sender
-     * @return The result value
-     */
-function l2ToL1Sender() external view returns (address);
+    function l2ToL1Sender() external view returns (address);
 
-        /**
-     * @notice L2 to l1 block
-     * @return The result value
-     */
-function l2ToL1Block() external view returns (uint256);
+    function l2ToL1Block() external view returns (uint256);
 
-        /**
-     * @notice L2 to l1 timestamp
-     * @return The result value
-     */
-function l2ToL1Timestamp() external view returns (uint256);
+    function l2ToL1Timestamp() external view returns (uint256);
 
-        /**
-     * @notice Executes transaction
-     * @param proof The ZK proof data
-     * @param index The index in the collection
-     * @param l2Sender The l2 sender
-     * @param to The destination address
-     * @param l2Block The l2 block
-     * @param l1Block The l1 block
-     * @param l2Timestamp The l2Timestamp timestamp
-     * @param value The value to set
-     * @param data The calldata payload
-     */
-function executeTransaction(
+    function executeTransaction(
         bytes32[] calldata proof,
         uint256 index,
         address l2Sender,

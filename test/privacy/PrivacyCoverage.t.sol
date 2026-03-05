@@ -111,14 +111,16 @@ contract PrivacyCoverageTest is Test {
         uint256 chainId = 10; // Optimism
 
         privacyHub.registerAdapter(
-            chainId,
-            mockAdapter,
-            CrossChainPrivacyHub.ChainType.EVM,
-            CrossChainPrivacyHub.ProofSystem.NONE,
-            true, // supports privacy
-            1, // min confirms
-            1000 ether, // max transfer
-            10000 ether // daily limit
+            CrossChainPrivacyHub.AdapterRegistrationParams({
+                chainId: chainId,
+                adapter: mockAdapter,
+                chainType: CrossChainPrivacyHub.ChainType.EVM,
+                proofSystem: CrossChainPrivacyHub.ProofSystem.NONE,
+                supportsPrivacy: true,
+                minConfirmations: 1,
+                maxTransfer: 1000 ether,
+                dailyLimit: 10000 ether
+            })
         );
 
         (address adapterAddr, , , , , , , , , , ) = privacyHub.adapters(

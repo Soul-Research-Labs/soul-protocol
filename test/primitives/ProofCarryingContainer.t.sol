@@ -113,10 +113,16 @@ contract ProofCarryingContainerTest is Test {
     }
 
     function test_createContainer_revertsPayloadTooLarge() public {
-        bytes memory hugePayload = _makePayload(1 << (20 + 1)); // > 1MB
+        uint256 maxSize = pc3.MAX_PAYLOAD_SIZE();
+        bytes memory hugePayload = _makePayload(maxSize + 1);
         vm.prank(user);
-        // PayloadTooLarge has params, just check it reverts
-        vm.expectRevert();
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ProofCarryingContainer.PayloadTooLarge.selector,
+                hugePayload.length,
+                maxSize
+            )
+        );
         pc3.createContainer(
             hugePayload,
             commitment,
@@ -664,7 +670,9 @@ contract ProofCarryingContainerTest is Test {
 
     function test_lockVerificationMode() public {
         vm.startPrank(admin);
-        pc3.lockVerificationMode();
+        pc3.requestLockVerificationMode();
+        vm.warp(block.timestamp + 48 hours);
+        pc3.executeLockVerificationMode();
 
         assertTrue(pc3.verificationLocked());
         assertTrue(pc3.useRealVerification());
@@ -677,10 +685,28 @@ contract ProofCarryingContainerTest is Test {
         vm.stopPrank();
     }
 
+    function test_lockVerificationMode_revertsBeforeGracePeriod() public {
+        vm.startPrank(admin);
+        pc3.requestLockVerificationMode();
+        // Try executing before 48h
+        vm.expectRevert();
+        pc3.executeLockVerificationMode();
+        vm.stopPrank();
+    }
+
+    function test_cancelLockVerificationMode() public {
+        vm.startPrank(admin);
+        pc3.requestLockVerificationMode();
+        assertGt(pc3.lockRequestedAt(), 0);
+        pc3.cancelLockVerificationMode();
+        assertEq(pc3.lockRequestedAt(), 0);
+        vm.stopPrank();
+    }
+
     function test_lockVerificationMode_revertsWithoutAdmin() public {
         vm.prank(user);
         vm.expectRevert();
-        pc3.lockVerificationMode();
+        pc3.requestLockVerificationMode();
     }
 
     function test_pause_unpause() public {

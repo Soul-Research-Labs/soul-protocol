@@ -207,7 +207,9 @@ async function main() {
   console.log("  1. Verify contracts on block explorer");
   console.log("  2. Run ConfigureCrossChain.s.sol to link L2 peers");
   console.log("  3. Fund relayer and register in DecentralizedRelayerRegistry");
-  console.log("  4. Run ConfirmRoleSeparation.s.sol to enable proof submission");
+  console.log(
+    "  4. Run ConfirmRoleSeparation.s.sol to enable proof submission",
+  );
 }
 
 main().catch((error) => {

@@ -129,8 +129,14 @@ contract ProofCarryingContainer is AccessControl, ReentrancyGuard, Pausable {
     bool public useRealVerification = true;
 
     /// @notice Once locked, `setRealVerification(false)` is permanently disabled.
-    /// @dev Call `lockVerificationMode()` before going to production.
+    /// @dev Call `requestLockVerificationMode()` then `executeLockVerificationMode()` after 48h.
     bool public verificationLocked;
+
+    /// @notice Timestamp when lock was requested (0 = no pending request)
+    uint256 public lockRequestedAt;
+
+    /// @notice Grace period before lock can be executed (48 hours)
+    uint256 public constant LOCK_GRACE_PERIOD = 48 hours;
 
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
@@ -170,6 +176,8 @@ contract ProofCarryingContainer is AccessControl, ReentrancyGuard, Pausable {
         address indexed newRegistry
     );
     event RealVerificationToggled(bool enabled);
+    event VerificationLockRequested(uint256 executeAfter);
+    event VerificationLockRequestCancelled();
     event VerificationModeLocked();
 
     /*//////////////////////////////////////////////////////////////
@@ -177,6 +185,9 @@ contract ProofCarryingContainer is AccessControl, ReentrancyGuard, Pausable {
     //////////////////////////////////////////////////////////////*/
 
     error VerificationModePermanentlyLocked();
+    error LockNotRequested();
+    error LockGracePeriodNotElapsed(uint256 executeAfter);
+    error LockAlreadyRequested();
     error ContainerAlreadyExists(bytes32 containerId);
     error ContainerNotFound(bytes32 containerId);
     error NullifierAlreadyConsumed(bytes32 nullifier);
@@ -214,7 +225,7 @@ contract ProofCarryingContainer is AccessControl, ReentrancyGuard, Pausable {
     /// @param proofs The embedded proof bundle
     /// @param policyHash Hash of the applicable policy
     /// @return containerId The unique container identifier
-        /**
+    /**
      * @notice Creates container
      * @param encryptedPayload The encrypted payload
      * @param stateCommitment The state commitment
@@ -223,7 +234,7 @@ contract ProofCarryingContainer is AccessControl, ReentrancyGuard, Pausable {
      * @param policyHash The policyHash hash value
      * @return containerId The container id
      */
-function createContainer(
+    function createContainer(
         bytes calldata encryptedPayload,
         bytes32 stateCommitment,
         bytes32 nullifier,
@@ -313,12 +324,12 @@ function createContainer(
     /// @notice Verify a container's embedded proofs
     /// @param containerId The container to verify
     /// @return result The verification result
-        /**
+    /**
      * @notice Verifys container
      * @param containerId The container identifier
      * @return result The result
      */
-function verifyContainer(
+    function verifyContainer(
         bytes32 containerId
     ) external view returns (VerificationResult memory result) {
         Container storage container = containers[containerId];
@@ -409,11 +420,11 @@ function verifyContainer(
 
     /// @notice Consume a verified container (marks nullifier as used)
     /// @param containerId The container to consume
-        /**
+    /**
      * @notice Consume container
      * @param containerId The container identifier
      */
-function consumeContainer(
+    function consumeContainer(
         bytes32 containerId
     ) external whenNotPaused nonReentrant onlyRole(VERIFIER_ROLE) {
         Container storage container = containers[containerId];
@@ -450,13 +461,13 @@ function consumeContainer(
     /// @param containerData Serialized container data
     /// @param sourceChainProof Proof of existence on source chain
     /// @return containerId The imported container ID
-        /**
+    /**
      * @notice Import container
      * @param containerData The container data
      * @param sourceChainProof The source chain proof
      * @return containerId The container id
      */
-function importContainer(
+    function importContainer(
         bytes calldata containerData,
         bytes calldata sourceChainProof
     ) external whenNotPaused nonReentrant returns (bytes32 containerId) {
@@ -535,12 +546,12 @@ function importContainer(
     /// @notice Export a container for cross-chain transfer
     /// @param containerId The container to export
     /// @return data Serialized container data
-        /**
+    /**
      * @notice Export container
      * @param containerId The container identifier
      * @return data The data
      */
-function exportContainer(
+    function exportContainer(
         bytes32 containerId
     ) external view returns (bytes memory data) {
         Container storage container = containers[containerId];
@@ -568,11 +579,11 @@ function exportContainer(
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Add a supported policy
-        /**
+    /**
      * @notice Adds policy
      * @param policyHash The policyHash hash value
      */
-function addPolicy(
+    function addPolicy(
         bytes32 policyHash
     ) external onlyRole(CONTAINER_ADMIN_ROLE) {
         supportedPolicies[policyHash] = true;
@@ -580,11 +591,11 @@ function addPolicy(
     }
 
     /// @notice Remove a policy
-        /**
+    /**
      * @notice Removes policy
      * @param policyHash The policyHash hash value
      */
-function removePolicy(
+    function removePolicy(
         bytes32 policyHash
     ) external onlyRole(CONTAINER_ADMIN_ROLE) {
         supportedPolicies[policyHash] = false;
@@ -609,14 +620,14 @@ function removePolicy(
     /// @param publicInput The public input (as bytes32)
     /// @param circuitType The circuit type for verification
     /// @return valid Whether the proof is valid
-        /**
+    /**
      * @notice _verify with registry
      * @param proof The ZK proof data
      * @param publicInput The public input
      * @param circuitType The circuit type
      * @return valid The valid
      */
-function _verifyWithRegistry(
+    function _verifyWithRegistry(
         bytes memory proof,
         bytes32 publicInput,
         VerifierRegistryV2.CircuitType circuitType
@@ -644,24 +655,24 @@ function _verifyWithRegistry(
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Get container details
-        /**
+    /**
      * @notice Returns the container
      * @param containerId The container identifier
      * @return The result value
      */
-function getContainer(
+    function getContainer(
         bytes32 containerId
     ) external view returns (Container memory) {
         return containers[containerId];
     }
 
     /// @notice Check if nullifier is consumed
-        /**
+    /**
      * @notice Checks if nullifier consumed
      * @param nullifier The nullifier hash
      * @return The result value
      */
-function isNullifierConsumed(
+    function isNullifierConsumed(
         bytes32 nullifier
     ) external view returns (bool) {
         return consumedNullifiers[nullifier];
@@ -670,13 +681,13 @@ function isNullifierConsumed(
     /// @notice Get all container IDs (paginated)
     /// @param offset Starting index
     /// @param limit Maximum number to return
-        /**
+    /**
      * @notice Returns the container ids
      * @param offset The offset
      * @param limit The limit value
      * @return ids The ids
      */
-function getContainerIds(
+    function getContainerIds(
         uint256 offset,
         uint256 limit
     ) external view returns (bytes32[] memory ids) {
@@ -698,12 +709,12 @@ function getContainerIds(
     /// @notice Batch verify multiple containers
     /// @param containerIds Array of container IDs to verify
     /// @return results Array of verification results
-        /**
+    /**
      * @notice Batchs verify containers
      * @param containerIds The containerIds identifier
      * @return results The results
      */
-function batchVerifyContainers(
+    function batchVerifyContainers(
         bytes32[] calldata containerIds
     ) external view returns (VerificationResult[] memory results) {
         uint256 len = containerIds.length;
@@ -721,11 +732,11 @@ function batchVerifyContainers(
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Update proof validity window
-        /**
+    /**
      * @notice Sets the proof validity window
      * @param window The window
      */
-function setProofValidityWindow(
+    function setProofValidityWindow(
         uint256 window
     ) external onlyRole(CONTAINER_ADMIN_ROLE) {
         proofValidityWindow = window;
@@ -733,11 +744,11 @@ function setProofValidityWindow(
 
     /// @notice Set the verifier registry (V2)
     /// @param _registry The new verifier registry address
-        /**
+    /**
      * @notice Sets the verifier registry
      * @param _registry The _registry
      */
-function setVerifierRegistry(
+    function setVerifierRegistry(
         address _registry
     ) external onlyRole(CONTAINER_ADMIN_ROLE) {
         address oldRegistry = address(verifierRegistry);
@@ -748,11 +759,11 @@ function setVerifierRegistry(
     /// @notice Enable or disable real verification mode
     /// @dev Once `lockVerificationMode()` has been called, disabling is permanently blocked.
     /// @param enabled True to use real verifiers, false for placeholder
-        /**
+    /**
      * @notice Sets the real verification
      * @param enabled Whether the feature is enabled
      */
-function setRealVerification(
+    function setRealVerification(
         bool enabled
     ) external onlyRole(CONTAINER_ADMIN_ROLE) {
         if (!enabled && verificationLocked)
@@ -761,30 +772,74 @@ function setRealVerification(
         emit RealVerificationToggled(enabled);
     }
 
-    /// @notice Permanently prevent disabling real verification.
-    /// @dev This is a one-way operation — call before production deployment.
-        /**
-     * @notice Locks verification mode
-     */
-function lockVerificationMode() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    /// @notice Request to permanently lock verification mode.
+    /// @dev Starts a 48h grace period. Call `executeLockVerificationMode()` after the grace period.
+    function requestLockVerificationMode()
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        if (verificationLocked) revert VerificationModePermanentlyLocked();
+        if (lockRequestedAt != 0) revert LockAlreadyRequested();
+        lockRequestedAt = block.timestamp;
+        emit VerificationLockRequested(block.timestamp + LOCK_GRACE_PERIOD);
+    }
+
+    /// @notice Cancel a pending lock request.
+    function cancelLockVerificationMode()
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        if (lockRequestedAt == 0) revert LockNotRequested();
+        lockRequestedAt = 0;
+        emit VerificationLockRequestCancelled();
+    }
+
+    /// @notice Execute the lock after the 48h grace period has elapsed.
+    function executeLockVerificationMode()
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        if (lockRequestedAt == 0) revert LockNotRequested();
+        uint256 executeAfter = lockRequestedAt + LOCK_GRACE_PERIOD;
+        if (block.timestamp < executeAfter)
+            revert LockGracePeriodNotElapsed(executeAfter);
+        lockRequestedAt = 0;
+        verificationLocked = true;
+        useRealVerification = true;
+        emit VerificationModeLocked();
+    }
+
+    /// @notice Convenience: request + immediate execute (only works if grace period is 0 in tests).
+    /// @dev In production the 48h grace period makes this revert. Use the two-step flow instead.
+    function lockVerificationMode() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (verificationLocked) revert VerificationModePermanentlyLocked();
+        // If no pending request, start one and try to execute (will revert in production due to grace period)
+        if (lockRequestedAt == 0) {
+            lockRequestedAt = block.timestamp;
+            emit VerificationLockRequested(block.timestamp + LOCK_GRACE_PERIOD);
+        }
+        uint256 executeAfter = lockRequestedAt + LOCK_GRACE_PERIOD;
+        if (block.timestamp < executeAfter)
+            revert LockGracePeriodNotElapsed(executeAfter);
+        lockRequestedAt = 0;
         verificationLocked = true;
         useRealVerification = true;
         emit VerificationModeLocked();
     }
 
     /// @notice Pause contract
-        /**
+    /**
      * @notice Pauses the operation
      */
-function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
 
     /// @notice Unpause contract
-        /**
+    /**
      * @notice Unpauses the operation
      */
-function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
 }

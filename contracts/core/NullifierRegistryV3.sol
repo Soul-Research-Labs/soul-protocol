@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.20;
 
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
-import {INullifierRegistryV3} from "../interfaces/INullifierRegistryV3.sol";
 
 /// @title NullifierRegistryV3
-/// @author ZASEON
+/// @author Soul Protocol
 /// @notice Production-ready nullifier registry with merkle tree support for light client verification
 /// @dev Implements incremental merkle tree, cross-chain sync, and efficient batch operations
 ///
@@ -17,19 +14,7 @@ import {INullifierRegistryV3} from "../interfaces/INullifierRegistryV3.sol";
 /// - Pre-computed role hashes (saves ~200 gas per access)
 /// - Unchecked arithmetic in safe contexts (saves ~40 gas per operation)
 /// - Packed NullifierData struct (saves ~20k gas on writes)
-/**
- * @title NullifierRegistryV3
- * @author ZASEON Team
- * @notice Nullifier Registry V3 contract
- */
-contract NullifierRegistryV3 is
-    AccessControl,
-    Pausable,
-    ReentrancyGuard,
-    INullifierRegistryV3
-{
-    using SafeCast for uint256;
-
+contract NullifierRegistryV3 is AccessControl, Pausable {
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
@@ -39,10 +24,10 @@ contract NullifierRegistryV3 is
     bytes32 public constant REGISTRAR_ROLE =
         0xedcc084d3dcd65a1f7f23c65c46722faca6953d28e43150a467cf43e5c309238;
 
-    /// @notice Role for cross-chain relay operations
-    /// @dev Pre-computed hash saves ~200 gas per access: keccak256("RELAY_ROLE")
-    bytes32 public constant RELAY_ROLE =
-        0x077a1d526a4ce8a773632ab13b4fbbf1fcc954c3dab26cd27ea0e2a6750da5d7;
+    /// @notice Role for cross-chain bridge operations
+    /// @dev Pre-computed hash saves ~200 gas per access: keccak256("BRIDGE_ROLE")
+    bytes32 public constant BRIDGE_ROLE =
+        0x52ba824bfabc2bcfcdf7f0edbb486ebb05e1836c90e78047efeb949990f72e5f;
 
     /// @notice Role for emergency operations
     /// @dev Pre-computed hash saves ~200 gas per access: keccak256("EMERGENCY_ROLE")
@@ -52,6 +37,22 @@ contract NullifierRegistryV3 is
     /*//////////////////////////////////////////////////////////////
                                  TYPES
     //////////////////////////////////////////////////////////////*/
+
+    /// @notice Nullifier metadata structure
+    /// @param timestamp Block timestamp when registered
+    /// @param blockNumber Block number when registered
+    /// @param sourceChainId Origin chain ID
+    /// @param registrar Address that registered the nullifier
+    /// @param commitment Associated commitment (if any)
+    /// @param index Position in the merkle tree
+    struct NullifierData {
+        uint64 timestamp;
+        uint64 blockNumber;
+        uint64 sourceChainId;
+        address registrar;
+        bytes32 commitment;
+        uint256 index;
+    }
 
     /*//////////////////////////////////////////////////////////////
                           MERKLE TREE CONFIG
@@ -82,9 +83,6 @@ contract NullifierRegistryV3 is
     /// @notice Historical merkle roots (for delayed verification)
     mapping(bytes32 => bool) public historicalRoots;
 
-    /// @notice Reference count for roots in the ring buffer (SECURITY FIX M-2)
-    mapping(bytes32 => uint256) public rootRefCount;
-
     /// @notice Number of historical roots to keep
     uint256 public constant ROOT_HISTORY_SIZE = 100;
 
@@ -100,13 +98,8 @@ contract NullifierRegistryV3 is
     /// @notice Nullifiers per chain
     mapping(uint256 => uint256) public chainNullifierCount;
 
-    /// @dev DEPRECATED: pendingCrossChainNullifiers removed (was never written to)
-    /// Storage slot preserved for upgrade compatibility
-    mapping(bytes32 => bytes32[])
-        private __deprecated_pendingCrossChainNullifiers;
-
-    /// @notice Registered cross-chain peer domains for nullifier sync
-    mapping(bytes32 => bool) public registeredDomains;
+    /// @notice Pending cross-chain nullifiers (merkle root => pending)
+    mapping(bytes32 => bytes32[]) public pendingCrossChainNullifiers;
 
     /// @notice Chain ID for this deployment
     uint256 public immutable CHAIN_ID;
@@ -115,16 +108,47 @@ contract NullifierRegistryV3 is
                                 EVENTS
     //////////////////////////////////////////////////////////////*/
 
-    event DomainRegistered(bytes32 indexed domain);
-    event DomainRemoved(bytes32 indexed domain);
+    event NullifierRegistered(
+        bytes32 indexed nullifier,
+        bytes32 indexed commitment,
+        uint256 indexed index,
+        address registrar,
+        uint64 chainId
+    );
+
+    event NullifierBatchRegistered(
+        bytes32[] nullifiers,
+        uint256 startIndex,
+        uint256 count
+    );
+
+    event MerkleRootUpdated(
+        bytes32 indexed oldRoot,
+        bytes32 indexed newRoot,
+        uint256 nullifierCount
+    );
+
+    event CrossChainNullifiersReceived(
+        uint256 indexed sourceChainId,
+        bytes32 indexed merkleRoot,
+        uint256 count
+    );
+
+    event RegistrarAdded(address indexed registrar);
+    event RegistrarRemoved(address indexed registrar);
 
     /*//////////////////////////////////////////////////////////////
                               CUSTOM ERRORS
     //////////////////////////////////////////////////////////////*/
 
-    error DomainAlreadyRegistered(bytes32 domain);
-    error DomainNotRegistered(bytes32 domain);
-    error ZeroDomain();
+    error NullifierAlreadyExists(bytes32 nullifier);
+    error NullifierNotFound(bytes32 nullifier);
+    error InvalidMerkleProof();
+    error BatchTooLarge(uint256 size, uint256 maxSize);
+    error EmptyBatch();
+    error ZeroNullifier();
+    error RootNotInHistory(bytes32 root);
+    error InvalidChainId();
 
     /*//////////////////////////////////////////////////////////////
                               CONSTANTS
@@ -141,11 +165,10 @@ contract NullifierRegistryV3 is
     /// @notice Initializes the nullifier registry
     constructor() {
         CHAIN_ID = block.chainid;
-        require(block.chainid <= type(uint64).max, "Chain ID exceeds uint64");
 
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(REGISTRAR_ROLE, msg.sender);
-        _grantRole(RELAY_ROLE, msg.sender);
+        _grantRole(BRIDGE_ROLE, msg.sender);
         _grantRole(EMERGENCY_ROLE, msg.sender);
 
         // Initialize zero values for merkle tree
@@ -174,36 +197,17 @@ contract NullifierRegistryV3 is
     /// @param nullifier The nullifier hash to register
     /// @param commitment Associated commitment (optional)
     /// @return index The index in the merkle tree
-    /**
-     * @notice Registers nullifier
-     * @param nullifier The nullifier hash
-     * @param commitment The cryptographic commitment
-     * @return index The index
-     */
     function registerNullifier(
         bytes32 nullifier,
         bytes32 commitment
-    )
-        external
-        onlyRole(REGISTRAR_ROLE)
-        whenNotPaused
-        nonReentrant
-        returns (uint256 index)
-    {
+    ) external onlyRole(REGISTRAR_ROLE) whenNotPaused returns (uint256 index) {
         return _registerNullifier(nullifier, commitment, msg.sender);
     }
 
     /// @notice Registers multiple nullifiers in a batch
-    /// @dev Gas-optimized: single Merkle root recomputation for the entire batch
     /// @param _nullifiers Array of nullifiers to register
     /// @param _commitments Array of associated commitments
     /// @return startIndex The starting index in the merkle tree
-    /**
-     * @notice Batchs register nullifiers
-     * @param _nullifiers The _nullifiers
-     * @param _commitments The _commitments
-     * @return startIndex The start index
-     */
     function batchRegisterNullifiers(
         bytes32[] calldata _nullifiers,
         bytes32[] calldata _commitments
@@ -211,7 +215,6 @@ contract NullifierRegistryV3 is
         external
         onlyRole(REGISTRAR_ROLE)
         whenNotPaused
-        nonReentrant
         returns (uint256 startIndex)
     {
         uint256 len = _nullifiers.length;
@@ -222,127 +225,77 @@ contract NullifierRegistryV3 is
 
         startIndex = totalNullifiers;
 
-        // Register nullifier state without individual tree insertions
-        bytes32[] memory leaves = new bytes32[](len);
         for (uint256 i = 0; i < len; ) {
             bytes32 commitment = _commitments.length > 0
                 ? _commitments[i]
                 : bytes32(0);
-            leaves[i] = _registerNullifierState(
-                _nullifiers[i],
-                commitment,
-                msg.sender
-            );
+            _registerNullifier(_nullifiers[i], commitment, msg.sender);
             unchecked {
                 ++i;
             }
         }
-
-        // Single batched Merkle tree insertion — one root write + one history entry
-        _batchInsertIntoTree(leaves, startIndex);
 
         emit NullifierBatchRegistered(_nullifiers, startIndex, len);
     }
 
     /// @notice Receives nullifiers from another chain
-    /// @dev Gas-optimized: single Merkle root recomputation for the entire batch
     /// @param sourceChainId The source chain ID
     /// @param _nullifiers Array of nullifiers
     /// @param _commitments Array of commitments
     /// @param sourceMerkleRoot The merkle root from source chain
-    /**
-     * @notice Receive cross chain nullifiers
-     * @param sourceChainId The source chain identifier
-     * @param _nullifiers The _nullifiers
-     * @param _commitments The _commitments
-     * @param sourceMerkleRoot The source merkle root
-     */
     function receiveCrossChainNullifiers(
         uint256 sourceChainId,
         bytes32[] calldata _nullifiers,
         bytes32[] calldata _commitments,
         bytes32 sourceMerkleRoot
-    ) external onlyRole(RELAY_ROLE) whenNotPaused nonReentrant {
+    ) external onlyRole(BRIDGE_ROLE) whenNotPaused {
         if (sourceChainId == CHAIN_ID) revert InvalidChainId();
-        require(
-            registeredDomains[bytes32(sourceChainId)],
-            "Domain not registered"
-        );
-        // SECURITY FIX S8-10: Validate source Merkle root is non-zero.
-        // Full cross-chain root verification requires a trusted proof hub
-        // (e.g., CrossChainProofHubV3) to attest the root. Here we enforce
-        // basic validation; the RELAY_ROLE is trusted to only forward
-        // attested nullifiers. A future upgrade should verify root via proof.
-        require(sourceMerkleRoot != bytes32(0), "Zero source root");
 
         uint256 len = _nullifiers.length;
         if (len == 0) revert EmptyBatch();
-        if (len > MAX_BATCH_SIZE) revert BatchTooLarge(len, MAX_BATCH_SIZE);
-
-        // Collect new leaves for batched tree insertion
-        uint256 newCount = 0;
-        uint256 batchStartIndex = totalNullifiers;
-        bytes32[] memory leaves = new bytes32[](len);
 
         for (uint256 i = 0; i < len; ) {
             bytes32 nullifier = _nullifiers[i];
 
             if (!isNullifierUsed[nullifier]) {
-                leaves[newCount] = _registerCrossChainNullifierState(
+                _registerCrossChainNullifier(
                     nullifier,
                     _commitments.length > i ? _commitments[i] : bytes32(0),
                     sourceChainId
                 );
-                unchecked {
-                    ++newCount;
-                }
             }
             unchecked {
                 ++i;
-            }
-        }
-
-        // Batched Merkle tree insertion for all new nullifiers
-        if (newCount > 0) {
-            // Trim leaves array to actual count
-            if (newCount < len) {
-                bytes32[] memory trimmed = new bytes32[](newCount);
-                for (uint256 i = 0; i < newCount; ) {
-                    trimmed[i] = leaves[i];
-                    unchecked {
-                        ++i;
-                    }
-                }
-                _batchInsertIntoTree(trimmed, batchStartIndex);
-            } else {
-                _batchInsertIntoTree(leaves, batchStartIndex);
             }
         }
 
         emit CrossChainNullifiersReceived(sourceChainId, sourceMerkleRoot, len);
     }
 
-    /// @dev Internal helper to register cross-chain nullifier state without tree insertion
-    /// @return leaf The nullifier hash to insert into the tree
-    function _registerCrossChainNullifierState(
+    /// @dev Internal helper to register cross-chain nullifier (reduces stack depth)
+    function _registerCrossChainNullifier(
         bytes32 nullifier,
         bytes32 commitment,
         uint256 sourceChainId
-    ) internal returns (bytes32 leaf) {
+    ) internal {
         if (nullifier == bytes32(0)) revert ZeroNullifier();
 
         uint256 index = totalNullifiers;
 
-        nullifiers[nullifier] = NullifierData({
-            timestamp: uint64(block.timestamp),
-            blockNumber: uint64(block.number),
-            sourceChainId: sourceChainId.toUint64(),
-            registrar: msg.sender,
-            commitment: commitment,
-            index: index
-        });
+        // Scoped block: struct storage + tree insert (frees struct locals before emit)
+        {
+            nullifiers[nullifier] = NullifierData({
+                timestamp: uint64(block.timestamp),
+                blockNumber: uint64(block.number),
+                sourceChainId: uint64(sourceChainId),
+                registrar: msg.sender,
+                commitment: commitment,
+                index: index
+            });
 
-        isNullifierUsed[nullifier] = true;
+            isNullifierUsed[nullifier] = true;
+            _insertIntoTree(nullifier);
+        }
 
         unchecked {
             ++totalNullifiers;
@@ -354,22 +307,8 @@ contract NullifierRegistryV3 is
             commitment,
             index,
             msg.sender,
-            sourceChainId.toUint64()
+            uint64(sourceChainId)
         );
-
-        return nullifier;
-    }
-
-    /// @dev Legacy helper for single cross-chain nullifier registration.
-    ///      Registers state AND inserts into tree.
-    function _registerCrossChainNullifier(
-        bytes32 nullifier,
-        bytes32 commitment,
-        uint256 sourceChainId
-    ) internal {
-        uint256 idx = totalNullifiers;
-        _registerCrossChainNullifierState(nullifier, commitment, sourceChainId);
-        _insertIntoTree(nullifier, idx);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -381,37 +320,28 @@ contract NullifierRegistryV3 is
         bytes32 commitment,
         address registrar
     ) internal returns (uint256 index) {
-        // Capture index before state registration (which increments totalNullifiers)
-        index = totalNullifiers;
-        _registerNullifierState(nullifier, commitment, registrar);
-        // Single-nullifier path: insert directly into tree at the pre-increment index
-        _insertIntoTree(nullifier, index);
-    }
-
-    /// @dev Registers nullifier state (metadata, existence flag, counters, events)
-    ///      without inserting into the Merkle tree. Used by batch path.
-    /// @return leaf The nullifier hash (used as leaf in Merkle tree)
-    function _registerNullifierState(
-        bytes32 nullifier,
-        bytes32 commitment,
-        address registrar
-    ) internal returns (bytes32) {
         if (nullifier == bytes32(0)) revert ZeroNullifier();
         if (isNullifierUsed[nullifier])
             revert NullifierAlreadyExists(nullifier);
 
-        uint256 index = totalNullifiers;
+        index = totalNullifiers;
 
-        nullifiers[nullifier] = NullifierData({
-            timestamp: uint64(block.timestamp),
-            blockNumber: uint64(block.number),
-            sourceChainId: CHAIN_ID.toUint64(),
-            registrar: registrar,
-            commitment: commitment,
-            index: index
-        });
+        // Scoped block: struct storage + tree insert (frees struct locals before emit)
+        {
+            nullifiers[nullifier] = NullifierData({
+                timestamp: uint64(block.timestamp),
+                blockNumber: uint64(block.number),
+                sourceChainId: uint64(CHAIN_ID),
+                registrar: registrar,
+                commitment: commitment,
+                index: index
+            });
 
-        isNullifierUsed[nullifier] = true;
+            isNullifierUsed[nullifier] = true;
+
+            // Insert into merkle tree and update root
+            _insertIntoTree(nullifier);
+        }
 
         unchecked {
             ++totalNullifiers;
@@ -423,18 +353,15 @@ contract NullifierRegistryV3 is
             commitment,
             index,
             registrar,
-            CHAIN_ID.toUint64()
+            uint64(CHAIN_ID)
         );
-
-        return nullifier;
     }
 
     /// @notice Inserts a leaf into the incremental merkle tree
     /// @param leaf The leaf to insert
-    /// @param treeIndex The position index in the tree for this leaf
-    function _insertIntoTree(bytes32 leaf, uint256 treeIndex) internal {
+    function _insertIntoTree(bytes32 leaf) internal {
         bytes32 oldRoot = merkleRoot;
-        uint256 index = treeIndex;
+        uint256 index = totalNullifiers;
         bytes32 currentHash = leaf;
 
         for (uint256 i = 0; i < TREE_DEPTH; ) {
@@ -458,70 +385,20 @@ contract NullifierRegistryV3 is
         emit MerkleRootUpdated(oldRoot, currentHash, totalNullifiers);
     }
 
-    /// @notice Batch inserts multiple leaves into the incremental Merkle tree
-    /// @dev Gas optimization: inserts all leaves sequentially but only writes the final
-    ///      Merkle root and history entry once, saving ~20k gas per additional leaf.
-    ///      Each leaf is inserted at its correct index position.
-    /// @param leaves Array of leaf hashes to insert
-    /// @param startIndex The tree index of the first leaf (totalNullifiers BEFORE the batch registered state)
-    function _batchInsertIntoTree(
-        bytes32[] memory leaves,
-        uint256 startIndex
-    ) internal {
-        bytes32 oldRoot = merkleRoot;
-        uint256 len = leaves.length;
-        bytes32 currentHash;
-
-        for (uint256 leafIdx = 0; leafIdx < len; ) {
-            uint256 index = startIndex + leafIdx;
-            currentHash = leaves[leafIdx];
-
-            for (uint256 i = 0; i < TREE_DEPTH; ) {
-                if (index & 1 == 0) {
-                    branches[i] = currentHash;
-                    currentHash = _hashPair(currentHash, zeros[i]);
-                } else {
-                    currentHash = _hashPair(branches[i], currentHash);
-                }
-                index >>= 1;
-                unchecked {
-                    ++i;
-                }
-            }
-
-            unchecked {
-                ++leafIdx;
-            }
-        }
-
-        // Write root and history only once for entire batch
-        merkleRoot = currentHash;
-        _addRootToHistory(currentHash);
-
-        emit MerkleRootUpdated(oldRoot, currentHash, startIndex + len);
-    }
-
     /// @notice Adds a root to the history ring buffer
     /// @param root The root to add
     function _addRootToHistory(bytes32 root) internal {
-        // SECURITY FIX M-2: Use reference counting to handle duplicate roots correctly
-        // Decrement ref count for evicted root
+        // First, invalidate the old root at the current index before overwriting
         bytes32 evictedRoot = rootHistory[rootHistoryIndex];
-        if (evictedRoot != bytes32(0)) {
-            uint256 refCount = rootRefCount[evictedRoot];
-            if (refCount <= 1) {
-                // Last reference — invalidate the root
-                historicalRoots[evictedRoot] = false;
-                delete rootRefCount[evictedRoot];
-            } else {
-                rootRefCount[evictedRoot] = refCount - 1;
-            }
+        if (evictedRoot != bytes32(0) && evictedRoot != root) {
+            // Only invalidate if this root doesn't appear elsewhere in the buffer
+            // For gas efficiency, we just mark it false; duplicate roots are unlikely
+            historicalRoots[evictedRoot] = false;
         }
 
-        // Write new root at current position and increment its ref count
+        // Write new root at current position
         rootHistory[rootHistoryIndex] = root;
         historicalRoots[root] = true;
-        rootRefCount[root]++;
 
         unchecked {
             rootHistoryIndex = (rootHistoryIndex + 1) % ROOT_HISTORY_SIZE;
@@ -552,11 +429,6 @@ contract NullifierRegistryV3 is
     /// @notice Checks if a nullifier exists
     /// @param nullifier The nullifier to check
     /// @return exists True if the nullifier exists
-    /**
-     * @notice Exists
-     * @param nullifier The nullifier hash
-     * @return The result value
-     */
     function exists(bytes32 nullifier) external view returns (bool) {
         return isNullifierUsed[nullifier];
     }
@@ -564,16 +436,10 @@ contract NullifierRegistryV3 is
     /// @notice Batch checks if nullifiers exist
     /// @param _nullifiers Array of nullifiers to check
     /// @return results Array of existence results
-    /**
-     * @notice Batchs exists
-     * @param _nullifiers The _nullifiers
-     * @return results The results
-     */
     function batchExists(
         bytes32[] calldata _nullifiers
     ) external view returns (bool[] memory results) {
         uint256 len = _nullifiers.length;
-        if (len > MAX_BATCH_SIZE) revert BatchTooLarge(len, MAX_BATCH_SIZE);
         results = new bool[](len);
 
         for (uint256 i = 0; i < len; ) {
@@ -587,11 +453,6 @@ contract NullifierRegistryV3 is
     /// @notice Gets nullifier data
     /// @param nullifier The nullifier to query
     /// @return data The nullifier metadata
-    /**
-     * @notice Returns the nullifier data
-     * @param nullifier The nullifier hash
-     * @return data The data
-     */
     function getNullifierData(
         bytes32 nullifier
     ) external view returns (NullifierData memory data) {
@@ -602,11 +463,6 @@ contract NullifierRegistryV3 is
     /// @notice Checks if a merkle root is valid (current or historical)
     /// @param root The root to check
     /// @return valid True if the root is valid
-    /**
-     * @notice Checks if valid root
-     * @param root The Merkle root
-     * @return valid The valid
-     */
     function isValidRoot(bytes32 root) external view returns (bool valid) {
         return root == merkleRoot || historicalRoots[root];
     }
@@ -617,14 +473,6 @@ contract NullifierRegistryV3 is
     /// @param siblings The merkle proof siblings
     /// @param root The merkle root to verify against
     /// @return valid True if the proof is valid
-    /**
-     * @notice Verifys merkle proof
-     * @param nullifier The nullifier hash
-     * @param index The index in the collection
-     * @param siblings The siblings
-     * @param root The Merkle root
-     * @return valid The valid
-     */
     function verifyMerkleProof(
         bytes32 nullifier,
         uint256 index,
@@ -659,12 +507,6 @@ contract NullifierRegistryV3 is
     /// @return _totalNullifiers Total registered nullifiers
     /// @return _merkleRoot Current merkle root
     /// @return _rootHistorySize Number of valid historical roots
-    /**
-     * @notice Returns the tree stats
-     * @return _totalNullifiers The _total nullifiers
-     * @return _merkleRoot The _merkle root
-     * @return _rootHistorySize The _root history size
-     */
     function getTreeStats()
         external
         view
@@ -680,11 +522,6 @@ contract NullifierRegistryV3 is
     /// @notice Gets nullifier count for a specific chain
     /// @param chainId The chain ID to query
     /// @return count The number of nullifiers from that chain
-    /**
-     * @notice Returns the nullifier count by chain
-     * @param chainId The chain identifier
-     * @return count The count
-     */
     function getNullifierCountByChain(
         uint256 chainId
     ) external view returns (uint256 count) {
@@ -697,10 +534,6 @@ contract NullifierRegistryV3 is
 
     /// @notice Adds a registrar
     /// @param registrar The address to add
-    /**
-     * @notice Adds registrar
-     * @param registrar The registrar
-     */
     function addRegistrar(
         address registrar
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -710,10 +543,6 @@ contract NullifierRegistryV3 is
 
     /// @notice Removes a registrar
     /// @param registrar The address to remove
-    /**
-     * @notice Removes registrar
-     * @param registrar The registrar
-     */
     function removeRegistrar(
         address registrar
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -721,47 +550,12 @@ contract NullifierRegistryV3 is
         emit RegistrarRemoved(registrar);
     }
 
-    /// @notice Registers a cross-chain domain for nullifier sync
-    /// @param domain The domain identifier (typically bytes32 of chain ID)
-    /**
-     * @notice Registers domain
-     * @param domain The domain identifier
-     */
-    function registerDomain(
-        bytes32 domain
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (domain == bytes32(0)) revert ZeroDomain();
-        if (registeredDomains[domain]) revert DomainAlreadyRegistered(domain);
-        registeredDomains[domain] = true;
-        emit DomainRegistered(domain);
-    }
-
-    /// @notice Removes a registered cross-chain domain
-    /// @param domain The domain identifier to remove
-    /**
-     * @notice Removes domain
-     * @param domain The domain identifier
-     */
-    function removeDomain(
-        bytes32 domain
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (!registeredDomains[domain]) revert DomainNotRegistered(domain);
-        registeredDomains[domain] = false;
-        emit DomainRemoved(domain);
-    }
-
     /// @notice Pauses the contract
-    /**
-     * @notice Pauses the operation
-     */
     function pause() external onlyRole(EMERGENCY_ROLE) {
         _pause();
     }
 
     /// @notice Unpauses the contract
-    /**
-     * @notice Unpauses the operation
-     */
     function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }

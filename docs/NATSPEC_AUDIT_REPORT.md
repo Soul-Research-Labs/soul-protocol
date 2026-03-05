@@ -120,9 +120,9 @@
 
 ---
 
-## 9. `contracts/crosschain/HyperlaneAdapter.sol`
+## 9. `contracts/crosschain/HyperlaneAdapter.sol` (🔮 Planned — not yet implemented)
 
-**All public/external functions have complete NatSpec. No findings.**
+**Adapter not yet implemented. NatSpec audit deferred.**
 
 ---
 
@@ -159,9 +159,9 @@
 
 ---
 
-## 12. `contracts/crosschain/LayerZeroAdapter.sol`
+## 12. `contracts/crosschain/LayerZeroAdapter.sol` (🔮 Planned — not yet implemented)
 
-**All public/external functions have complete NatSpec. No findings.**
+**Adapter not yet implemented. NatSpec audit deferred.**
 
 ---
 
@@ -258,9 +258,7 @@ The following files have **complete NatSpec coverage** on all public/external fu
 
 1. `contracts/crosschain/CrossL2Atomicity.sol`
 2. `contracts/crosschain/DirectL2Messenger.sol`
-3. `contracts/crosschain/HyperlaneAdapter.sol`
-4. `contracts/crosschain/LayerZeroAdapter.sol`
-5. `contracts/crosschain/ZaseonL2Messenger.sol`
+3. `contracts/crosschain/ZaseonL2Messenger.sol`
 
 ---
 

@@ -9,7 +9,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 
 /**
  * @title CrossChainBridgeIntegration
- * @author ZASEON
+ * @author Soul Protocol
  * @notice Unified cross-chain bridge integration connecting all L2 and bridge adapters
  * @dev Single entry point for cross-chain operations across 40+ supported chains
  *
@@ -57,12 +57,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
  * │                                                                                  │
  * └─────────────────────────────────────────────────────────────────────────────────┘
  *
- * @custom:security-contact security@zaseonprotocol.io
- */
-/**
- * @title CrossChainBridgeIntegration
- * @author ZASEON Team
- * @notice Cross Chain Bridge Integration contract
+ * @custom:security-contact security@soulprotocol.io
  */
 contract CrossChainBridgeIntegration is
     ReentrancyGuard,
@@ -115,7 +110,7 @@ contract CrossChainBridgeIntegration is
         uint256 amount
     );
 
-    event RelayAdapterRegistered(
+    event BridgeAdapterRegistered(
         uint256 indexed chainId,
         BridgeProtocol indexed protocol,
         address adapter
@@ -236,7 +231,7 @@ contract CrossChainBridgeIntegration is
     bytes32 public constant ROUTER_ROLE = keccak256("ROUTER_ROLE");
 
     bytes32 public constant BRIDGE_DOMAIN =
-        keccak256("Zaseon_BRIDGE_INTEGRATION_V1");
+        keccak256("Soul_BRIDGE_INTEGRATION_V1");
 
     /// @notice Maximum protocols per route
     uint256 public constant MAX_PROTOCOLS_PER_ROUTE = 5;
@@ -263,7 +258,7 @@ contract CrossChainBridgeIntegration is
 
     /// @notice Bridge adapters per chain per protocol
     mapping(uint256 => mapping(BridgeProtocol => BridgeAdapter))
-        public relayAdapters;
+        public bridgeAdapters;
 
     /// @notice Routes between chains
     mapping(bytes32 => Route) public routes;
@@ -321,11 +316,6 @@ contract CrossChainBridgeIntegration is
 
     /**
      * @notice Configure a supported chain
-          * @param chainId The chain identifier
-     * @param chainType The chain type
-     * @param minConfirmations The minConfirmations bound
-     * @param maxTransfer The maxTransfer bound
-     * @param dailyLimit The daily limit
      */
     function configureChain(
         uint256 chainId,
@@ -356,13 +346,8 @@ contract CrossChainBridgeIntegration is
 
     /**
      * @notice Register a bridge adapter
-          * @param chainId The chain identifier
-     * @param protocol The protocol
-     * @param adapter The bridge adapter address
-     * @param baseFee The base fee
-     * @param percentageFee The percentage fee
      */
-    function registerRelayAdapter(
+    function registerBridgeAdapter(
         uint256 chainId,
         BridgeProtocol protocol,
         address adapter,
@@ -372,7 +357,7 @@ contract CrossChainBridgeIntegration is
         if (adapter == address(0)) revert ZeroAddress();
         if (!chainConfigs[chainId].isSupported) revert ChainNotSupported();
 
-        relayAdapters[chainId][protocol] = BridgeAdapter({
+        bridgeAdapters[chainId][protocol] = BridgeAdapter({
             adapter: adapter,
             protocol: protocol,
             isActive: true,
@@ -382,15 +367,11 @@ contract CrossChainBridgeIntegration is
             reliability: 10000 // Start at 100%
         });
 
-        emit RelayAdapterRegistered(chainId, protocol, adapter);
+        emit BridgeAdapterRegistered(chainId, protocol, adapter);
     }
 
     /**
      * @notice Configure route between chains
-          * @param sourceChain The source chain
-     * @param destChain The destination chain ID
-     * @param protocols The protocols
-     * @param preferredProtocol The preferred protocol
      */
     function configureRoute(
         uint256 sourceChain,
@@ -427,26 +408,7 @@ contract CrossChainBridgeIntegration is
      * @param protocol Bridge protocol to use (ignored if auto-router enabled)
      * @param extraData Protocol-specific data
      */
-    /// @notice Parameters for bridge transfer (reduces stack depth)
-    struct BridgeTransferParams {
-        uint256 destChain;
-        bytes32 recipient;
-        address token;
-        uint256 amount;
-        BridgeProtocol protocol;
-    }
-
-        /**
-     * @notice Bridges transfer
-     * @param destChain The destination chain ID
-     * @param recipient The recipient address
-     * @param token The token address
-     * @param amount The amount to process
-     * @param protocol The protocol
-     * @param extraData The extra data
-     * @return transferId The transfer id
-     */
-function bridgeTransfer(
+    function bridgeTransfer(
         uint256 destChain,
         bytes32 recipient,
         address token,
@@ -457,151 +419,108 @@ function bridgeTransfer(
         if (recipient == bytes32(0)) revert InvalidRecipient();
         if (amount == 0) revert ZeroAmount();
 
-        BridgeTransferParams memory p = BridgeTransferParams({
-            destChain: destChain,
-            recipient: recipient,
-            token: token,
-            amount: amount,
-            protocol: protocol
-        });
-
-        transferId = _executeBridgeTransfer(p, extraData);
-    }
-
-    function _executeBridgeTransfer(
-        BridgeTransferParams memory p,
-        bytes calldata extraData
-    ) internal returns (bytes32 transferId) {
-        ChainConfig storage destConfig = chainConfigs[p.destChain];
+        ChainConfig storage destConfig = chainConfigs[destChain];
         if (!destConfig.isSupported) revert ChainNotSupported();
-        if (p.amount > destConfig.maxTransfer) revert ExceedsMaxTransfer();
+        if (amount > destConfig.maxTransfer) revert ExceedsMaxTransfer();
 
         // Reset daily limit if needed
         _resetDailyLimitIfNeeded(destConfig);
-        if (destConfig.dailyUsed + p.amount > destConfig.dailyLimit) {
+        if (destConfig.dailyUsed + amount > destConfig.dailyLimit) {
             revert ExceedsDailyLimit();
         }
 
         // Select protocol
         BridgeProtocol selectedProtocol = autoRouterEnabled
-            ? _selectOptimalProtocol(THIS_CHAIN_ID, p.destChain, p.amount)
-            : p.protocol;
+            ? _selectOptimalProtocol(THIS_CHAIN_ID, destChain, amount)
+            : protocol;
 
-        BridgeAdapter storage adapter = relayAdapters[p.destChain][
+        transferId = _executeBridgeTransfer(
+            destChain, recipient, token, amount, selectedProtocol, extraData
+        );
+
+        // Update daily usage
+        destConfig.dailyUsed += amount;
+    }
+
+    /**
+     * @dev Execute the core bridge transfer logic
+     */
+    function _executeBridgeTransfer(
+        uint256 destChain,
+        bytes32 recipient,
+        address token,
+        uint256 amount,
+        BridgeProtocol selectedProtocol,
+        bytes calldata extraData
+    ) internal returns (bytes32 transferId) {
+        BridgeAdapter storage adapter = bridgeAdapters[destChain][
             selectedProtocol
         ];
         if (!adapter.isActive) revert BridgeNotAvailable();
 
-        // Calculate and collect fees
-        uint256 totalFee;
-        {
-            uint256 bridgeFeeAmt = adapter.baseFee +
-                (p.amount * adapter.percentageFee) /
-                10000;
-            uint256 protocolFeeAmt = (p.amount * protocolFeeBps) / 10000;
-            totalFee = bridgeFeeAmt + protocolFeeAmt;
+        // Calculate fees
+        (uint256 totalFee, uint256 protocolFee) = _calculateBridgeFees(adapter, amount);
 
-            if (p.token == NATIVE_TOKEN) {
-                if (msg.value < p.amount + totalFee) revert InsufficientFee();
-            } else {
-                if (msg.value < totalFee) revert InsufficientFee();
-                IERC20(p.token).safeTransferFrom(
-                    msg.sender,
-                    address(this),
-                    p.amount
-                );
-            }
-
-            if (protocolFeeAmt > 0) {
-                accruedProtocolFees += protocolFeeAmt;
-            }
+        if (token == NATIVE_TOKEN) {
+            if (msg.value < amount + totalFee) revert InsufficientFee();
+        } else {
+            if (msg.value < totalFee) revert InsufficientFee();
+            IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
         }
 
-        transferId = _createTransferRecord(p, selectedProtocol, extraData);
+        // Generate transfer ID (include nonce to prevent collisions)
+        transferId = _generateTransferId(destChain, recipient, token, amount);
 
-        // Update daily usage
-        destConfig.dailyUsed += p.amount;
-
-        // Execute bridge call
-        _executeBridgeCall(
-            adapter.adapter,
-            TransferRequest({
+        // Create and store transfer record
+        {
+            TransferRequest memory request = TransferRequest({
                 sourceChain: THIS_CHAIN_ID,
-                destChain: p.destChain,
+                destChain: destChain,
                 sender: msg.sender,
-                recipient: p.recipient,
-                token: p.token,
-                amount: p.amount,
+                recipient: recipient,
+                token: token,
+                amount: amount,
                 protocol: selectedProtocol,
                 extraData: extraData
-            }),
-            totalFee
-        );
+            });
+
+            transfers[transferId] = TransferRecord({
+                transferId: transferId,
+                request: request,
+                status: TransferStatus.PENDING,
+                initiatedAt: block.timestamp,
+                completedAt: 0,
+                sourceProof: bytes32(0),
+                destProof: bytes32(0)
+            });
+
+            // Execute bridge call
+            _executeBridgeCall(adapter.adapter, request, totalFee);
+        }
+
+        userTransfers[msg.sender].push(transferId);
+
+        // Accrue protocol fee (non-blocking to prevent griefing)
+        if (protocolFee > 0) {
+            accruedProtocolFees += protocolFee;
+        }
 
         emit BridgeTransferInitiated(
             transferId,
             THIS_CHAIN_ID,
-            p.destChain,
+            destChain,
             msg.sender,
-            p.recipient,
-            p.token,
-            p.amount,
+            recipient,
+            token,
+            amount,
             selectedProtocol
         );
     }
 
-    function _createTransferRecord(
-        BridgeTransferParams memory p,
-        BridgeProtocol selectedProtocol,
-        bytes calldata extraData
-    ) private returns (bytes32 transferId) {
-        transferId = keccak256(
-            abi.encodePacked(
-                BRIDGE_DOMAIN,
-                THIS_CHAIN_ID,
-                p.destChain,
-                msg.sender,
-                p.recipient,
-                p.token,
-                p.amount,
-                block.timestamp,
-                transferNonce++
-            )
-        );
-
-        TransferRequest memory request = TransferRequest({
-            sourceChain: THIS_CHAIN_ID,
-            destChain: p.destChain,
-            sender: msg.sender,
-            recipient: p.recipient,
-            token: p.token,
-            amount: p.amount,
-            protocol: selectedProtocol,
-            extraData: extraData
-        });
-
-        transfers[transferId] = TransferRecord({
-            transferId: transferId,
-            request: request,
-            status: TransferStatus.PENDING,
-            initiatedAt: block.timestamp,
-            completedAt: 0,
-            sourceProof: bytes32(0),
-            destProof: bytes32(0)
-        });
-
-        userTransfers[msg.sender].push(transferId);
-    }
-
     /**
      * @notice Complete transfer (called by relayer on destination)
-          * @param transferId The transferId identifier
-     * @param recipient The recipient address
-     * @param token The token address
-     * @param amount The amount to process
-     * @param proof The ZK proof data
      */
-    function completeRelay(
+    function completeTransfer(
         bytes32 transferId,
         bytes32 recipient,
         address token,
@@ -662,7 +581,7 @@ function bridgeTransfer(
 
         for (uint256 i = 0; i < route.availableProtocols.length; i++) {
             BridgeProtocol protocol = route.availableProtocols[i];
-            BridgeAdapter storage adapter = relayAdapters[destChain][protocol];
+            BridgeAdapter storage adapter = bridgeAdapters[destChain][protocol];
 
             if (!adapter.isActive) continue;
 
@@ -690,12 +609,6 @@ function bridgeTransfer(
 
     /**
      * @notice Get quote for transfer
-          * @param destChain The destination chain ID
-     * @param amount The amount to process
-     * @param protocol The protocol
-     * @return bridgeFee The bridge fee
-     * @return protocolFee The protocol fee
-     * @return estimatedLatency The estimated latency
      */
     function getQuote(
         uint256 destChain,
@@ -715,7 +628,7 @@ function bridgeTransfer(
             ? _selectOptimalProtocol(THIS_CHAIN_ID, destChain, amount)
             : protocol;
 
-        BridgeAdapter storage adapter = relayAdapters[destChain][
+        BridgeAdapter storage adapter = bridgeAdapters[destChain][
             selectedProtocol
         ];
         if (!adapter.isActive) revert BridgeNotAvailable();
@@ -742,6 +655,44 @@ function bridgeTransfer(
             config.dailyUsed = 0;
             config.lastResetDay = currentDay;
         }
+    }
+
+    /**
+     * @dev Calculate bridge and protocol fees for a transfer
+     */
+    function _calculateBridgeFees(
+        BridgeAdapter storage adapter,
+        uint256 amount
+    ) internal view returns (uint256 totalFee, uint256 protocolFee) {
+        uint256 bridgeFee = adapter.baseFee +
+            (amount * adapter.percentageFee) /
+            10000;
+        protocolFee = (amount * protocolFeeBps) / 10000;
+        totalFee = bridgeFee + protocolFee;
+    }
+
+    /**
+     * @dev Generate a unique transfer ID
+     */
+    function _generateTransferId(
+        uint256 destChain,
+        bytes32 recipient,
+        address token,
+        uint256 amount
+    ) internal returns (bytes32) {
+        return keccak256(
+            abi.encodePacked(
+                BRIDGE_DOMAIN,
+                THIS_CHAIN_ID,
+                destChain,
+                msg.sender,
+                recipient,
+                token,
+                amount,
+                block.timestamp,
+                transferNonce++
+            )
+        );
     }
 
     function _executeBridgeCall(
@@ -776,20 +727,11 @@ function bridgeTransfer(
         // Require ECDSA signature from a RELAYER_ROLE holder
         if (proof.length < 65) revert("Transfer proof too short");
 
-        // SECURITY FIX: Include block.chainid to prevent cross-chain signature replay.
-        // Without chain ID, a valid signature on chain A can be replayed on chain B
-        // where the same contract is deployed with the same role setup.
         bytes32 messageHash = keccak256(
             abi.encodePacked(
                 "\x19Ethereum Signed Message:\n32",
                 keccak256(
-                    abi.encodePacked(
-                        transferId,
-                        recipient,
-                        token,
-                        amount,
-                        block.chainid
-                    )
+                    abi.encodePacked(transferId, recipient, token, amount)
                 )
             )
         );
@@ -820,10 +762,7 @@ function bridgeTransfer(
     }
 
     /// @notice Claim accrued protocol fees
-        /**
-     * @notice Claims protocol fees
-     */
-function claimProtocolFees() external nonReentrant {
+    function claimProtocolFees() external nonReentrant {
         if (msg.sender != feeRecipient) revert Unauthorized();
         uint256 amount = accruedProtocolFees;
         if (amount == 0) revert ZeroAmount();
@@ -836,79 +775,43 @@ function claimProtocolFees() external nonReentrant {
                             VIEW FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-        /**
-     * @notice Returns the chain config
-     * @param chainId The chain identifier
-     * @return The result value
-     */
-function getChainConfig(
+    function getChainConfig(
         uint256 chainId
     ) external view returns (ChainConfig memory) {
         return chainConfigs[chainId];
     }
 
-        /**
-     * @notice Returns the relay adapter
-     * @param chainId The chain identifier
-     * @param protocol The protocol
-     * @return The result value
-     */
-function getRelayAdapter(
+    function getBridgeAdapter(
         uint256 chainId,
         BridgeProtocol protocol
     ) external view returns (BridgeAdapter memory) {
-        return relayAdapters[chainId][protocol];
+        return bridgeAdapters[chainId][protocol];
     }
 
-        /**
-     * @notice Returns the route
-     * @param source The source
-     * @param dest The dest
-     * @return The result value
-     */
-function getRoute(
+    function getRoute(
         uint256 source,
         uint256 dest
     ) external view returns (Route memory) {
         return routes[_getRouteKey(source, dest)];
     }
 
-        /**
-     * @notice Returns the relay record
-     * @param transferId The transferId identifier
-     * @return The result value
-     */
-function getRelayRecord(
+    function getTransfer(
         bytes32 transferId
     ) external view returns (TransferRecord memory) {
         return transfers[transferId];
     }
 
-        /**
-     * @notice Returns the user transfers
-     * @param user The user
-     * @return The result value
-     */
-function getUserTransfers(
+    function getUserTransfers(
         address user
     ) external view returns (bytes32[] memory) {
         return userTransfers[user];
     }
 
-        /**
-     * @notice Returns the supported chains
-     * @return The result value
-     */
-function getSupportedChains() external view returns (uint256[] memory) {
+    function getSupportedChains() external view returns (uint256[] memory) {
         return supportedChains;
     }
 
-        /**
-     * @notice Checks if chain supported
-     * @param chainId The chain identifier
-     * @return The result value
-     */
-function isChainSupported(uint256 chainId) external view returns (bool) {
+    function isChainSupported(uint256 chainId) external view returns (bool) {
         return chainConfigs[chainId].isSupported;
     }
 
@@ -916,84 +819,52 @@ function isChainSupported(uint256 chainId) external view returns (bool) {
                          ADMIN FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-        /**
-     * @notice Sets the auto router
-     * @param enabled Whether the feature is enabled
-     */
-function setAutoRouter(bool enabled) external onlyRole(OPERATOR_ROLE) {
+    function setAutoRouter(bool enabled) external onlyRole(OPERATOR_ROLE) {
         autoRouterEnabled = enabled;
     }
 
-        /**
-     * @notice Sets the fee recipient
-     * @param _feeRecipient The _fee recipient
-     */
-function setFeeRecipient(
+    function setFeeRecipient(
         address _feeRecipient
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_feeRecipient == address(0)) revert ZeroAddress();
         feeRecipient = _feeRecipient;
     }
 
-        /**
-     * @notice Sets the protocol fee
-     * @param _protocolFeeBps The _protocol fee bps
-     */
-function setProtocolFee(
+    function setProtocolFee(
         uint256 _protocolFeeBps
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_protocolFeeBps > 500) revert InvalidRoute();
         protocolFeeBps = _protocolFeeBps;
     }
 
-        /**
-     * @notice Updates adapter metrics
-     * @param chainId The chain identifier
-     * @param protocol The protocol
-     * @param avgLatency The avg latency
-     * @param reliability The reliability
-     */
-function updateAdapterMetrics(
+    function updateAdapterMetrics(
         uint256 chainId,
         BridgeProtocol protocol,
         uint256 avgLatency,
         uint256 reliability
     ) external onlyRole(OPERATOR_ROLE) {
-        BridgeAdapter storage adapter = relayAdapters[chainId][protocol];
+        BridgeAdapter storage adapter = bridgeAdapters[chainId][protocol];
         adapter.avgLatency = avgLatency;
         adapter.reliability = reliability;
     }
 
-        /**
-     * @notice Deactivate adapter
-     * @param chainId The chain identifier
-     * @param protocol The protocol
-     */
-function deactivateAdapter(
+    function deactivateAdapter(
         uint256 chainId,
         BridgeProtocol protocol
     ) external onlyRole(GUARDIAN_ROLE) {
-        relayAdapters[chainId][protocol].isActive = false;
+        bridgeAdapters[chainId][protocol].isActive = false;
     }
 
-        /**
-     * @notice Pauses the operation
-     */
-function pause() external onlyRole(GUARDIAN_ROLE) {
+    function pause() external onlyRole(GUARDIAN_ROLE) {
         _pause();
     }
 
-        /**
-     * @notice Unpauses the operation
-     */
-function unpause() external onlyRole(OPERATOR_ROLE) {
+    function unpause() external onlyRole(OPERATOR_ROLE) {
         _unpause();
     }
 
     /**
      * @notice Emergency withdraw
-          * @param token The token address
-     * @param to The destination address
      */
     function emergencyWithdraw(
         address token,

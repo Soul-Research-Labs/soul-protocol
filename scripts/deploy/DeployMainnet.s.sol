@@ -11,6 +11,10 @@ import {RelayRateLimiter} from "../../contracts/security/RelayRateLimiter.sol";
 import {EnhancedKillSwitch} from "../../contracts/security/EnhancedKillSwitch.sol";
 import {ZKFraudProof} from "../../contracts/security/ZKFraudProof.sol";
 import {RelayProofValidator} from "../../contracts/security/RelayProofValidator.sol";
+import {ProtocolEmergencyCoordinator} from "../../contracts/security/ProtocolEmergencyCoordinator.sol";
+import {CrossChainEmergencyRelay} from "../../contracts/crosschain/CrossChainEmergencyRelay.sol";
+import {EmergencyRecovery} from "../../contracts/security/EmergencyRecovery.sol";
+import {ProtocolHealthAggregator} from "../../contracts/security/ProtocolHealthAggregator.sol";
 
 // ── Phase 2: Verifiers ──
 import {VerifierRegistryV2} from "../../contracts/verifiers/VerifierRegistryV2.sol";
@@ -99,6 +103,10 @@ contract DeployMainnet is Script {
     EnhancedKillSwitch public killSwitch;
     ZKFraudProof public zkFraudProof;
     RelayProofValidator public relayProofValidator;
+    ProtocolEmergencyCoordinator public emergencyCoordinator;
+    CrossChainEmergencyRelay public emergencyRelay;
+    EmergencyRecovery public emergencyRecovery;
+    ProtocolHealthAggregator public healthAggregator;
 
     // Phase 2: Verifiers
     VerifierRegistryV2 public verifierRegistry;
@@ -181,6 +189,17 @@ contract DeployMainnet is Script {
 
         relayProofValidator = new RelayProofValidator();
         console.log("RelayProofValidator:", address(relayProofValidator));
+
+        // Emergency subsystems
+        emergencyRecovery = new EmergencyRecovery();
+        console.log("EmergencyRecovery:", address(emergencyRecovery));
+
+        healthAggregator = new ProtocolHealthAggregator(
+            admin,
+            8000, // healthy threshold (80%)
+            4000 // critical threshold (40%)
+        );
+        console.log("ProtocolHealthAggregator:", address(healthAggregator));
 
         // ======== PHASE 2: VERIFIER INFRASTRUCTURE ========
         console.log("\n--- Phase 2: Verifiers ---");
@@ -327,9 +346,37 @@ contract DeployMainnet is Script {
         hub.setRelayCircuitBreaker(address(circuitBreaker));
         console.log("RelayCircuitBreaker wired to Hub");
 
-        // Lock PCC verification to production mode (one-way, irreversible)
-        proofCarryingContainer.lockVerificationMode();
-        console.log("PCC verification mode locked (production)");
+        // Deploy ProtocolEmergencyCoordinator (needs Hub, killSwitch, circuitBreaker, emergencyRecovery, healthAggregator)
+        emergencyCoordinator = new ProtocolEmergencyCoordinator(
+            address(healthAggregator),
+            address(emergencyRecovery),
+            address(killSwitch),
+            address(circuitBreaker),
+            address(hub),
+            admin
+        );
+        console.log(
+            "ProtocolEmergencyCoordinator:",
+            address(emergencyCoordinator)
+        );
+
+        // Deploy CrossChainEmergencyRelay
+        emergencyRelay = new CrossChainEmergencyRelay(admin);
+        console.log("CrossChainEmergencyRelay:", address(emergencyRelay));
+
+        // Grant BROADCASTER_ROLE to the coordinator so it can propagate emergencies
+        emergencyRelay.grantRole(
+            emergencyRelay.BROADCASTER_ROLE(),
+            address(emergencyCoordinator)
+        );
+        console.log("Emergency coordinator granted BROADCASTER_ROLE on relay");
+
+        // Request PCC verification lock (48h grace period before execution)
+        // The multisig must call executeLockVerificationMode() after 48 hours.
+        proofCarryingContainer.requestLockVerificationMode();
+        console.log(
+            "PCC verification lock requested (execute after 48h grace period)"
+        );
 
         // ======== PHASE 7: TRANSFER ROLES TO MULTISIG ========
         console.log("\n--- Phase 7: Role Transfer ---");
@@ -412,6 +459,17 @@ contract DeployMainnet is Script {
             policyBoundProofs.DEFAULT_ADMIN_ROLE(),
             admin
         );
+
+        // ProtocolEmergencyCoordinator — admin already set via constructor
+        // CrossChainEmergencyRelay — admin already set via constructor
+        // EmergencyRecovery — transfer to multisig
+        emergencyRecovery.grantRole(
+            emergencyRecovery.DEFAULT_ADMIN_ROLE(),
+            admin
+        );
+        emergencyRecovery.grantRole(emergencyRecovery.GUARDIAN_ROLE(), admin);
+        emergencyRecovery.grantRole(emergencyRecovery.RECOVERY_ROLE(), admin);
+        emergencyRecovery.grantRole(emergencyRecovery.OPERATOR_ROLE(), admin);
 
         // ======== PHASE 8: RENOUNCE DEPLOYER ROLES ========
         console.log("\n--- Phase 8: Renounce Deployer ---");
@@ -515,7 +573,49 @@ contract DeployMainnet is Script {
             deployer
         );
 
+        // EmergencyRecovery
+        emergencyRecovery.renounceRole(
+            emergencyRecovery.OPERATOR_ROLE(),
+            deployer
+        );
+        emergencyRecovery.renounceRole(
+            emergencyRecovery.RECOVERY_ROLE(),
+            deployer
+        );
+        emergencyRecovery.renounceRole(
+            emergencyRecovery.GUARDIAN_ROLE(),
+            deployer
+        );
+        emergencyRecovery.renounceRole(
+            emergencyRecovery.DEFAULT_ADMIN_ROLE(),
+            deployer
+        );
+
         vm.stopBroadcast();
+
+        // ========= POST-DEPLOY VALIDATION =========
+        require(address(hub) != address(0), "Hub not deployed");
+        require(
+            address(emergencyCoordinator) != address(0),
+            "EmergencyCoordinator not deployed"
+        );
+        require(
+            address(emergencyRelay) != address(0),
+            "EmergencyRelay not deployed"
+        );
+        require(
+            address(emergencyRecovery) != address(0),
+            "EmergencyRecovery not deployed"
+        );
+        require(
+            address(healthAggregator) != address(0),
+            "HealthAggregator not deployed"
+        );
+        require(address(killSwitch) != address(0), "KillSwitch not deployed");
+        require(
+            address(circuitBreaker) != address(0),
+            "CircuitBreaker not deployed"
+        );
 
         // ========= LOG =========
         _logDeployment();
@@ -531,6 +631,13 @@ contract DeployMainnet is Script {
         console.log("EnhancedKillSwitch:", address(killSwitch));
         console.log("ZKFraudProof:", address(zkFraudProof));
         console.log("RelayProofValidator:", address(relayProofValidator));
+        console.log("EmergencyRecovery:", address(emergencyRecovery));
+        console.log("ProtocolHealthAggregator:", address(healthAggregator));
+        console.log(
+            "ProtocolEmergencyCoordinator:",
+            address(emergencyCoordinator)
+        );
+        console.log("CrossChainEmergencyRelay:", address(emergencyRelay));
         console.log("\n-- Verifiers --");
         console.log("VerifierRegistryV2:", address(verifierRegistry));
         console.log("ZaseonUniversalVerifier:", address(universalVerifier));
@@ -564,7 +671,10 @@ contract DeployMainnet is Script {
         );
         console.log("  7. Run verify-deployment.ts");
         console.log(
-            "  7. CRITICAL: Run ConfirmRoleSeparation.s.sol from multisig"
+            "  8. CRITICAL: Run ConfirmRoleSeparation.s.sol from multisig"
+        );
+        console.log(
+            "  9. Execute PCC verification lock after 48h: executeLockVerificationMode()"
         );
     }
 }

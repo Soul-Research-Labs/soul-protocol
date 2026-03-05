@@ -394,31 +394,26 @@ contract UniversalShieldedPoolUpgradeable is
 
         _enforceCircuitBreaker();
 
-        bool valid = _verifyWithdrawalProof(wp);
-        if (!valid) revert WithdrawalProofFailed();
+        // Scoped: proof verification (frees `valid` after block)
+        {
+            bool valid = _verifyWithdrawalProof(wp);
+            if (!valid) revert WithdrawalProofFailed();
+        }
 
         nullifiers[wp.nullifier] = true;
-
-        uint256 netAmount = wp.amount - wp.relayerFee;
         asset.totalWithdrawn += wp.amount;
         unchecked {
             ++totalWithdrawals;
         }
 
-        if (asset.tokenAddress == address(0)) {
-            _safeTransferETH(wp.recipient, netAmount);
-            if (wp.relayerFee > 0 && wp.relayerAddress != address(0)) {
-                _safeTransferETH(wp.relayerAddress, wp.relayerFee);
-            }
-        } else {
-            IERC20(asset.tokenAddress).safeTransfer(wp.recipient, netAmount);
-            if (wp.relayerFee > 0 && wp.relayerAddress != address(0)) {
-                IERC20(asset.tokenAddress).safeTransfer(
-                    wp.relayerAddress,
-                    wp.relayerFee
-                );
-            }
-        }
+        // Scoped: transfer execution (frees `netAmount` and transfer vars after block)
+        _executeWithdrawalTransfer(
+            asset.tokenAddress,
+            wp.recipient,
+            wp.relayerAddress,
+            wp.amount,
+            wp.relayerFee
+        );
 
         emit Withdrawal(
             wp.nullifier,
@@ -866,6 +861,30 @@ contract UniversalShieldedPoolUpgradeable is
                     circuitBreakerThreshold
                 );
                 revert CircuitBreakerActive();
+            }
+        }
+    }
+
+    /// @dev Executes withdrawal transfers (ETH or ERC-20) to recipient and relayer.
+    ///      Extracted from withdraw to reduce stack depth.
+    function _executeWithdrawalTransfer(
+        address tokenAddress,
+        address recipient,
+        address relayerAddress,
+        uint256 amount,
+        uint256 relayerFee
+    ) internal {
+        uint256 netAmount = amount - relayerFee;
+
+        if (tokenAddress == address(0)) {
+            _safeTransferETH(recipient, netAmount);
+            if (relayerFee > 0 && relayerAddress != address(0)) {
+                _safeTransferETH(relayerAddress, relayerFee);
+            }
+        } else {
+            IERC20(tokenAddress).safeTransfer(recipient, netAmount);
+            if (relayerFee > 0 && relayerAddress != address(0)) {
+                IERC20(tokenAddress).safeTransfer(relayerAddress, relayerFee);
             }
         }
     }

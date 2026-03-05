@@ -9,7 +9,7 @@ import {IProofVerifier} from "../interfaces/IProofVerifier.sol";
 
 /**
  * @title UnifiedNullifierManager
- * @author ZASEON
+ * @author Soul Protocol
  * @notice Unified nullifier registry for cross-domain double-spend prevention
  * @dev Implements Cross-Domain Nullifier Algebra (CDNA) for multi-chain privacy
  *
@@ -24,8 +24,8 @@ import {IProofVerifier} from "../interfaces/IProofVerifier.sol";
  * │  Cross-Domain Nullifier (for bridging):                                 │
  * │  nf_cross = H(nf_source || sourceChain || destChain || "CROSS_DOMAIN")  │
  * │                                                                          │
- * │  Zaseon Binding:                                                           │
- * │  nf_zaseon = H(nf_source || domain || "Zaseon_BINDING")                      │
+ * │  Soul Binding:                                                           │
+ * │  nf_soul = H(nf_source || domain || "Soul_BINDING")                      │
  * │                                                                          │
  * │  Properties:                                                            │
  * │  1. Uniqueness: Same note → same nullifier (per domain)                 │
@@ -41,7 +41,7 @@ import {IProofVerifier} from "../interfaces/IProofVerifier.sol";
  * - L1: Ethereum, Solana, Aptos, Sui, Celestia
  * - Enterprise: Canton, Provenance, Hyperledger
  *
- * @custom:security-contact security@zaseonprotocol.io
+ * @custom:security-contact security@soulprotocol.io
  */
 contract UnifiedNullifierManager is
     Initializable,
@@ -55,8 +55,8 @@ contract UnifiedNullifierManager is
 
     bytes32 public constant OPERATOR_ROLE =
         0x97667070c54ef182b0f5858b034beac1b6f3089aa2d3188bb1e8929f4fa9b929;
-    bytes32 public constant RELAY_ROLE =
-        0x077a1d526a4ce8a773632ab13b4fbbf1fcc954c3dab26cd27ea0e2a6750da5d7;
+    bytes32 public constant BRIDGE_ROLE =
+        0x52ba824bfabc2bcfcdf7f0edbb486ebb05e1836c90e78047efeb949990f72e5f;
     bytes32 public constant UPGRADER_ROLE =
         0x189ab7a9244df0848122154315af71fe140f3db0fe014031783b0946b8c9d2e3;
 
@@ -65,7 +65,7 @@ contract UnifiedNullifierManager is
     // =========================================================================
 
     /// @notice Domain separator for nullifier derivation
-    /// @dev keccak256("Zaseon_UNIFIED_NULLIFIER_V1")
+    /// @dev keccak256("Soul_UNIFIED_NULLIFIER_V1")
     bytes32 public constant NULLIFIER_DOMAIN =
         0x4e34b80f71d0c7dd46ffae77756be54f9e303fc51e2f7be5fff8e7a2bf349f32;
 
@@ -74,9 +74,9 @@ contract UnifiedNullifierManager is
     bytes32 public constant CROSS_DOMAIN_TAG =
         0xf6f08d2d647836449ce6c7faec104604bd003520989d06a862b6d31058c3d5ed;
 
-    /// @notice Zaseon binding tag
-    /// @dev keccak256("Zaseon_BINDING")
-    bytes32 public constant ZASEON_BINDING_TAG =
+    /// @notice Soul binding tag
+    /// @dev keccak256("Soul_BINDING")
+    bytes32 public constant SOUL_BINDING_TAG =
         0x656e8f2a48d70e58b878efa25a14fb177d2f624851d2d47f5979db5e4953df92;
 
     /// @notice Chain-specific tags
@@ -148,7 +148,7 @@ contract UnifiedNullifierManager is
     struct CrossDomainBinding {
         bytes32 sourceNullifier;
         bytes32 destNullifier;
-        bytes32 zaseonBinding; // Unified Zaseon binding
+        bytes32 soulBinding; // Unified Soul binding
         uint256 sourceChainId;
         uint256 destChainId;
         bytes32 sourceDomain;
@@ -166,7 +166,7 @@ contract UnifiedNullifierManager is
         ChainType chainType;
         bytes32 domainTag;
         bytes32 nullifierPrefix;
-        address relayAdapter;
+        address bridgeAdapter;
         bool isActive;
         uint256 registeredAt;
     }
@@ -199,11 +199,11 @@ contract UnifiedNullifierManager is
     /// @notice Cross-chain verifier adapter
     address public crossChainVerifier;
 
-    /// @notice Zaseon unified bindings: source nullifier => Zaseon binding
-    mapping(bytes32 => bytes32) public zaseonBindings;
+    /// @notice Soul unified bindings: source nullifier => Soul binding
+    mapping(bytes32 => bytes32) public soulBindings;
 
-    /// @notice Reverse lookup: Zaseon binding => source nullifiers
-    mapping(bytes32 => bytes32[]) public reverseZaseonLookup;
+    /// @notice Reverse lookup: Soul binding => source nullifiers
+    mapping(bytes32 => bytes32[]) public reverseSoulLookup;
 
     /// @notice Nullifier batches: batchId => batch
     mapping(bytes32 => NullifierBatch) public nullifierBatches;
@@ -243,7 +243,7 @@ contract UnifiedNullifierManager is
     event CrossDomainBindingCreated(
         bytes32 indexed sourceNullifier,
         bytes32 indexed destNullifier,
-        bytes32 indexed zaseonBinding,
+        bytes32 indexed soulBinding,
         uint256 sourceChainId,
         uint256 destChainId
     );
@@ -260,9 +260,9 @@ contract UnifiedNullifierManager is
         bytes32 merkleRoot
     );
 
-    event ZaseonNullifierDerived(
+    event SoulNullifierDerived(
         bytes32 indexed sourceNullifier,
-        bytes32 indexed zaseonBinding,
+        bytes32 indexed soulBinding,
         bytes32 domain
     );
 
@@ -291,19 +291,16 @@ contract UnifiedNullifierManager is
         _disableInitializers();
     }
 
-        /**
-     * @notice Initializes the operation
-     * @param admin The admin bound
-     */
-function initialize(address admin) external initializer {
+    function initialize(address admin) external initializer {
         if (admin == address(0)) revert ZeroAddress();
 
+        __UUPSUpgradeable_init();
         __AccessControl_init();
         __ReentrancyGuard_init();
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(OPERATOR_ROLE, admin);
-        _grantRole(RELAY_ROLE, admin);
+        _grantRole(BRIDGE_ROLE, admin);
         _grantRole(UPGRADER_ROLE, admin);
 
         // Register default chains
@@ -321,13 +318,13 @@ function initialize(address admin) external initializer {
      * @param chainId The EVM chain ID or custom ID for non-EVM chains (e.g., 900001 for Monero)
      * @param chainType The chain classification (EVM, UTXO, PRIVACY, etc.)
      * @param domainTag A unique identifier tag for this chain's nullifier domain
-     * @param relayAdapter The bridge adapter contract address for this chain (address(0) if none)
+     * @param bridgeAdapter The bridge adapter contract address for this chain (address(0) if none)
      */
     function registerChainDomain(
         uint256 chainId,
         ChainType chainType,
         bytes32 domainTag,
-        address relayAdapter
+        address bridgeAdapter
     ) external onlyRole(OPERATOR_ROLE) {
         // SECURITY FIX: Changed from abi.encodePacked to abi.encode
         bytes32 nullifierPrefix = keccak256(
@@ -339,7 +336,7 @@ function initialize(address admin) external initializer {
             chainType: chainType,
             domainTag: domainTag,
             nullifierPrefix: nullifierPrefix,
-            relayAdapter: relayAdapter,
+            bridgeAdapter: bridgeAdapter,
             isActive: true,
             registeredAt: block.timestamp
         });
@@ -398,7 +395,7 @@ function initialize(address admin) external initializer {
             nullifierPrefix: keccak256(
                 abi.encode(NULLIFIER_DOMAIN, chainId, domainTag)
             ),
-            relayAdapter: address(0),
+            bridgeAdapter: address(0),
             isActive: true,
             registeredAt: block.timestamp
         });
@@ -410,16 +407,16 @@ function initialize(address admin) external initializer {
     // =========================================================================
 
     /**
-     * @notice Register a new nullifier with its commitment and derive a zaseon binding
-     * @dev Creates a NullifierRecord, derives a unified zaseon binding via CDNA,
-     *      and stores the reverse lookup. Only callable by RELAY_ROLE.
-     *      The zaseon binding links nullifiers across chains to the same identity.
+     * @notice Register a new nullifier with its commitment and derive a soul binding
+     * @dev Creates a NullifierRecord, derives a unified soul binding via CDNA,
+     *      and stores the reverse lookup. Only callable by BRIDGE_ROLE.
+     *      The soul binding links nullifiers across chains to the same identity.
      * @param nullifier The unique nullifier hash (must not already exist)
      * @param commitment The Pedersen commitment associated with this nullifier
      * @param chainId The chain where this nullifier originates (must be registered)
      * @param nullifierType The classification of this nullifier (UTXO, NOTE, ACCOUNT, etc.)
      * @param expiresAt Unix timestamp when this nullifier expires (0 for no expiry)
-     * @return zaseonBinding The derived cross-chain zaseon binding hash
+     * @return soulBinding The derived cross-chain soul binding hash
      */
     function registerNullifier(
         bytes32 nullifier,
@@ -427,7 +424,7 @@ function initialize(address admin) external initializer {
         uint256 chainId,
         NullifierType nullifierType,
         uint256 expiresAt
-    ) external onlyRole(RELAY_ROLE) returns (bytes32 zaseonBinding) {
+    ) external onlyRole(BRIDGE_ROLE) returns (bytes32 soulBinding) {
         if (nullifierRecords[nullifier].status != NullifierStatus.UNKNOWN) {
             revert NullifierAlreadyExists();
         }
@@ -447,26 +444,25 @@ function initialize(address admin) external initializer {
             expiresAt: expiresAt
         });
 
-        // Derive Zaseon unified nullifier
-        zaseonBinding = deriveZaseonBinding(nullifier, domain.domainTag);
-        zaseonBindings[nullifier] = zaseonBinding;
-        reverseZaseonLookup[zaseonBinding].push(nullifier);
+        // Derive Soul unified nullifier
+        soulBinding = deriveSoulBinding(nullifier, domain.domainTag);
+        soulBindings[nullifier] = soulBinding;
+        reverseSoulLookup[soulBinding].push(nullifier);
 
         unchecked {
             ++totalNullifiers;
         }
 
         emit NullifierRegistered(nullifier, commitment, chainId, nullifierType);
-        emit ZaseonNullifierDerived(nullifier, zaseonBinding, domain.domainTag);
+        emit SoulNullifierDerived(nullifier, soulBinding, domain.domainTag);
 
-        return zaseonBinding;
+        return soulBinding;
     }
 
     /**
      * @notice Mark nullifier as spent
-          * @param nullifier The nullifier hash
      */
-    function spendNullifier(bytes32 nullifier) external onlyRole(RELAY_ROLE) {
+    function spendNullifier(bytes32 nullifier) external onlyRole(BRIDGE_ROLE) {
         NullifierRecord storage record = nullifierRecords[nullifier];
 
         if (record.status == NullifierStatus.UNKNOWN)
@@ -484,8 +480,6 @@ function initialize(address admin) external initializer {
 
     /**
      * @notice Check if nullifier is spent
-          * @param nullifier The nullifier hash
-     * @return The result value
      */
     function isNullifierSpent(bytes32 nullifier) external view returns (bool) {
         return nullifierRecords[nullifier].status == NullifierStatus.SPENT;
@@ -505,7 +499,7 @@ function initialize(address admin) external initializer {
      * @param destChainId The target chain ID for the binding
      * @param derivationProof ZK proof validating the cross-domain derivation
      * @return destNullifier The derived nullifier on the destination chain
-     * @return zaseonBinding The unified zaseon binding hash linking both nullifiers
+     * @return soulBinding The unified soul binding hash linking both nullifiers
      */
     function createCrossDomainBinding(
         bytes32 sourceNullifier,
@@ -514,8 +508,8 @@ function initialize(address admin) external initializer {
         bytes calldata derivationProof
     )
         external
-        onlyRole(RELAY_ROLE)
-        returns (bytes32 destNullifier, bytes32 zaseonBinding)
+        onlyRole(BRIDGE_ROLE)
+        returns (bytes32 destNullifier, bytes32 soulBinding)
     {
         NullifierRecord storage sourceRecord = nullifierRecords[
             sourceNullifier
@@ -540,22 +534,52 @@ function initialize(address admin) external initializer {
             revert InvalidProof();
         }
 
-        // SECURITY FIX: Changed from abi.encodePacked to abi.encode to prevent hash collision
-        destNullifier = keccak256(
-            abi.encode(
+        // Phase 1: Compute derived nullifiers (scoped to free stack)
+        {
+            // SECURITY FIX: Changed from abi.encodePacked to abi.encode to prevent hash collision
+            destNullifier = keccak256(
+                abi.encode(
+                    sourceNullifier,
+                    sourceChainId,
+                    destChainId,
+                    CROSS_DOMAIN_TAG
+                )
+            );
+
+            // Derive unified Soul nullifier
+            soulBinding = deriveSoulBinding(
                 sourceNullifier,
-                sourceChainId,
-                destChainId,
-                CROSS_DOMAIN_TAG
-            )
-        );
+                sourceDomain.domainTag
+            );
+        }
 
-        // Derive unified Zaseon nullifier
-        zaseonBinding = deriveZaseonBinding(
+        // Phase 2: Store binding (scoped to free stack)
+        _storeCrossDomainBinding(
             sourceNullifier,
-            sourceDomain.domainTag
+            destNullifier,
+            soulBinding,
+            sourceChainId,
+            destChainId,
+            sourceDomain.domainTag,
+            destDomain.domainTag,
+            derivationProof
         );
 
+        return (destNullifier, soulBinding);
+    }
+
+    /// @dev Stores cross-domain binding and updates lookups. Extracted from
+    ///      createCrossDomainBinding to reduce stack depth.
+    function _storeCrossDomainBinding(
+        bytes32 sourceNullifier,
+        bytes32 destNullifier,
+        bytes32 soulBinding,
+        uint256 sourceChainId,
+        uint256 destChainId,
+        bytes32 sourceDomainTag,
+        bytes32 destDomainTag,
+        bytes calldata derivationProof
+    ) internal {
         // SECURITY FIX: Changed from abi.encodePacked to abi.encode
         bytes32 bindingId = keccak256(
             abi.encode(sourceNullifier, destNullifier)
@@ -564,21 +588,21 @@ function initialize(address admin) external initializer {
         crossDomainBindings[bindingId] = CrossDomainBinding({
             sourceNullifier: sourceNullifier,
             destNullifier: destNullifier,
-            zaseonBinding: zaseonBinding,
+            soulBinding: soulBinding,
             sourceChainId: sourceChainId,
             destChainId: destChainId,
-            sourceDomain: sourceDomain.domainTag,
-            destDomain: destDomain.domainTag,
+            sourceDomain: sourceDomainTag,
+            destDomain: destDomainTag,
             derivationProof: derivationProof,
             timestamp: block.timestamp,
             verified: true
         });
 
         // Update lookups
-        zaseonBindings[sourceNullifier] = zaseonBinding;
-        zaseonBindings[destNullifier] = zaseonBinding;
-        reverseZaseonLookup[zaseonBinding].push(sourceNullifier);
-        reverseZaseonLookup[zaseonBinding].push(destNullifier);
+        soulBindings[sourceNullifier] = soulBinding;
+        soulBindings[destNullifier] = soulBinding;
+        reverseSoulLookup[soulBinding].push(sourceNullifier);
+        reverseSoulLookup[soulBinding].push(destNullifier);
 
         unchecked {
             ++totalBindings;
@@ -587,25 +611,19 @@ function initialize(address admin) external initializer {
         emit CrossDomainBindingCreated(
             sourceNullifier,
             destNullifier,
-            zaseonBinding,
+            soulBinding,
             sourceChainId,
             destChainId
         );
-
-        return (destNullifier, zaseonBinding);
     }
 
     /**
      * @notice Verify cross-domain binding exists
-          * @param sourceNullifier The source nullifier
-     * @param destNullifier The dest nullifier
-     * @return valid The valid
-     * @return zaseonBinding The zaseon binding
      */
     function verifyCrossDomainBinding(
         bytes32 sourceNullifier,
         bytes32 destNullifier
-    ) external view returns (bool valid, bytes32 zaseonBinding) {
+    ) external view returns (bool valid, bytes32 soulBinding) {
         // SECURITY FIX: Changed from abi.encodePacked to abi.encode
         bytes32 bindingId = keccak256(
             abi.encode(sourceNullifier, destNullifier)
@@ -613,7 +631,7 @@ function initialize(address admin) external initializer {
 
         CrossDomainBinding storage binding = crossDomainBindings[bindingId];
 
-        return (binding.verified, binding.zaseonBinding);
+        return (binding.verified, binding.soulBinding);
     }
 
     // =========================================================================
@@ -622,18 +640,13 @@ function initialize(address admin) external initializer {
 
     /**
      * @notice Process batch of nullifiers
-          * @param nullifiers The nullifiers
-     * @param commitments The commitments
-     * @param chainId The chain identifier
-     * @param merkleRoot The Merkle tree root
-     * @return batchId The batch id
      */
     function processBatch(
         bytes32[] calldata nullifiers,
         bytes32[] calldata commitments,
         uint256 chainId,
         bytes32 merkleRoot
-    ) external onlyRole(RELAY_ROLE) returns (bytes32 batchId) {
+    ) external onlyRole(BRIDGE_ROLE) returns (bytes32 batchId) {
         if (nullifiers.length == 0 || nullifiers.length > MAX_BATCH_SIZE) {
             revert InvalidBatchSize();
         }
@@ -649,32 +662,13 @@ function initialize(address admin) external initializer {
 
         // Register all nullifiers
         for (uint256 i = 0; i < nullifiers.length; ) {
-            if (
-                nullifierRecords[nullifiers[i]].status ==
-                NullifierStatus.UNKNOWN
-            ) {
-                nullifierRecords[nullifiers[i]] = NullifierRecord({
-                    nullifier: nullifiers[i],
-                    commitment: commitments[i],
-                    nullifierType: NullifierType.BATCH,
-                    status: NullifierStatus.REGISTERED,
-                    chainId: chainId,
-                    chainType: domain.chainType,
-                    domainTag: domain.domainTag,
-                    timestamp: block.timestamp,
-                    expiresAt: 0
-                });
-
-                bytes32 zaseonBinding = deriveZaseonBinding(
-                    nullifiers[i],
-                    domain.domainTag
-                );
-                zaseonBindings[nullifiers[i]] = zaseonBinding;
-
-                unchecked {
-                    ++totalNullifiers;
-                }
-            }
+            _registerBatchNullifier(
+                nullifiers[i],
+                commitments[i],
+                chainId,
+                domain.chainType,
+                domain.domainTag
+            );
             unchecked {
                 ++i;
             }
@@ -699,32 +693,57 @@ function initialize(address admin) external initializer {
         return batchId;
     }
 
+    /// @dev Registers a single nullifier within a batch. Extracted from
+    ///      processBatch to reduce stack depth in the loop body.
+    function _registerBatchNullifier(
+        bytes32 nullifier,
+        bytes32 commitment,
+        uint256 chainId,
+        ChainType chainType,
+        bytes32 domainTag
+    ) internal {
+        if (nullifierRecords[nullifier].status != NullifierStatus.UNKNOWN) {
+            return;
+        }
+
+        nullifierRecords[nullifier] = NullifierRecord({
+            nullifier: nullifier,
+            commitment: commitment,
+            nullifierType: NullifierType.BATCH,
+            status: NullifierStatus.REGISTERED,
+            chainId: chainId,
+            chainType: chainType,
+            domainTag: domainTag,
+            timestamp: block.timestamp,
+            expiresAt: 0
+        });
+
+        soulBindings[nullifier] = deriveSoulBinding(nullifier, domainTag);
+
+        unchecked {
+            ++totalNullifiers;
+        }
+    }
+
     // =========================================================================
     // DERIVATION FUNCTIONS
     // =========================================================================
 
     /**
-     * @notice Derive Zaseon unified nullifier
+     * @notice Derive Soul unified nullifier
      * @dev HIGH FIX: Changed from abi.encodePacked to abi.encode to prevent hash collision
      *      abi.encodePacked with multiple bytes32 can have collisions if bits align
-          * @param sourceNullifier The source nullifier
-     * @param domainTag The domain tag
-     * @return The result value
      */
-    function deriveZaseonBinding(
+    function deriveSoulBinding(
         bytes32 sourceNullifier,
         bytes32 domainTag
     ) public pure returns (bytes32) {
         return
-            keccak256(abi.encode(sourceNullifier, domainTag, ZASEON_BINDING_TAG));
+            keccak256(abi.encode(sourceNullifier, domainTag, SOUL_BINDING_TAG));
     }
 
     /**
      * @notice Derive chain-specific nullifier from commitment
-          * @param commitment The cryptographic commitment
-     * @param secret The secret value
-     * @param chainId The chain identifier
-     * @return The result value
      */
     function deriveChainNullifier(
         bytes32 commitment,
@@ -749,10 +768,6 @@ function initialize(address admin) external initializer {
 
     /**
      * @notice Derive cross-domain nullifier
-          * @param sourceNullifier The source nullifier
-     * @param sourceChainId The source chain identifier
-     * @param destChainId The destination chain identifier
-     * @return The result value
      */
     function deriveCrossDomainNullifier(
         bytes32 sourceNullifier,
@@ -804,24 +819,13 @@ function initialize(address admin) external initializer {
     // VIEW FUNCTIONS
     // =========================================================================
 
-        /**
-     * @notice Returns the nullifier record
-     * @param nullifier The nullifier hash
-     * @return The result value
-     */
-function getNullifierRecord(
+    function getNullifierRecord(
         bytes32 nullifier
     ) external view returns (NullifierRecord memory) {
         return nullifierRecords[nullifier];
     }
 
-        /**
-     * @notice Returns the cross domain binding
-     * @param sourceNullifier The source nullifier
-     * @param destNullifier The dest nullifier
-     * @return The result value
-     */
-function getCrossDomainBinding(
+    function getCrossDomainBinding(
         bytes32 sourceNullifier,
         bytes32 destNullifier
     ) external view returns (CrossDomainBinding memory) {
@@ -832,62 +836,39 @@ function getCrossDomainBinding(
         return crossDomainBindings[bindingId];
     }
 
-        /**
-     * @notice Returns the chain domain
-     * @param chainId The chain identifier
-     * @return The result value
-     */
-function getChainDomain(
+    function getChainDomain(
         uint256 chainId
     ) external view returns (ChainDomain memory) {
         return chainDomains[chainId];
     }
 
-        /**
-     * @notice Returns the zaseon binding
-     * @param sourceNullifier The source nullifier
-     * @return The result value
-     */
-function getZaseonBinding(
+    function getSoulBinding(
         bytes32 sourceNullifier
     ) external view returns (bytes32) {
-        return zaseonBindings[sourceNullifier];
+        return soulBindings[sourceNullifier];
     }
 
-    /// @notice Gets all source nullifiers for a zaseon binding
+    /// @notice Gets all source nullifiers for a soul binding
     /// @dev WARNING: May run out of gas for bindings with many nullifiers. Use paginated version for large sets.
-        /**
-     * @notice Returns the source nullifiers
-     * @param zaseonBinding The zaseon binding
-     * @return The result value
-     */
-function getSourceNullifiers(
-        bytes32 zaseonBinding
+    function getSourceNullifiers(
+        bytes32 soulBinding
     ) external view returns (bytes32[] memory) {
-        return reverseZaseonLookup[zaseonBinding];
+        return reverseSoulLookup[soulBinding];
     }
 
     /// @notice Gets source nullifiers with pagination
-    /// @param zaseonBinding The zaseon binding to query
+    /// @param soulBinding The soul binding to query
     /// @param offset Starting index
     /// @param limit Maximum number of nullifiers to return
     /// @return nullifiers Array of source nullifiers
     /// @return total Total number of nullifiers for this binding
     /// @dev M-12: Added pagination to prevent out-of-gas for large arrays
-        /**
-     * @notice Returns the source nullifiers paginated
-     * @param zaseonBinding The zaseon binding
-     * @param offset The offset
-     * @param limit The limit value
-     * @return nullifiers The nullifiers
-     * @return total The total
-     */
-function getSourceNullifiersPaginated(
-        bytes32 zaseonBinding,
+    function getSourceNullifiersPaginated(
+        bytes32 soulBinding,
         uint256 offset,
         uint256 limit
     ) external view returns (bytes32[] memory nullifiers, uint256 total) {
-        bytes32[] storage allNullifiers = reverseZaseonLookup[zaseonBinding];
+        bytes32[] storage allNullifiers = reverseSoulLookup[soulBinding];
         total = allNullifiers.length;
 
         if (offset >= total) {
@@ -906,33 +887,17 @@ function getSourceNullifiersPaginated(
         }
     }
 
-        /**
-     * @notice Returns the batch
-     * @param batchId The batchId identifier
-     * @return The result value
-     */
-function getBatch(
+    function getBatch(
         bytes32 batchId
     ) external view returns (NullifierBatch memory) {
         return nullifierBatches[batchId];
     }
 
-        /**
-     * @notice Returns the registered chain count
-     * @return The result value
-     */
-function getRegisteredChainCount() external view returns (uint256) {
+    function getRegisteredChainCount() external view returns (uint256) {
         return registeredChains.length;
     }
 
-        /**
-     * @notice Returns the stats
-     * @return _totalNullifiers The _total nullifiers
-     * @return _totalBindings The _total bindings
-     * @return _totalBatches The _total batches
-     * @return _registeredChains The _registered chains
-     */
-function getStats()
+    function getStats()
         external
         view
         returns (

@@ -524,36 +524,13 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
             revert InvalidDomainSeparator(domainSeparator);
         }
 
-        // Create lock
-        locks[lockId] = ZKSLock({
-            lockId: lockId,
-            oldStateCommitment: oldStateCommitment,
-            transitionPredicateHash: transitionPredicateHash,
-            policyHash: policyHash,
-            domainSeparator: domainSeparator,
-            lockedBy: msg.sender,
-            createdAt: uint64(block.timestamp),
-            unlockDeadline: unlockDeadline,
-            isUnlocked: false
-        });
-
-        // Track active lock
-        _activeLockIndex[lockId] = _activeLockIds.length;
-        _activeLockIds.push(lockId);
-
-        // Update statistics (packed, saves gas)
-        unchecked {
-            _packedStats += 1; // Increment totalLocksCreated (lowest 64 bits)
-        }
-        userLockCount[msg.sender]++;
-
-        emit LockCreated(
+        // Store lock and update tracking — extracted to reduce stack depth
+        _storeLockAndEmit(
             lockId,
             oldStateCommitment,
             transitionPredicateHash,
             policyHash,
             domainSeparator,
-            msg.sender,
             unlockDeadline
         );
     }
@@ -924,6 +901,49 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
     /*//////////////////////////////////////////////////////////////
                             INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
+
+    /// @dev Stores a new lock, updates tracking arrays and stats, and emits event.
+    ///      Extracted from createLock to stay within EVM stack limits.
+    function _storeLockAndEmit(
+        bytes32 lockId,
+        bytes32 oldStateCommitment,
+        bytes32 transitionPredicateHash,
+        bytes32 policyHash,
+        bytes32 domainSeparator,
+        uint64 unlockDeadline
+    ) internal {
+        locks[lockId] = ZKSLock({
+            lockId: lockId,
+            oldStateCommitment: oldStateCommitment,
+            transitionPredicateHash: transitionPredicateHash,
+            policyHash: policyHash,
+            domainSeparator: domainSeparator,
+            lockedBy: msg.sender,
+            createdAt: uint64(block.timestamp),
+            unlockDeadline: unlockDeadline,
+            isUnlocked: false
+        });
+
+        // Track active lock
+        _activeLockIndex[lockId] = _activeLockIds.length;
+        _activeLockIds.push(lockId);
+
+        // Update statistics (packed, saves gas)
+        unchecked {
+            _packedStats += 1; // Increment totalLocksCreated (lowest 64 bits)
+        }
+        userLockCount[msg.sender]++;
+
+        emit LockCreated(
+            lockId,
+            oldStateCommitment,
+            transitionPredicateHash,
+            policyHash,
+            domainSeparator,
+            msg.sender,
+            unlockDeadline
+        );
+    }
 
     function _validateLockForUnlock(ZKSLock storage lock) internal view {
         if (lock.lockId == bytes32(0)) {

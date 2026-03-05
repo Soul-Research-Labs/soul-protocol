@@ -76,14 +76,16 @@ contract CrossChainPrivacyHubTest is Test {
 
         // Register adapter for DEST_CHAIN
         hub.registerAdapter(
-            DEST_CHAIN,
-            address(0xADA0),
-            CrossChainPrivacyHub.ChainType.EVM,
-            CrossChainPrivacyHub.ProofSystem.GROTH16,
-            true,
-            1,
-            10_000 ether,
-            10_000 ether
+            CrossChainPrivacyHub.AdapterRegistrationParams({
+                chainId: DEST_CHAIN,
+                adapter: address(0xADA0),
+                chainType: CrossChainPrivacyHub.ChainType.EVM,
+                proofSystem: CrossChainPrivacyHub.ProofSystem.GROTH16,
+                supportsPrivacy: true,
+                minConfirmations: 1,
+                maxTransfer: 10_000 ether,
+                dailyLimit: 10_000 ether
+            })
         );
 
         // Set proof verifier
@@ -154,14 +156,16 @@ contract CrossChainPrivacyHubTest is Test {
     function test_registerAdapter() public {
         uint256 chain = 10; // Optimism
         hub.registerAdapter(
-            chain,
-            address(0xADA2),
-            CrossChainPrivacyHub.ChainType.EVM,
-            CrossChainPrivacyHub.ProofSystem.PLONK,
-            true,
-            2,
-            500 ether,
-            5000 ether
+            CrossChainPrivacyHub.AdapterRegistrationParams({
+                chainId: chain,
+                adapter: address(0xADA2),
+                chainType: CrossChainPrivacyHub.ChainType.EVM,
+                proofSystem: CrossChainPrivacyHub.ProofSystem.PLONK,
+                supportsPrivacy: true,
+                minConfirmations: 2,
+                maxTransfer: 500 ether,
+                dailyLimit: 5000 ether
+            })
         );
 
         CrossChainPrivacyHub.AdapterConfig memory config = hub.getAdapterConfig(
@@ -175,14 +179,16 @@ contract CrossChainPrivacyHubTest is Test {
     function test_registerAdapter_revertOnZeroAddr() public {
         vm.expectRevert(CrossChainPrivacyHub.ZeroAddress.selector);
         hub.registerAdapter(
-            10,
-            address(0),
-            CrossChainPrivacyHub.ChainType.EVM,
-            CrossChainPrivacyHub.ProofSystem.NONE,
-            false,
-            0,
-            0,
-            0
+            CrossChainPrivacyHub.AdapterRegistrationParams({
+                chainId: 10,
+                adapter: address(0),
+                chainType: CrossChainPrivacyHub.ChainType.EVM,
+                proofSystem: CrossChainPrivacyHub.ProofSystem.NONE,
+                supportsPrivacy: false,
+                minConfirmations: 0,
+                maxTransfer: 0,
+                dailyLimit: 0
+            })
         );
     }
 
@@ -194,14 +200,16 @@ contract CrossChainPrivacyHubTest is Test {
             )
         );
         hub.registerAdapter(
-            DEST_CHAIN,
-            address(0xADA3),
-            CrossChainPrivacyHub.ChainType.EVM,
-            CrossChainPrivacyHub.ProofSystem.NONE,
-            false,
-            0,
-            0,
-            0
+            CrossChainPrivacyHub.AdapterRegistrationParams({
+                chainId: DEST_CHAIN,
+                adapter: address(0xADA3),
+                chainType: CrossChainPrivacyHub.ChainType.EVM,
+                proofSystem: CrossChainPrivacyHub.ProofSystem.NONE,
+                supportsPrivacy: false,
+                minConfirmations: 0,
+                maxTransfer: 0,
+                dailyLimit: 0
+            })
         );
     }
 

@@ -15,7 +15,7 @@ Cross-chain ZK privacy middleware for confidential state transfer across L2 netw
 ```
 contracts/           # Solidity source
   core/              # ZaseonProtocolHub, Orchestrator
-  crosschain/        # Bridge adapters, HyperlaneAdapter, DirectL2Messenger
+  crosschain/        # Bridge adapters, DirectL2Messenger
   bridge/            # MultiBridgeRouter, CrossChainProofHubV3
   privacy/           # StealthAddressRegistry, ShieldedPool, BatchAccumulator
   security/          # ExperimentalFeatureRegistry, SecurityModule, Emergency

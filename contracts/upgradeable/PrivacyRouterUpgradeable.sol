@@ -345,22 +345,8 @@ function depositERC20(
 
         operationId = _nextOperationId();
 
-        // Look up token address from the pool
-        // Use a try/catch-style approach: read the asset config from pool
-        (bool readSuccess, bytes memory assetData) = shieldedPool.staticcall(
-            abi.encodeWithSignature("assets(bytes32)", assetId)
-        );
-        require(
-            readSuccess && assetData.length >= 160,
-            "PrivacyRouter: asset lookup failed"
-        );
-
-        // AssetConfig: (address tokenAddress, bytes32 assetId, uint256 totalDeposited, uint256 totalWithdrawn, bool active)
-        (address tokenAddress, , , , ) = abi.decode(
-            assetData,
-            (address, bytes32, uint256, uint256, bool)
-        );
-        require(tokenAddress != address(0), "PrivacyRouter: invalid token");
+        // Resolve token address from pool asset config
+        address tokenAddress = _resolveTokenAddress(assetId);
 
         // Pull tokens from user to router
         IERC20(tokenAddress).safeTransferFrom(
@@ -706,6 +692,27 @@ function unpause() external onlyRole(EMERGENCY_ROLE) {
             keccak256(
                 abi.encodePacked(msg.sender, block.chainid, operationNonce++)
             );
+    }
+
+    /// @dev Resolves the ERC-20 token address for a given asset ID from the shielded pool.
+    ///      Extracted from depositERC20 to reduce stack depth.
+    function _resolveTokenAddress(
+        bytes32 assetId
+    ) internal view returns (address tokenAddress) {
+        (bool readSuccess, bytes memory assetData) = shieldedPool.staticcall(
+            abi.encodeWithSignature("assets(bytes32)", assetId)
+        );
+        require(
+            readSuccess && assetData.length >= 160,
+            "PrivacyRouter: asset lookup failed"
+        );
+
+        // AssetConfig: (address tokenAddress, bytes32 assetId, uint256 totalDeposited, uint256 totalWithdrawn, bool active)
+        (tokenAddress, , , , ) = abi.decode(
+            assetData,
+            (address, bytes32, uint256, uint256, bool)
+        );
+        require(tokenAddress != address(0), "PrivacyRouter: invalid token");
     }
 
     function _recordReceipt(

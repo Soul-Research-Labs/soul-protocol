@@ -93,7 +93,6 @@ contracts/crosschain/
 ├── ArbitrumBridgeAdapter.sol      # Arbitrum native messaging
 ├── OptimismBridgeAdapter.sol      # OP Stack CrossDomainMessenger
 ├── BaseBridgeAdapter.sol          # Base + CCTP
-├── LayerZeroAdapter.sol           # LayerZero V2 OApp
 ├── DirectL2Messenger.sol          # Direct L2-to-L2 messaging
 ├── EthereumL1Bridge.sol           # L1 state commitments
 ├── ZaseonL2Messenger.sol            # RIP-7755 L2 messaging
@@ -528,19 +527,19 @@ Source Chain                    Zaseon                      Destination Chain
 | --------------- | ----------------------- | -------- | ------------- |
 | Ethereum L1     | `EthereumL1Bridge`      | 1        | ✅ Production |
 | Arbitrum        | `ArbitrumBridgeAdapter` | 42161    | ✅ Production |
-| Any (LayerZero) | `LayerZeroAdapter`      | Various  | ✅ Production |
+| Any (LayerZero) | `LayerZeroAdapter`      | Various  | 🔮 Planned    |
 | Direct L2       | `DirectL2Messenger`     | Various  | ✅ Production |
 
-### Additional Production Adapters
+### Additional Adapters
 
 | Chain         | Adapter                     | Chain ID | Status        |
 | ------------- | --------------------------- | -------- | ------------- |
 | Optimism      | `OptimismBridgeAdapter`     | 10       | ✅ Production |
 | Base          | `BaseBridgeAdapter`         | 8453     | ✅ Production |
-| zkSync Era    | `zkSyncBridgeAdapter`       | 324      | ✅ Production |
-| Scroll        | `ScrollBridgeAdapter`       | 534352   | ✅ Production |
-| Linea         | `LineaBridgeAdapter`        | 59144    | ✅ Production |
-| Polygon zkEVM | `PolygonZkEVMBridgeAdapter` | 1101     | ✅ Production |
+| zkSync Era    | `zkSyncBridgeAdapter`       | 324      | 🔮 Planned    |
+| Scroll        | `ScrollBridgeAdapter`       | 534352   | 🔮 Planned    |
+| Linea         | `LineaBridgeAdapter`        | 59144    | 🔮 Planned    |
+| Polygon zkEVM | `PolygonZkEVMBridgeAdapter` | 1101     | 🔮 Planned    |
 
 ### Privacy Chain Adapters (Production)
 

@@ -6,7 +6,6 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IPrivacyIntegration} from "../interfaces/IPrivacyIntegration.sol";
 
 /**
  * @title PrivateProofRelayIntegration
@@ -42,7 +41,11 @@ import {IPrivacyIntegration} from "../interfaces/IPrivacyIntegration.sol";
  *
  * @custom:security-contact security@zaseonprotocol.io
  */
-contract PrivateProofRelayIntegration is ReentrancyGuard, AccessControl, Pausable {
+contract PrivateProofRelayIntegration is
+    ReentrancyGuard,
+    AccessControl,
+    Pausable
+{
     using SafeERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////
@@ -285,7 +288,7 @@ contract PrivateProofRelayIntegration is ReentrancyGuard, AccessControl, Pausabl
 
     /**
      * @notice Authorize or revoke relayer
-          * @param relayer The relayer address
+     * @param relayer The relayer address
      * @param authorized The authorized
      */
     function setRelayerAuthorization(
@@ -464,7 +467,7 @@ contract PrivateProofRelayIntegration is ReentrancyGuard, AccessControl, Pausabl
 
     /**
      * @notice Check if nullifier is used locally
-          * @param nullifierHash The nullifier hash value
+     * @param nullifierHash The nullifier hash value
      * @return The result value
      */
     function isLocalNullifierUsed(
@@ -507,16 +510,10 @@ contract PrivateProofRelayIntegration is ReentrancyGuard, AccessControl, Pausabl
 
         // Return escrowed value (implementation depends on token type)
         // For ETH relays - use recorded amount, not full balance
-        (bool success, ) = refundRecipient.call{value: transfer.amount}(
-            ""
-        );
+        (bool success, ) = refundRecipient.call{value: transfer.amount}("");
         if (!success) revert InvalidRecipient();
 
-        emit PrivateRelayRefunded(
-            requestId,
-            refundRecipient,
-            block.timestamp
-        );
+        emit PrivateRelayRefunded(requestId, refundRecipient, block.timestamp);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -689,7 +686,7 @@ contract PrivateProofRelayIntegration is ReentrancyGuard, AccessControl, Pausabl
 
     /**
      * @notice Get relay record
-          * @param requestId The requestId identifier
+     * @param requestId The requestId identifier
      * @return The result value
      */
     function getRelayRecord(
@@ -700,7 +697,7 @@ contract PrivateProofRelayIntegration is ReentrancyGuard, AccessControl, Pausabl
 
     /**
      * @notice Get user relay requests
-          * @param user The user
+     * @param user The user
      * @return The result value
      */
     function getUserRequests(
@@ -711,7 +708,7 @@ contract PrivateProofRelayIntegration is ReentrancyGuard, AccessControl, Pausabl
 
     /**
      * @notice Get chain config
-          * @param chainId The chain identifier
+     * @param chainId The chain identifier
      * @return The result value
      */
     function getChainConfig(
@@ -722,7 +719,7 @@ contract PrivateProofRelayIntegration is ReentrancyGuard, AccessControl, Pausabl
 
     /**
      * @notice Get supported chains
-          * @return The result value
+     * @return The result value
      */
     function getSupportedChains() external view returns (uint256[] memory) {
         return supportedChains;
@@ -730,7 +727,7 @@ contract PrivateProofRelayIntegration is ReentrancyGuard, AccessControl, Pausabl
 
     /**
      * @notice Check if chain is supported
-          * @param chainId The chain identifier
+     * @param chainId The chain identifier
      * @return The result value
      */
     function isChainSupported(uint256 chainId) external view returns (bool) {
@@ -743,7 +740,7 @@ contract PrivateProofRelayIntegration is ReentrancyGuard, AccessControl, Pausabl
 
     /**
      * @notice Update proof verifier
-          * @param _proofVerifier The _proof verifier
+     * @param _proofVerifier The _proof verifier
      */
     function setProofVerifier(
         address _proofVerifier
@@ -754,7 +751,7 @@ contract PrivateProofRelayIntegration is ReentrancyGuard, AccessControl, Pausabl
 
     /**
      * @notice Update message verifier
-          * @param _messageVerifier The _message verifier
+     * @param _messageVerifier The _message verifier
      */
     function setMessageVerifier(
         address _messageVerifier
@@ -779,7 +776,7 @@ contract PrivateProofRelayIntegration is ReentrancyGuard, AccessControl, Pausabl
 
     /**
      * @notice Emergency withdraw (only admin)
-          * @param token The token address
+     * @param token The token address
      * @param to The destination address
      */
     function emergencyWithdraw(

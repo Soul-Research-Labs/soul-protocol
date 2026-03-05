@@ -225,7 +225,6 @@ jobs:
     name: Security Analysis
     runs-on: ubuntu-latest
     needs: [build-and-test, foundry-tests]
-    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
         with:

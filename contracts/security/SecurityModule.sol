@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.20;
 
 /**
  * @title SecurityModule
- * @author ZASEON
+ * @author Soul Protocol
  * @notice Comprehensive security module providing zero-day attack mitigations
  * @dev Inherit this contract to add rate limiting, circuit breakers, flash loan guards,
  *      and withdrawal limits to any contract
@@ -20,14 +20,9 @@ pragma solidity ^0.8.24;
  * - Flash Loan Guard: Prevents same-block deposit/withdrawal attacks
  * - Withdrawal Limits: Caps single and daily withdrawal amounts
  *
- * @custom:security-contact security@zaseon.network
+ * @custom:security-contact security@soul.network
  */
-abstract /**
- * @title SecurityModule
- * @author ZASEON Team
- * @notice Security Module contract
- */
-contract SecurityModule {
+abstract contract SecurityModule {
     /*//////////////////////////////////////////////////////////////
                             CUSTOM ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -58,21 +53,13 @@ contract SecurityModule {
     /// @notice Thrown when cooldown period not elapsed
     error CooldownNotElapsed(uint256 remaining);
 
-    /// @notice Thrown when the rate limit window duration is below the minimum allowed
     error WindowTooShort();
-    /// @notice Thrown when the rate limit window duration exceeds the maximum allowed
     error WindowTooLong();
-    /// @notice Thrown when the max actions per window is set below the minimum allowed
     error MaxActionsTooLow();
-    /// @notice Thrown when the max actions per window exceeds the maximum allowed
     error MaxActionsTooHigh();
-    /// @notice Thrown when the volume threshold is set below the minimum allowed
     error ThresholdTooLow();
-    /// @notice Thrown when the cooldown period is shorter than the minimum allowed
     error CooldownTooShort(uint256 minCooldown);
-    /// @notice Thrown when the cooldown period exceeds the maximum allowed
     error CooldownTooLong(uint256 maxCooldown);
-    /// @notice Thrown when withdrawal limit parameters are invalid
     error InvalidWithdrawalLimits();
 
     /*//////////////////////////////////////////////////////////////
@@ -165,81 +152,30 @@ contract SecurityModule {
     /// @notice Per-account maximum daily withdrawal
     uint256 public accountMaxDailyWithdrawal = 100_000 * 1e18;
 
-    /*//////////////////////////////////////////////////////////////
-                     UPGRADEABLE INITIALIZATION HELPER
-    //////////////////////////////////////////////////////////////*/
-
-    /**
-     * @dev Initialize SecurityModule storage defaults. Must be called from
-     *      initialize() in any upgradeable contract that inherits SecurityModule,
-     *      because Solidity field initializers only run in the implementation
-     *      constructor — NOT through a proxy.
-     */
-    function __initSecurityModule() internal {
-        _securityFlags =
-            FLAG_RATE_LIMITING |
-            FLAG_CIRCUIT_BREAKER |
-            FLAG_FLASH_LOAN_GUARD |
-            FLAG_WITHDRAWAL_LIMITS;
-        rateLimitWindow = 1 hours;
-        maxActionsPerWindow = 50;
-        volumeThreshold = 10_000_000 * 1e18;
-        circuitBreakerCooldown = 1 hours;
-        minBlocksForWithdrawal = 1;
-        maxSingleWithdrawal = 100_000 * 1e18;
-        maxDailyWithdrawal = 1_000_000 * 1e18;
-        accountMaxDailyWithdrawal = 100_000 * 1e18;
-    }
-
     // ============ Backward-Compatible Public Getters for Packed Flags ============
 
     /// @notice Whether rate limiting is enabled
-    /// @return True if rate limiting is active
-        /**
-     * @notice Rate limiting enabled
-     * @return The result value
-     */
-function rateLimitingEnabled() public view returns (bool) {
+    function rateLimitingEnabled() public view returns (bool) {
         return (_securityFlags & FLAG_RATE_LIMITING) != 0;
     }
 
     /// @notice Whether circuit breaker is enabled
-    /// @return True if circuit breaker is active
-        /**
-     * @notice Circuit breaker enabled
-     * @return The result value
-     */
-function circuitBreakerEnabled() public view returns (bool) {
+    function circuitBreakerEnabled() public view returns (bool) {
         return (_securityFlags & FLAG_CIRCUIT_BREAKER) != 0;
     }
 
     /// @notice Whether circuit breaker is currently tripped
-    /// @return True if circuit breaker has been triggered
-        /**
-     * @notice Circuit breaker tripped
-     * @return The result value
-     */
-function circuitBreakerTripped() public view returns (bool) {
+    function circuitBreakerTripped() public view returns (bool) {
         return (_securityFlags & FLAG_CIRCUIT_TRIPPED) != 0;
     }
 
     /// @notice Whether flash loan guard is enabled
-    /// @return True if flash loan guard is active
-        /**
-     * @notice Flash loan guard enabled
-     * @return The result value
-     */
-function flashLoanGuardEnabled() public view returns (bool) {
+    function flashLoanGuardEnabled() public view returns (bool) {
         return (_securityFlags & FLAG_FLASH_LOAN_GUARD) != 0;
     }
 
     /// @notice Whether withdrawal limits are enabled
-    /// @return True if withdrawal limits are active
-        /**
-     * @notice Withdrawal limits enabled
-     * @return The result value
-     */
-function withdrawalLimitsEnabled() public view returns (bool) {
+    function withdrawalLimitsEnabled() public view returns (bool) {
         return (_securityFlags & FLAG_WITHDRAWAL_LIMITS) != 0;
     }
 
@@ -258,17 +194,11 @@ function withdrawalLimitsEnabled() public view returns (bool) {
                                EVENTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Emitted when an account exceeds the rate limit for the current window
     event RateLimitTriggered(address indexed account, uint256 actionCount);
-    /// @notice Emitted when the circuit breaker is activated due to excessive volume
     event CircuitBreakerActivated(uint256 volume, uint256 threshold);
-    /// @notice Emitted when the circuit breaker is reset after the cooldown period
     event CircuitBreakerReset();
-    /// @notice Emitted when a suspected flash loan withdrawal attempt is blocked
     event FlashLoanAttemptBlocked(address indexed account);
-    /// @notice Emitted when a withdrawal is processed under enforced limits
     event WithdrawalLimitApplied(address indexed account, uint256 amount);
-    /// @notice Emitted when a security configuration parameter is updated
     event SecurityConfigUpdated(
         string parameter,
         uint256 oldValue,
@@ -281,9 +211,56 @@ function withdrawalLimitsEnabled() public view returns (bool) {
 
     /**
      * @notice Rate limiting modifier - limits actions per time window
-     * @dev Optimized with cached reads and unchecked arithmetic
+     * @dev Delegates to internal function to prevent stack bloat when modifiers are stacked
      */
     modifier rateLimited() {
+        _checkRateLimit();
+        _;
+    }
+
+    /**
+     * @notice Circuit breaker modifier - halts on abnormal volume
+     * @param value The value being processed
+     */
+    modifier circuitBreaker(uint256 value) {
+        _checkCircuitBreaker(value);
+        _;
+    }
+
+    /**
+     * @notice Flash loan guard - prevents same-block attacks
+     * @dev Requires at least minBlocksForWithdrawal between deposit and withdrawal
+     */
+    modifier noFlashLoan() {
+        _checkNoFlashLoan();
+        _;
+    }
+
+    /**
+     * @notice Withdrawal limit modifier - caps extraction amounts
+     * @param amount The withdrawal amount
+     */
+    modifier withdrawalLimited(uint256 amount) {
+        _checkWithdrawalLimit(amount);
+        _;
+    }
+
+    /**
+     * @notice Per-account withdrawal limit modifier
+     * @param amount The withdrawal amount
+     */
+    modifier accountWithdrawalLimited(uint256 amount) {
+        _checkAccountWithdrawalLimit(amount);
+        _;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                           INTERNAL HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @dev Rate limit check — extracted from modifier to avoid stack bloat
+    ///      when multiple security modifiers are stacked on a single function.
+    function _checkRateLimit() internal {
         if (rateLimitingEnabled()) {
             address sender = msg.sender;
             uint256 lastTime = lastActionTime[sender];
@@ -306,17 +283,10 @@ function withdrawalLimitsEnabled() public view returns (bool) {
                 }
             }
         }
-        _;
     }
 
-    /**
-     * @notice Circuit breaker modifier - halts on abnormal volume
-     * @dev When volume exceeds threshold, the current transaction is allowed to complete
-     *      but the circuit breaker trips, blocking all subsequent calls until cooldown elapses.
-     *      This is the standard circuit breaker pattern — state must persist for it to work.
-     * @param value The value being processed
-     */
-    modifier circuitBreaker(uint256 value) {
+    /// @dev Circuit breaker check — extracted from modifier to avoid stack bloat.
+    function _checkCircuitBreaker(uint256 value) internal {
         if (circuitBreakerEnabled()) {
             // Check if currently tripped
             if (circuitBreakerTripped()) {
@@ -346,24 +316,21 @@ function withdrawalLimitsEnabled() public view returns (bool) {
             // Add to volume
             lastHourlyVolume += value;
 
-            // Check threshold — trip the breaker but allow this transaction to complete.
-            // The state change persists because we do NOT revert here.
-            // Subsequent calls will see circuitBreakerTripped() == true and revert
-            // with CooldownNotElapsed until the cooldown period elapses.
+            // Check threshold
             if (lastHourlyVolume > volumeThreshold) {
                 _setFlag(FLAG_CIRCUIT_TRIPPED, true);
                 circuitBreakerTrippedAt = block.timestamp;
                 emit CircuitBreakerActivated(lastHourlyVolume, volumeThreshold);
+                revert CircuitBreakerTriggered(
+                    lastHourlyVolume,
+                    volumeThreshold
+                );
             }
         }
-        _;
     }
 
-    /**
-     * @notice Flash loan guard - prevents same-block attacks
-     * @dev Requires at least minBlocksForWithdrawal between deposit and withdrawal
-     */
-    modifier noFlashLoan() {
+    /// @dev Flash loan guard check — extracted from modifier to avoid stack bloat.
+    function _checkNoFlashLoan() internal {
         if (flashLoanGuardEnabled()) {
             uint256 depositBlock = lastDepositBlock[msg.sender];
             if (
@@ -378,14 +345,10 @@ function withdrawalLimitsEnabled() public view returns (bool) {
                 );
             }
         }
-        _;
     }
 
-    /**
-     * @notice Withdrawal limit modifier - caps extraction amounts
-     * @param amount The withdrawal amount
-     */
-    modifier withdrawalLimited(uint256 amount) {
+    /// @dev Withdrawal limit check — extracted from modifier to avoid stack bloat.
+    function _checkWithdrawalLimit(uint256 amount) internal {
         if (withdrawalLimitsEnabled()) {
             // Check single withdrawal limit
             if (amount > maxSingleWithdrawal) {
@@ -414,14 +377,10 @@ function withdrawalLimitsEnabled() public view returns (bool) {
             dailyWithdrawn += amount;
             emit WithdrawalLimitApplied(msg.sender, amount);
         }
-        _;
     }
 
-    /**
-     * @notice Per-account withdrawal limit modifier
-     * @param amount The withdrawal amount
-     */
-    modifier accountWithdrawalLimited(uint256 amount) {
+    /// @dev Per-account withdrawal limit check — extracted from modifier to avoid stack bloat.
+    function _checkAccountWithdrawalLimit(uint256 amount) internal {
         if (withdrawalLimitsEnabled()) {
             // Reset account daily counter if new day
             uint256 currentDay = block.timestamp / 1 days;
@@ -444,12 +403,7 @@ function withdrawalLimitsEnabled() public view returns (bool) {
             // Update account counter
             accountDailyWithdrawn[msg.sender] = currentWithdrawn + amount;
         }
-        _;
     }
-
-    /*//////////////////////////////////////////////////////////////
-                           INTERNAL HELPERS
-    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Record a deposit for flash loan tracking
@@ -700,15 +654,4 @@ function withdrawalLimitsEnabled() public view returns (bool) {
 
         return (false, requiredBlock - block.number + 1);
     }
-
-    /*//////////////////////////////////////////////////////////////
-                          STORAGE GAP
-    //////////////////////////////////////////////////////////////*/
-
-    /**
-     * @dev Reserved storage gap for future upgrades.
-     *      Allows adding new state variables in SecurityModule without
-     *      shifting the storage layout of child contracts.
-     */
-    uint256[50] private __gap;
 }
