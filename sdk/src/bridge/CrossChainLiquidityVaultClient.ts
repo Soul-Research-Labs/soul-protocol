@@ -353,7 +353,8 @@ export class CrossChainLiquidityVaultClient {
       abi: LIQUIDITY_VAULT_ABI,
       functionName: "depositETH",
       value: amount,
-    });
+      chain: null,
+    } as any);
     return hash;
   }
 
@@ -370,7 +371,8 @@ export class CrossChainLiquidityVaultClient {
       abi: LIQUIDITY_VAULT_ABI,
       functionName: "depositToken",
       args: [token, amount],
-    });
+      chain: null,
+    } as any);
     return hash;
   }
 
@@ -386,7 +388,8 @@ export class CrossChainLiquidityVaultClient {
       abi: LIQUIDITY_VAULT_ABI,
       functionName: "withdrawETH",
       args: [amount],
-    });
+      chain: null,
+    } as any);
     return hash;
   }
 
@@ -403,7 +406,8 @@ export class CrossChainLiquidityVaultClient {
       abi: LIQUIDITY_VAULT_ABI,
       functionName: "withdrawToken",
       args: [token, amount],
-    });
+      chain: null,
+    } as any);
     return hash;
   }
 

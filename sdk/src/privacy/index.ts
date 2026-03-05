@@ -82,7 +82,7 @@ export {
   InsufficientAdapterCapacityError,
   RelayTimeoutError,
   type ChainConfig,
-  type PrivateRequestStatus,
+  type PrivateRelayStatus,
   type PrivateTransferResult,
   type ShieldResult,
   type ZKProofResult,

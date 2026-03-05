@@ -186,7 +186,8 @@ const EXPERIMENTAL_FEATURE_REGISTRY_ABI = [
 // ────────────────────────────────────────────────────────
 
 export class ExperimentalFeatureRegistryClient {
-  private readonly contract;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private readonly contract: any;
 
   constructor(
     public readonly address: Address,
@@ -364,9 +365,7 @@ export class ExperimentalFeatureRegistryClient {
 
   // ─── Helpers ────────────────────────────────────────
 
-  private _requireWallet(): asserts this is {
-    walletClient: WalletClient;
-  } {
+  private _requireWallet(): void {
     if (!this.walletClient) {
       throw new Error(
         "ExperimentalFeatureRegistryClient: walletClient required for write operations",

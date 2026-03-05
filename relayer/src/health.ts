@@ -40,28 +40,49 @@ export class HealthReporter {
             ? Math.round(m.totalLatencyMs / m.tasksSucceeded)
             : 0;
 
+        const lines: string[] = [
+          `# HELP zaseon_relayer_uptime_ms Relayer uptime in milliseconds`,
+          `# TYPE zaseon_relayer_uptime_ms gauge`,
+          `zaseon_relayer_uptime_ms ${Date.now() - this.startTime}`,
+          `# HELP zaseon_relayer_chains_total Number of watched chains`,
+          `# TYPE zaseon_relayer_chains_total gauge`,
+          `zaseon_relayer_chains_total ${this.config.chains.length}`,
+          `# HELP zaseon_relayer_queue_size Current queue depth`,
+          `# TYPE zaseon_relayer_queue_size gauge`,
+          `zaseon_relayer_queue_size ${this.queue?.size ?? 0}`,
+          `# HELP zaseon_relayer_tasks_total Total relay tasks processed`,
+          `# TYPE zaseon_relayer_tasks_total counter`,
+          `zaseon_relayer_tasks_total{status="success"} ${m?.tasksSucceeded ?? 0}`,
+          `zaseon_relayer_tasks_total{status="failure"} ${m?.tasksFailed ?? 0}`,
+          `# HELP zaseon_relayer_relay_latency_avg_ms Average relay latency`,
+          `# TYPE zaseon_relayer_relay_latency_avg_ms gauge`,
+          `zaseon_relayer_relay_latency_avg_ms ${avgLatency}`,
+          `# HELP zaseon_relayer_retries_total Total retry attempts`,
+          `# TYPE zaseon_relayer_retries_total counter`,
+          `zaseon_relayer_retries_total ${m?.totalRetries ?? 0}`,
+          `# HELP zaseon_relayer_gas_used_total Total gas used for relays (wei)`,
+          `# TYPE zaseon_relayer_gas_used_total counter`,
+          `zaseon_relayer_gas_used_total ${m?.totalGasUsed?.toString() ?? "0"}`,
+        ];
+
+        // Per-chain relay metrics
+        if (m?.perChain && m.perChain.size > 0) {
+          lines.push(
+            `# HELP zaseon_relayer_chain_tasks Per-chain relay task counts`,
+            `# TYPE zaseon_relayer_chain_tasks counter`,
+          );
+          for (const [chainId, counts] of m.perChain) {
+            lines.push(
+              `zaseon_relayer_chain_tasks{chain="${chainId}",status="success"} ${counts.success}`,
+              `zaseon_relayer_chain_tasks{chain="${chainId}",status="failure"} ${counts.failure}`,
+            );
+          }
+        }
+
+        lines.push("");
+
         res.writeHead(200, { "Content-Type": "text/plain" });
-        res.end(
-          [
-            `# HELP zaseon_relayer_uptime_ms Relayer uptime in milliseconds`,
-            `# TYPE zaseon_relayer_uptime_ms gauge`,
-            `zaseon_relayer_uptime_ms ${Date.now() - this.startTime}`,
-            `# HELP zaseon_relayer_chains_total Number of watched chains`,
-            `# TYPE zaseon_relayer_chains_total gauge`,
-            `zaseon_relayer_chains_total ${this.config.chains.length}`,
-            `# HELP zaseon_relayer_queue_size Current queue depth`,
-            `# TYPE zaseon_relayer_queue_size gauge`,
-            `zaseon_relayer_queue_size ${this.queue?.size ?? 0}`,
-            `# HELP zaseon_relayer_tasks_total Total relay tasks processed`,
-            `# TYPE zaseon_relayer_tasks_total counter`,
-            `zaseon_relayer_tasks_total{status="success"} ${m?.tasksSucceeded ?? 0}`,
-            `zaseon_relayer_tasks_total{status="failure"} ${m?.tasksFailed ?? 0}`,
-            `# HELP zaseon_relayer_relay_latency_avg_ms Average relay latency`,
-            `# TYPE zaseon_relayer_relay_latency_avg_ms gauge`,
-            `zaseon_relayer_relay_latency_avg_ms ${avgLatency}`,
-            "",
-          ].join("\n"),
-        );
+        res.end(lines.join("\n"));
       } else {
         res.writeHead(404);
         res.end("Not Found");

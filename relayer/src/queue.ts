@@ -51,6 +51,9 @@ export class ProofQueue {
     tasksSucceeded: 0,
     tasksFailed: 0,
     totalLatencyMs: 0,
+    totalRetries: 0,
+    totalGasUsed: 0n,
+    perChain: new Map<string, { success: number; failure: number }>(),
   };
 
   constructor(private config: RelayerConfig) {}
@@ -91,6 +94,13 @@ export class ProofQueue {
           this.metrics.tasksTotal++;
           this.metrics.tasksSucceeded++;
           this.metrics.totalLatencyMs += latency;
+          const destKey = task.destChainId?.toString() ?? "unknown";
+          const chainMetric = this.metrics.perChain.get(destKey) ?? {
+            success: 0,
+            failure: 0,
+          };
+          chainMetric.success++;
+          this.metrics.perChain.set(destKey, chainMetric);
           logger.info(
             { taskId: task.id, latencyMs: latency },
             "Task completed",
@@ -98,6 +108,7 @@ export class ProofQueue {
         } catch (err) {
           task.retries++;
           task.error = (err as Error).message;
+          this.metrics.totalRetries++;
 
           if (task.retries < this.config.maxRetries) {
             logger.warn(
@@ -108,6 +119,13 @@ export class ProofQueue {
           } else {
             this.metrics.tasksTotal++;
             this.metrics.tasksFailed++;
+            const destKey = task.destChainId?.toString() ?? "unknown";
+            const chainMetric = this.metrics.perChain.get(destKey) ?? {
+              success: 0,
+              failure: 0,
+            };
+            chainMetric.failure++;
+            this.metrics.perChain.set(destKey, chainMetric);
             logger.error({ taskId: task.id }, "Task permanently failed");
           }
         }

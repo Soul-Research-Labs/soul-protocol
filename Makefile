@@ -74,20 +74,28 @@ noir-test:
 # ─── Certora ──────────────────────────────────────
 .PHONY: certora-check certora-verify
 
-## Compile-check all Certora specs (no prover run)
+## Compile-check all Certora specs (no prover run, skips disabled)
 certora-check:
 	@for conf in certora/conf/*.conf; do \
+		if grep -q '"_disabled": true' "$$conf" 2>/dev/null; then \
+			echo "=== SKIP (disabled) $$conf ==="; \
+			continue; \
+		fi; \
 		echo "=== Compile-checking $$conf ==="; \
 		certoraRun "$$conf" --compilation_steps_only || true; \
 	done
 
-## Run full Certora prover verification (requires CERTORAKEY)
+## Run full Certora prover verification (requires CERTORAKEY, skips disabled)
 certora-verify:
 	@if [ -z "$$CERTORAKEY" ]; then \
 		echo "ERROR: CERTORAKEY not set. Export your Certora API key first."; \
 		exit 1; \
 	fi
 	@for conf in certora/conf/*.conf; do \
+		if grep -q '"_disabled": true' "$$conf" 2>/dev/null; then \
+			echo "=== SKIP (disabled) $$conf ==="; \
+			continue; \
+		fi; \
 		echo "=== Verifying $$conf ==="; \
 		certoraRun "$$conf" || true; \
 	done

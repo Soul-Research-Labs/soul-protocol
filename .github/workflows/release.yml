@@ -240,3 +240,38 @@ jobs:
             zaseon-*-artifacts.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-sdk:
+    name: Publish SDK to npm
+    runs-on: ubuntu-latest
+    needs: [validate, create-release]
+    if: ${{ !inputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: "https://registry.npmjs.org"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: cd sdk && npm ci
+
+      - name: Build SDK
+        run: cd sdk && npm run build
+
+      - name: Set version from tag
+        run: |
+          VERSION="${{ needs.validate.outputs.version }}"
+          # Strip leading 'v' if present
+          VERSION="${VERSION#v}"
+          cd sdk && npm version "$VERSION" --no-git-tag-version
+
+      - name: Publish to npm
+        run: cd sdk && npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

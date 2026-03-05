@@ -597,7 +597,7 @@ export class PrivacyHubClient {
   /**
    * Get transfer status
    */
-  async getRequestStatus(requestId: Hex): Promise<TransferStatus> {
+  async getRequestStatus(requestId: Hex): Promise<RequestStatus> {
     return (await this.hubContract.read.getRequestStatus([
       requestId,
     ])) as RequestStatus;
