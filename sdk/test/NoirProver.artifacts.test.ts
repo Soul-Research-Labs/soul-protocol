@@ -105,8 +105,10 @@ describe("NoirProver (compiled artifacts)", () => {
       const circuits = Object.values(Circuit);
       for (const circuit of circuits) {
         const artifact = await prover.loadCircuit(circuit);
-        expect(artifact.bytecode.length).to.be.greaterThan(0,
-          `Circuit ${circuit} has empty bytecode`);
+        expect(artifact.bytecode.length).to.be.greaterThan(
+          0,
+          `Circuit ${circuit} has empty bytecode`,
+        );
       }
     });
 

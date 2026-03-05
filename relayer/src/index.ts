@@ -5,7 +5,13 @@
  * queues proof relay tasks, and submits proofs to destination chains.
  */
 
-import { createPublicClient, createWalletClient, http, type Hex, parseEther } from "viem";
+import {
+  createPublicClient,
+  createWalletClient,
+  http,
+  type Hex,
+  parseEther,
+} from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { EventWatcher } from "./watcher.js";
 import { ProofQueue } from "./queue.js";
@@ -61,7 +67,9 @@ main().catch((err) => {
  */
 async function ensureRegistered(config: RelayerConfig): Promise<void> {
   if (!config.privateKey) {
-    logger.warn("No RELAYER_PRIVATE_KEY — skipping on-chain registration check");
+    logger.warn(
+      "No RELAYER_PRIVATE_KEY — skipping on-chain registration check",
+    );
     return;
   }
 
@@ -115,7 +123,9 @@ async function ensureRegistered(config: RelayerConfig): Promise<void> {
     chain: null,
   });
 
-  const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+  const receipt = await publicClient.waitForTransactionReceipt({
+    hash: txHash,
+  });
 
   if (receipt.status === "reverted") {
     throw new Error(`Relayer registration tx reverted: ${txHash}`);
