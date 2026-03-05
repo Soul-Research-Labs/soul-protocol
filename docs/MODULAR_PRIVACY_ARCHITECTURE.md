@@ -1,8 +1,6 @@
 # ZASEON: Modular Privacy Network Architecture
 
-## Celestia-Inspired Microservice Decomposition
-
-> **Strategic Insight**: Celestia proved unbundling creates ecosystems. Zaseon unbundles trust, execution, authority, and disclosure—then re-bundles them cryptographically.
+> Celestia-inspired microservice decomposition — unbundling trust, execution, authority, and disclosure, then re-bundling them cryptographically.
 
 ---
 

@@ -1,5 +1,22 @@
 # ZASEON - Formal Verification Report
 
+> Formal verification setup and results for ZASEON using Certora Prover, Halmos symbolic execution, and Foundry fuzz testing.
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Verification Jobs Submitted](#verification-jobs-submitted)
+- [Verified Properties](#verified-properties)
+- [Harness Contracts](#harness-contracts)
+- [Solidity Configuration](#solidity-configuration)
+- [Running Verifications](#running-verifications)
+- [Enhanced Verification (v3.0)](#enhanced-verification-v30)
+- [Next Steps](#next-steps)
+
+---
+
 ## Overview
 
 This document describes the formal verification setup for the ZASEON ZASEON using Certora Prover.

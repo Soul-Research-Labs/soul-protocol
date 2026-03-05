@@ -1,8 +1,20 @@
 # NatSpec Documentation Audit Report
 
+> Audit report for NatSpec coverage across `contracts/crosschain/` and `contracts/relayer/` — identifying missing `@notice`, `@param`, and `@return` tags.
+
 **Scope**: `contracts/crosschain/` (16 files) + `contracts/relayer/` (2 files)  
 **Standard**: Solidity NatSpec — `@notice`, `@param`, `@return`, `@dev`  
 **Rule**: Only public/external functions missing documentation are listed below.
+
+---
+
+## Table of Contents
+
+- [Summary](#summary)
+- [Contracts Audit Results](#1-contractscrosschainarbitrumbridgeadaptersol)
+- [Clean Files](#clean-files-no-missing-natspec)
+- [Patterns Observed](#patterns-observed)
+- [Recommendations](#recommendations)
 
 ---
 

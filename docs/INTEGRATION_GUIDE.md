@@ -780,4 +780,4 @@ See the `ExperimentalFeatureRegistry` contract for graduation criteria.
 
 ---
 
-**Next:** [API Reference](SOLIDITY_API_REFERENCE.md) | [Deployment Guide](DEPLOYMENT.md) | [Architecture](architecture.md)
+**Next:** [API Reference](SOLIDITY_API_REFERENCE.md) | [Deployment Guide](DEPLOYMENT.md) | [Architecture](ARCHITECTURE.md)

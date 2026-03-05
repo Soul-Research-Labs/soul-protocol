@@ -630,7 +630,7 @@ npx hardhat run scripts/deploy/deploy-l2-bridges.ts --network base-sepolia
 
 ## Documentation
 
-[Architecture](docs/architecture.md) • [API Reference](docs/SOLIDITY_API_REFERENCE.md) • [Integration Guide](docs/INTEGRATION_GUIDE.md) • [L2 Bridges](docs/L2_INTEROPERABILITY.md) • [Security](docs/THREAT_MODEL.md)
+[Architecture](docs/ARCHITECTURE.md) • [API Reference](docs/SOLIDITY_API_REFERENCE.md) • [Integration Guide](docs/INTEGRATION_GUIDE.md) • [L2 Bridges](docs/L2_INTEROPERABILITY.md) • [Security](docs/THREAT_MODEL.md)
 
 ---
 

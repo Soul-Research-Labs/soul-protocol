@@ -1,5 +1,20 @@
 # Optimism Integration
 
+> ZASEON's native integration with Optimism (OP Mainnet) for cross-chain privacy operations via the OP Stack CrossDomainMessenger.
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Key Features](#key-features)
+- [Roles](#roles)
+- [Deployment](#deployment)
+- [References](#references)
+
+---
+
 ## Overview
 
 ZASEON integrates with **Optimism (OP Mainnet)**, the leading OP Stack optimistic rollup on Ethereum. Optimism provides fast, low-cost transactions with Ethereum-equivalent security via a 7-day fault proof window.

@@ -1,5 +1,20 @@
 # ZASEON - Mainnet Security Checklist
 
+> Pre-launch security verification checklist for ZASEON mainnet deployment — covering smart contract security, configuration, and emergency response.
+
+---
+
+## Table of Contents
+
+- [Pre-Launch Security Verification](#pre-launch-security-verification)
+- [Mainnet Configuration](#mainnet-configuration)
+- [Launch Day Protocol](#launch-day-protocol)
+- [Emergency Response](#emergency-response)
+- [Contract Upgrade Policy](#contract-upgrade-policy)
+- [Monitoring Dashboard URLs](#monitoring-dashboard-urls)
+
+---
+
 ## Pre-Launch Security Verification
 
 ### Smart Contract Security

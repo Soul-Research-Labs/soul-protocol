@@ -1,5 +1,24 @@
 # Zaseon Recursive Proof Implementation Guide
 
+> Technical guide for implementing recursive proofs in Zaseon, enabling proof aggregation and composition across the protocol.
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Nova-Style IVC for Zaseon](#nova-style-ivc-for-zaseon)
+- [Folding-Based Approach](#folding-based-approach)
+- [Cross-System Recursion](#cross-system-recursion)
+- [Implementation Guide](#implementation-guide)
+- [Benchmarks](#benchmarks)
+- [Migration Path](#migration-path)
+- [Security Considerations](#security-considerations)
+- [References](#references)
+
+---
+
 ## Overview
 
 This document provides technical details for implementing recursive proofs in Zaseon, enabling proof aggregation and composition across the protocol.

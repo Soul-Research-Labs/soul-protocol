@@ -1,5 +1,24 @@
 # Cross-Chain Bridge Security Framework
 
+> Defense-in-depth security framework for ZASEON's cross-chain bridge infrastructure, minimizing trust assumptions across LayerZero, Hyperlane, and native L2 bridges.
+
+---
+
+## Table of Contents
+
+- [Problem Statement](#problem-statement)
+- [Threat Model](#threat-model)
+- [Defense-in-Depth Strategy](#defense-in-depth-strategy)
+- [Bridge Security Scorecard](#bridge-security-scorecard)
+- [Implementation Roadmap](#implementation-roadmap)
+- [Monitoring & Metrics](#monitoring--metrics)
+- [Incident Response](#incident-response)
+- [Best Practices](#best-practices)
+- [Session 8 Security Updates](#session-8-security-updates)
+- [Resources](#resources)
+
+---
+
 ## Problem Statement
 
 ZASEON relies on external bridge infrastructure (LayerZero, Hyperlane, native L2 bridges). Bridge exploits have resulted in $2B+ in losses historically. We must minimize trust assumptions and implement defense-in-depth.

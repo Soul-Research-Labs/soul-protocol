@@ -2,9 +2,9 @@
 
 ## From Solo Codebase to Production Privacy Middleware
 
-> **Classification**: INTERNAL — This document is in .gitignore and must not be committed.
+> **Classification**: INTERNAL
 >
-> **Last Updated**: March 4, 2026
+> **Last Updated**: March 5, 2026
 >
 > **Author**: Soul Research Team
 >

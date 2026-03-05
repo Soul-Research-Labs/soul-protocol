@@ -2,6 +2,8 @@
 
 > Tachyon-derived intent-based architecture for ZASEON
 
+---
+
 ## Overview
 
 ZASEON's intent completion suite enables users to express **what** they want

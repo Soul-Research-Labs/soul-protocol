@@ -196,4 +196,4 @@ try {
 
 - [API Reference](./SOLIDITY_API_REFERENCE.md)
 - [L2 Interoperability](./L2_INTEROPERABILITY.md) - L2-specific integration
-- [Architecture](./architecture.md)
+- [Architecture](./ARCHITECTURE.md)

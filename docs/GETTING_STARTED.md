@@ -312,7 +312,7 @@ SCROLLSCAN_API_KEY=your_key
 | ---------------------------------------------- | ------------------------------------------- |
 | **[Integration Guide](INTEGRATION_GUIDE.md)**  | Deep-dive into SDK usage with v2 primitives |
 | **[API Reference](SOLIDITY_API_REFERENCE.md)** | Complete function documentation             |
-| **[Architecture](architecture.md)**            | System design and components                |
+| **[Architecture](ARCHITECTURE.md)**            | System design and components                |
 | **[Deployment Guide](DEPLOYMENT.md)**          | Testnet and mainnet deployment              |
 
 ---

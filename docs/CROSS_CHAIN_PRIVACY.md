@@ -8,6 +8,25 @@
 
 ---
 
+## Table of Contents
+
+- [Production Status](#production-status)
+- [Architecture](#architecture)
+- [Privacy Levels](#privacy-levels)
+- [Core Components](#core-components)
+- [Cryptographic Primitives](#cryptographic-primitives)
+- [Research Reference Material](#research-reference-material)
+- [Stealth Addresses](#stealth-addresses)
+- [Ring Confidential Transactions](#ring-confidential-transactions)
+- [Cross-Domain Nullifier Algebra](#cross-domain-nullifier-algebra)
+- [Supported Chains](#supported-chains)
+- [Integration Guide](#integration-guide)
+- [Security Considerations](#security-considerations)
+- [Contract Addresses](#contract-addresses)
+- [References](#references)
+
+---
+
 ## Production Status
 
 > **⚠️ Important:** This document contains both production-ready features and research reference material.
@@ -663,4 +682,4 @@ const success = await ringCT.verifyAndExecuteRCT(
 
 ## References
 
-[ERC-5564 Stealth](https://eips.ethereum.org/EIPS/eip-5564) • [Groth16](https://eprint.iacr.org/2016/260) • [Poseidon Hash](https://www.poseidon-hash.info/) • [CDNA Design](./architecture.md)
+[ERC-5564 Stealth](https://eips.ethereum.org/EIPS/eip-5564) • [Groth16](https://eprint.iacr.org/2016/260) • [Poseidon Hash](https://www.poseidon-hash.info/) • [CDNA Design](./ARCHITECTURE.md)

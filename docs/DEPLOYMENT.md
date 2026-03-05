@@ -293,4 +293,4 @@ This sets up:
 
 **Deployment addresses:** `deployments/<network>-<chainId>.json`
 
-**Next:** [Architecture](architecture.md) | [Integration Guide](INTEGRATION_GUIDE.md) | [Security](../SECURITY.md)
+**Next:** [Architecture](ARCHITECTURE.md) | [Integration Guide](INTEGRATION_GUIDE.md) | [Security](../SECURITY.md)

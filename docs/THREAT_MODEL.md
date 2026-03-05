@@ -1,5 +1,24 @@
 # ZASEON (Zaseon) Threat Model
 
+> Comprehensive threat model for ZASEON's cross-chain privacy infrastructure — covering attack vectors, risk assessment, and security controls.
+
+---
+
+## Table of Contents
+
+- [Document Information](#document-information)
+- [1. Executive Summary](#1-executive-summary)
+- [2. System Overview](#2-system-overview)
+- [3. Threat Actors](#3-threat-actors)
+- [4. Attack Vectors & Mitigations](#4-attack-vectors--mitigations)
+- [5. Risk Matrix](#5-risk-matrix)
+- [6. Security Controls Summary](#6-security-controls-summary)
+- [7. Incident Response Triggers](#7-incident-response-triggers)
+- [8. Recommendations](#8-recommendations)
+- [9. Appendix](#9-appendix)
+
+---
+
 ## Document Information
 
 | Field          | Value      |

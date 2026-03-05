@@ -1,5 +1,25 @@
 # Risk Mitigation Roadmap
 
+> Prioritized, actionable roadmap addressing key risks in the ZASEON codebase — complexity, relayer dependency, experimental features, and bridge security.
+
+---
+
+## Table of Contents
+
+- [Executive Summary](#executive-summary)
+- [Priority Matrix](#priority-matrix)
+- [Phase 1: Immediate Actions (Week 1-4)](#phase-1-immediate-actions-week-1-4)
+- [Phase 2: Short-term Improvements (Month 1-2)](#phase-2-short-term-improvements-month-1-2)
+- [Phase 3: Medium-term Enhancements (Month 3-6)](#phase-3-medium-term-enhancements-month-3-6)
+- [Phase 4: Long-term Optimization (Month 6-12)](#phase-4-long-term-optimization-month-6-12)
+- [Resource Requirements](#resource-requirements)
+- [Success Criteria](#success-criteria)
+- [Risk Tracking](#risk-tracking)
+- [Communication Plan](#communication-plan)
+- [Conclusion](#conclusion)
+
+---
+
 ## Executive Summary
 
 This document provides a prioritized, actionable roadmap to address the four key concerns identified in the ZASEON codebase analysis:

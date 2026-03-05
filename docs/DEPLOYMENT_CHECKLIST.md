@@ -1,5 +1,21 @@
 # Zaseon Deployment Checklist
 
+> Step-by-step deployment verification checklist for testnet and mainnet launches.
+
+---
+
+## Table of Contents
+
+- [Pre-Deployment Verification](#pre-deployment-verification)
+- [Testnet Deployment](#testnet-deployment)
+- [Integration Testing (Post-Deployment)](#integration-testing-post-deployment)
+- [Mainnet Deployment Checklist](#mainnet-deployment-checklist)
+- [Rollback Procedures](#rollback-procedures)
+- [Monitoring & Alerting](#monitoring--alerting)
+- [Contact & Support](#contact--support)
+
+---
+
 ## Pre-Deployment Verification
 
 ### 1. Code Quality ✅

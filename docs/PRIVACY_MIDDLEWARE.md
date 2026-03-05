@@ -1,5 +1,20 @@
 # Privacy Middleware Architecture
 
+> Complete architecture for Zaseon's privacy middleware — shielded transactions, cross-chain proof translation, compliance screening, and incentivized relaying.
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Contracts](#contracts)
+- [Deployment](#deployment)
+- [SDK Usage](#sdk-usage)
+- [Formal Verification](#formal-verification)
+- [Security Checklist](#security-checklist)
+
+---
+
 Zaseon's privacy middleware provides a complete stack for shielded transactions, cross-chain proof translation, compliance screening, and incentivized relaying.
 
 ## Overview

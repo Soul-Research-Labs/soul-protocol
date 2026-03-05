@@ -1,5 +1,23 @@
 # Aztec Integration Guide
 
+> Integration guide for ZASEON's privacy bridge to Aztec — the privacy-first ZK-rollup using UltraHonk proofs via Noir circuits on BN254.
+
+---
+
+## Table of Contents
+
+- [Architecture](#architecture)
+- [Comparison: Aztec vs Other Privacy Chains](#comparison-aztec-vs-other-privacy-chains)
+- [Contract Details](#contract-details)
+- [Message Flow](#message-flow)
+- [Pre-Existing Aztec Infrastructure in ZASEON](#pre-existing-aztec-infrastructure-in-zaseon)
+- [Deployment](#deployment)
+- [SDK Usage](#sdk-usage)
+- [Security Considerations](#security-considerations)
+- [Test Coverage](#test-coverage)
+
+---
+
 Aztec is a **privacy-first ZK-rollup** on Ethereum that uses **UltraHonk proofs** via **Noir circuits** on BN254. ZASEON integrates with Aztec through the `AztecBridgeAdapter`, enabling private cross-chain state transfer between Aztec's encrypted execution environment and ZASEON's privacy middleware.
 
 ## Architecture

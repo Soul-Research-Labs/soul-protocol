@@ -5,6 +5,19 @@
 
 ---
 
+## Table of Contents
+
+- [Known Limitation](#%EF%B8%8F-known-limitation)
+- [Test Suite Summary](#test-suite-summary)
+- [Coverage Status](#coverage-status)
+- [Alternative Verification Methods](#alternative-verification-methods)
+- [Running Coverage](#running-coverage)
+- [Improving Coverage](#improving-coverage)
+- [CI Pipeline](#ci-pipeline)
+- [References](#references)
+
+---
+
 ## ⚠️ Known Limitation
 
 Forge coverage fails on **full-project** builds with **"stack too deep"** errors due to:

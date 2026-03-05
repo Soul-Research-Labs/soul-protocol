@@ -1314,4 +1314,4 @@ Privacy Guarantee:
 
 ---
 
-_This document covers the ZASEON liquidity management architecture as implemented across the contract suite. For the broader system architecture, see [architecture.md](architecture.md). For integration examples, see [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md). For the SDK interface, see [GETTING_STARTED.md](GETTING_STARTED.md)._
+_This document covers the ZASEON liquidity management architecture as implemented across the contract suite. For the broader system architecture, see [ARCHITECTURE.md](ARCHITECTURE.md). For integration examples, see [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md). For the SDK interface, see [GETTING_STARTED.md](GETTING_STARTED.md)._

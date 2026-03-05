@@ -1,9 +1,26 @@
 # ZASEON Security Audit Report
 
+> Comprehensive security audit documenting 65 vulnerabilities identified and fixed across multiple review phases.
+
 **Date:** February 5, 2026  
 **Auditor:** Internal Security Review  
 **Scope:** Core contracts, cross-chain bridges, privacy primitives, governance, security modules  
 **Status:** ✅ All Critical and High issues resolved
+
+---
+
+## Table of Contents
+
+- [Executive Summary](#executive-summary)
+- [Contracts Audited](#contracts-audited)
+- [Critical Vulnerabilities](#critical-vulnerabilities-5)
+- [High Vulnerabilities](#high-vulnerabilities-6)
+- [Medium Vulnerabilities](#medium-vulnerabilities-15)
+- [Phase 2 Security Review](#phase-2-security-review-february-2026)
+- [Session 8 Security Review](#session-8-security-review-march-2026)
+- [Recommendations](#recommendations)
+- [Commit History](#commit-history)
+- [Appendix: Testing Notes](#appendix-testing-notes)
 
 ---
 

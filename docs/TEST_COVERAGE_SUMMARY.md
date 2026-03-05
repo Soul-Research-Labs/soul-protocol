@@ -1,5 +1,21 @@
 # ZASEON — Test Coverage Summary
 
+> Overview of test coverage across Foundry, Hardhat, and Certora verification suites.
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Coverage by Category](#coverage-by-category)
+- [Specialized Test Suites](#specialized-test-suites)
+- [Known Gaps (Intentional)](#known-gaps-intentional)
+- [Lint Warnings](#lint-warnings)
+- [Total](#total)
+- [Commands](#commands)
+
+---
+
 ## Overview
 
 | Metric                              | Count |

@@ -1,5 +1,22 @@
 # ZASEON - Monitoring Configuration
 
+> Monitoring alerts and thresholds configuration for ZASEON production deployment.
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Alert Severity Levels](#alert-severity-levels)
+- [Contract Event Monitoring](#contract-event-monitoring)
+- [On-Chain Metrics](#on-chain-metrics)
+- [Infrastructure Monitoring](#infrastructure-monitoring)
+- [Alert Integrations](#alert-integrations)
+- [Grafana Dashboard Panels](#grafana-dashboard-panels)
+- [Runbook References](#runbook-references)
+
+---
+
 ## Overview
 
 This document defines monitoring alerts and thresholds for ZASEON production deployment.

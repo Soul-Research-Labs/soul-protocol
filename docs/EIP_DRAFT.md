@@ -2,7 +2,7 @@
 eip: XXXX
 title: Cross-Chain Confidential State Transfer via ZK-Bound State Locks
 description: A standard for privacy-preserving cross-chain state transitions using zero-knowledge proofs, self-authenticating containers, and cross-domain nullifier algebra.
-author: Manish Ghimire (@manishghimire), ZASEON Contributors
+author: Elric Ghimire (@manishghimire), ZASEON Contributors
 discussions-to: https://ethereum-magicians.org/t/eip-xxxx-cross-chain-confidential-state-transfer
 status: Draft
 type: Standards Track
@@ -170,6 +170,7 @@ interface IZKBoundStateLocks {
 #### Lock Creation
 
 Implementations MUST:
+
 - Derive `lockId` deterministically: `lockId = keccak256(abi.encodePacked(oldStateCommitment, transitionPredicateHash, policyHash, domainSeparator, msg.sender, block.chainid))`
 - Store the lock with state `LOCKED`
 - Emit `LockCreated` with all parameters
@@ -177,6 +178,7 @@ Implementations MUST:
 #### Unlock Verification
 
 Implementations MUST verify all of the following:
+
 1. The ZK proof is valid against the registered verifier for `verifierKeyHash`
 2. The `nullifier` has not been previously consumed (check local + cross-domain registry)
 3. The `oldStateCommitment` in the proof matches the lock's committed state
@@ -373,6 +375,7 @@ All ZK proofs MUST use a proving system with computational soundness (Groth16, U
 #### Nullifier Uniqueness
 
 The CDNA system provides **eventual consistency** for cross-chain nullifier sets. During the sync window (bounded by relayer latency), a nullifier MAY not yet be visible on all chains. Implementations MUST:
+
 - Track a ring buffer of recent Merkle roots (RECOMMENDED: 100) to tolerate sync delays
 - Allow verification against any recent root, not just the latest
 - Implement rate limiting to bound the exposure window
@@ -382,6 +385,7 @@ For high-value state transfers, implementations SHOULD require the destination c
 #### Optimistic Unlock Disputes
 
 When using optimistic unlock:
+
 - The dispute window MUST be configurable per lock (RECOMMENDED minimum: 1 hour)
 - The bond MUST be sufficient to cover challenger gas costs plus a slashing penalty
 - Challengers MUST provide a valid conflict proof (not merely an assertion)
@@ -390,6 +394,7 @@ When using optimistic unlock:
 #### Privacy Guarantees
 
 This protocol provides **transaction-level privacy** (amounts, senders, recipients are hidden within the shielded set) but does NOT provide:
+
 - **Timing analysis resistance**: Deposit and withdrawal timing can be correlated
 - **Amount-level privacy** across the bridge boundary: If the shielded set is small, the bridge deposit amount may reveal information
 - **Metadata privacy**: On-chain state (lock creation, container import) is publicly visible
@@ -410,11 +415,12 @@ State locks MUST include `block.chainid` in the domain separator (covered by `do
 
 Existing bridges (LayerZero Endpoint, Hyperlane Mailbox, CCIP Router) are **message-passing** protocols. They transport arbitrary bytes between chains. This EIP operates at a higher abstraction level: it defines how **confidential state** -- state that is never exposed in plaintext -- can be transferred and verified across chains.
 
-The ZK-SLock primitive is the key innovation: it separates the *authorization to unlock state* (a ZK proof) from the *state itself* (only committed on-chain). This means the bridge infrastructure never needs to see the plaintext -- it only needs to verify proofs.
+The ZK-SLock primitive is the key innovation: it separates the _authorization to unlock state_ (a ZK proof) from the _state itself_ (only committed on-chain). This means the bridge infrastructure never needs to see the plaintext -- it only needs to verify proofs.
 
 ### Why three separate interfaces?
 
 The three primitives compose orthogonally:
+
 - **ZK-SLocks alone** work for simple cross-chain state transitions
 - **PC3 containers** add portability when the destination chain is unknown at lock time
 - **CDNA** provides the double-spend prevention layer that both depend on
@@ -451,11 +457,11 @@ The reference implementation supports Ethereum, Arbitrum, Optimism, Base, and Az
 
 ### Deployment
 
-| Contract | Network | Address |
-|----------|---------|---------|
-| ZKBoundStateLocks | Sepolia | (TBD at deployment) |
+| Contract               | Network | Address             |
+| ---------------------- | ------- | ------------------- |
+| ZKBoundStateLocks      | Sepolia | (TBD at deployment) |
 | ProofCarryingContainer | Sepolia | (TBD at deployment) |
-| NullifierRegistryV3 | Sepolia | (TBD at deployment) |
+| NullifierRegistryV3    | Sepolia | (TBD at deployment) |
 
 ## Copyright
 

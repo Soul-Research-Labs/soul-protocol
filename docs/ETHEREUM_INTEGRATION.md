@@ -1,5 +1,19 @@
 # Ethereum L1 Integration
 
+> ZASEON's integration with Ethereum L1 as the settlement and coordination layer for cross-chain proof relay and state synchronization.
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [Contract](#contract)
+- [Deployment](#deployment)
+- [References](#references)
+
+---
+
 ## Overview
 
 ZASEON integrates with **Ethereum L1** as the settlement and coordination layer. The `EthereumL1Bridge` serves as the hub contract that connects to all L2 rollup bridges and handles cross-chain proof relay and state synchronization.

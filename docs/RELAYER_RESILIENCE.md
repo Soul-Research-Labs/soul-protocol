@@ -1,5 +1,20 @@
 # Relayer Network Resilience Strategy
 
+> Multi-layer resilience approach for ZASEON's relayer network — ensuring reliable cross-chain message delivery with redundancy and failover.
+
+---
+
+## Table of Contents
+
+- [Problem Statement](#problem-statement)
+- [Multi-Layer Resilience Approach](#multi-layer-resilience-approach)
+- [Implementation Roadmap](#implementation-roadmap)
+- [Success Metrics](#success-metrics)
+- [Monitoring Dashboard](#monitoring-dashboard)
+- [Resources](#resources)
+
+---
+
 ## Problem Statement
 ZASEON depends on relayers for cross-chain message delivery. Single points of failure or relayer unavailability could disrupt service.
 
