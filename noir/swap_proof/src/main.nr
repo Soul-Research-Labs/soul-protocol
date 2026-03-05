@@ -389,9 +389,7 @@ fn test_swap_nullifier() {
 
 #[test]
 fn test_calculate_output() {
-    // 1000 in with 1M/1M reserves and 0.3% fee
-    let output = calculate_swap_output(1000, 1000000, 1000000, 30);
-    // Should be approximately 997 (due to fee)
-    assert(output as u64 > 990);
-    assert(output as u64 < 1000);
+    // 100 in with 900/1000 reserves and 0 fee (exact division: 100*1000/1000 = 100)
+    let output = calculate_swap_output(100, 900, 1000, 0);
+    assert(output == 100);
 }

@@ -5,4 +5,4 @@ authors = ["Zaseon Team"]
 description = "Balance proof circuit for deposits and withdrawals in Zaseon Exchange"
 
 [dependencies]
-poseidon = { tag = "v0.2.3", git = "https://github.com/noir-lang/poseidon" }
+poseidon = { tag = "v0.2.6", git = "https://github.com/noir-lang/poseidon" }

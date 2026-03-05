@@ -5,10 +5,23 @@
  * Uses an in-memory queue with optional Redis backing for persistence.
  */
 
-import { type RelayerConfig } from './config.js';
-import { createLogger } from './logger.js';
+import {
+  createPublicClient,
+  createWalletClient,
+  http,
+  type Hex,
+  decodeEventLog,
+} from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { type RelayerConfig, type ChainConfig } from "./config.js";
+import { createLogger } from "./logger.js";
+import {
+  SUBMIT_PROOF_ABI,
+  PROOF_DATA_EMITTED_EVENT,
+  RELAY_WATCH_ABI,
+} from "./abi.js";
 
-const logger = createLogger('queue');
+const logger = createLogger("queue");
 
 export interface RelayTask {
   id: string;
@@ -19,7 +32,10 @@ export interface RelayTask {
   logIndex: number;
   timestamp: number;
   retries: number;
+  destChainId?: number;
   targetChain?: string;
+  proofId?: string;
+  commitment?: string;
   proofData?: Uint8Array;
   error?: string;
 }
@@ -29,22 +45,33 @@ export class ProofQueue {
   private processing = false;
   private running = false;
 
+  /** Prometheus-compatible counters */
+  public metrics = {
+    tasksTotal: 0,
+    tasksSucceeded: 0,
+    tasksFailed: 0,
+    totalLatencyMs: 0,
+  };
+
   constructor(private config: RelayerConfig) {}
 
   async start(): Promise<void> {
-    logger.info('Starting proof queue processor...');
+    logger.info("Starting proof queue processor...");
     this.running = true;
     this._processLoop();
   }
 
   async drain(): Promise<void> {
-    logger.info({ pending: this.queue.length }, 'Draining queue...');
+    logger.info({ pending: this.queue.length }, "Draining queue...");
     this.running = false;
   }
 
   enqueue(task: RelayTask): void {
     this.queue.push(task);
-    logger.debug({ taskId: task.id, queueSize: this.queue.length }, 'Task enqueued');
+    logger.debug(
+      { taskId: task.id, queueSize: this.queue.length },
+      "Task enqueued",
+    );
   }
 
   get size(): number {
@@ -58,17 +85,27 @@ export class ProofQueue {
         const task = this.queue.shift()!;
 
         try {
+          const start = Date.now();
           await this._processTask(task);
-          logger.info({ taskId: task.id }, 'Task completed');
+          const latency = Date.now() - start;
+          this.metrics.tasksTotal++;
+          this.metrics.tasksSucceeded++;
+          this.metrics.totalLatencyMs += latency;
+          logger.info({ taskId: task.id, latencyMs: latency }, "Task completed");
         } catch (err) {
           task.retries++;
           task.error = (err as Error).message;
 
           if (task.retries < this.config.maxRetries) {
-            logger.warn({ taskId: task.id, retries: task.retries }, 'Task failed, re-queueing');
+            logger.warn(
+              { taskId: task.id, retries: task.retries },
+              "Task failed, re-queueing",
+            );
             this.queue.push(task);
           } else {
-            logger.error({ taskId: task.id }, 'Task permanently failed');
+            this.metrics.tasksTotal++;
+            this.metrics.tasksFailed++;
+            logger.error({ taskId: task.id }, "Task permanently failed");
           }
         }
 
@@ -80,15 +117,159 @@ export class ProofQueue {
   }
 
   private async _processTask(task: RelayTask): Promise<void> {
-    logger.info({ taskId: task.id, source: task.sourceChain }, 'Processing relay task');
+    logger.info(
+      { taskId: task.id, source: task.sourceChain, destChainId: task.destChainId },
+      "Processing relay task",
+    );
 
-    // TODO: Implement proof generation and submission
-    // 1. Fetch full transaction receipt from source chain
-    // 2. Generate cross-chain proof (or fetch from proof aggregator)
-    // 3. Submit proof to destination chain bridge adapter
-    // 4. Wait for confirmation
+    if (!this.config.privateKey) {
+      throw new Error("RELAYER_PRIVATE_KEY not configured");
+    }
 
-    // Placeholder for actual relay logic
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // 1. Resolve source and destination chain configs
+    const sourceChain = this.config.chains.find(
+      (c) => c.chainId === task.sourceChainId,
+    );
+    if (!sourceChain) {
+      throw new Error(`Unknown source chain: ${task.sourceChainId}`);
+    }
+
+    const destChain = task.destChainId
+      ? this.config.chains.find((c) => c.chainId === task.destChainId)
+      : undefined;
+    if (!destChain) {
+      throw new Error(
+        `Destination chain ${task.destChainId} not configured or not in task`,
+      );
+    }
+    if (!destChain.proofHubAddress) {
+      throw new Error(
+        `No proofHubAddress configured for ${destChain.name}`,
+      );
+    }
+
+    // 2. Fetch transaction receipt from source chain to extract proof data
+    const sourceClient = createPublicClient({
+      transport: http(sourceChain.rpcUrl),
+    });
+
+    const receipt = await sourceClient.getTransactionReceipt({
+      hash: task.txHash as Hex,
+    });
+
+    logger.debug(
+      { txHash: task.txHash, logCount: receipt.logs.length },
+      "Fetched source receipt",
+    );
+
+    // 3. Extract proof data from ProofDataEmitted event in the receipt
+    let proofBytes: Hex | undefined;
+    let publicInputsBytes: Hex | undefined;
+    let commitment: Hex | undefined;
+
+    for (const log of receipt.logs) {
+      try {
+        const decoded = decodeEventLog({
+          abi: RELAY_WATCH_ABI,
+          data: log.data,
+          topics: log.topics,
+        });
+        if (decoded.eventName === "ProofRelayed") {
+          const args = decoded.args as {
+            proofId: Hex;
+            sourceChainId: bigint;
+            destChainId: bigint;
+            commitment: Hex;
+            messageId: Hex;
+          };
+          commitment = args.commitment;
+        }
+      } catch {
+        // Not our event — skip
+      }
+
+      try {
+        const decoded = decodeEventLog({
+          abi: [PROOF_DATA_EMITTED_EVENT],
+          data: log.data,
+          topics: log.topics,
+        });
+        if (decoded.eventName === "ProofDataEmitted") {
+          const args = decoded.args as {
+            proofId: Hex;
+            proof: Hex;
+            publicInputs: Hex;
+          };
+          proofBytes = args.proof;
+          publicInputsBytes = args.publicInputs;
+        }
+      } catch {
+        // Not our event — skip
+      }
+    }
+
+    if (!proofBytes || !publicInputsBytes) {
+      throw new Error(
+        `No ProofDataEmitted found in receipt for tx ${task.txHash}`,
+      );
+    }
+
+    commitment =
+      commitment || (task.commitment as Hex) || ("0x" + "00".repeat(32)) as Hex;
+
+    // 4. Submit proof to destination chain's CrossChainProofHubV3
+    const account = privateKeyToAccount(this.config.privateKey as Hex);
+
+    const destWalletClient = createWalletClient({
+      account,
+      transport: http(destChain.rpcUrl),
+    });
+
+    const destPublicClient = createPublicClient({
+      transport: http(destChain.rpcUrl),
+    });
+
+    logger.info(
+      {
+        taskId: task.id,
+        destChain: destChain.name,
+        proofHub: destChain.proofHubAddress,
+      },
+      "Submitting proof to destination",
+    );
+
+    const txHash = await destWalletClient.writeContract({
+      address: destChain.proofHubAddress as Hex,
+      abi: SUBMIT_PROOF_ABI,
+      functionName: "submitProof",
+      args: [
+        proofBytes,
+        publicInputsBytes,
+        commitment,
+        BigInt(task.sourceChainId),
+        BigInt(destChain.chainId),
+      ],
+      chain: null,
+    });
+
+    // 5. Wait for confirmation
+    const txReceipt = await destPublicClient.waitForTransactionReceipt({
+      hash: txHash,
+      confirmations: destChain.confirmations,
+    });
+
+    logger.info(
+      {
+        taskId: task.id,
+        destTxHash: txHash,
+        blockNumber: Number(txReceipt.blockNumber),
+        status: txReceipt.status,
+      },
+      "Proof submitted to destination chain",
+    );
+
+    if (txReceipt.status === "reverted") {
+      throw new Error(`Destination tx reverted: ${txHash}`);
+    }
   }
 }

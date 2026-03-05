@@ -5,4 +5,4 @@ authors = ["ZASEON"]
 description = "PC³ Container Validity Circuit - proves container is valid without revealing contents"
 
 [dependencies]
-poseidon = { tag = "v0.2.3", git = "https://github.com/noir-lang/poseidon" }
+poseidon = { tag = "v0.2.6", git = "https://github.com/noir-lang/poseidon" }

@@ -26,11 +26,11 @@ use poseidon::poseidon::bn254;
 ///
 /// Constraint budget: ~3,500 constraints
 
-// ─── Constants ────────────────────────────────────────────────────────
+// --- Constants --------------------------------------------------------
 
 global FEE_DENOMINATOR: Field = 10000; // Basis points denominator
 
-// ─── Structs ──────────────────────────────────────────────────────────
+// --- Structs ----------------------------------------------------------
 
 /// Source-chain lock details (private witness)
 struct LockWitness {
@@ -58,7 +58,7 @@ struct ProverContext {
     current_timestamp: Field, // Current timestamp (for expiry check)
 }
 
-// ─── Helper functions ─────────────────────────────────────────────────
+// --- Helper functions -------------------------------------------------
 
 /// Compute commitment to a liquidity lock
 /// commitment = H(request_id, token, amount, source_chain, dest_chain, lock_timestamp, expiry, salt)
@@ -115,7 +115,7 @@ fn verify_fee_deduction(
     lhs == rhs
 }
 
-// ─── Main circuit ─────────────────────────────────────────────────────
+// --- Main circuit -----------------------------------------------------
 
 /// Main entry point for the liquidity proof circuit
 ///
@@ -145,15 +145,15 @@ fn main(
     ctx: ProverContext,
     net_amount: Field
 ) {
-    // ── 1. Verify lock commitment matches witness ──────────────
+    // -- 1. Verify lock commitment matches witness --------------
     let computed_lock_commitment = compute_lock_commitment(lock);
     assert(computed_lock_commitment == lock_commitment, "Lock commitment mismatch");
 
-    // ── 2. Verify pool commitment matches witness ──────────────
+    // -- 2. Verify pool commitment matches witness --------------
     let computed_pool_commitment = compute_pool_commitment(pool);
     assert(computed_pool_commitment == pool_commitment, "Pool commitment mismatch");
 
-    // ── 3. Verify nullifier derivation ─────────────────────────
+    // -- 3. Verify nullifier derivation -------------------------
     let computed_nullifier = derive_release_nullifier(
         ctx.relayer_secret,
         lock.request_id,
@@ -161,7 +161,7 @@ fn main(
     );
     assert(computed_nullifier == nullifier, "Nullifier mismatch");
 
-    // ── 4. Verify lock has not expired ─────────────────────────
+    // -- 4. Verify lock has not expired -------------------------
     // We use field comparison: current_timestamp < expiry
     // Since these are timestamps (< 2^64), field arithmetic is safe
     assert(ctx.current_timestamp != lock.expiry, "Lock expired (equal)");
@@ -181,10 +181,10 @@ fn main(
     assert(time_remaining != 0, "Lock has zero time remaining");
     // Note: Full range proof would use bit decomposition; simplified here
 
-    // ── 5. Verify sufficient destination liquidity ─────────────
+    // -- 5. Verify sufficient destination liquidity -------------
     // available = total_deposited - total_locked
     let available = pool.total_deposited - pool.total_locked;
-    // available >= net_amount  ←→  available - net_amount >= 0
+    // available >= net_amount  --  available - net_amount >= 0
     let surplus = available - net_amount;
     // Constrain surplus is small (not wrapped around the field)
     // surplus should be less than total_deposited (sanity bound)
@@ -194,22 +194,22 @@ fn main(
     // Additional: net_amount must be positive
     assert(net_amount != 0, "Transfer amount must be non-zero");
 
-    // ── 6. Verify fee deduction is correct ─────────────────────
+    // -- 6. Verify fee deduction is correct ---------------------
     let fee_valid = verify_fee_deduction(lock.amount, net_amount, pool.fee_bps);
     assert(fee_valid, "Fee deduction invalid");
 
-    // ── 7. Verify transfer amount hash ─────────────────────────
+    // -- 7. Verify transfer amount hash -------------------------
     let computed_amount_hash = bn254::hash_1([net_amount]);
     assert(computed_amount_hash == transfer_amount_hash, "Transfer amount hash mismatch");
 
-    // ── 8. Cross-chain sanity: source != destination ───────────
+    // -- 8. Cross-chain sanity: source != destination -----------
     assert(lock.source_chain_id != lock.dest_chain_id, "Source and destination must differ");
 
-    // ── 9. Amount sanity: lock amount > 0 ──────────────────────
+    // -- 9. Amount sanity: lock amount > 0 ----------------------
     assert(lock.amount != 0, "Lock amount must be non-zero");
 }
 
-// ─── Test module ──────────────────────────────────────────────────────
+// --- Test module ------------------------------------------------------
 
 #[test]
 fn test_valid_liquidity_proof() {

@@ -5,4 +5,4 @@ authors = ["Zaseon Team"]
 description = "AMM swap proof circuit for Zaseon Exchange with constant product verification"
 
 [dependencies]
-poseidon = { tag = "v0.2.3", git = "https://github.com/noir-lang/poseidon" }
+poseidon = { tag = "v0.2.6", git = "https://github.com/noir-lang/poseidon" }
