@@ -24,6 +24,17 @@ contract MockProofVerifier {
     }
 }
 
+/// @dev Mock bridge adapter that accepts any sendMessage call (for E2E)
+contract MockBridgeAdapter {
+    event MessageSent(uint32 dstEid, bytes payload);
+
+    fallback() external payable {
+        // Accept any call — relay adapter mock
+    }
+
+    receive() external payable {}
+}
+
 /**
  * @title PrivateTransferE2E
  * @notice End-to-end test: deposit on chain A → relay proof → withdraw on chain B.
@@ -69,6 +80,7 @@ contract PrivateTransferE2E is Test {
 
     // Mock
     MockProofVerifier public mockVerifier;
+    MockBridgeAdapter public mockAdapter;
 
     // Accounts
     address public admin;
@@ -110,6 +122,7 @@ contract PrivateTransferE2E is Test {
 
         // Deploy shared mock verifier
         mockVerifier = new MockProofVerifier();
+        mockAdapter = new MockBridgeAdapter();
 
         // --- Source chain contracts ---
         srcPool = new UniversalShieldedPool(admin, address(mockVerifier), false);
@@ -139,6 +152,31 @@ contract PrivateTransferE2E is Test {
 
         // Register source chain on proof hub
         destProofHub.addSupportedChain(SOURCE_CHAIN_ID);
+
+        // Confirm role separation (required before proof submissions)
+        destProofHub.confirmRoleSeparation();
+
+        vm.stopPrank();
+
+        // Relayer stakes on ProofHub (required: minRelayerStake = 0.1 ETH)
+        vm.prank(relayerAddr);
+        destProofHub.depositStake{value: 0.1 ether}();
+
+        vm.startPrank(admin);
+
+        // Add destination chain as supported on ProofHub
+        destProofHub.addSupportedChain(DEST_CHAIN_ID);
+
+        // Configure destination chain on relay (required for relayProof)
+        relay.configureChain(
+            DEST_CHAIN_ID,
+            ZaseonCrossChainRelay.ChainConfig({
+                proofHub: address(destProofHub),
+                relayAdapter: address(mockAdapter),
+                bridgeChainId: uint32(DEST_CHAIN_ID),
+                active: true
+            })
+        );
 
         vm.stopPrank();
 
@@ -199,7 +237,7 @@ contract PrivateTransferE2E is Test {
         // Relayer submits proof to destination ProofHub
         // (In production, this happens via cross-chain message bridge)
         vm.prank(relayerAddr);
-        bytes32 hubProofId = destProofHub.submitProof(
+        bytes32 hubProofId = destProofHub.submitProof{value: 0.001 ether}(
             proof,
             publicInputs,
             commitment,
