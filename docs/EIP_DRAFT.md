@@ -2,7 +2,7 @@
 eip: XXXX
 title: Cross-Chain Confidential State Transfer via ZK-Bound State Locks
 description: A standard for privacy-preserving cross-chain state transitions using zero-knowledge proofs, self-authenticating containers, and cross-domain nullifier algebra.
-author: Elric Ghimire (@manishghimire), ZASEON Contributors
+author: Elric Ghimire (@elricghimire), ZASEON Contributors
 discussions-to: https://ethereum-magicians.org/t/eip-xxxx-cross-chain-confidential-state-transfer
 status: Draft
 type: Standards Track

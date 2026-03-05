@@ -18,7 +18,7 @@ export interface Logger {
 }
 
 export function createLogger(component: string): Logger {
-  const level = process.env.LOG_LEVEL || 'info';
+  const level = process.env.LOG_LEVEL || "info";
   const levels: Record<string, number> = {
     debug: 0,
     info: 1,
@@ -37,9 +37,13 @@ export function createLogger(component: string): Logger {
       time: new Date().toISOString(),
     };
 
-    if (args.length === 1 && typeof args[0] === 'string') {
+    if (args.length === 1 && typeof args[0] === "string") {
       entry.msg = args[0];
-    } else if (args.length >= 1 && typeof args[0] === 'object' && args[0] !== null) {
+    } else if (
+      args.length >= 1 &&
+      typeof args[0] === "object" &&
+      args[0] !== null
+    ) {
       Object.assign(entry, args[0]);
       if (args.length > 1) entry.msg = args[1];
     }
@@ -49,10 +53,10 @@ export function createLogger(component: string): Logger {
   };
 
   return {
-    info: (...args: unknown[]) => log('info', args),
-    warn: (...args: unknown[]) => log('warn', args),
-    error: (...args: unknown[]) => log('error', args),
-    debug: (...args: unknown[]) => log('debug', args),
-    fatal: (...args: unknown[]) => log('fatal', args),
+    info: (...args: unknown[]) => log("info", args),
+    warn: (...args: unknown[]) => log("warn", args),
+    error: (...args: unknown[]) => log("error", args),
+    debug: (...args: unknown[]) => log("debug", args),
+    fatal: (...args: unknown[]) => log("fatal", args),
   } as Logger;
 }

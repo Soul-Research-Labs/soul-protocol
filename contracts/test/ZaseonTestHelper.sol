@@ -184,9 +184,7 @@ contract ZaseonTestHelper is Test {
                       INTERNAL DEPLOY FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    function _deployBaseBridge(
-        address _admin
-    ) internal returns (address addr) {
+    function _deployBaseBridge(address _admin) internal returns (address addr) {
         bytes memory bytecode = abi.encodePacked(
             _getBaseBridgeCreationCode(),
             abi.encode(_admin)
@@ -240,15 +238,8 @@ contract ZaseonTestHelper is Test {
                      CREATION CODE ACCESSORS
     //////////////////////////////////////////////////////////////*/
 
-    function _getBaseBridgeCreationCode()
-        internal
-        view
-        returns (bytes memory)
-    {
-        return
-            vm.getCode(
-                "BaseBridgeAdapter.sol:BaseBridgeAdapter"
-            );
+    function _getBaseBridgeCreationCode() internal view returns (bytes memory) {
+        return vm.getCode("BaseBridgeAdapter.sol:BaseBridgeAdapter");
     }
 
     function _getOptimismBridgeCreationCode()
@@ -256,10 +247,7 @@ contract ZaseonTestHelper is Test {
         view
         returns (bytes memory)
     {
-        return
-            vm.getCode(
-                "OptimismBridgeAdapter.sol:OptimismBridgeAdapter"
-            );
+        return vm.getCode("OptimismBridgeAdapter.sol:OptimismBridgeAdapter");
     }
 
     function _getArbitrumBridgeCreationCode()
@@ -267,10 +255,7 @@ contract ZaseonTestHelper is Test {
         view
         returns (bytes memory)
     {
-        return
-            vm.getCode(
-                "ArbitrumBridgeAdapter.sol:ArbitrumBridgeAdapter"
-            );
+        return vm.getCode("ArbitrumBridgeAdapter.sol:ArbitrumBridgeAdapter");
     }
 
     function _getEthereumBridgeCreationCode()
@@ -278,10 +263,7 @@ contract ZaseonTestHelper is Test {
         view
         returns (bytes memory)
     {
-        return
-            vm.getCode(
-                "EthereumL1Bridge.sol:EthereumL1Bridge"
-            );
+        return vm.getCode("EthereumL1Bridge.sol:EthereumL1Bridge");
     }
 }
 

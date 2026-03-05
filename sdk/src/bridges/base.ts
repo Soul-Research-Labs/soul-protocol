@@ -63,31 +63,31 @@ export const BASE_CHALLENGE_PERIOD_MS = 7 * 24 * 60 * 60 * 1000;
 // =============================================================================
 
 export enum BaseDepositStatus {
-    PENDING = 0,
-    VERIFIED = 1,
-    COMPLETED = 2,
-    FAILED = 3,
+  PENDING = 0,
+  VERIFIED = 1,
+  COMPLETED = 2,
+  FAILED = 3,
 }
 
 export enum BaseWithdrawalStatus {
-    PENDING = 0,
-    PROCESSING = 1,
-    COMPLETED = 2,
-    REFUNDED = 3,
-    FAILED = 4,
+  PENDING = 0,
+  PROCESSING = 1,
+  COMPLETED = 2,
+  REFUNDED = 3,
+  FAILED = 4,
 }
 
 export enum BaseEscrowStatus {
-    ACTIVE = 0,
-    FINISHED = 1,
-    CANCELLED = 2,
+  ACTIVE = 0,
+  FINISHED = 1,
+  CANCELLED = 2,
 }
 
 export enum BaseBridgeOpType {
-    ETH_TRANSFER = 0,
-    ERC20_TRANSFER = 1,
-    OUTPUT_PROPOSAL = 2,
-    EMERGENCY_OP = 3,
+  ETH_TRANSFER = 0,
+  ERC20_TRANSFER = 1,
+  OUTPUT_PROPOSAL = 2,
+  EMERGENCY_OP = 3,
 }
 
 // =============================================================================
@@ -95,81 +95,81 @@ export enum BaseBridgeOpType {
 // =============================================================================
 
 export interface BaseDeposit {
-    depositId: `0x${string}`;
-    l2TxHash: `0x${string}`;
-    l2Sender: `0x${string}`;
-    evmRecipient: `0x${string}`;
-    amountWei: bigint;
-    netAmountWei: bigint;
-    fee: bigint;
-    status: BaseDepositStatus;
-    l2BlockNumber: bigint;
-    initiatedAt: bigint;
-    completedAt: bigint;
+  depositId: `0x${string}`;
+  l2TxHash: `0x${string}`;
+  l2Sender: `0x${string}`;
+  evmRecipient: `0x${string}`;
+  amountWei: bigint;
+  netAmountWei: bigint;
+  fee: bigint;
+  status: BaseDepositStatus;
+  l2BlockNumber: bigint;
+  initiatedAt: bigint;
+  completedAt: bigint;
 }
 
 export interface BaseWithdrawal {
-    withdrawalId: `0x${string}`;
-    evmSender: `0x${string}`;
-    l2Recipient: `0x${string}`;
-    amountWei: bigint;
-    l2TxHash: `0x${string}`;
-    status: BaseWithdrawalStatus;
-    initiatedAt: bigint;
-    completedAt: bigint;
+  withdrawalId: `0x${string}`;
+  evmSender: `0x${string}`;
+  l2Recipient: `0x${string}`;
+  amountWei: bigint;
+  l2TxHash: `0x${string}`;
+  status: BaseWithdrawalStatus;
+  initiatedAt: bigint;
+  completedAt: bigint;
 }
 
 export interface BaseEscrow {
-    escrowId: `0x${string}`;
-    evmParty: `0x${string}`;
-    l2Party: `0x${string}`;
-    amountWei: bigint;
-    hashlock: `0x${string}`;
-    preimage: `0x${string}`;
-    finishAfter: bigint;
-    cancelAfter: bigint;
-    status: BaseEscrowStatus;
-    createdAt: bigint;
+  escrowId: `0x${string}`;
+  evmParty: `0x${string}`;
+  l2Party: `0x${string}`;
+  amountWei: bigint;
+  hashlock: `0x${string}`;
+  preimage: `0x${string}`;
+  finishAfter: bigint;
+  cancelAfter: bigint;
+  status: BaseEscrowStatus;
+  createdAt: bigint;
 }
 
 export interface BaseBridgeConfig {
-    baseBridgeContract: `0x${string}`;
-    wrappedBase: `0x${string}`;
-    validatorOracle: `0x${string}`;
-    minValidatorSignatures: bigint;
-    requiredBlockConfirmations: bigint;
-    active: boolean;
+  baseBridgeContract: `0x${string}`;
+  wrappedBase: `0x${string}`;
+  validatorOracle: `0x${string}`;
+  minValidatorSignatures: bigint;
+  requiredBlockConfirmations: bigint;
+  active: boolean;
 }
 
 export interface L2OutputProposal {
-    l2BlockNumber: bigint;
-    outputRoot: `0x${string}`;
-    stateRoot: `0x${string}`;
-    withdrawalStorageRoot: `0x${string}`;
-    timestamp: bigint;
-    verified: boolean;
+  l2BlockNumber: bigint;
+  outputRoot: `0x${string}`;
+  stateRoot: `0x${string}`;
+  withdrawalStorageRoot: `0x${string}`;
+  timestamp: bigint;
+  verified: boolean;
 }
 
 export interface OutputRootProof {
-    version: `0x${string}`;
-    stateRoot: `0x${string}`;
-    messagePasserStorageRoot: `0x${string}`;
-    latestBlockhash: `0x${string}`;
+  version: `0x${string}`;
+  stateRoot: `0x${string}`;
+  messagePasserStorageRoot: `0x${string}`;
+  latestBlockhash: `0x${string}`;
 }
 
 export interface ValidatorAttestation {
-    validator: `0x${string}`;
-    signature: `0x${string}`;
+  validator: `0x${string}`;
+  signature: `0x${string}`;
 }
 
 export interface BaseBridgeStats {
-    totalDeposited: bigint;
-    totalWithdrawn: bigint;
-    totalEscrows: bigint;
-    totalEscrowsFinished: bigint;
-    totalEscrowsCancelled: bigint;
-    accumulatedFees: bigint;
-    latestL2BlockNumber: bigint;
+  totalDeposited: bigint;
+  totalWithdrawn: bigint;
+  totalEscrows: bigint;
+  totalEscrowsFinished: bigint;
+  totalEscrowsCancelled: bigint;
+  accumulatedFees: bigint;
+  latestL2BlockNumber: bigint;
 }
 
 // =============================================================================
@@ -182,15 +182,15 @@ export interface BaseBridgeStats {
  * @returns Amount in wei as bigint
  */
 export function baseToWei(eth: number | string): bigint {
-    if (typeof eth === 'string') {
-        const parts = eth.split('.');
-        const whole = BigInt(parts[0]) * WEI_PER_BASE;
-        if (parts.length === 1) return whole;
+  if (typeof eth === "string") {
+    const parts = eth.split(".");
+    const whole = BigInt(parts[0]) * WEI_PER_BASE;
+    if (parts.length === 1) return whole;
 
-        const decStr = parts[1].padEnd(18, '0').slice(0, 18);
-        return whole + BigInt(decStr);
-    }
-    return baseToWei(eth.toString());
+    const decStr = parts[1].padEnd(18, "0").slice(0, 18);
+    return whole + BigInt(decStr);
+  }
+  return baseToWei(eth.toString());
 }
 
 /**
@@ -199,13 +199,13 @@ export function baseToWei(eth: number | string): bigint {
  * @returns Formatted ETH amount string (up to 18 decimals)
  */
 export function weiToBase(wei: bigint): string {
-    const whole = wei / WEI_PER_BASE;
-    const remainder = wei % WEI_PER_BASE;
+  const whole = wei / WEI_PER_BASE;
+  const remainder = wei % WEI_PER_BASE;
 
-    if (remainder === 0n) return whole.toString();
+  if (remainder === 0n) return whole.toString();
 
-    const fracStr = remainder.toString().padStart(18, '0').replace(/0+$/, '');
-    return `${whole}.${fracStr}`;
+  const fracStr = remainder.toString().padStart(18, "0").replace(/0+$/, "");
+  return `${whole}.${fracStr}`;
 }
 
 /**
@@ -214,10 +214,10 @@ export function weiToBase(wei: bigint): string {
  * @returns e.g. "1.5 ETH" or "500,000 wei"
  */
 export function formatBaseWei(wei: bigint): string {
-    if (wei >= WEI_PER_BASE) {
-        return `${weiToBase(wei)} ETH`;
-    }
-    return `${wei.toLocaleString()} wei`;
+  if (wei >= WEI_PER_BASE) {
+    return `${weiToBase(wei)} ETH`;
+  }
+  return `${wei.toLocaleString()} wei`;
 }
 
 // =============================================================================
@@ -230,7 +230,7 @@ export function formatBaseWei(wei: bigint): string {
  * @returns True if the address format appears valid
  */
 export function isValidBaseAddress(address: string): boolean {
-    return /^0x[0-9a-fA-F]{40}$/.test(address);
+  return /^0x[0-9a-fA-F]{40}$/.test(address);
 }
 
 /**
@@ -239,22 +239,22 @@ export function isValidBaseAddress(address: string): boolean {
  * @returns Object with valid flag and error message if invalid
  */
 export function validateBaseDepositAmount(amountWei: bigint): {
-    valid: boolean;
-    error?: string;
+  valid: boolean;
+  error?: string;
 } {
-    if (amountWei < BASE_MIN_DEPOSIT_WEI) {
-        return {
-            valid: false,
-            error: `Amount ${formatBaseWei(amountWei)} is below minimum deposit of ${formatBaseWei(BASE_MIN_DEPOSIT_WEI)}`,
-        };
-    }
-    if (amountWei > BASE_MAX_DEPOSIT_WEI) {
-        return {
-            valid: false,
-            error: `Amount ${formatBaseWei(amountWei)} exceeds maximum deposit of ${formatBaseWei(BASE_MAX_DEPOSIT_WEI)}`,
-        };
-    }
-    return { valid: true };
+  if (amountWei < BASE_MIN_DEPOSIT_WEI) {
+    return {
+      valid: false,
+      error: `Amount ${formatBaseWei(amountWei)} is below minimum deposit of ${formatBaseWei(BASE_MIN_DEPOSIT_WEI)}`,
+    };
+  }
+  if (amountWei > BASE_MAX_DEPOSIT_WEI) {
+    return {
+      valid: false,
+      error: `Amount ${formatBaseWei(amountWei)} exceeds maximum deposit of ${formatBaseWei(BASE_MAX_DEPOSIT_WEI)}`,
+    };
+  }
+  return { valid: true };
 }
 
 // =============================================================================
@@ -267,7 +267,7 @@ export function validateBaseDepositAmount(amountWei: bigint): {
  * @returns Fee in wei (0.03% by default)
  */
 export function calculateBaseBridgeFee(amountWei: bigint): bigint {
-    return (amountWei * BASE_BRIDGE_FEE_BPS) / BASE_BPS_DENOMINATOR;
+  return (amountWei * BASE_BRIDGE_FEE_BPS) / BASE_BPS_DENOMINATOR;
 }
 
 /**
@@ -276,7 +276,7 @@ export function calculateBaseBridgeFee(amountWei: bigint): bigint {
  * @returns Net amount in wei
  */
 export function calculateBaseNetAmount(amountWei: bigint): bigint {
-    return amountWei - calculateBaseBridgeFee(amountWei);
+  return amountWei - calculateBaseBridgeFee(amountWei);
 }
 
 /**
@@ -285,13 +285,13 @@ export function calculateBaseNetAmount(amountWei: bigint): bigint {
  * @returns Object with fee and gas estimate
  */
 export function estimateBaseDepositCost(amountWei: bigint): {
-    fee: bigint;
-    gasEstimate: bigint;
+  fee: bigint;
+  gasEstimate: bigint;
 } {
-    const fee = calculateBaseBridgeFee(amountWei);
-    // Estimated gas for Base L2 deposit (~250k gas at 0.001 gwei L2 gas price)
-    const gasEstimate = 250_000n * 1_000_000n; // 250k gas * 0.001 gwei
-    return { fee, gasEstimate };
+  const fee = calculateBaseBridgeFee(amountWei);
+  // Estimated gas for Base L2 deposit (~250k gas at 0.001 gwei L2 gas price)
+  const gasEstimate = 250_000n * 1_000_000n; // 250k gas * 0.001 gwei
+  return { fee, gasEstimate };
 }
 
 // =============================================================================
@@ -303,9 +303,11 @@ export function estimateBaseDepositCost(amountWei: bigint): {
  * @returns 32-byte hex preimage
  */
 export function generateBasePreimage(): `0x${string}` {
-    const bytes = new Uint8Array(32);
-    crypto.getRandomValues(bytes);
-    return `0x${Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('')}`;
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return `0x${Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("")}`;
 }
 
 /**
@@ -313,12 +315,16 @@ export function generateBasePreimage(): `0x${string}` {
  * @param preimage The 32-byte hex preimage
  * @returns SHA-256 hash of the preimage
  */
-export async function computeBaseHashlock(preimage: `0x${string}`): Promise<`0x${string}`> {
-    const bytes = new Uint8Array(
-        (preimage.slice(2).match(/.{2}/g) || []).map((b) => parseInt(b, 16))
-    );
-    const hash = await crypto.subtle.digest('SHA-256', bytes);
-    return `0x${Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, '0')).join('')}`;
+export async function computeBaseHashlock(
+  preimage: `0x${string}`,
+): Promise<`0x${string}`> {
+  const bytes = new Uint8Array(
+    (preimage.slice(2).match(/.{2}/g) || []).map((b) => parseInt(b, 16)),
+  );
+  const hash = await crypto.subtle.digest("SHA-256", bytes);
+  return `0x${Array.from(new Uint8Array(hash))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("")}`;
 }
 
 /**
@@ -328,32 +334,32 @@ export async function computeBaseHashlock(preimage: `0x${string}`): Promise<`0x$
  * @returns Validation result
  */
 export function validateBaseEscrowTimelocks(
-    finishAfter: number,
-    cancelAfter: number
+  finishAfter: number,
+  cancelAfter: number,
 ): { valid: boolean; error?: string } {
-    const now = Math.floor(Date.now() / 1000);
+  const now = Math.floor(Date.now() / 1000);
 
-    if (finishAfter <= now) {
-        return { valid: false, error: 'finishAfter must be in the future' };
-    }
+  if (finishAfter <= now) {
+    return { valid: false, error: "finishAfter must be in the future" };
+  }
 
-    const duration = cancelAfter - finishAfter;
+  const duration = cancelAfter - finishAfter;
 
-    if (duration < BASE_MIN_ESCROW_TIMELOCK) {
-        return {
-            valid: false,
-            error: `Escrow duration ${duration}s is below minimum ${BASE_MIN_ESCROW_TIMELOCK}s (1 hour)`,
-        };
-    }
+  if (duration < BASE_MIN_ESCROW_TIMELOCK) {
+    return {
+      valid: false,
+      error: `Escrow duration ${duration}s is below minimum ${BASE_MIN_ESCROW_TIMELOCK}s (1 hour)`,
+    };
+  }
 
-    if (duration > BASE_MAX_ESCROW_TIMELOCK) {
-        return {
-            valid: false,
-            error: `Escrow duration ${duration}s exceeds maximum ${BASE_MAX_ESCROW_TIMELOCK}s (30 days)`,
-        };
-    }
+  if (duration > BASE_MAX_ESCROW_TIMELOCK) {
+    return {
+      valid: false,
+      error: `Escrow duration ${duration}s exceeds maximum ${BASE_MAX_ESCROW_TIMELOCK}s (30 days)`,
+    };
+  }
 
-    return { valid: true };
+  return { valid: true };
 }
 
 // =============================================================================
@@ -366,8 +372,8 @@ export function validateBaseEscrowTimelocks(
  * @returns Estimated time in milliseconds
  */
 export function estimateBaseBlockFinalityMs(confirmations?: number): number {
-    const n = confirmations ?? BASE_DEFAULT_BLOCK_CONFIRMATIONS;
-    return n * BASE_BLOCK_TIME_MS;
+  const n = confirmations ?? BASE_DEFAULT_BLOCK_CONFIRMATIONS;
+  return n * BASE_BLOCK_TIME_MS;
 }
 
 /**
@@ -376,8 +382,8 @@ export function estimateBaseBlockFinalityMs(confirmations?: number): number {
  * @returns True if the refund delay (24 hours) has passed
  */
 export function isBaseRefundEligible(initiatedAt: number): boolean {
-    const now = Math.floor(Date.now() / 1000);
-    return now >= initiatedAt + BASE_WITHDRAWAL_REFUND_DELAY;
+  const now = Math.floor(Date.now() / 1000);
+  return now >= initiatedAt + BASE_WITHDRAWAL_REFUND_DELAY;
 }
 
 /**
@@ -385,10 +391,12 @@ export function isBaseRefundEligible(initiatedAt: number): boolean {
  * @param proposalTimestampMs L2 output proposal submission time in milliseconds
  * @returns Remaining time in milliseconds (0 if challenge period has ended)
  */
-export function estimateRemainingChallengePeriodMs(proposalTimestampMs: number): number {
-    const now = Date.now();
-    const challengeEnd = proposalTimestampMs + BASE_CHALLENGE_PERIOD_MS;
-    return Math.max(0, challengeEnd - now);
+export function estimateRemainingChallengePeriodMs(
+  proposalTimestampMs: number,
+): number {
+  const now = Date.now();
+  const challengeEnd = proposalTimestampMs + BASE_CHALLENGE_PERIOD_MS;
+  return Math.max(0, challengeEnd - now);
 }
 
 /**
@@ -397,7 +405,7 @@ export function estimateRemainingChallengePeriodMs(proposalTimestampMs: number):
  * @returns Estimated time in milliseconds
  */
 export function estimateBaseSequencerTimeMs(blocks: number): number {
-    return blocks * BASE_BLOCK_TIME_MS;
+  return blocks * BASE_BLOCK_TIME_MS;
 }
 
 // =============================================================================
@@ -405,88 +413,88 @@ export function estimateBaseSequencerTimeMs(blocks: number): number {
 // =============================================================================
 
 export const BASE_BRIDGE_ADAPTER_ABI = [
-    // Configuration
-    'function configure(address baseBridgeContract, address wrappedBase, address validatorOracle, uint256 minValidatorSignatures, uint256 requiredBlockConfirmations) external',
-    'function setTreasury(address _treasury) external',
+  // Configuration
+  "function configure(address baseBridgeContract, address wrappedBase, address validatorOracle, uint256 minValidatorSignatures, uint256 requiredBlockConfirmations) external",
+  "function setTreasury(address _treasury) external",
 
-    // Deposits (Base -> Zaseon)
-    'function initiateBaseDeposit(bytes32 l2TxHash, address l2Sender, address evmRecipient, uint256 amountWei, uint256 l2BlockNumber, (bytes32 version, bytes32 stateRoot, bytes32 messagePasserStorageRoot, bytes32 latestBlockhash) txProof, (address validator, bytes signature)[] attestations) external returns (bytes32)',
-    'function completeBaseDeposit(bytes32 depositId) external',
+  // Deposits (Base -> Zaseon)
+  "function initiateBaseDeposit(bytes32 l2TxHash, address l2Sender, address evmRecipient, uint256 amountWei, uint256 l2BlockNumber, (bytes32 version, bytes32 stateRoot, bytes32 messagePasserStorageRoot, bytes32 latestBlockhash) txProof, (address validator, bytes signature)[] attestations) external returns (bytes32)",
+  "function completeBaseDeposit(bytes32 depositId) external",
 
-    // Withdrawals (Zaseon -> Base)
-    'function initiateWithdrawal(address l2Recipient, uint256 amountWei) external returns (bytes32)',
-    'function completeWithdrawal(bytes32 withdrawalId, bytes32 l2TxHash, (bytes32 version, bytes32 stateRoot, bytes32 messagePasserStorageRoot, bytes32 latestBlockhash) txProof, (address validator, bytes signature)[] attestations) external',
-    'function refundWithdrawal(bytes32 withdrawalId) external',
+  // Withdrawals (Zaseon -> Base)
+  "function initiateWithdrawal(address l2Recipient, uint256 amountWei) external returns (bytes32)",
+  "function completeWithdrawal(bytes32 withdrawalId, bytes32 l2TxHash, (bytes32 version, bytes32 stateRoot, bytes32 messagePasserStorageRoot, bytes32 latestBlockhash) txProof, (address validator, bytes signature)[] attestations) external",
+  "function refundWithdrawal(bytes32 withdrawalId) external",
 
-    // Escrow (Atomic Swaps)
-    'function createEscrow(address l2Party, bytes32 hashlock, uint256 finishAfter, uint256 cancelAfter) external payable returns (bytes32)',
-    'function finishEscrow(bytes32 escrowId, bytes32 preimage) external',
-    'function cancelEscrow(bytes32 escrowId) external',
+  // Escrow (Atomic Swaps)
+  "function createEscrow(address l2Party, bytes32 hashlock, uint256 finishAfter, uint256 cancelAfter) external payable returns (bytes32)",
+  "function finishEscrow(bytes32 escrowId, bytes32 preimage) external",
+  "function cancelEscrow(bytes32 escrowId) external",
 
-    // Privacy
-    'function registerPrivateDeposit(bytes32 depositId, bytes32 commitment, bytes32 nullifier, bytes zkProof) external',
+  // Privacy
+  "function registerPrivateDeposit(bytes32 depositId, bytes32 commitment, bytes32 nullifier, bytes zkProof) external",
 
-    // L2OutputProposal Verification
-    'function submitL2Output(uint256 l2BlockNumber, bytes32 outputRoot, bytes32 stateRoot, bytes32 withdrawalStorageRoot, uint256 timestamp, (address validator, bytes signature)[] attestations) external',
+  // L2OutputProposal Verification
+  "function submitL2Output(uint256 l2BlockNumber, bytes32 outputRoot, bytes32 stateRoot, bytes32 withdrawalStorageRoot, uint256 timestamp, (address validator, bytes signature)[] attestations) external",
 
-    // Views
-    'function getDeposit(bytes32 depositId) external view returns (tuple)',
-    'function getWithdrawal(bytes32 withdrawalId) external view returns (tuple)',
-    'function getEscrow(bytes32 escrowId) external view returns (tuple)',
-    'function getL2Output(uint256 l2BlockNumber) external view returns (tuple)',
-    'function getUserDeposits(address user) external view returns (bytes32[])',
-    'function getUserWithdrawals(address user) external view returns (bytes32[])',
-    'function getUserEscrows(address user) external view returns (bytes32[])',
-    'function getBridgeStats() external view returns (uint256, uint256, uint256, uint256, uint256, uint256, uint256)',
+  // Views
+  "function getDeposit(bytes32 depositId) external view returns (tuple)",
+  "function getWithdrawal(bytes32 withdrawalId) external view returns (tuple)",
+  "function getEscrow(bytes32 escrowId) external view returns (tuple)",
+  "function getL2Output(uint256 l2BlockNumber) external view returns (tuple)",
+  "function getUserDeposits(address user) external view returns (bytes32[])",
+  "function getUserWithdrawals(address user) external view returns (bytes32[])",
+  "function getUserEscrows(address user) external view returns (bytes32[])",
+  "function getBridgeStats() external view returns (uint256, uint256, uint256, uint256, uint256, uint256, uint256)",
 
-    // Admin
-    'function pause() external',
-    'function unpause() external',
-    'function withdrawFees() external',
+  // Admin
+  "function pause() external",
+  "function unpause() external",
+  "function withdrawFees() external",
 
-    // Constants
-    'function BASE_CHAIN_ID() view returns (uint256)',
-    'function MIN_DEPOSIT() view returns (uint256)',
-    'function MAX_DEPOSIT() view returns (uint256)',
-    'function BRIDGE_FEE_BPS() view returns (uint256)',
-    'function WITHDRAWAL_REFUND_DELAY() view returns (uint256)',
-    'function DEFAULT_BLOCK_CONFIRMATIONS() view returns (uint256)',
+  // Constants
+  "function BASE_CHAIN_ID() view returns (uint256)",
+  "function MIN_DEPOSIT() view returns (uint256)",
+  "function MAX_DEPOSIT() view returns (uint256)",
+  "function BRIDGE_FEE_BPS() view returns (uint256)",
+  "function WITHDRAWAL_REFUND_DELAY() view returns (uint256)",
+  "function DEFAULT_BLOCK_CONFIRMATIONS() view returns (uint256)",
 
-    // State
-    'function depositNonce() view returns (uint256)',
-    'function withdrawalNonce() view returns (uint256)',
-    'function escrowNonce() view returns (uint256)',
-    'function latestL2BlockNumber() view returns (uint256)',
-    'function totalDeposited() view returns (uint256)',
-    'function totalWithdrawn() view returns (uint256)',
-    'function accumulatedFees() view returns (uint256)',
-    'function treasury() view returns (address)',
-    'function usedL2TxHashes(bytes32) view returns (bool)',
-    'function usedNullifiers(bytes32) view returns (bool)',
+  // State
+  "function depositNonce() view returns (uint256)",
+  "function withdrawalNonce() view returns (uint256)",
+  "function escrowNonce() view returns (uint256)",
+  "function latestL2BlockNumber() view returns (uint256)",
+  "function totalDeposited() view returns (uint256)",
+  "function totalWithdrawn() view returns (uint256)",
+  "function accumulatedFees() view returns (uint256)",
+  "function treasury() view returns (address)",
+  "function usedL2TxHashes(bytes32) view returns (bool)",
+  "function usedNullifiers(bytes32) view returns (bool)",
 
-    // Events
-    'event BridgeConfigured(address indexed baseBridgeContract, address wrappedBase, address validatorOracle)',
-    'event BaseDepositInitiated(bytes32 indexed depositId, bytes32 indexed l2TxHash, address l2Sender, address indexed evmRecipient, uint256 amountWei)',
-    'event BaseDepositCompleted(bytes32 indexed depositId, address indexed evmRecipient, uint256 amountWei)',
-    'event BaseWithdrawalInitiated(bytes32 indexed withdrawalId, address indexed evmSender, address l2Recipient, uint256 amountWei)',
-    'event BaseWithdrawalCompleted(bytes32 indexed withdrawalId, bytes32 l2TxHash)',
-    'event BaseWithdrawalRefunded(bytes32 indexed withdrawalId, address indexed evmSender, uint256 amountWei)',
-    'event EscrowCreated(bytes32 indexed escrowId, address indexed evmParty, address l2Party, uint256 amountWei, bytes32 hashlock)',
-    'event EscrowFinished(bytes32 indexed escrowId, bytes32 preimage)',
-    'event EscrowCancelled(bytes32 indexed escrowId)',
-    'event L2OutputVerified(uint256 indexed l2BlockNumber, bytes32 outputRoot, bytes32 stateRoot)',
-    'event PrivateDepositRegistered(bytes32 indexed depositId, bytes32 commitment, bytes32 nullifier)',
-    'event FeesWithdrawn(address indexed recipient, uint256 amount)',
+  // Events
+  "event BridgeConfigured(address indexed baseBridgeContract, address wrappedBase, address validatorOracle)",
+  "event BaseDepositInitiated(bytes32 indexed depositId, bytes32 indexed l2TxHash, address l2Sender, address indexed evmRecipient, uint256 amountWei)",
+  "event BaseDepositCompleted(bytes32 indexed depositId, address indexed evmRecipient, uint256 amountWei)",
+  "event BaseWithdrawalInitiated(bytes32 indexed withdrawalId, address indexed evmSender, address l2Recipient, uint256 amountWei)",
+  "event BaseWithdrawalCompleted(bytes32 indexed withdrawalId, bytes32 l2TxHash)",
+  "event BaseWithdrawalRefunded(bytes32 indexed withdrawalId, address indexed evmSender, uint256 amountWei)",
+  "event EscrowCreated(bytes32 indexed escrowId, address indexed evmParty, address l2Party, uint256 amountWei, bytes32 hashlock)",
+  "event EscrowFinished(bytes32 indexed escrowId, bytes32 preimage)",
+  "event EscrowCancelled(bytes32 indexed escrowId)",
+  "event L2OutputVerified(uint256 indexed l2BlockNumber, bytes32 outputRoot, bytes32 stateRoot)",
+  "event PrivateDepositRegistered(bytes32 indexed depositId, bytes32 commitment, bytes32 nullifier)",
+  "event FeesWithdrawn(address indexed recipient, uint256 amount)",
 ] as const;
 
 export const WRAPPED_BASE_ABI = [
-    'function mint(address to, uint256 amount) external',
-    'function burn(uint256 amount) external',
-    'function balanceOf(address account) view returns (uint256)',
-    'function approve(address spender, uint256 amount) returns (bool)',
-    'function transfer(address to, uint256 amount) returns (bool)',
-    'function transferFrom(address from, address to, uint256 amount) returns (bool)',
-    'function allowance(address owner, address spender) view returns (uint256)',
-    'function decimals() view returns (uint8)',
-    'function totalSupply() view returns (uint256)',
+  "function mint(address to, uint256 amount) external",
+  "function burn(uint256 amount) external",
+  "function balanceOf(address account) view returns (uint256)",
+  "function approve(address spender, uint256 amount) returns (bool)",
+  "function transfer(address to, uint256 amount) returns (bool)",
+  "function transferFrom(address from, address to, uint256 amount) returns (bool)",
+  "function allowance(address owner, address spender) view returns (uint256)",
+  "function decimals() view returns (uint8)",
+  "function totalSupply() view returns (uint256)",
 ] as const;

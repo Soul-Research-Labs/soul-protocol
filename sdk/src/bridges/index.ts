@@ -136,7 +136,12 @@ export abstract class BaseBridgeAdapter {
 // Supported Chains
 // ============================================
 
-export type SupportedChain = "arbitrum" | "ethereum" | "optimism" | "base" | "aztec";
+export type SupportedChain =
+  | "arbitrum"
+  | "ethereum"
+  | "optimism"
+  | "base"
+  | "aztec";
 
 // ============================================
 // Bridge Factory

@@ -42,7 +42,9 @@ async function deposit(
   amount: bigint,
   secret: Uint8Array,
 ): Promise<{ commitment: `0x${string}`; nullifier: `0x${string}` }> {
-  console.log(`Depositing ${amount} wei into shielded pool on ${SOURCE_CHAIN}...`);
+  console.log(
+    `Depositing ${amount} wei into shielded pool on ${SOURCE_CHAIN}...`,
+  );
 
   // In production, commitment = Poseidon(asset, amount, secret, nullifier_preimage)
   // The nullifier_preimage is derived from the secret
@@ -116,9 +118,7 @@ async function createContainer(
 // Step 4: Bridge to Destination Chain
 // ============================================================================
 
-async function bridgeContainer(
-  containerId: `0x${string}`,
-): Promise<string> {
+async function bridgeContainer(containerId: `0x${string}`): Promise<string> {
   console.log(`Bridging container from ${SOURCE_CHAIN} to ${DEST_CHAIN}...`);
 
   // In production:
@@ -194,7 +194,8 @@ async function main() {
   const bridgeTx = await bridgeContainer(containerId);
 
   // Step 5: Consume on destination
-  const recipient = "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18" as `0x${string}`;
+  const recipient =
+    "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18" as `0x${string}`;
   const withdrawTx = await consumeOnDestination(containerId, recipient);
 
   console.log("\n=== Complete ===");
@@ -202,7 +203,9 @@ async function main() {
   console.log(`Bridge:   ${bridgeTx.slice(0, 18)}...`);
   console.log(`Withdraw: ${withdrawTx.slice(0, 18)}...`);
   console.log(`\nPrivacy preserved: amount, sender, and recipient are hidden`);
-  console.log(`Compliance: policy hash bound to ZK proof at container creation`);
+  console.log(
+    `Compliance: policy hash bound to ZK proof at container creation`,
+  );
 }
 
 main().catch(console.error);

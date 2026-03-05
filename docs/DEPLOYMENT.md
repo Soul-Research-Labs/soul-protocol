@@ -20,22 +20,26 @@
 ## Pre-Deployment Checklist
 
 **Code:**
+
 - [ ] All tests passing (`forge test -vvv` and `npx hardhat test`)
 - [ ] No compiler warnings
 - [ ] Code freeze applied
 
 **Security:**
+
 - [ ] Multi-sig wallets created for admin roles
 - [ ] Hardware wallet for deployer key
 - [ ] Emergency pause procedures documented
 - [ ] Role separation verified (`npx hardhat run scripts/verify-role-separation.ts`)
 
 **Infrastructure:**
+
 - [ ] RPC endpoints configured (Alchemy, Infura)
 - [ ] Block explorer API keys for contract verification
 - [ ] Monitoring configured (see `monitoring/`)
 
 **Funding:**
+
 - [ ] Deployer wallet funded (2-5 ETH for full deployment)
 
 ---
@@ -144,6 +148,7 @@ npx hardhat run scripts/deploy-cross-chain.ts
 ```
 
 This deploys:
+
 - `ZaseonCrossChainRelay` — proof relay with LayerZero/Hyperlane bridge support
 - `CrossChainNullifierSync` — bidirectional nullifier synchronization
 
@@ -183,18 +188,18 @@ npx hardhat run scripts/verify-manual.ts --network sepolia
 
 At ~30 gwei (Ethereum mainnet):
 
-| Contract | Estimated Gas | Cost (ETH) |
-|----------|---------------|------------|
-| ZKBoundStateLocks | ~3,000,000 | ~0.090 |
-| ProofCarryingContainer | ~2,800,000 | ~0.084 |
-| PolicyBoundProofs | ~2,300,000 | ~0.069 |
-| ExecutionAgnosticStateCommitments | ~2,000,000 | ~0.060 |
-| CrossDomainNullifierAlgebra | ~2,300,000 | ~0.069 |
-| ZaseonCrossChainRelay | ~2,500,000 | ~0.075 |
-| CrossChainNullifierSync | ~2,200,000 | ~0.066 |
-| UniversalShieldedPool | ~3,200,000 | ~0.096 |
-| UltraHonk Verifiers (×8) | ~12,000,000 | ~0.360 |
-| **Total** | **~32,300,000** | **~0.97** |
+| Contract                          | Estimated Gas   | Cost (ETH) |
+| --------------------------------- | --------------- | ---------- |
+| ZKBoundStateLocks                 | ~3,000,000      | ~0.090     |
+| ProofCarryingContainer            | ~2,800,000      | ~0.084     |
+| PolicyBoundProofs                 | ~2,300,000      | ~0.069     |
+| ExecutionAgnosticStateCommitments | ~2,000,000      | ~0.060     |
+| CrossDomainNullifierAlgebra       | ~2,300,000      | ~0.069     |
+| ZaseonCrossChainRelay             | ~2,500,000      | ~0.075     |
+| CrossChainNullifierSync           | ~2,200,000      | ~0.066     |
+| UniversalShieldedPool             | ~3,200,000      | ~0.096     |
+| UltraHonk Verifiers (×8)          | ~12,000,000     | ~0.360     |
+| **Total**                         | **~32,300,000** | **~0.97**  |
 
 L2 deployment costs are significantly lower (1-10% of L1).
 
@@ -224,17 +229,17 @@ Deployment addresses are saved to `deployments/`.
 
 ### Supported Networks
 
-| Network | Chain ID | Status |
-|---------|----------|--------|
+| Network          | Chain ID | Status  |
+| ---------------- | -------- | ------- |
 | Ethereum Sepolia | 11155111 | Testnet |
-| Arbitrum Sepolia | 421614 | Testnet |
-| Base Sepolia | 84532 | Testnet |
-| Scroll Sepolia | 534351 | Testnet |
-| Ethereum Mainnet | 1 | Planned |
-| Arbitrum One | 42161 | Planned |
-| Base | 8453 | Planned |
-| Optimism | 10 | Planned |
-| Scroll | 534352 | Planned |
+| Arbitrum Sepolia | 421614   | Testnet |
+| Base Sepolia     | 84532    | Testnet |
+| Scroll Sepolia   | 534351   | Testnet |
+| Ethereum Mainnet | 1        | Planned |
+| Arbitrum One     | 42161    | Planned |
+| Base             | 8453     | Planned |
+| Optimism         | 10       | Planned |
+| Scroll           | 534352   | Planned |
 
 ### Cross-Chain Configuration
 
@@ -245,6 +250,7 @@ npx hardhat run scripts/deploy-cross-chain.ts
 ```
 
 This sets up:
+
 - Bridge adapters (LayerZero endpoints, Hyperlane mailboxes)
 - Trusted remote pairs between relay contracts
 - Nullifier sync intervals and batch sizes
@@ -255,21 +261,21 @@ This sets up:
 
 ### Access Control Roles
 
-| Role | Holder | Purpose |
-|------|--------|---------|
-| `DEFAULT_ADMIN_ROLE` | Timelock | Role admin, upgrade authority |
-| `PAUSER_ROLE` | Multi-sig (2/3) | Emergency pause |
-| `OPERATOR_ROLE` | Relayer/Team | Day-to-day operations |
-| `RELAYER_ROLE` | Relayer nodes | Proof relay operations |
-| `BRIDGE_ROLE` | Bridge adapters | Cross-chain message receiving |
+| Role                 | Holder          | Purpose                       |
+| -------------------- | --------------- | ----------------------------- |
+| `DEFAULT_ADMIN_ROLE` | Timelock        | Role admin, upgrade authority |
+| `PAUSER_ROLE`        | Multi-sig (2/3) | Emergency pause               |
+| `OPERATOR_ROLE`      | Relayer/Team    | Day-to-day operations         |
+| `RELAYER_ROLE`       | Relayer nodes   | Proof relay operations        |
+| `BRIDGE_ROLE`        | Bridge adapters | Cross-chain message receiving |
 
 ### Timelock Delays
 
-| Action | Delay |
-|--------|-------|
-| Standard operations | 48 hours |
-| Emergency pause | Immediate (multi-sig) |
-| Parameter changes | 24 hours |
+| Action              | Delay                 |
+| ------------------- | --------------------- |
+| Standard operations | 48 hours              |
+| Emergency pause     | Immediate (multi-sig) |
+| Parameter changes   | 24 hours              |
 
 ### Emergency Procedures
 
@@ -281,13 +287,13 @@ This sets up:
 
 ## Troubleshooting
 
-| Issue | Fix |
-|-------|-----|
-| Insufficient funds | Fund deployer wallet, check gas prices |
-| Verification failed | Ensure compiler settings match (solc 0.8.24, via_ir, optimizer) |
-| Tx reverted | Check constructor args, deploy dependencies first |
-| Noir compilation error | Ensure nargo 1.0.0-beta.18+, check `noir/circuits/` |
-| Verifier mismatch | Re-generate verifiers with matching circuit version |
+| Issue                  | Fix                                                             |
+| ---------------------- | --------------------------------------------------------------- |
+| Insufficient funds     | Fund deployer wallet, check gas prices                          |
+| Verification failed    | Ensure compiler settings match (solc 0.8.24, via_ir, optimizer) |
+| Tx reverted            | Check constructor args, deploy dependencies first               |
+| Noir compilation error | Ensure nargo 1.0.0-beta.18+, check `noir/circuits/`             |
+| Verifier mismatch      | Re-generate verifiers with matching circuit version             |
 
 ---
 

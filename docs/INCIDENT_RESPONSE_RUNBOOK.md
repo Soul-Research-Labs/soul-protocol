@@ -22,23 +22,23 @@
 
 ### Severity Levels
 
-| Level | Name | Description | Response Time | Example |
-|-------|------|-------------|---------------|---------|
-| **P0** | Critical | Active exploitation, fund loss imminent | < 15 min | Drain attack in progress |
-| **P1** | High | Vulnerability discovered, exploit possible | < 1 hour | Critical bug found |
-| **P2** | Medium | Security issue, no immediate exploit | < 4 hours | Access control weakness |
-| **P3** | Low | Minor issue, no user impact | < 24 hours | Information disclosure |
-| **P4** | Info | Security improvement opportunity | < 1 week | Best practice suggestion |
+| Level  | Name     | Description                                | Response Time | Example                  |
+| ------ | -------- | ------------------------------------------ | ------------- | ------------------------ |
+| **P0** | Critical | Active exploitation, fund loss imminent    | < 15 min      | Drain attack in progress |
+| **P1** | High     | Vulnerability discovered, exploit possible | < 1 hour      | Critical bug found       |
+| **P2** | Medium   | Security issue, no immediate exploit       | < 4 hours     | Access control weakness  |
+| **P3** | Low      | Minor issue, no user impact                | < 24 hours    | Information disclosure   |
+| **P4** | Info     | Security improvement opportunity           | < 1 week      | Best practice suggestion |
 
 ### Classification Matrix (Impact × Exploitability)
 
-| Impact | None | Low | Med | High | Active |
-|--------|------|-----|-----|------|--------|
-| Critical (>$1M) | P2 | P1 | P0 | P0 | P0 |
-| High ($100K-$1M) | P3 | P2 | P1 | P0 | P0 |
-| Medium ($10K-$100K) | P3 | P3 | P2 | P1 | P0 |
-| Low (<$10K) | P4 | P3 | P3 | P2 | P1 |
-| None | P4 | P4 | P3 | P3 | P2 |
+| Impact              | None | Low | Med | High | Active |
+| ------------------- | ---- | --- | --- | ---- | ------ |
+| Critical (>$1M)     | P2   | P1  | P0  | P0   | P0     |
+| High ($100K-$1M)    | P3   | P2  | P1  | P0   | P0     |
+| Medium ($10K-$100K) | P3   | P3  | P2  | P1   | P0     |
+| Low (<$10K)         | P4   | P3  | P3  | P2   | P1     |
+| None                | P4   | P4  | P3  | P3   | P2     |
 
 ---
 
@@ -46,13 +46,13 @@
 
 ### Roles & Responsibilities
 
-| Role | Primary | Backup | Responsibilities |
-|------|---------|--------|------------------|
-| **Incident Commander** | @lead | @backup-lead | Overall coordination, decisions |
-| **Technical Lead** | @tech-lead | @senior-dev | Technical investigation, fixes |
-| **Communications Lead** | @comms | @pm | User/public communication |
-| **Operations Lead** | @ops | @devops | System access, deployments |
-| **Legal/Compliance** | @legal | External | Regulatory, legal guidance |
+| Role                    | Primary    | Backup       | Responsibilities                |
+| ----------------------- | ---------- | ------------ | ------------------------------- |
+| **Incident Commander**  | @lead      | @backup-lead | Overall coordination, decisions |
+| **Technical Lead**      | @tech-lead | @senior-dev  | Technical investigation, fixes  |
+| **Communications Lead** | @comms     | @pm          | User/public communication       |
+| **Operations Lead**     | @ops       | @devops      | System access, deployments      |
+| **Legal/Compliance**    | @legal     | External     | Regulatory, legal guidance      |
 
 ### Escalation Path
 
@@ -67,22 +67,22 @@
 
 ### Internal Channels
 
-| Channel | Purpose | SLA |
-|---------|---------|-----|
+| Channel            | Purpose                      | SLA       |
+| ------------------ | ---------------------------- | --------- |
 | #incident-war-room | Active incident coordination | Real-time |
-| #security-alerts | Automated monitoring alerts | 5 min |
-| @security-oncall | Direct escalation | 15 min |
-| Incident Call | Voice coordination for P0/P1 | Immediate |
+| #security-alerts   | Automated monitoring alerts  | 5 min     |
+| @security-oncall   | Direct escalation            | 15 min    |
+| Incident Call      | Voice coordination for P0/P1 | Immediate |
 
 ### External Communication
 
-| Audience | Channel | Timing | Approver |
-|----------|---------|--------|----------|
-| Users | Status page | Every 30 min during P0/P1 | Comms Lead |
-| Community | Discord/Twitter | After initial assessment | Incident Commander |
-| Partners | Direct email | Within 1 hour of P0 | CEO |
-| Regulators | Formal notice | As required by law | Legal |
-| Media | Press release | Only for major incidents | CEO + Legal |
+| Audience   | Channel         | Timing                    | Approver           |
+| ---------- | --------------- | ------------------------- | ------------------ |
+| Users      | Status page     | Every 30 min during P0/P1 | Comms Lead         |
+| Community  | Discord/Twitter | After initial assessment  | Incident Commander |
+| Partners   | Direct email    | Within 1 hour of P0       | CEO                |
+| Regulators | Formal notice   | As required by law        | Legal              |
+| Media      | Press release   | Only for major incidents  | CEO + Legal        |
 
 ### Communication Templates
 
@@ -154,6 +154,7 @@ cast send $CONTRACT_ADDRESS "pause()" \
 ```
 
 **Verification**:
+
 ```bash
 # Verify pause state
 cast call $CONTRACT_ADDRESS "paused()(bool)" --rpc-url $RPC_URL
@@ -161,6 +162,7 @@ cast call $CONTRACT_ADDRESS "paused()(bool)" --rpc-url $RPC_URL
 ```
 
 **Rollback**:
+
 ```bash
 # Only after incident resolved and fix deployed
 cast send $CONTRACT_ADDRESS "unpause()" \
@@ -175,12 +177,14 @@ cast send $CONTRACT_ADDRESS "unpause()" \
 **Authority**: Automatic or Operator role
 
 **Monitoring Thresholds**:
+
 - Volume spike: > 3x average in 1 hour
 - Failed transactions: > 10% in 10 minutes
 - Large withdrawal: > $100K single tx
 - Multiple withdrawals: > $500K in 1 hour
 
 **Procedure**:
+
 ```bash
 # Manual activation if automatic trigger failed
 cast send $CIRCUIT_BREAKER_ADDRESS \
@@ -197,6 +201,7 @@ cast send $CIRCUIT_BREAKER_ADDRESS \
 **Authority**: Operator role
 
 **Procedure**:
+
 ```bash
 # 1. Block specific source address
 cast send $BRIDGE_ADAPTER_ADDRESS \
@@ -220,6 +225,7 @@ cast send $BRIDGE_ADAPTER_ADDRESS \
 **Authority**: Multi-sig (3/7) + Emergency timelock bypass
 
 **Procedure**:
+
 ```bash
 # 1. Prepare upgrade transaction
 # (Fix must already be audited/reviewed)
@@ -253,6 +259,7 @@ cast call $PROXY_ADDRESS "getImplementation()(address)" \
    - Monitor for unauthorized transactions
 
 2. **Containment** (< 30 minutes)
+
    ```bash
    # Revoke compromised address from all roles
    cast send $CONTRACT_ADDRESS \
@@ -282,6 +289,7 @@ cast call $PROXY_ADDRESS "getImplementation()(address)" \
    - Alert all exchanges
 
 2. **Containment** (< 15 minutes)
+
    ```bash
    # Block attacker addresses
    cast send $BRIDGE_ADDRESS \
@@ -351,16 +359,19 @@ npm run test:crosschain:smoke
 **Timeline**: Complete within 48 hours of resolution
 
 **Template**:
+
 ```markdown
 # Post-Mortem: [INCIDENT NAME]
 
 ## Summary
-- **Date**: 
-- **Duration**: 
-- **Severity**: 
-- **Impact**: 
+
+- **Date**:
+- **Duration**:
+- **Severity**:
+- **Impact**:
 
 ## Timeline
+
 - HH:MM - Detection
 - HH:MM - Escalation
 - HH:MM - Containment
@@ -369,22 +380,29 @@ npm run test:crosschain:smoke
 - HH:MM - Services restored
 
 ## Root Cause
+
 [Detailed technical explanation]
 
 ## Impact
-- Funds lost: 
-- Users affected: 
-- Downtime: 
+
+- Funds lost:
+- Users affected:
+- Downtime:
 
 ## Response Assessment
+
 ### What went well
-- 
+
+-
+
 ### What could be improved
-- 
+
+-
 
 ## Action Items
+
 | Action | Owner | Due Date | Status |
-|--------|-------|----------|--------|
+| ------ | ----- | -------- | ------ |
 |        |       |          |        |
 
 ## Lessons Learned
@@ -392,13 +410,13 @@ npm run test:crosschain:smoke
 
 ### Long-term Improvements
 
-| Category | Action | Timeline |
-|----------|--------|----------|
-| Prevention | Add automated checks | 2 weeks |
-| Detection | Enhance monitoring | 1 week |
-| Response | Update runbooks | 3 days |
-| Recovery | Improve backup procedures | 2 weeks |
-| Training | Conduct incident drill | 1 month |
+| Category   | Action                    | Timeline |
+| ---------- | ------------------------- | -------- |
+| Prevention | Add automated checks      | 2 weeks  |
+| Detection  | Enhance monitoring        | 1 week   |
+| Response   | Update runbooks           | 3 days   |
+| Recovery   | Improve backup procedures | 2 weeks  |
+| Training   | Conduct incident drill    | 1 month  |
 
 ---
 
@@ -406,31 +424,31 @@ npm run test:crosschain:smoke
 
 ### Emergency Contacts
 
-| Role | Name | Phone | Telegram |
-|------|------|-------|----------|
-| Primary On-Call | [REDACTED] | [REDACTED] | @[REDACTED] |
+| Role               | Name       | Phone      | Telegram    |
+| ------------------ | ---------- | ---------- | ----------- |
+| Primary On-Call    | [REDACTED] | [REDACTED] | @[REDACTED] |
 | Incident Commander | [REDACTED] | [REDACTED] | @[REDACTED] |
-| Legal Counsel | [REDACTED] | [REDACTED] | N/A |
+| Legal Counsel      | [REDACTED] | [REDACTED] | N/A         |
 
 ### External Resources
 
-| Resource | Contact | Purpose |
-|----------|---------|---------|
-| Immunefi | platform@immunefi.com | Bug bounty coordination |
-| Chainanalysis | incident@chainalysis.com | Fund tracing |
-| AWS Support | Enterprise support line | Infrastructure |
+| Resource      | Contact                  | Purpose                 |
+| ------------- | ------------------------ | ----------------------- |
+| Immunefi      | platform@immunefi.com    | Bug bounty coordination |
+| Chainanalysis | incident@chainalysis.com | Fund tracing            |
+| AWS Support   | Enterprise support line  | Infrastructure          |
 
 ### Multi-Sig Wallet Addresses
 
-| Network | Address | Signers Required |
-|---------|---------|------------------|
-| Ethereum | [ADDRESS] | 4/7 |
-| Arbitrum | [ADDRESS] | 3/5 |
-| Optimism | [ADDRESS] | 3/5 |
-| Base | [ADDRESS] | 3/5 |
+| Network  | Address   | Signers Required |
+| -------- | --------- | ---------------- |
+| Ethereum | [ADDRESS] | 4/7              |
+| Arbitrum | [ADDRESS] | 3/5              |
+| Optimism | [ADDRESS] | 3/5              |
+| Base     | [ADDRESS] | 3/5              |
 
 ---
 
-*Last Updated: January 2026*
-*Version: 1.0.0*
-*Review Schedule: Quarterly*
+_Last Updated: January 2026_
+_Version: 1.0.0_
+_Review Schedule: Quarterly_

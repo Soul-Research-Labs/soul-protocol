@@ -93,10 +93,16 @@ interface ZaseonState {
 
 function F(prevState: ZaseonState, transfer: Transfer): ZaseonState {
   return {
-    commitmentRoot: merkleInsert(prevState.commitmentRoot, transfer.newCommitment),
-    nullifierSetHash: hashConcat(prevState.nullifierSetHash, transfer.nullifier),
+    commitmentRoot: merkleInsert(
+      prevState.commitmentRoot,
+      transfer.newCommitment,
+    ),
+    nullifierSetHash: hashConcat(
+      prevState.nullifierSetHash,
+      transfer.nullifier,
+    ),
     transferCount: prevState.transferCount + 1,
-    totalVolume: prevState.totalVolume + transfer.amount
+    totalVolume: prevState.totalVolume + transfer.amount,
   };
 }
 ```
@@ -134,14 +140,14 @@ fn verify_fold(
     folded: FoldedInstance
 ) -> bool {
     // Verify commitment combination
-    let expected_commitment = instance1.commitment + 
+    let expected_commitment = instance1.commitment +
                               challenge * instance2.commitment;
-    
+
     // Verify error term accumulation
-    let expected_error = instance1.error_term + 
+    let expected_error = instance1.error_term +
                          challenge * challenge * instance2.error_term +
                          cross_term(instance1, instance2, challenge);
-    
+
     folded.commitment == expected_commitment &&
     folded.error_term == expected_error
 }
@@ -207,7 +213,7 @@ struct RecursiveTransfer {
     // Previous proof (if not genesis)
     prev_proof: Option<Proof>,
     prev_public_inputs: [Field; 4],
-    
+
     // Current transfer
     nullifier: Field,
     commitment: Field,
@@ -229,19 +235,19 @@ fn main(
             transfer.prev_public_inputs
         ));
     }
-    
+
     // 2. Verify current transfer
     verify_nullifier(transfer.nullifier);
     verify_commitment(transfer.commitment, transfer.amount);
     verify_merkle_proof(transfer.merkle_proof);
-    
+
     // 3. Compute new state hash
     let computed_new_state = poseidon::hash([
         prev_state_hash,
         transfer.nullifier,
         transfer.commitment
     ]);
-    
+
     assert(computed_new_state == new_state_hash);
 }
 ```
@@ -251,8 +257,8 @@ fn main(
 ```typescript
 // TypeScript aggregator service
 
-import { Noir, CompiledCircuit } from '@noir-lang/noir_js';
-import { BarretenbergBackend } from '@noir-lang/backend_barretenberg';
+import { Noir, CompiledCircuit } from "@noir-lang/noir_js";
+import { BarretenbergBackend } from "@noir-lang/backend_barretenberg";
 
 class ZaseonProofAggregator {
   private pendingProofs: Array<{
@@ -260,59 +266,63 @@ class ZaseonProofAggregator {
     publicInputs: string[];
     transferId: string;
   }> = [];
-  
+
   private batchSize = 10;
   private aggregationInterval = 60000; // 1 minute
-  
-  async addProof(proof: Uint8Array, publicInputs: string[], transferId: string) {
+
+  async addProof(
+    proof: Uint8Array,
+    publicInputs: string[],
+    transferId: string,
+  ) {
     this.pendingProofs.push({ proof, publicInputs, transferId });
-    
+
     if (this.pendingProofs.length >= this.batchSize) {
       await this.aggregate();
     }
   }
-  
+
   async aggregate(): Promise<{
     aggregatedProof: Uint8Array;
     includedTransfers: string[];
   }> {
     const toAggregate = this.pendingProofs.splice(0, this.batchSize);
-    
+
     // Initialize with first proof
     let currentProof = toAggregate[0].proof;
     let currentInputs = toAggregate[0].publicInputs;
-    
+
     // Fold remaining proofs
     for (let i = 1; i < toAggregate.length; i++) {
       const { proof: nextProof, publicInputs: nextInputs } = toAggregate[i];
-      
+
       // Generate folded proof
       const foldedResult = await this.foldProofs(
         currentProof,
         currentInputs,
         nextProof,
-        nextInputs
+        nextInputs,
       );
-      
+
       currentProof = foldedResult.proof;
       currentInputs = foldedResult.publicInputs;
     }
-    
+
     return {
       aggregatedProof: currentProof,
-      includedTransfers: toAggregate.map(p => p.transferId)
+      includedTransfers: toAggregate.map((p) => p.transferId),
     };
   }
-  
+
   private async foldProofs(
     proof1: Uint8Array,
     inputs1: string[],
     proof2: Uint8Array,
-    inputs2: string[]
+    inputs2: string[],
   ): Promise<{ proof: Uint8Array; publicInputs: string[] }> {
     // Implement folding logic based on chosen scheme
     // This is scheme-specific (Nova, Sangria, etc.)
-    throw new Error('Implement based on chosen folding scheme');
+    throw new Error("Implement based on chosen folding scheme");
   }
 }
 ```
@@ -328,51 +338,51 @@ import "./IVerifier.sol";
 contract ZaseonRecursiveVerifier {
     // Verifier for aggregated proofs
     IVerifier public aggregatedVerifier;
-    
+
     // Verifier for single proofs (backward compatibility)
     IVerifier public singleVerifier;
-    
+
     // Mapping of batch IDs to verified status
     mapping(bytes32 => bool) public verifiedBatches;
-    
+
     // Mapping of transfer IDs included in verified batches
     mapping(bytes32 => bytes32) public transferToBatch;
-    
+
     event BatchVerified(
         bytes32 indexed batchId,
         bytes32[] transferIds,
         uint256 gasUsed
     );
-    
+
     function verifyAggregatedProof(
         bytes calldata proof,
         bytes32[] calldata transferIds,
         bytes32 stateTransition
     ) external returns (bool) {
         uint256 gasStart = gasleft();
-        
+
         // Verify the aggregated proof
         bool valid = aggregatedVerifier.verify(
             proof,
             abi.encode(stateTransition, transferIds.length)
         );
-        
+
         require(valid, "Invalid aggregated proof");
-        
+
         // Record batch verification
         bytes32 batchId = keccak256(abi.encode(transferIds, block.number));
         verifiedBatches[batchId] = true;
-        
+
         // Map individual transfers to batch
         for (uint256 i = 0; i < transferIds.length; i++) {
             transferToBatch[transferIds[i]] = batchId;
         }
-        
+
         emit BatchVerified(batchId, transferIds, gasStart - gasleft());
-        
+
         return true;
     }
-    
+
     function isTransferVerified(bytes32 transferId) external view returns (bool) {
         bytes32 batchId = transferToBatch[transferId];
         return verifiedBatches[batchId];
@@ -384,12 +394,12 @@ contract ZaseonRecursiveVerifier {
 
 ### Expected Performance
 
-| Metric | Single Proof | Aggregated (10) | Aggregated (100) |
-|--------|--------------|-----------------|------------------|
-| Prover Time | 5s | 15s | 60s |
-| Proof Size | 2 KB | 5 KB | 10 KB |
-| Verification Gas | 250k | 300k | 350k |
-| Gas per Transfer | 250k | 30k | 3.5k |
+| Metric           | Single Proof | Aggregated (10) | Aggregated (100) |
+| ---------------- | ------------ | --------------- | ---------------- |
+| Prover Time      | 5s           | 15s             | 60s              |
+| Proof Size       | 2 KB         | 5 KB            | 10 KB            |
+| Verification Gas | 250k         | 300k            | 350k             |
+| Gas per Transfer | 250k         | 30k             | 3.5k             |
 
 ### Cost Analysis
 
@@ -406,16 +416,19 @@ Savings: 98.6%
 ## Migration Path
 
 ### Phase 1: Parallel Operation
+
 - Deploy recursive verifier alongside existing
 - Aggregator service runs in shadow mode
 - Compare results for validation
 
 ### Phase 2: Gradual Migration
+
 - Enable recursive verification for low-value transfers
 - Monitor gas savings and proof times
 - Increase coverage based on confidence
 
 ### Phase 3: Full Migration
+
 - Default to recursive proofs for all transfers
 - Maintain single-proof path for urgent transfers
 - Deprecate non-recursive path after stability

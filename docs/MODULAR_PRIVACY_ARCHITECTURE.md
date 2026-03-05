@@ -22,24 +22,24 @@
 
 Blockchains are **composable services**, not monoliths:
 
-| Function | Celestia Approach |
-|----------|-------------------|
-| Consensus | External |
-| Execution | External |
-| Data Availability | Core |
-| Completion | External |
+| Function          | Celestia Approach |
+| ----------------- | ----------------- |
+| Consensus         | External          |
+| Execution         | External          |
+| Data Availability | Core              |
+| Completion        | External          |
 
 ### Zaseon's Reinterpretation
 
 Apply this insight to **privacy and interoperability**, not just DA:
 
-| Function | Zaseon Approach |
-|----------|---------------|
-| Confidentiality | Core |
-| Verification | Shared (Inherited) |
-| Execution | Pluggable Microservices |
-| Transport | Oblivious Layer |
-| Completion | Materialization Adapters |
+| Function        | Zaseon Approach          |
+| --------------- | ------------------------ |
+| Confidentiality | Core                     |
+| Verification    | Shared (Inherited)       |
+| Execution       | Pluggable Microservices  |
+| Transport       | Oblivious Layer          |
+| Completion      | Materialization Adapters |
 
 ---
 
@@ -91,6 +91,7 @@ Zaseon explicitly decomposes into **privacy-native microservices**:
 ### Service Properties
 
 Each service is:
+
 - **Independently upgradable**: Can upgrade policy service without touching execution
 - **Independently scalable**: Proof service can scale horizontally
 - **Cryptographically bound**: Kernel proofs link all services together
@@ -101,13 +102,13 @@ Each service is:
 
 ### Evolution from Celestia DA
 
-| Celestia DA | Zaseon CDA |
-|-------------|----------|
-| Data is public | Data is **encrypted** |
-| Availability = downloadable | Availability = **recoverable + private** |
-| No access control | **Policy-bound access** |
-| No semantic meaning | **Typed confidential containers** |
-| Sampling proves availability | **ZK proofs** prove availability |
+| Celestia DA                  | Zaseon CDA                               |
+| ---------------------------- | ---------------------------------------- |
+| Data is public               | Data is **encrypted**                    |
+| Availability = downloadable  | Availability = **recoverable + private** |
+| No access control            | **Policy-bound access**                  |
+| No semantic meaning          | **Typed confidential containers**        |
+| Sampling proves availability | **ZK proofs** prove availability         |
 
 ### CDA Architecture
 
@@ -143,12 +144,12 @@ Each service is:
 
 ### Use Cases
 
-| Use Case | How CDA Enables |
-|----------|-----------------|
+| Use Case               | How CDA Enables                                |
+| ---------------------- | ---------------------------------------------- |
 | Private state recovery | Authorized parties can reconstruct from shards |
-| Auditor access | Policy-bound access to historical data |
-| Delayed disclosure | Time-locked data release |
-| Cross-chain migration | State transfer without exposure |
+| Auditor access         | Policy-bound access to historical data         |
+| Delayed disclosure     | Time-locked data release                       |
+| Cross-chain migration  | State transfer without exposure                |
 
 ### Key Contract: `ConfidentialDataAvailability.sol`
 
@@ -169,12 +170,12 @@ struct ConfidentialBlob {
 
 ### Celestia's Assumption vs Zaseon's Extension
 
-| Aspect | Celestia | Zaseon |
-|--------|----------|------|
-| Execution location | Elsewhere | Pluggable microservices |
-| Execution model | Not specified | ZK/TEE/MPC backends |
-| Proof requirement | None | Standard ExecutionReceipt |
-| Backend selection | N/A | Policy-driven routing |
+| Aspect             | Celestia      | Zaseon                    |
+| ------------------ | ------------- | ------------------------- |
+| Execution location | Elsewhere     | Pluggable microservices   |
+| Execution model    | Not specified | ZK/TEE/MPC backends       |
+| Proof requirement  | None          | Standard ExecutionReceipt |
+| Backend selection  | N/A           | Policy-driven routing     |
 
 ### Standard Execution Receipt (All Backends)
 
@@ -186,19 +187,19 @@ struct ExecutionReceipt {
     bytes32 stateCommitmentOld;
     bytes32 stateCommitmentNew;
     bytes32 stateTransitionHash;
-    
+
     // Policy binding
     bytes32 policyHash;
     bytes32 constraintRoot;
-    
+
     // Proof (backend-specific)
     BackendType backendType;  // ZK_SNARK, TEE_SGX, MPC_THRESHOLD, etc.
     bytes proof;              // Actual proof/attestation
-    
+
     // Outputs
     bytes32 outputCommitment;
     bytes encryptedOutputs;
-    
+
     // Nullifier
     bytes32 nullifier;
 }
@@ -245,11 +246,11 @@ interface IExecutionMicroservice {
     function submitRequest(ExecutionRequest calldata request) external returns (bytes32);
     function execute(bytes32 requestId) external returns (ExecutionReceipt memory);
     function submitReceipt(ExecutionReceipt calldata receipt) external returns (bool);
-    
+
     // Verification
     function verifyReceipt(ExecutionReceipt calldata receipt) external returns (VerificationResult memory);
     function verifyProof(bytes32 proofHash, bytes calldata proof, bytes32[] calldata publicInputs) external returns (bool);
-    
+
     // Capabilities
     function getBackendType() external view returns (BackendType);
     function getCapabilities() external view returns (BackendCapabilities memory);
@@ -259,11 +260,11 @@ interface IExecutionMicroservice {
 
 ### Backend-Specific Extensions
 
-| Interface | Additional Methods |
-|-----------|-------------------|
-| `IZKBackend` | `aggregateProofs()`, `verifyRecursive()`, `getVerificationKey()` |
-| `ITEEBackend` | `getAttestation()`, `verifyAttestation()`, `rotateEnclave()` |
-| `IMPCBackend` | `getThreshold()`, `submitShare()`, `combineShares()` |
+| Interface     | Additional Methods                                               |
+| ------------- | ---------------------------------------------------------------- |
+| `IZKBackend`  | `aggregateProofs()`, `verifyRecursive()`, `getVerificationKey()` |
+| `ITEEBackend` | `getAttestation()`, `verifyAttestation()`, `rotateEnclave()`     |
+| `IMPCBackend` | `getThreshold()`, `submitShare()`, `combineShares()`             |
 
 ---
 
@@ -271,14 +272,14 @@ interface IExecutionMicroservice {
 
 ### Celestia Sovereign Rollups → Zaseon SPDs
 
-| Celestia | Zaseon |
-|----------|------|
-| Sovereign rollups | Sovereign Privacy Domains (SPDs) |
-| Define own execution rules | Define own privacy policies |
-| Use external DA | Use Confidential DA |
-| Inherit DA security | Inherit verification security |
-| Custom state machine | Custom disclosure rules |
-| Completion anywhere | Materialization anywhere |
+| Celestia                   | Zaseon                           |
+| -------------------------- | -------------------------------- |
+| Sovereign rollups          | Sovereign Privacy Domains (SPDs) |
+| Define own execution rules | Define own privacy policies      |
+| Use external DA            | Use Confidential DA              |
+| Inherit DA security        | Inherit verification security    |
+| Custom state machine       | Custom disclosure rules          |
+| Completion anywhere        | Materialization anywhere         |
 
 ### SPD Architecture
 
@@ -313,14 +314,14 @@ interface IExecutionMicroservice {
 
 ### Domain Types
 
-| Type | Use Case |
-|------|----------|
-| Institution | Banks, enterprises with regulatory requirements |
-| DAO | Decentralized organizations with token governance |
-| Government | Public sector with citizen privacy |
-| Consortium | Multi-party collaboration (trade finance, etc.) |
-| Personal | Individual privacy domains |
-| Application | App-specific privacy rules |
+| Type        | Use Case                                          |
+| ----------- | ------------------------------------------------- |
+| Institution | Banks, enterprises with regulatory requirements   |
+| DAO         | Decentralized organizations with token governance |
+| Government  | Public sector with citizen privacy                |
+| Consortium  | Multi-party collaboration (trade finance, etc.)   |
+| Personal    | Individual privacy domains                        |
+| Application | App-specific privacy rules                        |
 
 ### Key Contract: `SovereignPrivacyDomain.sol`
 
@@ -352,16 +353,16 @@ struct PrivacyPolicy {
 
 ### Complete Mapping Table
 
-| Celestia Concept | Zaseon Equivalent | Implementation |
-|------------------|-----------------|----------------|
-| Modular blockchain | Modular privacy network | 6 core services |
-| DA layer | Confidential DA | `ConfidentialDataAvailability.sol` |
-| Sovereign rollups | Sovereign privacy domains | `SovereignPrivacyDomain.sol` |
-| Execution off-chain | Execution microservices | `IExecutionMicroservice.sol` |
-| Shared security | Shared verification | Kernel invariants (cannot weaken) |
-| Namespaces | Domain separation | Domain separators in proofs |
-| Light clients | Stateless verifiers | Constant-cost verification |
-| Data sampling | Availability proofs | ZK proofs of shard validity |
+| Celestia Concept    | Zaseon Equivalent         | Implementation                     |
+| ------------------- | ------------------------- | ---------------------------------- |
+| Modular blockchain  | Modular privacy network   | 6 core services                    |
+| DA layer            | Confidential DA           | `ConfidentialDataAvailability.sol` |
+| Sovereign rollups   | Sovereign privacy domains | `SovereignPrivacyDomain.sol`       |
+| Execution off-chain | Execution microservices   | `IExecutionMicroservice.sol`       |
+| Shared security     | Shared verification       | Kernel invariants (cannot weaken)  |
+| Namespaces          | Domain separation         | Domain separators in proofs        |
+| Light clients       | Stateless verifiers       | Constant-cost verification         |
+| Data sampling       | Availability proofs       | ZK proofs of shard validity        |
 
 ### Shared Security Model
 
@@ -411,17 +412,18 @@ struct PrivacyPolicy {
 
 Zaseon explicitly rejects:
 
-| Celestia Pattern | Why Zaseon Rejects |
-|------------------|------------------|
-| DA-first worldview | Zaseon is privacy-first, not DA-first |
-| Consensus dependency | Zaseon uses cryptographic verification, not consensus |
-| Public data assumption | Zaseon assumes data is confidential by default |
+| Celestia Pattern               | Why Zaseon Rejects                                             |
+| ------------------------------ | -------------------------------------------------------------- |
+| DA-first worldview             | Zaseon is privacy-first, not DA-first                          |
+| Consensus dependency           | Zaseon uses cryptographic verification, not consensus          |
+| Public data assumption         | Zaseon assumes data is confidential by default                 |
 | Execution ignorance of privacy | Zaseon's execution always produces privacy-preserving receipts |
-| Rollup-centric framing | Zaseon is a privacy fabric, not a rollup platform |
+| Rollup-centric framing         | Zaseon is a privacy fabric, not a rollup platform              |
 
 ### Zaseon's Unique Advantages
 
 Celestia cannot:
+
 - Hide state
 - Hide execution
 - Enforce policy cryptographically
@@ -437,15 +439,15 @@ Zaseon can do all of these, making it:
 
 ### Contracts Implemented
 
-| Contract | Status | Description |
-|----------|--------|-------------|
+| Contract                           | Status      | Description                               |
+| ---------------------------------- | ----------- | ----------------------------------------- |
 | `ConfidentialDataAvailability.sol` | ✅ Complete | Encrypted erasure-coded DA with ZK proofs |
-| `IExecutionMicroservice.sol` | ✅ Complete | Standard interface for all backends |
-| `IZKBackend.sol` | ✅ Complete | ZK-specific extensions |
-| `ITEEBackend.sol` | ✅ Complete | TEE-specific extensions |
-| `IMPCBackend.sol` | ✅ Complete | MPC-specific extensions |
-| `IExecutionRouter.sol` | ✅ Complete | Backend routing |
-| `SovereignPrivacyDomain.sol` | ✅ Complete | SPD implementation |
+| `IExecutionMicroservice.sol`       | ✅ Complete | Standard interface for all backends       |
+| `IZKBackend.sol`                   | ✅ Complete | ZK-specific extensions                    |
+| `ITEEBackend.sol`                  | ✅ Complete | TEE-specific extensions                   |
+| `IMPCBackend.sol`                  | ✅ Complete | MPC-specific extensions                   |
+| `IExecutionRouter.sol`             | ✅ Complete | Backend routing                           |
+| `SovereignPrivacyDomain.sol`       | ✅ Complete | SPD implementation                        |
 
 ### Integration Points
 
@@ -466,14 +468,17 @@ SovereignPrivacyDomain
 ## 9. Strategic Summary
 
 ### Celestia's Contribution
+
 > Unbundling creates ecosystems, not just protocols.
 
 ### Zaseon's Extension
+
 > Unbundle trust, execution, authority, and disclosure—then re-bundle them cryptographically.
 
 ### The Result
 
 Zaseon becomes:
+
 - **Modular**: Each service independently upgradable/scalable
 - **Private**: Confidentiality by default, disclosure by policy
 - **Verifiable**: Kernel proofs bind everything together

@@ -200,9 +200,9 @@ contract ZKBoundStateLocks is AccessControl {
      * @notice Creates a new ZK-bound state lock
      * @dev The lock binds a state commitment to a transition predicate.
      *      Only ZK proofs satisfying the predicate can unlock the state.
-     *      
+     *
      *      Gas: ~50,000 for basic lock, ~80,000 with policy binding
-     *      
+     *
      *      Emits {LockCreated} on success.
      *
      * @param oldStateCommitment Poseidon hash of the current confidential state
@@ -227,13 +227,13 @@ contract ZKBoundStateLocks is AccessControl {
      * @notice Unlocks a state lock with a valid ZK proof
      * @dev Verifies the ZK proof against the registered verifier,
      *      checks nullifier uniqueness, and executes the state transition.
-     *      
+     *
      *      Verification flow:
      *      1. Validate proof format and lock existence
      *      2. Verify ZK proof with registered verifier
      *      3. Check nullifier not previously used
      *      4. Mark lock as unlocked and register nullifier
-     *      
+     *
      *      Gas: ~200,000 - 400,000 depending on proof type
      *
      * @param proof The unlock proof containing ZK proof and metadata
@@ -255,6 +255,7 @@ contract ZKBoundStateLocks is AccessControl {
 ## Documentation Quality Checklist
 
 ### Contract Level
+
 - [ ] `@title` matches contract name
 - [ ] `@author` is "ZASEON"
 - [ ] `@notice` explains purpose in plain English
@@ -262,6 +263,7 @@ contract ZKBoundStateLocks is AccessControl {
 - [ ] `@custom:security-contact` is included
 
 ### Function Level
+
 - [ ] `@notice` explains what, not how
 - [ ] `@dev` explains implementation details
 - [ ] All `@param` documented
@@ -269,6 +271,7 @@ contract ZKBoundStateLocks is AccessControl {
 - [ ] Security notes added where applicable
 
 ### Event Level
+
 - [ ] `@notice` explains when emitted
 - [ ] All parameters documented
 

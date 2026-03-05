@@ -34,17 +34,17 @@ docker-compose up -d
 
 ## Configuration
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `CHAINS` | Comma-separated chain names | `ethereum,arbitrum,optimism,base` |
-| `ETHEREUM_RPC_URL` | Ethereum RPC endpoint | `http://localhost:8545` |
-| `ARBITRUM_RPC_URL` | Arbitrum RPC endpoint | `http://localhost:8545` |
-| `OPTIMISM_RPC_URL` | Optimism RPC endpoint | `http://localhost:8545` |
-| `BASE_RPC_URL` | Base RPC endpoint | `http://localhost:8545` |
-| `RELAYER_PRIVATE_KEY` | Relayer signing key | - |
-| `REDIS_URL` | Redis connection URL | `redis://localhost:6379` |
-| `LOG_LEVEL` | Logging level | `info` |
-| `HEALTH_PORT` | Health check port | `9090` |
+| Variable              | Description                 | Default                           |
+| --------------------- | --------------------------- | --------------------------------- |
+| `CHAINS`              | Comma-separated chain names | `ethereum,arbitrum,optimism,base` |
+| `ETHEREUM_RPC_URL`    | Ethereum RPC endpoint       | `http://localhost:8545`           |
+| `ARBITRUM_RPC_URL`    | Arbitrum RPC endpoint       | `http://localhost:8545`           |
+| `OPTIMISM_RPC_URL`    | Optimism RPC endpoint       | `http://localhost:8545`           |
+| `BASE_RPC_URL`        | Base RPC endpoint           | `http://localhost:8545`           |
+| `RELAYER_PRIVATE_KEY` | Relayer signing key         | -                                 |
+| `REDIS_URL`           | Redis connection URL        | `redis://localhost:6379`          |
+| `LOG_LEVEL`           | Logging level               | `info`                            |
+| `HEALTH_PORT`         | Health check port           | `9090`                            |
 
 ## Monitoring
 
