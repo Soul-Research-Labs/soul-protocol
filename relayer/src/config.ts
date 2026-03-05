@@ -28,8 +28,16 @@ const CHAIN_DEFAULTS: Record<string, Omit<ChainConfig, "rpcUrl">> = {
   optimism: { name: "Optimism", chainId: 10, confirmations: 1 },
   base: { name: "Base", chainId: 8453, confirmations: 1 },
   aztec: { name: "Aztec", chainId: 4100, confirmations: 1 },
-  "arbitrum-sepolia": { name: "Arbitrum Sepolia", chainId: 421614, confirmations: 1 },
-  "optimism-sepolia": { name: "Optimism Sepolia", chainId: 11155420, confirmations: 1 },
+  "arbitrum-sepolia": {
+    name: "Arbitrum Sepolia",
+    chainId: 421614,
+    confirmations: 1,
+  },
+  "optimism-sepolia": {
+    name: "Optimism Sepolia",
+    chainId: 11155420,
+    confirmations: 1,
+  },
   sepolia: { name: "Sepolia", chainId: 11155111, confirmations: 2 },
 };
 
@@ -45,8 +53,7 @@ export function loadConfig(): RelayerConfig {
       const envKey = name.replace(/-/g, "_").toUpperCase();
       return {
         ...CHAIN_DEFAULTS[name],
-        rpcUrl:
-          process.env[`${envKey}_RPC_URL`] || `http://localhost:8545`,
+        rpcUrl: process.env[`${envKey}_RPC_URL`] || `http://localhost:8545`,
         bridgeAddress: process.env[`${envKey}_BRIDGE_ADDRESS`],
         proofHubAddress: process.env[`${envKey}_PROOF_HUB_ADDRESS`],
         relayContractAddress: process.env[`${envKey}_RELAY_CONTRACT_ADDRESS`],

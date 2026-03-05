@@ -91,7 +91,10 @@ export class ProofQueue {
           this.metrics.tasksTotal++;
           this.metrics.tasksSucceeded++;
           this.metrics.totalLatencyMs += latency;
-          logger.info({ taskId: task.id, latencyMs: latency }, "Task completed");
+          logger.info(
+            { taskId: task.id, latencyMs: latency },
+            "Task completed",
+          );
         } catch (err) {
           task.retries++;
           task.error = (err as Error).message;
@@ -118,7 +121,11 @@ export class ProofQueue {
 
   private async _processTask(task: RelayTask): Promise<void> {
     logger.info(
-      { taskId: task.id, source: task.sourceChain, destChainId: task.destChainId },
+      {
+        taskId: task.id,
+        source: task.sourceChain,
+        destChainId: task.destChainId,
+      },
       "Processing relay task",
     );
 
@@ -143,9 +150,7 @@ export class ProofQueue {
       );
     }
     if (!destChain.proofHubAddress) {
-      throw new Error(
-        `No proofHubAddress configured for ${destChain.name}`,
-      );
+      throw new Error(`No proofHubAddress configured for ${destChain.name}`);
     }
 
     // 2. Fetch transaction receipt from source chain to extract proof data
@@ -215,7 +220,9 @@ export class ProofQueue {
     }
 
     commitment =
-      commitment || (task.commitment as Hex) || ("0x" + "00".repeat(32)) as Hex;
+      commitment ||
+      (task.commitment as Hex) ||
+      (("0x" + "00".repeat(32)) as Hex);
 
     // 4. Submit proof to destination chain's CrossChainProofHubV3
     const account = privateKeyToAccount(this.config.privateKey as Hex);

@@ -12,6 +12,9 @@ test = "test"
 cache_path = "forge-cache"
 solc_version = "0.8.24"
 evm_version = "cancun"
+# AggregatorHonkVerifier requires solc 0.8.27+ features + non-via_ir compilation;
+# excluded until bb regeneration support is fixed (bb on_curve assertion bug)
+skip = ["contracts/verifiers/generated/AggregatorHonkVerifier.sol"]
 optimizer = true
 optimizer_runs = 10000
 via_ir = true
@@ -29,6 +32,7 @@ additional_compiler_profiles = [
 ]
 compilation_restrictions = [
     { paths = "contracts/verifiers/generated/**", max_optimizer_runs = 200 },
+    { paths = "contracts/verifiers/generated/AggregatorHonkVerifier.sol", max_optimizer_runs = 1 },
     { paths = "lib/openzeppelin-contracts/**", max_optimizer_runs = 200 },
     { paths = "lib/openzeppelin-contracts-upgradeable/**", max_optimizer_runs = 200 },
     # Sync with Hardhat per-contract overrides (runs: 1) — complex contracts that

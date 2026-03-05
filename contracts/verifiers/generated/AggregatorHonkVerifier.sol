@@ -129,7 +129,7 @@ library HonkVerificationKey {
     }
 }
 
-pragma solidity ^0.8.27;
+pragma solidity >=0.8.21;
 
 interface IVerifier {
     function verify(bytes calldata _proof, bytes32[] calldata _publicInputs) external returns (bool);
@@ -2438,7 +2438,7 @@ abstract contract BaseZKHonkVerifier is IVerifier {
             mstore(add(result, 0x20), mload(add(free, 0x20)))
         }
 
-        require(success, ShpleminiFailed());
+        if (!success) revert ShpleminiFailed();
     }
 }
 

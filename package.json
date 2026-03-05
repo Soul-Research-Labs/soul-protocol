@@ -117,7 +117,7 @@
   },
   "dependencies": {
     "@aztec/bb.js": "^0.82.0",
-    "@noir-lang/noir_js": "^1.0.0",
+    "@noir-lang/noir_js": "1.0.0-beta.18",
     "@openzeppelin/contracts": "^5.4.0",
     "@openzeppelin/contracts-upgradeable": "^5.4.0",
     "commander": "^13.0.0",
@@ -151,6 +151,8 @@
     "tar": "^6.2.1",
     "form-data": "^4.0.0",
     "jsonpath": "npm:jsonpath-plus@^10.0.0",
-    "bfj": "^9.0.0"
+    "bfj": "^9.0.0",
+    "serialize-javascript": "^7.0.3",
+    "minimatch": "^9.0.7"
   }
 }
