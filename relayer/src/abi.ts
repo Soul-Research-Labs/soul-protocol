@@ -64,3 +64,33 @@ export const RELAY_WATCH_ABI = [
   PROOF_RELAYED_EVENT,
   PROOF_DATA_EMITTED_EVENT,
 ] as const;
+
+/** DecentralizedRelayerRegistry — registration + status check */
+export const RELAYER_REGISTRY_ABI = [
+  {
+    type: "function",
+    name: "register",
+    inputs: [],
+    outputs: [],
+    stateMutability: "payable",
+  },
+  {
+    type: "function",
+    name: "relayers",
+    inputs: [{ name: "relayer", type: "address" }],
+    outputs: [
+      { name: "stake", type: "uint256" },
+      { name: "rewards", type: "uint256" },
+      { name: "unlockTime", type: "uint256" },
+      { name: "isRegistered", type: "bool" },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "MIN_STAKE",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
+] as const;

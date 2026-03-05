@@ -330,14 +330,27 @@ export class NoirProver {
       const fs = await import("fs/promises");
       const path = await import("path");
 
-      const circuitPath = path.join(
-        process.cwd(),
-        "noir",
-        circuit,
-        "target",
-        `${circuit}.json`,
-      );
-      const data = await fs.readFile(circuitPath, "utf-8");
+      // Workspace compilation: noir/target/{circuit}.json
+      // Per-project compilation: noir/{circuit}/target/{circuit}.json
+      const candidates = [
+        path.join(process.cwd(), "noir", "target", `${circuit}.json`),
+        path.join(process.cwd(), "noir", circuit, "target", `${circuit}.json`),
+      ];
+
+      let data: string | undefined;
+      for (const candidate of candidates) {
+        try {
+          data = await fs.readFile(candidate, "utf-8");
+          break;
+        } catch {
+          // try next candidate
+        }
+      }
+
+      if (!data) {
+        throw new Error(`Circuit artifact not found for ${circuit}`);
+      }
+
       const artifact = JSON.parse(data) as CircuitArtifact;
 
       this.circuits.set(circuit, artifact);
@@ -346,7 +359,7 @@ export class NoirProver {
       if (this.mode === "production") {
         throw new Error(
           `Circuit ${circuit} not found — cannot load circuits in production mode. ` +
-            `Expected at: noir/${circuit}/target/${circuit}.json`,
+            `Expected at: noir/target/${circuit}.json or noir/${circuit}/target/${circuit}.json`,
         );
       }
       // Return placeholder artifact

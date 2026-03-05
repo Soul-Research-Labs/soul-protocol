@@ -9,6 +9,7 @@ export interface ChainConfig {
   bridgeAddress?: string;
   proofHubAddress?: string;
   relayContractAddress?: string;
+  registryAddress?: string;
   confirmations: number;
 }
 
@@ -57,6 +58,7 @@ export function loadConfig(): RelayerConfig {
         bridgeAddress: process.env[`${envKey}_BRIDGE_ADDRESS`],
         proofHubAddress: process.env[`${envKey}_PROOF_HUB_ADDRESS`],
         relayContractAddress: process.env[`${envKey}_RELAY_CONTRACT_ADDRESS`],
+        registryAddress: process.env[`${envKey}_REGISTRY_ADDRESS`],
       };
     });
 

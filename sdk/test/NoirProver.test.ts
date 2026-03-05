@@ -105,6 +105,7 @@ describe("NoirProver", () => {
         proof: new Uint8Array(100),
         publicInputs: ["0x01"],
         proofHex: ("0x" + "00".repeat(100)) as `0x${string}`,
+        isPlaceholder: false,
       };
 
       const valid = await prover.verifyProof(
@@ -120,6 +121,7 @@ describe("NoirProver", () => {
         proof: new Uint8Array(256),
         publicInputs: [],
         proofHex: ("0x" + "00".repeat(256)) as `0x${string}`,
+        isPlaceholder: false,
       };
 
       const valid = await prover.verifyProof(

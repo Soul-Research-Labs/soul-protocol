@@ -174,6 +174,7 @@ describe("NoirProver (advanced)", () => {
         proof: undefined as any,
         publicInputs: ["0x01"],
         proofHex: "0x00" as `0x${string}`,
+        isPlaceholder: false,
       };
       const valid = await prover.verifyProof(
         Circuit.StateCommitment,
@@ -188,6 +189,7 @@ describe("NoirProver (advanced)", () => {
         proof: new Uint8Array(256),
         publicInputs: null as any,
         proofHex: ("0x" + "00".repeat(256)) as `0x${string}`,
+        isPlaceholder: false,
       };
       const valid = await prover.verifyProof(
         Circuit.StateCommitment,
@@ -202,6 +204,7 @@ describe("NoirProver (advanced)", () => {
         proof: new Uint8Array(255),
         publicInputs: ["0x01"],
         proofHex: ("0x" + "00".repeat(255)) as `0x${string}`,
+        isPlaceholder: false,
       };
       const valid = await prover.verifyProof(
         Circuit.StateCommitment,
