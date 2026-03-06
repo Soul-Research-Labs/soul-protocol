@@ -415,6 +415,9 @@ contract CrossChainProofHubV3 is
     /// @notice Error thrown when proof rate limit is exceeded
     error ProofRateLimitExceeded();
 
+    /// @notice Error thrown when hourly value rate limit is exceeded
+    error ValueRateLimitExceeded();
+
     /*//////////////////////////////////////////////////////////////
                              CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
@@ -599,7 +602,7 @@ contract CrossChainProofHubV3 is
             );
 
         // FIX: Enforce rate limits for batch
-        _checkRateLimit(len);
+        _checkRateLimit(len, msg.value);
 
         // FIX: Prevent Stake Drain (TOCTOU)
         unchecked {
@@ -713,7 +716,10 @@ contract CrossChainProofHubV3 is
 
         // Verify proof — delegated to helper to reduce stack depth
         bool proofValid = _verifyChallengeProof(
-            submission, proof, publicInputs, proofType
+            submission,
+            proof,
+            publicInputs,
+            proofType
         );
 
         challenge.resolved = true;
@@ -799,16 +805,10 @@ contract CrossChainProofHubV3 is
 
         // SECURITY FIX: If specific verifier not found, DO NOT fallback to default
         // This prevents proof type bypass attacks where attacker uses weaker verifier
-        if (
-            address(verifier) == address(0) &&
-            verifierRegistry != address(0)
-        ) {
+        if (address(verifier) == address(0) && verifierRegistry != address(0)) {
             (bool regSuccess, bytes memory regData) = verifierRegistry
                 .staticcall(
-                    abi.encodeWithSignature(
-                        "getVerifier(bytes32)",
-                        proofType
-                    )
+                    abi.encodeWithSignature("getVerifier(bytes32)", proofType)
                 );
             if (regSuccess && regData.length == 32) {
                 verifier = IProofVerifier(abi.decode(regData, (address)));
@@ -954,7 +954,7 @@ contract CrossChainProofHubV3 is
 
     /// @dev Enforces hourly proof submission rate limits, resetting the counter each hour
     /// @param count Number of proofs being submitted in this call
-    function _checkRateLimit(uint256 count) internal {
+    function _checkRateLimit(uint256 count, uint256 value) internal {
         if (block.timestamp >= lastRateLimitReset + 1 hours) {
             hourlyProofCount = 0;
             hourlyValueRelayed = 0;
@@ -964,8 +964,12 @@ contract CrossChainProofHubV3 is
         if (hourlyProofCount + count > maxProofsPerHour) {
             revert ProofRateLimitExceeded();
         }
+        if (hourlyValueRelayed + value > maxValuePerHour) {
+            revert ValueRateLimitExceeded();
+        }
         unchecked {
             hourlyProofCount += count;
+            hourlyValueRelayed += value;
         }
     }
 
@@ -986,7 +990,7 @@ contract CrossChainProofHubV3 is
         bool instant
     ) internal returns (bytes32 proofId) {
         // CIRCUIT BREAKER: Check rate limits
-        _checkRateLimit(1);
+        _checkRateLimit(1, msg.value);
 
         // Phase 1: Validate fee and stake (scoped to free locals)
         {
@@ -1014,7 +1018,12 @@ contract CrossChainProofHubV3 is
             bytes32 publicInputsHash = keccak256(publicInputs);
 
             proofId = keccak256(
-                abi.encodePacked(proofHash, commitment, sourceChainId, destChainId)
+                abi.encodePacked(
+                    proofHash,
+                    commitment,
+                    sourceChainId,
+                    destChainId
+                )
             );
 
             if (proofs[proofId].relayer != address(0))

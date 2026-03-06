@@ -209,7 +209,7 @@ contract CrossChainEmergencyRelay is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Deactivate a chain (stops receiving emergency broadcasts)
-          * @param chainId The chain identifier
+     * @param chainId The chain identifier
      */
     function deactivateChain(
         uint256 chainId
@@ -221,7 +221,7 @@ contract CrossChainEmergencyRelay is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Reactivate a previously deactivated chain
-          * @param chainId The chain identifier
+     * @param chainId The chain identifier
      */
     function reactivateChain(
         uint256 chainId
@@ -382,6 +382,10 @@ contract CrossChainEmergencyRelay is AccessControl, ReentrancyGuard, Pausable {
         // Validate target chain
         if (msg_.targetChainId != deployChainId) revert InvalidChainId();
 
+        // Validate source chain is registered
+        if (!chains[msg_.sourceChainId].active)
+            revert ChainNotRegistered(msg_.sourceChainId);
+
         // Replay protection: nonce must be strictly increasing per source
         if (msg_.nonce <= lastReceivedNonce[msg_.sourceChainId]) {
             revert ReplayDetected(msg_.sourceChainId, msg_.nonce);
@@ -526,18 +530,18 @@ contract CrossChainEmergencyRelay is AccessControl, ReentrancyGuard, Pausable {
     }
 
     /// @notice Admin pause
-        /**
+    /**
      * @notice Pauses the operation
      */
-function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
 
     /// @notice Admin unpause
-        /**
+    /**
      * @notice Unpauses the operation
      */
-function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
         heartbeat.autoPauseTriggered = false;
     }
@@ -547,20 +551,20 @@ function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Get all registered chain IDs
-        /**
+    /**
      * @notice Returns the registered chain ids
      * @return The result value
      */
-function getRegisteredChainIds() external view returns (uint256[] memory) {
+    function getRegisteredChainIds() external view returns (uint256[] memory) {
         return registeredChainIds;
     }
 
     /// @notice Get the number of active chains
-        /**
+    /**
      * @notice Active chain count
      * @return count The count
      */
-function activeChainCount() external view returns (uint256 count) {
+    function activeChainCount() external view returns (uint256 count) {
         uint256 length = registeredChainIds.length;
         for (uint256 i; i < length; ) {
             if (chains[registeredChainIds[i]].active) {
@@ -575,20 +579,20 @@ function activeChainCount() external view returns (uint256 count) {
     }
 
     /// @notice Whether the heartbeat is overdue
-        /**
+    /**
      * @notice Checks if heartbeat overdue
      * @return The result value
      */
-function isHeartbeatOverdue() external view returns (bool) {
+    function isHeartbeatOverdue() external view returns (bool) {
         return block.timestamp > heartbeat.lastHeartbeatAt + heartbeat.interval;
     }
 
     /// @notice Whether we are in an emergency state (received severity >= YELLOW)
-        /**
+    /**
      * @notice Checks if in emergency
      * @return The result value
      */
-function isInEmergency() external view returns (bool) {
+    function isInEmergency() external view returns (bool) {
         return _isEmergency();
     }
 

@@ -105,13 +105,13 @@ Chain A                              Chain B
 
 ### Core Capabilities
 
-| Feature                   | What It Does                                           |
-| ------------------------- | ------------------------------------------------------ |
-| **Confidential State**    | AES-256-GCM encrypted containers verified by ZK proofs |
-| **Cross-Chain ZK Bridge** | Transfer proofs across chains via Groth16 (BN254)      |
-| **L2 Interoperability**   | Arbitrum, Base, LayerZero, Hyperlane adapters          |
-| **Stealth Addresses**     | Unlinkable receiving addresses for privacy             |
-| **Atomic Swaps**          | HTLC private swaps with stealth commitments            |
+| Feature                   | What It Does                                                                          |
+| ------------------------- | ------------------------------------------------------------------------------------- |
+| **Confidential State**    | AES-256-GCM encrypted containers verified by ZK proofs                                |
+| **Cross-Chain ZK Bridge** | Transfer proofs across chains via Groth16 (BN254)                                     |
+| **L2 Interoperability**   | Arbitrum, Optimism, Base, Aztec, LayerZero, Hyperlane, zkSync, Scroll, Linea adapters |
+| **Stealth Addresses**     | Unlinkable receiving addresses for privacy                                            |
+| **Atomic Swaps**          | HTLC private swaps with stealth commitments                                           |
 
 ---
 
@@ -336,60 +336,69 @@ See [API Reference](docs/SOLIDITY_API_REFERENCE.md) for full contract documentat
 
 ## L2 Bridge Adapters
 
-Zaseon provides adapters for major cross-chain messaging:
+Zaseon provides adapters for major cross-chain messaging.
 
-| Adapter                     | Key Features                              |
-| --------------------------- | ----------------------------------------- |
-| `ArbitrumBridgeAdapter`     | Arbitrum Nitro, Retryable Tickets         |
-| `OptimismBridgeAdapter`     | OP Stack, L2OutputOracle verification     |
-| `BaseBridgeAdapter`         | OP Stack, CCTP support                    |
-| `zkSyncBridgeAdapter`       | zkSync Era native bridge (🔮 Planned)     |
-| `ScrollBridgeAdapter`       | Scroll L2 native messaging (🔮 Planned)   |
-| `LineaBridgeAdapter`        | Linea L2 bridge (🔮 Planned)              |
-| `PolygonZkEVMBridgeAdapter` | Polygon zkEVM bridge (🔮 Planned)         |
-| `StarknetBridgeAdapter`     | Starknet Core, felt252 (🔮 Planned)       |
-| `MantleBridgeAdapter`       | OP Stack + EigenDA (🔮 Planned)           |
-| `BlastBridgeAdapter`        | OP Stack, native yield (🔮 Planned)       |
-| `TaikoBridgeAdapter`        | Based contestable rollup (🔮 Planned)     |
-| `ModeBridgeAdapter`         | OP Stack, SFS fee (🔮 Planned)            |
-| `MantaPacificBridgeAdapter` | Celestia DA (🔮 Planned)                  |
-| `EthereumL1Bridge`          | Ethereum L1 settlement with blob DA       |
-| `ChainlinkCCIPAdapter`      | CCIP Router, chain-selector (🔮 Planned)  |
-| `LayerZeroAdapter`          | 120+ chains via LayerZero V2 (🔮 Planned) |
-| `HyperlaneAdapter`          | Modular security with ISM (🔮 Planned)    |
-| `DirectL2Messenger`         | Direct L2-to-L2 messaging                 |
-| `CrossChainMessageRelay`    | General message relay                     |
-| `SolanaBridgeAdapter`       | Wormhole VAA, Ed25519 (🔮 Planned)        |
-| `CardanoBridgeAdapter`      | Wormhole VAA, Plutus (🔮 Planned)         |
-| `MidnightBridgeAdapter`     | PLONK proofs, Compact (🔮 Planned)        |
-| `RailgunBridgeAdapter`      | Groth16 SNARKs, UTXO (🔮 Planned)         |
-| `AztecBridgeAdapter`        | UltraHonk proofs (🔮 Planned)             |
-| `SecretBridgeAdapter`       | TEE attestation (🔮 Planned)              |
-| `PolkadotBridgeAdapter`     | Snowbridge, BEEFY (🔮 Planned)            |
-| `CosmosBridgeAdapter`       | Gravity Bridge, IBC (🔮 Planned)          |
-| `ZcashBridgeAdapter`        | Halo 2 Orchard proofs (🔮 Planned)        |
-| `PenumbraBridgeAdapter`     | Groth16 decaf377 (🔮 Planned)             |
-| `NEARBridgeAdapter`         | Rainbow Bridge (🔮 Planned)               |
-| `AvalancheBridgeAdapter`    | AWM warp messages (🔮 Planned)            |
-| `AxelarBridgeAdapter`       | Axelar GMP, ECDSA (🔮 Planned)            |
-| `WormholeBridgeAdapter`     | Wormhole VAA, Guardian (🔮 Planned)       |
-| `SuiBridgeAdapter`          | Sui Native Bridge (🔮 Planned)            |
-| `AptosBridgeAdapter`        | LayerZero DVN, JMT (🔮 Planned)           |
-| `TONBridgeAdapter`          | TON Bridge relay (🔮 Planned)             |
-| `AleoBridgeAdapter`         | Marlin SNARKs (🔮 Planned)                |
-| `XRPLBridgeAdapter`         | Witness attestation (🔮 Planned)          |
-| `BitcoinBridgeAdapter`      | SPV proofs, PoW (🔮 Planned)              |
-| `TronBridgeAdapter`         | SR committee (🔮 Planned)                 |
-| `CeloBridgeAdapter`         | Plumo SNARKs (🔮 Planned)                 |
-| `FilecoinBridgeAdapter`     | EC consensus (🔮 Planned)                 |
-| `FantomSonicBridgeAdapter`  | DAG aBFT Lachesis (🔮 Planned)            |
-| `OasisBridgeAdapter`        | TEE attestation (🔮 Planned)              |
-| `HederaBridgeAdapter`       | Hashgraph aBFT (🔮 Planned)               |
-| `AlgorandBridgeAdapter`     | Falcon state proofs (🔮 Planned)          |
-| `StellarBridgeAdapter`      | SCP/FBA quorum (🔮 Planned)               |
-| `AcrossBridgeAdapter`       | UMA optimistic oracle (🔮 Planned)        |
-| `StargateBridgeAdapter`     | LayerZero OFT (🔮 Planned)                |
-| `DeBridgeBridgeAdapter`     | Intent-based DLN (🔮 Planned)             |
+### ✅ Production Adapters
+
+| Adapter                  | Key Features                          | Status        |
+| ------------------------ | ------------------------------------- | ------------- |
+| `ArbitrumBridgeAdapter`  | Arbitrum Nitro, Retryable Tickets     | ✅ Production |
+| `OptimismBridgeAdapter`  | OP Stack, L2OutputOracle verification | ✅ Production |
+| `BaseBridgeAdapter`      | OP Stack, CCTP support                | ✅ Production |
+| `EthereumL1Bridge`       | Ethereum L1 settlement with blob DA   | ✅ Production |
+| `AztecBridgeAdapter`     | UltraHonk proofs, encrypted notes     | ✅ Production |
+| `DirectL2Messenger`      | Direct L2-to-L2 messaging             | ✅ Production |
+| `CrossChainMessageRelay` | General message relay                 | ✅ Production |
+| `LayerZeroAdapter`       | 120+ chains via LayerZero V2          | ✅ Production |
+| `HyperlaneAdapter`       | Modular security with ISM             | ✅ Production |
+| `zkSyncBridgeAdapter`    | zkSync Era native bridge (ZK proofs)  | ✅ Production |
+| `ScrollBridgeAdapter`    | Scroll L2 native messaging (zkEVM)    | ✅ Production |
+| `LineaBridgeAdapter`     | Linea L2 bridge (zk-SNARK)            | ✅ Production |
+
+### 🔮 Planned Adapters (Roadmap)
+
+> **Note:** The following adapters are on the development roadmap and **do not yet exist** in the codebase.
+
+| Adapter                     | Key Features                | Priority |
+| --------------------------- | --------------------------- | -------- |
+| `ChainlinkCCIPAdapter`      | CCIP Router, chain-selector | Medium   |
+| `PolygonZkEVMBridgeAdapter` | Polygon zkEVM bridge        | Medium   |
+| `SolanaBridgeAdapter`       | Wormhole VAA, Ed25519       | Medium   |
+| `StarknetBridgeAdapter`     | Starknet Core, felt252      | Medium   |
+| `AxelarBridgeAdapter`       | Axelar GMP, ECDSA           | Medium   |
+| `WormholeBridgeAdapter`     | Wormhole VAA, Guardian      | Medium   |
+| `MantleBridgeAdapter`       | OP Stack + EigenDA          | Low      |
+| `BlastBridgeAdapter`        | OP Stack, native yield      | Low      |
+| `TaikoBridgeAdapter`        | Based contestable rollup    | Low      |
+| `ModeBridgeAdapter`         | OP Stack, SFS fee           | Low      |
+| `MantaPacificBridgeAdapter` | Celestia DA                 | Low      |
+| `CardanoBridgeAdapter`      | Wormhole VAA, Plutus        | Low      |
+| `MidnightBridgeAdapter`     | PLONK proofs, Compact       | Low      |
+| `RailgunBridgeAdapter`      | Groth16 SNARKs, UTXO        | Low      |
+| `SecretBridgeAdapter`       | TEE attestation             | Low      |
+| `PolkadotBridgeAdapter`     | Snowbridge, BEEFY           | Low      |
+| `CosmosBridgeAdapter`       | Gravity Bridge, IBC         | Low      |
+| `ZcashBridgeAdapter`        | Halo 2 Orchard proofs       | Low      |
+| `PenumbraBridgeAdapter`     | Groth16 decaf377            | Low      |
+| `NEARBridgeAdapter`         | Rainbow Bridge              | Low      |
+| `AvalancheBridgeAdapter`    | AWM warp messages           | Low      |
+| `SuiBridgeAdapter`          | Sui Native Bridge           | Low      |
+| `AptosBridgeAdapter`        | LayerZero DVN, JMT          | Low      |
+| `TONBridgeAdapter`          | TON Bridge relay            | Low      |
+| `AleoBridgeAdapter`         | Marlin SNARKs               | Low      |
+| `XRPLBridgeAdapter`         | Witness attestation         | Low      |
+| `BitcoinBridgeAdapter`      | SPV proofs, PoW             | Low      |
+| `TronBridgeAdapter`         | SR committee                | Low      |
+| `CeloBridgeAdapter`         | Plumo SNARKs                | Low      |
+| `FilecoinBridgeAdapter`     | EC consensus                | Low      |
+| `FantomSonicBridgeAdapter`  | DAG aBFT Lachesis           | Low      |
+| `OasisBridgeAdapter`        | TEE attestation             | Low      |
+| `HederaBridgeAdapter`       | Hashgraph aBFT              | Low      |
+| `AlgorandBridgeAdapter`     | Falcon state proofs         | Low      |
+| `StellarBridgeAdapter`      | SCP/FBA quorum              | Low      |
+| `AcrossBridgeAdapter`       | UMA optimistic oracle       | Low      |
+| `StargateBridgeAdapter`     | LayerZero OFT               | Low      |
+| `DeBridgeBridgeAdapter`     | Intent-based DLN            | Low      |
 
 ---
 

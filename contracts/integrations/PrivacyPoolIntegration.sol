@@ -6,6 +6,7 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IPrivacyPool} from "../interfaces/IPrivacyIntegration.sol";
 
 /**
  * @title PrivacyPoolIntegration
@@ -42,7 +43,12 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
  *
  * @custom:security-contact security@zaseonprotocol.io
  */
-contract PrivacyPoolIntegration is ReentrancyGuard, AccessControl, Pausable {
+contract PrivacyPoolIntegration is
+    IPrivacyPool,
+    ReentrancyGuard,
+    AccessControl,
+    Pausable
+{
     using SafeERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////

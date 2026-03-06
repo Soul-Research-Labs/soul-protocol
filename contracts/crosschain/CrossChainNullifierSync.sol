@@ -84,6 +84,9 @@ contract CrossChainNullifierSync is AccessControl, ReentrancyGuard, Pausable {
     /// @notice Total nullifiers received per chain (inbound)
     mapping(uint256 => uint256) public inboundSyncCount;
 
+    /// @notice Per-chain sync sequence number for replay protection
+    mapping(uint256 => uint256) public syncSequence;
+
     // ──────────────────────────────────────────────
     //  Events
     // ──────────────────────────────────────────────
@@ -249,13 +252,15 @@ contract CrossChainNullifierSync is AccessControl, ReentrancyGuard, Pausable {
         // SECURITY FIX M-3: O(1) head pointer advance instead of O(n) array shift
         pendingHead += batchSize;
 
-        // Encode the sync message
+        // Encode the sync message with sequence number for replay protection
+        uint256 seq = ++syncSequence[targetChainId];
         bytes memory payload = abi.encode(
             MSG_NULLIFIER_SYNC,
             batchNullifiers,
             batchCommitments,
             currentRoot,
-            block.chainid.toUint64()
+            block.chainid.toUint64(),
+            seq
         );
 
         // Record batch
@@ -373,31 +378,31 @@ contract CrossChainNullifierSync is AccessControl, ReentrancyGuard, Pausable {
 
     /// @notice Get the number of nullifiers pending synchronisation
     /// @return The count of pending nullifiers
-        /**
+    /**
      * @notice Returns the pending count
      * @return The result value
      */
-function getPendingCount() external view returns (uint256) {
+    function getPendingCount() external view returns (uint256) {
         return pendingNullifiers.length - pendingHead;
     }
 
     /// @notice Get all target chain IDs configured for sync
     /// @return Array of target chain IDs
-        /**
+    /**
      * @notice Returns the target chains
      * @return The result value
      */
-function getTargetChains() external view returns (uint256[] memory) {
+    function getTargetChains() external view returns (uint256[] memory) {
         return targetChainIds;
     }
 
     /// @notice Get the total number of sync batches sent
     /// @return The count of historical batches
-        /**
+    /**
      * @notice Returns the batch count
      * @return The result value
      */
-function getBatchCount() external view returns (uint256) {
+    function getBatchCount() external view returns (uint256) {
         return batchHistory.length;
     }
 
@@ -406,18 +411,18 @@ function getBatchCount() external view returns (uint256) {
     // ──────────────────────────────────────────────
 
     /// @notice Pause nullifier synchronisation
-        /**
+    /**
      * @notice Pauses the operation
      */
-function pause() external onlyRole(OPERATOR_ROLE) {
+    function pause() external onlyRole(OPERATOR_ROLE) {
         _pause();
     }
 
     /// @notice Unpause nullifier synchronisation
-        /**
+    /**
      * @notice Unpauses the operation
      */
-function unpause() external onlyRole(OPERATOR_ROLE) {
+    function unpause() external onlyRole(OPERATOR_ROLE) {
         _unpause();
     }
 }

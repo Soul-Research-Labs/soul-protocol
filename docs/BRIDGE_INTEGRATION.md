@@ -35,8 +35,8 @@ interface IBridgeAdapter {
 | Arbitrum Sepolia | `ArbitrumBridgeAdapter` | Retryable Tickets | 7 days              | ✅ Production |
 | Base             | `BaseBridgeAdapter`     | OP Stack          | 7 days              | ✅ Production |
 | Optimism         | `OptimismBridgeAdapter` | OP Stack          | 7 days              | ✅ Production |
-| LayerZero        | `LayerZeroAdapter`      | OApp V2           | Chain-dependent     | 🔮 Planned    |
 | Ethereum L1      | `EthereumL1Bridge`      | Native            | Finalized           | ✅ Production |
+| Aztec            | `AztecBridgeAdapter`    | UltraHonk         | Finalized           | ✅ Production |
 
 ---
 
@@ -142,23 +142,32 @@ const messageId = await messenger.sendMessage({
 
 ## Additional Integrations
 
-The following chains have adapters on the roadmap:
+### Implemented
 
-| Chain      | Status     | Adapter                  |
-| ---------- | ---------- | ------------------------ |
-| zkSync Era | 🔮 Planned | `zkSyncBridgeAdapter`    |
-| Scroll     | 🔮 Planned | `ScrollBridgeAdapter`    |
-| Linea      | 🔮 Planned | `LineaBridgeAdapter`     |
-| Axelar     | 🔮 Planned | `AxelarBridgeAdapter`    |
-| Solana     | 🔮 Planned | `SolanaBridgeAdapter`    |
-| Cardano    | 🔮 Planned | `CardanoBridgeAdapter`   |
-| Zcash      | 🔮 Planned | `ZcashBridgeAdapter`     |
-| Secret     | 🔮 Planned | `SecretBridgeAdapter`    |
-| Polkadot   | 🔮 Planned | `PolkadotBridgeAdapter`  |
-| Cosmos     | 🔮 Planned | `CosmosBridgeAdapter`    |
-| NEAR       | 🔮 Planned | `NEARBridgeAdapter`      |
-| Avalanche  | 🔮 Planned | `AvalancheBridgeAdapter` |
-| Penumbra   | 🔮 Planned | `PenumbraBridgeAdapter`  |
+| Chain      | Status         | Adapter               | Priority |
+| ---------- | -------------- | --------------------- | -------- |
+| LayerZero  | ✅ Implemented | `LayerZeroAdapter`    | High     |
+| Hyperlane  | ✅ Implemented | `HyperlaneAdapter`    | High     |
+| zkSync Era | ✅ Implemented | `zkSyncBridgeAdapter` | High     |
+| Scroll     | ✅ Implemented | `ScrollBridgeAdapter` | High     |
+| Linea      | ✅ Implemented | `LineaBridgeAdapter`  | High     |
+
+### Planned
+
+> **Note:** The following adapters are on the development roadmap and **do not yet exist** in the codebase.
+
+| Chain     | Status     | Adapter                  | Priority |
+| --------- | ---------- | ------------------------ | -------- |
+| Axelar    | 🔮 Planned | `AxelarBridgeAdapter`    | Medium   |
+| Solana    | 🔮 Planned | `SolanaBridgeAdapter`    | Medium   |
+| Cardano   | 🔮 Planned | `CardanoBridgeAdapter`   | Low      |
+| Zcash     | 🔮 Planned | `ZcashBridgeAdapter`     | Low      |
+| Secret    | 🔮 Planned | `SecretBridgeAdapter`    | Low      |
+| Polkadot  | 🔮 Planned | `PolkadotBridgeAdapter`  | Low      |
+| Cosmos    | 🔮 Planned | `CosmosBridgeAdapter`    | Low      |
+| NEAR      | 🔮 Planned | `NEARBridgeAdapter`      | Low      |
+| Avalanche | 🔮 Planned | `AvalancheBridgeAdapter` | Low      |
+| Penumbra  | 🔮 Planned | `PenumbraBridgeAdapter`  | Low      |
 
 ---
 

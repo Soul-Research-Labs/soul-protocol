@@ -148,24 +148,15 @@ mutate:
     contract: OptimismBridgeAdapter
   - filename: contracts/crosschain/BaseBridgeAdapter.sol
     contract: BaseBridgeAdapter
-  - filename: contracts/crosschain/LayerZeroBridgeAdapter.sol
-    contract: LayerZeroBridgeAdapter
   - filename: contracts/crosschain/EthereumL1Bridge.sol
     contract: EthereumL1Bridge
-  - filename: contracts/crosschain/ScrollBridgeAdapter.sol
-    contract: ScrollBridgeAdapter
-  - filename: contracts/crosschain/LineaBridgeAdapter.sol
-    contract: LineaBridgeAdapter
-  - filename: contracts/crosschain/zkSyncBridgeAdapter.sol
-    contract: zkSyncBridgeAdapter
-  - filename: contracts/crosschain/PolygonZkEVMBridgeAdapter.sol
-    contract: PolygonZkEVMBridgeAdapter
   - filename: contracts/crosschain/CrossChainEmergencyRelay.sol
     contract: CrossChainEmergencyRelay
-  - filename: contracts/crosschain/HyperlaneAdapter.sol
-    contract: HyperlaneAdapter
   - filename: contracts/crosschain/CrossChainNullifierSync.sol
     contract: CrossChainNullifierSync
+  # NOTE: The following adapters are planned but not yet implemented:
+  # - LayerZeroBridgeAdapter, HyperlaneAdapter, ScrollBridgeAdapter,
+  #   LineaBridgeAdapter, zkSyncBridgeAdapter, PolygonZkEVMBridgeAdapter
   - filename: contracts/crosschain/ZaseonL2Messenger.sol
     contract: ZaseonL2Messenger
   - filename: contracts/crosschain/L2ProofRouter.sol

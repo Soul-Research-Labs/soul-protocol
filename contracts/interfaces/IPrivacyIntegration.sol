@@ -282,11 +282,13 @@ interface IPrivacyPool {
      * @param commitment Commitment to the deposit amount
      * @param rangeProof Proof that amount is in valid range
      * @param nullifier Nullifier for the deposit
+     * @param token Token address (address(0) for ETH)
      */
     function privateDeposit(
         bytes32 commitment,
         bytes calldata rangeProof,
-        bytes32 nullifier
+        bytes32 nullifier,
+        address token
     ) external payable;
 
     /**
@@ -294,11 +296,17 @@ interface IPrivacyPool {
      * @param proof ZK proof of valid withdrawal
      * @param nullifierHash Nullifier to prevent double-spend
      * @param recipient Stealth address of recipient
+     * @param token Token address (address(0) for ETH)
+     * @param relayerFee Fee paid to the relayer
+     * @param relayer Address of the relayer
      */
     function privateWithdraw(
         bytes calldata proof,
         bytes32 nullifierHash,
-        bytes32 recipient
+        bytes32 recipient,
+        address token,
+        uint256 relayerFee,
+        address relayer
     ) external;
 
     /**
@@ -307,12 +315,16 @@ interface IPrivacyPool {
      * @param outputCommitment Expected output commitment
      * @param proof ZK proof of valid swap
      * @param inputNullifier Nullifier for input
+     * @param inputToken Input token address
+     * @param outputToken Output token address
      */
     function privateSwap(
         bytes32 inputCommitment,
         bytes32 outputCommitment,
         bytes calldata proof,
-        bytes32 inputNullifier
+        bytes32 inputNullifier,
+        address inputToken,
+        address outputToken
     ) external;
 }
 

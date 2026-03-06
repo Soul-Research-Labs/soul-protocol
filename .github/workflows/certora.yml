@@ -1,0 +1,62 @@
+name: Certora Nightly Verification
+
+permissions:
+  contents: read
+
+on:
+  schedule:
+    # 4:00 AM UTC every day (after Foundry nightly at 3:00 AM)
+    - cron: "0 4 * * *"
+  workflow_dispatch: # allow manual trigger
+
+concurrency:
+  group: certora-nightly
+  cancel-in-progress: true
+
+jobs:
+  certora-verify:
+    name: Certora Formal Verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    # Only run if CERTORAKEY is configured
+    if: ${{ github.repository_owner == 'zaseon' || github.event_name == 'workflow_dispatch' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        conf:
+          - certora/conf/ZaseonProtocolHub.conf
+          - certora/conf/verify_zkslocks.conf
+          - certora/conf/verify_stealth_address.conf
+          - certora/conf/verify_nullifier_sync.conf
+          - certora/conf/verify_security_module.conf
+          - certora/conf/verify_emergency_relay.conf
+          - certora/conf/verify_flash_loan_guard.conf
+          - certora/conf/verify_decentralized_relayer_registry.conf
+          - certora/conf/verify_security.conf
+          - certora/conf/verify_pc3.conf
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Certora CLI
+        run: pip install certora-cli
+
+      - name: Install solc
+        run: |
+          pip install solc-select
+          solc-select install 0.8.24
+          solc-select use 0.8.24
+
+      - name: Install Node dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Run Certora verification
+        env:
+          CERTORAKEY: ${{ secrets.CERTORAKEY }}
+        run: certoraRun ${{ matrix.conf }}

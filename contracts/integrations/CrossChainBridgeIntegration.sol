@@ -6,6 +6,7 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ICrossChainBridge} from "../interfaces/ICrossChainBridge.sol";
 
 /**
  * @title CrossChainBridgeIntegration
@@ -60,6 +61,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
  * @custom:security-contact security@soulprotocol.io
  */
 contract CrossChainBridgeIntegration is
+    ICrossChainBridge,
     ReentrancyGuard,
     AccessControl,
     Pausable
@@ -133,21 +135,7 @@ contract CrossChainBridgeIntegration is
                                  ENUMS
     //////////////////////////////////////////////////////////////*/
 
-    enum BridgeProtocol {
-        NATIVE, // Native chain bridge
-        LAYERZERO, // LayerZero v2
-        HYPERLANE, // Hyperlane
-        AXELAR, // Axelar
-        WORMHOLE, // Wormhole
-        CCIP, // Chainlink CCIP
-        STARGATE, // Stargate
-        ACROSS, // Across Protocol
-        HOP, // Hop Protocol
-        MULTICHAIN, // Multichain
-        AZTEC, // Aztec Connect
-        STARKNET, // Starknet Bridge
-        BITVM // BitVM Trust-minimized
-    }
+    // BridgeProtocol enum inherited from ICrossChainBridge
 
     enum ChainType {
         EVM,
@@ -435,7 +423,12 @@ contract CrossChainBridgeIntegration is
             : protocol;
 
         transferId = _executeBridgeTransfer(
-            destChain, recipient, token, amount, selectedProtocol, extraData
+            destChain,
+            recipient,
+            token,
+            amount,
+            selectedProtocol,
+            extraData
         );
 
         // Update daily usage
@@ -459,7 +452,10 @@ contract CrossChainBridgeIntegration is
         if (!adapter.isActive) revert BridgeNotAvailable();
 
         // Calculate fees
-        (uint256 totalFee, uint256 protocolFee) = _calculateBridgeFees(adapter, amount);
+        (uint256 totalFee, uint256 protocolFee) = _calculateBridgeFees(
+            adapter,
+            amount
+        );
 
         if (token == NATIVE_TOKEN) {
             if (msg.value < amount + totalFee) revert InsufficientFee();
@@ -680,19 +676,20 @@ contract CrossChainBridgeIntegration is
         address token,
         uint256 amount
     ) internal returns (bytes32) {
-        return keccak256(
-            abi.encodePacked(
-                BRIDGE_DOMAIN,
-                THIS_CHAIN_ID,
-                destChain,
-                msg.sender,
-                recipient,
-                token,
-                amount,
-                block.timestamp,
-                transferNonce++
-            )
-        );
+        return
+            keccak256(
+                abi.encodePacked(
+                    BRIDGE_DOMAIN,
+                    THIS_CHAIN_ID,
+                    destChain,
+                    msg.sender,
+                    recipient,
+                    token,
+                    amount,
+                    block.timestamp,
+                    transferNonce++
+                )
+            );
     }
 
     function _executeBridgeCall(

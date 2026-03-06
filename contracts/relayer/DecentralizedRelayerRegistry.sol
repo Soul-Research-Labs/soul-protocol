@@ -194,8 +194,10 @@ contract DecentralizedRelayerRegistry is AccessControl, ReentrancyGuard {
         if (relayers[msg.sender].isRegistered)
             revert AlreadyRegistered(msg.sender);
 
+        uint256 excess = msg.value - MIN_STAKE;
+
         relayers[msg.sender] = RelayerInfo({
-            stake: msg.value,
+            stake: MIN_STAKE,
             rewards: 0,
             unlockTime: 0,
             isRegistered: true
@@ -203,7 +205,13 @@ contract DecentralizedRelayerRegistry is AccessControl, ReentrancyGuard {
 
         relayerIndex[msg.sender] = activeRelayers.length;
         activeRelayers.push(msg.sender);
-        emit RelayerRegistered(msg.sender, msg.value);
+        emit RelayerRegistered(msg.sender, MIN_STAKE);
+
+        // Refund any overpayment
+        if (excess > 0) {
+            (bool sent, ) = msg.sender.call{value: excess}("");
+            if (!sent) revert TransferFailed(msg.sender, excess);
+        }
     }
 
     /**

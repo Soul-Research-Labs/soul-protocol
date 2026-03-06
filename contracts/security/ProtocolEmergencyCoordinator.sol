@@ -258,29 +258,55 @@ contract ProtocolEmergencyCoordinator is
     /**
      * @notice Confirm that critical roles (GUARDIAN, RESPONDER, RECOVERY) are held by
      *         separate addresses. Must be called before RED/BLACK emergency plans.
-     * @dev Validates that no single address holds more than one of the three critical roles.
-     *      This prevents a compromised admin from single-handedly escalating to BLACK and
-     *      executing the most destructive emergency actions.
+     * @dev Validates that no single address holds more than one of the three critical roles,
+     *      and that the provided addresses actually hold their claimed roles.
      *
      *      The admin should:
      *      1. Grant GUARDIAN_ROLE, RESPONDER_ROLE, RECOVERY_ROLE to separate multisigs
      *      2. Revoke those roles from the deployer address
-     *      3. Call confirmRoleSeparation()
+     *      3. Call confirmRoleSeparation(guardian, responder, recovery)
+     * @param guardian Address expected to hold GUARDIAN_ROLE
+     * @param responder Address expected to hold RESPONDER_ROLE
+     * @param recovery Address expected to hold RECOVERY_ROLE
      */
-    function confirmRoleSeparation() external onlyRole(DEFAULT_ADMIN_ROLE) {
-        // Get role member counts (AccessControl stores members per role)
-        // Iterate over the three critical roles and check no address has >1
-        // Note: We check the msg.sender (admin) doesn't hold operational roles
+    function confirmRoleSeparation(
+        address guardian,
+        address responder,
+        address recovery
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        // Verify all three addresses are distinct
         if (
-            hasRole(GUARDIAN_ROLE, msg.sender) &&
-            hasRole(RESPONDER_ROLE, msg.sender)
-        ) revert RoleSeparationViolation(msg.sender);
+            guardian == responder ||
+            guardian == recovery ||
+            responder == recovery
+        ) revert RoleSeparationViolation(guardian);
+
+        // Verify each address actually holds its claimed role
+        if (!hasRole(GUARDIAN_ROLE, guardian))
+            revert RoleSeparationViolation(guardian);
+        if (!hasRole(RESPONDER_ROLE, responder))
+            revert RoleSeparationViolation(responder);
+        if (!hasRole(RECOVERY_ROLE, recovery))
+            revert RoleSeparationViolation(recovery);
+
+        // Verify no address holds more than one critical role
         if (
-            hasRole(GUARDIAN_ROLE, msg.sender) &&
-            hasRole(RECOVERY_ROLE, msg.sender)
-        ) revert RoleSeparationViolation(msg.sender);
+            hasRole(RESPONDER_ROLE, guardian) ||
+            hasRole(RECOVERY_ROLE, guardian)
+        ) revert RoleSeparationViolation(guardian);
         if (
-            hasRole(RESPONDER_ROLE, msg.sender) &&
+            hasRole(GUARDIAN_ROLE, responder) ||
+            hasRole(RECOVERY_ROLE, responder)
+        ) revert RoleSeparationViolation(responder);
+        if (
+            hasRole(GUARDIAN_ROLE, recovery) ||
+            hasRole(RESPONDER_ROLE, recovery)
+        ) revert RoleSeparationViolation(recovery);
+
+        // Verify the admin doesn't hold any critical operational role
+        if (
+            hasRole(GUARDIAN_ROLE, msg.sender) ||
+            hasRole(RESPONDER_ROLE, msg.sender) ||
             hasRole(RECOVERY_ROLE, msg.sender)
         ) revert RoleSeparationViolation(msg.sender);
 

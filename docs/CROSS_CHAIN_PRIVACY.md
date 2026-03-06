@@ -523,23 +523,27 @@ Source Chain                    Zaseon                      Destination Chain
 
 ### Production Adapters
 
-| Chain           | Adapter                 | Chain ID | Status        |
-| --------------- | ----------------------- | -------- | ------------- |
-| Ethereum L1     | `EthereumL1Bridge`      | 1        | ✅ Production |
-| Arbitrum        | `ArbitrumBridgeAdapter` | 42161    | ✅ Production |
-| Any (LayerZero) | `LayerZeroAdapter`      | Various  | 🔮 Planned    |
-| Direct L2       | `DirectL2Messenger`     | Various  | ✅ Production |
+| Chain       | Adapter                 | Chain ID | Status        |
+| ----------- | ----------------------- | -------- | ------------- |
+| Ethereum L1 | `EthereumL1Bridge`      | 1        | ✅ Production |
+| Arbitrum    | `ArbitrumBridgeAdapter` | 42161    | ✅ Production |
+| Optimism    | `OptimismBridgeAdapter` | 10       | ✅ Production |
+| Base        | `BaseBridgeAdapter`     | 8453     | ✅ Production |
+| Aztec       | `AztecBridgeAdapter`    | —        | ✅ Production |
+| Direct L2   | `DirectL2Messenger`     | Various  | ✅ Production |
 
-### Additional Adapters
+### Planned Adapters (Roadmap)
 
-| Chain         | Adapter                     | Chain ID | Status        |
-| ------------- | --------------------------- | -------- | ------------- |
-| Optimism      | `OptimismBridgeAdapter`     | 10       | ✅ Production |
-| Base          | `BaseBridgeAdapter`         | 8453     | ✅ Production |
-| zkSync Era    | `zkSyncBridgeAdapter`       | 324      | 🔮 Planned    |
-| Scroll        | `ScrollBridgeAdapter`       | 534352   | 🔮 Planned    |
-| Linea         | `LineaBridgeAdapter`        | 59144    | 🔮 Planned    |
-| Polygon zkEVM | `PolygonZkEVMBridgeAdapter` | 1101     | 🔮 Planned    |
+> **Note:** These adapters **do not yet exist** in the codebase.
+
+| Chain         | Adapter                     | Chain ID | Priority |
+| ------------- | --------------------------- | -------- | -------- |
+| LayerZero     | `LayerZeroAdapter`          | Various  | High     |
+| Hyperlane     | `HyperlaneAdapter`          | Various  | High     |
+| zkSync Era    | `zkSyncBridgeAdapter`       | 324      | High     |
+| Scroll        | `ScrollBridgeAdapter`       | 534352   | High     |
+| Linea         | `LineaBridgeAdapter`        | 59144    | High     |
+| Polygon zkEVM | `PolygonZkEVMBridgeAdapter` | 1101     | Medium   |
 
 ### Privacy Chain Adapters (Production)
 

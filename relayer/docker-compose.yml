@@ -5,16 +5,13 @@ services:
     build: .
     ports:
       - "9090:9090"
+    env_file:
+      - .env
     environment:
       - NODE_ENV=production
       - REDIS_URL=redis://redis:6379
       - LOG_LEVEL=info
       - CHAINS=ethereum,arbitrum,optimism,base,aztec
-      - ETHEREUM_RPC_URL=${ETHEREUM_RPC_URL}
-      - ARBITRUM_RPC_URL=${ARBITRUM_RPC_URL}
-      - OPTIMISM_RPC_URL=${OPTIMISM_RPC_URL}
-      - BASE_RPC_URL=${BASE_RPC_URL}
-      - RELAYER_PRIVATE_KEY=${RELAYER_PRIVATE_KEY}
     depends_on:
       redis:
         condition: service_healthy

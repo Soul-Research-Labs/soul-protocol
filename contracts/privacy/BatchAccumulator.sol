@@ -347,6 +347,18 @@ contract BatchAccumulator is
             // Do not revert so that the FAILED state is persisted and the
             // batch can be retried or handled later, and the route unblocked.
             batch.status = BatchStatus.FAILED;
+
+            // Recover nullifiers so users can resubmit to a new batch
+            uint256 failCount = batch.commitments.length;
+            for (uint256 j = 0; j < failCount; ) {
+                BatchedTransaction storage txn = batchTransactions[batchId][j];
+                nullifierUsed[txn.nullifierHash] = false;
+                commitmentToBatch[txn.commitment] = bytes32(0);
+                unchecked {
+                    ++j;
+                }
+            }
+
             emit BatchFailed(batchId, "INVALID_PROOF");
             return;
         }

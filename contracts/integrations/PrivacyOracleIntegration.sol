@@ -5,6 +5,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {IPrivacyOracle} from "../interfaces/IPrivacyIntegration.sol";
 
 /**
  * @title PrivacyOracleIntegration
@@ -47,7 +48,12 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
  *
  * @custom:security-contact security@zaseonprotocol.io
  */
-contract PrivacyOracleIntegration is ReentrancyGuard, AccessControl, Pausable {
+contract PrivacyOracleIntegration is
+    IPrivacyOracle,
+    ReentrancyGuard,
+    AccessControl,
+    Pausable
+{
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -278,7 +284,7 @@ contract PrivacyOracleIntegration is ReentrancyGuard, AccessControl, Pausable {
 
     /**
      * @notice Register oracle node
-          * @param nodeAddress The nodeAddress address
+     * @param nodeAddress The nodeAddress address
      * @param publicKey The public key
      */
     function registerOracleNode(
@@ -401,7 +407,7 @@ contract PrivacyOracleIntegration is ReentrancyGuard, AccessControl, Pausable {
      * @param minPrice Minimum price (committed)
      * @param maxPrice Maximum price (committed)
      * @param proof Range proof
-          * @return valid The valid
+     * @return valid The valid
      */
     function verifyPriceInRange(
         bytes32 pairId,
@@ -611,7 +617,7 @@ contract PrivacyOracleIntegration is ReentrancyGuard, AccessControl, Pausable {
 
     /**
      * @notice Get pair configuration
-          * @param pairId The pairId identifier
+     * @param pairId The pairId identifier
      * @return The result value
      */
     function getPair(bytes32 pairId) external view returns (PairConfig memory) {
@@ -620,7 +626,7 @@ contract PrivacyOracleIntegration is ReentrancyGuard, AccessControl, Pausable {
 
     /**
      * @notice Get all pairs
-          * @return The result value
+     * @return The result value
      */
     function getAllPairs() external view returns (bytes32[] memory) {
         return allPairs;
@@ -628,7 +634,7 @@ contract PrivacyOracleIntegration is ReentrancyGuard, AccessControl, Pausable {
 
     /**
      * @notice Get latest price commitment
-          * @param pairId The pairId identifier
+     * @param pairId The pairId identifier
      * @return The result value
      */
     function getLatestPriceCommitment(
@@ -639,7 +645,7 @@ contract PrivacyOracleIntegration is ReentrancyGuard, AccessControl, Pausable {
 
     /**
      * @notice Get historical price commitment
-          * @param pairId The pairId identifier
+     * @param pairId The pairId identifier
      * @param roundId The roundId identifier
      * @return The result value
      */
@@ -652,7 +658,7 @@ contract PrivacyOracleIntegration is ReentrancyGuard, AccessControl, Pausable {
 
     /**
      * @notice Get oracle node info
-          * @param nodeAddress The nodeAddress address
+     * @param nodeAddress The nodeAddress address
      * @return The result value
      */
     function getOracleNode(
@@ -663,7 +669,7 @@ contract PrivacyOracleIntegration is ReentrancyGuard, AccessControl, Pausable {
 
     /**
      * @notice Get all oracle nodes
-          * @return The result value
+     * @return The result value
      */
     function getAllOracleNodes() external view returns (address[] memory) {
         return oracleNodeList;
@@ -671,7 +677,7 @@ contract PrivacyOracleIntegration is ReentrancyGuard, AccessControl, Pausable {
 
     /**
      * @notice Check if price is fresh
-          * @param pairId The pairId identifier
+     * @param pairId The pairId identifier
      * @return The result value
      */
     function isPriceFresh(bytes32 pairId) external view returns (bool) {
@@ -685,7 +691,7 @@ contract PrivacyOracleIntegration is ReentrancyGuard, AccessControl, Pausable {
 
     /**
      * @notice Update signature threshold
-          * @param newThreshold The new Threshold value
+     * @param newThreshold The new Threshold value
      */
     function setSignatureThreshold(
         uint256 newThreshold
@@ -697,7 +703,7 @@ contract PrivacyOracleIntegration is ReentrancyGuard, AccessControl, Pausable {
 
     /**
      * @notice Update verifiers
-          * @param _priceProofVerifier The _price proof verifier
+     * @param _priceProofVerifier The _price proof verifier
      * @param _rangeProofVerifier The _range proof verifier
      */
     function setVerifiers(
@@ -713,7 +719,7 @@ contract PrivacyOracleIntegration is ReentrancyGuard, AccessControl, Pausable {
 
     /**
      * @notice Deactivate oracle node
-          * @param nodeAddress The nodeAddress address
+     * @param nodeAddress The nodeAddress address
      */
     function deactivateOracleNode(
         address nodeAddress
@@ -724,7 +730,7 @@ contract PrivacyOracleIntegration is ReentrancyGuard, AccessControl, Pausable {
 
     /**
      * @notice Deactivate pair
-          * @param pairId The pairId identifier
+     * @param pairId The pairId identifier
      */
     function deactivatePair(bytes32 pairId) external onlyRole(OPERATOR_ROLE) {
         pairs[pairId].isActive = false;

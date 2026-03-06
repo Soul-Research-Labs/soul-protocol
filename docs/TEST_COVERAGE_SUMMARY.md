@@ -20,11 +20,11 @@
 
 | Metric                              | Count |
 | ----------------------------------- | ----- |
-| **Total Solidity source files**     | 136   |
-| **Foundry test files** (`.t.sol`)   | 88    |
-| **Hardhat test files** (`.test.ts`) | 12    |
-| **Certora specs**                   | 45    |
-| **Certora conf files**              | 33    |
+| **Total Solidity source files**     | 236   |
+| **Foundry test files** (`.t.sol`)   | 269   |
+| **Hardhat test files** (`.test.ts`) | 15    |
+| **Certora specs**                   | 62    |
+| **Certora conf files**              | 62    |
 
 ## Coverage by Category
 
@@ -98,15 +98,15 @@
 
 ## Specialized Test Suites
 
-| Suite Type             | Tests                                                 |
-| ---------------------- | ----------------------------------------------------- |
-| **Fuzz tests**         | 17 files in `test/fuzz/`                              |
-| **Invariant tests**    | 5 files in `test/invariant/`                          |
-| **Attack simulations** | 6 files in `test/attacks/`                            |
-| **Formal proofs**      | 4 files in `test/formal/`                             |
-| **Stress tests**       | 3 files in `test/stress/`                             |
-| **Gas benchmarks**     | 2 files in `test/gas/`                                |
-| **Integration**        | 5 files in `test/integration/` + `test/integrations/` |
+| Suite Type             | Tests                                                  |
+| ---------------------- | ------------------------------------------------------ |
+| **Fuzz tests**         | 20 files in `test/fuzz/`                               |
+| **Invariant tests**    | 13 files in `test/invariant/`                          |
+| **Attack simulations** | 8 files in `test/attacks/`                             |
+| **Formal proofs**      | 11 files in `test/formal/`                             |
+| **Stress tests**       | 3 files in `test/stress/`                              |
+| **Gas benchmarks**     | 7 files in `test/gas/`                                 |
+| **Integration**        | 32 files in `test/integration/` + `test/integrations/` |
 
 ## Known Gaps (Intentional)
 
@@ -134,7 +134,7 @@ These contracts lack dedicated test files but are either:
 
 ## Total
 
-> **5,600+ tests** across **220+ test suites** — 0 failures (February 2026)
+> **5,600+ tests** across **269 Foundry + 15 Hardhat test suites** — 0 failures (March 2026)
 
 ## Commands
 

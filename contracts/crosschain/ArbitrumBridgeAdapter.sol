@@ -431,8 +431,15 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
 
         // Store deposit and ticket — extracted to reduce stack depth
         _storeDepositAndTicket(
-            depositId, ticketId, l2Recipient, l1Token,
-            mapping_, amount, submissionCost, l2GasLimit, l2GasPrice
+            depositId,
+            ticketId,
+            l2Recipient,
+            l1Token,
+            mapping_,
+            amount,
+            submissionCost,
+            l2GasLimit,
+            l2GasPrice
         );
 
         mapping_.totalDeposited += amount;
@@ -441,8 +448,13 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
 
         // Create retryable ticket on Arbitrum Inbox — extracted to reduce stack depth
         _createRetryableTicket(
-            config.inbox, l2Recipient, l1Token,
-            amount, submissionCost, l2GasLimit, l2GasPrice
+            config.inbox,
+            l2Recipient,
+            l1Token,
+            amount,
+            submissionCost,
+            l2GasLimit,
+            l2GasPrice
         );
 
         emit DepositInitiated(
@@ -531,8 +543,8 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
      */
     function claimWithdrawal(
         bytes32 withdrawalId,
-        bytes32[] calldata /* proof */,
-        uint256 /* index */
+        bytes32[] calldata proof,
+        uint256 index
     ) external nonReentrant {
         L2ToL1Withdrawal storage withdrawal = withdrawals[withdrawalId];
         if (withdrawal.initiatedAt == 0) revert WithdrawalNotFound();
@@ -544,22 +556,17 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         // Verify outbox proof (using Arbitrum Outbox)
         IOutbox outbox = IOutbox(rollupConfigs[ARB_ONE_CHAIN_ID].outbox);
 
-        // Arbitrum L2→L1 pattern: verify that the Outbox is currently executing
-        // a message from the expected L2 sender. This works when called within
-        // the Outbox.executeTransaction() callback, OR when called by a relayer
-        // with appropriate proof.
-        // For relayer-initiated claims, verify the caller has RELAYER_ROLE
-        // or is the withdrawal recipient.
-        if (
-            msg.sender != address(outbox) &&
-            msg.sender != withdrawal.l1Recipient &&
-            !hasRole(OPERATOR_ROLE, msg.sender)
-        ) revert InvalidProof();
-
-        // If called by Outbox during executeTransaction, verify L2 sender
         if (msg.sender == address(outbox)) {
+            // Called by Outbox during executeTransaction callback
             address l2Sender = outbox.l2ToL1Sender();
             if (l2Sender == address(0)) revert InvalidProof();
+        } else {
+            // Called directly by recipient or OPERATOR — verify output was proven via Outbox
+            if (!outbox.isSpent(index)) revert InvalidProof();
+            if (
+                msg.sender != withdrawal.l1Recipient &&
+                !hasRole(OPERATOR_ROLE, msg.sender)
+            ) revert InvalidProof();
         }
 
         processedOutputs[withdrawal.outputId] = true;
@@ -887,6 +894,8 @@ interface IOutbox {
     function l2ToL1Block() external view returns (uint256);
 
     function l2ToL1Timestamp() external view returns (uint256);
+
+    function isSpent(uint256 index) external view returns (bool);
 
     function executeTransaction(
         bytes32[] calldata proof,
