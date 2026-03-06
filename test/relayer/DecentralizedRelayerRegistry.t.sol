@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import "../../contracts/relayer/DecentralizedRelayerRegistry.sol";
+import {IDecentralizedRelayerRegistry} from "../../contracts/interfaces/IDecentralizedRelayerRegistry.sol";
 
 contract DecentralizedRelayerRegistryTest is Test {
     DecentralizedRelayerRegistry public registry;
@@ -42,7 +43,7 @@ contract DecentralizedRelayerRegistryTest is Test {
         vm.startPrank(relayer);
         vm.expectRevert(
             abi.encodeWithSelector(
-                DecentralizedRelayerRegistry.InsufficientStake.selector,
+                IDecentralizedRelayerRegistry.InsufficientStake.selector,
                 5 ether,
                 10 ether
             )
@@ -57,7 +58,7 @@ contract DecentralizedRelayerRegistryTest is Test {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                DecentralizedRelayerRegistry.AlreadyRegistered.selector,
+                IDecentralizedRelayerRegistry.AlreadyRegistered.selector,
                 relayer
             )
         );
@@ -94,7 +95,7 @@ contract DecentralizedRelayerRegistryTest is Test {
         vm.startPrank(relayer);
         vm.expectRevert(
             abi.encodeWithSelector(
-                DecentralizedRelayerRegistry.NotRegistered.selector,
+                IDecentralizedRelayerRegistry.NotRegistered.selector,
                 relayer
             )
         );
@@ -118,7 +119,7 @@ contract DecentralizedRelayerRegistryTest is Test {
         // Try withdraw too early
         vm.expectRevert(
             abi.encodeWithSelector(
-                DecentralizedRelayerRegistry.StillLocked.selector,
+                IDecentralizedRelayerRegistry.StillLocked.selector,
                 unlockTime,
                 block.timestamp
             )
@@ -149,7 +150,7 @@ contract DecentralizedRelayerRegistryTest is Test {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                DecentralizedRelayerRegistry.AlreadyUnbonding.selector,
+                IDecentralizedRelayerRegistry.AlreadyUnbonding.selector,
                 relayer,
                 unlockTime
             )
@@ -162,7 +163,7 @@ contract DecentralizedRelayerRegistryTest is Test {
         vm.startPrank(relayer);
         vm.expectRevert(
             abi.encodeWithSelector(
-                DecentralizedRelayerRegistry.NotRegistered.selector,
+                IDecentralizedRelayerRegistry.NotRegistered.selector,
                 relayer
             )
         );
@@ -176,7 +177,7 @@ contract DecentralizedRelayerRegistryTest is Test {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                DecentralizedRelayerRegistry.NotUnbonding.selector,
+                IDecentralizedRelayerRegistry.NotUnbonding.selector,
                 relayer
             )
         );
@@ -226,7 +227,9 @@ contract DecentralizedRelayerRegistryTest is Test {
         vm.prank(slasher);
         vm.expectRevert(
             abi.encodeWithSelector(
-                DecentralizedRelayerRegistry.InsufficientStakeForSlash.selector,
+                IDecentralizedRelayerRegistry
+                    .InsufficientStakeForSlash
+                    .selector,
                 10 ether,
                 15 ether
             )
@@ -279,7 +282,7 @@ contract DecentralizedRelayerRegistryTest is Test {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                DecentralizedRelayerRegistry.ValueMismatch.selector,
+                IDecentralizedRelayerRegistry.ValueMismatch.selector,
                 2 ether,
                 1 ether
             )
@@ -290,7 +293,7 @@ contract DecentralizedRelayerRegistryTest is Test {
     function test_AddRewardUnregistered() public {
         vm.expectRevert(
             abi.encodeWithSelector(
-                DecentralizedRelayerRegistry.NotRegistered.selector,
+                IDecentralizedRelayerRegistry.NotRegistered.selector,
                 relayer
             )
         );
@@ -321,7 +324,7 @@ contract DecentralizedRelayerRegistryTest is Test {
         vm.prank(relayer);
         vm.expectRevert(
             abi.encodeWithSelector(
-                DecentralizedRelayerRegistry.NoRewards.selector,
+                IDecentralizedRelayerRegistry.NoRewards.selector,
                 relayer
             )
         );

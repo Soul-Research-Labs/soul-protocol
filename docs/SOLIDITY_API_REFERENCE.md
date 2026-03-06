@@ -1,6 +1,6 @@
 # ZASEON — Solidity API Reference
 
-> **Auto-generated from Solidity source** — covers all public/external functions, events, roles, and key state variables for the eight core contracts.
+> **Auto-generated from Solidity source** — covers all public/external functions, events, roles, and key state variables for core contracts and bridge adapters.
 
 ---
 
@@ -16,6 +16,12 @@
 8. [StealthAddressRegistry](#8-stealthaddressregistry)
 9. [BN254 Library](#9-bn254-library)
 10. [RingSignatureVerifier](#10-ringsignatureverifier)
+11. [Bridge Adapters](#11-bridge-adapters)
+12. [BatchAccumulator](#12-batchaccumulator)
+13. [DecentralizedRelayerRegistry](#13-decentralizedrelayerregistry)
+14. [CrossChainEmergencyRelay](#14-crosschainemergencyrelay)
+15. [CrossChainNullifierSync](#15-crosschainnullifiersync)
+16. [ProtocolEmergencyCoordinator](#16-protocolemergencycoordinator)
 
 ---
 
@@ -59,10 +65,14 @@ Production-ready cross-chain proof relay with optimistic verification and disput
 #### Relayer Stake Management
 
 ```solidity
-function confirmRoleSeparation() external onlyRole(DEFAULT_ADMIN_ROLE)
+function confirmRoleSeparation(
+    address guardian,
+    address responder,
+    address recovery
+) external onlyRole(DEFAULT_ADMIN_ROLE)
 ```
 
-Mark roles as properly separated. Prevents mainnet deployment with centralized control.
+Mark roles as properly separated. Validates that the three addresses are distinct, each holds its claimed role, no address holds more than one critical role, and the admin does not hold operational roles. Must be called before `submitProof` / `submitBatch` operations are enabled.
 
 ```solidity
 function depositStake() external payable nonReentrant
@@ -873,3 +883,140 @@ function markKeyImageUsed(bytes32 keyImageHash) external
 | 32 members | ~832,000                     |
 
 > **Note:** ~26,000 gas per ring member, dominated by BN254 scalar multiplications.
+
+---
+
+## 11. Bridge Adapters
+
+### Overview
+
+All bridge adapters implement the `IBridgeAdapter` pattern with shared roles (`OPERATOR_ROLE`, `GUARDIAN_ROLE`, `EXECUTOR_ROLE`), `ReentrancyGuard`, and `Pausable`.
+
+### zkSyncBridgeAdapter
+
+**Path:** `contracts/crosschain/zkSyncBridgeAdapter.sol`
+
+```solidity
+function deposit(uint256 chainId, address l2Recipient, address l1Token, uint256 amount, uint256 l2GasLimit) external payable returns (bytes32 depositId)
+function proveWithdrawal(bytes32 withdrawalId, L2LogProof calldata proof) external
+function claimWithdrawal(bytes32 withdrawalId) external  // Transfers ETH to recipient
+function configureBridge(uint256 chainId, address diamondProxy, address l1Bridge, address l2Bridge) external
+```
+
+### ScrollBridgeAdapter
+
+**Path:** `contracts/crosschain/ScrollBridgeAdapter.sol`
+
+```solidity
+function deposit(uint256 chainId, address l2Recipient, address l1Token, uint256 amount, uint256 l2GasLimit) external payable returns (bytes32 depositId)
+function proveWithdrawal(bytes32 withdrawalId, ScrollWithdrawalProof calldata proof) external
+function claimWithdrawal(bytes32 withdrawalId) external  // Transfers ETH to recipient
+function configureScroll(uint256 chainId, address l1Messenger, address l1GatewayRouter, address l1MessageQueue, address rollup) external
+```
+
+### LineaBridgeAdapter
+
+**Path:** `contracts/crosschain/LineaBridgeAdapter.sol`
+
+```solidity
+function deposit(uint256 chainId, address l2Recipient, address l1Token, uint256 amount, uint256 messageFee) external payable returns (bytes32 depositId)
+function proveWithdrawal(bytes32 withdrawalId, LineaClaimProof calldata proof) external
+function claimWithdrawal(bytes32 withdrawalId) external  // Transfers ETH to recipient
+function configureLinea(uint256 chainId, address messageService, address tokenBridge) external
+```
+
+### LayerZeroAdapter
+
+**Path:** `contracts/crosschain/LayerZeroAdapter.sol`
+
+```solidity
+function send(uint32 dstEid, address receiver, bytes calldata payload, MessagingOptions calldata options) external payable returns (bytes32 messageId)
+function lzReceive(uint32 srcEid, bytes32 sender, uint64 nonce, bytes calldata payload) external
+function estimateFee(uint32 dstEid, bytes calldata payload, uint128 dstGasLimit) external view returns (MessagingFee memory)
+function configureEndpoint(uint32 eid, address endpoint, uint64 confirmations, uint128 baseGas) external
+function setPeer(uint32 eid, bytes32 peer) external
+```
+
+### HyperlaneAdapter
+
+**Path:** `contracts/crosschain/HyperlaneAdapter.sol`
+
+```solidity
+function dispatch(uint32 dstDomain, bytes32 recipient, bytes calldata body) external payable returns (bytes32 messageId)
+function handle(uint32 srcDomain, bytes32 sender, bytes calldata body) external
+function quoteDispatch(uint32 dstDomain, bytes calldata body) external view returns (uint256 nativeFee)
+function configureDomain(uint32 domain, bytes32 router, address ism, uint256 gasOverhead) external
+function configureISM(uint32 domain, ISMType ismType, address ismAddress, uint8 threshold, address[] calldata validators) external
+```
+
+---
+
+## 12. BatchAccumulator
+
+**Path:** `contracts/privacy/BatchAccumulator.sol`
+
+Batches privacy transactions for efficient ZK proof verification. On batch failure, nullifiers and commitments are recovered so users can resubmit.
+
+```solidity
+function submitTransaction(bytes32 batchId, bytes32 nullifierHash, bytes32 commitment, bytes calldata encryptedData) external
+function processBatch(bytes32 batchId, bytes calldata batchProof) external  // Recovers nullifiers on failure
+function createBatch(bytes32 routeId) external returns (bytes32 batchId)
+```
+
+---
+
+## 13. DecentralizedRelayerRegistry
+
+**Path:** `contracts/relayer/DecentralizedRelayerRegistry.sol`
+
+Manages relayer registration, staking, and rewards. Overpayment above `MIN_STAKE` is automatically refunded.
+
+```solidity
+function register() external payable  // Requires msg.value >= MIN_STAKE; refunds excess
+function deregister() external
+function claimRewards() external
+function slash(address relayer, uint256 amount) external onlyRole(SLASHER_ROLE)
+```
+
+---
+
+## 14. CrossChainEmergencyRelay
+
+**Path:** `contracts/crosschain/CrossChainEmergencyRelay.sol`
+
+Cross-chain emergency propagation. Validates source chain registration before accepting messages.
+
+```solidity
+function broadcastEmergency(EmergencyMessage calldata msg_) external
+function receiveEmergency(EmergencyMessage calldata msg_) external  // Validates sourceChainId
+function registerChain(uint256 chainId, address adapter) external
+```
+
+---
+
+## 15. CrossChainNullifierSync
+
+**Path:** `contracts/crosschain/CrossChainNullifierSync.sol`
+
+Synchronizes nullifiers across chains with per-chain sequence numbers for replay protection.
+
+```solidity
+function flushToChain(uint256 targetChainId) external  // Includes syncSequence in payload
+function receiveNullifiers(bytes calldata payload) external
+function getPendingCount() external view returns (uint256)
+```
+
+---
+
+## 16. ProtocolEmergencyCoordinator
+
+**Path:** `contracts/security/ProtocolEmergencyCoordinator.sol`
+
+Multi-role emergency coordination with validated role separation.
+
+```solidity
+function confirmRoleSeparation(address guardian, address responder, address recovery) external onlyRole(DEFAULT_ADMIN_ROLE)
+function initiateIncident(EmergencySeverity severity, string calldata description) external
+function escalateIncident(bytes32 incidentId) external
+function resolveIncident(bytes32 incidentId) external
+```

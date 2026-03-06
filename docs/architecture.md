@@ -387,20 +387,24 @@ Chain A                    Relayer Network                    Chain B
 
 ### Threat Model
 
-| Threat                | Mitigation                                      |
-| --------------------- | ----------------------------------------------- |
-| State theft           | ZK proof required for transfers                 |
-| Double-spending       | Nullifier registry with cross-chain sync        |
-| Replay attacks        | Unique nullifiers per state                     |
-| Relayer censorship    | Multiple independent relayers                   |
-| Relayer collusion     | Economic slashing, reputation                   |
-| Traffic analysis      | Mixnet routing, decoy traffic                   |
-| Front-running         | Commit-reveal schemes                           |
-| Reentrancy            | ReentrancyGuard on all state-changing functions |
-| DoS via .transfer()   | Using .call{value:}() for all ETH transfers     |
-| Access control bypass | Role-based access with separation of duties     |
+| Threat                    | Mitigation                                                     |
+| ------------------------- | -------------------------------------------------------------- |
+| State theft               | ZK proof required for transfers                                |
+| Double-spending           | Nullifier registry with cross-chain sync + syncSequence replay |
+| Replay attacks            | Unique nullifiers per state + syncSequence mapping             |
+| Relayer censorship        | Multiple independent relayers with VRF selection               |
+| Relayer collusion         | Economic slashing, reputation, overpayment refund              |
+| Traffic analysis          | Mixnet routing, decoy traffic                                  |
+| Front-running             | Commit-reveal schemes                                          |
+| Reentrancy                | ReentrancyGuard on all state-changing functions                |
+| DoS via .transfer()       | Using .call{value:}() for all ETH transfers                    |
+| Access control bypass     | Role-based access with `confirmRoleSeparation()` (3 addresses) |
+| Signature malleability    | ECDSA `s` value enforcement (s < secp256k1n/2)                 |
+| Cross-chain source spoof  | `sourceChainId` validation against active chain set            |
+| Value-based DoS           | `_checkRateLimit(count, value)` with hourly value caps         |
+| Bridge adapter compromise | ICrossChainBridge interface + per-adapter emergency withdrawal |
 
-### Security Hardening (February 2026)
+### Security Hardening (February–March 2026)
 
 All critical contracts include:
 
@@ -409,15 +413,28 @@ All critical contracts include:
 3. **Zero-Address Validation**: All admin setters validate inputs
 4. **Event Emission**: All config changes emit events for monitoring
 5. **Loop Gas Optimization**: Array length caching, batch storage writes
+6. **Signature Malleability Protection**: All ECDSA operations enforce `s < secp256k1n/2`
+7. **Value-Based Rate Limiting**: `_checkRateLimit(count, value)` enforces hourly value caps
+8. **Source Chain Validation**: Cross-chain relays verify `sourceChainId` against active chain set
+9. **Replay Protection**: `syncSequence` mapping prevents cross-chain nullifier replay
+10. **Overpayment Refund**: Stake-based contracts refund excess above `MIN_STAKE`
 
 **Protected Contracts**:
 
-- `ZaseonMultiSigGovernance` - Multi-sig governance with reentrancy protection
-- `BridgeWatchtower` - Watchtower network with optimized slashing
-- `ZaseonPreconfirmationHandler` - Preconfirmation with safe ETH transfers
-- `ZaseonIntentResolver` - Cross-chain intents with bond management
-- `ZaseonL2Messenger` - L2 messaging with fulfiller protection
-- `ConfidentialDataAvailability` - DA with comprehensive event logging
+- `ProtocolEmergencyCoordinator` - Multi-role emergency with `confirmRoleSeparation(guardian, responder, recovery)`
+- `CrossChainEmergencyRelay` - Cross-chain emergency propagation with source chain validation
+- `DecentralizedRelayerRegistry` - Relayer staking with overpayment refund and VRF selection
+- `ArbitrumBridgeAdapter` - L2 bridge with `Outbox.isSpent(index)` verification
+- `CrossChainNullifierSync` - Cross-domain nullifier tracking with `syncSequence` replay protection
+- `BatchAccumulator` - Batch processing with nullifier recovery on failure
+- `CrossChainProofHubV3` - Proof aggregation with value-based rate limiting
+- `ZKBoundStateLocks` - State locks with enhanced proof verification
+
+**Bridge Adapters (All ICrossChainBridge compliant)**:
+
+- `ArbitrumBridgeAdapter`, `OptimismBridgeAdapter`, `BaseBridgeAdapter`
+- `zkSyncBridgeAdapter`, `ScrollBridgeAdapter`, `LineaBridgeAdapter`
+- `LayerZeroAdapter`, `HyperlaneAdapter`
 
 ### Cryptographic Assumptions
 
@@ -482,13 +499,16 @@ function registerState(
 
 ## Future Enhancements
 
-### Phase 3: Additional L2 Support
+### Phase 3: L2 & Cross-Chain Messaging Support
 
 - ✅ **Optimism Adapter**: OP Stack native messaging — _Production_
 - ✅ **Base + CCTP**: Circle's cross-chain transfer protocol — _Production_
-- **zkSync Era**: ZK rollup native integration
-- **Scroll**: zkEVM integration
-- **Linea**: Consensys zkEVM integration
+- ✅ **zkSync Era**: ZK rollup native integration via `zkSyncBridgeAdapter` — _Production_
+- ✅ **Scroll**: zkEVM integration via `ScrollBridgeAdapter` — _Production_
+- ✅ **Linea**: Consensys zkEVM integration via `LineaBridgeAdapter` — _Production_
+- ✅ **LayerZero V2**: Omnichain messaging via `LayerZeroAdapter` — _Production_
+- ✅ **Hyperlane**: Permissionless interchain messaging via `HyperlaneAdapter` — _Production_
+- ✅ **ICrossChainBridge**: Unified interface for all bridge adapters — _Production_
 
 ### Phase 4: Advanced Cryptography
 
@@ -582,13 +602,15 @@ Enhanced with merkle tree support for light client verification:
 
 Production-ready cross-chain proof relay:
 
-| Feature                     | Description                           |
-| --------------------------- | ------------------------------------- |
-| **Optimistic Verification** | Challenge period before finalization  |
-| **Instant Verification**    | Higher fee for immediate verification |
-| **Challenge System**        | Dispute resolution with slashing      |
-| **Relayer Staking**         | Economic security with deposits       |
-| **Batch Submissions**       | Merkle root-based batch proofs        |
-| **Fee Management**          | Configurable fees and withdrawal      |
+| Feature                     | Description                                           |
+| --------------------------- | ----------------------------------------------------- |
+| **Optimistic Verification** | Challenge period before finalization                  |
+| **Instant Verification**    | Higher fee for immediate verification                 |
+| **Challenge System**        | Dispute resolution with slashing                      |
+| **Relayer Staking**         | Economic security with deposits                       |
+| **Batch Submissions**       | Merkle root-based batch proofs                        |
+| **Fee Management**          | Configurable fees and withdrawal                      |
+| **Value Rate Limiting**     | `_checkRateLimit(count, value)` hourly caps           |
+| **Signature Protection**    | ECDSA malleability protection on all proof operations |
 
 ---

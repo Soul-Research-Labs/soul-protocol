@@ -184,6 +184,6 @@ Before mainnet deployment:
 - [ ] Call `shieldedPool.disableTestMode()` (irreversible)
 - [ ] Configure sanctions oracle providers with real data feeds
 - [ ] Set relayer fee routes for all target L2s
-- [x] Run Certora formal verification (54 CVL specs passing)
+- [x] Run Certora formal verification (62 CVL specs passing)
 - [x] Complete security audit (February 2026 — 44 findings fixed)
 - [ ] Enable compliance screening on PrivacyRouter

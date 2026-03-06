@@ -20,11 +20,11 @@
 
 | Metric                              | Count |
 | ----------------------------------- | ----- |
-| **Total Solidity source files**     | 236   |
-| **Foundry test files** (`.t.sol`)   | 269   |
+| **Total Solidity source files**     | 242   |
+| **Foundry test files** (`.t.sol`)   | 282   |
 | **Hardhat test files** (`.test.ts`) | 15    |
-| **Certora specs**                   | 62    |
-| **Certora conf files**              | 62    |
+| **Certora specs**                   | 69    |
+| **Certora conf files**              | 69    |
 
 ## Coverage by Category
 
@@ -134,7 +134,7 @@ These contracts lack dedicated test files but are either:
 
 ## Total
 
-> **5,600+ tests** across **269 Foundry + 15 Hardhat test suites** — 0 failures (March 2026)
+> **5,760+ tests** across **282 Foundry + 15 Hardhat test suites** — 0 failures (March 2026)
 
 ## Commands
 

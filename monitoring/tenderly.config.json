@@ -19,6 +19,18 @@
       "chainId": 8453,
       "contracts": []
     },
+    "zksync": {
+      "chainId": 324,
+      "contracts": []
+    },
+    "scroll": {
+      "chainId": 534352,
+      "contracts": []
+    },
+    "linea": {
+      "chainId": 59144,
+      "contracts": []
+    },
     "base-sepolia": {
       "chainId": 84532,
       "contracts": [

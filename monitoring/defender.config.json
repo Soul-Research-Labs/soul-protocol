@@ -116,7 +116,10 @@
         "amount": 1,
         "windowSeconds": 1
       },
-      "notificationChannels": ["zaseon-slack-security", "zaseon-email-security"],
+      "notificationChannels": [
+        "zaseon-slack-security",
+        "zaseon-email-security"
+      ],
       "riskCategory": "FINANCIAL"
     },
     "admin_actions": {
@@ -209,6 +212,98 @@
         },
         {
           "eventSignature": "FraudProofSubmitted(bytes32,address)",
+          "expression": null
+        }
+      ],
+      "alertThreshold": {
+        "amount": 1,
+        "windowSeconds": 1
+      },
+      "notificationChannels": ["zaseon-slack-ops"],
+      "riskCategory": "TECHNICAL"
+    },
+    "governance_proposals": {
+      "name": "Governance Proposal Monitoring",
+      "description": "Track governance proposal lifecycle events",
+      "type": "BLOCK",
+      "network": "mainnet",
+      "addresses": [],
+      "abi": [],
+      "eventConditions": [
+        {
+          "eventSignature": "ProposalCreated(uint256,address,address[],uint256[],string[],bytes[],uint256,uint256,string)",
+          "expression": null
+        },
+        {
+          "eventSignature": "ProposalExecuted(uint256)",
+          "expression": null
+        },
+        {
+          "eventSignature": "ProposalCanceled(uint256)",
+          "expression": null
+        },
+        {
+          "eventSignature": "TimelockChange(uint256,uint256)",
+          "expression": null
+        }
+      ],
+      "alertThreshold": {
+        "amount": 1,
+        "windowSeconds": 1
+      },
+      "notificationChannels": ["zaseon-slack-admin"],
+      "riskCategory": "ACCESS-CONTROL"
+    },
+    "nullifier_sync": {
+      "name": "Cross-Chain Nullifier Sync",
+      "description": "Monitor cross-chain nullifier synchronization",
+      "type": "BLOCK",
+      "network": "mainnet",
+      "addresses": [],
+      "abi": [],
+      "eventConditions": [
+        {
+          "eventSignature": "NullifiersSent(uint256,bytes32,uint256)",
+          "expression": null
+        },
+        {
+          "eventSignature": "NullifiersReceived(uint256,bytes32,uint256)",
+          "expression": null
+        },
+        {
+          "eventSignature": "SyncFailed(uint256,bytes32,string)",
+          "expression": null
+        }
+      ],
+      "alertThreshold": {
+        "amount": 1,
+        "windowSeconds": 1
+      },
+      "notificationChannels": ["zaseon-slack-ops"],
+      "riskCategory": "TECHNICAL"
+    },
+    "bridge_adapter_health": {
+      "name": "Bridge Adapter Health",
+      "description": "Monitor bridge adapter failures and degradation across all 9 adapters",
+      "type": "BLOCK",
+      "network": "mainnet",
+      "addresses": [],
+      "abi": [],
+      "eventConditions": [
+        {
+          "eventSignature": "BridgeStatusUpdated(uint8,uint8)",
+          "expression": null
+        },
+        {
+          "eventSignature": "AdapterRegistered(uint8,address)",
+          "expression": null
+        },
+        {
+          "eventSignature": "DepositInitiated(bytes32,address,uint256,uint256)",
+          "expression": null
+        },
+        {
+          "eventSignature": "WithdrawalClaimed(bytes32,address,uint256)",
           "expression": null
         }
       ],

@@ -4,7 +4,7 @@ This directory contains all Zaseon ZK circuits implemented in Noir.
 
 ## Poseidon Migration (Feb 2026)
 
-All 20 circuits have been migrated from the external `poseidon` crate (`v0.2.3`)
+All 21 circuits have been migrated from the external `poseidon` crate (`v0.2.3`)
 to the **Noir standard library** (`std::hash::poseidon::bn254`). This resolves
 the compilation failure with nargo ≥1.0.0-beta.18 caused by the deprecated
 third-party Poseidon package.
@@ -30,7 +30,7 @@ third-party Poseidon package.
 
 ```
 noir/
-├── Nargo.toml                    # Workspace configuration (20 circuits)
+├── Nargo.toml                    # Workspace configuration (21 circuits)
 ├── merkle_proof/                 # Merkle tree inclusion proofs
 ├── nullifier/                    # Cross-domain nullifier derivation (CDNA)
 ├── state_commitment/             # State preimage commitment proofs
@@ -50,6 +50,7 @@ noir/
 ├── encrypted_transfer/           # Encrypted transfer proofs
 ├── ring_signature/               # Ring signature proofs (CLSAG)
 ├── private_transfer/             # Private transfer proofs
+├── liquidity_proof/              # Cross-chain liquidity backing proof
 └── aggregator/                   # Recursive 4-proof batch aggregation
 ```
 
@@ -70,6 +71,7 @@ noir/
 | ------------------------ | --------------------------------------- | -------------------- |
 | `cross_chain_proof`      | Cross-chain proof relay and aggregation | ~5,000               |
 | `cross_domain_nullifier` | Domain-separated nullifiers (CDNA)      | ~4,500               |
+| `liquidity_proof`        | Cross-chain liquidity backing proof     | ~4,200               |
 
 ### Compliance & Policy
 

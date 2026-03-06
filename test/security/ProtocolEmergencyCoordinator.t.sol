@@ -545,7 +545,7 @@ contract ProtocolEmergencyCoordinatorPlanTest is Test {
         coordinator.revokeRole(coordinator.GUARDIAN_ROLE(), admin);
         coordinator.revokeRole(coordinator.RESPONDER_ROLE(), admin);
         coordinator.revokeRole(coordinator.RECOVERY_ROLE(), admin);
-        coordinator.confirmRoleSeparation();
+        coordinator.confirmRoleSeparation(guardian, responder, recovery);
         vm.stopPrank();
     }
 
@@ -725,7 +725,7 @@ contract ProtocolEmergencyCoordinatorRecoveryTest is Test {
         coordinator.revokeRole(coordinator.GUARDIAN_ROLE(), admin);
         coordinator.revokeRole(coordinator.RESPONDER_ROLE(), admin);
         coordinator.revokeRole(coordinator.RECOVERY_ROLE(), admin);
-        coordinator.confirmRoleSeparation();
+        coordinator.confirmRoleSeparation(guardian, responder, recovery);
         vm.stopPrank();
     }
 

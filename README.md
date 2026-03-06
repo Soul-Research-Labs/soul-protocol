@@ -264,7 +264,7 @@ Zaseon sits between **privacy chains** and **public chains**, enabling confident
 contracts/           # 242 production Solidity contracts
 ├── core/            # ZaseonProtocolHub, ConfidentialStateContainer, NullifierRegistry, PrivacyRouter
 ├── primitives/      # ZK-SLocks, PC³, CDNA, EASC, Orchestrator
-├── crosschain/      # 62 bridge adapters (Arbitrum, Optimism, Base, zkSync, Scroll, Linea, Polygon zkEVM, Solana, Cardano, Midnight, Railgun, Aztec, Secret, Polkadot, Cosmos, Zcash, Penumbra, NEAR, Avalanche, Axelar, Wormhole, Sui, Aptos, TON, Aleo, XRPL, Bitcoin, Tron, Celo, Filecoin, Fantom/Sonic, Oasis, Hedera, Algorand, Stellar, Across, Stargate, deBridge)
+├── crosschain/      # 9 bridge adapters (Arbitrum, Optimism, Base, Aztec, zkSync, Scroll, Linea, LayerZero, Hyperlane)
 ├── privacy/         # UniversalShieldedPool, UniversalProofTranslator, Stealth addresses, CrossChainLiquidityVault
 ├── compliance/      # CrossChainSanctionsOracle, SelectiveDisclosure, ComplianceReporting
 ├── governance/      # ZaseonGovernor, ZaseonUpgradeTimelock
@@ -273,7 +273,7 @@ contracts/           # 242 production Solidity contracts
 ├── bridge/          # MultiBridgeRouter, CrossChainProofHubV3, AtomicSwap
 ├── verifiers/       # 47 verifier contracts (20 UltraHonk, CLSAG ring signature, VerifierRegistry)
 ├── libraries/       # BN254, CryptoLib, PoseidonYul, GasOptimizations, ValidationLib
-├── interfaces/      # 44 contract interfaces
+├── interfaces/      # 46 contract interfaces
 ├── adapters/        # External protocol adapters
 ├── integrations/    # Orchestrator, advanced integration contracts
 ├── security/        # 20 security contracts: Timelock, circuit breaker, rate limiter, MEV protection, emergency coordination
@@ -281,9 +281,9 @@ contracts/           # 242 production Solidity contracts
 
 noir/                # 21 Noir ZK circuits (shielded_pool, nullifiers, transfers, ring_signature, liquidity_proof, etc.)
 sdk/                 # TypeScript SDK (viem-based clients, 83 test files)
-certora/             # 81 formal verification specs (CVL)
+certora/             # 69 formal verification specs (CVL)
 specs/               # K Framework + TLA+ formal specifications
-test/                # 307 Foundry test files + Hardhat tests (5600+ passing)
+test/                # 282 Foundry test files + 15 Hardhat tests (5,760+ passing)
 scripts/             # Deployment + security scripts (storage layout checker, mutation testing)
 ```
 
@@ -355,51 +355,6 @@ Zaseon provides adapters for major cross-chain messaging.
 | `ScrollBridgeAdapter`    | Scroll L2 native messaging (zkEVM)    | ✅ Production |
 | `LineaBridgeAdapter`     | Linea L2 bridge (zk-SNARK)            | ✅ Production |
 
-### 🔮 Planned Adapters (Roadmap)
-
-> **Note:** The following adapters are on the development roadmap and **do not yet exist** in the codebase.
-
-| Adapter                     | Key Features                | Priority |
-| --------------------------- | --------------------------- | -------- |
-| `ChainlinkCCIPAdapter`      | CCIP Router, chain-selector | Medium   |
-| `PolygonZkEVMBridgeAdapter` | Polygon zkEVM bridge        | Medium   |
-| `SolanaBridgeAdapter`       | Wormhole VAA, Ed25519       | Medium   |
-| `StarknetBridgeAdapter`     | Starknet Core, felt252      | Medium   |
-| `AxelarBridgeAdapter`       | Axelar GMP, ECDSA           | Medium   |
-| `WormholeBridgeAdapter`     | Wormhole VAA, Guardian      | Medium   |
-| `MantleBridgeAdapter`       | OP Stack + EigenDA          | Low      |
-| `BlastBridgeAdapter`        | OP Stack, native yield      | Low      |
-| `TaikoBridgeAdapter`        | Based contestable rollup    | Low      |
-| `ModeBridgeAdapter`         | OP Stack, SFS fee           | Low      |
-| `MantaPacificBridgeAdapter` | Celestia DA                 | Low      |
-| `CardanoBridgeAdapter`      | Wormhole VAA, Plutus        | Low      |
-| `MidnightBridgeAdapter`     | PLONK proofs, Compact       | Low      |
-| `RailgunBridgeAdapter`      | Groth16 SNARKs, UTXO        | Low      |
-| `SecretBridgeAdapter`       | TEE attestation             | Low      |
-| `PolkadotBridgeAdapter`     | Snowbridge, BEEFY           | Low      |
-| `CosmosBridgeAdapter`       | Gravity Bridge, IBC         | Low      |
-| `ZcashBridgeAdapter`        | Halo 2 Orchard proofs       | Low      |
-| `PenumbraBridgeAdapter`     | Groth16 decaf377            | Low      |
-| `NEARBridgeAdapter`         | Rainbow Bridge              | Low      |
-| `AvalancheBridgeAdapter`    | AWM warp messages           | Low      |
-| `SuiBridgeAdapter`          | Sui Native Bridge           | Low      |
-| `AptosBridgeAdapter`        | LayerZero DVN, JMT          | Low      |
-| `TONBridgeAdapter`          | TON Bridge relay            | Low      |
-| `AleoBridgeAdapter`         | Marlin SNARKs               | Low      |
-| `XRPLBridgeAdapter`         | Witness attestation         | Low      |
-| `BitcoinBridgeAdapter`      | SPV proofs, PoW             | Low      |
-| `TronBridgeAdapter`         | SR committee                | Low      |
-| `CeloBridgeAdapter`         | Plumo SNARKs                | Low      |
-| `FilecoinBridgeAdapter`     | EC consensus                | Low      |
-| `FantomSonicBridgeAdapter`  | DAG aBFT Lachesis           | Low      |
-| `OasisBridgeAdapter`        | TEE attestation             | Low      |
-| `HederaBridgeAdapter`       | Hashgraph aBFT              | Low      |
-| `AlgorandBridgeAdapter`     | Falcon state proofs         | Low      |
-| `StellarBridgeAdapter`      | SCP/FBA quorum              | Low      |
-| `AcrossBridgeAdapter`       | UMA optimistic oracle       | Low      |
-| `StargateBridgeAdapter`     | LayerZero OFT               | Low      |
-| `DeBridgeBridgeAdapter`     | Intent-based DLN            | Low      |
-
 ---
 
 ## Cryptography
@@ -423,14 +378,14 @@ Zaseon provides adapters for major cross-chain messaging.
 | Module                             | Purpose                           |
 | ---------------------------------- | --------------------------------- |
 | `ZaseonUpgradeTimelock.sol`        | Time-delayed admin operations     |
-| `BridgeCircuitBreaker.sol`         | Anomaly detection and auto-pause  |
-| `BridgeRateLimiter.sol`            | Volume and rate limiting          |
+| `RelayCircuitBreaker.sol`          | Anomaly detection and auto-pause  |
+| `RelayRateLimiter.sol`             | Volume and rate limiting          |
 | `MEVProtection.sol`                | Commit-reveal for MEV resistance  |
 | `FlashLoanGuard.sol`               | Flash loan attack prevention      |
 | `EmergencyRecovery.sol`            | Emergency pause and recovery      |
 | `SecurityModule.sol`               | Core security primitives          |
-| `BridgeProofValidator.sol`         | Cross-chain proof validation      |
-| `BridgeWatchtower.sol`             | Real-time bridge monitoring       |
+| `RelayProofValidator.sol`          | Cross-chain proof validation      |
+| `RelayWatchtower.sol`              | Real-time bridge monitoring       |
 | `ZKFraudProof.sol`                 | ZK-based fraud proof system       |
 | `GriefingProtection.sol`           | Anti-griefing mechanisms          |
 | `ProtocolEmergencyCoordinator.sol` | Multi-role emergency coordination |
@@ -438,26 +393,26 @@ Zaseon provides adapters for major cross-chain messaging.
 
 ### Testing & Verification
 
-**5600+ Foundry tests + 483 SDK tests passing** across 307 test suites — unit, integration, fuzz, formal, invariant, attack simulation, and stress testing.
+**5,760+ Foundry tests + 816 SDK tests passing** across 282 test suites — unit, integration, fuzz, formal, invariant, attack simulation, and stress testing.
 
 ```bash
-forge test -vv                                          # All tests (5600+ passing)
+forge test -vv                                          # All tests (5,760+ passing)
 forge test --match-path "test/fuzz/*" --fuzz-runs 10000  # Fuzz tests
 forge test --match-path "test/formal/*"                  # Halmos symbolic tests
 forge test --match-path "test/verifiers/*"               # Verifier + CLSAG tests
 forge test --match-path "test/upgradeable/*"             # UUPS proxy + storage layout tests
 forge test --match-path "test/integration/*"             # Cross-chain fork integration tests
 forge test --match-path "test/attacks/*"                 # Attack simulation tests
-npm run certora                                          # Formal verification (81 Certora CVL specs)
+npm run certora                                          # Formal verification (69 Certora CVL specs)
 ```
 
 | Tool                   | Purpose                                                                |
 | ---------------------- | ---------------------------------------------------------------------- |
 | Foundry fuzz           | Property-based fuzzing (10k+ runs per test)                            |
-| Certora CVL            | 81 formal verification specs for core/privacy/bridge/vault contracts   |
+| Certora CVL            | 69 formal verification specs for core/privacy/bridge/vault contracts   |
 | Halmos                 | Symbolic execution (CrossChainProofHub, ZKBoundStateLocks — 12 checks) |
 | Echidna                | Stateful property testing (6 invariant properties)                     |
-| Gambit                 | Mutation testing (8 security-critical contracts)                       |
+| Gambit                 | Mutation testing (80 contracts)                                        |
 | K Framework            | Algebraic specification of protocol invariants                         |
 | TLA+                   | Model checking for cross-chain state machine safety                    |
 | Storage Layout Checker | Automated storage slot compatibility for UUPS upgrades                 |
@@ -621,7 +576,7 @@ See [sdk/README.md](sdk/README.md) for full documentation.
 | DecentralizedRelayerRegistry | [`0x2472BDB087590e4F4F4bE1243ec9533828eC0D9d`](https://sepolia.basescan.org/address/0x2472BDB087590e4F4F4bE1243ec9533828eC0D9d) |
 | BridgeFraudProof             | [`0x583E650c0385FEd1E427dF68fa91b2d8E56Df20f`](https://sepolia.basescan.org/address/0x583E650c0385FEd1E427dF68fa91b2d8E56Df20f) |
 
-**Full deployment:** See [`deployments/base-sepolia-84532.json`](deployments/base-sepolia-84532.json)
+**Full deployment:** See [Tenderly dashboard](monitoring/tenderly.config.json) for Base Sepolia monitoring
 
 ### Deploy to Testnet
 

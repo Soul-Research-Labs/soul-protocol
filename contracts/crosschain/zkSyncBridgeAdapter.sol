@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import {IBridgeAdapter} from "./IBridgeAdapter.sol";
 
 /**
  * @title zkSyncBridgeAdapter
@@ -31,7 +32,12 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
  * │  - L2→L1 messages proven via L2 log inclusion proofs                   │
  * └─────────────────────────────────────────────────────────────────────────┘
  */
-contract zkSyncBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
+contract zkSyncBridgeAdapter is
+    IBridgeAdapter,
+    AccessControl,
+    ReentrancyGuard,
+    Pausable
+{
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
@@ -615,5 +621,34 @@ contract zkSyncBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
             return abi.decode(result, (bool));
         }
         return false;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                     IBridgeAdapter COMPATIBILITY
+    //////////////////////////////////////////////////////////////*/
+
+    /// @inheritdoc IBridgeAdapter
+    function bridgeMessage(
+        address targetAddress,
+        bytes calldata payload,
+        address /*refundAddress*/
+    ) external payable nonReentrant whenNotPaused returns (bytes32 messageId) {
+        // Use deposit() for full zkSync-specific control
+        revert("Use deposit() with explicit parameters");
+    }
+
+    /// @inheritdoc IBridgeAdapter
+    function estimateFee(
+        address /*targetAddress*/,
+        bytes calldata /*payload*/
+    ) external pure returns (uint256 nativeFee) {
+        // zkSync fees depend on L2 gas price and ergsLimit
+        revert("Use zkSync-specific fee estimation");
+    }
+
+    /// @inheritdoc IBridgeAdapter
+    function isMessageVerified(bytes32 messageId) external view returns (bool) {
+        ZKWithdrawal storage w = withdrawals[messageId];
+        return w.status == TransferStatus.FINALIZED;
     }
 }

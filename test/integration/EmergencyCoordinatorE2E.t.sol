@@ -238,7 +238,7 @@ contract EmergencyCoordinatorE2E is Test {
         coordinator.revokeRole(RECOVERY_ROLE, admin);
 
         // Confirm role separation
-        coordinator.confirmRoleSeparation();
+        coordinator.confirmRoleSeparation(guardian, responder, recoveryAgent);
 
         // Grant responder role back for testing (admin still has DEFAULT_ADMIN)
         coordinator.grantRole(RESPONDER_ROLE, responder);

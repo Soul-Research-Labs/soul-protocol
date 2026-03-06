@@ -13,9 +13,10 @@ Cross-chain ZK privacy middleware for confidential state transfer across L2 netw
 ## Project Structure
 
 ```
-contracts/           # Solidity source
+contracts/           # Solidity source (~242 files)
+  adapters/          # EVMUniversalAdapter, NativeL2BridgeWrapper
   core/              # ZaseonProtocolHub, Orchestrator
-  crosschain/        # Bridge adapters, DirectL2Messenger
+  crosschain/        # Bridge adapters (9), DirectL2Messenger, IBridgeAdapter
   bridge/            # MultiBridgeRouter, CrossChainProofHubV3
   privacy/           # StealthAddressRegistry, ShieldedPool, BatchAccumulator
   security/          # ExperimentalFeatureRegistry, SecurityModule, Emergency
@@ -24,13 +25,18 @@ contracts/           # Solidity source
   relayer/           # DecentralizedRelayerRegistry, RelayerHealthMonitor
   compliance/        # SelectiveDisclosure, ComplianceReporting
   governance/        # ZaseonGovernance, Timelock
+  integrations/      # DeFi protocol integrations
+  interfaces/        # 46 interfaces
+  internal/          # Internal utilities
+  libraries/         # Shared libraries
   upgradeable/       # Upgradeable variants (UUPS proxies)
-noir/                # Noir ZK circuits (balance_proof, shielded_pool, etc.)
-test/                # Foundry tests (5600+ passing)
-sdk/                 # TypeScript SDK (ZaseonSDK, StealthAddressClient, etc.)
-scripts/deploy/      # Foundry deploy scripts
+noir/                # Noir ZK circuits (21 circuits)
+test/                # Foundry tests (282 files, 5,760+ passing) + 15 Hardhat tests
+sdk/                 # TypeScript SDK (ZaseonSDK, StealthAddressClient, bridges)
+scripts/deploy/      # Foundry deploy scripts (16 scripts)
 specs/               # K Framework, TLA+ formal specs
-certora/             # Certora CVL specs
+certora/             # Certora CVL specs (69 specs)
+monitoring/          # Defender + Tenderly configs
 docs/                # Documentation
 examples/            # SDK quickstart examples
 ```
@@ -46,6 +52,20 @@ examples/            # SDK quickstart examples
 - `ProofCarryingContainer` - Bundles state transitions with ZK proofs
 - `ProtocolEmergencyCoordinator` - Multi-role emergency coordination
 - `CrossChainEmergencyRelay` - Cross-chain emergency propagation
+
+## Bridge Adapters (9)
+
+- `ArbitrumBridgeAdapter` - Arbitrum One/Nova native bridge (retryable tickets)
+- `OptimismBridgeAdapter` - OP Stack native messaging
+- `AztecBridgeAdapter` - Aztec rollup bridge (shielded deposits)
+- `BaseBridgeAdapter` - Base (OP Stack) native bridge
+- `zkSyncBridgeAdapter` - zkSync Era native bridge (Diamond Proxy)
+- `ScrollBridgeAdapter` - Scroll L2 native messaging
+- `LineaBridgeAdapter` - Linea native messaging (MessageService)
+- `LayerZeroAdapter` - LayerZero V2 OApp cross-chain messaging (120+ chains)
+- `HyperlaneAdapter` - Hyperlane Mailbox with modular ISM security
+
+All adapters implement `IBridgeAdapter` (`bridgeMessage`, `estimateFee`, `isMessageVerified`).
 
 ## Security Features
 
@@ -76,10 +96,11 @@ npx hardhat test                                   # Test (Hardhat)
 ## Deploy Scripts
 
 - `DeployMainnet.s.sol` - Full production 8-phase deploy
+- `DeployL2Bridges.s.sol` - Deploy bridge adapters per L2 (Optimism/Arbitrum/Aztec/zkSync/Scroll/Linea/LayerZero/Hyperlane)
 - `WireRemainingComponents.s.sol` - Post-deploy Hub wiring for separately-deployed components
 - `ConfigureCrossChain.s.sol` - Link L1 hub with L2 chains
 - `ConfirmRoleSeparation.s.sol` - Lock admin/operator role separation (multisig)
 
 ## Documentation
 
-See `docs/GETTING_STARTED.md` for setup, `docs/INTEGRATION_GUIDE.md` for SDK usage.
+See `docs/GETTING_STARTED.md` for setup, `docs/INTEGRATION_GUIDE.md` for SDK usage, `docs/GOVERNANCE.md` for governance, `docs/STEALTH_ADDRESSES.md` for stealth address privacy, `docs/UPGRADE_GUIDE.md` for UUPS upgrade procedures.

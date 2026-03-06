@@ -59,12 +59,18 @@ ETHEREUM_RPC_URL=https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY
 ARBITRUM_RPC_URL=https://arb-mainnet.g.alchemy.com/v2/YOUR_KEY
 BASE_RPC_URL=https://base-mainnet.g.alchemy.com/v2/YOUR_KEY
 OPTIMISM_RPC_URL=https://opt-mainnet.g.alchemy.com/v2/YOUR_KEY
+ZKSYNC_RPC_URL=https://mainnet.era.zksync.io
+SCROLL_RPC_URL=https://rpc.scroll.io
+LINEA_RPC_URL=https://rpc.linea.build
 
 # Testnet RPCs
 SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/YOUR_KEY
 ARBITRUM_SEPOLIA_RPC_URL=https://arb-sepolia.g.alchemy.com/v2/YOUR_KEY
 BASE_SEPOLIA_RPC_URL=https://base-sepolia.g.alchemy.com/v2/YOUR_KEY
+OPTIMISM_SEPOLIA_RPC_URL=https://opt-sepolia.g.alchemy.com/v2/YOUR_KEY
 SCROLL_SEPOLIA_RPC_URL=https://sepolia-rpc.scroll.io
+ZKSYNC_SEPOLIA_RPC_URL=https://sepolia.era.zksync.dev
+LINEA_SEPOLIA_RPC_URL=https://rpc.sepolia.linea.build
 
 # Block Explorer API Keys
 ETHERSCAN_API_KEY=your_etherscan_key
@@ -82,6 +88,10 @@ TIMELOCK_MIN_DELAY=172800  # 48 hours in seconds
 ### 2. Build Contracts
 
 ```bash
+# Validate environment variables
+./scripts/validate-env.sh
+
+# Build
 forge build && npx hardhat compile
 ```
 
@@ -234,12 +244,17 @@ Deployment addresses are saved to `deployments/`.
 | Ethereum Sepolia | 11155111 | Testnet |
 | Arbitrum Sepolia | 421614   | Testnet |
 | Base Sepolia     | 84532    | Testnet |
+| Optimism Sepolia | 11155420 | Testnet |
 | Scroll Sepolia   | 534351   | Testnet |
+| zkSync Sepolia   | 300      | Testnet |
+| Linea Sepolia    | 59141    | Testnet |
 | Ethereum Mainnet | 1        | Planned |
 | Arbitrum One     | 42161    | Planned |
 | Base             | 8453     | Planned |
 | Optimism         | 10       | Planned |
 | Scroll           | 534352   | Planned |
+| zkSync Era       | 324      | Planned |
+| Linea            | 59144    | Planned |
 
 ### Cross-Chain Configuration
 

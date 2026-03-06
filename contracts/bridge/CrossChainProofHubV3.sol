@@ -5,6 +5,8 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {SecurityModule} from "../security/SecurityModule.sol";
+import {ICrossChainProofHubV3, BatchProofInput} from "../interfaces/ICrossChainProofHubV3.sol";
+import {IProofVerifier} from "../interfaces/IProofVerifier.sol";
 
 /// @title CrossChainProofHubV3
 /// @author Soul Protocol
@@ -17,61 +19,12 @@ import {SecurityModule} from "../security/SecurityModule.sol";
 /// - TOCTOU protection via relayerPendingProofs
 /// - Challenge period for optimistic verification
 contract CrossChainProofHubV3 is
+    ICrossChainProofHubV3,
     AccessControl,
     ReentrancyGuard,
     Pausable,
     SecurityModule
 {
-    /*//////////////////////////////////////////////////////////////
-                                 TYPES
-    //////////////////////////////////////////////////////////////*/
-
-    enum ProofStatus {
-        Pending, // Submitted, in challenge period
-        Verified, // Challenge period passed or instant verified
-        Challenged, // Under dispute
-        Rejected, // Failed verification
-        Finalized // Executed on destination
-    }
-
-    /// @notice Proof submission structure
-    struct ProofSubmission {
-        bytes32 proofHash; // keccak256(proof)
-        bytes32 publicInputsHash; // keccak256(publicInputs)
-        bytes32 commitment; // Associated state commitment
-        uint64 sourceChainId; // Origin chain
-        uint64 destChainId; // Destination chain
-        uint64 submittedAt; // Submission timestamp
-        uint64 challengeDeadline; // When challenge period ends
-        address relayer; // Who submitted
-        ProofStatus status; // Current status
-        uint256 stake; // Relayer's stake
-    }
-
-    /// @notice Batch proof submission
-    struct BatchSubmission {
-        bytes32 batchId; // Unique batch identifier
-        bytes32 merkleRoot; // Root of proof merkle tree
-        uint256 proofCount; // Number of proofs in batch
-        uint64 submittedAt; // Submission timestamp
-        uint64 challengeDeadline; // Batch challenge deadline
-        address relayer; // Who submitted
-        ProofStatus status; // Batch status
-        uint256 totalStake; // Total stake for batch
-    }
-
-    /// @notice Challenge structure
-    struct Challenge {
-        bytes32 proofId; // Proof being challenged
-        address challenger; // Who challenged
-        uint256 stake; // Challenger's stake
-        uint64 createdAt; // Challenge timestamp
-        uint64 deadline; // Resolution deadline
-        bool resolved; // Whether resolved
-        bool challengerWon; // Outcome
-        string reason; // Challenge reason
-    }
-
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
@@ -201,219 +154,6 @@ contract CrossChainProofHubV3 is
 
     /// @notice Trusted remote contract addresses per chain
     mapping(uint256 => address) public trustedRemotes;
-
-    /*//////////////////////////////////////////////////////////////
-                                EVENTS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Emitted when a single proof is submitted
-    /// @param proofId The unique identifier of the proof
-    /// @param commitment The state commitment associated with the proof
-    /// @param sourceChainId The chain ID where the proof originated
-    /// @param destChainId The chain ID where the proof is being submitted
-    /// @param relayer The address of the relayer who submitted the proof
-    event ProofSubmitted(
-        bytes32 indexed proofId,
-        bytes32 indexed commitment,
-        uint64 sourceChainId,
-        uint64 destChainId,
-        address indexed relayer
-    );
-
-    /// @notice Emitted to provide full proof data for off-chain retrieval
-    /// @param proofId The unique identifier of the proof
-    /// @param proof The full ZK proof bytes
-    /// @param publicInputs The public inputs for the proof
-    event ProofDataEmitted(
-        bytes32 indexed proofId,
-        bytes proof,
-        bytes publicInputs
-    );
-
-    /// @notice Emitted when a batch of proofs is submitted
-    /// @param batchId The unique identifier of the batch
-    /// @param merkleRoot The Merkle root of the proofs in the batch
-    /// @param proofCount The number of proofs included in the batch
-    /// @param relayer The address of the relayer who submitted the batch
-    event BatchSubmitted(
-        bytes32 indexed batchId,
-        bytes32 indexed merkleRoot,
-        uint256 indexed proofCount,
-        address relayer
-    );
-
-    /// @notice Emitted when a proof is successfully verified
-    /// @param proofId The unique identifier of the proof
-    /// @param status The new status of the proof
-    event ProofVerified(bytes32 indexed proofId, ProofStatus status);
-
-    /// @notice Emitted when a proof is finalized
-    /// @param proofId The unique identifier of the proof
-    event ProofFinalized(bytes32 indexed proofId);
-
-    /// @notice Emitted when a proof is rejected
-    /// @param proofId The unique identifier of the proof
-    /// @param reason The reason for rejection
-    event ProofRejected(bytes32 indexed proofId, string reason);
-
-    /// @notice Emitted when a challenge is created
-    /// @param proofId The unique identifier of the challenged proof
-    /// @param challenger The address of the challenger
-    /// @param reason The reason for the challenge
-    event ChallengeCreated(
-        bytes32 indexed proofId,
-        address indexed challenger,
-        string reason
-    );
-
-    /// @notice Emitted when a challenge is resolved
-    /// @param proofId The unique identifier of the challenged proof
-    /// @param challengerWon True if the challenger won the dispute
-    /// @param winner The address of the winner (relayer or challenger)
-    /// @param reward The amount of stake rewarded or slashed
-    event ChallengeResolved(
-        bytes32 indexed proofId,
-        bool challengerWon,
-        address indexed winner,
-        uint256 reward
-    );
-
-    /// @notice Emitted when a relayer deposits stake
-    /// @param relayer The address of the relayer
-    /// @param amount The amount deposited
-    event RelayerStakeDeposited(
-        address indexed relayer,
-        uint256 indexed amount
-    );
-
-    /// @notice Emitted when a relayer withdraws stake
-    /// @param relayer The address of the relayer
-    /// @param amount The amount withdrawn
-    event RelayerStakeWithdrawn(
-        address indexed relayer,
-        uint256 indexed amount
-    );
-
-    /// @notice Emitted when a relayer is slashed
-    /// @param relayer The address of the relayer
-    /// @param amount The amount slashed
-    event RelayerSlashed(address indexed relayer, uint256 indexed amount);
-
-    /// @notice Emitted when a new supported chain is added
-    /// @param chainId The ID of the added chain
-    event ChainAdded(uint256 indexed chainId);
-
-    /// @notice Emitted when a supported chain is removed
-    /// @param chainId The ID of the removed chain
-    event ChainRemoved(uint256 indexed chainId);
-
-    /// @notice Emitted when a trusted remote is set
-    /// @param chainId The chain ID
-    /// @param remote The trusted remote address
-    event TrustedRemoteSet(uint256 indexed chainId, address indexed remote);
-
-    /// @notice Emitted when a verifier address is set for a proof type
-    /// @param proofType The identifier of the proof type
-    /// @param verifier The address of the new verifier
-    event VerifierSet(bytes32 indexed proofType, address verifier);
-
-    /// @notice Emitted when verifier registry is updated
-    event VerifierRegistryUpdated(
-        address indexed oldRegistry,
-        address indexed newRegistry
-    );
-
-    /// @notice Emitted when challenge period is updated
-    event ChallengePeriodUpdated(uint256 oldPeriod, uint256 newPeriod);
-
-    /// @notice Emitted when minimum stakes are updated
-    event MinStakesUpdated(uint256 relayerStake, uint256 challengerStake);
-
-    /// @notice Emitted when proof submission fee is updated
-    event ProofSubmissionFeeUpdated(uint256 oldFee, uint256 newFee);
-
-    /// @notice Emitted when rate limits are updated
-    event RateLimitsUpdated(uint256 maxProofsPerHour, uint256 maxValuePerHour);
-
-    /*//////////////////////////////////////////////////////////////
-                              CUSTOM ERRORS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Error thrown when stake is insufficient
-    error InsufficientStake(uint256 provided, uint256 required);
-
-    /// @notice Error thrown when a proof is not found
-    error ProofNotFound(bytes32 proofId);
-
-    /// @notice Error thrown when a proof already exists
-    error ProofAlreadyExists(bytes32 proofId);
-
-    /// @notice Error thrown when a proof is in an invalid state for the operation
-    error InvalidProofStatus(
-        bytes32 proofId,
-        ProofStatus current,
-        ProofStatus expected
-    );
-
-    /// @notice Error thrown when a challenge period hasn't elapsed
-    error ChallengePeriodNotOver(bytes32 proofId, uint256 deadline);
-
-    /// @notice Error thrown when a challenge period has already elapsed
-    error ChallengePeriodOver(bytes32 proofId);
-
-    /// @notice Error thrown when a challenge already exists
-    error ChallengeAlreadyExists(bytes32 proofId);
-
-    /// @notice Error thrown when a challenge is not found
-    error ChallengeNotFound(bytes32 proofId);
-
-    /// @notice Error thrown when a chain is not supported
-    error UnsupportedChain(uint256 chainId);
-
-    /// @notice Error thrown when a verifier is not set for a proof type
-    error VerifierNotSet(bytes32 proofType);
-
-    /// @notice Error thrown when a proof is invalid
-    error InvalidProof();
-
-    /// @notice Error thrown when a batch is too large
-    error BatchTooLarge(uint256 size, uint256 maxSize);
-
-    /// @notice Error thrown when a batch is empty
-    error EmptyBatch();
-
-    /// @notice Error thrown when a Merkle proof is invalid
-    error InvalidMerkleProof();
-
-    /// @notice Error thrown when a relayer is not authorized
-    error UnauthorizedRelayer();
-
-    /// @notice Error thrown when a withdraw operation fails
-    error WithdrawFailed();
-
-    /// @notice Error thrown when the provided fee is insufficient
-    error InsufficientFee(uint256 provided, uint256 required);
-
-    /// @notice Error thrown when a zero address is provided
-    error ZeroAddress();
-
-    /// @notice Error thrown when an invalid chain ID is provided
-    error InvalidChainId(uint256 chainId);
-
-    /// @notice Error thrown when challenge period is too short
-    error InvalidChallengePeriod();
-
-    /// @notice Error thrown when admin tries to perform relayer/challenger actions
-    error AdminNotAllowed();
-
-    /// @notice Error thrown when roles are not properly separated
-    error RolesNotSeparated();
-
-    /// @notice Error thrown when a transfer fails
-    error TransferFailed();
-
-    /// @notice Error thrown when proof rate limit is exceeded
-    error ProofRateLimitExceeded();
 
     /// @notice Error thrown when hourly value rate limit is exceeded
     error ValueRateLimitExceeded();
@@ -1304,24 +1044,4 @@ contract CrossChainProofHubV3 is
 
     /// @notice Allows contract to receive ETH
     receive() external payable {}
-}
-
-/*//////////////////////////////////////////////////////////////
-                          INTERFACES
-//////////////////////////////////////////////////////////////*/
-
-interface IProofVerifier {
-    function verifyProof(
-        bytes calldata proof,
-        bytes calldata publicInputs
-    ) external view returns (bool);
-}
-
-/// @notice Batch proof input structure
-struct BatchProofInput {
-    bytes32 proofHash;
-    bytes32 publicInputsHash;
-    bytes32 commitment;
-    uint64 sourceChainId;
-    uint64 destChainId;
 }

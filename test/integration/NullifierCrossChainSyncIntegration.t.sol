@@ -21,7 +21,7 @@ contract NullifierCrossChainSyncIntegration is Test {
     address public bridge = makeAddr("bridge");
     address public registrar = makeAddr("registrar");
 
-    bytes32 constant RELAY_ROLE = keccak256("RELAY_ROLE");
+    bytes32 constant BRIDGE_ROLE = keccak256("BRIDGE_ROLE");
     bytes32 constant REGISTRAR_ROLE = keccak256("REGISTRAR_ROLE");
 
     function setUp() public {
@@ -37,14 +37,10 @@ contract NullifierCrossChainSyncIntegration is Test {
         vm.chainId(1);
 
         // Grant roles on both registries
-        registryA.grantRole(RELAY_ROLE, bridge);
+        registryA.grantRole(BRIDGE_ROLE, bridge);
         registryA.grantRole(REGISTRAR_ROLE, registrar);
-        registryB.grantRole(RELAY_ROLE, bridge);
+        registryB.grantRole(BRIDGE_ROLE, bridge);
         registryB.grantRole(REGISTRAR_ROLE, registrar);
-
-        // Register cross-chain domains (each registry accepts nullifiers from the other chain)
-        registryA.registerDomain(bytes32(uint256(42161))); // Chain A accepts from Chain B
-        registryB.registerDomain(bytes32(uint256(1))); // Chain B accepts from Chain A
     }
 
     /*//////////////////////////////////////////////////////////////

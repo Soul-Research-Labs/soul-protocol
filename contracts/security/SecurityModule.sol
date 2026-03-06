@@ -316,15 +316,13 @@ abstract contract SecurityModule {
             // Add to volume
             lastHourlyVolume += value;
 
-            // Check threshold
+            // Check threshold — trip the breaker but let the current tx succeed.
+            // Subsequent calls will see circuitBreakerTripped() == true and revert
+            // with CooldownNotElapsed until the cooldown elapses.
             if (lastHourlyVolume > volumeThreshold) {
                 _setFlag(FLAG_CIRCUIT_TRIPPED, true);
                 circuitBreakerTrippedAt = block.timestamp;
                 emit CircuitBreakerActivated(lastHourlyVolume, volumeThreshold);
-                revert CircuitBreakerTriggered(
-                    lastHourlyVolume,
-                    volumeThreshold
-                );
             }
         }
     }

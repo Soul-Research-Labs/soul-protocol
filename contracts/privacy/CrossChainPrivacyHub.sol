@@ -425,7 +425,7 @@ contract CrossChainPrivacyHub is
         if (guardian == address(0)) revert ZeroAddress();
         if (_feeRecipient == address(0)) revert ZeroAddress();
 
-        __UUPSUpgradeable_init();
+        // Note: UUPSUpgradeable in OZ 5.x does not require __UUPSUpgradeable_init()
         __AccessControl_init();
         __ReentrancyGuard_init();
         __Pausable_init();
@@ -486,7 +486,12 @@ contract CrossChainPrivacyHub is
 
         supportedChainIds.push(params.chainId);
 
-        emit AdapterRegistered(params.chainId, params.adapter, params.chainType, params.proofSystem);
+        emit AdapterRegistered(
+            params.chainId,
+            params.adapter,
+            params.chainType,
+            params.proofSystem
+        );
     }
 
     /**

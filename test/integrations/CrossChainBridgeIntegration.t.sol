@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import "../../contracts/integrations/CrossChainBridgeIntegration.sol";
+import {ICrossChainBridge} from "../../contracts/interfaces/ICrossChainBridge.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 /// @dev Mock ERC20 for bridge tests
@@ -90,25 +91,23 @@ contract CrossChainBridgeIntegrationTest is Test {
         );
 
         // Register adapter
-        bridge.registerRelayAdapter(
+        bridge.registerBridgeAdapter(
             DEST_CHAIN,
-            CrossChainBridgeIntegration.BridgeProtocol.NATIVE,
+            ICrossChainBridge.BridgeProtocol.NATIVE,
             address(adapter),
             0.01 ether, // baseFee
             10 // 0.1% percentage fee
         );
 
         // Configure route
-        CrossChainBridgeIntegration.BridgeProtocol[]
-            memory protocols = new CrossChainBridgeIntegration.BridgeProtocol[](
-                1
-            );
-        protocols[0] = CrossChainBridgeIntegration.BridgeProtocol.NATIVE;
+        ICrossChainBridge.BridgeProtocol[]
+            memory protocols = new ICrossChainBridge.BridgeProtocol[](1);
+        protocols[0] = ICrossChainBridge.BridgeProtocol.NATIVE;
         bridge.configureRoute(
             THIS_CHAIN,
             DEST_CHAIN,
             protocols,
-            CrossChainBridgeIntegration.BridgeProtocol.NATIVE
+            ICrossChainBridge.BridgeProtocol.NATIVE
         );
     }
 
@@ -197,18 +196,15 @@ contract CrossChainBridgeIntegrationTest is Test {
             50 ether,
             200 ether
         );
-        bridge.registerRelayAdapter(
+        bridge.registerBridgeAdapter(
             10,
-            CrossChainBridgeIntegration.BridgeProtocol.LAYERZERO,
+            ICrossChainBridge.BridgeProtocol.LAYERZERO,
             address(adapter),
             0.02 ether,
             20
         );
         CrossChainBridgeIntegration.BridgeAdapter memory ba = bridge
-            .getRelayAdapter(
-                10,
-                CrossChainBridgeIntegration.BridgeProtocol.LAYERZERO
-            );
+            .getBridgeAdapter(10, ICrossChainBridge.BridgeProtocol.LAYERZERO);
         assertTrue(ba.isActive);
         assertEq(ba.adapter, address(adapter));
         assertEq(ba.baseFee, 0.02 ether);
@@ -217,9 +213,9 @@ contract CrossChainBridgeIntegrationTest is Test {
 
     function test_RegisterBridgeAdapter_RevertZeroAddress() public {
         vm.expectRevert(CrossChainBridgeIntegration.ZeroAddress.selector);
-        bridge.registerRelayAdapter(
+        bridge.registerBridgeAdapter(
             DEST_CHAIN,
-            CrossChainBridgeIntegration.BridgeProtocol.LAYERZERO,
+            ICrossChainBridge.BridgeProtocol.LAYERZERO,
             address(0),
             0,
             0
@@ -228,9 +224,9 @@ contract CrossChainBridgeIntegrationTest is Test {
 
     function test_RegisterBridgeAdapter_RevertChainNotSupported() public {
         vm.expectRevert(CrossChainBridgeIntegration.ChainNotSupported.selector);
-        bridge.registerRelayAdapter(
+        bridge.registerBridgeAdapter(
             999,
-            CrossChainBridgeIntegration.BridgeProtocol.NATIVE,
+            ICrossChainBridge.BridgeProtocol.NATIVE,
             address(adapter),
             0,
             0
@@ -240,17 +236,15 @@ contract CrossChainBridgeIntegrationTest is Test {
     // ============= Route Configuration =============
 
     function test_ConfigureRoute() public {
-        CrossChainBridgeIntegration.BridgeProtocol[]
-            memory protocols = new CrossChainBridgeIntegration.BridgeProtocol[](
-                2
-            );
-        protocols[0] = CrossChainBridgeIntegration.BridgeProtocol.NATIVE;
-        protocols[1] = CrossChainBridgeIntegration.BridgeProtocol.LAYERZERO;
+        ICrossChainBridge.BridgeProtocol[]
+            memory protocols = new ICrossChainBridge.BridgeProtocol[](2);
+        protocols[0] = ICrossChainBridge.BridgeProtocol.NATIVE;
+        protocols[1] = ICrossChainBridge.BridgeProtocol.LAYERZERO;
         bridge.configureRoute(
             THIS_CHAIN,
             10,
             protocols,
-            CrossChainBridgeIntegration.BridgeProtocol.NATIVE
+            ICrossChainBridge.BridgeProtocol.NATIVE
         );
         CrossChainBridgeIntegration.Route memory route = bridge.getRoute(
             THIS_CHAIN,
@@ -261,28 +255,26 @@ contract CrossChainBridgeIntegrationTest is Test {
     }
 
     function test_ConfigureRoute_RevertEmpty() public {
-        CrossChainBridgeIntegration.BridgeProtocol[]
-            memory empty = new CrossChainBridgeIntegration.BridgeProtocol[](0);
+        ICrossChainBridge.BridgeProtocol[]
+            memory empty = new ICrossChainBridge.BridgeProtocol[](0);
         vm.expectRevert(CrossChainBridgeIntegration.InvalidRoute.selector);
         bridge.configureRoute(
             THIS_CHAIN,
             10,
             empty,
-            CrossChainBridgeIntegration.BridgeProtocol.NATIVE
+            ICrossChainBridge.BridgeProtocol.NATIVE
         );
     }
 
     function test_ConfigureRoute_RevertTooManyProtocols() public {
-        CrossChainBridgeIntegration.BridgeProtocol[]
-            memory tooMany = new CrossChainBridgeIntegration.BridgeProtocol[](
-                6
-            );
+        ICrossChainBridge.BridgeProtocol[]
+            memory tooMany = new ICrossChainBridge.BridgeProtocol[](6);
         vm.expectRevert(CrossChainBridgeIntegration.InvalidRoute.selector);
         bridge.configureRoute(
             THIS_CHAIN,
             10,
             tooMany,
-            CrossChainBridgeIntegration.BridgeProtocol.NATIVE
+            ICrossChainBridge.BridgeProtocol.NATIVE
         );
     }
 
@@ -305,13 +297,13 @@ contract CrossChainBridgeIntegrationTest is Test {
             recipient,
             NATIVE,
             amount,
-            CrossChainBridgeIntegration.BridgeProtocol.NATIVE,
+            ICrossChainBridge.BridgeProtocol.NATIVE,
             ""
         );
 
         assertTrue(transferId != bytes32(0));
         CrossChainBridgeIntegration.TransferRecord memory record = bridge
-            .getRelayRecord(transferId);
+            .getTransfer(transferId);
         assertEq(
             uint8(record.status),
             uint8(CrossChainBridgeIntegration.TransferStatus.PENDING)
@@ -327,7 +319,7 @@ contract CrossChainBridgeIntegrationTest is Test {
             bytes32(0),
             NATIVE,
             1 ether,
-            CrossChainBridgeIntegration.BridgeProtocol.NATIVE,
+            ICrossChainBridge.BridgeProtocol.NATIVE,
             ""
         );
     }
@@ -340,7 +332,7 @@ contract CrossChainBridgeIntegrationTest is Test {
             bytes32(uint256(1)),
             NATIVE,
             0,
-            CrossChainBridgeIntegration.BridgeProtocol.NATIVE,
+            ICrossChainBridge.BridgeProtocol.NATIVE,
             ""
         );
     }
@@ -353,7 +345,7 @@ contract CrossChainBridgeIntegrationTest is Test {
             bytes32(uint256(1)),
             NATIVE,
             1 ether,
-            CrossChainBridgeIntegration.BridgeProtocol.NATIVE,
+            ICrossChainBridge.BridgeProtocol.NATIVE,
             ""
         );
     }
@@ -369,7 +361,7 @@ contract CrossChainBridgeIntegrationTest is Test {
             bytes32(uint256(1)),
             NATIVE,
             101 ether, // max is 100
-            CrossChainBridgeIntegration.BridgeProtocol.NATIVE,
+            ICrossChainBridge.BridgeProtocol.NATIVE,
             ""
         );
     }
@@ -387,7 +379,7 @@ contract CrossChainBridgeIntegrationTest is Test {
                 recipient,
                 NATIVE,
                 99 ether,
-                CrossChainBridgeIntegration.BridgeProtocol.NATIVE,
+                ICrossChainBridge.BridgeProtocol.NATIVE,
                 ""
             );
         }
@@ -399,7 +391,7 @@ contract CrossChainBridgeIntegrationTest is Test {
             recipient,
             NATIVE,
             6 ether,
-            CrossChainBridgeIntegration.BridgeProtocol.NATIVE,
+            ICrossChainBridge.BridgeProtocol.NATIVE,
             ""
         );
     }
@@ -415,7 +407,7 @@ contract CrossChainBridgeIntegrationTest is Test {
             recipient,
             NATIVE,
             99 ether,
-            CrossChainBridgeIntegration.BridgeProtocol.NATIVE,
+            ICrossChainBridge.BridgeProtocol.NATIVE,
             ""
         );
 
@@ -429,7 +421,7 @@ contract CrossChainBridgeIntegrationTest is Test {
             recipient,
             NATIVE,
             99 ether,
-            CrossChainBridgeIntegration.BridgeProtocol.NATIVE,
+            ICrossChainBridge.BridgeProtocol.NATIVE,
             ""
         );
     }
@@ -443,7 +435,7 @@ contract CrossChainBridgeIntegrationTest is Test {
             recipient,
             NATIVE,
             1 ether,
-            CrossChainBridgeIntegration.BridgeProtocol.NATIVE,
+            ICrossChainBridge.BridgeProtocol.NATIVE,
             ""
         );
 
@@ -462,7 +454,7 @@ contract CrossChainBridgeIntegrationTest is Test {
             recipient,
             NATIVE,
             amount,
-            CrossChainBridgeIntegration.BridgeProtocol.NATIVE,
+            ICrossChainBridge.BridgeProtocol.NATIVE,
             ""
         );
 
@@ -487,7 +479,7 @@ contract CrossChainBridgeIntegrationTest is Test {
             recipient,
             address(token),
             amount,
-            CrossChainBridgeIntegration.BridgeProtocol.NATIVE,
+            ICrossChainBridge.BridgeProtocol.NATIVE,
             ""
         );
         vm.stopPrank();
@@ -547,7 +539,7 @@ contract CrossChainBridgeIntegrationTest is Test {
 
         uint256 userBalBefore = user.balance;
         vm.prank(relayerAddr);
-        bridge.completeRelay(transferId, recipient, NATIVE, amount, proof);
+        bridge.completeTransfer(transferId, recipient, NATIVE, amount, proof);
 
         assertEq(user.balance - userBalBefore, amount);
     }
@@ -579,13 +571,13 @@ contract CrossChainBridgeIntegrationTest is Test {
         bytes memory proof = abi.encodePacked(r, s, v);
 
         vm.prank(relayerAddr);
-        bridge.completeRelay(transferId, recipient, NATIVE, amount, proof);
+        bridge.completeTransfer(transferId, recipient, NATIVE, amount, proof);
 
         vm.prank(relayerAddr);
         vm.expectRevert(
             CrossChainBridgeIntegration.MessageAlreadyProcessed.selector
         );
-        bridge.completeRelay(transferId, recipient, NATIVE, amount, proof);
+        bridge.completeTransfer(transferId, recipient, NATIVE, amount, proof);
     }
 
     function test_CompleteTransfer_RevertInvalidProof() public {
@@ -613,7 +605,7 @@ contract CrossChainBridgeIntegrationTest is Test {
 
         vm.prank(relayer);
         vm.expectRevert(CrossChainBridgeIntegration.InvalidProof.selector);
-        bridge.completeRelay(transferId, recipient, NATIVE, 1 ether, proof);
+        bridge.completeTransfer(transferId, recipient, NATIVE, 1 ether, proof);
     }
 
     // ============= Quote =============
@@ -623,7 +615,7 @@ contract CrossChainBridgeIntegrationTest is Test {
             DEST_CHAIN,
             address(token),
             10 ether,
-            CrossChainBridgeIntegration.BridgeProtocol.NATIVE
+            ICrossChainBridge.BridgeProtocol.NATIVE
         );
 
         // baseFee=0.01 + 10e18 * 10/10000 = 0.01 + 0.01 = 0.02
@@ -641,7 +633,7 @@ contract CrossChainBridgeIntegrationTest is Test {
             DEST_CHAIN,
             address(token),
             10 ether,
-            CrossChainBridgeIntegration.BridgeProtocol.LAYERZERO
+            ICrossChainBridge.BridgeProtocol.LAYERZERO
         );
     }
 
@@ -656,7 +648,7 @@ contract CrossChainBridgeIntegrationTest is Test {
             recipient,
             NATIVE,
             10 ether,
-            CrossChainBridgeIntegration.BridgeProtocol.NATIVE,
+            ICrossChainBridge.BridgeProtocol.NATIVE,
             ""
         );
 
@@ -710,14 +702,14 @@ contract CrossChainBridgeIntegrationTest is Test {
     function test_UpdateAdapterMetrics() public {
         bridge.updateAdapterMetrics(
             DEST_CHAIN,
-            CrossChainBridgeIntegration.BridgeProtocol.NATIVE,
+            ICrossChainBridge.BridgeProtocol.NATIVE,
             100,
             9500
         );
         CrossChainBridgeIntegration.BridgeAdapter memory ba = bridge
-            .getRelayAdapter(
+            .getBridgeAdapter(
                 DEST_CHAIN,
-                CrossChainBridgeIntegration.BridgeProtocol.NATIVE
+                ICrossChainBridge.BridgeProtocol.NATIVE
             );
         assertEq(ba.avgLatency, 100);
         assertEq(ba.reliability, 9500);
@@ -727,12 +719,12 @@ contract CrossChainBridgeIntegrationTest is Test {
         vm.prank(guardian);
         bridge.deactivateAdapter(
             DEST_CHAIN,
-            CrossChainBridgeIntegration.BridgeProtocol.NATIVE
+            ICrossChainBridge.BridgeProtocol.NATIVE
         );
         CrossChainBridgeIntegration.BridgeAdapter memory ba = bridge
-            .getRelayAdapter(
+            .getBridgeAdapter(
                 DEST_CHAIN,
-                CrossChainBridgeIntegration.BridgeProtocol.NATIVE
+                ICrossChainBridge.BridgeProtocol.NATIVE
             );
         assertFalse(ba.isActive);
     }
@@ -748,7 +740,7 @@ contract CrossChainBridgeIntegrationTest is Test {
             bytes32(uint256(1)),
             NATIVE,
             1 ether,
-            CrossChainBridgeIntegration.BridgeProtocol.NATIVE,
+            ICrossChainBridge.BridgeProtocol.NATIVE,
             ""
         );
 
@@ -795,7 +787,7 @@ contract CrossChainBridgeIntegrationTest is Test {
             recipient,
             NATIVE,
             1 ether,
-            CrossChainBridgeIntegration.BridgeProtocol.NATIVE,
+            ICrossChainBridge.BridgeProtocol.NATIVE,
             ""
         );
     }
@@ -808,7 +800,7 @@ contract CrossChainBridgeIntegrationTest is Test {
             DEST_CHAIN,
             NATIVE,
             amount,
-            CrossChainBridgeIntegration.BridgeProtocol.NATIVE
+            ICrossChainBridge.BridgeProtocol.NATIVE
         );
         assertEq(protocolFee, (amount * PROTOCOL_FEE_BPS) / 10000);
     }

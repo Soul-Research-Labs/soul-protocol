@@ -266,4 +266,4 @@ forge test --no-match-path "test/stress/*" -vvv
 
 ---
 
-**See also**: [TACHYON_COMPLIANCE_INTEGRATION.md](TACHYON_COMPLIANCE_INTEGRATION.md)
+**See also**: [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md) | [CROSS_CHAIN_PRIVACY.md](CROSS_CHAIN_PRIVACY.md)

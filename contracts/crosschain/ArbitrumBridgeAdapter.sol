@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import {IBridgeAdapter} from "./IBridgeAdapter.sol";
 
 /**
  * @title ArbitrumBridgeAdapter
@@ -48,7 +49,12 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
  * - Challenge Period: ~7 day dispute window
  * - ArbOS: Arbitrum's operating system layer
  */
-contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
+contract ArbitrumBridgeAdapter is
+    IBridgeAdapter,
+    AccessControl,
+    ReentrancyGuard,
+    Pausable
+{
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
@@ -870,6 +876,35 @@ contract ArbitrumBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
         // which internally verifies the Merkle proof against the send root.
         // This function provides a secondary client-side check.
         return computedHash != bytes32(0);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                     IBridgeAdapter COMPATIBILITY
+    //////////////////////////////////////////////////////////////*/
+
+    /// @inheritdoc IBridgeAdapter
+    function bridgeMessage(
+        address targetAddress,
+        bytes calldata payload,
+        address /*refundAddress*/
+    ) external payable nonReentrant whenNotPaused returns (bytes32 messageId) {
+        // Use deposit() for full Arbitrum retryable ticket control
+        revert("Use deposit() with explicit parameters");
+    }
+
+    /// @inheritdoc IBridgeAdapter
+    function estimateFee(
+        address /*targetAddress*/,
+        bytes calldata /*payload*/
+    ) external pure returns (uint256 nativeFee) {
+        // Arbitrum fees depend on retryable ticket parameters
+        revert("Use Arbitrum-specific fee estimation");
+    }
+
+    /// @inheritdoc IBridgeAdapter
+    function isMessageVerified(bytes32 messageId) external view returns (bool) {
+        L2ToL1Withdrawal storage w = withdrawals[messageId];
+        return w.status == TransferStatus.FINALIZED;
     }
 
     receive() external payable {}

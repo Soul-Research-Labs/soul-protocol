@@ -112,3 +112,6 @@ npx hardhat run scripts/deploy/deploy-arbitrum-bridge.ts --network arbitrum
 - All state-changing functions protected by ReentrancyGuard
 - Fast exits require sufficient exit funding provider stake
 - Deposit limits prevent economic attacks
+- **Outbox Verification**: Uses `outbox.isSpent(index)` to verify withdrawal claims directly (P4-4 fix)
+- All ETH transfers use `call{value:}()` with CEI pattern
+- Emergency withdrawal functions: `emergencyWithdrawETH()` and `emergencyWithdrawERC20()`

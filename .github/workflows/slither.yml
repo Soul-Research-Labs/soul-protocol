@@ -1,0 +1,67 @@
+name: Slither Analysis
+
+permissions:
+  contents: read
+  security-events: write
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "contracts/**"
+      - "slither.config.json"
+      - ".github/workflows/slither.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "contracts/**"
+      - "slither.config.json"
+  workflow_dispatch:
+
+concurrency:
+  group: slither-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  slither:
+    name: Slither Static Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Build contracts
+        run: |
+          forge build --skip test --skip script \
+            --skip AggregatorHonkVerifier \
+            --skip CrossChainPrivacyHub
+
+      - name: Run Slither
+        uses: crytic/slither-action@v0.4.0
+        id: slither
+        with:
+          sarif: results.sarif
+          slither-config: slither.config.json
+          fail-on: high
+          slither-args: --exclude-dependencies --filter-paths "test,script,lib,contracts/verifiers/generated,contracts/mocks"
+
+      - name: Upload SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
+
+      - name: Upload Slither report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: slither-report
+          path: results.sarif
+          retention-days: 30

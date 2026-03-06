@@ -112,14 +112,14 @@ We take security seriously. If you discover a security vulnerability within ZASE
 
 | Tool             | Purpose                                         | Frequency    |
 | ---------------- | ----------------------------------------------- | ------------ |
-| Certora          | Formal verification (54 CVL specs)              | Per release  |
+| Certora          | Formal verification (69 CVL specs)              | Per release  |
 | Slither          | Static analysis                                 | Every commit |
 | Echidna          | Property fuzzing (6 invariant properties)       | Weekly       |
 | Halmos           | Symbolic execution (12 checks)                  | Weekly       |
 | K Framework      | Algebraic specification                         | Per release  |
 | TLA+             | Model checking (TVL conservation, double-spend) | Per release  |
 | Foundry Fuzz     | Differential testing (300+ fuzz tests)          | Every PR     |
-| Mutation Testing | Gambit across 8 contracts                       | Monthly      |
+| Mutation Testing | Gambit across 80 contracts                      | Monthly      |
 | Storage Layout   | Upgrade compatibility (8 contract pairs)        | Every PR     |
 
 ### Security Focus Areas
@@ -198,24 +198,24 @@ We take security seriously. If you discover a security vulnerability within ZASE
 
 ##### Critical Fixes
 
-| Fix        | Contract               | Description                                                |
-| ---------- | ---------------------- | ---------------------------------------------------------- |
+| Fix        | Contract                 | Description                                                |
+| ---------- | ------------------------ | ---------------------------------------------------------- |
 | Reentrancy | ZaseonMultiSigGovernance | Added ReentrancyGuard + nonReentrant to executeProposal()  |
-| Reentrancy | BridgeWatchtower       | Added ReentrancyGuard to completeExit() and claimRewards() |
+| Reentrancy | BridgeWatchtower         | Added ReentrancyGuard to completeExit() and claimRewards() |
 
 ##### High Fixes
 
-| Fix                 | Contract                   | Description                                                         |
-| ------------------- | -------------------------- | ------------------------------------------------------------------- |
+| Fix                 | Contract                     | Description                                                         |
+| ------------------- | ---------------------------- | ------------------------------------------------------------------- |
 | DoS via .transfer() | ZaseonPreconfirmationHandler | Replaced .transfer() with .call{value:}() in 4 locations            |
 | DoS via .transfer() | ZaseonIntentResolver         | Replaced .transfer() with .call{value:}() in withdrawBond()         |
 | DoS via .transfer() | ZaseonL2Messenger            | Replaced .transfer() with .call{value:}() in withdrawBond()         |
-| Loop Gas            | BridgeWatchtower           | Optimized slashInactive() with cached length + batch storage writes |
+| Loop Gas            | BridgeWatchtower             | Optimized slashInactive() with cached length + batch storage writes |
 
 ##### Medium Fixes
 
-| Fix          | Contract        | Description                             |
-| ------------ | --------------- | --------------------------------------- |
+| Fix          | Contract          | Description                             |
+| ------------ | ----------------- | --------------------------------------- |
 | Zero-Address | ZaseonProtocolHub | Added validation to addSupportedChain() |
 
 **Total: 44 vulnerabilities fixed across both phases**
@@ -342,7 +342,7 @@ See [docs/SECURITY_AUDIT_REPORT.md](./docs/SECURITY_AUDIT_REPORT.md) for the com
 | Document                                                    | Description                                                                 |
 | ----------------------------------------------------------- | --------------------------------------------------------------------------- |
 | [SECURITY_AUDIT_REPORT.md](./docs/SECURITY_AUDIT_REPORT.md) | February 2026 audit findings (44 fixes across 2 phases)                     |
-| [FORMAL_VERIFICATION.md](./docs/FORMAL_VERIFICATION.md)     | Formal verification report (54 Certora specs + Halmos + K Framework + TLA+) |
+| [FORMAL_VERIFICATION.md](./docs/FORMAL_VERIFICATION.md)     | Formal verification report (69 Certora specs + Halmos + K Framework + TLA+) |
 | [THREAT_MODEL.md](./docs/THREAT_MODEL.md)                   | Threat analysis                                                             |
 
 Thank you for contributing to ZASEON security!

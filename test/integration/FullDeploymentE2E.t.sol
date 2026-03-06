@@ -664,7 +664,7 @@ contract FullDeploymentE2E is Test {
             admin
         );
         nullifierRegistry.grantRole(nullifierRegistry.REGISTRAR_ROLE(), admin);
-        nullifierRegistry.grantRole(nullifierRegistry.RELAY_ROLE(), admin);
+        nullifierRegistry.grantRole(nullifierRegistry.BRIDGE_ROLE(), admin);
         nullifierRegistry.grantRole(nullifierRegistry.EMERGENCY_ROLE(), admin);
 
         // ── VerifierRegistryV2 ──
@@ -717,7 +717,7 @@ contract FullDeploymentE2E is Test {
             deployer
         );
         nullifierRegistry.renounceRole(
-            nullifierRegistry.RELAY_ROLE(),
+            nullifierRegistry.BRIDGE_ROLE(),
             deployer
         );
         nullifierRegistry.renounceRole(
@@ -791,7 +791,7 @@ contract FullDeploymentE2E is Test {
             nullifierRegistry.hasRole(nullifierRegistry.REGISTRAR_ROLE(), admin)
         );
         assertTrue(
-            nullifierRegistry.hasRole(nullifierRegistry.RELAY_ROLE(), admin)
+            nullifierRegistry.hasRole(nullifierRegistry.BRIDGE_ROLE(), admin)
         );
         assertTrue(
             nullifierRegistry.hasRole(nullifierRegistry.EMERGENCY_ROLE(), admin)
@@ -948,7 +948,7 @@ contract FullDeploymentE2E is Test {
             )
         );
         assertFalse(
-            nullifierRegistry.hasRole(nullifierRegistry.RELAY_ROLE(), deployer)
+            nullifierRegistry.hasRole(nullifierRegistry.BRIDGE_ROLE(), deployer)
         );
         assertFalse(
             nullifierRegistry.hasRole(
@@ -1039,7 +1039,7 @@ contract FullDeploymentE2E is Test {
             nullifierRegistry.hasRole(nullifierRegistry.REGISTRAR_ROLE(), admin)
         );
         assertTrue(
-            nullifierRegistry.hasRole(nullifierRegistry.RELAY_ROLE(), admin)
+            nullifierRegistry.hasRole(nullifierRegistry.BRIDGE_ROLE(), admin)
         );
         assertTrue(
             nullifierRegistry.hasRole(nullifierRegistry.EMERGENCY_ROLE(), admin)

@@ -6,6 +6,8 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+import {IConfidentialStateContainerV3, BatchStateInput} from "../interfaces/IConfidentialStateContainerV3.sol";
+import {IProofVerifier} from "../interfaces/IProofVerifier.sol";
 
 /// @title ConfidentialStateContainerV3
 /// @author Soul Protocol
@@ -19,6 +21,7 @@ import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/Messa
 /// - Assembly for hash operations (saves ~500 gas)
 /// - Unchecked arithmetic in safe contexts (saves ~40 gas per operation)
 contract ConfidentialStateContainerV3 is
+    IConfidentialStateContainerV3,
     AccessControl,
     ReentrancyGuard,
     Pausable
@@ -45,40 +48,6 @@ contract ConfidentialStateContainerV3 is
     /*//////////////////////////////////////////////////////////////
                                  TYPES
     //////////////////////////////////////////////////////////////*/
-
-    /// @notice State status enum
-    enum StateStatus {
-        Active, // Normal active state
-        Locked, // Temporarily locked (e.g., during dispute)
-        Frozen, // Frozen by compliance
-        Retired // State has been consumed/transferred
-    }
-
-    /// @notice Encrypted state structure with gas-optimized packing
-    /// @dev Packed to minimize storage slots: slot1=commitment, slot2=nullifier,
-    ///      slot3=owner+version+status+createdAt, slot4=updatedAt+metadata(partial),
-    ///      slot5+=encryptedState (dynamic)
-    struct EncryptedState {
-        bytes32 commitment; // slot 0
-        bytes32 nullifier; // slot 1
-        bytes32 metadata; // slot 2
-        address owner; // slot 3 (20 bytes)
-        uint48 createdAt; // slot 3 (6 bytes) - supports dates until year 8.9M
-        uint48 updatedAt; // slot 3 (6 bytes)
-        uint32 version; // slot 4 (4 bytes) - 4B+ versions
-        StateStatus status; // slot 4 (1 byte)
-        bytes encryptedState; // slot 5+ (dynamic)
-    }
-
-    /// @notice State transition record for auditing
-    struct StateTransition {
-        bytes32 fromCommitment;
-        bytes32 toCommitment;
-        address fromOwner;
-        address toOwner;
-        uint256 timestamp;
-        bytes32 transactionHash;
-    }
 
     /// @notice Parameters for creating a new state (reduces stack depth)
     struct NewStateParams {
@@ -136,94 +105,6 @@ contract ConfidentialStateContainerV3 is
 
     /// @notice Chain ID for this deployment (immutable for gas savings)
     uint256 public immutable CHAIN_ID;
-
-    /*//////////////////////////////////////////////////////////////
-                                EVENTS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Emitted when a new confidential state is registered
-    /// @param commitment The unique commitment hash identifying this state
-    /// @param owner The address that owns this state
-    /// @param nullifier The nullifier associated with this state for spend tracking
-    /// @param timestamp Block timestamp when the state was registered
-    event StateRegistered(
-        bytes32 indexed commitment,
-        address indexed owner,
-        bytes32 nullifier,
-        uint256 timestamp
-    );
-
-    /// @notice Emitted when a state is transferred to a new owner
-    /// @param fromCommitment The old state commitment being consumed
-    /// @param toCommitment The new state commitment being created
-    /// @param newOwner The address of the new state owner
-    /// @param version The version number of the new state
-    event StateTransferred(
-        bytes32 indexed fromCommitment,
-        bytes32 indexed toCommitment,
-        address indexed newOwner,
-        uint256 version
-    );
-
-    /// @notice Emitted when a state's status is updated (Active, Locked, Frozen, Retired)
-    /// @param commitment The state commitment whose status changed
-    /// @param oldStatus The previous status
-    /// @param newStatus The new status
-    event StateStatusChanged(
-        bytes32 indexed commitment,
-        StateStatus oldStatus,
-        StateStatus newStatus
-    );
-
-    /// @notice Emitted when multiple states are registered in a single batch
-    /// @param commitments Array of commitment hashes for the registered states
-    /// @param owner The address that owns all states in this batch
-    /// @param count Number of states registered
-    event StateBatchRegistered(
-        bytes32[] commitments,
-        address indexed owner,
-        uint256 count
-    );
-
-    /// @notice Emitted when the proof validity window configuration is changed
-    /// @param oldWindow The previous validity window in seconds
-    /// @param newWindow The new validity window in seconds
-    event ProofValidityWindowUpdated(uint256 oldWindow, uint256 newWindow);
-    /// @notice Emitted when the maximum encrypted state size configuration is changed
-    /// @param oldSize The previous maximum size in bytes
-    /// @param newSize The new maximum size in bytes
-    event MaxStateSizeUpdated(uint256 oldSize, uint256 newSize);
-
-    /*//////////////////////////////////////////////////////////////
-                              CUSTOM ERRORS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Thrown when a nullifier has already been consumed
-    error NullifierAlreadyUsed(bytes32 nullifier);
-    /// @notice Thrown when a ZK proof fails verification
-    error InvalidProof();
-    /// @notice Thrown when the caller does not own the referenced state
-    error NotStateOwner(address caller, address owner);
-    /// @notice Thrown when a zero address is provided for a required parameter
-    error ZeroAddress();
-    /// @notice Thrown when encrypted state data has zero length
-    error EmptyEncryptedState();
-    /// @notice Thrown when a commitment hash is already registered
-    error CommitmentAlreadyExists(bytes32 commitment);
-    /// @notice Thrown when a commitment hash is not present in the registry
-    error CommitmentNotFound(bytes32 commitment);
-    /// @notice Thrown when encrypted state data exceeds the configured maxStateSize
-    error StateSizeTooLarge(uint256 size, uint256 maxSize);
-    /// @notice Thrown when a state is not in Active status
-    error StateNotActive(bytes32 commitment, StateStatus status);
-    /// @notice Thrown when EIP-712 signature verification fails or chain ID mismatches
-    error InvalidSignature();
-    /// @notice Thrown when the signature deadline has passed
-    error SignatureExpired();
-    /// @notice Thrown when the provided nonce does not match the expected value
-    error InvalidNonce();
-    /// @notice Thrown when batch size exceeds MAX_BATCH_SIZE
-    error BatchTooLarge(uint256 size, uint256 maxSize);
 
     /*//////////////////////////////////////////////////////////////
                               CONSTANTS
@@ -388,7 +269,13 @@ contract ConfidentialStateContainerV3 is
 
         // Verify EIP-712 signature — digest computed in helper to avoid stack-too-deep
         address signer = _recoverRegistrationSigner(
-            commitment, nullifier, owner, encryptedState, metadata, deadline, signature
+            commitment,
+            nullifier,
+            owner,
+            encryptedState,
+            metadata,
+            deadline,
+            signature
         );
         if (signer != owner) revert InvalidSignature();
 
@@ -941,19 +828,4 @@ contract ConfidentialStateContainerV3 is
                           INTERFACES
 //////////////////////////////////////////////////////////////*/
 
-interface IProofVerifier {
-    function verifyProof(
-        bytes calldata proof,
-        bytes calldata publicInputs
-    ) external view returns (bool);
-}
-
-/// @notice Batch input structure
-struct BatchStateInput {
-    bytes encryptedState;
-    bytes32 commitment;
-    bytes32 nullifier;
-    bytes proof;
-    // bytes publicInputs; // Removed: constructed internally
-    bytes32 metadata;
-}
+// IProofVerifier imported from ../interfaces/IProofVerifier.sol

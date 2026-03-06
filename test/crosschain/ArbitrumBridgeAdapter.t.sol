@@ -188,7 +188,7 @@ contract ArbitrumBridgeAdapterTest is Test {
     function test_ProvideExitFunding() public {
         vm.deal(user, 10 ether);
         vm.prank(user);
-        adapter.provideExitFunding{value: 5 ether}();
+        adapter.provideLiquidity{value: 5 ether}();
     }
 
     function test_ReceiveETH() public {

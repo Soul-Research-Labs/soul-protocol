@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {INullifierRegistryV3} from "../interfaces/INullifierRegistryV3.sol";
 
 /// @title NullifierRegistryV3
 /// @author Soul Protocol
@@ -14,7 +15,7 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 /// - Pre-computed role hashes (saves ~200 gas per access)
 /// - Unchecked arithmetic in safe contexts (saves ~40 gas per operation)
 /// - Packed NullifierData struct (saves ~20k gas on writes)
-contract NullifierRegistryV3 is AccessControl, Pausable {
+contract NullifierRegistryV3 is INullifierRegistryV3, AccessControl, Pausable {
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
@@ -33,26 +34,6 @@ contract NullifierRegistryV3 is AccessControl, Pausable {
     /// @dev Pre-computed hash saves ~200 gas per access: keccak256("EMERGENCY_ROLE")
     bytes32 public constant EMERGENCY_ROLE =
         0xbf233dd2aafeb4d50879c4aa5c81e96d92f6e6945c906a58f9f2d1c1631b4b26;
-
-    /*//////////////////////////////////////////////////////////////
-                                 TYPES
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Nullifier metadata structure
-    /// @param timestamp Block timestamp when registered
-    /// @param blockNumber Block number when registered
-    /// @param sourceChainId Origin chain ID
-    /// @param registrar Address that registered the nullifier
-    /// @param commitment Associated commitment (if any)
-    /// @param index Position in the merkle tree
-    struct NullifierData {
-        uint64 timestamp;
-        uint64 blockNumber;
-        uint64 sourceChainId;
-        address registrar;
-        bytes32 commitment;
-        uint256 index;
-    }
 
     /*//////////////////////////////////////////////////////////////
                           MERKLE TREE CONFIG
@@ -103,52 +84,6 @@ contract NullifierRegistryV3 is AccessControl, Pausable {
 
     /// @notice Chain ID for this deployment
     uint256 public immutable CHAIN_ID;
-
-    /*//////////////////////////////////////////////////////////////
-                                EVENTS
-    //////////////////////////////////////////////////////////////*/
-
-    event NullifierRegistered(
-        bytes32 indexed nullifier,
-        bytes32 indexed commitment,
-        uint256 indexed index,
-        address registrar,
-        uint64 chainId
-    );
-
-    event NullifierBatchRegistered(
-        bytes32[] nullifiers,
-        uint256 startIndex,
-        uint256 count
-    );
-
-    event MerkleRootUpdated(
-        bytes32 indexed oldRoot,
-        bytes32 indexed newRoot,
-        uint256 nullifierCount
-    );
-
-    event CrossChainNullifiersReceived(
-        uint256 indexed sourceChainId,
-        bytes32 indexed merkleRoot,
-        uint256 count
-    );
-
-    event RegistrarAdded(address indexed registrar);
-    event RegistrarRemoved(address indexed registrar);
-
-    /*//////////////////////////////////////////////////////////////
-                              CUSTOM ERRORS
-    //////////////////////////////////////////////////////////////*/
-
-    error NullifierAlreadyExists(bytes32 nullifier);
-    error NullifierNotFound(bytes32 nullifier);
-    error InvalidMerkleProof();
-    error BatchTooLarge(uint256 size, uint256 maxSize);
-    error EmptyBatch();
-    error ZeroNullifier();
-    error RootNotInHistory(bytes32 root);
-    error InvalidChainId();
 
     /*//////////////////////////////////////////////////////////////
                               CONSTANTS

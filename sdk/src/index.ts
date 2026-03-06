@@ -258,6 +258,48 @@ export type {
   LPPosition,
 } from "./bridge/CrossChainLiquidityVaultClient";
 
+// zkSync Bridge SDK Client
+export {
+  ZkSyncBridgeClient,
+  createZkSyncBridgeClient,
+  ZkSyncTransferStatus,
+} from "./bridge/zkSyncBridgeClient";
+export type {
+  ZkSyncBridgeConfig,
+  ZkSyncDeposit,
+  ZkSyncWithdrawal,
+  L2LogProof,
+  ZkSyncBridgeStats,
+} from "./bridge/zkSyncBridgeClient";
+
+// Scroll Bridge SDK Client
+export {
+  ScrollBridgeClient,
+  createScrollBridgeClient,
+  ScrollTransferStatus,
+} from "./bridge/ScrollBridgeClient";
+export type {
+  ScrollBridgeConfig,
+  ScrollDeposit,
+  ScrollWithdrawal,
+  ScrollWithdrawalProof,
+  ScrollBridgeStats,
+} from "./bridge/ScrollBridgeClient";
+
+// Linea Bridge SDK Client
+export {
+  LineaBridgeClient,
+  createLineaBridgeClient,
+  LineaTransferStatus,
+} from "./bridge/LineaBridgeClient";
+export type {
+  LineaBridgeConfig,
+  LineaDeposit,
+  LineaWithdrawal,
+  LineaClaimProof,
+  LineaBridgeStats,
+} from "./bridge/LineaBridgeClient";
+
 // ZK-Bound State Locks SDK Client
 export { ZKBoundStateLocksClient } from "./primitives/ZKBoundStateLocksClient";
 export type {
@@ -330,3 +372,30 @@ export type {
   RecoveryValidation,
   OpenIncidentResult,
 } from "./security/ProtocolEmergencyCoordinatorClient";
+
+// Governance
+export {
+  GovernanceClient,
+  createGovernanceClient,
+  ProposalState,
+  VoteType,
+} from "./client/GovernanceClient";
+export type {
+  GovernanceClientConfig,
+  ProposalVotes,
+} from "./client/GovernanceClient";
+
+// View Key Registry
+export {
+  ViewKeyRegistryClient,
+  createViewKeyRegistryClient,
+  ViewKeyType,
+  GrantStatus,
+} from "./client/ViewKeyRegistryClient";
+export type {
+  ViewKeyRegistryClientConfig,
+  ViewKey,
+  ViewGrant,
+  GrantDetails,
+  AuditEntry,
+} from "./client/ViewKeyRegistryClient";

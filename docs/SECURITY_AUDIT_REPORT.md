@@ -1,10 +1,10 @@
 # ZASEON Security Audit Report
 
-> Comprehensive security audit documenting 65 vulnerabilities identified and fixed across multiple review phases.
+> Comprehensive security audit documenting 79 vulnerabilities identified and fixed across multiple review phases.
 
-**Date:** February 5, 2026  
+**Date:** March 6, 2026  
 **Auditor:** Internal Security Review  
-**Scope:** Core contracts, cross-chain bridges, privacy primitives, governance, security modules  
+**Scope:** Core contracts, cross-chain bridges, privacy primitives, governance, security modules, new bridge adapters  
 **Status:** ✅ All Critical and High issues resolved
 
 ---
@@ -18,6 +18,7 @@
 - [Medium Vulnerabilities](#medium-vulnerabilities-15)
 - [Phase 2 Security Review](#phase-2-security-review-february-2026)
 - [Session 8 Security Review](#session-8-security-review-march-2026)
+- [Phase 4 Security Review](#phase-4-security-review-march-2026)
 - [Recommendations](#recommendations)
 - [Commit History](#commit-history)
 - [Appendix: Testing Notes](#appendix-testing-notes)
@@ -26,7 +27,7 @@
 
 ## Executive Summary
 
-This report documents the comprehensive security audit performed on the ZASEON codebase. The audit identified and fixed **65 vulnerabilities** across multiple security reviews:
+This report documents the comprehensive security audit performed on the ZASEON codebase. The audit identified and fixed **79 vulnerabilities** across multiple security reviews:
 
 ### Security Review Phase 1 (January 2026)
 
@@ -57,7 +58,16 @@ This report documents the comprehensive security audit performed on the ZASEON c
 | Low       | 4      | 4      | 0         |
 | **Total** | **21** | **21** | **0**     |
 
-**Grand Total: 65 vulnerabilities identified and fixed**
+### Phase 4 Security Review (March 2026) — Bridge Adapters & Hardening
+
+| Severity  | Found  | Fixed  | Remaining |
+| --------- | ------ | ------ | --------- |
+| Critical  | 4      | 4      | 0         |
+| High      | 8      | 8      | 0         |
+| Medium    | 2      | 2      | 0         |
+| **Total** | **14** | **14** | **0**     |
+
+**Grand Total: 79 vulnerabilities identified and fixed**
 
 ---
 
@@ -633,11 +643,134 @@ require(sourceRoot != bytes32(0), "Invalid source root");
 
 ---
 
+## Phase 4 Security Review (March 2026)
+
+### Scope
+
+Comprehensive security audit of 5 newly implemented bridge adapters (LayerZero, Hyperlane, zkSync, Scroll, Linea) and hardening fixes for 7 existing contracts identified through parallel agent-based vulnerability scanning.
+
+### Contracts Audited
+
+| Contract                     | Path                                                  | Lines | Risk Level |
+| ---------------------------- | ----------------------------------------------------- | ----- | ---------- |
+| zkSyncBridgeAdapter          | `contracts/crosschain/zkSyncBridgeAdapter.sol`        | ~619  | High       |
+| ScrollBridgeAdapter          | `contracts/crosschain/ScrollBridgeAdapter.sol`        | ~544  | High       |
+| LineaBridgeAdapter           | `contracts/crosschain/LineaBridgeAdapter.sol`         | ~545  | High       |
+| HyperlaneAdapter             | `contracts/crosschain/HyperlaneAdapter.sol`           | ~575  | High       |
+| LayerZeroAdapter             | `contracts/crosschain/LayerZeroAdapter.sol`           | ~635  | High       |
+| ArbitrumBridgeAdapter        | `contracts/crosschain/ArbitrumBridgeAdapter.sol`      | ~900  | High       |
+| BatchAccumulator             | `contracts/privacy/BatchAccumulator.sol`              | ~500  | High       |
+| CrossChainEmergencyRelay     | `contracts/crosschain/CrossChainEmergencyRelay.sol`   | ~600  | Medium     |
+| CrossChainNullifierSync      | `contracts/crosschain/CrossChainNullifierSync.sol`    | ~430  | Medium     |
+| DecentralizedRelayerRegistry | `contracts/relayer/DecentralizedRelayerRegistry.sol`  | ~450  | Medium     |
+| CrossChainProofHubV3         | `contracts/bridge/CrossChainProofHubV3.sol`           | ~1220 | High       |
+| ProtocolEmergencyCoordinator | `contracts/security/ProtocolEmergencyCoordinator.sol` | ~620  | High       |
+
+### Critical Vulnerabilities (4)
+
+#### P4-1: Missing ETH Transfer in `claimWithdrawal()` (zkSync/Scroll/Linea)
+
+**Contracts:** zkSyncBridgeAdapter, ScrollBridgeAdapter, LineaBridgeAdapter  
+**Severity:** Critical  
+**Status:** ✅ Fixed
+
+**Description:**  
+All three ZK-rollup bridge adapters updated withdrawal status and emitted events but never transferred ETH to the recipient. Users' funds would be permanently locked in the adapter.
+
+**Fix:**
+
+```solidity
+(bool sent, ) = w.l1Recipient.call{value: w.amount}("");
+if (!sent) revert TransferFailed();
+```
+
+Applied to `claimWithdrawal()` in all three adapters, before emitting events (CEI pattern).
+
+---
+
+#### P4-2: L2 Transaction Failure Produces Fake Hash (zkSync)
+
+**Contract:** zkSyncBridgeAdapter  
+**Severity:** Critical  
+**Status:** ✅ Fixed
+
+**Description:**  
+`_requestL2Transaction()` generated a fake `keccak256` hash when the Diamond Proxy call failed, creating a deposit record for a transaction that never existed on L2.
+
+**Fix:**  
+Replaced fake hash generation with `revert L2TransactionFailed()`.
+
+---
+
+#### P4-3: Permanent Nullifier Lock on Batch Failure
+
+**Contract:** BatchAccumulator  
+**Severity:** Critical  
+**Status:** ✅ Fixed
+
+**Description:**  
+When `processBatch()` failed proof verification, nullifiers consumed by the batch were not recovered. Users who submitted to the failed batch could never resubmit those nullifiers.
+
+**Fix:**
+
+```solidity
+uint256 failCount = batch.commitments.length;
+for (uint256 j = 0; j < failCount; ) {
+    BatchedTransaction storage txn = batchTransactions[batchId][j];
+    nullifierUsed[txn.nullifierHash] = false;
+    commitmentToBatch[txn.commitment] = bytes32(0);
+    unchecked { ++j; }
+}
+```
+
+---
+
+#### P4-4: Weak `confirmRoleSeparation()` Bypass
+
+**Contract:** ProtocolEmergencyCoordinator  
+**Severity:** Critical  
+**Status:** ✅ Fixed
+
+**Description:**  
+`confirmRoleSeparation()` took no parameters and only checked if `msg.sender` held multiple roles. An admin could grant GUARDIAN + RESPONDER + RECOVERY to the same address, call `confirmRoleSeparation()` from a different address, and bypass role separation.
+
+**Fix:**  
+Changed signature to `confirmRoleSeparation(address guardian, address responder, address recovery)` with explicit checks:
+
+- All three addresses must be distinct
+- Each address must hold its claimed role
+- No address holds more than one critical role
+- The admin (msg.sender) must not hold any critical operational role
+
+---
+
+### High Vulnerabilities (8)
+
+| ID    | Contract                     | Issue                                                        | Fix                                                         |
+| ----- | ---------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------- |
+| P4-5  | ArbitrumBridgeAdapter        | `claimWithdrawal` no Outbox verification for direct calls    | Added `outbox.isSpent(index)` check for non-Outbox callers  |
+| P4-6  | HyperlaneAdapter             | Mailbox dispatch failure silently marks message FAILED       | Replaced with `revert MailboxDispatchFailed()`              |
+| P4-7  | LayerZeroAdapter             | LZ endpoint call failure silently marks message FAILED       | Replaced with `revert LZEndpointSendFailed()`               |
+| P4-8  | ScrollBridgeAdapter          | `configureScroll` accepts zero addresses for 4 params        | Added zero-address checks for all 4 configuration addresses |
+| P4-9  | CrossChainEmergencyRelay     | `receiveEmergency` accepts messages from unregistered chains | Added `chains[sourceChainId].active` validation             |
+| P4-10 | CrossChainNullifierSync      | No replay protection across sync flushes                     | Added `syncSequence` mapping included in payload encoding   |
+| P4-11 | DecentralizedRelayerRegistry | Overpayment above `MIN_STAKE` permanently trapped            | Refund `msg.value - MIN_STAKE` to sender after registration |
+| P4-12 | CrossChainProofHubV3         | `hourlyValueRelayed` never incremented, dead code            | `_checkRateLimit(count, value)` now enforces value limit    |
+
+### Medium Vulnerabilities (2)
+
+| ID    | Contract            | Issue                                              | Fix                                                  |
+| ----- | ------------------- | -------------------------------------------------- | ---------------------------------------------------- |
+| P4-13 | ScrollBridgeAdapter | `_sendScrollMessage` returns 0 on failure silently | Added `revert ScrollMessageFailed()` on call failure |
+| P4-14 | LineaBridgeAdapter  | `_sendLineaMessage` returns 0 on failure silently  | Added `revert LineaMessageFailed()` on call failure  |
+
+---
+
 ## Recommendations
 
 ### Immediate Actions (Completed)
 
-- [x] All critical and high vulnerabilities fixed (Phase 1, 2, & Session 8)
+- [x] All critical and high vulnerabilities fixed (Phase 1, 2, Session 8, & Phase 4)
 - [x] All medium vulnerabilities fixed
 - [x] All low vulnerabilities fixed
 - [x] Code compiles successfully
@@ -646,11 +779,12 @@ require(sourceRoot != bytes32(0), "Invalid source root");
 ### Pre-Mainnet Checklist
 
 1. **Run Foundry Tests**: `forge test --summary`
-2. **Call `confirmRoleSeparation()`**: Ensure admin roles are distributed
+2. **Call `confirmRoleSeparation(guardian, responder, recovery)`**: With three distinct role-holder addresses
 3. **Verify `batchVerifier` configured**: Before enabling cross-chain commitments
 4. **Verify `canClaimStealth` uses 4 parameters**: Aligned with `generateStealthAddress`
-5. **External Audit**: Consider professional audit (Trail of Bits, OpenZeppelin)
-6. **Formal Verification**: Run Certora specs in `certora/` directory
+5. **Run `scripts/validate-env.sh --all`**: Validate all environment variables before deploy
+6. **External Audit**: Consider professional audit (Trail of Bits, OpenZeppelin)
+7. **Formal Verification**: Run Certora specs via `certora.yml` CI workflow
 
 ### Ongoing Security
 
@@ -662,24 +796,25 @@ require(sourceRoot != bytes32(0), "Invalid source root");
 
 ## Commit History
 
-| Commit     | Description                                                      |
-| ---------- | ---------------------------------------------------------------- |
-| `95d4220`  | Fix nullifier race condition, add ChallengeRejected event        |
-| `57d663c`  | Fix 5 critical and 2 high severity vulnerabilities               |
-| `1bbc246`  | Fix 4 additional high severity vulnerabilities                   |
-| `8b83c58`  | Fix 10 medium severity vulnerabilities                           |
-| `7e5a4b0`  | Fix 5 additional medium severity vulnerabilities                 |
-| `feb2026a` | Phase 2: Fix reentrancy in ZaseonMultiSigGovernance              |
-| `feb2026b` | Phase 2: Fix reentrancy in BridgeWatchtower + loop optimization  |
-| `feb2026c` | Phase 2: Replace .transfer() with .call{} in 3 contracts         |
-| `feb2026d` | Phase 2: Add zero-address validation + missing events            |
-| `mar2026a` | Session 8: Fix stale root exploit in UniversalShieldedPool       |
-| `mar2026b` | Session 8: Require batchVerifier for cross-chain commitments     |
-| `mar2026c` | Session 8: Fix canClaimStealth derivation mismatch               |
-| `mar2026d` | Session 8: MultiBridgeRouter ETH forwarding + emergency withdraw |
-| `mar2026e` | Session 8: CrossChainPrivacyHub excess ETH refund                |
-| `mar2026f` | Session 8: Nullifier binding + zero root validation              |
-| `mar2026g` | Session 8: Medium/Low fixes across 8 contracts                   |
+| Commit     | Description                                                        |
+| ---------- | ------------------------------------------------------------------ |
+| `95d4220`  | Fix nullifier race condition, add ChallengeRejected event          |
+| `57d663c`  | Fix 5 critical and 2 high severity vulnerabilities                 |
+| `1bbc246`  | Fix 4 additional high severity vulnerabilities                     |
+| `8b83c58`  | Fix 10 medium severity vulnerabilities                             |
+| `7e5a4b0`  | Fix 5 additional medium severity vulnerabilities                   |
+| `feb2026a` | Phase 2: Fix reentrancy in ZaseonMultiSigGovernance                |
+| `feb2026b` | Phase 2: Fix reentrancy in BridgeWatchtower + loop optimization    |
+| `feb2026c` | Phase 2: Replace .transfer() with .call{} in 3 contracts           |
+| `feb2026d` | Phase 2: Add zero-address validation + missing events              |
+| `mar2026a` | Session 8: Fix stale root exploit in UniversalShieldedPool         |
+| `mar2026b` | Session 8: Require batchVerifier for cross-chain commitments       |
+| `mar2026c` | Session 8: Fix canClaimStealth derivation mismatch                 |
+| `mar2026d` | Session 8: MultiBridgeRouter ETH forwarding + emergency withdraw   |
+| `mar2026e` | Session 8: CrossChainPrivacyHub excess ETH refund                  |
+| `mar2026f` | Session 8: Nullifier binding + zero root validation                |
+| `mar2026g` | Session 8: Medium/Low fixes across 8 contracts                     |
+| `db0c73b`  | Phase 4: Security hardening + bridge adapters (14 vulnerabilities) |
 
 ---
 

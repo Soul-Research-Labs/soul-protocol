@@ -123,8 +123,76 @@
         }
       ],
       "alertThreshold": { "amount": 1, "windowSeconds": 1 },
-      "notificationChannels": ["zaseon-pagerduty", "zaseon-slack-critical", "zaseon-email-critical"],
+      "notificationChannels": [
+        "zaseon-pagerduty",
+        "zaseon-slack-critical",
+        "zaseon-email-critical"
+      ],
       "riskCategory": "ACCESS-CONTROL"
+    },
+    "zksync_bridge_deposits": {
+      "name": "zkSync Bridge Deposits",
+      "description": "Track deposit volume through zkSync adapter",
+      "type": "BLOCK",
+      "network": "mainnet",
+      "addresses": [],
+      "eventConditions": [
+        {
+          "eventSignature": "DepositInitiated(bytes32,address,address,uint256)",
+          "expression": null
+        }
+      ],
+      "alertThreshold": { "amount": 50, "windowSeconds": 300 },
+      "notificationChannels": ["zaseon-slack-ops"],
+      "riskCategory": "FINANCIAL"
+    },
+    "linea_bridge_deposits": {
+      "name": "Linea Bridge Deposits",
+      "description": "Track deposit volume through Linea adapter",
+      "type": "BLOCK",
+      "network": "mainnet",
+      "addresses": [],
+      "eventConditions": [
+        {
+          "eventSignature": "DepositInitiated(bytes32,address,address,uint256)",
+          "expression": null
+        }
+      ],
+      "alertThreshold": { "amount": 50, "windowSeconds": 300 },
+      "notificationChannels": ["zaseon-slack-ops"],
+      "riskCategory": "FINANCIAL"
+    },
+    "layerzero_message_failures": {
+      "name": "LayerZero Message Failures",
+      "description": "Detect failed LayerZero cross-chain messages",
+      "type": "BLOCK",
+      "network": "mainnet",
+      "addresses": [],
+      "eventConditions": [
+        {
+          "eventSignature": "MessageFailed(bytes32,bytes)",
+          "expression": null
+        }
+      ],
+      "alertThreshold": { "amount": 1, "windowSeconds": 1 },
+      "notificationChannels": ["zaseon-pagerduty", "zaseon-slack-critical"],
+      "riskCategory": "TECHNICAL"
+    },
+    "hyperlane_message_failures": {
+      "name": "Hyperlane Message Failures",
+      "description": "Detect failed Hyperlane cross-chain messages",
+      "type": "BLOCK",
+      "network": "mainnet",
+      "addresses": [],
+      "eventConditions": [
+        {
+          "eventSignature": "MessageFailed(bytes32,bytes)",
+          "expression": null
+        }
+      ],
+      "alertThreshold": { "amount": 1, "windowSeconds": 1 },
+      "notificationChannels": ["zaseon-pagerduty", "zaseon-slack-critical"],
+      "riskCategory": "TECHNICAL"
     }
   }
 }

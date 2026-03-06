@@ -20,6 +20,9 @@ on:
           - arbitrum-sepolia
           - optimism-sepolia
           - base-sepolia
+          - zksync-sepolia
+          - scroll-sepolia
+          - linea-sepolia
         default: all
 
 concurrency:
@@ -46,6 +49,12 @@ jobs:
             rpc_secret: OPTIMISM_SEPOLIA_RPC_URL
           - name: base-sepolia
             rpc_secret: BASE_SEPOLIA_RPC_URL
+          - name: zksync-sepolia
+            rpc_secret: ZKSYNC_SEPOLIA_RPC_URL
+          - name: scroll-sepolia
+            rpc_secret: SCROLL_SEPOLIA_RPC_URL
+          - name: linea-sepolia
+            rpc_secret: LINEA_SEPOLIA_RPC_URL
     steps:
       - uses: actions/checkout@v4
         with:

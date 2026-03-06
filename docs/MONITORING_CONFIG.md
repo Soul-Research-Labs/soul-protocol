@@ -8,7 +8,10 @@
 
 - [Overview](#overview)
 - [Alert Severity Levels](#alert-severity-levels)
-- [Contract Event Monitoring](#contract-event-monitoring)
+- [Core Contract Monitoring](#core-contract-monitoring)
+- [Bridge Adapter Monitoring](#bridge-adapter-monitoring)
+- [Cross-Chain Messaging Monitoring](#cross-chain-messaging-monitoring)
+- [Security & Emergency Monitoring](#security--emergency-monitoring)
 - [On-Chain Metrics](#on-chain-metrics)
 - [Infrastructure Monitoring](#infrastructure-monitoring)
 - [Alert Integrations](#alert-integrations)
@@ -19,7 +22,7 @@
 
 ## Overview
 
-This document defines monitoring alerts and thresholds for ZASEON production deployment.
+This document defines monitoring alerts and thresholds for ZASEON production deployment across Ethereum L1 and 7 supported L2 networks (Arbitrum, Optimism, Base, zkSync Era, Scroll, Linea, Polygon zkEVM).
 
 ## Alert Severity Levels
 
@@ -32,7 +35,7 @@ This document defines monitoring alerts and thresholds for ZASEON production dep
 
 ---
 
-## Contract Event Monitoring
+## Core Contract Monitoring
 
 ### ZKBoundStateLocks
 
@@ -57,7 +60,7 @@ events:
     response: "Immediate investigation required"
 ```
 
-### CrossChainProofHub
+### CrossChainProofHubV3
 
 ```yaml
 events:
@@ -79,9 +82,17 @@ events:
   - name: RelayerSlashed
     alert: high
     description: Malicious relayer detected and slashed
+
+  - name: RateLimitExceeded
+    alert: high
+    description: Value-based rate limit triggered (_checkRateLimit)
+    threshold:
+      warning: "> 3/hour"
+      critical: "> 10/hour"
+    response: "Review submission patterns for potential abuse"
 ```
 
-### NullifierRegistry
+### NullifierRegistryV3
 
 ```yaml
 events:
@@ -96,28 +107,56 @@ events:
       critical: "> 1"
 ```
 
-### ZaseonAtomicSwap
+### BatchAccumulator
 
 ```yaml
 events:
-  - name: SwapInitiated
+  - name: BatchCreated
     alert: low
-    description: New atomic swap started
+    description: New batch created
+
+  - name: BatchFinalized
+    alert: low
+    description: Batch successfully finalized
+
+  - name: BatchFailed
+    alert: high
+    description: Batch failed — nullifiers recovered
+    response: "Verify nullifier rollback completed correctly"
     threshold:
-      warning: "value > 100 ETH"
-      critical: "value > 1000 ETH"
+      warning: "> 1/day"
+      critical: "> 5/day"
 
-  - name: SwapCompleted
-    alert: low
-    description: Swap successfully completed
-
-  - name: SwapRefunded
+  - name: NullifierRecovered
     alert: medium
-    description: Swap expired and refunded
-    threshold:
+    description: Nullifier recovered from failed batch
 ```
 
-### ZaseonMultiSigGovernance
+### DecentralizedRelayerRegistry
+
+```yaml
+events:
+  - name: RelayerRegistered
+    alert: low
+    description: New relayer registered with stake
+
+  - name: RelayerDeregistered
+    alert: medium
+    description: Relayer exited the network
+
+  - name: StakeRefunded
+    alert: medium
+    description: Overpayment above MIN_STAKE refunded
+    threshold:
+      warning: "refund > 1 ETH"
+
+  - name: RelayerSlashed
+    alert: high
+    description: Relayer slashed for misbehavior
+    response: "Review slashing evidence and relayer history"
+```
+
+### ZaseonGovernance
 
 ```yaml
 events:
@@ -135,51 +174,227 @@ events:
     description: Governance proposal cancelled
 ```
 
-### BridgeWatchtower
+---
+
+## Bridge Adapter Monitoring
+
+### All Bridge Adapters (Common)
 
 ```yaml
 events:
-  - name: WatchtowerSlashed
-    alert: high
-    description: Watchtower slashed for misbehavior
-
-  - name: ReportSubmitted
-    alert: medium
-    description: Anomaly report submitted
-    threshold:
-      warning: "> 10/hour"
-      critical: "> 50/hour"
-
-  - name: ReportFinalized
-    alert: high
-    description: Report consensus reached
-```
-
-### ConfidentialDataAvailability
-
-```yaml
-events:
-  - name: BlobPublished
+  - name: DepositInitiated
     alert: low
-    description: New confidential blob published
+    description: Cross-chain deposit started
+    threshold:
+      warning: "value > 100 ETH"
+      critical: "value > 1000 ETH"
 
-  - name: ChallengeCreated
+  - name: WithdrawalClaimed
+    alert: low
+    description: Withdrawal successfully claimed
+
+  - name: WithdrawalFailed
     alert: high
-    description: Data availability challenged
+    description: Withdrawal claim reverted
+    threshold:
+      critical: "> 1"
+    response: "Check proof validity and bridge state"
 
-  - name: MinChallengeStakeUpdated
-    alert: medium
-    description: Admin configuration changed
+  - name: EmergencyWithdrawETH
+    alert: critical
+    description: Emergency ETH withdrawal by admin
+    response: "Verify authorized admin action"
 
-  - name: VerifiersUpdated
-    alert: high
-    description: Verifier addresses changed
-    response: "Verify new verifiers are legitimate"
+  - name: EmergencyWithdrawERC20
+    alert: critical
+    description: Emergency ERC20 withdrawal by admin
 ```
 
-      warning: "> 10% of swaps refunded"
+### ArbitrumBridgeAdapter
 
-````
+```yaml
+events:
+  - name: RetryableTicketCreated
+    alert: low
+    description: L1→L2 retryable ticket
+
+  - name: OutboxProofVerified
+    alert: low
+    description: L2→L1 Outbox.isSpent verification passed
+
+  - name: RetryableTicketRedeemed
+    alert: low
+    description: Retryable ticket auto-redeemed on L2
+```
+
+### zkSyncBridgeAdapter
+
+```yaml
+events:
+  - name: ZKProofVerified
+    alert: low
+    description: zkSync ZK proof verified for withdrawal
+
+  - name: BridgeConfigured
+    alert: high
+    description: Bridge configuration changed (Diamond Proxy addresses)
+    response: "Verify configuration matches zkSync Diamond Proxy"
+```
+
+### ScrollBridgeAdapter
+
+```yaml
+events:
+  - name: ScrollMessageSent
+    alert: low
+    description: Message sent via L1ScrollMessenger
+
+  - name: ScrollConfigured
+    alert: high
+    description: Scroll bridge configuration updated
+    response: "Verify all 4 addresses (messenger, gateway, queue, rollup)"
+```
+
+### LineaBridgeAdapter
+
+```yaml
+events:
+  - name: LineaMessageSent
+    alert: low
+    description: Message sent via LineaMessageService
+
+  - name: LineaConfigured
+    alert: high
+    description: Linea bridge configuration updated
+    response: "Verify messageService and tokenBridge addresses"
+```
+
+---
+
+## Cross-Chain Messaging Monitoring
+
+### LayerZeroAdapter
+
+```yaml
+events:
+  - name: MessageSent
+    alert: low
+    description: LayerZero message dispatched
+
+  - name: MessageReceived
+    alert: low
+    description: LayerZero message received via lzReceive
+
+  - name: PeerSet
+    alert: high
+    description: LayerZero peer address changed
+    response: "Verify peer address is authorized"
+
+  - name: EndpointConfigured
+    alert: high
+    description: LZ Endpoint configuration changed
+    response: "Verify endpoint address and confirmation settings"
+```
+
+### HyperlaneAdapter
+
+```yaml
+events:
+  - name: MessageDispatched
+    alert: low
+    description: Hyperlane message dispatched via Mailbox
+
+  - name: MessageHandled
+    alert: low
+    description: Hyperlane message received and handled
+
+  - name: DomainConfigured
+    alert: high
+    description: Hyperlane domain router/ISM changed
+    response: "Verify router and ISM addresses are correct"
+```
+
+### CrossChainNullifierSync
+
+```yaml
+events:
+  - name: NullifierSynced
+    alert: low
+    description: Nullifier synchronized cross-chain
+
+  - name: SyncSequenceGap
+    alert: high
+    description: Gap detected in syncSequence mapping
+    threshold:
+      critical: "> 1"
+    response: "Investigate potential replay or skipped sync"
+
+  - name: DuplicateSyncAttempt
+    alert: high
+    description: Replay attempt detected via syncSequence
+```
+
+---
+
+## Security & Emergency Monitoring
+
+### ProtocolEmergencyCoordinator
+
+```yaml
+events:
+  - name: EmergencyDeclared
+    alert: critical
+    description: Protocol-wide emergency declared
+    response: "Execute incident response runbook immediately"
+
+  - name: RoleSeparationConfirmed
+    alert: high
+    description: "confirmRoleSeparation(guardian, responder, recovery) called"
+    response: "Verify 3 addresses are distinct multisigs"
+
+  - name: EmergencyResolved
+    alert: high
+    description: Emergency resolved, review impact
+```
+
+### CrossChainEmergencyRelay
+
+```yaml
+events:
+  - name: EmergencyBroadcast
+    alert: critical
+    description: Emergency propagated cross-chain
+
+  - name: InvalidSourceChain
+    alert: critical
+    description: Emergency relay from unauthorized chain (sourceChainId not in active chains)
+    response: "Potential attack — investigate immediately"
+
+  - name: ChainActivated
+    alert: high
+    description: New chain added to active chain set
+
+  - name: ChainDeactivated
+    alert: high
+    description: Chain removed from active set
+```
+
+### ExperimentalFeatureRegistry
+
+```yaml
+events:
+  - name: FeatureRegistered
+    alert: medium
+    description: New experimental feature registered
+
+  - name: FeatureGraduated
+    alert: medium
+    description: Feature graduated to production
+
+  - name: FeatureRevoked
+    alert: high
+    description: Feature revoked — check dependent contracts
+```
 
 ---
 
@@ -199,7 +414,7 @@ metrics:
     description: Total protocol gas usage per day
     threshold:
       warning: "> 100 ETH equivalent"
-````
+```
 
 ### Protocol Health
 
@@ -358,14 +573,18 @@ telegram:
 
 ## Runbook References
 
-| Alert                   | Runbook                                                                                        |
-| ----------------------- | ---------------------------------------------------------------------------------------------- |
-| EmergencyPaused         | [INCIDENT_RESPONSE_RUNBOOK.md#emergency-pause](./INCIDENT_RESPONSE_RUNBOOK.md#emergency-pause) |
-| ProofVerificationFailed | [INCIDENT_RESPONSE_RUNBOOK.md#failed-proofs](./INCIDENT_RESPONSE_RUNBOOK.md#failed-proofs)     |
-| LargeValueTransfer      | [INCIDENT_RESPONSE_RUNBOOK.md#large-transfers](./INCIDENT_RESPONSE_RUNBOOK.md#large-transfers) |
-| IndexingLag             | [INCIDENT_RESPONSE_RUNBOOK.md#subgraph-issues](./INCIDENT_RESPONSE_RUNBOOK.md#subgraph-issues) |
+| Alert                   | Runbook                                                                                                    |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------- |
+| EmergencyPaused         | [INCIDENT_RESPONSE_RUNBOOK.md#emergency-pause](./INCIDENT_RESPONSE_RUNBOOK.md#emergency-pause)             |
+| EmergencyDeclared       | [INCIDENT_RESPONSE_RUNBOOK.md#emergency-pause](./INCIDENT_RESPONSE_RUNBOOK.md#emergency-pause)             |
+| ProofVerificationFailed | [INCIDENT_RESPONSE_RUNBOOK.md#failed-proofs](./INCIDENT_RESPONSE_RUNBOOK.md#failed-proofs)                 |
+| LargeValueTransfer      | [INCIDENT_RESPONSE_RUNBOOK.md#large-transfers](./INCIDENT_RESPONSE_RUNBOOK.md#large-transfers)             |
+| IndexingLag             | [INCIDENT_RESPONSE_RUNBOOK.md#subgraph-issues](./INCIDENT_RESPONSE_RUNBOOK.md#subgraph-issues)             |
+| InvalidSourceChain      | [INCIDENT_RESPONSE_RUNBOOK.md#cross-chain-emergency](./INCIDENT_RESPONSE_RUNBOOK.md#cross-chain-emergency) |
+| BatchFailed             | [INCIDENT_RESPONSE_RUNBOOK.md#batch-failure](./INCIDENT_RESPONSE_RUNBOOK.md#batch-failure)                 |
+| WithdrawalFailed        | [INCIDENT_RESPONSE_RUNBOOK.md#bridge-failure](./INCIDENT_RESPONSE_RUNBOOK.md#bridge-failure)               |
 
 ---
 
-_Monitoring configuration version: 1.0.0_  
-_Last updated: January 2026_
+_Monitoring configuration version: 2.0.0_  
+_Last updated: March 2026_

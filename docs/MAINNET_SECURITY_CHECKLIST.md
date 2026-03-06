@@ -21,7 +21,7 @@
 
 #### ✅ Completed Checks
 
-- [x] All tests pass: `forge test --summary` (4,426 tests / 189 suites)
+- [x] All tests pass: `forge test --summary` (5,760+ tests / 282 suites)
 - [x] Fuzz testing: 300+ fuzz tests with high iterations
 - [x] Invariant testing: 8 invariant tests
 - [x] Attack simulation: 44 attack vectors tested
@@ -29,31 +29,39 @@
 - [x] Halmos symbolic execution: 12 symbolic checks (CrossChainProofHub + ZKBoundStateLocks)
 - [x] Slither analysis: No critical/high findings (all 9 findings addressed)
 - [x] Code coverage: >80% on core contracts
-- [x] Bridge adapter tests: 200 tests across 5 adapters
+- [x] Bridge adapter tests: 300+ tests across 9 adapters
 - [x] Privacy contract tests: 183 tests across 3 contracts
-- [x] Certora formal specs: 54 spec files with invariants
+- [x] Certora formal specs: 62+ spec files with invariants
 - [x] K Framework: 5 algebraic specifications for protocol invariants
 - [x] TLA+ model checking: 4 safety properties (TVL conservation, no double-spend)
 - [x] CLSAG ring signature verifier: 18 test vectors (valid/invalid/gas benchmarks)
 - [x] Storage layout: 8 base/upgradeable contract pairs verified compatible
 - [x] Cross-chain fork tests: 8 integration tests (chain ID isolation, replay protection)
-- [x] Gambit mutation testing: 8 contracts covered
+- [x] Gambit mutation testing: 80 contracts covered
 
 #### ✅ Internal Security Audit (February–March 2026)
 
-- [x] **65 vulnerabilities fixed** - see [SECURITY_AUDIT_REPORT.md](./SECURITY_AUDIT_REPORT.md)
+- [x] **79 vulnerabilities fixed** - see [SECURITY_AUDIT_REPORT.md](./SECURITY_AUDIT_REPORT.md)
 - [x] Phase 1: 26 vulnerabilities (5 Critical, 6 High, 15 Medium)
 - [x] Phase 2: 18 vulnerabilities (2 Critical, 4 High, 6 Medium, 6 Low)
 - [x] Phase 3 (Session 8): 21 vulnerabilities (4 Critical, 6 High, 7 Medium, 4 Low)
+- [x] Phase 4 (Session 9): 14 vulnerabilities (3 Critical, 5 High, 4 Medium, 2 Low)
 - [x] ReentrancyGuard added to governance and security contracts
 - [x] Deprecated .transfer() replaced with .call{}
 - [x] Zero-address validation added to admin setters
 - [x] Missing events added for config changes
+- [x] Signature malleability protection on all ECDSA operations
+- [x] Value-based rate limiting (`_checkRateLimit(count, value)`) in CrossChainProofHubV3
+- [x] Source chain validation in CrossChainEmergencyRelay
+- [x] Replay protection via `syncSequence` in CrossChainNullifierSync
+- [x] Overpayment refund in DecentralizedRelayerRegistry
+- [x] Nullifier recovery on batch failure in BatchAccumulator
+- [x] `Outbox.isSpent(index)` verification in ArbitrumBridgeAdapter
 - [x] Batch verifier bypass in ShieldedPool eliminated (require non-zero address)
 - [x] Historical Merkle root eviction on ring buffer overwrite
 - [x] MultiBridgeRouter ETH forwarding and emergency withdrawal
 - [x] NullifierRegistryV3 source Merkle root validation
-- [x] All 7 bridge adapters have ERC20 emergency withdrawal
+- [x] All 9 bridge adapters have ERC20 emergency withdrawal
 
 #### 🔄 Pending Verification
 
@@ -68,8 +76,8 @@
 
 ```bash
 # After deployment, call these to enforce role separation:
-ZKBoundStateLocks.confirmRoleSeparation()
-CrossChainProofHubV3.confirmRoleSeparation()
+ZKBoundStateLocks.confirmRoleSeparation(guardian, responder, recovery)
+CrossChainProofHubV3.confirmRoleSeparation(guardian, responder, recovery)
 ```
 
 | Role               | Required Setup                                     | Status     |
@@ -244,5 +252,5 @@ forge verify-check <IMPLEMENTATION_ADDRESS> \
 
 ---
 
-_Security checklist version: 1.1.0_  
-_Last updated: February 2026_
+_Security checklist version: 2.0.0_  
+_Last updated: March 2026_

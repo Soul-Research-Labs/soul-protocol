@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import {IBridgeAdapter} from "./IBridgeAdapter.sol";
 
 /**
  * @title HyperlaneAdapter
@@ -33,7 +34,12 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
  * │  - AggregationISM: Combine multiple ISMs                               │
  * └─────────────────────────────────────────────────────────────────────────┘
  */
-contract HyperlaneAdapter is AccessControl, ReentrancyGuard, Pausable {
+contract HyperlaneAdapter is
+    IBridgeAdapter,
+    AccessControl,
+    ReentrancyGuard,
+    Pausable
+{
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
@@ -499,6 +505,17 @@ contract HyperlaneAdapter is AccessControl, ReentrancyGuard, Pausable {
         return
             status == MessageStatus.DELIVERED ||
             status == MessageStatus.PROCESSED;
+    }
+
+    /**
+     * @notice IBridgeAdapter-compatible fee estimation
+     */
+    function estimateFee(
+        address /*targetAddress*/,
+        bytes calldata /*payload*/
+    ) external pure returns (uint256 nativeFee) {
+        // Use dispatch() with explicit dstDomain for accurate quotes
+        revert("Use dispatch() with explicit dstDomain");
     }
 
     /*//////////////////////////////////////////////////////////////

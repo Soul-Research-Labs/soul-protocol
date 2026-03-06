@@ -25,7 +25,7 @@ This document describes the formal verification setup for the ZASEON ZASEON usin
 
 All verification jobs have been successfully submitted to the Certora cloud.
 
-> **Status (February 2026):** 64 CVL specs across 62 configurations. Results updated as Certora Prover returns. Local Foundry symbolic tests (Halmos) and fuzz tests (10,000+ runs) complement online verification. See `certora/specs/` for full CVL source. Foundry: 5,600+ tests passing (220+ suites), SDK: 569 tests passing.
+> **Status (March 2026):** 69 CVL specs across 69 configurations. Results updated as Certora Prover returns. Local Foundry symbolic tests (Halmos) and fuzz tests (10,000+ runs) complement online verification. See `certora/specs/` for full CVL source. Foundry: 5,760+ tests passing (282 suites), SDK: 816 tests passing.
 
 ### Core Contracts
 
@@ -370,7 +370,7 @@ certoraRun certora/conf/verify_security.conf
 1. Monitor Certora cloud for verification results
 2. Address any counterexamples found
 3. Add additional properties as needed
-4. ~~Integrate verification into CI/CD pipeline~~ ✅ Done — CI runs Certora matrix (56 specs), Halmos, Echidna, K Framework, TLA+
+4. ~~Integrate verification into CI/CD pipeline~~ ✅ Done — CI runs Certora matrix (56 specs), Halmos, Echidna, K Framework, TLA+ via `.github/workflows/certora.yml`
 5. Extend coverage to new bridge adapters
 6. ~~Add Halmos symbolic execution tests~~ ✅ Done — 12 symbolic checks (CrossChainProofHub + ZKBoundStateLocks)
 7. ~~Implement Kontrol K-framework proofs~~ ✅ Done — K specs in `specs/k/`, CI job runs `kompile`
@@ -384,5 +384,5 @@ certoraRun certora/conf/verify_security.conf
 | TLA+                   | `specs/tla/MC_ZaseonBridge.tla`                                                           | Model checking: TVL conservation, no double-spend, proof-required withdrawal              |
 | K Framework            | `specs/k/*.k`                                                                             | Algebraic specifications of protocol invariants                                           |
 | Storage Layout         | `scripts/check_storage_layout.sh`                                                         | 8 base/upgradeable contract pairs verified for slot compatibility                         |
-| Gambit                 | `scripts/run_gambit.sh`                                                                   | Mutation testing across 8 security-critical contracts                                     |
+| Gambit                 | `scripts/run_gambit.sh`                                                                   | Mutation testing across 80 security-critical contracts                                    |
 | Ring Signature Certora | `certora/specs/RingSignatureVerifier.spec`                                                | Min/max ring size, zero message reverts, determinism, statelessness                       |

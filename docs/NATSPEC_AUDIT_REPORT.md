@@ -287,4 +287,4 @@ Functions like `setL2Target`, `configureCCTP`, `setMessenger`, `setProtocolFeeBp
 1. **Priority 1**: Add `@notice` to the 28 functions completely lacking it (especially `pause`/`unpause` and view functions).
 2. **Priority 2**: Add `@param` tags to admin setters and configuration functions — these are security-critical and need clear parameter documentation.
 3. **Priority 3**: Add `@return` tags to all view/getter functions to improve SDK/tooling integration.
-4. **Priority 4**: Consider adding `@dev` notes on all functions that involve cross-chain messaging or ZK proof verification, per the project's [NATSPEC_STYLE_GUIDE.md](docs/NATSPEC_STYLE_GUIDE.md).
+4. **Priority 4**: Consider adding `@dev` notes on all functions that involve cross-chain messaging or ZK proof verification, per the project's [NATSPEC_STYLE_GUIDE.md](NATSPEC_STYLE_GUIDE.md).

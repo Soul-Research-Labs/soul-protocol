@@ -14,6 +14,9 @@ const POLYGONSCAN_API_KEY = process.env.POLYGONSCAN_API_KEY || "";
 const ARBISCAN_API_KEY = process.env.ARBISCAN_API_KEY || "";
 const BASESCAN_API_KEY = process.env.BASESCAN_API_KEY || "";
 const OPTIMISM_API_KEY = process.env.OPTIMISM_API_KEY || "";
+const SCROLLSCAN_API_KEY = process.env.SCROLLSCAN_API_KEY || "";
+const LINEASCAN_API_KEY = process.env.LINEASCAN_API_KEY || "";
+const ZKSYNC_API_KEY = process.env.ZKSYNC_API_KEY || "";
 
 export default defineConfig({
   plugins: [hardhatMocha, hardhatViem],
@@ -277,6 +280,75 @@ export default defineConfig({
       accounts: [PRIVATE_KEY],
       chainId: 2442,
     },
+  },
+
+  etherscan: {
+    apiKey: {
+      mainnet: ETHERSCAN_API_KEY,
+      sepolia: ETHERSCAN_API_KEY,
+      arbitrumOne: ARBISCAN_API_KEY,
+      arbitrumSepolia: ARBISCAN_API_KEY,
+      optimisticEthereum: OPTIMISM_API_KEY,
+      optimisticSepolia: OPTIMISM_API_KEY,
+      base: BASESCAN_API_KEY,
+      baseSepolia: BASESCAN_API_KEY,
+      polygon: POLYGONSCAN_API_KEY,
+      polygonAmoy: POLYGONSCAN_API_KEY,
+      scroll: SCROLLSCAN_API_KEY,
+      scrollSepolia: SCROLLSCAN_API_KEY,
+      linea: LINEASCAN_API_KEY,
+      lineaSepolia: LINEASCAN_API_KEY,
+    },
+    customChains: [
+      {
+        network: "zkSync",
+        chainId: 324,
+        urls: {
+          apiURL: "https://block-explorer-api.mainnet.zksync.io/api",
+          browserURL: "https://explorer.zksync.io",
+        },
+      },
+      {
+        network: "zkSyncSepolia",
+        chainId: 300,
+        urls: {
+          apiURL: "https://block-explorer-api.sepolia.zksync.dev/api",
+          browserURL: "https://sepolia.explorer.zksync.io",
+        },
+      },
+      {
+        network: "scrollSepolia",
+        chainId: 534351,
+        urls: {
+          apiURL: "https://api-sepolia.scrollscan.com/api",
+          browserURL: "https://sepolia.scrollscan.com",
+        },
+      },
+      {
+        network: "scroll",
+        chainId: 534352,
+        urls: {
+          apiURL: "https://api.scrollscan.com/api",
+          browserURL: "https://scrollscan.com",
+        },
+      },
+      {
+        network: "lineaSepolia",
+        chainId: 59141,
+        urls: {
+          apiURL: "https://api-sepolia.lineascan.build/api",
+          browserURL: "https://sepolia.lineascan.build",
+        },
+      },
+      {
+        network: "linea",
+        chainId: 59144,
+        urls: {
+          apiURL: "https://api.lineascan.build/api",
+          browserURL: "https://lineascan.build",
+        },
+      },
+    ],
   },
 
   test: {

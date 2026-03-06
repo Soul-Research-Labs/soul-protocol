@@ -51,7 +51,8 @@ contract UnifiedNullifierManagerTest is Test {
 
     address public admin = address(this);
 
-    bytes32 public constant RELAY_ROLE = keccak256("RELAY_ROLE");
+    bytes32 public constant BRIDGE_ROLE =
+        0x52ba824bfabc2bcfcdf7f0edbb486ebb05e1836c90e78047efeb949990f72e5f;
     bytes32 public constant OPERATOR_ROLE =
         0x97667070c54ef182b0f5858b034beac1b6f3089aa2d3188bb1e8929f4fa9b929;
     bytes32 public constant UPGRADER_ROLE =
@@ -76,7 +77,7 @@ contract UnifiedNullifierManagerTest is Test {
     function test_initialize() public view {
         assertTrue(manager.hasRole(manager.DEFAULT_ADMIN_ROLE(), admin));
         assertTrue(manager.hasRole(OPERATOR_ROLE, admin));
-        assertTrue(manager.hasRole(RELAY_ROLE, admin));
+        assertTrue(manager.hasRole(BRIDGE_ROLE, admin));
         assertTrue(manager.hasRole(UPGRADER_ROLE, admin));
     }
 
@@ -135,7 +136,7 @@ contract UnifiedNullifierManagerTest is Test {
             .getChainDomain(newChainId);
         assertEq(domain.chainId, newChainId);
         assertTrue(domain.isActive);
-        assertEq(domain.relayAdapter, address(0xADA));
+        assertEq(domain.bridgeAdapter, address(0xADA));
         assertEq(domain.domainTag, tag);
     }
 
@@ -195,7 +196,7 @@ contract UnifiedNullifierManagerTest is Test {
         );
 
         // Verify zaseon binding
-        assertEq(manager.getZaseonBinding(nullifier), zaseon);
+        assertEq(manager.getSoulBinding(nullifier), zaseon);
         assertEq(manager.totalNullifiers(), 1);
     }
 
@@ -246,7 +247,7 @@ contract UnifiedNullifierManagerTest is Test {
 
         UnifiedNullifierManager.ChainDomain memory domain = manager
             .getChainDomain(42_161);
-        bytes32 expected = manager.deriveZaseonBinding(
+        bytes32 expected = manager.deriveSoulBinding(
             nullifier,
             domain.domainTag
         );
@@ -507,21 +508,21 @@ contract UnifiedNullifierManagerTest is Test {
     // DERIVATION FUNCTIONS
     // =========================================================================
 
-    function test_deriveZaseonBinding_deterministic() public view {
+    function test_deriveSoulBinding_deterministic() public view {
         bytes32 n = keccak256("test");
         bytes32 d = keccak256("domain");
-        bytes32 s1 = manager.deriveZaseonBinding(n, d);
-        bytes32 s2 = manager.deriveZaseonBinding(n, d);
+        bytes32 s1 = manager.deriveSoulBinding(n, d);
+        bytes32 s2 = manager.deriveSoulBinding(n, d);
         assertEq(s1, s2);
     }
 
-    function test_deriveZaseonBinding_domainSeparation() public view {
+    function test_deriveSoulBinding_domainSeparation() public view {
         bytes32 n = keccak256("test");
         bytes32 d1 = keccak256("ARBITRUM");
         bytes32 d2 = keccak256("OPTIMISM");
 
-        bytes32 s1 = manager.deriveZaseonBinding(n, d1);
-        bytes32 s2 = manager.deriveZaseonBinding(n, d2);
+        bytes32 s1 = manager.deriveSoulBinding(n, d1);
+        bytes32 s2 = manager.deriveSoulBinding(n, d2);
         assertNotEq(s1, s2);
     }
 
@@ -567,7 +568,7 @@ contract UnifiedNullifierManagerTest is Test {
             0
         );
 
-        bytes32 zaseon = manager.getZaseonBinding(n1);
+        bytes32 zaseon = manager.getSoulBinding(n1);
 
         // Use createCrossDomainBinding to add more entries to the same zaseon binding
         // The second nullifier would need same domain tag to get same zaseon binding
@@ -588,7 +589,7 @@ contract UnifiedNullifierManagerTest is Test {
             UnifiedNullifierManager.NullifierType.STANDARD,
             0
         );
-        bytes32 zaseon = manager.getZaseonBinding(n);
+        bytes32 zaseon = manager.getSoulBinding(n);
 
         (bytes32[] memory nullifiers, uint256 total) = manager
             .getSourceNullifiersPaginated(zaseon, 100, 10);

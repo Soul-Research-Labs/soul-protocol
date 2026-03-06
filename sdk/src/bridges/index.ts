@@ -2,7 +2,7 @@
  * Zaseon SDK - Bridge Adapters Module
  *
  * Provides TypeScript interfaces and implementations for supported bridge adapters.
- * Supported chains: Ethereum, Arbitrum, Optimism, Base, Aztec.
+ * Supported chains: Ethereum, Arbitrum, Optimism, Base, Aztec, zkSync, Scroll, Linea.
  */
 
 export * as ArbitrumBridge from "./arbitrum";
@@ -10,6 +10,9 @@ export * as EthereumBridge from "./ethereum";
 export * from "./optimism";
 export * as BaseBridge from "./base";
 export * as AztecBridge from "./aztec";
+export * as ZkSyncBridge from "./zksync";
+export * as ScrollBridge from "./scroll";
+export * as LineaBridge from "./linea";
 
 import {
   type PublicClient,
@@ -27,6 +30,9 @@ import { OPTIMISM_BRIDGE_ABI } from "./optimism";
 import { ETHEREUM_L1_BRIDGE_ABI } from "./ethereum";
 import { AZTEC_BRIDGE_ADAPTER_ABI } from "./aztec";
 import { BASE_BRIDGE_ADAPTER_ABI } from "./base";
+import { ZKSYNC_BRIDGE_ADAPTER_ABI } from "./zksync";
+import { SCROLL_BRIDGE_ADAPTER_ABI } from "./scroll";
+import { LINEA_BRIDGE_ADAPTER_ABI } from "./linea";
 
 /** Maps chain names to their chain-specific bridge ABIs */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -37,6 +43,10 @@ const CHAIN_ABI_MAP: Record<string, readonly any[]> = {
   ethereum: ETHEREUM_L1_BRIDGE_ABI,
   base: BASE_BRIDGE_ADAPTER_ABI,
   aztec: AZTEC_BRIDGE_ADAPTER_ABI,
+  zksync: ZKSYNC_BRIDGE_ADAPTER_ABI,
+  "zksync-era": ZKSYNC_BRIDGE_ADAPTER_ABI,
+  scroll: SCROLL_BRIDGE_ADAPTER_ABI,
+  linea: LINEA_BRIDGE_ADAPTER_ABI,
 };
 
 // ============================================
@@ -141,7 +151,10 @@ export type SupportedChain =
   | "ethereum"
   | "optimism"
   | "base"
-  | "aztec";
+  | "aztec"
+  | "zksync"
+  | "scroll"
+  | "linea";
 
 // ============================================
 // Bridge Factory
@@ -193,6 +206,30 @@ const CHAIN_CONFIGS: Record<SupportedChain, BridgeAdapterConfig> = {
     chainId: 4100, // ZASEON internal virtual chain ID
     nativeToken: "ETH",
     finality: 15, // L1 finality for posted rollup proofs
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  zksync: {
+    name: "zkSync Era",
+    chainId: 324,
+    nativeToken: "ETH",
+    finality: 60, // ~1 hour for proof generation + L1 finality
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  scroll: {
+    name: "Scroll",
+    chainId: 534352,
+    nativeToken: "ETH",
+    finality: 240, // ~4 hours for ZK proof generation
+    maxAmount: 1_000_000_000_000_000_000_000_000n,
+    minAmount: 1_000_000_000_000_000n,
+  },
+  linea: {
+    name: "Linea",
+    chainId: 59144,
+    nativeToken: "ETH",
+    finality: 480, // ~8 hours for batch proof finalization
     maxAmount: 1_000_000_000_000_000_000_000_000n,
     minAmount: 1_000_000_000_000_000n,
   },

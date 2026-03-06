@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import {IBridgeAdapter} from "./IBridgeAdapter.sol";
 
 /**
  * @title LineaBridgeAdapter
@@ -34,7 +35,12 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
  * │  - L1MessageService.sendMessage() + claimMessage()                     │
  * └─────────────────────────────────────────────────────────────────────────┘
  */
-contract LineaBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
+contract LineaBridgeAdapter is
+    IBridgeAdapter,
+    AccessControl,
+    ReentrancyGuard,
+    Pausable
+{
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
@@ -541,5 +547,34 @@ contract LineaBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
             }
         }
         return false;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                     IBridgeAdapter COMPATIBILITY
+    //////////////////////////////////////////////////////////////*/
+
+    /// @inheritdoc IBridgeAdapter
+    function bridgeMessage(
+        address targetAddress,
+        bytes calldata payload,
+        address /*refundAddress*/
+    ) external payable nonReentrant whenNotPaused returns (bytes32 messageId) {
+        // Use deposit() for full Linea-specific control
+        revert("Use deposit() with explicit parameters");
+    }
+
+    /// @inheritdoc IBridgeAdapter
+    function estimateFee(
+        address /*targetAddress*/,
+        bytes calldata /*payload*/
+    ) external pure returns (uint256 nativeFee) {
+        // Linea fees depend on L1MessageService.minimumFeeInWei()
+        revert("Use Linea-specific fee estimation");
+    }
+
+    /// @inheritdoc IBridgeAdapter
+    function isMessageVerified(bytes32 messageId) external view returns (bool) {
+        LineaWithdrawal storage w = withdrawals[messageId];
+        return w.status == TransferStatus.CLAIMED;
     }
 }

@@ -149,8 +149,18 @@ cast send $CONTRACT_ADDRESS "pause()" \
 # For multiple contracts, pause in order:
 # 1. CrossChainProofHubV3
 # 2. ZaseonAtomicSwapV2
-# 3. All bridge adapters
-# 4. ZKBoundStateLocks
+# 3. All bridge adapters (9 total):
+#    - ArbitrumBridgeAdapter
+#    - OptimismBridgeAdapter
+#    - BaseBridgeAdapter
+#    - zkSyncBridgeAdapter
+#    - ScrollBridgeAdapter
+#    - LineaBridgeAdapter
+#    - LayerZeroAdapter
+#    - HyperlaneAdapter
+#    - (+ 4 other adapters)
+# 4. CrossChainEmergencyRelay (broadcast pause to L2s)
+# 5. ZKBoundStateLocks
 ```
 
 **Verification**:
@@ -309,6 +319,51 @@ cast call $PROXY_ADDRESS "getImplementation()(address)" \
    - File law enforcement report
    - Coordinate with on-chain investigators
 
+### Playbook 7: Cross-Chain Emergency Propagation
+
+**Trigger**: Critical vulnerability requiring immediate pause across all L2 networks
+
+**Authority**: Guardian role + ProtocolEmergencyCoordinator
+
+**Procedure**:
+
+```bash
+# 1. Declare emergency on L1
+cast send $EMERGENCY_COORDINATOR "declareEmergency(uint8,string)" \
+  1 "Critical vulnerability — pausing all chains" \
+  --rpc-url $L1_RPC_URL \
+  --private-key $GUARDIAN_PRIVATE_KEY
+
+# 2. Broadcast to all active L2 chains via CrossChainEmergencyRelay
+cast send $CROSS_CHAIN_EMERGENCY_RELAY "broadcastEmergency()" \
+  --rpc-url $L1_RPC_URL \
+  --private-key $GUARDIAN_PRIVATE_KEY \
+  --value 1ether  # covers gas for all L2 messages
+
+# 3. Verify propagation on each L2
+for CHAIN_RPC in $ARBITRUM_RPC $OPTIMISM_RPC $BASE_RPC $ZKSYNC_RPC $SCROLL_RPC $LINEA_RPC; do
+  cast call $L2_RELAY_ADDRESS "isPaused()(bool)" --rpc-url $CHAIN_RPC
+done
+```
+
+**Validation**:
+
+- Verify `sourceChainId` matches L1 for all relay messages
+- Confirm all 7 L2 adapters received the emergency signal
+- Monitor for `InvalidSourceChain` events (indicates attack attempt)
+
+**Recovery**:
+
+```bash
+# 1. Resolve emergency on L1
+cast send $EMERGENCY_COORDINATOR "resolveEmergency()" \
+  --rpc-url $L1_RPC_URL \
+  --private-key $GUARDIAN_PRIVATE_KEY
+
+# 2. Un-pause L2s individually after verification
+# Follow Re-enablement Order in Recovery Procedures
+```
+
 ---
 
 ## Recovery Procedures
@@ -328,8 +383,17 @@ Re-enablement Order:
 1. ZKBoundStateLocks (lowest risk)
 2. NullifierRegistry
 3. CrossChainProofHubV3
-4. Bridge Adapters (one at a time)
-5. ZaseonAtomicSwapV2 (highest risk, last)
+4. Bridge Adapters (one at a time, verify each):
+   a. ArbitrumBridgeAdapter
+   b. OptimismBridgeAdapter
+   c. BaseBridgeAdapter
+   d. zkSyncBridgeAdapter
+   e. ScrollBridgeAdapter
+   f. LineaBridgeAdapter
+   g. LayerZeroAdapter
+   h. HyperlaneAdapter
+5. CrossChainEmergencyRelay
+6. ZaseonAtomicSwapV2 (highest risk, last)
 ```
 
 ### Service Restoration Verification
@@ -446,9 +510,12 @@ npm run test:crosschain:smoke
 | Arbitrum | [ADDRESS] | 3/5              |
 | Optimism | [ADDRESS] | 3/5              |
 | Base     | [ADDRESS] | 3/5              |
+| zkSync   | [ADDRESS] | 3/5              |
+| Scroll   | [ADDRESS] | 3/5              |
+| Linea    | [ADDRESS] | 3/5              |
 
 ---
 
-_Last Updated: January 2026_
-_Version: 1.0.0_
+_Last Updated: March 2026_
+_Version: 2.0.0_
 _Review Schedule: Quarterly_

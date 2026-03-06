@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import {IBridgeAdapter} from "./IBridgeAdapter.sol";
 
 /**
  * @title ScrollBridgeAdapter
@@ -35,7 +36,12 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
  * │  - L1ScrollMessenger for L2→L1 claim with Merkle proof                 │
  * └─────────────────────────────────────────────────────────────────────────┘
  */
-contract ScrollBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
+contract ScrollBridgeAdapter is
+    IBridgeAdapter,
+    AccessControl,
+    ReentrancyGuard,
+    Pausable
+{
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
@@ -540,5 +546,34 @@ contract ScrollBridgeAdapter is AccessControl, ReentrancyGuard, Pausable {
             return abi.decode(result, (bool));
         }
         return false;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                     IBridgeAdapter COMPATIBILITY
+    //////////////////////////////////////////////////////////////*/
+
+    /// @inheritdoc IBridgeAdapter
+    function bridgeMessage(
+        address targetAddress,
+        bytes calldata payload,
+        address /*refundAddress*/
+    ) external payable nonReentrant whenNotPaused returns (bytes32 messageId) {
+        // Use deposit() for full Scroll-specific control
+        revert("Use deposit() with explicit parameters");
+    }
+
+    /// @inheritdoc IBridgeAdapter
+    function estimateFee(
+        address /*targetAddress*/,
+        bytes calldata /*payload*/
+    ) external pure returns (uint256 nativeFee) {
+        // Scroll fees depend on L1 message queue gas estimation
+        revert("Use Scroll-specific fee estimation");
+    }
+
+    /// @inheritdoc IBridgeAdapter
+    function isMessageVerified(bytes32 messageId) external view returns (bool) {
+        ScrollWithdrawal storage w = withdrawals[messageId];
+        return w.status == TransferStatus.CLAIMED;
     }
 }

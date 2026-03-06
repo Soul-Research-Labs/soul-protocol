@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {IDecentralizedRelayerRegistry} from "../interfaces/IDecentralizedRelayerRegistry.sol";
 
 /**
  * @title DecentralizedRelayerRegistry
@@ -41,7 +42,11 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
  * - Rewards distributed via addReward(), claimed separately to prevent
  *   griefing through failed transfers
  */
-contract DecentralizedRelayerRegistry is AccessControl, ReentrancyGuard {
+contract DecentralizedRelayerRegistry is
+    IDecentralizedRelayerRegistry,
+    AccessControl,
+    ReentrancyGuard
+{
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
@@ -65,22 +70,6 @@ contract DecentralizedRelayerRegistry is AccessControl, ReentrancyGuard {
     uint256 public constant UNBONDING_PERIOD = 7 days;
 
     /*//////////////////////////////////////////////////////////////
-                                STRUCTS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice On-chain state for each registered relayer
-    /// @param stake Current staked amount (decreases on slash, increases on deposit)
-    /// @param rewards Accumulated unclaimed rewards
-    /// @param unlockTime Timestamp when withdrawal is allowed (0 = active, >0 = unbonding)
-    /// @param isRegistered Whether the relayer is registered in the system
-    struct RelayerInfo {
-        uint256 stake;
-        uint256 rewards;
-        uint256 unlockTime; // 0 if active, > 0 if unbonding
-        bool isRegistered;
-    }
-
-    /*//////////////////////////////////////////////////////////////
                                 STORAGE
     //////////////////////////////////////////////////////////////*/
 
@@ -94,73 +83,6 @@ contract DecentralizedRelayerRegistry is AccessControl, ReentrancyGuard {
     /// @notice Index of each relayer in the activeRelayers array
     /// @dev Used for O(1) removal via swap-and-pop pattern
     mapping(address => uint256) private relayerIndex;
-
-    /*//////////////////////////////////////////////////////////////
-                                EVENTS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Emitted when a new relayer registers with their initial stake
-    event RelayerRegistered(address indexed relayer, uint256 stake);
-
-    /// @notice Emitted when a relayer deposits additional stake
-    event StakeAdded(address indexed relayer, uint256 amount);
-
-    /// @notice Emitted when a relayer begins the unbonding process
-    event UnstakeInitiated(address indexed relayer, uint256 unlockTime);
-
-    /// @notice Emitted when a relayer withdraws their stake after unbonding
-    event StakeWithdrawn(address indexed relayer, uint256 amount);
-
-    /// @notice Emitted when a relayer claims accumulated rewards
-    event RewardsClaimed(address indexed relayer, uint256 amount);
-
-    /// @notice Emitted when rewards are added to a relayer's balance
-    event RewardAdded(
-        address indexed relayer,
-        address indexed funder,
-        uint256 amount
-    );
-
-    /// @notice Emitted when a relayer is slashed for misconduct
-    event RelayerSlashed(
-        address indexed relayer,
-        uint256 amount,
-        address recipient
-    );
-
-    /*//////////////////////////////////////////////////////////////
-                                ERRORS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Thrown when registration stake is below MIN_STAKE
-    error InsufficientStake(uint256 provided, uint256 required);
-
-    /// @notice Thrown when address is already registered as a relayer
-    error AlreadyRegistered(address relayer);
-
-    /// @notice Thrown when action requires registration but address is not registered
-    error NotRegistered(address relayer);
-
-    /// @notice Thrown when initiateUnstake is called while already unbonding
-    error AlreadyUnbonding(address relayer, uint256 unlockTime);
-
-    /// @notice Thrown when withdrawStake is called before initiating unstake
-    error NotUnbonding(address relayer);
-
-    /// @notice Thrown when withdrawStake is called before unbonding period ends
-    error StillLocked(uint256 unlockTime, uint256 currentTime);
-
-    /// @notice Thrown when slash amount exceeds relayer's current stake
-    error InsufficientStakeForSlash(uint256 stake, uint256 slashAmount);
-
-    /// @notice Thrown when msg.value doesn't match the amount parameter
-    error ValueMismatch(uint256 msgValue, uint256 amount);
-
-    /// @notice Thrown when there are no rewards to claim
-    error NoRewards(address relayer);
-
-    /// @notice Thrown when an ETH transfer fails
-    error TransferFailed(address recipient, uint256 amount);
 
     /*//////////////////////////////////////////////////////////////
                             CONSTRUCTOR

@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-03-06
+
 ### Security Audit — Session 8 (21 Findings: 4 CRITICAL, 6 HIGH, 7 MEDIUM, 4 LOW)
 
 #### CRITICAL Fixes
@@ -47,9 +49,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CrossChainMessageCodec library for standardized cross-chain message encoding
 - `rescueETH` / `emergencyWithdraw` to contracts with bare `receive()` (DataAvailabilityOracle, CrossChainPrivacyHub, PrivacyPoolIntegration, OperationTimelockModule)
 - Certora conf files for DecentralizedRelayerRegistry and ProtocolHealthAggregator
-- 15 additional Certora specs wired into CI matrix (total: 70)
+- 15 additional Certora specs wired into CI matrix (total: 67)
 - EchidnaCrossChainHarness added to CI echidna step
-- Gambit mutation testing config expanded from 40 to 95 contracts
+- Gambit mutation testing config expanded from 40 to 80 contracts
 - halmos-cheatcodes dependency installed for formal verification tests
 - CHANGELOG.md
 
@@ -76,3 +78,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Deprecated `sdk/src/client/_deprecated/ZaseonPrivacySDK.ts`
 - Deprecated `sdk/src/client/ZaseonClient.ts` (superseded by ZaseonProtocolClient)
+
+[Unreleased]: https://github.com/zaseon/zaseon/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/zaseon/zaseon/releases/tag/v0.9.0

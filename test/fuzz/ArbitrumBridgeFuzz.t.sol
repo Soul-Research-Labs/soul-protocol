@@ -116,15 +116,15 @@ contract ArbitrumBridgeFuzz is Test {
         amount = bound(amount, 1, 100 ether);
         vm.deal(user1, amount);
         vm.prank(user1);
-        bridge.provideExitFunding{value: amount}();
-        assertEq(bridge.exitFundingProviders(user1), amount);
+        bridge.provideLiquidity{value: amount}();
+        assertEq(bridge.liquidityProviders(user1), amount);
     }
 
     function testFuzz_withdrawExitFundingReverts(uint256 amount) public {
         amount = bound(amount, 1, 100 ether);
         vm.prank(user1);
-        vm.expectRevert(ArbitrumBridgeAdapter.InsufficientCapacity.selector);
-        bridge.withdrawExitFunding(amount);
+        vm.expectRevert(ArbitrumBridgeAdapter.InsufficientLiquidity.selector);
+        bridge.withdrawLiquidity(amount);
     }
 
     // --- Fast Exit Toggle ---

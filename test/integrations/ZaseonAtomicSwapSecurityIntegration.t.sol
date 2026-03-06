@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 import "../../contracts/integrations/ZaseonAtomicSwapSecurityIntegration.sol";
 
 contract ZaseonAtomicSwapSecurityIntegrationTest is Test {
-    ZaseonAtomicSwapSecurityIntegration swap;
+    SoulAtomicSwapSecurityIntegration swap;
 
     address admin = makeAddr("admin");
     address operator;
@@ -21,7 +21,7 @@ contract ZaseonAtomicSwapSecurityIntegrationTest is Test {
 
     function setUp() public {
         vm.prank(admin);
-        swap = new ZaseonAtomicSwapSecurityIntegration(admin);
+        swap = new SoulAtomicSwapSecurityIntegration(admin);
 
         OPERATOR_ROLE = swap.OPERATOR_ROLE();
         GUARDIAN_ROLE = swap.GUARDIAN_ROLE();
@@ -66,7 +66,7 @@ contract ZaseonAtomicSwapSecurityIntegrationTest is Test {
         bytes32 commitmentId = swap.commitSwap(commitHash);
         assertTrue(commitmentId != bytes32(0));
 
-        ZaseonAtomicSwapSecurityIntegration.Commitment memory c = swap
+        SoulAtomicSwapSecurityIntegration.Commitment memory c = swap
             .getCommitment(commitmentId);
         assertEq(c.initiator, user1);
         assertEq(c.commitHash, commitHash);
@@ -117,7 +117,7 @@ contract ZaseonAtomicSwapSecurityIntegrationTest is Test {
 
         assertTrue(swapId != bytes32(0));
 
-        ZaseonAtomicSwapSecurityIntegration.ProtectedSwap memory s = swap.getSwap(
+        SoulAtomicSwapSecurityIntegration.ProtectedSwap memory s = swap.getSwap(
             swapId
         );
         assertEq(s.initiator, user1);
@@ -125,7 +125,7 @@ contract ZaseonAtomicSwapSecurityIntegrationTest is Test {
         assertEq(s.amount, amount);
         assertEq(
             uint8(s.status),
-            uint8(ZaseonAtomicSwapSecurityIntegration.SwapStatus.CREATED)
+            uint8(SoulAtomicSwapSecurityIntegration.SwapStatus.CREATED)
         );
     }
 
@@ -137,7 +137,7 @@ contract ZaseonAtomicSwapSecurityIntegrationTest is Test {
         // Don't wait for delay
         vm.prank(user1);
         vm.expectRevert(
-            ZaseonAtomicSwapSecurityIntegration.CommitmentNotReady.selector
+            SoulAtomicSwapSecurityIntegration.CommitmentNotReady.selector
         );
         swap.revealSwap(
             commitmentId,
@@ -160,7 +160,7 @@ contract ZaseonAtomicSwapSecurityIntegrationTest is Test {
 
         vm.prank(user1);
         vm.expectRevert(
-            ZaseonAtomicSwapSecurityIntegration.CommitmentExpired.selector
+            SoulAtomicSwapSecurityIntegration.CommitmentExpired.selector
         );
         swap.revealSwap(
             commitmentId,
@@ -193,12 +193,12 @@ contract ZaseonAtomicSwapSecurityIntegrationTest is Test {
         vm.prank(user2);
         swap.claimSwap(swapId, preimage);
 
-        ZaseonAtomicSwapSecurityIntegration.ProtectedSwap memory s = swap.getSwap(
+        SoulAtomicSwapSecurityIntegration.ProtectedSwap memory s = swap.getSwap(
             swapId
         );
         assertEq(
             uint8(s.status),
-            uint8(ZaseonAtomicSwapSecurityIntegration.SwapStatus.CLAIMED)
+            uint8(SoulAtomicSwapSecurityIntegration.SwapStatus.CLAIMED)
         );
     }
 
@@ -217,7 +217,7 @@ contract ZaseonAtomicSwapSecurityIntegrationTest is Test {
 
         vm.prank(user2);
         vm.expectRevert(
-            ZaseonAtomicSwapSecurityIntegration.InvalidSecret.selector
+            SoulAtomicSwapSecurityIntegration.InvalidSecret.selector
         );
         swap.claimSwap(swapId, bytes32(uint256(0xBEEF))); // wrong preimage
     }
@@ -242,12 +242,12 @@ contract ZaseonAtomicSwapSecurityIntegrationTest is Test {
         vm.prank(user1);
         swap.refundSwap(swapId);
 
-        ZaseonAtomicSwapSecurityIntegration.ProtectedSwap memory s = swap.getSwap(
+        SoulAtomicSwapSecurityIntegration.ProtectedSwap memory s = swap.getSwap(
             swapId
         );
         assertEq(
             uint8(s.status),
-            uint8(ZaseonAtomicSwapSecurityIntegration.SwapStatus.REFUNDED)
+            uint8(SoulAtomicSwapSecurityIntegration.SwapStatus.REFUNDED)
         );
     }
 
@@ -267,7 +267,7 @@ contract ZaseonAtomicSwapSecurityIntegrationTest is Test {
 
         vm.prank(user1);
         vm.expectRevert(
-            ZaseonAtomicSwapSecurityIntegration.SwapNotRefundable.selector
+            SoulAtomicSwapSecurityIntegration.SwapNotRefundable.selector
         );
         swap.refundSwap(swapId);
     }

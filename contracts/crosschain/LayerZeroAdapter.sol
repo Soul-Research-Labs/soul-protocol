@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import {IBridgeAdapter} from "./IBridgeAdapter.sol";
 
 /**
  * @title LayerZeroAdapter
@@ -34,7 +35,12 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
  * │  - Executor handles destination gas payment                            │
  * └─────────────────────────────────────────────────────────────────────────┘
  */
-contract LayerZeroAdapter is AccessControl, ReentrancyGuard, Pausable {
+contract LayerZeroAdapter is
+    IBridgeAdapter,
+    AccessControl,
+    ReentrancyGuard,
+    Pausable
+{
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
@@ -528,6 +534,17 @@ contract LayerZeroAdapter is AccessControl, ReentrancyGuard, Pausable {
         return
             status == MessageStatus.VERIFIED ||
             status == MessageStatus.EXECUTED;
+    }
+
+    /**
+     * @notice IBridgeAdapter-compatible fee estimation
+     */
+    function estimateFee(
+        address /*targetAddress*/,
+        bytes calldata /*payload*/
+    ) external pure returns (uint256 nativeFee) {
+        // Use estimateFee(uint32,bytes,uint128) for accurate per-endpoint quotes
+        revert("Use estimateFee(uint32,bytes,uint128)");
     }
 
     /*//////////////////////////////////////////////////////////////

@@ -23,8 +23,8 @@
 
 | Field          | Value      |
 | -------------- | ---------- |
-| Version        | 2.0.0      |
-| Last Updated   | 2026-02-01 |
+| Version        | 3.0.0      |
+| Last Updated   | 2026-03-06 |
 | Status         | Active     |
 | Classification | Public     |
 
@@ -233,6 +233,22 @@ bytes32 nullifier = keccak256(abi.encodePacked(
 - ✅ Multi-source proof verification
 - ✅ Chain-specific domain separators
 - ✅ Finality requirements before proof acceptance
+- ✅ (Session 9) Source chain validation — `CrossChainEmergencyRelay` validates `sourceChainId` against `chains[].active`
+- ✅ (Session 9) Per-adapter emergency withdrawal (`emergencyWithdrawETH`, `emergencyWithdrawERC20`)
+- ✅ (Session 9) `ICrossChainBridge` unified interface enforces consistent security across all 9 adapters
+
+**Bridge Adapter Attack Surface** (9 adapters):
+
+| Adapter               | Verification                | Finality             |
+| --------------------- | --------------------------- | -------------------- |
+| ArbitrumBridgeAdapter | `Outbox.isSpent(index)`     | ~7 days (optimistic) |
+| OptimismBridgeAdapter | CrossDomainMessenger        | ~7 days (optimistic) |
+| BaseBridgeAdapter     | CrossDomainMessenger + CCTP | ~7 days (optimistic) |
+| zkSyncBridgeAdapter   | ZK validity proof           | ~1 hour              |
+| ScrollBridgeAdapter   | ZK validity proof           | ~4 hours             |
+| LineaBridgeAdapter    | ZK validity proof           | ~hours               |
+| LayerZeroAdapter      | DVN threshold (2-of-3)      | Configurable         |
+| HyperlaneAdapter      | ISM verification            | Configurable         |
 
 **Chain Verification**:
 
@@ -258,6 +274,17 @@ function submitCrossChainProof(...) external {
 - ✅ Nullifier consumption prevents replay
 - ✅ (Session 8) NullifierRegistryV3 requires non-zero `sourceMerkleRoot` for cross-chain nullifiers
 - ✅ (Session 8) `completeRelay()` validates nullifier binding matches relay transfer
+- ✅ (Session 9) `syncSequence` mapping in CrossChainNullifierSync prevents cross-chain nullifier replay
+
+#### 4.3.3 Cross-Chain Emergency Spoofing
+
+**Threat**: Attacker sends fake emergency signals from unauthorized chain to trigger protocol-wide pause.
+
+**Mitigations**:
+
+- ✅ (Session 9) `CrossChainEmergencyRelay` validates `sourceChainId` against `chains[].active` mapping
+- ✅ Chain activation/deactivation requires admin role
+- ✅ Monitoring alert on `InvalidSourceChain` events
 
 ### 4.4 Economic Attacks
 
@@ -415,14 +442,22 @@ The following conditions should trigger immediate incident response:
 
 ## 8.4 Known Limitations
 
-| Component                | Description                                                                                                                                                                                             | Severity      | Status                                        |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | --------------------------------------------- |
-| Ring Signature Verifier  | `RingSignatureVerifier.sol` implements BN254 CLSAG ring signature verification using EVM precompiles (ecAdd, ecMul, modExp). Integrated with `GasOptimizedPrivacy.sol`. Gas cost: ~26k per ring member. | Informational | Resolved — production CLSAG verifier deployed |
-| Noir Circuit Compilation | All 20 Noir circuits compile successfully after February 2026 migration from external `poseidon` crate to `std::hash::poseidon::bn254`. Existing 8 generated Solidity verifiers remain valid.           | Informational | Resolved — see `noir/README.md`               |
-| Batch Verifier Bypass    | `insertCrossChainCommitments()` previously skipped verification when `batchVerifier == address(0)`. Now requires non-zero batch verifier.                                                               | Critical      | Resolved — Session 8 (S8-2/S8-3)              |
-| Historical Root Growth   | `UniversalShieldedPool` Merkle root ring buffer never evicted old roots from `historicalRoots`, allowing unbounded set growth. Now evicts on overwrite.                                                 | Critical      | Resolved — Session 8 (S8-1)                   |
-| ETH Trapped in Router    | `MultiBridgeRouter` accepted `msg.value` but never forwarded to bridge adapters. ETH is now forwarded; emergency withdrawal added.                                                                      | High          | Resolved — Session 8 (S8-5/S8-6)              |
-| Stealth Derivation       | `canClaimStealth()` used different derivation than `generateStealthAddress()`. Now aligned with 4-parameter signature.                                                                                  | Critical      | Resolved — Session 8 (S8-4)                   |
+| Component                   | Description                                                                                                                                                                                             | Severity      | Status                                        |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | --------------------------------------------- |
+| Ring Signature Verifier     | `RingSignatureVerifier.sol` implements BN254 CLSAG ring signature verification using EVM precompiles (ecAdd, ecMul, modExp). Integrated with `GasOptimizedPrivacy.sol`. Gas cost: ~26k per ring member. | Informational | Resolved — production CLSAG verifier deployed |
+| Noir Circuit Compilation    | All 20 Noir circuits compile successfully after February 2026 migration from external `poseidon` crate to `std::hash::poseidon::bn254`. Existing 8 generated Solidity verifiers remain valid.           | Informational | Resolved — see `noir/README.md`               |
+| Batch Verifier Bypass       | `insertCrossChainCommitments()` previously skipped verification when `batchVerifier == address(0)`. Now requires non-zero batch verifier.                                                               | Critical      | Resolved — Session 8 (S8-2/S8-3)              |
+| Historical Root Growth      | `UniversalShieldedPool` Merkle root ring buffer never evicted old roots from `historicalRoots`, allowing unbounded set growth. Now evicts on overwrite.                                                 | Critical      | Resolved — Session 8 (S8-1)                   |
+| ETH Trapped in Router       | `MultiBridgeRouter` accepted `msg.value` but never forwarded to bridge adapters. ETH is now forwarded; emergency withdrawal added.                                                                      | High          | Resolved — Session 8 (S8-5/S8-6)              |
+| Stealth Derivation          | `canClaimStealth()` used different derivation than `generateStealthAddress()`. Now aligned with 4-parameter signature.                                                                                  | Critical      | Resolved — Session 8 (S8-4)                   |
+| Signature Malleability      | ECDSA signatures accepted both `s` values. Now enforces `s < secp256k1n/2` on all operations.                                                                                                           | Critical      | Resolved — Session 9 (P4-1)                   |
+| Value-Based Rate Limit      | `_checkRateLimit()` only tracked count, not value. Now enforces `hourlyValueLimit` via `_checkRateLimit(count, value)`.                                                                                 | High          | Resolved — Session 9 (P4-2)                   |
+| Outbox Verification         | `ArbitrumBridgeAdapter` used `verifyProof()` without checking spend status. Now uses `outbox.isSpent(index)`.                                                                                           | Critical      | Resolved — Session 9 (P4-4)                   |
+| Emergency Source Validation | `CrossChainEmergencyRelay` accepted emergencies from any chain. Now validates `sourceChainId` against `chains[].active`.                                                                                | Critical      | Resolved — Session 9 (P4-5)                   |
+| Nullifier Sync Replay       | `CrossChainNullifierSync` had no replay protection. Now uses `syncSequence` mapping for ordered processing.                                                                                             | High          | Resolved — Session 9 (P4-6)                   |
+| Overpayment in Staking      | `DecentralizedRelayerRegistry` silently absorbed overpayment above `MIN_STAKE`. Now refunds excess.                                                                                                     | Medium        | Resolved — Session 9 (P4-7)                   |
+| Batch Nullifier Loss        | `BatchAccumulator` did not recover nullifiers on batch failure. Now rolls back nullifier state.                                                                                                         | High          | Resolved — Session 9 (P4-8)                   |
+| Role Separation             | `confirmRoleSeparation()` accepted no parameters, enforcing nothing. Now takes `(guardian, responder, recovery)` addresses and validates distinctness.                                                  | High          | Resolved — Session 9 (P4-3)                   |
 
 ---
 
@@ -433,7 +468,7 @@ The following conditions should trigger immediate incident response:
 | Tool               | Findings          | Critical | High | Medium | Low |
 | ------------------ | ----------------- | -------- | ---- | ------ | --- |
 | Slither            | 9 (all addressed) | 0        | 0    | 2      | 7   |
-| Foundry Tests      | 5,600+            | N/A      | N/A  | N/A    | N/A |
+| Foundry Tests      | 5,760+            | N/A      | N/A  | N/A    | N/A |
 | Fuzz Tests         | 300+              | N/A      | N/A  | N/A    | N/A |
 | Halmos Symbolic    | 12 checks         | N/A      | N/A  | N/A    | N/A |
 | Echidna Properties | 6 invariants      | N/A      | N/A  | N/A    | N/A |
@@ -441,6 +476,7 @@ The following conditions should trigger immediate incident response:
 | TLA+ Model Check   | 4 properties      | N/A      | N/A  | N/A    | N/A |
 | Certora CVL        | 80+ specs         | N/A      | N/A  | N/A    | N/A |
 | Internal Audit S8  | 21                | 4        | 6    | 7      | 4   |
+| Internal Audit S9  | 14                | 3        | 5    | 4      | 2   |
 
 ### 9.2 Contact Information
 

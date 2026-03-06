@@ -27,13 +27,18 @@
 
 ### 2. Security Audit (February–March 2026) ✅
 
-- [x] Internal security audit completed (65 vulnerabilities fixed)
+- [x] Internal security audit completed (79 vulnerabilities fixed)
 - [x] Phase 1: 5 Critical, 6 High, 15 Medium resolved
 - [x] Phase 2: 2 Critical, 4 High, 6 Medium, 6 Low resolved
-- [x] Session 8: 4 Critical, 6 High, 7 Medium, 4 Low resolved
+- [x] Phase 3 (Session 8): 4 Critical, 6 High, 7 Medium, 4 Low resolved
+- [x] Phase 4 (Session 9): 3 Critical, 5 High, 4 Medium, 2 Low resolved
 - [x] ReentrancyGuard protection added to governance/security
 - [x] .transfer() DoS vulnerabilities fixed
 - [x] Zero-address validation added
+- [x] Signature malleability protection on all ECDSA operations
+- [x] Value-based rate limiting in CrossChainProofHubV3
+- [x] Source chain validation in CrossChainEmergencyRelay
+- [x] Nullifier recovery on batch failure in BatchAccumulator
 - [x] See [SECURITY_AUDIT_REPORT.md](./SECURITY_AUDIT_REPORT.md) for details
 
 ### 3. Security Checks ✅
@@ -44,19 +49,20 @@
 - [x] Invariant tests pass (8 tests)
 - [x] Echidna property tests pass (6 invariant properties)
 - [x] Halmos symbolic execution: 12 checks
-- [x] Certora formal verification: 54 CVL specs
+- [x] Certora formal verification: 69+ CVL specs
 - [x] K Framework specs: 5 algebraic specifications
 - [x] TLA+ model checking: 4 safety properties
 - [x] Storage layout compatibility verified for all upgradeable contracts
 - [x] CLSAG ring signature verifier tested (18 test vectors)
-- [x] Foundry test suite: 4,426 tests passing (189 suites)
-- [x] Total: 4,426+ tests passing
+- [x] Foundry test suite: 5,760+ tests passing (282 suites)
+- [x] Total: 5,760+ tests passing
 
 ### 4. Pre-Mainnet Security Checklist
 
-- [ ] Call `confirmRoleSeparation()` on ZKBoundStateLocks
-- [ ] Call `confirmRoleSeparation()` on CrossChainProofHubV3
+- [ ] Call `confirmRoleSeparation(guardian, responder, recovery)` on ZKBoundStateLocks
+- [ ] Call `confirmRoleSeparation(guardian, responder, recovery)` on CrossChainProofHubV3
 - [ ] Call `lockVerificationMode()` on ProofCarryingContainer (one-way, irreversible)
+- [ ] Run `./scripts/validate-env.sh` before each deployment phase
 - [ ] Verify admin roles distributed to separate addresses
 - [ ] Configure timelocks for all admin operations
 - [ ] Set up monitoring for critical events
@@ -190,6 +196,36 @@ npx hardhat run scripts/deploy-v3.ts --network optimismSepolia
 - [ ] L2 specific optimizations enabled
 - [ ] Gas costs verified
 
+### Phase 5: zkSync Sepolia
+
+```bash
+forge script scripts/deploy/DeployZkSyncAdapter.s.sol --rpc-url $ZKSYNC_SEPOLIA_RPC --broadcast
+```
+
+- [ ] zkSyncBridgeAdapter deployed
+- [ ] Diamond Proxy address configured
+- [ ] ZK proof verification tested
+
+### Phase 6: Scroll Sepolia
+
+```bash
+forge script scripts/deploy/DeployScrollAdapter.s.sol --rpc-url $SCROLL_SEPOLIA_RPC --broadcast
+```
+
+- [ ] ScrollBridgeAdapter deployed
+- [ ] L1ScrollMessenger + L1GatewayRouter configured
+- [ ] Zero-address validation verified (4 addresses)
+
+### Phase 7: Linea Sepolia
+
+```bash
+forge script scripts/deploy/DeployLineaAdapter.s.sol --rpc-url $LINEA_SEPOLIA_RPC --broadcast
+```
+
+- [ ] LineaBridgeAdapter deployed
+- [ ] L1MessageService + TokenBridge configured
+- [ ] Cross-chain message relay tested
+
 ---
 
 ## Integration Testing (Post-Deployment)
@@ -198,8 +234,14 @@ npx hardhat run scripts/deploy-v3.ts --network optimismSepolia
 
 - [ ] Proof relay from Sepolia → Arbitrum Sepolia
 - [ ] Proof relay from Arbitrum → Base
+- [ ] Proof relay from Sepolia → zkSync Sepolia
+- [ ] Proof relay from Sepolia → Scroll Sepolia
+- [ ] Proof relay from Sepolia → Linea Sepolia
+- [ ] LayerZero message relay across all L2s
+- [ ] Hyperlane message relay across all L2s
 - [ ] Atomic swap execution
 - [ ] Emergency pause/unpause
+- [ ] Cross-chain emergency propagation via CrossChainEmergencyRelay
 
 ### Relayer Network
 
@@ -232,7 +274,7 @@ npx hardhat run scripts/deploy-v3.ts --network optimismSepolia
 3. [ ] Core state containers
 4. [ ] Privacy middleware (PrivacyRouter, ShieldedPool)
 5. [ ] ZaseonProtocolHub (central registry)
-6. [ ] Bridge contracts + L2 adapters
+6. [ ] Bridge contracts + L2 adapters (9 adapters: Arbitrum, Optimism, Base, Aztec, zkSync, Scroll, Linea, LayerZero, Hyperlane)
 7. [ ] Governance contracts (Timelock, Governor)
 8. [ ] Application layer (swaps, compliance)
 
@@ -291,4 +333,4 @@ timelockAdmin.executeUpgrade();
 
 ---
 
-_Last Updated: February 12, 2026_
+_Last Updated: March 6, 2026_
