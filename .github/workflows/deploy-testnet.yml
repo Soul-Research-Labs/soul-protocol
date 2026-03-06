@@ -1,0 +1,138 @@
+name: Deploy Testnet
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      network:
+        description: "Target network"
+        required: true
+        type: choice
+        options:
+          - sepolia
+          - arbitrum-sepolia
+          - optimism-sepolia
+          - base-sepolia
+          - zksync-sepolia
+          - scroll-sepolia
+          - linea-sepolia
+          - all-testnets
+      script:
+        description: "Deploy script"
+        required: true
+        type: choice
+        options:
+          - DeployMinimalCore
+          - DeployMainnet
+          - DeployL2Bridges
+          - DeploySecurityComponents
+          - DeployPrivacyComponents
+          - DeployRelayerInfrastructure
+          - DeployComplianceSuite
+          - DeployRoutingSuite
+          - DeployIntentSuite
+          - DeployRiskMitigation
+      dry_run:
+        description: "Dry run (simulate only)"
+        required: false
+        type: boolean
+        default: true
+      verify:
+        description: "Verify contracts on block explorer"
+        required: false
+        type: boolean
+        default: true
+
+concurrency:
+  group: deploy-${{ inputs.network }}
+  cancel-in-progress: false
+
+env:
+  FOUNDRY_PROFILE: production
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.network }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.network }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build contracts
+        run: forge build
+
+      - name: Set RPC URL
+        id: rpc
+        run: |
+          case "${{ inputs.network }}" in
+            sepolia) echo "rpc_url=${{ secrets.SEPOLIA_RPC_URL }}" >> "$GITHUB_OUTPUT" ;;
+            arbitrum-sepolia) echo "rpc_url=${{ secrets.ARBITRUM_SEPOLIA_RPC_URL }}" >> "$GITHUB_OUTPUT" ;;
+            optimism-sepolia) echo "rpc_url=${{ secrets.OPTIMISM_SEPOLIA_RPC_URL }}" >> "$GITHUB_OUTPUT" ;;
+            base-sepolia) echo "rpc_url=${{ secrets.BASE_SEPOLIA_RPC_URL }}" >> "$GITHUB_OUTPUT" ;;
+            zksync-sepolia) echo "rpc_url=${{ secrets.ZKSYNC_SEPOLIA_RPC_URL }}" >> "$GITHUB_OUTPUT" ;;
+            scroll-sepolia) echo "rpc_url=${{ secrets.SCROLL_SEPOLIA_RPC_URL }}" >> "$GITHUB_OUTPUT" ;;
+            linea-sepolia) echo "rpc_url=${{ secrets.LINEA_SEPOLIA_RPC_URL }}" >> "$GITHUB_OUTPUT" ;;
+            all-testnets)
+              echo "Running deploy-all-testnets.sh"
+              echo "rpc_url=all" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+
+      - name: Deploy (dry run)
+        if: inputs.dry_run
+        run: |
+          if [ "${{ steps.rpc.outputs.rpc_url }}" = "all" ]; then
+            echo "Dry run not supported for all-testnets"
+            exit 1
+          fi
+          forge script scripts/deploy/${{ inputs.script }}.s.sol \
+            --rpc-url "${{ steps.rpc.outputs.rpc_url }}" \
+            --private-key "${{ secrets.DEPLOYER_PRIVATE_KEY }}" \
+            -vvv
+
+      - name: Deploy (live)
+        if: "!inputs.dry_run"
+        run: |
+          VERIFY_FLAG=""
+          if [ "${{ inputs.verify }}" = "true" ]; then
+            VERIFY_FLAG="--verify --etherscan-api-key ${{ secrets.ETHERSCAN_API_KEY }}"
+          fi
+
+          if [ "${{ steps.rpc.outputs.rpc_url }}" = "all" ]; then
+            bash scripts/deploy/deploy-all-testnets.sh
+          else
+            forge script scripts/deploy/${{ inputs.script }}.s.sol \
+              --rpc-url "${{ steps.rpc.outputs.rpc_url }}" \
+              --private-key "${{ secrets.DEPLOYER_PRIVATE_KEY }}" \
+              --broadcast \
+              $VERIFY_FLAG \
+              -vvv
+          fi
+
+      - name: Save deployment artifacts
+        if: "!inputs.dry_run"
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-${{ inputs.network }}-${{ github.run_number }}
+          path: |
+            broadcast/
+            deployments/
+          retention-days: 90

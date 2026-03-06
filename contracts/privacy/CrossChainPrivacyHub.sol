@@ -13,7 +13,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
  * @title CrossChainPrivacyHub
  * @author Soul Protocol
  * @notice Unified aggregator for cross-chain privacy-preserving transfers
- * @dev Provides a single entry point for all 41+ bridge adapters with privacy features
+ * @dev Provides a single entry point for bridge adapters with privacy features
  *
  * ARCHITECTURE:
  * ┌─────────────────────────────────────────────────────────────────────────┐
@@ -35,12 +35,11 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
  * │  │                   Bridge Adapters                                │   │
  * │  │                                                                  │   │
  * │  │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐  │   │
- * │  │  │ Monero  │ │  Zcash  │ │ Secret  │ │  Oasis  │ │ Railgun │  │   │
+ * │  │  │Arbitrum │ │Optimism │ │  Base   │ │ zkSync  │ │ Scroll  │  │   │
  * │  │  └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘  │   │
- * │  │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐  │   │
- * │  │  │Tornado  │ │Midnight │ │ Canton  │ │ Brevis  │ │  Aztec  │  │   │
- * │  │  └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘  │   │
- * │  │  ... (30+ more adapters)                                      │   │
+ * │  │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐              │   │
+ * │  │  │  Linea  │ │LayerZero│ │Hyperlane│ │  Aztec  │              │   │
+ * │  │  └─────────┘ └─────────┘ └─────────┘ └─────────┘              │   │
  * │  └──────────────────────────────────────────────────────────────┘   │
  * └─────────────────────────────────────────────────────────────────────────┘
  *
@@ -51,13 +50,10 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
  * 4. ZK Proof Verification - Multiple proof systems supported
  * 5. Encrypted Metadata - TEE support
  *
- * SUPPORTED CHAINS (41+):
- * - Privacy Chains: Monero, Zcash, Secret, Oasis, Railgun, Tornado, Midnight
- * - L2 Rollups: Arbitrum, Optimism, Base, zkSync, Scroll, Linea, Polygon zkEVM
- * - Alt L1s: Solana, Avalanche, Cosmos, Polkadot, NEAR, Cardano, Sui, Aptos, Sei
- * - Bitcoin Ecosystem: Bitcoin, Alpen (BitVM), Lightning
- * - Enterprise: Canton, Provenance, Hyperliquid
- * - Data Availability: Celestia
+ * SUPPORTED CHAINS:
+ * - L2 Rollups: Arbitrum, Optimism, Base, zkSync, Scroll, Linea
+ * - Cross-chain: LayerZero (120+ chains), Hyperlane
+ * - Privacy: Aztec (shielded)
  */
 contract CrossChainPrivacyHub is
     Initializable,
@@ -929,21 +925,25 @@ contract CrossChainPrivacyHub is
      * @param stealthPubKey The stealth public key
      * @param ephemeralPubKey The ephemeral public key from sender
      * @param viewingPrivKey The recipient's viewing private key (hashed)
+     * @param spendingPubKey The recipient's spending public key
      */
     function canClaimStealth(
         bytes32 stealthPubKey,
         bytes32 ephemeralPubKey,
-        bytes32 viewingPrivKey
+        bytes32 viewingPrivKey,
+        bytes32 spendingPubKey
     ) external pure returns (bool) {
-        // Recipient computes shared secret: S = viewingPrivKey * ephemeralPubKey
+        // Recipient computes shared secret: S = ECDH(viewingPrivKey, ephemeralPubKey)
+        // On-chain simplified as keccak256; real ECDH ensures this equals
+        // the sender's keccak256(ephemeralPubKey, viewingPubKey)
         bytes32 sharedSecret = keccak256(
-            abi.encode(viewingPrivKey, ephemeralPubKey)
+            abi.encode(ephemeralPubKey, viewingPrivKey)
         );
 
-        // Derive expected stealth key: P' = P_spend + hash(S) * G
+        // Derive expected stealth key: P' = H(P_spend, S)
         // Must match the same derivation used in generateStealthAddress
         bytes32 expectedStealth = keccak256(
-            abi.encode(sharedSecret, ephemeralPubKey)
+            abi.encode(spendingPubKey, sharedSecret)
         );
 
         // Only return true if derived stealth key matches the provided one

@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
 import {ExperimentalFeatureRegistry} from "../../contracts/security/ExperimentalFeatureRegistry.sol";
+import {IExperimentalFeatureRegistry} from "../../contracts/interfaces/IExperimentalFeatureRegistry.sol";
 import {ExperimentalGraduationManager} from "../../contracts/security/ExperimentalGraduationManager.sol";
 
 /// @dev Shared base with setUp and helpers — split into multiple contracts to avoid Yul stack-too-deep
@@ -80,9 +81,18 @@ abstract contract GraduationTestBase is Test {
 
     function _getFeatureStatus(
         bytes32 fid
-    ) internal view returns (ExperimentalFeatureRegistry.FeatureStatus) {
-        (, ExperimentalFeatureRegistry.FeatureStatus s, , , , , , , ) = registry
-            .features(fid);
+    ) internal view returns (IExperimentalFeatureRegistry.FeatureStatus) {
+        (
+            ,
+            IExperimentalFeatureRegistry.FeatureStatus s,
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+
+        ) = registry.features(fid);
         return s;
     }
 
@@ -90,11 +100,11 @@ abstract contract GraduationTestBase is Test {
         vm.startPrank(admin);
         registry.updateFeatureStatus(
             fid,
-            ExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
+            IExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
         );
         registry.updateFeatureStatus(
             fid,
-            ExperimentalFeatureRegistry.FeatureStatus.BETA
+            IExperimentalFeatureRegistry.FeatureStatus.BETA
         );
         manager.recordBetaEntry(fid);
         vm.stopPrank();
@@ -483,7 +493,7 @@ contract GraduationExecutionTest is GraduationTestBase {
         );
         assertTrue(
             _getFeatureStatus(fheId) ==
-                ExperimentalFeatureRegistry.FeatureStatus.PRODUCTION
+                IExperimentalFeatureRegistry.FeatureStatus.PRODUCTION
         );
         assertEq(manager.activeProposal(fheId), 0);
     }
@@ -590,7 +600,7 @@ contract GraduationDemotionTest is GraduationTestBase {
 
         assertTrue(
             _getFeatureStatus(fheId) ==
-                ExperimentalFeatureRegistry.FeatureStatus.BETA
+                IExperimentalFeatureRegistry.FeatureStatus.BETA
         );
     }
 
@@ -875,7 +885,7 @@ contract GraduationAdvancedTest is GraduationTestBase {
 
         assertTrue(
             _getFeatureStatus(mpcId) ==
-                ExperimentalFeatureRegistry.FeatureStatus.PRODUCTION
+                IExperimentalFeatureRegistry.FeatureStatus.PRODUCTION
         );
     }
 

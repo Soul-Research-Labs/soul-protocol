@@ -5,6 +5,7 @@ import {Test} from "forge-std/Test.sol";
 
 // Import from security/ — the canonical version (core/ is deprecated)
 import {ExperimentalFeatureRegistry} from "../../contracts/security/ExperimentalFeatureRegistry.sol";
+import {IExperimentalFeatureRegistry} from "../../contracts/interfaces/IExperimentalFeatureRegistry.sol";
 
 contract ExperimentalFeatureRegistryTest is Test {
     ExperimentalFeatureRegistry public registry;
@@ -73,14 +74,14 @@ contract ExperimentalFeatureRegistryTest is Test {
         registry.registerFeature(
             featureId,
             "New Feature",
-            ExperimentalFeatureRegistry.FeatureStatus.DISABLED,
+            IExperimentalFeatureRegistry.FeatureStatus.DISABLED,
             impl,
             1000 ether,
             true,
             "https://docs.zaseon.io/new-feature"
         );
 
-        ExperimentalFeatureRegistry.Feature memory f = registry.getFeature(
+        IExperimentalFeatureRegistry.Feature memory f = registry.getFeature(
             featureId
         );
         assertEq(f.name, "New Feature");
@@ -94,15 +95,15 @@ contract ExperimentalFeatureRegistryTest is Test {
 
         vm.prank(admin);
         vm.expectEmit(true, false, false, true);
-        emit ExperimentalFeatureRegistry.FeatureRegistered(
+        emit IExperimentalFeatureRegistry.FeatureRegistered(
             featureId,
             "Event Feature",
-            ExperimentalFeatureRegistry.FeatureStatus.DISABLED
+            IExperimentalFeatureRegistry.FeatureStatus.DISABLED
         );
         registry.registerFeature(
             featureId,
             "Event Feature",
-            ExperimentalFeatureRegistry.FeatureStatus.DISABLED,
+            IExperimentalFeatureRegistry.FeatureStatus.DISABLED,
             address(0),
             0,
             false,
@@ -114,14 +115,14 @@ contract ExperimentalFeatureRegistryTest is Test {
         vm.prank(admin);
         vm.expectRevert(
             abi.encodeWithSelector(
-                ExperimentalFeatureRegistry.FeatureAlreadyExists.selector,
+                IExperimentalFeatureRegistry.FeatureAlreadyExists.selector,
                 fheId
             )
         );
         registry.registerFeature(
             fheId,
             "Duplicate",
-            ExperimentalFeatureRegistry.FeatureStatus.DISABLED,
+            IExperimentalFeatureRegistry.FeatureStatus.DISABLED,
             address(0),
             0,
             false,
@@ -135,7 +136,7 @@ contract ExperimentalFeatureRegistryTest is Test {
         registry.registerFeature(
             keccak256("UNAUTH"),
             "Unauthorized",
-            ExperimentalFeatureRegistry.FeatureStatus.DISABLED,
+            IExperimentalFeatureRegistry.FeatureStatus.DISABLED,
             address(0),
             0,
             false,
@@ -151,7 +152,7 @@ contract ExperimentalFeatureRegistryTest is Test {
         vm.prank(featureAdmin);
         registry.updateFeatureStatus(
             fheId,
-            ExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
+            IExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
         );
         assertTrue(registry.isFeatureEnabled(fheId));
     }
@@ -160,20 +161,20 @@ contract ExperimentalFeatureRegistryTest is Test {
         vm.startPrank(featureAdmin);
         registry.updateFeatureStatus(
             fheId,
-            ExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
+            IExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
         );
         registry.updateFeatureStatus(
             fheId,
-            ExperimentalFeatureRegistry.FeatureStatus.BETA
+            IExperimentalFeatureRegistry.FeatureStatus.BETA
         );
         vm.stopPrank();
 
-        ExperimentalFeatureRegistry.Feature memory f = registry.getFeature(
+        IExperimentalFeatureRegistry.Feature memory f = registry.getFeature(
             fheId
         );
         assertEq(
             uint8(f.status),
-            uint8(ExperimentalFeatureRegistry.FeatureStatus.BETA)
+            uint8(IExperimentalFeatureRegistry.FeatureStatus.BETA)
         );
     }
 
@@ -181,15 +182,15 @@ contract ExperimentalFeatureRegistryTest is Test {
         vm.startPrank(featureAdmin);
         registry.updateFeatureStatus(
             fheId,
-            ExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
+            IExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
         );
         registry.updateFeatureStatus(
             fheId,
-            ExperimentalFeatureRegistry.FeatureStatus.BETA
+            IExperimentalFeatureRegistry.FeatureStatus.BETA
         );
         registry.updateFeatureStatus(
             fheId,
-            ExperimentalFeatureRegistry.FeatureStatus.PRODUCTION
+            IExperimentalFeatureRegistry.FeatureStatus.PRODUCTION
         );
         vm.stopPrank();
     }
@@ -198,19 +199,19 @@ contract ExperimentalFeatureRegistryTest is Test {
         vm.startPrank(featureAdmin);
         registry.updateFeatureStatus(
             fheId,
-            ExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
+            IExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
         );
         registry.updateFeatureStatus(
             fheId,
-            ExperimentalFeatureRegistry.FeatureStatus.BETA
+            IExperimentalFeatureRegistry.FeatureStatus.BETA
         );
         registry.updateFeatureStatus(
             fheId,
-            ExperimentalFeatureRegistry.FeatureStatus.PRODUCTION
+            IExperimentalFeatureRegistry.FeatureStatus.PRODUCTION
         );
         registry.updateFeatureStatus(
             fheId,
-            ExperimentalFeatureRegistry.FeatureStatus.BETA
+            IExperimentalFeatureRegistry.FeatureStatus.BETA
         );
         vm.stopPrank();
     }
@@ -221,14 +222,14 @@ contract ExperimentalFeatureRegistryTest is Test {
         vm.prank(featureAdmin);
         vm.expectRevert(
             abi.encodeWithSelector(
-                ExperimentalFeatureRegistry.InvalidStatusTransition.selector,
-                ExperimentalFeatureRegistry.FeatureStatus.DISABLED,
-                ExperimentalFeatureRegistry.FeatureStatus.BETA
+                IExperimentalFeatureRegistry.InvalidStatusTransition.selector,
+                IExperimentalFeatureRegistry.FeatureStatus.DISABLED,
+                IExperimentalFeatureRegistry.FeatureStatus.BETA
             )
         );
         registry.updateFeatureStatus(
             fheId,
-            ExperimentalFeatureRegistry.FeatureStatus.BETA
+            IExperimentalFeatureRegistry.FeatureStatus.BETA
         );
     }
 
@@ -238,14 +239,14 @@ contract ExperimentalFeatureRegistryTest is Test {
         vm.prank(featureAdmin);
         vm.expectRevert(
             abi.encodeWithSelector(
-                ExperimentalFeatureRegistry.InvalidStatusTransition.selector,
-                ExperimentalFeatureRegistry.FeatureStatus.DISABLED,
-                ExperimentalFeatureRegistry.FeatureStatus.PRODUCTION
+                IExperimentalFeatureRegistry.InvalidStatusTransition.selector,
+                IExperimentalFeatureRegistry.FeatureStatus.DISABLED,
+                IExperimentalFeatureRegistry.FeatureStatus.PRODUCTION
             )
         );
         registry.updateFeatureStatus(
             fheId,
-            ExperimentalFeatureRegistry.FeatureStatus.PRODUCTION
+            IExperimentalFeatureRegistry.FeatureStatus.PRODUCTION
         );
     }
 
@@ -253,27 +254,27 @@ contract ExperimentalFeatureRegistryTest is Test {
         vm.prank(featureAdmin);
         vm.expectRevert(
             abi.encodeWithSelector(
-                ExperimentalFeatureRegistry.FeatureNotFound.selector,
+                IExperimentalFeatureRegistry.FeatureNotFound.selector,
                 keccak256("NONEXISTENT")
             )
         );
         registry.updateFeatureStatus(
             keccak256("NONEXISTENT"),
-            ExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
+            IExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
         );
     }
 
     function test_updateStatus_emitsEvent() public {
         vm.prank(featureAdmin);
         vm.expectEmit(true, false, false, true);
-        emit ExperimentalFeatureRegistry.FeatureStatusUpdated(
+        emit IExperimentalFeatureRegistry.FeatureStatusUpdated(
             fheId,
-            ExperimentalFeatureRegistry.FeatureStatus.DISABLED,
-            ExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
+            IExperimentalFeatureRegistry.FeatureStatus.DISABLED,
+            IExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
         );
         registry.updateFeatureStatus(
             fheId,
-            ExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
+            IExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
         );
     }
 
@@ -285,7 +286,7 @@ contract ExperimentalFeatureRegistryTest is Test {
         vm.prank(featureAdmin);
         registry.updateFeatureStatus(
             fheId,
-            ExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
+            IExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
         );
 
         vm.prank(emergencyAdmin);
@@ -299,15 +300,15 @@ contract ExperimentalFeatureRegistryTest is Test {
         vm.startPrank(featureAdmin);
         registry.updateFeatureStatus(
             fheId,
-            ExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
+            IExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
         );
         registry.updateFeatureStatus(
             fheId,
-            ExperimentalFeatureRegistry.FeatureStatus.BETA
+            IExperimentalFeatureRegistry.FeatureStatus.BETA
         );
         registry.updateFeatureStatus(
             fheId,
-            ExperimentalFeatureRegistry.FeatureStatus.PRODUCTION
+            IExperimentalFeatureRegistry.FeatureStatus.PRODUCTION
         );
         vm.stopPrank();
 
@@ -331,13 +332,13 @@ contract ExperimentalFeatureRegistryTest is Test {
         vm.prank(featureAdmin);
         registry.updateFeatureStatus(
             fheId,
-            ExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
+            IExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
         );
 
         vm.prank(featureAdmin);
         registry.lockValue(fheId, 0.5 ether);
 
-        ExperimentalFeatureRegistry.Feature memory f = registry.getFeature(
+        IExperimentalFeatureRegistry.Feature memory f = registry.getFeature(
             fheId
         );
         assertEq(f.currentValueLocked, 0.5 ether);
@@ -347,7 +348,7 @@ contract ExperimentalFeatureRegistryTest is Test {
         vm.prank(featureAdmin);
         vm.expectRevert(
             abi.encodeWithSelector(
-                ExperimentalFeatureRegistry.FeatureDisabled.selector,
+                IExperimentalFeatureRegistry.FeatureDisabled.selector,
                 fheId
             )
         );
@@ -358,10 +359,10 @@ contract ExperimentalFeatureRegistryTest is Test {
         vm.startPrank(featureAdmin);
         registry.updateFeatureStatus(
             fheId,
-            ExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
+            IExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
         );
 
-        ExperimentalFeatureRegistry.Feature memory f = registry.getFeature(
+        IExperimentalFeatureRegistry.Feature memory f = registry.getFeature(
             fheId
         );
         uint256 maxValue = f.maxValueLocked;
@@ -375,13 +376,13 @@ contract ExperimentalFeatureRegistryTest is Test {
         vm.startPrank(featureAdmin);
         registry.updateFeatureStatus(
             fheId,
-            ExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
+            IExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
         );
         registry.lockValue(fheId, 0.5 ether);
         registry.unlockValue(fheId, 0.2 ether);
         vm.stopPrank();
 
-        ExperimentalFeatureRegistry.Feature memory f = registry.getFeature(
+        IExperimentalFeatureRegistry.Feature memory f = registry.getFeature(
             fheId
         );
         assertEq(f.currentValueLocked, 0.3 ether);
@@ -394,7 +395,7 @@ contract ExperimentalFeatureRegistryTest is Test {
     function test_requireFeatureEnabled_revertsWhenDisabled() public {
         vm.expectRevert(
             abi.encodeWithSelector(
-                ExperimentalFeatureRegistry.FeatureDisabled.selector,
+                IExperimentalFeatureRegistry.FeatureDisabled.selector,
                 fheId
             )
         );
@@ -405,7 +406,7 @@ contract ExperimentalFeatureRegistryTest is Test {
         vm.prank(featureAdmin);
         registry.updateFeatureStatus(
             fheId,
-            ExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
+            IExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
         );
         // Should not revert
         registry.requireFeatureEnabled(fheId);
@@ -415,12 +416,12 @@ contract ExperimentalFeatureRegistryTest is Test {
         vm.prank(featureAdmin);
         registry.updateFeatureStatus(
             fheId,
-            ExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
+            IExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
         );
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                ExperimentalFeatureRegistry.FeatureDisabled.selector,
+                IExperimentalFeatureRegistry.FeatureDisabled.selector,
                 fheId
             )
         );
@@ -431,15 +432,15 @@ contract ExperimentalFeatureRegistryTest is Test {
         vm.startPrank(featureAdmin);
         registry.updateFeatureStatus(
             fheId,
-            ExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
+            IExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
         );
         registry.updateFeatureStatus(
             fheId,
-            ExperimentalFeatureRegistry.FeatureStatus.BETA
+            IExperimentalFeatureRegistry.FeatureStatus.BETA
         );
         registry.updateFeatureStatus(
             fheId,
-            ExperimentalFeatureRegistry.FeatureStatus.PRODUCTION
+            IExperimentalFeatureRegistry.FeatureStatus.PRODUCTION
         );
         vm.stopPrank();
 
@@ -459,10 +460,10 @@ contract ExperimentalFeatureRegistryTest is Test {
         vm.startPrank(featureAdmin);
         registry.updateFeatureStatus(
             fheId,
-            ExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
+            IExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
         );
 
-        ExperimentalFeatureRegistry.Feature memory f = registry.getFeature(
+        IExperimentalFeatureRegistry.Feature memory f = registry.getFeature(
             fheId
         );
         uint256 maxVal = f.maxValueLocked;
@@ -484,21 +485,21 @@ contract ExperimentalFeatureRegistryTest is Test {
         vm.prank(admin);
         registry.updateRiskLimit(fheId, 5000 ether);
 
-        ExperimentalFeatureRegistry.Feature memory f = registry.getFeature(
+        IExperimentalFeatureRegistry.Feature memory f = registry.getFeature(
             fheId
         );
         assertEq(f.maxValueLocked, 5000 ether);
     }
 
     function test_updateRiskLimit_emitsEvent() public {
-        ExperimentalFeatureRegistry.Feature memory f = registry.getFeature(
+        IExperimentalFeatureRegistry.Feature memory f = registry.getFeature(
             fheId
         );
         uint256 oldLimit = f.maxValueLocked;
 
         vm.prank(admin);
         vm.expectEmit(true, false, false, true);
-        emit ExperimentalFeatureRegistry.RiskLimitUpdated(
+        emit IExperimentalFeatureRegistry.RiskLimitUpdated(
             fheId,
             oldLimit,
             5000 ether

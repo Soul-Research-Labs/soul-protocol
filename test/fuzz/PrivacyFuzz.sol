@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "../../contracts/privacy/UnifiedNullifierManager.sol";
+import "../../contracts/interfaces/IUnifiedNullifierManager.sol";
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 /**
@@ -25,18 +26,18 @@ contract PrivacyFuzz is UnifiedNullifierManager {
      */
     function echidna_nullifier_status_valid() public view returns (bool) {
         if (lastNullifier == bytes32(0)) return true;
-        UnifiedNullifierManager.NullifierRecord
+        IUnifiedNullifierManager.NullifierRecord
             memory record = nullifierRecords[lastNullifier];
         return
             record.chainId != 0 ||
-            record.status == UnifiedNullifierManager.NullifierStatus.UNKNOWN;
+            record.status == IUnifiedNullifierManager.NullifierStatus.UNKNOWN;
     }
 
     function fuzz_registerNullifier(
         bytes32 nullifier,
         bytes32 commitment,
         uint256 chainId,
-        UnifiedNullifierManager.NullifierType nType,
+        IUnifiedNullifierManager.NullifierType nType,
         uint256 expiresAt
     ) public {
         lastNullifier = nullifier;

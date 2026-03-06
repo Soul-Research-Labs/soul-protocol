@@ -1,421 +1,342 @@
+<div align="center">
+
 # ZASEON
 
+### Cross-Chain ZK Privacy Middleware
+
+**Move privately between chains. No metadata. No lock-in.**
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Solidity](https://img.shields.io/badge/Solidity-0.8.24-blue.svg)](https://docs.soliditylang.org/)
-[![Foundry](https://img.shields.io/badge/Built%20with-Foundry-FFDB1C.svg)](https://getfoundry.sh/)
+[![Solidity](https://img.shields.io/badge/Solidity-0.8.24-363636.svg?logo=solidity)](https://docs.soliditylang.org/)
+[![Foundry](https://img.shields.io/badge/Foundry-FFDB1C.svg?logo=ethereum)](https://getfoundry.sh/)
 [![OpenZeppelin](https://img.shields.io/badge/OpenZeppelin-5.4.0-4E5EE4.svg)](https://openzeppelin.com/contracts/)
+[![Tests](https://img.shields.io/badge/Tests-5%2C760%2B_passing-brightgreen.svg)]()
+[![Certora](https://img.shields.io/badge/Certora-69_specs-blue.svg)]()
 
-> **Move privately between chains. No metadata. No lock-in.**
+```
+243 contracts · 22 ZK circuits · 12 bridge adapters · 69 formal specs · 286 test suites
+```
 
-ZASEON is zero-knowledge middleware for cross-chain confidential state transfer. It solves the privacy lock-in problem that traps users on single chains.
+[Getting Started](docs/GETTING_STARTED.md) · [Architecture](docs/ARCHITECTURE.md) · [SDK Docs](sdk/README.md) · [API Reference](docs/SOLIDITY_API_REFERENCE.md) · [Security](SECURITY.md)
 
-## Table of Contents
-
-- [The Problem: Privacy Lock-In](#the-problem-privacy-lock-in)
-- [Zaseon's Solution: Privacy Without Lock-In](#zaseons-solution-privacy-without-lock-in)
-- [How It Works](#how-it-works)
-- [Getting Started](#getting-started)
-- [Contributing](#contributing)
-- [License](#license)
+</div>
 
 ---
 
-## The Problem: Privacy Lock-In
+## Why Zaseon Exists
 
-**Privacy will be the most important moat in crypto.**
+Bridging tokens is easy. **Bridging secrets is hard.**
 
-Privacy by itself is sufficiently compelling to differentiate a new chain from all the rest. But it also does something more important: **it creates chain lock-in**. Bridging tokens is easy, but bridging secrets is hard.
+Privacy creates chain lock-in. When you cross the boundary between a private chain and a public one, metadata leaks everywhere — timing, amounts, address links. This traps users on whichever privacy chain they chose first, creating a winner-take-most dynamic where a handful of chains own all of crypto's privacy.
 
-As long as everything is public, it's trivial to move from one chain to another. But as soon as you make things private, that is no longer true. There is always a risk when moving in or out of a private zone that people watching the chain, mempool, or network traffic will figure out who you are.
+**Zaseon breaks this lock-in** by making secrets portable. Privacy becomes a network feature, not a cage.
 
-**The metadata leakage problem:** Crossing the boundary between a private chain and a public one—or even between two private chains—leaks all kinds of metadata:
+```
+WITHOUT Zaseon                               WITH Zaseon
 
-- **Transaction timing** (when you left vs. arrived)
-- **Transaction size** (amount correlation)
-- **Network patterns** (graph analysis)
+  Chain A (private)                    Chain A (private)
+       │                                    │
+  ╔════╧════════════════╗             ╔═════╧═══════════════════╗
+  ║   METADATA LEAKED   ║             ║   ENCRYPTED CONTAINER   ║
+  ║  • Timing visible   ║             ║  • ZK proof travels     ║
+  ║  • Amount exposed   ║             ║  • Nullifiers split     ║
+  ║  • Addresses linked ║             ║  • Identity hidden      ║
+  ╚════╤════════════════╝             ╚═════╤═══════════════════╝
+       │                                    │
+  Chain B (private)                    Chain B (private)
 
-This makes it easier to track you. Compared to the many undifferentiated chains whose fees will be driven to zero by competition, blockchains with privacy have a much stronger network effect.
+  Result → LOCK-IN                   Result → FREEDOM
+```
 
-When you're on public blockchains, it's easy to transact with users on other chains—it doesn't matter which chain you join. When you're on private blockchains, the chain you choose matters much more because, once you join one, **you're less likely to move and risk being exposed**.
+| Lock-In Vector         | How Zaseon Breaks It                                            |
+| ---------------------- | --------------------------------------------------------------- |
+| **Timing correlation** | ZK-SLocks decouple lock/unlock timing — proof generated offline |
+| **Amount correlation** | Pedersen commitments + Bulletproofs hide amounts                |
+| **Address linkage**    | Stealth addresses + CDNA nullifiers prevent graph analysis      |
+| **Winner-take-most**   | Interoperability prevents any chain from monopolizing privacy   |
 
-This creates a **winner-take-most dynamic**. A handful of privacy chains will own most of crypto.
+> **Zaseon is SMTP for private blockchain transactions.** Just as email moved from walled gardens to universal interoperability, Zaseon enables private transactions to flow freely across any chain.
 
 ---
 
-## Zaseon's Solution: Privacy Without Lock-In
+## The Four Primitives
 
-Zaseon makes **secrets portable** so privacy becomes a feature of the network—not a cage.
+Zaseon introduces four novel cryptographic primitives that make private interoperability possible:
 
-```
-WITHOUT Zaseon:                            WITH Zaseon:
-┌────────────────────────────┐          ┌────────────────────────────┐
-│  Privacy Chain A           │          │  Privacy Chain A           │
-│       ↓                    │          │       ↓                    │
-│   [METADATA LEAK]          │          │  [ENCRYPTED CONTAINER]     │
-│   • Timing visible         │          │  • ZK proofs travel with   │
-│   • Amount correlates      │          │  • Nullifiers domain-split │
-│   • Addresses linkable     │          │  • Identity stays hidden   │
-│       ↓                    │          │       ↓                    │
-│  Privacy Chain B           │          │  Privacy Chain B           │
-│                            │          │                            │
-│  Result: LOCK-IN           │          │  Result: FREEDOM TO MOVE   │
-│                            │          │                            │
-└────────────────────────────┘          └────────────────────────────┘
-```
+<table>
+<tr>
+<td width="50%">
 
-### How Zaseon Breaks Each Lock-In Mechanism
+### ZK-SLocks
 
-| Lock-In Vector         | Zaseon's Solution                                             |
-| ---------------------- | ------------------------------------------------------------- |
-| **Timing correlation** | ZK-SLocks decouple lock/unlock timing—proof generated offline |
-| **Amount correlation** | Pedersen commitments + Bulletproofs hide amounts              |
-| **Address linkage**    | Stealth addresses + CDNA nullifiers prevent graph analysis    |
-| **Winner-take-most**   | Interoperability prevents any chain from monopolizing         |
+**ZK-Bound State Locks**
 
-### The Network Effect Reversal
+Lock confidential state on one chain. Unlock on another with only a ZK proof. No secret exposure, no timing correlation.
 
 ```
-WITHOUT Zaseon:                            WITH Zaseon:
-More Privacy Users                      More Privacy Users
-        ↓                                       ↓
-More Lock-in                           Can Move Freely
-        ↓                                       ↓
-Fewer Chains Win                       Many Chains Coexist
-(winner-take-most)                     (privacy as commodity layer)
+Chain A                    Chain B
+   │                          │
+[Lock] ─── ZK Proof ───→ [Unlock]
+   │                          │
+   └── Domain-split nullifier ┘
+       Cannot link src ↔ dest
 ```
 
-**ZASEON is SMTP for private blockchain transactions.** Just as email moved from walled gardens (AOL, CompuServe) to universal interoperability, Zaseon enables private transactions to flow across any chain.
+</td>
+<td width="50%">
 
----
+### PC³
 
-## Features
+**Proof-Carrying Containers**
 
-### ZK-Bound State Locks (ZK-SLocks)
-
-**The flagship primitive.** Lock confidential state on one chain, unlock on another with only a ZK proof—no secret exposure, no timing correlation.
-
-```
-Chain A                              Chain B
-   │                                    │
-[Lock: C_old] ──── ZK Proof ────→ [Unlock: C_new]
-   │                                    │
-   └── Nullifier (unique per domain) ───┘
-       Cannot link source ↔ destination
-```
-
-### Core Capabilities
-
-| Feature                   | What It Does                                                                          |
-| ------------------------- | ------------------------------------------------------------------------------------- |
-| **Confidential State**    | AES-256-GCM encrypted containers verified by ZK proofs                                |
-| **Cross-Chain ZK Bridge** | Transfer proofs across chains via Groth16 (BN254)                                     |
-| **L2 Interoperability**   | Arbitrum, Optimism, Base, Aztec, LayerZero, Hyperlane, zkSync, Scroll, Linea adapters |
-| **Stealth Addresses**     | Unlinkable receiving addresses for privacy                                            |
-| **Atomic Swaps**          | HTLC private swaps with stealth commitments                                           |
-
----
-
-## Zaseon v2 Primitives
-
-The four novel cryptographic primitives that make private interoperability possible:
-
-### PC³ — Proof-Carrying Containers
-
-**Problem:** How do you prove state is valid without revealing it?
-
-**Solution:** Self-authenticating containers that carry their own validity proof. The container proves itself—no external oracle needed.
+Self-authenticating containers that carry their own validity proof. No external oracle needed.
 
 ```solidity
-container.getProof()      // Returns embedded ZK proof
-container.verify()        // Self-validates without decryption
-container.transfer(dest)  // Moves to new chain, proof travels with it
+container.verify()        // Self-validates
+container.transfer(dest)  // Proof travels with it
 ```
 
----
+</td>
+</tr>
+<tr>
+<td>
 
-### PBP — Policy-Bound Proofs
+### CDNA
 
-**Problem:** How do you prove compliance without revealing everything?
+**Cross-Domain Nullifier Algebra**
 
-**Solution:** ZK proofs cryptographically bound to disclosure policies. Prove "I'm not on OFAC list" without revealing "I am Alice."
-
----
-
-### EASC — Execution-Agnostic State Commitments
-
-**Problem:** Different chains use different proof backends (Groth16, PLONK, STARK). How do you verify across all of them?
-
-**Solution:** Backend-independent commitments that verify on any proof system:
-
-| Backend          | Use Case                    |
-| ---------------- | --------------------------- |
-| Groth16 (BN254)  | Production EVM verification |
-| PLONK/UltraPlonk | Noir circuit proofs         |
-| STARK/FRI        | Recursive proof aggregation |
-| Hybrid           | Combined proof translation  |
-
----
-
-### CDNA — Cross-Domain Nullifier Algebra
-
-**Problem:** If the same nullifier appears on two chains, transactions are linkable.
-
-**Solution:** Domain-separated nullifiers—same secret, different nullifier per chain. Prevents replay AND prevents graph analysis.
+Same secret, different nullifier per chain. Prevents replay attacks **and** graph analysis simultaneously.
 
 ```
-Same secret key on different chains:
-├─ Chain A nullifier: H(secret || "CHAIN_A") = 0xabc...
-├─ Chain B nullifier: H(secret || "CHAIN_B") = 0xdef...
-└─ Cannot prove they're from the same user
+H(secret ‖ "CHAIN_A") = 0xabc...
+H(secret ‖ "CHAIN_B") = 0xdef...
+→ Cannot prove same user
 ```
+
+</td>
+<td>
+
+### PBP + EASC
+
+**Policy-Bound Proofs & Execution-Agnostic State Commitments**
+
+Prove compliance without revealing identity. Verify across any proof system — Groth16, PLONK, STARK.
+
+</td>
+</tr>
+</table>
 
 ---
 
 ## Architecture
 
-Zaseon sits between **privacy chains** and **public chains**, enabling confidential state to flow across both:
-
 ```
-                    ┌─────────────────────────────────────────┐
-                    │         PRIVACY INTEROPERABILITY        │
-                    │               LAYER (ZASEON)               │
-                    └─────────────────────────────────────────┘
-                                       │
-        ┌──────────────────────────────┼──────────────────────────────┐
-        │                              │                              │
-        ▼                              ▼                              ▼
-┌───────────────┐              ┌───────────────┐              ┌───────────────┐
-│ PRIVACY CHAINS│              │  ZASEON PROTOCOL │              │ PUBLIC CHAINS │
-│               │              │               │              │               │
-│  Aztec        │◄────────────►│  ZK-SLocks    │◄────────────►│  Ethereum     │
-│  Zcash        │   encrypted  │  PC³          │   encrypted  │  Arbitrum     │
-│  Secret       │   containers │  CDNA         │   containers │  Optimism     │
-│  Railgun      │   + proofs   │  PBP + EASC   │   + proofs   │  Base         │
-│  Midnight     │              │               │              │  zkSync       │
-└───────────────┘              └───────────────┘              └───────────────┘
-        │                              │                              │
-        └──────────────────────────────┴──────────────────────────────┘
-                          No metadata leakage
-                          No timing correlation
-                          No address linkage
-```
-
-### ZASEON Stack
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  Layer 6: Privacy Router (dApp Facade)                      │
-│           Unified deposit/withdraw/cross-chain/stealth API  │
-├─────────────────────────────────────────────────────────────┤
-│  Layer 5: ZK-Bound State Locks (ZK-SLocks)                  │
-│           Lock on Aztec → Unlock on Ethereum (or reverse)   │
-├─────────────────────────────────────────────────────────────┤
-│  Layer 4: Zaseon v2 Primitives                                │
-│           PC³ │ PBP │ EASC │ CDNA                           │
-├─────────────────────────────────────────────────────────────┤
-│  Layer 3: Privacy Middleware                                │
-│           ShieldedPool │ SanctionsOracle │ RelayerFeeMarket │
-├─────────────────────────────────────────────────────────────┤
-│  Layer 2: Proof Translation                                 │
-│           Groth16 ↔ PLONK ↔ STARK ↔ Bulletproofs            │
-│           UniversalProofTranslator + Universal Adapters     │
-├─────────────────────────────────────────────────────────────┤
-│  Layer 1: Core Infrastructure                               │
-│           Confidential State │ Nullifier Registry           │
-└─────────────────────────────────────────────────────────────┘
-                              ↓
-   ┌──────────────────────────┴──────────────────────────┐
-   │                                                      │
-   ▼                                                      ▼
-┌─────────────────────────────┐    ┌─────────────────────────────┐
-│     PRIVACY CHAINS          │    │      PUBLIC L2s             │
-│  Aztec │ Secret │ Midnight  │    │  Arbitrum │ Optimism │ Base │
-│  Zcash │ Railgun │ Penumbra │    │  zkSync │ Scroll │ Linea   │
-└─────────────────────────────┘    │  Solana (via Wormhole)      │
-│  Cardano (via Wormhole)     │
-                                   └─────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│  PRIVACY INTEROPERABILITY LAYER                                  │
+│                                                                  │
+│  ┌────────────────────────────────────────────────────────────┐  │
+│  │  L6  Privacy Router — Unified dApp facade                  │  │
+│  ├────────────────────────────────────────────────────────────┤  │
+│  │  L5  ZK-SLocks — Lock on Chain A → Unlock on Chain B      │  │
+│  ├────────────────────────────────────────────────────────────┤  │
+│  │  L4  Primitives — PC³ · PBP · EASC · CDNA                 │  │
+│  ├────────────────────────────────────────────────────────────┤  │
+│  │  L3  Middleware — ShieldedPool · Compliance · RelayerFees  │  │
+│  ├────────────────────────────────────────────────────────────┤  │
+│  │  L2  Proof Translation — Groth16 ↔ PLONK ↔ STARK          │  │
+│  ├────────────────────────────────────────────────────────────┤  │
+│  │  L1  Core — Confidential State · Nullifier Registry        │  │
+│  └────────────────────────────────────────────────────────────┘  │
+│                              │                                   │
+│    ┌─────────────────────────┼─────────────────────────┐         │
+│    ▼                         ▼                         ▼         │
+│  ┌──────────┐  ┌──────────────────────┐  ┌──────────────────┐   │
+│  │ Privacy  │  │   Native L2 Bridges  │  │  Cross-Chain     │   │
+│  │  Aztec   │  │  Arb·OP·Base·zkSync  │  │  LayerZero V2    │   │
+│  │          │  │  Scroll · Linea      │  │  Hyperlane        │   │
+│  └──────────┘  └──────────────────────┘  └──────────────────┘   │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
-### How Data Flows: Aztec → Ethereum Example
+### Data Flow: Private Cross-Chain Transfer
 
 ```
-1. User on Aztec (private)
-   └── Creates encrypted note (UltraPLONK proof)
-           │
-2. Zaseon Bridge receives note
-   └── Converts Aztec note → Zaseon commitment
-   └── Generates cross-domain nullifier (CDNA)
-           │
-3. Proof Translation
-   └── UltraPLONK → Groth16 (for EVM verification)
-           │
-4. Arrives on Ethereum
-   └── ZK-SLock verifies proof
-   └── New commitment created
-   └── Nullifier registered (prevents double-spend)
-           │
-5. User controls funds on Ethereum
-   └── No one knows: who, what amount, or when
+User on Chain A (private)
+  └─ Creates encrypted note with ZK proof
+          │
+Zaseon Bridge
+  └─ Converts note → Zaseon commitment
+  └─ Generates cross-domain nullifier (CDNA)
+          │
+Proof Translation
+  └─ Source proof system → Target proof system
+          │
+Chain B receives
+  └─ ZK-SLock verifies proof
+  └─ New commitment created, nullifier registered
+          │
+User controls funds on Chain B
+  └─ No one knows: who, what amount, or when
 ```
 
-## Project Structure
-
-```
-contracts/           # 242 production Solidity contracts
-├── core/            # ZaseonProtocolHub, ConfidentialStateContainer, NullifierRegistry, PrivacyRouter
-├── primitives/      # ZK-SLocks, PC³, CDNA, EASC, Orchestrator
-├── crosschain/      # 9 bridge adapters (Arbitrum, Optimism, Base, Aztec, zkSync, Scroll, Linea, LayerZero, Hyperlane)
-├── privacy/         # UniversalShieldedPool, UniversalProofTranslator, Stealth addresses, CrossChainLiquidityVault
-├── compliance/      # CrossChainSanctionsOracle, SelectiveDisclosure, ComplianceReporting
-├── governance/      # ZaseonGovernor, ZaseonUpgradeTimelock
-├── upgradeable/     # 16 UUPS proxy implementations (ConfidentialState, NullifierRegistry, ProofHub, etc.)
-├── relayer/         # DecentralizedRelayerRegistry, RelayerHealthMonitor, RelayerFeeMarket
-├── bridge/          # MultiBridgeRouter, CrossChainProofHubV3, AtomicSwap
-├── verifiers/       # 47 verifier contracts (20 UltraHonk, CLSAG ring signature, VerifierRegistry)
-├── libraries/       # BN254, CryptoLib, PoseidonYul, GasOptimizations, ValidationLib
-├── interfaces/      # 46 contract interfaces
-├── adapters/        # External protocol adapters
-├── integrations/    # Orchestrator, advanced integration contracts
-├── security/        # 20 security contracts: Timelock, circuit breaker, rate limiter, MEV protection, emergency coordination
-└── internal/        # Internal helpers and base contracts
-
-noir/                # 21 Noir ZK circuits (shielded_pool, nullifiers, transfers, ring_signature, liquidity_proof, etc.)
-sdk/                 # TypeScript SDK (viem-based clients, 83 test files)
-certora/             # 69 formal verification specs (CVL)
-specs/               # K Framework + TLA+ formal specifications
-test/                # 282 Foundry test files + 15 Hardhat tests (5,760+ passing)
-scripts/             # Deployment + security scripts (storage layout checker, mutation testing)
-```
+---
 
 ## Quick Start
 
 ```bash
-git clone https://github.com/zaseon-research-labs/Zaseon.git && cd Zaseon
+git clone https://github.com/Soul-Research-Labs/SOUL.git && cd SOUL
 npm install && forge build
-forge test                             # Unit tests
-forge test --match-path "test/fuzz/*"  # Fuzz tests
-anvil &                                # Local node
-npx hardhat run scripts/deploy.js --network localhost
 ```
 
-**Requires:** Node.js 18+, Foundry
+```bash
+forge test -vv                     # Run all tests
+npx hardhat test                   # Hardhat integration tests
+forge test --match-path "test/fuzz/*"  # Fuzz tests
+```
+
+> **Requires:** Node.js 20+, [Foundry](https://getfoundry.sh), npm 10+
+
+---
+
+## Project Structure
+
+```
+contracts/              243 Solidity contracts
+├── core/               ZaseonProtocolHub, ConfidentialState, NullifierRegistry, PrivacyRouter
+├── primitives/         ZK-SLocks, PC³, CDNA, EASC, Orchestrator
+├── crosschain/         12 bridge adapters (Arbitrum, Optimism, Base, Aztec, zkSync, Scroll, Linea, LZ, Hyperlane)
+├── privacy/            ShieldedPool, ProofTranslator, StealthAddresses, LiquidityVault
+├── bridge/             MultiBridgeRouter, CrossChainProofHubV3, AtomicSwap
+├── verifiers/          47 verifiers (22 UltraHonk generated, CLSAG ring signature, VerifierRegistry)
+├── security/           20 modules: circuit breaker, rate limiter, MEV protection, emergency coordination
+├── compliance/         SanctionsOracle, SelectiveDisclosure, ComplianceReporting
+├── governance/         ZaseonGovernor, UpgradeTimelock, ZaseonToken
+├── relayer/            DecentralizedRelayerRegistry, HealthMonitor, FeeMarket, SLA
+├── upgradeable/        16 UUPS proxy implementations
+├── interfaces/         47 contract interfaces
+├── libraries/          BN254, CryptoLib, PoseidonYul, GasOptimizations
+└── adapters/           EVMUniversalAdapter, NativeL2BridgeWrapper
+
+noir/                   22 Noir ZK circuits
+sdk/                    TypeScript SDK (60 viem-based modules)
+certora/                69 formal verification specs (CVL)
+specs/                  K Framework + TLA+ formal specifications
+test/                   286 Foundry test files + 15 Hardhat tests
+scripts/                14 deploy scripts + security tooling
+monitoring/             Defender + Tenderly configs
+examples/               3 examples (private-payment, sdk-quickstart, zk-locks-demo)
+docs/                   51 docs including 13 ADRs
+```
 
 ---
 
 ## Core Contracts
 
-| Contract                      | Purpose                                                              |
-| ----------------------------- | -------------------------------------------------------------------- |
-| `ConfidentialStateContainer`  | Encrypted state with ZK verification & nullifier protection          |
-| `CrossChainProofHub`          | Proof aggregation & relay with gas-optimized batching                |
-| `ZaseonAtomicSwap`            | HTLC atomic swaps with stealth address support                       |
-| `ProofCarryingContainer`      | PC³ - Self-authenticating containers with embedded proofs            |
-| `ZKBoundStateLocks`           | Cross-chain state locks unlocked by ZK proofs                        |
-| `CrossDomainNullifierAlgebra` | Domain-separated nullifiers with composability                       |
-| `VerifierRegistryV2`          | Multi-circuit verifier registry with versioned adapters              |
-| `RingSignatureVerifier`       | BN254 CLSAG ring signature verifier (precompile-optimized)           |
-| `DirectL2Messenger`           | Direct L2-to-L2 messaging with relayer bonds and chain ID validation |
-| `CrossChainLiquidityVault`    | Cross-chain LP-backed liquidity for instant transfers                |
-| `MultiBridgeRouter`           | Multi-bridge routing with failover via IBridgeAdapter                |
+| Contract                      | Purpose                                                     |
+| ----------------------------- | ----------------------------------------------------------- |
+| `ZaseonProtocolHub`           | Central coordination hub — wires all 17 components          |
+| `ConfidentialStateContainer`  | Encrypted state with ZK verification & nullifier protection |
+| `CrossChainProofHubV3`        | Proof aggregation with optimistic verification + batching   |
+| `ZKBoundStateLocks`           | Cross-chain state locks unlocked by ZK proofs               |
+| `ProofCarryingContainer`      | PC³ — Self-authenticating containers with embedded proofs   |
+| `CrossDomainNullifierAlgebra` | CDNA — Domain-separated nullifiers with composability       |
+| `MultiBridgeRouter`           | Multi-bridge routing with failover via IBridgeAdapter       |
+| `ZaseonAtomicSwap`            | HTLC atomic swaps with stealth address support              |
 
-### Privacy Middleware
+### Privacy Layer
 
-| Contract                    | Purpose                                                               |
-| --------------------------- | --------------------------------------------------------------------- |
-| `PrivacyRouter`             | Unified facade for deposit, withdraw, cross-chain, stealth operations |
-| `UniversalShieldedPool`     | Multi-asset shielded pool with Poseidon Merkle tree (depth-32)        |
-| `UniversalProofTranslator`  | Translate ZK proofs between proof systems (Groth16 ↔ PLONK ↔ STARK)   |
-| `CrossChainSanctionsOracle` | Multi-provider compliance screening with weighted quorum              |
-| `RelayerFeeMarket`          | Incentivized relay marketplace with fee estimation                    |
-| `CrossChainPrivacyHub`      | Unified cross-chain privacy relay with vault-backed liquidity         |
-| `StealthAddressRegistry`    | ERC-5564 stealth addresses (upgradeable)                              |
+| Contract                    | Purpose                                                  |
+| --------------------------- | -------------------------------------------------------- |
+| `PrivacyRouter`             | Unified facade — deposit, withdraw, cross-chain, stealth |
+| `UniversalShieldedPool`     | Multi-asset shielded pool with Poseidon Merkle tree      |
+| `UniversalProofTranslator`  | Proof system translation (Groth16 ↔ PLONK ↔ STARK)       |
+| `StealthAddressRegistry`    | ERC-5564 stealth addresses (upgradeable)                 |
+| `CrossChainPrivacyHub`      | Cross-chain privacy relay with vault-backed liquidity    |
+| `CrossChainSanctionsOracle` | Multi-provider compliance screening with weighted quorum |
 
-See [API Reference](docs/SOLIDITY_API_REFERENCE.md) for full contract documentation.
+Full API documentation: [SOLIDITY_API_REFERENCE.md](docs/SOLIDITY_API_REFERENCE.md)
 
 ---
 
-## L2 Bridge Adapters
+## Bridge Adapters
 
-Zaseon provides adapters for major cross-chain messaging.
+All 12 adapters implement `IBridgeAdapter` with `bridgeMessage`, `estimateFee`, and `isMessageVerified`.
 
-### ✅ Production Adapters
-
-| Adapter                  | Key Features                          | Status        |
-| ------------------------ | ------------------------------------- | ------------- |
-| `ArbitrumBridgeAdapter`  | Arbitrum Nitro, Retryable Tickets     | ✅ Production |
-| `OptimismBridgeAdapter`  | OP Stack, L2OutputOracle verification | ✅ Production |
-| `BaseBridgeAdapter`      | OP Stack, CCTP support                | ✅ Production |
-| `EthereumL1Bridge`       | Ethereum L1 settlement with blob DA   | ✅ Production |
-| `AztecBridgeAdapter`     | UltraHonk proofs, encrypted notes     | ✅ Production |
-| `DirectL2Messenger`      | Direct L2-to-L2 messaging             | ✅ Production |
-| `CrossChainMessageRelay` | General message relay                 | ✅ Production |
-| `LayerZeroAdapter`       | 120+ chains via LayerZero V2          | ✅ Production |
-| `HyperlaneAdapter`       | Modular security with ISM             | ✅ Production |
-| `zkSyncBridgeAdapter`    | zkSync Era native bridge (ZK proofs)  | ✅ Production |
-| `ScrollBridgeAdapter`    | Scroll L2 native messaging (zkEVM)    | ✅ Production |
-| `LineaBridgeAdapter`     | Linea L2 bridge (zk-SNARK)            | ✅ Production |
+| Adapter                 | Transport                         | Coverage    |
+| ----------------------- | --------------------------------- | ----------- |
+| `ArbitrumBridgeAdapter` | Arbitrum Nitro, Retryable Tickets | Native      |
+| `OptimismBridgeAdapter` | OP Stack native messaging         | Native      |
+| `BaseBridgeAdapter`     | OP Stack + CCTP                   | Native      |
+| `AztecBridgeAdapter`    | UltraHonk proofs, encrypted notes | Native      |
+| `zkSyncBridgeAdapter`   | zkSync Era Diamond Proxy          | Native      |
+| `ScrollBridgeAdapter`   | Scroll L2 native messaging        | Native      |
+| `LineaBridgeAdapter`    | Linea MessageService              | Native      |
+| `LayerZeroAdapter`      | LayerZero V2 OApp                 | 120+ chains |
+| `HyperlaneAdapter`      | Hyperlane Mailbox + modular ISM   | Multi-chain |
+| `DirectL2Messenger`     | Direct L2↔L2 with relayer bonds   | L2 pairs    |
+| `EthereumL1Bridge`      | L1 settlement with blob DA        | Ethereum    |
+| `L2ChainAdapter`        | Generic L2 chain adapter          | Generic     |
 
 ---
 
 ## Cryptography
 
-**Proof System:** Groth16 on BN254 (production-ready, works on all EVM chains)  
-**Ring Signatures:** CLSAG on BN254 via EVM precompiles (ecAdd, ecMul, modExp) — ~26k gas/ring member  
-**Encryption:** AES-256-GCM for confidential state containers  
-**Hashing:** Poseidon (ZK-friendly), Keccak256 (EVM-native)  
-**Signatures:** ECDSA with signature malleability protection  
-**Privacy:** Stealth addresses, domain-separated nullifiers (CDNA)  
-**Circuits:** 21 Noir circuits (nullifiers, transfers, commitments, PC³, PBP, EASC, ring signatures, compliance, shielded pool, balance proofs, liquidity proofs)  
-**On-chain Verifiers:** 20 of 21 UltraHonk verifiers generated from Noir VKs (AggregatorVerifier pending `bb >= 3.1.0`)  
-**Curve Library:** BN254.sol — compressed points, hash-to-curve, point arithmetic via precompiles
+| Component          | Implementation                                                         |
+| ------------------ | ---------------------------------------------------------------------- |
+| Proof System       | Groth16 on BN254 — production EVM, all chains                          |
+| Ring Signatures    | CLSAG on BN254 via ecAdd/ecMul/modExp precompiles (~26k gas/member)    |
+| Encryption         | AES-256-GCM for confidential state containers                          |
+| Hashing            | Poseidon (ZK-friendly) + Keccak256 (EVM-native)                        |
+| Signatures         | ECDSA with signature malleability protection                           |
+| Privacy            | ERC-5564 stealth addresses, CDNA domain-separated nullifiers           |
+| Circuits           | 22 Noir circuits — transfers, commitments, ring sigs, compliance, etc. |
+| On-chain Verifiers | 22 UltraHonk verifiers generated from Noir VKs                         |
+| Curve Library      | BN254.sol — compressed points, hash-to-curve, precompile arithmetic    |
 
 ---
 
 ## Security
 
-### Security Stack
+### Defense Modules (20 contracts)
 
-| Module                             | Purpose                           |
-| ---------------------------------- | --------------------------------- |
-| `ZaseonUpgradeTimelock.sol`        | Time-delayed admin operations     |
-| `RelayCircuitBreaker.sol`          | Anomaly detection and auto-pause  |
-| `RelayRateLimiter.sol`             | Volume and rate limiting          |
-| `MEVProtection.sol`                | Commit-reveal for MEV resistance  |
-| `FlashLoanGuard.sol`               | Flash loan attack prevention      |
-| `EmergencyRecovery.sol`            | Emergency pause and recovery      |
-| `SecurityModule.sol`               | Core security primitives          |
-| `RelayProofValidator.sol`          | Cross-chain proof validation      |
-| `RelayWatchtower.sol`              | Real-time bridge monitoring       |
-| `ZKFraudProof.sol`                 | ZK-based fraud proof system       |
-| `GriefingProtection.sol`           | Anti-griefing mechanisms          |
-| `ProtocolEmergencyCoordinator.sol` | Multi-role emergency coordination |
-| `CrossChainEmergencyRelay.sol`     | Cross-chain emergency propagation |
+| Module                                    | Function                          |
+| ----------------------------------------- | --------------------------------- |
+| `ZaseonUpgradeTimelock`                   | Time-delayed admin operations     |
+| `RelayCircuitBreaker` + `SecurityModule`  | Anomaly detection, auto-pause     |
+| `RelayRateLimiter`                        | Volume and rate limiting          |
+| `MEVProtection`                           | Commit-reveal for MEV resistance  |
+| `FlashLoanGuard` + `GriefingProtection`   | Flash loan & griefing prevention  |
+| `ProtocolEmergencyCoordinator`            | Multi-role emergency coordination |
+| `CrossChainEmergencyRelay`                | Cross-chain emergency propagation |
+| `RelayWatchtower` + `RelayProofValidator` | Real-time bridge monitoring       |
+| `ZKFraudProof`                            | ZK-based fraud proof system       |
+| `ExperimentalFeatureRegistry`             | Feature graduation pipeline       |
 
-### Testing & Verification
+### Testing & Formal Verification
 
-**5,760+ Foundry tests + 816 SDK tests passing** across 282 test suites — unit, integration, fuzz, formal, invariant, attack simulation, and stress testing.
+286 Foundry test suites + 15 Hardhat tests covering unit, integration, fuzz, formal, invariant, attack simulation, and stress testing.
 
 ```bash
-forge test -vv                                          # All tests (5,760+ passing)
-forge test --match-path "test/fuzz/*" --fuzz-runs 10000  # Fuzz tests
-forge test --match-path "test/formal/*"                  # Halmos symbolic tests
-forge test --match-path "test/verifiers/*"               # Verifier + CLSAG tests
-forge test --match-path "test/upgradeable/*"             # UUPS proxy + storage layout tests
-forge test --match-path "test/integration/*"             # Cross-chain fork integration tests
-forge test --match-path "test/attacks/*"                 # Attack simulation tests
-npm run certora                                          # Formal verification (69 Certora CVL specs)
+forge test -vv                                             # All tests
+forge test --match-path "test/fuzz/*" --fuzz-runs 10000    # Fuzz (10k runs)
+forge test --match-path "test/formal/*"                    # Halmos symbolic
+forge test --match-path "test/attacks/*"                   # Attack simulations
+forge test --match-path "test/security/*"                  # Security hardening
+npx hardhat test                                           # Hardhat (15 suites)
 ```
 
-| Tool                   | Purpose                                                                |
-| ---------------------- | ---------------------------------------------------------------------- |
-| Foundry fuzz           | Property-based fuzzing (10k+ runs per test)                            |
-| Certora CVL            | 69 formal verification specs for core/privacy/bridge/vault contracts   |
-| Halmos                 | Symbolic execution (CrossChainProofHub, ZKBoundStateLocks — 12 checks) |
-| Echidna                | Stateful property testing (6 invariant properties)                     |
-| Gambit                 | Mutation testing (80 contracts)                                        |
-| K Framework            | Algebraic specification of protocol invariants                         |
-| TLA+                   | Model checking for cross-chain state machine safety                    |
-| Storage Layout Checker | Automated storage slot compatibility for UUPS upgrades                 |
+| Tool                | Scope                                                      |
+| ------------------- | ---------------------------------------------------------- |
+| **Foundry fuzz**    | Property-based fuzzing, 10k+ runs per test                 |
+| **Certora CVL**     | 69 formal specs for core, privacy, bridge, vault contracts |
+| **Halmos**          | Symbolic execution — CrossChainProofHub, ZKBoundStateLocks |
+| **Echidna**         | Stateful invariant testing (6 properties)                  |
+| **Gambit**          | Mutation testing across 80 contracts                       |
+| **K Framework**     | Algebraic specification of protocol invariants             |
+| **TLA+**            | Model checking for cross-chain state machine safety        |
+| **Storage Checker** | Automated storage slot compatibility for UUPS upgrades     |
+
+---
 
 ## SDK
 
@@ -423,19 +344,14 @@ npm run certora                                          # Formal verification (
 cd sdk && npm install && npm run build
 ```
 
-### Quick Start - ZK-Bound State Locks
+### Create a ZK-Bound State Lock
 
 ```typescript
 import { createWalletClient, createPublicClient, http } from "viem";
 import { sepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
-import {
-  ZaseonProtocolClient,
-  NoirProver,
-  SEPOLIA_ADDRESSES,
-} from "@zaseon/sdk";
+import { ZaseonProtocolClient, SEPOLIA_ADDRESSES } from "@zaseon/sdk";
 
-// Setup clients
 const account = privateKeyToAccount("0x...");
 const walletClient = createWalletClient({
   account,
@@ -444,170 +360,163 @@ const walletClient = createWalletClient({
 });
 const publicClient = createPublicClient({ chain: sepolia, transport: http() });
 
-// Initialize ZASEON
 const zaseon = new ZaseonProtocolClient({
   walletClient,
   publicClient,
   addresses: SEPOLIA_ADDRESSES,
 });
 
-// Create a ZK-bound state lock
-const stateHash = "0x" + "1234".repeat(16);
-const zkRequirements = "0x" + "abcd".repeat(16);
-const destChainId = 42161n; // Arbitrum
-
-const { lockId, txHash } = await zaseon.zkLocks.createStateLock(
+// Lock state on Ethereum, unlock on Arbitrum
+const { lockId } = await zaseon.zkLocks.createStateLock(
   stateHash,
   zkRequirements,
-  destChainId,
+  42161n,
 );
 
-console.log(`Lock created: ${lockId}`);
-```
-
-### Generate ZK Proofs
-
-```typescript
-import { NoirProver } from "@zaseon/sdk";
-
-const prover = new NoirProver();
-
-// Generate a balance proof
-const proof = await prover.generateProof("balance_proof", {
+// Generate proof and unlock on destination
+const proof = await new NoirProver().generateProof("balance_proof", {
   balance: 1000n,
   minRequired: 500n,
   salt: 12345n,
 });
-
-// Verify the proof
-const isValid = await prover.verifyProof("balance_proof", proof);
+await zaseon.zkLocks.unlockWithProof(lockId, proof);
 ```
 
-### Core API
-
-| Method                                 | Description                     |
-| -------------------------------------- | ------------------------------- |
-| `zaseon.zkLocks.createStateLock()`     | Create ZK-bound state lock      |
-| `zaseon.zkLocks.unlockWithProof()`     | Unlock state with ZK proof      |
-| `zaseon.zkLocks.getLockDetails()`      | Get lock state and metadata     |
-| `zaseon.nullifier.registerNullifier()` | Register cross-domain nullifier |
-| `zaseon.nullifier.isNullifierUsed()`   | Check nullifier status          |
-| `zaseon.proofHub.submitProof()`        | Submit proof for aggregation    |
-| `zaseon.atomicSwap.initiateSwap()`     | Start atomic swap               |
-| `zaseon.getProtocolStats()`            | Get protocol statistics         |
-
-### Privacy Middleware SDK
+### Privacy Operations
 
 ```typescript
-import {
-  PrivacyRouterClient,
-  ShieldedPoolClient,
-  RelayerFeeMarketClient,
-} from "@zaseon/sdk";
+import { PrivacyRouterClient, ShieldedPoolClient } from "@zaseon/sdk";
 
-// Unified privacy router (recommended entry point)
+// Deposit into shielded pool
 const router = new PrivacyRouterClient({
   publicClient,
   walletClient,
   routerAddress,
 });
-const { operationId } = await router.depositETH(commitment, parseEther("1"));
+await router.depositETH(commitment, parseEther("1"));
+
+// Withdraw privately
 await router.withdraw({ nullifierHash, recipient, root, proof });
-
-// Direct shielded pool access
-const pool = new ShieldedPoolClient({
-  publicClient,
-  walletClient,
-  poolAddress,
-});
-const note = pool.generateDepositNote(parseEther("1")); // { commitment, secret, nullifier }
-const stats = await pool.getPoolStats();
-
-// Relayer fee market
-const feeMarket = new RelayerFeeMarketClient({
-  publicClient,
-  walletClient,
-  feeMarketAddress,
-});
-const fee = await feeMarket.estimateFee(1, 42161); // Ethereum → Arbitrum
-await feeMarket.submitRelayRequest(1, 42161, proofData, deadline, fee);
 ```
 
-### Supported Networks
+### API Overview
 
-| Network          | Chain ID | Status     |
-| ---------------- | -------- | ---------- |
-| Sepolia          | 11155111 | ✅ Live    |
-| Arbitrum Sepolia | 421614   | 🔄 Planned |
-| Base Sepolia     | 84532    | ✅ Live    |
+| Method                                 | Description                     |
+| -------------------------------------- | ------------------------------- |
+| `zaseon.zkLocks.createStateLock()`     | Create ZK-bound state lock      |
+| `zaseon.zkLocks.unlockWithProof()`     | Unlock state with ZK proof      |
+| `zaseon.nullifier.registerNullifier()` | Register cross-domain nullifier |
+| `zaseon.proofHub.submitProof()`        | Submit proof for aggregation    |
+| `zaseon.atomicSwap.initiateSwap()`     | Start atomic swap               |
 
-See [sdk/README.md](sdk/README.md) for full documentation.
+Full SDK documentation: [sdk/README.md](sdk/README.md)
 
 ---
 
 ## Deployments
 
-### Sepolia Testnet ✅
+### Sepolia Testnet
 
-**Deployed:** January 22, 2026 | **Chain ID:** 11155111
+Deployed January 22, 2026 · Chain ID `11155111`
 
-| Contract                     | Address                                                                                                                         |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| ConfidentialStateContainerV3 | [`0x5d79991daabf7cd198860a55f3a1f16548687798`](https://sepolia.etherscan.io/address/0x5d79991daabf7cd198860a55f3a1f16548687798) |
-| CrossChainProofHubV3         | [`0x40eaa5de0c6497c8943c967b42799cb092c26adc`](https://sepolia.etherscan.io/address/0x40eaa5de0c6497c8943c967b42799cb092c26adc) |
-| ProofCarryingContainer (PC³) | [`0x52f8a660ff436c450b5190a84bc2c1a86f1032cc`](https://sepolia.etherscan.io/address/0x52f8a660ff436c450b5190a84bc2c1a86f1032cc) |
-| ZKBoundStateLocks            | [`0xf390ae12c9ce8f546ef7c7adaa6a1ab7768a2c78`](https://sepolia.etherscan.io/address/0xf390ae12c9ce8f546ef7c7adaa6a1ab7768a2c78) |
-| NullifierRegistryV3          | [`0x3e21d559f19c76a0bcec378b10dae2cc0e4c2191`](https://sepolia.etherscan.io/address/0x3e21d559f19c76a0bcec378b10dae2cc0e4c2191) |
-| ZaseonAtomicSwapV2           | [`0xdefb9a66dc14a6d247b282555b69da7745b0ab57`](https://sepolia.etherscan.io/address/0xdefb9a66dc14a6d247b282555b69da7745b0ab57) |
+| Contract                     | Address                                                                                            |
+| ---------------------------- | -------------------------------------------------------------------------------------------------- |
+| ConfidentialStateContainerV3 | [`0x5d79...7798`](https://sepolia.etherscan.io/address/0x5d79991daabf7cd198860a55f3a1f16548687798) |
+| CrossChainProofHubV3         | [`0x40ea...6adc`](https://sepolia.etherscan.io/address/0x40eaa5de0c6497c8943c967b42799cb092c26adc) |
+| ProofCarryingContainer (PC³) | [`0x52f8...32cc`](https://sepolia.etherscan.io/address/0x52f8a660ff436c450b5190a84bc2c1a86f1032cc) |
+| ZKBoundStateLocks            | [`0xf390...2c78`](https://sepolia.etherscan.io/address/0xf390ae12c9ce8f546ef7c7adaa6a1ab7768a2c78) |
+| NullifierRegistryV3          | [`0x3e21...2191`](https://sepolia.etherscan.io/address/0x3e21d559f19c76a0bcec378b10dae2cc0e4c2191) |
+| ZaseonAtomicSwapV2           | [`0xdefb...ab57`](https://sepolia.etherscan.io/address/0xdefb9a66dc14a6d247b282555b69da7745b0ab57) |
 
-**Full deployment:** See [`deployments/`](deployments/)
+### Base Sepolia
 
-### Base Sepolia Testnet ✅
+Chain ID `84532`
 
-**Deployed:** TBD (planned) | **Chain ID:** 84532
+| Contract                     | Address                                                                                            |
+| ---------------------------- | -------------------------------------------------------------------------------------------------- |
+| PrivacyZoneManager           | [`0xDFBE...b602`](https://sepolia.basescan.org/address/0xDFBEe5bB4d4943715D4f8539cbad0a18aA75b602) |
+| ZaseonCrossChainRelay        | [`0x65CD...0251`](https://sepolia.basescan.org/address/0x65CDCdA5ba98bB0d784c3a69C826cb3B59C20251) |
+| OptimisticBridgeVerifier     | [`0xBA63...D9f`](https://sepolia.basescan.org/address/0xBA63a3F3C5568eC6447FBe1b852a613743419D9f)  |
+| BridgeRateLimiter            | [`0x2382...1135`](https://sepolia.basescan.org/address/0x23824cDbD8Ca773c5DA0202f8f41083F81aF1135) |
+| BridgeWatchtower             | [`0x3E55...B76E`](https://sepolia.basescan.org/address/0x3E556432Ea021046ad4BE22cB94f713f98f4B76E) |
+| DecentralizedRelayerRegistry | [`0x2472...D9d`](https://sepolia.basescan.org/address/0x2472BDB087590e4F4F4bE1243ec9533828eC0D9d)  |
+| BridgeFraudProof             | [`0x583E...20f`](https://sepolia.basescan.org/address/0x583E650c0385FEd1E427dF68fa91b2d8E56Df20f)  |
 
-| Contract                     | Address                                                                                                                         |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| PrivacyZoneManager           | [`0xDFBEe5bB4d4943715D4f8539cbad0a18aA75b602`](https://sepolia.basescan.org/address/0xDFBEe5bB4d4943715D4f8539cbad0a18aA75b602) |
-| ZaseonCrossChainRelay        | [`0x65CDCdA5ba98bB0d784c3a69C826cb3B59C20251`](https://sepolia.basescan.org/address/0x65CDCdA5ba98bB0d784c3a69C826cb3B59C20251) |
-| OptimisticBridgeVerifier     | [`0xBA63a3F3C5568eC6447FBe1b852a613743419D9f`](https://sepolia.basescan.org/address/0xBA63a3F3C5568eC6447FBe1b852a613743419D9f) |
-| BridgeRateLimiter            | [`0x23824cDbD8Ca773c5DA0202f8f41083F81aF1135`](https://sepolia.basescan.org/address/0x23824cDbD8Ca773c5DA0202f8f41083F81aF1135) |
-| BridgeWatchtower             | [`0x3E556432Ea021046ad4BE22cB94f713f98f4B76E`](https://sepolia.basescan.org/address/0x3E556432Ea021046ad4BE22cB94f713f98f4B76E) |
-| DecentralizedRelayerRegistry | [`0x2472BDB087590e4F4F4bE1243ec9533828eC0D9d`](https://sepolia.basescan.org/address/0x2472BDB087590e4F4F4bE1243ec9533828eC0D9d) |
-| BridgeFraudProof             | [`0x583E650c0385FEd1E427dF68fa91b2d8E56Df20f`](https://sepolia.basescan.org/address/0x583E650c0385FEd1E427dF68fa91b2d8E56Df20f) |
+Full deployment details: [`deployments/`](deployments/)
 
-**Full deployment:** See [Tenderly dashboard](monitoring/tenderly.config.json) for Base Sepolia monitoring
-
-### Deploy to Testnet
+### Deploy
 
 ```bash
-# Sepolia
-npx hardhat run scripts/deploy-v3.ts --network sepolia
+# Full deploy (8-phase script)
+forge script scripts/deploy/DeployMainnet.s.sol --rpc-url $RPC_URL --broadcast
 
-# L2 testnets
-npx hardhat run scripts/deploy/deploy-l2-bridges.ts --network optimism-sepolia
-npx hardhat run scripts/deploy/deploy-l2-bridges.ts --network arbitrum-sepolia
-npx hardhat run scripts/deploy/deploy-l2-bridges.ts --network base-sepolia
+# L2 bridge adapters
+forge script scripts/deploy/DeployL2Bridges.s.sol --rpc-url $RPC_URL --broadcast
+
+# Post-deploy wiring
+forge script scripts/deploy/WireRemainingComponents.s.sol --rpc-url $RPC_URL --broadcast
 ```
+
+Or use **GitHub Actions → Deploy Testnet** workflow for automated deployment to 7 networks.
 
 ---
 
 ## Documentation
 
-[Architecture](docs/ARCHITECTURE.md) • [API Reference](docs/SOLIDITY_API_REFERENCE.md) • [Integration Guide](docs/INTEGRATION_GUIDE.md) • [L2 Bridges](docs/L2_INTEROPERABILITY.md) • [Security](docs/THREAT_MODEL.md)
+51 docs including 13 Architecture Decision Records.
+
+| Category         | Documents                                                                                                                                                                                       |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Start Here**   | [Getting Started](docs/GETTING_STARTED.md) · [Integration Guide](docs/INTEGRATION_GUIDE.md)                                                                                                     |
+| **Architecture** | [Architecture](docs/ARCHITECTURE.md) · [Modular Privacy](docs/MODULAR_PRIVACY_ARCHITECTURE.md) · [Complexity](docs/COMPLEXITY_MANAGEMENT.md)                                                    |
+| **Cross-Chain**  | [L2 Interop](docs/L2_INTEROPERABILITY.md) · [Bridge Integration](docs/BRIDGE_INTEGRATION.md) · [Bridge Security](docs/BRIDGE_SECURITY_FRAMEWORK.md) · [Privacy](docs/CROSS_CHAIN_PRIVACY.md)    |
+| **L2 Guides**    | [Arbitrum](docs/ARBITRUM_INTEGRATION.md) · [Optimism](docs/OPTIMISM_INTEGRATION.md) · [Aztec](docs/AZTEC_INTEGRATION.md) · [Ethereum](docs/ETHEREUM_INTEGRATION.md)                             |
+| **Privacy**      | [Middleware](docs/PRIVACY_MIDDLEWARE.md) · [Stealth Addresses](docs/STEALTH_ADDRESSES.md) · [Recursive Proofs](docs/RECURSIVE_PROOFS.md)                                                        |
+| **Security**     | [Threat Model](docs/THREAT_MODEL.md) · [Audit Report](docs/SECURITY_AUDIT_REPORT.md) · [Incident Response](docs/INCIDENT_RESPONSE_RUNBOOK.md)                                                   |
+| **Operations**   | [Deployment](docs/DEPLOYMENT.md) · [Checklist](docs/DEPLOYMENT_CHECKLIST.md) · [Monitoring](docs/MONITORING_CONFIG.md) · [Upgrades](docs/UPGRADE_GUIDE.md)                                      |
+| **Governance**   | [Governance](docs/GOVERNANCE.md) · [EIP Draft](docs/EIP_DRAFT.md)                                                                                                                               |
+| **Reference**    | [API Reference](docs/SOLIDITY_API_REFERENCE.md) · [NatSpec Guide](docs/NATSPEC_STYLE_GUIDE.md) · [Coverage](docs/TEST_COVERAGE_SUMMARY.md) · [Formal Verification](docs/FORMAL_VERIFICATION.md) |
+| **ADRs**         | [ADR-001 → ADR-013](docs/adr/) — Groth16, CDNA, relayer incentives, UUPS, ERC-5564, Poseidon, Noir migration, and more                                                                          |
+
+---
+
+## CI/CD
+
+11 GitHub Actions workflows:
+
+| Workflow              | Trigger   | Purpose                                     |
+| --------------------- | --------- | ------------------------------------------- |
+| `ci.yml`              | Push / PR | Build + test (Foundry, Hardhat, SDK)        |
+| `certora.yml`         | Push / PR | Formal verification (69 CVL specs)          |
+| `coverage.yml`        | Push / PR | Coverage with threshold enforcement         |
+| `slither.yml`         | Push / PR | Static analysis                             |
+| `noir-benchmarks.yml` | Push / PR | Noir circuit compilation + proof benchmarks |
+| `docs.yml`            | Push / PR | Documentation validation                    |
+| `fork-tests.yml`      | Scheduled | Fork integration tests on live networks     |
+| `nightly.yml`         | Scheduled | Extended fuzz + stress tests                |
+| `mutation.yml`        | Scheduled | Gambit mutation testing                     |
+| `deploy-testnet.yml`  | Manual    | Testnet deployment (7 networks)             |
+| `release.yml`         | Tag push  | NPM publish + GitHub release                |
 
 ---
 
 ## Contributing
 
-Fork → branch → `forge test && npm test` → PR.
+```
+Fork → Branch → forge test && npx hardhat test → PR
+```
 
-All new features need fuzz tests. Security-critical code needs Certora specs. Follow the [NatSpec Style Guide](docs/NATSPEC_STYLE_GUIDE.md) and use existing patterns from `contracts/interfaces/`.
+- All new features require fuzz tests
+- Security-critical code requires Certora specs
+- Follow the [NatSpec Style Guide](docs/NATSPEC_STYLE_GUIDE.md)
+- Use existing patterns from `contracts/interfaces/`
 
-See [SECURITY.md](SECURITY.md) for disclosure policy.
+See [SECURITY.md](SECURITY.md) for vulnerability disclosure and [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ---
 
-## License
+<div align="center">
 
-MIT - [LICENSE](LICENSE) | Built by [Zaseon Research Labs](https://github.com/soul-research-labs)
+**MIT License** · Built by [Soul Research Labs](https://github.com/Soul-Research-Labs)
+
+</div>

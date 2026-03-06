@@ -35,7 +35,7 @@ contract NullifierRegistryV3UpgradeableTest is Test {
 
         // Grant roles
         registry.grantRole(registry.REGISTRAR_ROLE(), registrar);
-        registry.grantRole(registry.RELAY_ROLE(), bridgeRole);
+        registry.grantRole(registry.BRIDGE_ROLE(), bridgeRole);
         registry.grantRole(registry.EMERGENCY_ROLE(), emergency);
     }
 
@@ -49,7 +49,7 @@ contract NullifierRegistryV3UpgradeableTest is Test {
 
     function test_InitializerSetsRoles() public view {
         assertTrue(registry.hasRole(registry.REGISTRAR_ROLE(), admin));
-        assertTrue(registry.hasRole(registry.RELAY_ROLE(), admin));
+        assertTrue(registry.hasRole(registry.BRIDGE_ROLE(), admin));
         assertTrue(registry.hasRole(registry.EMERGENCY_ROLE(), admin));
         assertTrue(registry.hasRole(registry.UPGRADER_ROLE(), admin));
     }

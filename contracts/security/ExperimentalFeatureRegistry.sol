@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import {IExperimentalFeatureRegistry} from "../interfaces/IExperimentalFeatureRegistry.sol";
 
 /**
  * @title ExperimentalFeatureRegistry
@@ -15,40 +16,16 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
  * - Graduation requirements enforcement
  * - Emergency disable capability
  */
-contract ExperimentalFeatureRegistry is AccessControl {
+contract ExperimentalFeatureRegistry is
+    IExperimentalFeatureRegistry,
+    AccessControl
+{
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
 
     bytes32 public constant FEATURE_ADMIN = keccak256("FEATURE_ADMIN");
     bytes32 public constant EMERGENCY_ROLE = keccak256("EMERGENCY_ROLE");
-
-    /*//////////////////////////////////////////////////////////////
-                                 ENUMS
-    //////////////////////////////////////////////////////////////*/
-
-    enum FeatureStatus {
-        DISABLED, // Feature is disabled
-        EXPERIMENTAL, // Testnet only, high risk
-        BETA, // Limited mainnet, medium risk
-        PRODUCTION // Full mainnet, audited
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                                STRUCTS
-    //////////////////////////////////////////////////////////////*/
-
-    struct Feature {
-        string name;
-        FeatureStatus status;
-        address implementation;
-        uint256 maxValueLocked; // Risk limit
-        uint256 currentValueLocked; // Current TVL
-        bool requiresWarning;
-        string documentationUrl;
-        uint256 createdAt;
-        uint256 lastStatusChange;
-    }
 
     /*//////////////////////////////////////////////////////////////
                                 STORAGE
@@ -67,60 +44,6 @@ contract ExperimentalFeatureRegistry is AccessControl {
 
     /// @notice List of all feature IDs
     bytes32[] public featureIds;
-
-    /*//////////////////////////////////////////////////////////////
-                                EVENTS
-    //////////////////////////////////////////////////////////////*/
-
-    event FeatureRegistered(
-        bytes32 indexed featureId,
-        string name,
-        FeatureStatus status
-    );
-
-    event FeatureStatusUpdated(
-        bytes32 indexed featureId,
-        FeatureStatus oldStatus,
-        FeatureStatus newStatus
-    );
-
-    event FeatureValueLocked(
-        bytes32 indexed featureId,
-        uint256 amount,
-        uint256 totalLocked
-    );
-
-    event FeatureValueUnlocked(
-        bytes32 indexed featureId,
-        uint256 amount,
-        uint256 totalLocked
-    );
-
-    event RiskLimitUpdated(
-        bytes32 indexed featureId,
-        uint256 oldLimit,
-        uint256 newLimit
-    );
-
-    event FeatureImplementationUpdated(
-        bytes32 indexed featureId,
-        address indexed oldImplementation,
-        address indexed newImplementation
-    );
-
-    /*//////////////////////////////////////////////////////////////
-                                ERRORS
-    //////////////////////////////////////////////////////////////*/
-
-    error FeatureNotFound(bytes32 featureId);
-    error FeatureDisabled(bytes32 featureId);
-    error ExceedsRiskLimit(
-        bytes32 featureId,
-        uint256 requested,
-        uint256 available
-    );
-    error InvalidStatusTransition(FeatureStatus from, FeatureStatus to);
-    error FeatureAlreadyExists(bytes32 featureId);
 
     /*//////////////////////////////////////////////////////////////
                             CONSTRUCTOR

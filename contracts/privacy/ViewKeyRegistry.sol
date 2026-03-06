@@ -5,6 +5,7 @@ import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/acce
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import {IViewKeyRegistry} from "../interfaces/IViewKeyRegistry.sol";
 
 /**
  * @title ViewKeyRegistry
@@ -28,6 +29,7 @@ import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/ut
  * @custom:security-contact security@zaseonprotocol.io
  */
 contract ViewKeyRegistry is
+    IViewKeyRegistry,
     AccessControlUpgradeable,
     PausableUpgradeable,
     ReentrancyGuardUpgradeable,
@@ -48,79 +50,6 @@ contract ViewKeyRegistry is
     uint256 public constant MIN_GRANT_DURATION = 1 hours;
     uint256 public constant MAX_GRANT_DURATION = 365 days;
     uint256 public constant REVOCATION_DELAY = 1 hours;
-
-    // =========================================================================
-    // ENUMS
-    // =========================================================================
-
-    enum ViewKeyType {
-        INCOMING,
-        OUTGOING,
-        FULL,
-        BALANCE,
-        AUDIT
-    }
-
-    enum GrantStatus {
-        ACTIVE,
-        REVOKED,
-        EXPIRED,
-        PENDING_REVOCATION
-    }
-
-    // =========================================================================
-    // STRUCTS
-    // =========================================================================
-
-    /**
-     * @notice Public view key registration
-     * @param publicKey The public portion of view key
-     * @param keyType Type of view access
-     * @param commitment Commitment to the private key
-     * @param registrationTime When key was registered
-     * @param isActive Whether key is currently active
-     */
-    struct ViewKey {
-        bytes32 publicKey;
-        ViewKeyType keyType;
-        bytes32 commitment;
-        uint256 registrationTime;
-        bool isActive;
-    }
-
-    /**
-     * @notice Grant of view access to another party
-     * @param grantId Unique grant identifier
-     * @param granter Account granting access
-     * @param grantee Account receiving access
-     * @param viewKeyHash Hash of the view key being shared
-     * @param keyType Type of access granted
-     * @param startTime When grant becomes active
-     * @param endTime When grant expires
-     * @param status Current status of grant
-     * @param scope Optional scope restriction (chain ID, contract, etc.)
-     */
-    struct ViewGrant {
-        bytes32 grantId;
-        address granter;
-        address grantee;
-        bytes32 viewKeyHash;
-        ViewKeyType keyType;
-        uint256 startTime;
-        uint256 endTime;
-        GrantStatus status;
-        bytes32 scope;
-    }
-
-    /**
-     * @notice Audit trail entry
-     */
-    struct AuditEntry {
-        bytes32 grantId;
-        address accessor;
-        uint256 accessTime;
-        bytes32 accessProof;
-    }
 
     // =========================================================================
     // STATE
@@ -153,56 +82,6 @@ contract ViewKeyRegistry is
     uint256 public totalActiveGrants;
 
     // =========================================================================
-    // EVENTS
-    // =========================================================================
-
-    event ViewKeyRegistered(
-        address indexed account,
-        ViewKeyType keyType,
-        bytes32 publicKey
-    );
-    event ViewKeyRevoked(address indexed account, ViewKeyType keyType);
-    event ViewKeyRotated(
-        address indexed account,
-        ViewKeyType keyType,
-        bytes32 oldKey,
-        bytes32 newKey
-    );
-
-    event ViewGrantIssued(
-        bytes32 indexed grantId,
-        address indexed granter,
-        address indexed grantee,
-        ViewKeyType keyType,
-        uint256 endTime
-    );
-    event ViewGrantRevoked(bytes32 indexed grantId, address indexed revoker);
-    event ViewGrantExpired(bytes32 indexed grantId);
-    event ViewGrantAccessed(
-        bytes32 indexed grantId,
-        address indexed accessor,
-        bytes32 accessProof
-    );
-
-    // =========================================================================
-    // ERRORS
-    // =========================================================================
-
-    error KeyAlreadyRegistered();
-    error KeyNotRegistered();
-    error KeyNotActive();
-    error InvalidKeyType();
-    error InvalidDuration();
-    error MaxGrantsReached();
-    error GrantNotFound();
-    error GrantNotActive();
-    error GrantExpired();
-    error UnauthorizedAccess();
-    error RevocationPending();
-    error InvalidScope();
-    error ZeroAddress();
-
-    // =========================================================================
     // INITIALIZER
     // =========================================================================
 
@@ -211,11 +90,11 @@ contract ViewKeyRegistry is
         _disableInitializers();
     }
 
-        /**
+    /**
      * @notice Initializes the operation
      * @param admin The admin bound
      */
-function initialize(address admin) external initializer {
+    function initialize(address admin) external initializer {
         if (admin == address(0)) revert ZeroAddress();
 
         __AccessControl_init();
@@ -316,7 +195,7 @@ function initialize(address admin) external initializer {
      * @param keyType Type of access to grant
      * @param duration How long the grant lasts
      * @param scope Optional scope restriction
-          * @return grantId The grant id
+     * @return grantId The grant id
      */
     function issueGrant(
         address grantee,
@@ -369,7 +248,7 @@ function initialize(address admin) external initializer {
      * @param auditor Auditor address
      * @param duration Audit duration
      * @param scope Audit scope (e.g., specific chain or time range)
-          * @return grantId The grant id
+     * @return grantId The grant id
      */
     function issueAuditGrant(
         address auditor,
@@ -496,7 +375,7 @@ function initialize(address admin) external initializer {
      * @param account Account claiming ownership
      * @param keyType Key type being verified
      * @param proof Proof of key ownership
-          * @return The result value
+     * @return The result value
      */
     function verifyKeyOwnership(
         address account,
@@ -514,7 +393,7 @@ function initialize(address admin) external initializer {
     /**
      * @notice Check if a grant is currently valid
      * @param grantId Grant to check
-          * @return The result value
+     * @return The result value
      */
     function isGrantValid(bytes32 grantId) external view returns (bool) {
         ViewGrant storage grant = grants[grantId];
@@ -525,7 +404,7 @@ function initialize(address admin) external initializer {
 
     /**
      * @notice Get grant details
-          * @param grantId The grantId identifier
+     * @param grantId The grantId identifier
      * @return granter The granter
      * @return grantee The grantee
      * @return keyType The key type
@@ -563,7 +442,7 @@ function initialize(address admin) external initializer {
 
     /**
      * @notice Get all active grants for an account (as grantee)
-          * @param account The account address
+     * @param account The account address
      * @return The result value
      */
     function getActiveGrantsReceived(
@@ -607,7 +486,7 @@ function initialize(address admin) external initializer {
 
     /**
      * @notice Get audit trail for a grant
-          * @param grantId The grantId identifier
+     * @param grantId The grantId identifier
      * @return The result value
      */
     function getAuditTrail(
@@ -669,17 +548,17 @@ function initialize(address admin) external initializer {
     // ADMIN
     // =========================================================================
 
-        /**
+    /**
      * @notice Pauses the operation
      */
-function pause() external onlyRole(ADMIN_ROLE) {
+    function pause() external onlyRole(ADMIN_ROLE) {
         _pause();
     }
 
-        /**
+    /**
      * @notice Unpauses the operation
      */
-function unpause() external onlyRole(ADMIN_ROLE) {
+    function unpause() external onlyRole(ADMIN_ROLE) {
         _unpause();
     }
 

@@ -208,7 +208,7 @@ At ~30 gwei (Ethereum mainnet):
 | ZaseonCrossChainRelay             | ~2,500,000      | ~0.075     |
 | CrossChainNullifierSync           | ~2,200,000      | ~0.066     |
 | UniversalShieldedPool             | ~3,200,000      | ~0.096     |
-| UltraHonk Verifiers (×8)          | ~12,000,000     | ~0.360     |
+| UltraHonk Verifiers (×21)         | ~12,000,000     | ~0.360     |
 | **Total**                         | **~32,300,000** | **~0.97**  |
 
 L2 deployment costs are significantly lower (1-10% of L1).
@@ -307,7 +307,7 @@ This sets up:
 | Insufficient funds     | Fund deployer wallet, check gas prices                          |
 | Verification failed    | Ensure compiler settings match (solc 0.8.24, via_ir, optimizer) |
 | Tx reverted            | Check constructor args, deploy dependencies first               |
-| Noir compilation error | Ensure nargo 1.0.0-beta.18+, check `noir/circuits/`             |
+| Noir compilation error | Ensure nargo 1.0.0-beta.18+, check `noir/`                      |
 | Verifier mismatch      | Re-generate verifiers with matching circuit version             |
 
 ---

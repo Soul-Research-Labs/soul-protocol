@@ -5,6 +5,7 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {IProtocolEmergencyCoordinator} from "../interfaces/IProtocolEmergencyCoordinator.sol";
+import {ICrossChainEmergencyRelay} from "../interfaces/ICrossChainEmergencyRelay.sol";
 
 /**
  * @title CrossChainEmergencyRelay
@@ -26,7 +27,12 @@ import {IProtocolEmergencyCoordinator} from "../interfaces/IProtocolEmergencyCoo
  *  - On L2: a mirror contract (or lightweight receiver) decodes the message
  *    and triggers local pause/unpause
  */
-contract CrossChainEmergencyRelay is AccessControl, ReentrancyGuard, Pausable {
+contract CrossChainEmergencyRelay is
+    ICrossChainEmergencyRelay,
+    AccessControl,
+    ReentrancyGuard,
+    Pausable
+{
     /*//////////////////////////////////////////////////////////////
                               ROLES
     //////////////////////////////////////////////////////////////*/
@@ -46,81 +52,6 @@ contract CrossChainEmergencyRelay is AccessControl, ReentrancyGuard, Pausable {
 
     /// @dev Magic prefix for emergency messages to prevent accidental relay
     bytes4 public constant EMERGENCY_PREFIX = 0x454D5247; // "EMRG"
-
-    /*//////////////////////////////////////////////////////////////
-                             STRUCTS
-    //////////////////////////////////////////////////////////////*/
-
-    struct ChainConfig {
-        uint256 chainId;
-        address messenger; // L1 messenger/bridge that can send to this chain
-        address remoteReceiver; // Address of the receiver contract on that L2
-        bool active;
-        uint48 lastBroadcastAt;
-    }
-
-    struct EmergencyMessage {
-        bytes4 prefix;
-        uint256 nonce;
-        uint256 sourceChainId;
-        uint256 targetChainId;
-        IProtocolEmergencyCoordinator.Severity severity;
-        uint256 incidentId;
-        uint48 timestamp;
-    }
-
-    struct HeartbeatState {
-        uint48 lastHeartbeatAt;
-        uint48 interval;
-        bool autoPauseTriggered;
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                              EVENTS
-    //////////////////////////////////////////////////////////////*/
-
-    event ChainRegistered(
-        uint256 indexed chainId,
-        address messenger,
-        address remoteReceiver
-    );
-    event ChainDeactivated(uint256 indexed chainId);
-    event ChainReactivated(uint256 indexed chainId);
-    event EmergencyBroadcasted(
-        uint256 indexed incidentId,
-        IProtocolEmergencyCoordinator.Severity severity,
-        uint256 chainsNotified,
-        uint256 chainsFailed
-    );
-    event EmergencyReceived(
-        uint256 indexed incidentId,
-        uint256 indexed sourceChainId,
-        IProtocolEmergencyCoordinator.Severity severity
-    );
-    event RecoveryBroadcasted(
-        uint256 indexed incidentId,
-        uint256 chainsNotified
-    );
-    event HeartbeatSent(uint256 indexed chainId, uint48 timestamp);
-    event HeartbeatReceived(uint256 indexed sourceChainId, uint48 timestamp);
-    event HeartbeatIntervalUpdated(uint48 oldInterval, uint48 newInterval);
-    event AutoPauseTriggered(string reason);
-    event AutoPauseRecovered();
-
-    /*//////////////////////////////////////////////////////////////
-                              ERRORS
-    //////////////////////////////////////////////////////////////*/
-
-    error ZeroAddress();
-    error ChainAlreadyRegistered(uint256 chainId);
-    error ChainNotRegistered(uint256 chainId);
-    error MaxChainsReached();
-    error InvalidChainId();
-    error InvalidHeartbeatInterval();
-    error InvalidMessage();
-    error ReplayDetected(uint256 chainId, uint256 nonce);
-    error MessageTooOld(uint48 timestamp, uint48 maxAge);
-    error SendFailed(uint256 chainId);
 
     /*//////////////////////////////////////////////////////////////
                            IMMUTABLES

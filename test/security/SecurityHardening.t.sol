@@ -5,6 +5,7 @@ import "forge-std/Test.sol";
 import "../../contracts/security/OptimisticRelayVerifier.sol";
 import "../../contracts/security/RelaySecurityScorecard.sol";
 import "../../contracts/security/ExperimentalFeatureRegistry.sol";
+import "../../contracts/interfaces/IExperimentalFeatureRegistry.sol";
 import "../../contracts/security/RelayRateLimiter.sol";
 import "../../contracts/security/RelayWatchtower.sol";
 
@@ -148,7 +149,7 @@ contract SecurityHardeningTest is Test {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                ExperimentalFeatureRegistry.FeatureDisabled.selector,
+                IExperimentalFeatureRegistry.FeatureDisabled.selector,
                 featureId
             )
         );
@@ -157,12 +158,12 @@ contract SecurityHardeningTest is Test {
         // Enable experimental
         registry.updateFeatureStatus(
             featureId,
-            ExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
+            IExperimentalFeatureRegistry.FeatureStatus.EXPERIMENTAL
         );
         assertTrue(registry.isFeatureEnabled(featureId));
 
         // Check risk limit
-        ExperimentalFeatureRegistry.Feature memory f = registry.getFeature(
+        IExperimentalFeatureRegistry.Feature memory f = registry.getFeature(
             featureId
         );
         assertEq(f.maxValueLocked, 1 ether);
@@ -222,9 +223,7 @@ contract SecurityHardeningTest is Test {
         watchtower.voteOnReport(reportId, true);
 
         // Should be finalized and action executed
-        RelayWatchtower.AnomalyReport memory r = watchtower.getReport(
-            reportId
-        );
+        RelayWatchtower.AnomalyReport memory r = watchtower.getReport(reportId);
         assertEq(uint(r.status), uint(RelayWatchtower.ReportStatus.CONFIRMED));
 
         // Check action execution (RateLimiter triggered)

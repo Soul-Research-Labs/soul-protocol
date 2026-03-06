@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import "../../contracts/privacy/UnifiedNullifierManager.sol";
+import "../../contracts/interfaces/IUnifiedNullifierManager.sol";
 import "../../contracts/interfaces/IProofVerifier.sol";
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
@@ -83,7 +84,7 @@ contract UnifiedNullifierManagerTest is Test {
 
     function test_initialize_revertOnZeroAddress() public {
         UnifiedNullifierManager newImpl = new UnifiedNullifierManager();
-        vm.expectRevert(UnifiedNullifierManager.ZeroAddress.selector);
+        vm.expectRevert(IUnifiedNullifierManager.ZeroAddress.selector);
         new ERC1967Proxy(
             address(newImpl),
             abi.encodeCall(UnifiedNullifierManager.initialize, (address(0)))
@@ -95,21 +96,20 @@ contract UnifiedNullifierManagerTest is Test {
         assertEq(manager.getRegisteredChainCount(), 13);
 
         // Spot check some chains
-        UnifiedNullifierManager.ChainDomain memory arb = manager.getChainDomain(
-            42_161
-        );
+        IUnifiedNullifierManager.ChainDomain memory arb = manager
+            .getChainDomain(42_161);
         assertTrue(arb.isActive);
         assertEq(
             uint256(arb.chainType),
-            uint256(UnifiedNullifierManager.ChainType.EVM)
+            uint256(IUnifiedNullifierManager.ChainType.EVM)
         );
 
-        UnifiedNullifierManager.ChainDomain memory monero = manager
+        IUnifiedNullifierManager.ChainDomain memory monero = manager
             .getChainDomain(900_001);
         assertTrue(monero.isActive);
         assertEq(
             uint256(monero.chainType),
-            uint256(UnifiedNullifierManager.ChainType.PRIVACY)
+            uint256(IUnifiedNullifierManager.ChainType.PRIVACY)
         );
     }
 
@@ -127,12 +127,12 @@ contract UnifiedNullifierManagerTest is Test {
         bytes32 tag = keccak256("CUSTOM");
         manager.registerChainDomain(
             newChainId,
-            UnifiedNullifierManager.ChainType.EVM,
+            IUnifiedNullifierManager.ChainType.EVM,
             tag,
             address(0xADA)
         );
 
-        UnifiedNullifierManager.ChainDomain memory domain = manager
+        IUnifiedNullifierManager.ChainDomain memory domain = manager
             .getChainDomain(newChainId);
         assertEq(domain.chainId, newChainId);
         assertTrue(domain.isActive);
@@ -145,7 +145,7 @@ contract UnifiedNullifierManagerTest is Test {
         vm.expectRevert();
         manager.registerChainDomain(
             99,
-            UnifiedNullifierManager.ChainType.EVM,
+            IUnifiedNullifierManager.ChainType.EVM,
             keccak256("X"),
             address(0)
         );
@@ -162,7 +162,7 @@ contract UnifiedNullifierManagerTest is Test {
     }
 
     function test_setCrossChainVerifier_revertOnZero() public {
-        vm.expectRevert(UnifiedNullifierManager.ZeroAddress.selector);
+        vm.expectRevert(IUnifiedNullifierManager.ZeroAddress.selector);
         manager.setCrossChainVerifier(address(0));
     }
 
@@ -179,20 +179,20 @@ contract UnifiedNullifierManagerTest is Test {
             nullifier,
             commitment,
             chainId,
-            UnifiedNullifierManager.NullifierType.STANDARD,
+            IUnifiedNullifierManager.NullifierType.STANDARD,
             0
         );
 
         assertNotEq(zaseon, bytes32(0));
 
-        UnifiedNullifierManager.NullifierRecord memory record = manager
+        IUnifiedNullifierManager.NullifierRecord memory record = manager
             .getNullifierRecord(nullifier);
         assertEq(record.nullifier, nullifier);
         assertEq(record.commitment, commitment);
         assertEq(record.chainId, chainId);
         assertEq(
             uint256(record.status),
-            uint256(UnifiedNullifierManager.NullifierStatus.REGISTERED)
+            uint256(IUnifiedNullifierManager.NullifierStatus.REGISTERED)
         );
 
         // Verify zaseon binding
@@ -206,31 +206,31 @@ contract UnifiedNullifierManagerTest is Test {
             nullifier,
             keccak256("c"),
             42_161,
-            UnifiedNullifierManager.NullifierType.STANDARD,
+            IUnifiedNullifierManager.NullifierType.STANDARD,
             0
         );
 
         vm.expectRevert(
-            UnifiedNullifierManager.NullifierAlreadyExists.selector
+            IUnifiedNullifierManager.NullifierAlreadyExists.selector
         );
         manager.registerNullifier(
             nullifier,
             keccak256("c2"),
             42_161,
-            UnifiedNullifierManager.NullifierType.STANDARD,
+            IUnifiedNullifierManager.NullifierType.STANDARD,
             0
         );
     }
 
     function test_registerNullifier_revertOnInactiveChain() public {
         vm.expectRevert(
-            UnifiedNullifierManager.ChainDomainNotRegistered.selector
+            IUnifiedNullifierManager.ChainDomainNotRegistered.selector
         );
         manager.registerNullifier(
             keccak256("x"),
             keccak256("c"),
             99_999,
-            UnifiedNullifierManager.NullifierType.STANDARD,
+            IUnifiedNullifierManager.NullifierType.STANDARD,
             0
         );
     }
@@ -241,11 +241,11 @@ contract UnifiedNullifierManagerTest is Test {
             nullifier,
             keccak256("c"),
             42_161,
-            UnifiedNullifierManager.NullifierType.STANDARD,
+            IUnifiedNullifierManager.NullifierType.STANDARD,
             0
         );
 
-        UnifiedNullifierManager.ChainDomain memory domain = manager
+        IUnifiedNullifierManager.ChainDomain memory domain = manager
             .getChainDomain(42_161);
         bytes32 expected = manager.deriveSoulBinding(
             nullifier,
@@ -269,7 +269,7 @@ contract UnifiedNullifierManagerTest is Test {
             nullifier,
             keccak256("c"),
             42_161,
-            UnifiedNullifierManager.NullifierType.STANDARD,
+            IUnifiedNullifierManager.NullifierType.STANDARD,
             0
         );
 
@@ -278,7 +278,7 @@ contract UnifiedNullifierManagerTest is Test {
     }
 
     function test_spendNullifier_revertOnUnknown() public {
-        vm.expectRevert(UnifiedNullifierManager.NullifierNotFound.selector);
+        vm.expectRevert(IUnifiedNullifierManager.NullifierNotFound.selector);
         manager.spendNullifier(keccak256("doesnt_exist"));
     }
 
@@ -288,12 +288,14 @@ contract UnifiedNullifierManagerTest is Test {
             nullifier,
             keccak256("c"),
             42_161,
-            UnifiedNullifierManager.NullifierType.STANDARD,
+            IUnifiedNullifierManager.NullifierType.STANDARD,
             0
         );
         manager.spendNullifier(nullifier);
 
-        vm.expectRevert(UnifiedNullifierManager.NullifierAlreadySpent.selector);
+        vm.expectRevert(
+            IUnifiedNullifierManager.NullifierAlreadySpent.selector
+        );
         manager.spendNullifier(nullifier);
     }
 
@@ -304,12 +306,12 @@ contract UnifiedNullifierManagerTest is Test {
             nullifier,
             keccak256("c"),
             42_161,
-            UnifiedNullifierManager.NullifierType.TIME_BOUND,
+            IUnifiedNullifierManager.NullifierType.TIME_BOUND,
             expiry
         );
 
         vm.warp(expiry + 1);
-        vm.expectRevert(UnifiedNullifierManager.NullifierExpired.selector);
+        vm.expectRevert(IUnifiedNullifierManager.NullifierExpired.selector);
         manager.spendNullifier(nullifier);
     }
 
@@ -319,7 +321,7 @@ contract UnifiedNullifierManagerTest is Test {
             nullifier,
             keccak256("c"),
             42_161,
-            UnifiedNullifierManager.NullifierType.STANDARD,
+            IUnifiedNullifierManager.NullifierType.STANDARD,
             0
         );
 
@@ -338,7 +340,7 @@ contract UnifiedNullifierManagerTest is Test {
             sourceNull,
             keccak256("c"),
             42_161,
-            UnifiedNullifierManager.NullifierType.STANDARD,
+            IUnifiedNullifierManager.NullifierType.STANDARD,
             0
         );
 
@@ -363,7 +365,7 @@ contract UnifiedNullifierManagerTest is Test {
     }
 
     function test_createCrossDomainBinding_revertOnUnknownSource() public {
-        vm.expectRevert(UnifiedNullifierManager.NullifierNotFound.selector);
+        vm.expectRevert(IUnifiedNullifierManager.NullifierNotFound.selector);
         manager.createCrossDomainBinding(keccak256("fake"), 42_161, 10, "");
     }
 
@@ -373,12 +375,12 @@ contract UnifiedNullifierManagerTest is Test {
             sourceNull,
             keccak256("c"),
             42_161,
-            UnifiedNullifierManager.NullifierType.STANDARD,
+            IUnifiedNullifierManager.NullifierType.STANDARD,
             0
         );
 
         vm.expectRevert(
-            UnifiedNullifierManager.ChainDomainNotRegistered.selector
+            IUnifiedNullifierManager.ChainDomainNotRegistered.selector
         );
         manager.createCrossDomainBinding(sourceNull, 42_161, 99_999, "");
     }
@@ -389,12 +391,12 @@ contract UnifiedNullifierManagerTest is Test {
             sourceNull,
             keccak256("c"),
             42_161,
-            UnifiedNullifierManager.NullifierType.STANDARD,
+            IUnifiedNullifierManager.NullifierType.STANDARD,
             0
         );
 
         verifier.setResult(false);
-        vm.expectRevert(UnifiedNullifierManager.InvalidProof.selector);
+        vm.expectRevert(IUnifiedNullifierManager.InvalidProof.selector);
         manager.createCrossDomainBinding(sourceNull, 42_161, 10, "proof");
     }
 
@@ -404,7 +406,7 @@ contract UnifiedNullifierManagerTest is Test {
             sourceNull,
             keccak256("c"),
             42_161,
-            UnifiedNullifierManager.NullifierType.STANDARD,
+            IUnifiedNullifierManager.NullifierType.STANDARD,
             0
         );
 
@@ -451,21 +453,21 @@ contract UnifiedNullifierManagerTest is Test {
 
     function test_processBatch_revertOnEmpty() public {
         bytes32[] memory empty = new bytes32[](0);
-        vm.expectRevert(UnifiedNullifierManager.InvalidBatchSize.selector);
+        vm.expectRevert(IUnifiedNullifierManager.InvalidBatchSize.selector);
         manager.processBatch(empty, empty, 42_161, bytes32(0));
     }
 
     function test_processBatch_revertOnTooLarge() public {
         bytes32[] memory big = new bytes32[](101);
         bytes32[] memory bigC = new bytes32[](101);
-        vm.expectRevert(UnifiedNullifierManager.InvalidBatchSize.selector);
+        vm.expectRevert(IUnifiedNullifierManager.InvalidBatchSize.selector);
         manager.processBatch(big, bigC, 42_161, bytes32(0));
     }
 
     function test_processBatch_revertOnMismatchedLengths() public {
         bytes32[] memory n = new bytes32[](3);
         bytes32[] memory c = new bytes32[](2);
-        vm.expectRevert(UnifiedNullifierManager.InvalidBatchSize.selector);
+        vm.expectRevert(IUnifiedNullifierManager.InvalidBatchSize.selector);
         manager.processBatch(n, c, 42_161, bytes32(0));
     }
 
@@ -476,7 +478,7 @@ contract UnifiedNullifierManagerTest is Test {
             existing,
             keccak256("c"),
             42_161,
-            UnifiedNullifierManager.NullifierType.STANDARD,
+            IUnifiedNullifierManager.NullifierType.STANDARD,
             0
         );
         assertEq(manager.totalNullifiers(), 1);
@@ -499,7 +501,7 @@ contract UnifiedNullifierManagerTest is Test {
         n[0] = keccak256("x");
         c[0] = keccak256("y");
         vm.expectRevert(
-            UnifiedNullifierManager.ChainDomainNotRegistered.selector
+            IUnifiedNullifierManager.ChainDomainNotRegistered.selector
         );
         manager.processBatch(n, c, 99_999, bytes32(0));
     }
@@ -539,7 +541,7 @@ contract UnifiedNullifierManagerTest is Test {
 
     function test_deriveChainNullifier_revertOnInactiveChain() public {
         vm.expectRevert(
-            UnifiedNullifierManager.ChainDomainNotRegistered.selector
+            IUnifiedNullifierManager.ChainDomainNotRegistered.selector
         );
         manager.deriveChainNullifier(keccak256("c"), keccak256("s"), 99_999);
     }
@@ -564,7 +566,7 @@ contract UnifiedNullifierManagerTest is Test {
             n1,
             keccak256("c1"),
             42_161,
-            UnifiedNullifierManager.NullifierType.STANDARD,
+            IUnifiedNullifierManager.NullifierType.STANDARD,
             0
         );
 
@@ -586,7 +588,7 @@ contract UnifiedNullifierManagerTest is Test {
             n,
             keccak256("c"),
             42_161,
-            UnifiedNullifierManager.NullifierType.STANDARD,
+            IUnifiedNullifierManager.NullifierType.STANDARD,
             0
         );
         bytes32 zaseon = manager.getSoulBinding(n);
@@ -606,7 +608,7 @@ contract UnifiedNullifierManagerTest is Test {
             keccak256("s1"),
             keccak256("c"),
             42_161,
-            UnifiedNullifierManager.NullifierType.STANDARD,
+            IUnifiedNullifierManager.NullifierType.STANDARD,
             0
         );
 
@@ -656,7 +658,7 @@ contract UnifiedNullifierManagerTest is Test {
             nullifier,
             commitment,
             42_161,
-            UnifiedNullifierManager.NullifierType.STANDARD,
+            IUnifiedNullifierManager.NullifierType.STANDARD,
             0
         );
         assertFalse(manager.isNullifierSpent(nullifier));

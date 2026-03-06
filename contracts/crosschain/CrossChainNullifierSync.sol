@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import {ICrossChainNullifierSync} from "../interfaces/ICrossChainNullifierSync.sol";
 
 /**
  * @title CrossChainNullifierSync
@@ -18,7 +19,12 @@ import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
  *      Nullifier batch format:
  *        abi.encode(MSG_NULLIFIER_SYNC, nullifiers[], commitments[], merkleRoot, sourceChainId)
  */
-contract CrossChainNullifierSync is AccessControl, ReentrancyGuard, Pausable {
+contract CrossChainNullifierSync is
+    ICrossChainNullifierSync,
+    AccessControl,
+    ReentrancyGuard,
+    Pausable
+{
     using SafeCast for uint256;
 
     // ──────────────────────────────────────────────
@@ -34,25 +40,6 @@ contract CrossChainNullifierSync is AccessControl, ReentrancyGuard, Pausable {
     uint8 public constant MSG_NULLIFIER_SYNC = 2;
     uint256 public constant MAX_BATCH_SIZE = 20;
     uint256 public constant MIN_SYNC_INTERVAL = 5 minutes;
-
-    // ──────────────────────────────────────────────
-    //  Structs
-    // ──────────────────────────────────────────────
-    struct NullifierBatch {
-        bytes32[] nullifiers;
-        bytes32[] commitments;
-        bytes32 merkleRoot;
-        uint256 chainId;
-        uint256 timestamp;
-        bool sent;
-    }
-
-    struct SyncTarget {
-        address nullifierRegistry; // NullifierRegistryV3 address
-        address relay; // ZaseonCrossChainRelay address
-        uint256 chainId; // Target chain ID
-        bool active;
-    }
 
     // ──────────────────────────────────────────────
     //  State
@@ -86,43 +73,6 @@ contract CrossChainNullifierSync is AccessControl, ReentrancyGuard, Pausable {
 
     /// @notice Per-chain sync sequence number for replay protection
     mapping(uint256 => uint256) public syncSequence;
-
-    // ──────────────────────────────────────────────
-    //  Events
-    // ──────────────────────────────────────────────
-    event NullifierQueued(bytes32 indexed nullifier, bytes32 commitment);
-
-    event NullifierBatchSent(
-        uint256 indexed targetChainId,
-        uint256 count,
-        bytes32 merkleRoot,
-        uint256 batchIndex
-    );
-
-    event NullifierBatchReceived(
-        uint256 indexed sourceChainId,
-        uint256 count,
-        bytes32 sourceMerkleRoot
-    );
-
-    event SyncTargetConfigured(
-        uint256 indexed chainId,
-        address nullifierRegistry,
-        address relay
-    );
-
-    // ──────────────────────────────────────────────
-    //  Errors
-    // ──────────────────────────────────────────────
-    error NoPendingNullifiers();
-    error TargetNotConfigured(uint256 chainId);
-    error SyncTooFrequent(uint256 chainId, uint256 nextAllowed);
-    error BatchTooLarge(uint256 size);
-    error ZeroAddress();
-    error ArrayLengthMismatch();
-    error EmptyBatch();
-    error RelayCallFailed();
-    error RegistryCallFailed();
 
     // ──────────────────────────────────────────────
     //  Constructor

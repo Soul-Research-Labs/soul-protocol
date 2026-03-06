@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "forge-std/Test.sol";
 import "../../contracts/crosschain/ZaseonCrossChainRelay.sol";
 import "../../contracts/crosschain/CrossChainNullifierSync.sol";
+import "../../contracts/interfaces/ICrossChainNullifierSync.sol";
 
 /**
  * @title CrossChainIntegrationTest
@@ -73,7 +74,7 @@ contract CrossChainIntegrationTest is Test {
         // Configure nullifier sync target
         nullifierSync.configureSyncTarget(
             BASE_CHAIN_ID,
-            CrossChainNullifierSync.SyncTarget({
+            ICrossChainNullifierSync.SyncTarget({
                 nullifierRegistry: mockNullifierRegistry,
                 relay: address(relaySource),
                 chainId: BASE_CHAIN_ID,
@@ -279,7 +280,7 @@ contract CrossChainIntegrationTest is Test {
         bytes32 commitment = keccak256("commitment_1");
 
         vm.expectEmit(true, false, false, true);
-        emit CrossChainNullifierSync.NullifierQueued(nullifier, commitment);
+        emit ICrossChainNullifierSync.NullifierQueued(nullifier, commitment);
 
         nullifierSync.queueNullifier(nullifier, commitment);
         assertEq(nullifierSync.getPendingCount(), 1, "Should have 1 pending");
@@ -303,7 +304,7 @@ contract CrossChainIntegrationTest is Test {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                CrossChainNullifierSync.BatchTooLarge.selector,
+                ICrossChainNullifierSync.BatchTooLarge.selector,
                 21
             )
         );
@@ -314,12 +315,12 @@ contract CrossChainIntegrationTest is Test {
         bytes32[] memory nullifiers = new bytes32[](3);
         bytes32[] memory commitments = new bytes32[](2);
 
-        vm.expectRevert(CrossChainNullifierSync.ArrayLengthMismatch.selector);
+        vm.expectRevert(ICrossChainNullifierSync.ArrayLengthMismatch.selector);
         nullifierSync.queueNullifierBatch(nullifiers, commitments);
     }
 
     function test_flushEmptyBatchReverts() public {
-        vm.expectRevert(CrossChainNullifierSync.NoPendingNullifiers.selector);
+        vm.expectRevert(ICrossChainNullifierSync.NoPendingNullifiers.selector);
         nullifierSync.flushToChain(BASE_CHAIN_ID);
     }
 
@@ -328,7 +329,7 @@ contract CrossChainIntegrationTest is Test {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                CrossChainNullifierSync.TargetNotConfigured.selector,
+                ICrossChainNullifierSync.TargetNotConfigured.selector,
                 999
             )
         );
@@ -347,7 +348,7 @@ contract CrossChainIntegrationTest is Test {
         commitments[1] = keccak256("remote_commit_2");
 
         vm.expectEmit(true, false, false, true);
-        emit CrossChainNullifierSync.NullifierBatchReceived(
+        emit ICrossChainNullifierSync.NullifierBatchReceived(
             ARBITRUM_CHAIN_ID,
             2,
             keccak256("source_root")
@@ -372,7 +373,7 @@ contract CrossChainIntegrationTest is Test {
 
         bytes32[] memory empty = new bytes32[](0);
 
-        vm.expectRevert(CrossChainNullifierSync.EmptyBatch.selector);
+        vm.expectRevert(ICrossChainNullifierSync.EmptyBatch.selector);
         nullifierSync.receiveNullifierBatch(
             ARBITRUM_CHAIN_ID,
             empty,

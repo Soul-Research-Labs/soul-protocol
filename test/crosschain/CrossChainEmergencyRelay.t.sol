@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
 import {CrossChainEmergencyRelay} from "../../contracts/crosschain/CrossChainEmergencyRelay.sol";
+import {ICrossChainEmergencyRelay} from "../../contracts/interfaces/ICrossChainEmergencyRelay.sol";
 import {IProtocolEmergencyCoordinator} from "../../contracts/interfaces/IProtocolEmergencyCoordinator.sol";
 
 /*//////////////////////////////////////////////////////////////
@@ -50,7 +51,7 @@ contract CrossChainEmergencyRelayConstructorTest is Test {
     }
 
     function test_Constructor_RevertsZeroAdmin() public {
-        vm.expectRevert(CrossChainEmergencyRelay.ZeroAddress.selector);
+        vm.expectRevert(ICrossChainEmergencyRelay.ZeroAddress.selector);
         new CrossChainEmergencyRelay(address(0));
     }
 
@@ -120,13 +121,13 @@ contract CrossChainEmergencyRelayChainTest is Test {
 
     function test_RegisterChain_RevertsZeroChainId() public {
         vm.prank(admin);
-        vm.expectRevert(CrossChainEmergencyRelay.InvalidChainId.selector);
+        vm.expectRevert(ICrossChainEmergencyRelay.InvalidChainId.selector);
         relay.registerChain(0, address(messenger1), remote1);
     }
 
     function test_RegisterChain_RevertsSameChain() public {
         vm.prank(admin);
-        vm.expectRevert(CrossChainEmergencyRelay.InvalidChainId.selector);
+        vm.expectRevert(ICrossChainEmergencyRelay.InvalidChainId.selector);
         relay.registerChain(block.chainid, address(messenger1), remote1);
     }
 
@@ -137,7 +138,7 @@ contract CrossChainEmergencyRelayChainTest is Test {
         vm.prank(admin);
         vm.expectRevert(
             abi.encodeWithSelector(
-                CrossChainEmergencyRelay.ChainAlreadyRegistered.selector,
+                ICrossChainEmergencyRelay.ChainAlreadyRegistered.selector,
                 chainId1
             )
         );
@@ -146,13 +147,13 @@ contract CrossChainEmergencyRelayChainTest is Test {
 
     function test_RegisterChain_RevertsZeroMessenger() public {
         vm.prank(admin);
-        vm.expectRevert(CrossChainEmergencyRelay.ZeroAddress.selector);
+        vm.expectRevert(ICrossChainEmergencyRelay.ZeroAddress.selector);
         relay.registerChain(chainId1, address(0), remote1);
     }
 
     function test_RegisterChain_RevertsZeroReceiver() public {
         vm.prank(admin);
-        vm.expectRevert(CrossChainEmergencyRelay.ZeroAddress.selector);
+        vm.expectRevert(ICrossChainEmergencyRelay.ZeroAddress.selector);
         relay.registerChain(chainId1, address(messenger1), address(0));
     }
 
@@ -164,7 +165,7 @@ contract CrossChainEmergencyRelayChainTest is Test {
             relay.registerChain(cid, address(messenger1), remote1);
         }
 
-        vm.expectRevert(CrossChainEmergencyRelay.MaxChainsReached.selector);
+        vm.expectRevert(ICrossChainEmergencyRelay.MaxChainsReached.selector);
         relay.registerChain(9999, address(messenger1), remote1);
         vm.stopPrank();
     }
@@ -187,7 +188,7 @@ contract CrossChainEmergencyRelayChainTest is Test {
         vm.prank(admin);
         vm.expectRevert(
             abi.encodeWithSelector(
-                CrossChainEmergencyRelay.ChainNotRegistered.selector,
+                ICrossChainEmergencyRelay.ChainNotRegistered.selector,
                 999
             )
         );
@@ -208,7 +209,7 @@ contract CrossChainEmergencyRelayChainTest is Test {
         vm.prank(admin);
         vm.expectRevert(
             abi.encodeWithSelector(
-                CrossChainEmergencyRelay.ChainNotRegistered.selector,
+                ICrossChainEmergencyRelay.ChainNotRegistered.selector,
                 999
             )
         );
@@ -348,8 +349,8 @@ contract CrossChainEmergencyRelayReceiveTest is Test {
         uint256 nonce,
         uint256 incidentId
     ) internal view returns (bytes memory) {
-        CrossChainEmergencyRelay.EmergencyMessage
-            memory msg_ = CrossChainEmergencyRelay.EmergencyMessage({
+        ICrossChainEmergencyRelay.EmergencyMessage
+            memory msg_ = ICrossChainEmergencyRelay.EmergencyMessage({
                 prefix: relay.EMERGENCY_PREFIX(),
                 nonce: nonce,
                 sourceChainId: sourceChainId,
@@ -418,7 +419,7 @@ contract CrossChainEmergencyRelayReceiveTest is Test {
         vm.prank(admin);
         vm.expectRevert(
             abi.encodeWithSelector(
-                CrossChainEmergencyRelay.ReplayDetected.selector,
+                ICrossChainEmergencyRelay.ReplayDetected.selector,
                 sourceChainId,
                 1
             )
@@ -443,7 +444,7 @@ contract CrossChainEmergencyRelayReceiveTest is Test {
         vm.prank(admin);
         vm.expectRevert(
             abi.encodeWithSelector(
-                CrossChainEmergencyRelay.ReplayDetected.selector,
+                ICrossChainEmergencyRelay.ReplayDetected.selector,
                 sourceChainId,
                 1
             )
@@ -452,8 +453,8 @@ contract CrossChainEmergencyRelayReceiveTest is Test {
     }
 
     function test_ReceiveEmergency_WrongPrefix() public {
-        CrossChainEmergencyRelay.EmergencyMessage
-            memory msg_ = CrossChainEmergencyRelay.EmergencyMessage({
+        ICrossChainEmergencyRelay.EmergencyMessage
+            memory msg_ = ICrossChainEmergencyRelay.EmergencyMessage({
                 prefix: bytes4(0xDEADBEEF),
                 nonce: 1,
                 sourceChainId: sourceChainId,
@@ -464,12 +465,12 @@ contract CrossChainEmergencyRelayReceiveTest is Test {
             });
 
         vm.prank(admin);
-        vm.expectRevert(CrossChainEmergencyRelay.InvalidMessage.selector);
+        vm.expectRevert(ICrossChainEmergencyRelay.InvalidMessage.selector);
         relay.receiveEmergency(abi.encode(msg_));
     }
 
     function test_ReceiveEmergency_WrongTargetChain() public {
-        CrossChainEmergencyRelay.EmergencyMessage memory msg_ = CrossChainEmergencyRelay
+        ICrossChainEmergencyRelay.EmergencyMessage memory msg_ = ICrossChainEmergencyRelay
             .EmergencyMessage({
                 prefix: relay.EMERGENCY_PREFIX(),
                 nonce: 1,
@@ -481,13 +482,13 @@ contract CrossChainEmergencyRelayReceiveTest is Test {
             });
 
         vm.prank(admin);
-        vm.expectRevert(CrossChainEmergencyRelay.InvalidChainId.selector);
+        vm.expectRevert(ICrossChainEmergencyRelay.InvalidChainId.selector);
         relay.receiveEmergency(abi.encode(msg_));
     }
 
     function test_ReceiveEmergency_StaleMessage() public {
-        CrossChainEmergencyRelay.EmergencyMessage
-            memory msg_ = CrossChainEmergencyRelay.EmergencyMessage({
+        ICrossChainEmergencyRelay.EmergencyMessage
+            memory msg_ = ICrossChainEmergencyRelay.EmergencyMessage({
                 prefix: relay.EMERGENCY_PREFIX(),
                 nonce: 1,
                 sourceChainId: sourceChainId,
@@ -572,7 +573,7 @@ contract CrossChainEmergencyRelayHeartbeatTest is Test {
         vm.prank(admin);
         vm.expectRevert(
             abi.encodeWithSelector(
-                CrossChainEmergencyRelay.ChainNotRegistered.selector,
+                ICrossChainEmergencyRelay.ChainNotRegistered.selector,
                 chainId1
             )
         );
@@ -585,7 +586,7 @@ contract CrossChainEmergencyRelayHeartbeatTest is Test {
         vm.prank(admin);
         vm.expectRevert(
             abi.encodeWithSelector(
-                CrossChainEmergencyRelay.SendFailed.selector,
+                ICrossChainEmergencyRelay.SendFailed.selector,
                 chainId1
             )
         );
@@ -678,8 +679,8 @@ contract CrossChainEmergencyRelayHeartbeatTest is Test {
         uint256 nonce,
         uint256 incidentId
     ) internal view returns (bytes memory) {
-        CrossChainEmergencyRelay.EmergencyMessage
-            memory msg_ = CrossChainEmergencyRelay.EmergencyMessage({
+        ICrossChainEmergencyRelay.EmergencyMessage
+            memory msg_ = ICrossChainEmergencyRelay.EmergencyMessage({
                 prefix: relay.EMERGENCY_PREFIX(),
                 nonce: nonce,
                 sourceChainId: 1,
@@ -715,7 +716,7 @@ contract CrossChainEmergencyRelayAdminTest is Test {
     function test_SetHeartbeatInterval_RevertsTooShort() public {
         vm.prank(admin);
         vm.expectRevert(
-            CrossChainEmergencyRelay.InvalidHeartbeatInterval.selector
+            ICrossChainEmergencyRelay.InvalidHeartbeatInterval.selector
         );
         relay.setHeartbeatInterval(5 minutes);
     }
@@ -723,7 +724,7 @@ contract CrossChainEmergencyRelayAdminTest is Test {
     function test_SetHeartbeatInterval_RevertsTooLong() public {
         vm.prank(admin);
         vm.expectRevert(
-            CrossChainEmergencyRelay.InvalidHeartbeatInterval.selector
+            ICrossChainEmergencyRelay.InvalidHeartbeatInterval.selector
         );
         relay.setHeartbeatInterval(25 hours);
     }
@@ -751,13 +752,13 @@ contract CrossChainEmergencyRelayAdminTest is Test {
 
     function test_SetMaxMessageAge_RevertsZero() public {
         vm.prank(admin);
-        vm.expectRevert(CrossChainEmergencyRelay.InvalidMessage.selector);
+        vm.expectRevert(ICrossChainEmergencyRelay.InvalidMessage.selector);
         relay.setMaxMessageAge(0);
     }
 
     function test_SetMaxMessageAge_RevertsTooLong() public {
         vm.prank(admin);
-        vm.expectRevert(CrossChainEmergencyRelay.InvalidMessage.selector);
+        vm.expectRevert(ICrossChainEmergencyRelay.InvalidMessage.selector);
         relay.setMaxMessageAge(uint48(24 hours + 1));
     }
 
@@ -849,8 +850,8 @@ contract CrossChainEmergencyRelayViewTest is Test {
 
     function test_IsInEmergency_True() public {
         // Receive an emergency message to set receivedSeverity
-        CrossChainEmergencyRelay.EmergencyMessage
-            memory msg_ = CrossChainEmergencyRelay.EmergencyMessage({
+        ICrossChainEmergencyRelay.EmergencyMessage
+            memory msg_ = ICrossChainEmergencyRelay.EmergencyMessage({
                 prefix: relay.EMERGENCY_PREFIX(),
                 nonce: 1,
                 sourceChainId: 1,
@@ -918,8 +919,8 @@ contract CrossChainEmergencyRelayFuzzTest is Test {
         nonce1 = bound(nonce1, 1, type(uint128).max - 1);
         nonce2 = bound(nonce2, nonce1 + 1, type(uint128).max);
 
-        CrossChainEmergencyRelay.EmergencyMessage
-            memory msg1 = CrossChainEmergencyRelay.EmergencyMessage({
+        ICrossChainEmergencyRelay.EmergencyMessage
+            memory msg1 = ICrossChainEmergencyRelay.EmergencyMessage({
                 prefix: relay.EMERGENCY_PREFIX(),
                 nonce: nonce1,
                 sourceChainId: 1,
@@ -934,8 +935,8 @@ contract CrossChainEmergencyRelayFuzzTest is Test {
 
         assertEq(relay.lastReceivedNonce(1), nonce1);
 
-        CrossChainEmergencyRelay.EmergencyMessage
-            memory msg2 = CrossChainEmergencyRelay.EmergencyMessage({
+        ICrossChainEmergencyRelay.EmergencyMessage
+            memory msg2 = ICrossChainEmergencyRelay.EmergencyMessage({
                 prefix: relay.EMERGENCY_PREFIX(),
                 nonce: nonce2,
                 sourceChainId: 1,

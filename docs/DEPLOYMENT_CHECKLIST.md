@@ -54,7 +54,7 @@
 - [x] TLA+ model checking: 4 safety properties
 - [x] Storage layout compatibility verified for all upgradeable contracts
 - [x] CLSAG ring signature verifier tested (18 test vectors)
-- [x] Foundry test suite: 5,760+ tests passing (282 suites)
+- [x] Foundry test suite: 5,760+ tests passing (286 suites)
 - [x] Total: 5,760+ tests passing
 
 ### 4. Pre-Mainnet Security Checklist
@@ -66,14 +66,14 @@
 - [ ] Verify admin roles distributed to separate addresses
 - [ ] Configure timelocks for all admin operations
 - [ ] Set up monitoring for critical events
-- [ ] Deploy with optimizer enabled (runs: 200)
+- [ ] Deploy with optimizer enabled (runs: 10000)
 
 ### 4a. Session 8 Security Checklist
 
 - [ ] Verify `batchVerifier` is configured on UniversalShieldedPool before enabling cross-chain commitments
 - [ ] Verify `batchVerifier` is configured on UniversalShieldedPoolUpgradeable
 - [ ] Verify MultiBridgeRouter has `receive()` function and `emergencyWithdrawETH()`
-- [ ] Verify all 7 bridge adapters have both `emergencyWithdrawETH()` and `emergencyWithdrawERC20()`
+- [ ] Verify all 12 bridge adapters have both `emergencyWithdrawETH()` and `emergencyWithdrawERC20()`
 - [ ] Verify `canClaimStealth()` uses 4 parameters in any SDK/frontend integration
 - [ ] Verify BatchAccumulator routes are pre-configured (no auto-creation)
 - [ ] Verify `testMode` is disabled on UniversalShieldedPool before mainnet
@@ -274,7 +274,7 @@ forge script scripts/deploy/DeployLineaAdapter.s.sol --rpc-url $LINEA_SEPOLIA_RP
 3. [ ] Core state containers
 4. [ ] Privacy middleware (PrivacyRouter, ShieldedPool)
 5. [ ] ZaseonProtocolHub (central registry)
-6. [ ] Bridge contracts + L2 adapters (9 adapters: Arbitrum, Optimism, Base, Aztec, zkSync, Scroll, Linea, LayerZero, Hyperlane)
+6. [ ] Bridge contracts + L2 adapters (12 adapters: Arbitrum, Optimism, Base, Aztec, zkSync, Scroll, Linea, LayerZero, Hyperlane, EthereumL1Bridge, L2ChainAdapter, DirectL2Messenger)
 7. [ ] Governance contracts (Timelock, Governor)
 8. [ ] Application layer (swaps, compliance)
 

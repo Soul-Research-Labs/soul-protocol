@@ -6,6 +6,7 @@ import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/U
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import {IProofVerifier} from "../interfaces/IProofVerifier.sol";
+import {IUnifiedNullifierManager} from "../interfaces/IUnifiedNullifierManager.sol";
 
 /**
  * @title UnifiedNullifierManager
@@ -44,6 +45,7 @@ import {IProofVerifier} from "../interfaces/IProofVerifier.sol";
  * @custom:security-contact security@soulprotocol.io
  */
 contract UnifiedNullifierManager is
+    IUnifiedNullifierManager,
     Initializable,
     UUPSUpgradeable,
     AccessControlUpgradeable,
@@ -95,95 +97,6 @@ contract UnifiedNullifierManager is
     uint256 public constant MAX_BATCH_SIZE = 100;
 
     // =========================================================================
-    // ENUMS
-    // =========================================================================
-
-    enum NullifierType {
-        STANDARD, // Single-domain nullifier
-        CROSS_DOMAIN, // Cross-chain nullifier
-        TIME_BOUND, // Expiring nullifier
-        BATCH, // Batch commitment
-        RECURSIVE // Recursive proof nullifier
-    }
-
-    enum ChainType {
-        EVM, // Ethereum, Polygon, etc.
-        UTXO, // Bitcoin, Zcash
-        ACCOUNT, // Solana, Aptos
-        PRIVACY, // Monero, Secret
-        COSMOS, // IBC chains
-        ENTERPRISE // Canton, Hyperledger
-    }
-
-    enum NullifierStatus {
-        UNKNOWN,
-        REGISTERED,
-        SPENT,
-        REVOKED,
-        EXPIRED
-    }
-
-    // =========================================================================
-    // STRUCTS
-    // =========================================================================
-
-    /**
-     * @notice Unified nullifier record
-     */
-    struct NullifierRecord {
-        bytes32 nullifier; // The nullifier hash
-        bytes32 commitment; // Associated commitment
-        NullifierType nullifierType;
-        NullifierStatus status;
-        uint256 chainId; // Source chain
-        ChainType chainType;
-        bytes32 domainTag; // Chain-specific tag
-        uint256 timestamp;
-        uint256 expiresAt; // 0 = never expires
-    }
-
-    /**
-     * @notice Cross-domain nullifier binding
-     */
-    struct CrossDomainBinding {
-        bytes32 sourceNullifier;
-        bytes32 destNullifier;
-        bytes32 soulBinding; // Unified Soul binding
-        uint256 sourceChainId;
-        uint256 destChainId;
-        bytes32 sourceDomain;
-        bytes32 destDomain;
-        bytes derivationProof;
-        uint256 timestamp;
-        bool verified;
-    }
-
-    /**
-     * @notice Chain domain configuration
-     */
-    struct ChainDomain {
-        uint256 chainId;
-        ChainType chainType;
-        bytes32 domainTag;
-        bytes32 nullifierPrefix;
-        address bridgeAdapter;
-        bool isActive;
-        uint256 registeredAt;
-    }
-
-    /**
-     * @notice Batch nullifier submission
-     */
-    struct NullifierBatch {
-        bytes32 batchId;
-        bytes32[] nullifiers;
-        bytes32 merkleRoot;
-        uint256 chainId;
-        uint256 timestamp;
-        bool processed;
-    }
-
-    // =========================================================================
     // STATE
     // =========================================================================
 
@@ -222,65 +135,6 @@ contract UnifiedNullifierManager is
 
     /// @notice Total batches processed
     uint256 public totalBatches;
-
-    // =========================================================================
-    // EVENTS
-    // =========================================================================
-
-    event NullifierRegistered(
-        bytes32 indexed nullifier,
-        bytes32 indexed commitment,
-        uint256 chainId,
-        NullifierType nullifierType
-    );
-
-    event NullifierSpent(
-        bytes32 indexed nullifier,
-        uint256 chainId,
-        uint256 timestamp
-    );
-
-    event CrossDomainBindingCreated(
-        bytes32 indexed sourceNullifier,
-        bytes32 indexed destNullifier,
-        bytes32 indexed soulBinding,
-        uint256 sourceChainId,
-        uint256 destChainId
-    );
-
-    event ChainDomainRegistered(
-        uint256 indexed chainId,
-        ChainType chainType,
-        bytes32 domainTag
-    );
-
-    event BatchProcessed(
-        bytes32 indexed batchId,
-        uint256 nullifierCount,
-        bytes32 merkleRoot
-    );
-
-    event SoulNullifierDerived(
-        bytes32 indexed sourceNullifier,
-        bytes32 indexed soulBinding,
-        bytes32 domain
-    );
-
-    // =========================================================================
-    // ERRORS
-    // =========================================================================
-
-    error NullifierAlreadyExists();
-    error NullifierNotFound();
-    error NullifierAlreadySpent();
-    error NullifierExpired();
-    error InvalidChainDomain();
-    error ChainDomainNotRegistered();
-    error InvalidBatchSize();
-    error BatchAlreadyProcessed();
-    error InvalidProof();
-    error UnauthorizedBridge();
-    error ZeroAddress();
 
     // =========================================================================
     // INITIALIZER

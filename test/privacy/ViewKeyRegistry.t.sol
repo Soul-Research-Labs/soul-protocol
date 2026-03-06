@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import {Test, console2} from "forge-std/Test.sol";
 import {ViewKeyRegistry} from "../../contracts/privacy/ViewKeyRegistry.sol";
+import {IViewKeyRegistry} from "../../contracts/interfaces/IViewKeyRegistry.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract ViewKeyRegistryTest is Test {
@@ -49,7 +50,7 @@ contract ViewKeyRegistryTest is Test {
 
     function _registerKey(
         address account,
-        ViewKeyRegistry.ViewKeyType keyType,
+        IViewKeyRegistry.ViewKeyType keyType,
         bytes32 pubKey,
         bytes32 commitment
     ) internal {
@@ -60,7 +61,7 @@ contract ViewKeyRegistryTest is Test {
     function _issueGrant(
         address granter,
         address grantee,
-        ViewKeyRegistry.ViewKeyType keyType,
+        IViewKeyRegistry.ViewKeyType keyType,
         uint256 duration,
         bytes32 scope
     ) internal returns (bytes32 grantId) {
@@ -80,7 +81,7 @@ contract ViewKeyRegistryTest is Test {
 
     function test_initialize_revertsOnZeroAddress() public {
         ViewKeyRegistry impl2 = new ViewKeyRegistry();
-        vm.expectRevert(ViewKeyRegistry.ZeroAddress.selector);
+        vm.expectRevert(IViewKeyRegistry.ZeroAddress.selector);
         new ERC1967Proxy(
             address(impl2),
             abi.encodeCall(ViewKeyRegistry.initialize, (address(0)))
@@ -109,27 +110,27 @@ contract ViewKeyRegistryTest is Test {
     function test_registerViewKey_incoming() public {
         vm.prank(alice);
         vm.expectEmit(true, false, false, true, address(registry));
-        emit ViewKeyRegistry.ViewKeyRegistered(
+        emit IViewKeyRegistry.ViewKeyRegistered(
             alice,
-            ViewKeyRegistry.ViewKeyType.INCOMING,
+            IViewKeyRegistry.ViewKeyType.INCOMING,
             PUB_KEY_1
         );
         registry.registerViewKey(
-            ViewKeyRegistry.ViewKeyType.INCOMING,
+            IViewKeyRegistry.ViewKeyType.INCOMING,
             PUB_KEY_1,
             COMMITMENT_1
         );
 
         (
             bytes32 pubKey,
-            ViewKeyRegistry.ViewKeyType keyType,
+            IViewKeyRegistry.ViewKeyType keyType,
             bytes32 commitment,
             uint256 regTime,
             bool isActive
-        ) = registry.viewKeys(alice, ViewKeyRegistry.ViewKeyType.INCOMING);
+        ) = registry.viewKeys(alice, IViewKeyRegistry.ViewKeyType.INCOMING);
 
         assertEq(pubKey, PUB_KEY_1);
-        assertEq(uint8(keyType), uint8(ViewKeyRegistry.ViewKeyType.INCOMING));
+        assertEq(uint8(keyType), uint8(IViewKeyRegistry.ViewKeyType.INCOMING));
         assertEq(commitment, COMMITMENT_1);
         assertEq(regTime, block.timestamp);
         assertTrue(isActive);
@@ -138,7 +139,7 @@ contract ViewKeyRegistryTest is Test {
     function test_registerViewKey_incrementsCounters() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.INCOMING,
+            IViewKeyRegistry.ViewKeyType.INCOMING,
             PUB_KEY_1,
             COMMITMENT_1
         );
@@ -150,13 +151,13 @@ contract ViewKeyRegistryTest is Test {
     function test_registerViewKey_multipleTypes() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.INCOMING,
+            IViewKeyRegistry.ViewKeyType.INCOMING,
             PUB_KEY_1,
             COMMITMENT_1
         );
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.OUTGOING,
+            IViewKeyRegistry.ViewKeyType.OUTGOING,
             PUB_KEY_2,
             COMMITMENT_2
         );
@@ -168,15 +169,15 @@ contract ViewKeyRegistryTest is Test {
     function test_registerViewKey_revertsIfAlreadyRegistered() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_1,
             COMMITMENT_1
         );
 
         vm.prank(alice);
-        vm.expectRevert(ViewKeyRegistry.KeyAlreadyRegistered.selector);
+        vm.expectRevert(IViewKeyRegistry.KeyAlreadyRegistered.selector);
         registry.registerViewKey(
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_2,
             COMMITMENT_2
         );
@@ -189,7 +190,7 @@ contract ViewKeyRegistryTest is Test {
         vm.prank(alice);
         vm.expectRevert();
         registry.registerViewKey(
-            ViewKeyRegistry.ViewKeyType.INCOMING,
+            IViewKeyRegistry.ViewKeyType.INCOMING,
             PUB_KEY_1,
             COMMITMENT_1
         );
@@ -198,31 +199,31 @@ contract ViewKeyRegistryTest is Test {
     function test_registerViewKey_allKeyTypes() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.INCOMING,
+            IViewKeyRegistry.ViewKeyType.INCOMING,
             keccak256("k1"),
             keccak256("c1")
         );
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.OUTGOING,
+            IViewKeyRegistry.ViewKeyType.OUTGOING,
             keccak256("k2"),
             keccak256("c2")
         );
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             keccak256("k3"),
             keccak256("c3")
         );
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.BALANCE,
+            IViewKeyRegistry.ViewKeyType.BALANCE,
             keccak256("k4"),
             keccak256("c4")
         );
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.AUDIT,
+            IViewKeyRegistry.ViewKeyType.AUDIT,
             keccak256("k5"),
             keccak256("c5")
         );
@@ -238,22 +239,22 @@ contract ViewKeyRegistryTest is Test {
     function test_revokeViewKey_success() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.INCOMING,
+            IViewKeyRegistry.ViewKeyType.INCOMING,
             PUB_KEY_1,
             COMMITMENT_1
         );
 
         vm.prank(alice);
         vm.expectEmit(true, false, false, true, address(registry));
-        emit ViewKeyRegistry.ViewKeyRevoked(
+        emit IViewKeyRegistry.ViewKeyRevoked(
             alice,
-            ViewKeyRegistry.ViewKeyType.INCOMING
+            IViewKeyRegistry.ViewKeyType.INCOMING
         );
-        registry.revokeViewKey(ViewKeyRegistry.ViewKeyType.INCOMING);
+        registry.revokeViewKey(IViewKeyRegistry.ViewKeyType.INCOMING);
 
         (, , , , bool isActive) = registry.viewKeys(
             alice,
-            ViewKeyRegistry.ViewKeyType.INCOMING
+            IViewKeyRegistry.ViewKeyType.INCOMING
         );
         assertFalse(isActive);
         assertEq(registry.activeKeyCount(alice), 0);
@@ -261,27 +262,27 @@ contract ViewKeyRegistryTest is Test {
 
     function test_revokeViewKey_revertsIfNotActive() public {
         vm.prank(alice);
-        vm.expectRevert(ViewKeyRegistry.KeyNotActive.selector);
-        registry.revokeViewKey(ViewKeyRegistry.ViewKeyType.INCOMING);
+        vm.expectRevert(IViewKeyRegistry.KeyNotActive.selector);
+        registry.revokeViewKey(IViewKeyRegistry.ViewKeyType.INCOMING);
     }
 
     function test_revokeViewKey_revokesAssociatedGrants() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_1,
             COMMITMENT_1
         );
         bytes32 grantId = _issueGrant(
             alice,
             bob,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             1 days,
             SCOPE_1
         );
 
         vm.prank(alice);
-        registry.revokeViewKey(ViewKeyRegistry.ViewKeyType.FULL);
+        registry.revokeViewKey(IViewKeyRegistry.ViewKeyType.FULL);
 
         assertFalse(registry.isGrantValid(grantId));
     }
@@ -293,27 +294,27 @@ contract ViewKeyRegistryTest is Test {
     function test_rotateViewKey_success() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.INCOMING,
+            IViewKeyRegistry.ViewKeyType.INCOMING,
             PUB_KEY_1,
             COMMITMENT_1
         );
 
         vm.prank(alice);
         vm.expectEmit(true, false, false, true, address(registry));
-        emit ViewKeyRegistry.ViewKeyRotated(
+        emit IViewKeyRegistry.ViewKeyRotated(
             alice,
-            ViewKeyRegistry.ViewKeyType.INCOMING,
+            IViewKeyRegistry.ViewKeyType.INCOMING,
             PUB_KEY_1,
             PUB_KEY_2
         );
         registry.rotateViewKey(
-            ViewKeyRegistry.ViewKeyType.INCOMING,
+            IViewKeyRegistry.ViewKeyType.INCOMING,
             PUB_KEY_2,
             COMMITMENT_2
         );
 
         (bytes32 pubKey, , bytes32 commitment, , bool isActive) = registry
-            .viewKeys(alice, ViewKeyRegistry.ViewKeyType.INCOMING);
+            .viewKeys(alice, IViewKeyRegistry.ViewKeyType.INCOMING);
         assertEq(pubKey, PUB_KEY_2);
         assertEq(commitment, COMMITMENT_2);
         assertTrue(isActive);
@@ -321,9 +322,9 @@ contract ViewKeyRegistryTest is Test {
 
     function test_rotateViewKey_revertsIfNotActive() public {
         vm.prank(alice);
-        vm.expectRevert(ViewKeyRegistry.KeyNotActive.selector);
+        vm.expectRevert(IViewKeyRegistry.KeyNotActive.selector);
         registry.rotateViewKey(
-            ViewKeyRegistry.ViewKeyType.INCOMING,
+            IViewKeyRegistry.ViewKeyType.INCOMING,
             PUB_KEY_2,
             COMMITMENT_2
         );
@@ -332,21 +333,21 @@ contract ViewKeyRegistryTest is Test {
     function test_rotateViewKey_updatesGrantKeyHashes() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_1,
             COMMITMENT_1
         );
         bytes32 grantId = _issueGrant(
             alice,
             bob,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             1 days,
             SCOPE_1
         );
 
         vm.prank(alice);
         registry.rotateViewKey(
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_2,
             COMMITMENT_2
         );
@@ -359,7 +360,7 @@ contract ViewKeyRegistryTest is Test {
     function test_rotateViewKey_revertsWhenPaused() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.INCOMING,
+            IViewKeyRegistry.ViewKeyType.INCOMING,
             PUB_KEY_1,
             COMMITMENT_1
         );
@@ -370,7 +371,7 @@ contract ViewKeyRegistryTest is Test {
         vm.prank(alice);
         vm.expectRevert();
         registry.rotateViewKey(
-            ViewKeyRegistry.ViewKeyType.INCOMING,
+            IViewKeyRegistry.ViewKeyType.INCOMING,
             PUB_KEY_2,
             COMMITMENT_2
         );
@@ -383,7 +384,7 @@ contract ViewKeyRegistryTest is Test {
     function test_issueGrant_success() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_1,
             COMMITMENT_1
         );
@@ -391,7 +392,7 @@ contract ViewKeyRegistryTest is Test {
         vm.prank(alice);
         bytes32 grantId = registry.issueGrant(
             bob,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             1 days,
             SCOPE_1
         );
@@ -405,7 +406,7 @@ contract ViewKeyRegistryTest is Test {
     function test_issueGrant_emitsEvent() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_1,
             COMMITMENT_1
         );
@@ -414,7 +415,7 @@ contract ViewKeyRegistryTest is Test {
         // We can't predict grantId for topic check, so check non-indexed params
         registry.issueGrant(
             bob,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             1 days,
             SCOPE_1
         );
@@ -430,10 +431,10 @@ contract ViewKeyRegistryTest is Test {
 
     function test_issueGrant_revertsIfKeyNotActive() public {
         vm.prank(alice);
-        vm.expectRevert(ViewKeyRegistry.KeyNotActive.selector);
+        vm.expectRevert(IViewKeyRegistry.KeyNotActive.selector);
         registry.issueGrant(
             bob,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             1 days,
             SCOPE_1
         );
@@ -442,16 +443,16 @@ contract ViewKeyRegistryTest is Test {
     function test_issueGrant_revertsIfDurationTooShort() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_1,
             COMMITMENT_1
         );
 
         vm.prank(alice);
-        vm.expectRevert(ViewKeyRegistry.InvalidDuration.selector);
+        vm.expectRevert(IViewKeyRegistry.InvalidDuration.selector);
         registry.issueGrant(
             bob,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             30 minutes,
             SCOPE_1
         );
@@ -460,16 +461,16 @@ contract ViewKeyRegistryTest is Test {
     function test_issueGrant_revertsIfDurationTooLong() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_1,
             COMMITMENT_1
         );
 
         vm.prank(alice);
-        vm.expectRevert(ViewKeyRegistry.InvalidDuration.selector);
+        vm.expectRevert(IViewKeyRegistry.InvalidDuration.selector);
         registry.issueGrant(
             bob,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             366 days,
             SCOPE_1
         );
@@ -478,7 +479,7 @@ contract ViewKeyRegistryTest is Test {
     function test_issueGrant_incrementsNonce() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_1,
             COMMITMENT_1
         );
@@ -487,7 +488,7 @@ contract ViewKeyRegistryTest is Test {
         _issueGrant(
             alice,
             bob,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             1 days,
             SCOPE_1
         );
@@ -495,7 +496,7 @@ contract ViewKeyRegistryTest is Test {
         _issueGrant(
             alice,
             carol,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             2 days,
             SCOPE_1
         );
@@ -505,7 +506,7 @@ contract ViewKeyRegistryTest is Test {
     function test_issueGrant_revertsWhenPaused() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_1,
             COMMITMENT_1
         );
@@ -517,7 +518,7 @@ contract ViewKeyRegistryTest is Test {
         vm.expectRevert();
         registry.issueGrant(
             bob,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             1 days,
             SCOPE_1
         );
@@ -531,7 +532,7 @@ contract ViewKeyRegistryTest is Test {
         // Audit grants require FULL view key
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_1,
             COMMITMENT_1
         );
@@ -540,34 +541,34 @@ contract ViewKeyRegistryTest is Test {
         bytes32 grantId = registry.issueAuditGrant(auditor, 7 days, SCOPE_1);
 
         assertTrue(grantId != bytes32(0));
-        (, , ViewKeyRegistry.ViewKeyType keyType, , , , ) = registry
+        (, , IViewKeyRegistry.ViewKeyType keyType, , , , ) = registry
             .getGrantDetails(grantId);
-        assertEq(uint8(keyType), uint8(ViewKeyRegistry.ViewKeyType.AUDIT));
+        assertEq(uint8(keyType), uint8(IViewKeyRegistry.ViewKeyType.AUDIT));
     }
 
     function test_issueAuditGrant_revertsIfNoFullKey() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.INCOMING,
+            IViewKeyRegistry.ViewKeyType.INCOMING,
             PUB_KEY_1,
             COMMITMENT_1
         );
 
         vm.prank(alice);
-        vm.expectRevert(ViewKeyRegistry.KeyNotActive.selector);
+        vm.expectRevert(IViewKeyRegistry.KeyNotActive.selector);
         registry.issueAuditGrant(auditor, 7 days, SCOPE_1);
     }
 
     function test_issueAuditGrant_revertsIfDurationExceeds30Days() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_1,
             COMMITMENT_1
         );
 
         vm.prank(alice);
-        vm.expectRevert(ViewKeyRegistry.InvalidDuration.selector);
+        vm.expectRevert(IViewKeyRegistry.InvalidDuration.selector);
         registry.issueAuditGrant(auditor, 31 days, SCOPE_1);
     }
 
@@ -578,68 +579,68 @@ contract ViewKeyRegistryTest is Test {
     function test_revokeGrant_success() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_1,
             COMMITMENT_1
         );
         bytes32 grantId = _issueGrant(
             alice,
             bob,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             1 days,
             SCOPE_1
         );
 
         vm.prank(alice);
         vm.expectEmit(true, true, false, false, address(registry));
-        emit ViewKeyRegistry.ViewGrantRevoked(grantId, alice);
+        emit IViewKeyRegistry.ViewGrantRevoked(grantId, alice);
         registry.revokeGrant(grantId);
 
-        (, , , , , ViewKeyRegistry.GrantStatus status, ) = registry
+        (, , , , , IViewKeyRegistry.GrantStatus status, ) = registry
             .getGrantDetails(grantId);
         assertEq(
             uint8(status),
-            uint8(ViewKeyRegistry.GrantStatus.PENDING_REVOCATION)
+            uint8(IViewKeyRegistry.GrantStatus.PENDING_REVOCATION)
         );
     }
 
     function test_revokeGrant_revertsIfNotGranter() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_1,
             COMMITMENT_1
         );
         bytes32 grantId = _issueGrant(
             alice,
             bob,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             1 days,
             SCOPE_1
         );
 
         vm.prank(bob);
-        vm.expectRevert(ViewKeyRegistry.UnauthorizedAccess.selector);
+        vm.expectRevert(IViewKeyRegistry.UnauthorizedAccess.selector);
         registry.revokeGrant(grantId);
     }
 
     function test_revokeGrant_revertsIfNotFound() public {
         vm.prank(alice);
-        vm.expectRevert(ViewKeyRegistry.GrantNotFound.selector);
+        vm.expectRevert(IViewKeyRegistry.GrantNotFound.selector);
         registry.revokeGrant(bytes32(0));
     }
 
     function test_revokeGrant_revertsIfAlreadyRevoked() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_1,
             COMMITMENT_1
         );
         bytes32 grantId = _issueGrant(
             alice,
             bob,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             1 days,
             SCOPE_1
         );
@@ -648,7 +649,7 @@ contract ViewKeyRegistryTest is Test {
         registry.revokeGrant(grantId);
 
         vm.prank(alice);
-        vm.expectRevert(ViewKeyRegistry.GrantNotActive.selector);
+        vm.expectRevert(IViewKeyRegistry.GrantNotActive.selector);
         registry.revokeGrant(grantId);
     }
 
@@ -659,14 +660,14 @@ contract ViewKeyRegistryTest is Test {
     function test_finalizeRevocation_success() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_1,
             COMMITMENT_1
         );
         bytes32 grantId = _issueGrant(
             alice,
             bob,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             1 days,
             SCOPE_1
         );
@@ -676,28 +677,28 @@ contract ViewKeyRegistryTest is Test {
 
         registry.finalizeRevocation(grantId);
 
-        (, , , , , ViewKeyRegistry.GrantStatus status, ) = registry
+        (, , , , , IViewKeyRegistry.GrantStatus status, ) = registry
             .getGrantDetails(grantId);
-        assertEq(uint8(status), uint8(ViewKeyRegistry.GrantStatus.REVOKED));
+        assertEq(uint8(status), uint8(IViewKeyRegistry.GrantStatus.REVOKED));
         assertEq(registry.totalActiveGrants(), 0);
     }
 
     function test_finalizeRevocation_revertsIfNotPendingRevocation() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_1,
             COMMITMENT_1
         );
         bytes32 grantId = _issueGrant(
             alice,
             bob,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             1 days,
             SCOPE_1
         );
 
-        vm.expectRevert(ViewKeyRegistry.GrantNotActive.selector);
+        vm.expectRevert(IViewKeyRegistry.GrantNotActive.selector);
         registry.finalizeRevocation(grantId);
     }
 
@@ -708,14 +709,14 @@ contract ViewKeyRegistryTest is Test {
     function test_recordAccess_success() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_1,
             COMMITMENT_1
         );
         bytes32 grantId = _issueGrant(
             alice,
             bob,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             1 days,
             SCOPE_1
         );
@@ -723,10 +724,10 @@ contract ViewKeyRegistryTest is Test {
 
         vm.prank(bob);
         vm.expectEmit(true, true, false, true, address(registry));
-        emit ViewKeyRegistry.ViewGrantAccessed(grantId, bob, proof);
+        emit IViewKeyRegistry.ViewGrantAccessed(grantId, bob, proof);
         registry.recordAccess(grantId, proof);
 
-        ViewKeyRegistry.AuditEntry[] memory entries = registry.getAuditTrail(
+        IViewKeyRegistry.AuditEntry[] memory entries = registry.getAuditTrail(
             grantId
         );
         assertEq(entries.length, 1);
@@ -737,34 +738,34 @@ contract ViewKeyRegistryTest is Test {
     function test_recordAccess_revertsIfNotGrantee() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_1,
             COMMITMENT_1
         );
         bytes32 grantId = _issueGrant(
             alice,
             bob,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             1 days,
             SCOPE_1
         );
 
         vm.prank(carol);
-        vm.expectRevert(ViewKeyRegistry.UnauthorizedAccess.selector);
+        vm.expectRevert(IViewKeyRegistry.UnauthorizedAccess.selector);
         registry.recordAccess(grantId, keccak256("proof"));
     }
 
     function test_recordAccess_revertsIfGrantExpired() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_1,
             COMMITMENT_1
         );
         bytes32 grantId = _issueGrant(
             alice,
             bob,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             1 hours,
             SCOPE_1
         );
@@ -773,21 +774,21 @@ contract ViewKeyRegistryTest is Test {
         vm.warp(block.timestamp + 2 hours);
 
         vm.prank(bob);
-        vm.expectRevert(ViewKeyRegistry.GrantExpired.selector);
+        vm.expectRevert(IViewKeyRegistry.GrantExpired.selector);
         registry.recordAccess(grantId, keccak256("proof"));
     }
 
     function test_recordAccess_revertsIfGrantNotActive() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_1,
             COMMITMENT_1
         );
         bytes32 grantId = _issueGrant(
             alice,
             bob,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             1 days,
             SCOPE_1
         );
@@ -797,13 +798,13 @@ contract ViewKeyRegistryTest is Test {
         registry.revokeGrant(grantId);
 
         vm.prank(bob);
-        vm.expectRevert(ViewKeyRegistry.GrantNotActive.selector);
+        vm.expectRevert(IViewKeyRegistry.GrantNotActive.selector);
         registry.recordAccess(grantId, keccak256("proof"));
     }
 
     function test_recordAccess_revertsIfGrantNotFound() public {
         vm.prank(bob);
-        vm.expectRevert(ViewKeyRegistry.GrantNotFound.selector);
+        vm.expectRevert(IViewKeyRegistry.GrantNotFound.selector);
         registry.recordAccess(bytes32(0), keccak256("proof"));
     }
 
@@ -817,14 +818,14 @@ contract ViewKeyRegistryTest is Test {
 
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_1,
             commitment
         );
 
         bool valid = registry.verifyKeyOwnership(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             secret
         );
         assertTrue(valid);
@@ -833,14 +834,14 @@ contract ViewKeyRegistryTest is Test {
     function test_verifyKeyOwnership_invalidProof() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_1,
             COMMITMENT_1
         );
 
         bool valid = registry.verifyKeyOwnership(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             "wrongProof"
         );
         assertFalse(valid);
@@ -849,7 +850,7 @@ contract ViewKeyRegistryTest is Test {
     function test_verifyKeyOwnership_inactiveKey() public {
         bool valid = registry.verifyKeyOwnership(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             "anything"
         );
         assertFalse(valid);
@@ -862,14 +863,14 @@ contract ViewKeyRegistryTest is Test {
     function test_isGrantValid_activeGrant() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_1,
             COMMITMENT_1
         );
         bytes32 grantId = _issueGrant(
             alice,
             bob,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             1 days,
             SCOPE_1
         );
@@ -880,14 +881,14 @@ contract ViewKeyRegistryTest is Test {
     function test_isGrantValid_expiredGrant() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_1,
             COMMITMENT_1
         );
         bytes32 grantId = _issueGrant(
             alice,
             bob,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             1 hours,
             SCOPE_1
         );
@@ -899,14 +900,14 @@ contract ViewKeyRegistryTest is Test {
     function test_isGrantValid_revokedGrant() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_1,
             COMMITMENT_1
         );
         bytes32 grantId = _issueGrant(
             alice,
             bob,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             1 days,
             SCOPE_1
         );
@@ -924,7 +925,7 @@ contract ViewKeyRegistryTest is Test {
     function test_getActiveGrantsReceived_returnsOnlyActive() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_1,
             COMMITMENT_1
         );
@@ -932,14 +933,14 @@ contract ViewKeyRegistryTest is Test {
         bytes32 grant1 = _issueGrant(
             alice,
             bob,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             1 days,
             SCOPE_1
         );
         bytes32 grant2 = _issueGrant(
             alice,
             bob,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             2 days,
             SCOPE_1
         );
@@ -994,14 +995,14 @@ contract ViewKeyRegistryTest is Test {
     function test_getGrantDetails_returnsCorrectData() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.BALANCE,
+            IViewKeyRegistry.ViewKeyType.BALANCE,
             PUB_KEY_1,
             COMMITMENT_1
         );
         bytes32 grantId = _issueGrant(
             alice,
             bob,
-            ViewKeyRegistry.ViewKeyType.BALANCE,
+            IViewKeyRegistry.ViewKeyType.BALANCE,
             5 days,
             SCOPE_1
         );
@@ -1009,19 +1010,19 @@ contract ViewKeyRegistryTest is Test {
         (
             address granter,
             address grantee,
-            ViewKeyRegistry.ViewKeyType keyType,
+            IViewKeyRegistry.ViewKeyType keyType,
             uint256 startTime,
             uint256 endTime,
-            ViewKeyRegistry.GrantStatus status,
+            IViewKeyRegistry.GrantStatus status,
             bytes32 scope
         ) = registry.getGrantDetails(grantId);
 
         assertEq(granter, alice);
         assertEq(grantee, bob);
-        assertEq(uint8(keyType), uint8(ViewKeyRegistry.ViewKeyType.BALANCE));
+        assertEq(uint8(keyType), uint8(IViewKeyRegistry.ViewKeyType.BALANCE));
         assertEq(startTime, block.timestamp);
         assertEq(endTime, block.timestamp + 5 days);
-        assertEq(uint8(status), uint8(ViewKeyRegistry.GrantStatus.ACTIVE));
+        assertEq(uint8(status), uint8(IViewKeyRegistry.GrantStatus.ACTIVE));
         assertEq(scope, SCOPE_1);
     }
 
@@ -1032,14 +1033,14 @@ contract ViewKeyRegistryTest is Test {
     function test_getAuditTrail_multipleAccesses() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_1,
             COMMITMENT_1
         );
         bytes32 grantId = _issueGrant(
             alice,
             bob,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             1 days,
             SCOPE_1
         );
@@ -1052,7 +1053,7 @@ contract ViewKeyRegistryTest is Test {
         vm.prank(bob);
         registry.recordAccess(grantId, keccak256("proof2"));
 
-        ViewKeyRegistry.AuditEntry[] memory entries = registry.getAuditTrail(
+        IViewKeyRegistry.AuditEntry[] memory entries = registry.getAuditTrail(
             grantId
         );
         assertEq(entries.length, 2);
@@ -1070,7 +1071,7 @@ contract ViewKeyRegistryTest is Test {
     ) public {
         vm.prank(alice);
         registry.registerViewKey(
-            ViewKeyRegistry.ViewKeyType.INCOMING,
+            IViewKeyRegistry.ViewKeyType.INCOMING,
             pubKey,
             commitment
         );
@@ -1081,7 +1082,7 @@ contract ViewKeyRegistryTest is Test {
             bytes32 storedCommitment,
             ,
             bool isActive
-        ) = registry.viewKeys(alice, ViewKeyRegistry.ViewKeyType.INCOMING);
+        ) = registry.viewKeys(alice, IViewKeyRegistry.ViewKeyType.INCOMING);
 
         assertEq(storedKey, pubKey);
         assertEq(storedCommitment, commitment);
@@ -1093,7 +1094,7 @@ contract ViewKeyRegistryTest is Test {
 
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_1,
             COMMITMENT_1
         );
@@ -1101,7 +1102,7 @@ contract ViewKeyRegistryTest is Test {
         vm.prank(alice);
         bytes32 grantId = registry.issueGrant(
             bob,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             duration,
             SCOPE_1
         );
@@ -1117,14 +1118,14 @@ contract ViewKeyRegistryTest is Test {
 
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_1,
             commitment
         );
 
         bool valid = registry.verifyKeyOwnership(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             secret
         );
         assertTrue(valid);
@@ -1137,14 +1138,14 @@ contract ViewKeyRegistryTest is Test {
     function test_recordAccess_expiresGrantOnAccess() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_1,
             COMMITMENT_1
         );
         bytes32 grantId = _issueGrant(
             alice,
             bob,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             1 hours,
             SCOPE_1
         );
@@ -1154,7 +1155,7 @@ contract ViewKeyRegistryTest is Test {
 
         // Access should revert with GrantExpired (state change reverts with it)
         vm.prank(bob);
-        vm.expectRevert(ViewKeyRegistry.GrantExpired.selector);
+        vm.expectRevert(IViewKeyRegistry.GrantExpired.selector);
         registry.recordAccess(grantId, keccak256("proof"));
 
         // Grant is no longer valid (expired by time even though status didn't persist)
@@ -1164,25 +1165,25 @@ contract ViewKeyRegistryTest is Test {
     function test_reRegisterKeyAfterRevocation() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.INCOMING,
+            IViewKeyRegistry.ViewKeyType.INCOMING,
             PUB_KEY_1,
             COMMITMENT_1
         );
 
         vm.prank(alice);
-        registry.revokeViewKey(ViewKeyRegistry.ViewKeyType.INCOMING);
+        registry.revokeViewKey(IViewKeyRegistry.ViewKeyType.INCOMING);
 
         // Should be able to register again
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.INCOMING,
+            IViewKeyRegistry.ViewKeyType.INCOMING,
             PUB_KEY_2,
             COMMITMENT_2
         );
 
         (bytes32 pubKey, , , , bool isActive) = registry.viewKeys(
             alice,
-            ViewKeyRegistry.ViewKeyType.INCOMING
+            IViewKeyRegistry.ViewKeyType.INCOMING
         );
         assertEq(pubKey, PUB_KEY_2);
         assertTrue(isActive);
@@ -1191,7 +1192,7 @@ contract ViewKeyRegistryTest is Test {
     function test_multipleGrantees_sameKey() public {
         _registerKey(
             alice,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             PUB_KEY_1,
             COMMITMENT_1
         );
@@ -1199,14 +1200,14 @@ contract ViewKeyRegistryTest is Test {
         bytes32 g1 = _issueGrant(
             alice,
             bob,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             1 days,
             SCOPE_1
         );
         bytes32 g2 = _issueGrant(
             alice,
             carol,
-            ViewKeyRegistry.ViewKeyType.FULL,
+            IViewKeyRegistry.ViewKeyType.FULL,
             2 days,
             SCOPE_1
         );

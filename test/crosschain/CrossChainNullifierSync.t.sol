@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import "../../contracts/crosschain/CrossChainNullifierSync.sol";
+import "../../contracts/interfaces/ICrossChainNullifierSync.sol";
 
 /**
  * @title CrossChainNullifierSyncTest
@@ -88,8 +89,8 @@ contract CrossChainNullifierSyncTest is Test {
     //////////////////////////////////////////////////////////////*/
 
     function test_ConfigureSyncTarget() public {
-        CrossChainNullifierSync.SyncTarget
-            memory target = CrossChainNullifierSync.SyncTarget({
+        ICrossChainNullifierSync.SyncTarget
+            memory target = ICrossChainNullifierSync.SyncTarget({
                 nullifierRegistry: address(0x1),
                 relay: address(0x2),
                 chainId: 42161,
@@ -103,8 +104,8 @@ contract CrossChainNullifierSyncTest is Test {
     }
 
     function test_ConfigureSyncTarget_RevertNonOperator() public {
-        CrossChainNullifierSync.SyncTarget
-            memory target = CrossChainNullifierSync.SyncTarget({
+        ICrossChainNullifierSync.SyncTarget
+            memory target = ICrossChainNullifierSync.SyncTarget({
                 nullifierRegistry: address(0x1),
                 relay: address(0x2),
                 chainId: 42161,
@@ -121,8 +122,8 @@ contract CrossChainNullifierSyncTest is Test {
     //////////////////////////////////////////////////////////////*/
 
     function test_Flush_RevertNoPending() public {
-        CrossChainNullifierSync.SyncTarget
-            memory target = CrossChainNullifierSync.SyncTarget({
+        ICrossChainNullifierSync.SyncTarget
+            memory target = ICrossChainNullifierSync.SyncTarget({
                 nullifierRegistry: address(0x1),
                 relay: address(0x2),
                 chainId: 42161,

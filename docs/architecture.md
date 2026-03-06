@@ -430,11 +430,12 @@ All critical contracts include:
 - `CrossChainProofHubV3` - Proof aggregation with value-based rate limiting
 - `ZKBoundStateLocks` - State locks with enhanced proof verification
 
-**Bridge Adapters (All ICrossChainBridge compliant)**:
+**Bridge Adapters (All IBridgeAdapter compliant)**:
 
 - `ArbitrumBridgeAdapter`, `OptimismBridgeAdapter`, `BaseBridgeAdapter`
-- `zkSyncBridgeAdapter`, `ScrollBridgeAdapter`, `LineaBridgeAdapter`
+- `AztecBridgeAdapter`, `zkSyncBridgeAdapter`, `ScrollBridgeAdapter`, `LineaBridgeAdapter`
 - `LayerZeroAdapter`, `HyperlaneAdapter`
+- `EthereumL1Bridge`, `L2ChainAdapter`, `DirectL2Messenger`
 
 ### Cryptographic Assumptions
 

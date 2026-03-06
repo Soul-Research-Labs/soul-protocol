@@ -46,8 +46,8 @@
 ### From Source
 
 ```bash
-git clone https://github.com/Zaseon-Research-Labs/ZASEON.git
-cd ZASEON
+git clone https://github.com/Soul-Research-Labs/SOUL.git
+cd SOUL
 npm install
 ```
 
@@ -201,7 +201,7 @@ const unlockTx = await client.unlockWithProof({
 
 Zaseon uses **Noir** circuits compiled to **UltraHonk** proofs (no trusted setup required). Generated Solidity verifiers are deployed on-chain and integrated via `UltraHonkAdapter.sol`.
 
-Available circuits (in `noir/circuits/`):
+Available circuits (in `noir/`):
 
 - `nullifier` — Nullifier derivation proof
 - `state_transfer` — Cross-chain state transfer
@@ -211,6 +211,19 @@ Available circuits (in `noir/circuits/`):
 - `private_transfer` — Private token transfers
 - `cross_domain_nullifier` — Cross-domain nullifier derivation
 - `policy` — Policy compliance verification
+- `shielded_pool` — Shielded pool deposit/withdrawal
+- `balance_proof` — Balance range attestation
+- `pedersen_commitment` — Pedersen commitment generation
+- `merkle_proof` — Merkle tree inclusion proof
+- `encrypted_transfer` — Encrypted transfer proof
+- `compliance_proof` — Compliance attestation
+- `ring_signature` — Ring signature anonymity set
+- `sanctions_check` — Sanctions screening proof
+- `liquidity_proof` — Liquidity backing attestation
+- `swap_proof` — Atomic swap proof
+- `accredited_investor` — Accreditation proof
+- `aggregator` — Recursive proof aggregation
+- `policy_bound_proof` — Policy-bound compliance proof
 
 ---
 
@@ -326,4 +339,4 @@ SCROLLSCAN_API_KEY=your_key
 
 ---
 
-_Built by [Zaseon Research Labs](https://github.com/zaseon-research-labs)_
+_Built by [Soul Research Labs](https://github.com/Soul-Research-Labs)_

@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import "../../contracts/privacy/UnifiedNullifierManager.sol";
+import "../../contracts/interfaces/IUnifiedNullifierManager.sol";
 import "../../contracts/privacy/CrossChainPrivacyHub.sol";
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
@@ -60,18 +61,18 @@ contract PrivacyCoverageTest is Test {
 
         // Register Nullifier
         vm.expectEmit(true, true, false, true);
-        emit UnifiedNullifierManager.NullifierRegistered(
+        emit IUnifiedNullifierManager.NullifierRegistered(
             nullifier,
             commitment,
             chainId,
-            UnifiedNullifierManager.NullifierType.STANDARD
+            IUnifiedNullifierManager.NullifierType.STANDARD
         );
 
         bytes32 zaseonNullifier = nullifierManager.registerNullifier(
             nullifier,
             commitment,
             chainId,
-            UnifiedNullifierManager.NullifierType.STANDARD,
+            IUnifiedNullifierManager.NullifierType.STANDARD,
             0 // no expiry
         );
 
@@ -79,13 +80,13 @@ contract PrivacyCoverageTest is Test {
         assertNotEq(zaseonNullifier, bytes32(0));
 
         // Check state
-        UnifiedNullifierManager.NullifierRecord memory record = nullifierManager
-            .getNullifierRecord(nullifier);
-        // assertEq(record.status == UnifiedNullifierManager.NullifierStatus.REGISTERED, true);
+        IUnifiedNullifierManager.NullifierRecord
+            memory record = nullifierManager.getNullifierRecord(nullifier);
+        // assertEq(record.status == IUnifiedNullifierManager.NullifierStatus.REGISTERED, true);
         // Enum comparison fix handled by assertEq casting or just bool check
         assertEq(
             uint(record.status),
-            uint(UnifiedNullifierManager.NullifierStatus.REGISTERED)
+            uint(IUnifiedNullifierManager.NullifierStatus.REGISTERED)
         );
         assertEq(record.commitment, commitment);
 
@@ -94,7 +95,9 @@ contract PrivacyCoverageTest is Test {
         assertTrue(nullifierManager.isNullifierSpent(nullifier));
 
         // Re-spend should fail
-        vm.expectRevert(UnifiedNullifierManager.NullifierAlreadySpent.selector);
+        vm.expectRevert(
+            IUnifiedNullifierManager.NullifierAlreadySpent.selector
+        );
         nullifierManager.spendNullifier(nullifier);
     }
 
@@ -144,7 +147,7 @@ contract PrivacyCoverageTest is Test {
             sourceNf,
             keccak256("commit"),
             srcChain,
-            UnifiedNullifierManager.NullifierType.STANDARD,
+            IUnifiedNullifierManager.NullifierType.STANDARD,
             0
         );
 
