@@ -2,9 +2,9 @@
 
 > Unified cross-chain privacy for Ethereum L2 networks.
 
-**Features:** Stealth Addresses • Confidential Commitments • Cross-Domain Nullifiers • Groth16 Proofs (BN254)
+**Features:** Stealth Addresses • Confidential Commitments • Cross-Domain Nullifiers • Groth16 Proofs (BN254) • Gas Normalization • Proof/Message Padding • Relay Jitter • Multi-Relayer Quorum
 
-**Privacy Guarantees:** Sender (stealth addresses) • Receiver (stealth addresses) • Amount (Pedersen commitments) • Graph (CDNA)
+**Privacy Guarantees:** Sender (stealth addresses) • Receiver (stealth addresses) • Amount (Pedersen commitments) • Graph (CDNA) • Metadata (12 independent reduction layers)
 
 ---
 
@@ -40,6 +40,14 @@
 | Cross-Domain Nullifiers (CDNA) | ✅ Production | Double-spend prevention across chains      |
 | Groth16 Proofs (BN254)         | ✅ Production | Efficient ZK proofs via native precompiles |
 | View Tag Optimization          | ✅ Production | 256x scanning speedup                      |
+| Gas Normalization              | ✅ Production | Constant-gas execution per operation type  |
+| Proof Envelope Padding         | ✅ Production | Uniform 2048-byte ZK proof envelopes       |
+| Message Envelope Padding       | ✅ Production | Uniform 4096-byte cross-chain messages     |
+| Adaptive Batching              | ✅ Production | Delay floor + dummy padding in batches     |
+| Per-User Relay Jitter          | ✅ Production | 5-30 min randomized relay scheduling       |
+| Multi-Relayer Quorum           | ✅ Production | 2-3 independent relayer confirmations      |
+| Denomination Enforcement       | ✅ Production | ERC-20 tiers at liquidity vault level      |
+| Mixnet Path Enforcement        | ✅ Production | 2-5 hop onion routing for MAXIMUM tier     |
 
 ### Research Reference
 
@@ -699,20 +707,24 @@ const success = await ringCT.verifyAndExecuteRCT(
 
 ## Security Considerations
 
-| Threat                | Mitigation                                     |
-| --------------------- | ---------------------------------------------- |
-| Double Spend          | Cross-domain nullifier registry (CDNA)         |
-| Front-running         | Commit-reveal for stealth announcements        |
-| Graph Analysis        | Stealth addresses + CDNA unlinkability         |
-| Amount Correlation    | Pedersen commitments with ZK range proofs      |
-| Timing Analysis       | Delayed relay + random jitter                  |
-| Key Compromise        | Separate view/spending keys                    |
-| Stale Root Exploit    | Merkle root ring buffer eviction (S8-1)        |
-| Batch Verifier Bypass | batchVerifier required for cross-chain (S8-3)  |
-| Stealth Mismatch      | canClaimStealth aligned with generation (S8-4) |
-| Pool Insolvency       | Balance check before withdrawal (S8-12)        |
-| Nullifier Replay      | Binding validation in completeRelay (S8-9)     |
-| Route Injection       | BatchAccumulator requires pre-config (S8-16)   |
+| Threat                 | Mitigation                                                              |
+| ---------------------- | ----------------------------------------------------------------------- |
+| Double Spend           | Cross-domain nullifier registry (CDNA)                                  |
+| Front-running          | Commit-reveal for stealth announcements                                 |
+| Graph Analysis         | Stealth addresses + CDNA unlinkability                                  |
+| Amount Correlation     | Pedersen commitments + denomination tier enforcement at vault level      |
+| Timing Analysis        | Delayed relay + per-user relay jitter (5-30 min) + adaptive batching    |
+| Key Compromise         | Separate view/spending keys                                             |
+| Gas Fingerprinting     | GasNormalizer pads all operations to constant gas ceilings              |
+| Proof-System Inference | ProofEnvelope pads all proofs to uniform 2048-byte envelopes            |
+| Message-Size Leaks     | FixedSizeMessageWrapper pads cross-chain messages to 4096 bytes         |
+| Relayer Correlation    | Multi-relayer quorum (2-3 confirmations) + mixnet path enforcement      |
+| Stale Root Exploit     | Merkle root ring buffer eviction (S8-1)                                 |
+| Batch Verifier Bypass  | batchVerifier required for cross-chain (S8-3)                           |
+| Stealth Mismatch       | canClaimStealth aligned with generation (S8-4)                          |
+| Pool Insolvency        | Balance check before withdrawal (S8-12)                                 |
+| Nullifier Replay       | Binding validation in completeRelay (S8-9)                              |
+| Route Injection        | BatchAccumulator requires pre-config (S8-16)                            |
 
 **Best Practices:** Use max privacy for high-value • Wait for anonymity set • Fresh addresses per tx • Verify proofs
 

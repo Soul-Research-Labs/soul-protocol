@@ -586,5 +586,60 @@ telegram:
 
 ---
 
-_Monitoring configuration version: 2.0.0_  
+## Metadata Protection Monitoring
+
+### GasNormalizer
+
+```yaml
+events:
+  - name: GasNormalized
+    alert: low
+    description: Gas usage normalized to tier
+
+  - name: TierOverflow
+    alert: high
+    description: Operation exceeded maximum gas tier
+    threshold:
+      warning: "> 5/day"
+      critical: "> 20/day"
+```
+
+### MultiRelayerQuorum
+
+```yaml
+events:
+  - name: QuorumReached
+    alert: low
+    description: Multi-relayer quorum achieved
+
+  - name: QuorumFailed
+    alert: high
+    description: Quorum not reached within timeout
+    response: "Check relayer availability and network connectivity"
+    threshold:
+      warning: "> 3/hour"
+      critical: "> 10/hour"
+
+  - name: AttestationMismatch
+    alert: critical
+    description: Relayers disagreed on message content
+    response: "Investigate potential relayer compromise or message tampering"
+    threshold:
+      critical: "> 0"
+```
+
+### ERC20DenominationEnforcer
+
+```yaml
+events:
+  - name: DenominationRejected
+    alert: medium
+    description: Deposit rejected due to non-standard denomination
+    threshold:
+      warning: "> 50/day"
+```
+
+---
+
+_Monitoring configuration version: 2.1.0_
 _Last updated: March 2026_

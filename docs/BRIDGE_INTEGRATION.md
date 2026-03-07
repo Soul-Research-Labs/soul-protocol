@@ -198,6 +198,19 @@ try {
 | **Challenge Period**   | Wait for 7-day challenge period (optimistic bridges) |
 | **Replay Protection**  | All transfers include nonces + chain IDs             |
 | **Amount Validation**  | Validate against min/max limits before transfer      |
+| **Gas Normalization**  | Gas usage padded to fixed tiers via `GasNormalizer`  |
+| **Message Padding**    | Cross-chain payloads padded by `FixedSizeMessageWrapper` to prevent size correlation |
+| **Proof Padding**      | Proofs padded to standard sizes by `ProofEnvelope` to prevent proof-system fingerprinting |
+
+### Metadata Protection
+
+Bridge transfers benefit from automatic metadata leakage reduction:
+
+- **Gas normalization**: All bridge operations are padded to fixed gas tiers (100k, 200k, 500k, 1M, 2M, 5M) via `GasNormalizer.sol`, preventing gas-based fingerprinting across bridge adapters.
+- **Message padding**: `FixedSizeMessageWrapper.sol` pads cross-chain messages to fixed sizes (1024, 4096, 16384 bytes), preventing payload-size correlation between source and destination chains.
+- **Proof padding**: `ProofEnvelope.sol` normalizes proof sizes to 4 tiers (512, 1024, 2048, 4096 bytes), preventing proof-system inference attacks.
+- **Multi-relayer quorum**: ENHANCED tier requires 2-of-3 relayer agreement; MAXIMUM requires 3-of-5, preventing single-relayer correlation.
+- **Relay jitter**: Per-user timing decorrelation prevents temporal correlation of bridge operations.
 
 ---
 

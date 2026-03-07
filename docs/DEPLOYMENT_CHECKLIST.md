@@ -54,8 +54,8 @@
 - [x] TLA+ model checking: 4 safety properties
 - [x] Storage layout compatibility verified for all upgradeable contracts
 - [x] CLSAG ring signature verifier tested (18 test vectors)
-- [x] Foundry test suite: 5,760+ tests passing (286 suites)
-- [x] Total: 5,760+ tests passing
+- [x] Foundry test suite: 5,880+ tests passing (288 suites)
+- [x] Total: 5,880+ tests passing
 
 ### 4. Pre-Mainnet Security Checklist
 
@@ -67,6 +67,18 @@
 - [ ] Configure timelocks for all admin operations
 - [ ] Set up monitoring for critical events
 - [ ] Deploy with optimizer enabled (runs: 10000)
+
+### 5. Metadata Protection Verification
+
+- [ ] GasNormalizer deployed and gas tiers configured
+- [ ] ProofEnvelope library linked to all verifier adapters
+- [ ] FixedSizeMessageWrapper linked to all bridge adapters
+- [ ] MultiRelayerQuorum deployed with correct thresholds (2-of-3 ENHANCED, 3-of-5 MAXIMUM)
+- [ ] ERC20DenominationEnforcer configured with standard denominations
+- [ ] MixnetNodeRegistry path enforcement enabled for MAXIMUM tier
+- [ ] RelayJitterManager parameters verified
+- [ ] AdaptiveBatchAccumulator deployed with tier-specific batch sizes
+- [ ] Metadata protection test suite passes (122+ tests)
 
 ### 4a. Session 8 Security Checklist
 

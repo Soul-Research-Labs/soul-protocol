@@ -449,6 +449,26 @@ Zaseon can do all of these, making it:
 | `IExecutionRouter.sol`             | ✅ Complete | Backend routing                           |
 | `SovereignPrivacyDomain.sol`       | ✅ Complete | SPD implementation                        |
 
+### Metadata Protection Layer
+
+The modular privacy architecture includes a 12-layer metadata leakage reduction system that operates across both contract and SDK levels:
+
+| Layer                         | Module                              | Scope    | Status      |
+| ----------------------------- | ----------------------------------- | -------- | ----------- |
+| Gas normalization             | `GasNormalizer.sol`                 | Contract | ✅ Complete |
+| Proof envelope padding        | `ProofEnvelope.sol`                 | Library  | ✅ Complete |
+| Cross-chain message padding   | `FixedSizeMessageWrapper.sol`       | Library  | ✅ Complete |
+| Adaptive batching             | `BatchAccumulator.sol` (enhanced)   | Contract | ✅ Complete |
+| Per-user relay jitter         | `RelayJitterManager.sol`            | Library  | ✅ Complete |
+| Multi-relayer quorum          | `MultiRelayerQuorum.sol`            | Contract | ✅ Complete |
+| Denomination enforcement      | `ERC20DenominationEnforcer.sol`     | Contract | ✅ Complete |
+| Mixnet path enforcement       | `MixnetNodeRegistry.sol` (enhanced) | Contract | ✅ Complete |
+| SDK decoy traffic             | `DecoyTrafficManager`               | SDK      | ✅ Complete |
+| SDK submission jitter         | `SubmissionJitter`                  | SDK      | ✅ Complete |
+| SDK polling jitter            | `PollingJitter`                     | SDK      | ✅ Complete |
+
+These layers integrate with the privacy tier system (STANDARD / ENHANCED / MAXIMUM) to provide progressive metadata protection.
+
 ### Integration Points
 
 ```

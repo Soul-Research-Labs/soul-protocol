@@ -20,8 +20,8 @@
 
 | Metric                              | Count |
 | ----------------------------------- | ----- |
-| **Total Solidity source files**     | 243   |
-| **Foundry test files** (`.t.sol`)   | 286   |
+| **Total Solidity source files**     | 254   |
+| **Foundry test files** (`.t.sol`)   | 288   |
 | **Hardhat test files** (`.test.ts`) | 15    |
 | **Certora specs**                   | 69    |
 | **Certora conf files**              | 69    |
@@ -54,6 +54,12 @@
 | ----------------------- | -------------------------------------------------- |
 | `UniversalShieldedPool` | `test/privacy/UniversalShieldedPool.t.sol`         |
 | `DelayedClaimVault`     | `test/privacy/DelayedClaimVault.t.sol` _(batch 3)_ |
+| `GasNormalizer`         | `test/privacy/GasNormalizer.t.sol` (21 tests)      |
+| `MultiRelayerQuorum`    | `test/privacy/MultiRelayerQuorum.t.sol` (17 tests) |
+| `DenominationEnforcer`  | `test/privacy/ERC20DenominationEnforcer.t.sol` (22 tests) |
+| `MixnetEnforcement`     | `test/privacy/MixnetPathEnforcement.t.sol` (21 tests) |
+| `RelayJitter`           | `test/privacy/RelayJitterManager.t.sol` (17 tests) |
+| `AdaptiveBatching`      | `test/privacy/AdaptiveBatchAccumulator.t.sol` (16 tests) |
 
 ### Security ✅
 
@@ -89,6 +95,9 @@
 | `BatchProcessing`  | `test/libraries/LibraryBatchGas.t.sol` _(batch 3)_  |
 | `CryptoLib`        | `test/libraries/CryptoValidation.t.sol` _(batch 3)_ |
 | `ValidationLib`    | `test/libraries/CryptoValidation.t.sol` _(batch 3)_ |
+| `ProofEnvelope`    | `test/libraries/ProofEnvelope.t.sol` (14 tests)     |
+| `FixedSizeMessageWrapper` | `test/libraries/FixedSizeMessageWrapper.t.sol` (11 tests) |
+| `RelayJitterManager`      | `test/libraries/RelayJitterManager.t.sol` (17 tests) |
 
 ### Upgradeable ✅
 
@@ -107,6 +116,7 @@
 | **Stress tests**       | 3 files in `test/stress/`                              |
 | **Gas benchmarks**     | 7 files in `test/gas/`                                 |
 | **Integration**        | 32 files in `test/integration/` + `test/integrations/` |
+| **Metadata protection** | 8 files in `test/privacy/` (122+ tests covering gas normalization, proof/message padding, relay jitter, multi-relayer quorum, denomination enforcement, mixnet enforcement, adaptive batching) |
 
 ## Known Gaps (Intentional)
 
@@ -134,7 +144,7 @@ These contracts lack dedicated test files but are either:
 
 ## Total
 
-> **5,760+ tests** across **286 Foundry + 15 Hardhat test suites** — 0 failures (March 2026)
+> **5,880+ tests** across **288 Foundry + 15 Hardhat test suites** — 0 failures (March 2026)
 
 ## Commands
 

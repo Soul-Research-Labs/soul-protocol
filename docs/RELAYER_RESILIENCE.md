@@ -610,23 +610,23 @@ However, batch sizes are observable on-chain, and small batches (< 5 items) prov
 
 ### Privacy Tier Integration
 
-| Privacy Tier | Relayer Privacy                                   | Commit-Reveal | Mixnet             | Batch    |
-| ------------ | ------------------------------------------------- | ------------- | ------------------ | -------- |
-| STANDARD     | Basic: single relayer sees all metadata           | Optional      | No                 | Optional |
-| ENHANCED     | Ring sig: 3+ relayer cluster, request distributed | Optional      | No                 | Yes      |
-| MAXIMUM      | Full: commit-reveal + 2-hop mixnet + batching     | Required      | Required (2+ hops) | Required |
+| Privacy Tier | Relayer Privacy                                   | Commit-Reveal | Mixnet             | Batch    | Gas Normalization | Proof/Message Padding | Multi-Relayer Quorum | Relay Jitter |
+| ------------ | ------------------------------------------------- | ------------- | ------------------ | -------- | ----------------- | --------------------- | -------------------- | ------------ |
+| STANDARD     | Basic: single relayer sees all metadata           | Optional      | No                 | Optional | Yes               | Proof only            | No                   | No           |
+| ENHANCED     | Ring sig: 3+ relayer cluster, request distributed | Optional      | No                 | Yes      | Yes               | Proof + Message       | 2-of-3               | Yes          |
+| MAXIMUM      | Full: commit-reveal + 2-hop mixnet + batching     | Required      | Required (2+ hops) | Required | Yes               | Proof + Message       | 3-of-5               | Yes          |
 
 ### Honest Assessment
 
-Even with all mitigations active, relayer-level privacy is **weaker than single-chain mixing** because:
+Even with all mitigations active, relayer-level privacy is **significantly improved but not absolute** because:
 
 1. Cross-chain relayers must know the destination chain (non-negotiable)
 2. On-chain adapter selection is publicly visible after execution
-3. Fee amounts and gas limits leak operation complexity
+3. ~~Fee amounts and gas limits leak operation complexity~~ **Mitigated**: Gas normalization pads to fixed tiers; denomination enforcement restricts amounts in MAXIMUM tier
 4. The relayer node set is small compared to Tornado Cash's anonymity set
-5. Bridge finality delays create timing windows for correlation
+5. ~~Bridge finality delays create timing windows for correlation~~ **Mitigated**: Per-user relay jitter and adaptive batching decorrelate timing
 
-These are fundamental constraints of cross-chain privacy, not implementation bugs. Users requiring maximum metadata resistance should use the MAXIMUM tier and accept the latency/cost trade-offs.
+These residual constraints are fundamental to cross-chain privacy. The 12-layer metadata protection system (gas normalization, proof/message padding, relay jitter, multi-relayer quorum, denomination enforcement, mixnet path enforcement, SDK decoy traffic, submission jitter, polling jitter, adaptive batching, commit-reveal, and batch accumulation) substantially reduces the attack surface. Users requiring maximum metadata resistance should use the MAXIMUM tier.
 
 ---
 

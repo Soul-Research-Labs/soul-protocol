@@ -21,7 +21,7 @@
 
 #### ✅ Completed Checks
 
-- [x] All tests pass: `forge test --summary` (5,760+ tests / 282 suites)
+- [x] All tests pass: `forge test --summary` (5,880+ tests / 288 suites)
 - [x] Fuzz testing: 300+ fuzz tests with high iterations
 - [x] Invariant testing: 8 invariant tests
 - [x] Attack simulation: 44 attack vectors tested
@@ -30,8 +30,8 @@
 - [x] Slither analysis: No critical/high findings (all 9 findings addressed)
 - [x] Code coverage: >80% on core contracts
 - [x] Bridge adapter tests: 300+ tests across 9 adapters
-- [x] Privacy contract tests: 183 tests across 3 contracts
-- [x] Certora formal specs: 62+ spec files with invariants
+- [x] Privacy contract tests: 183 tests across 3 contracts + 122 metadata protection tests
+- [x] Certora formal specs: 69 spec files with invariants
 - [x] K Framework: 5 algebraic specifications for protocol invariants
 - [x] TLA+ model checking: 4 safety properties (TVL conservation, no double-spend)
 - [x] CLSAG ring signature verifier: 18 test vectors (valid/invalid/gas benchmarks)

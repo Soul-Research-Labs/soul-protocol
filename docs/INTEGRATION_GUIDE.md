@@ -22,6 +22,7 @@
 - [Dynamic Routing](#dynamic-routing)
 - [Compliance & Selective Disclosure](#compliance--selective-disclosure)
 - [Experimental Features](#experimental-features)
+- [Metadata Protection](#metadata-protection)
 - [Production](#production)
 
 ---
@@ -777,6 +778,85 @@ registry.watchStatusChanges((id, oldStatus, newStatus) => {
 | `PRODUCTION`   | Full mainnet, fully audited and graduated | High          |
 
 See the `ExperimentalFeatureRegistry` contract for graduation criteria.
+
+---
+
+## Metadata Protection
+
+Zaseon includes 12 independent metadata leakage reduction layers that protect against traffic analysis, gas fingerprinting, proof-system inference, and relayer correlation attacks.
+
+### Gas Normalization
+
+All privacy operations are padded to fixed gas tiers to prevent gas-based fingerprinting:
+
+```typescript
+// Gas normalization is enforced at the contract level via GasNormalizer.sol
+// No SDK configuration needed — the contract automatically rounds gas usage
+// to the nearest tier: 100k, 200k, 500k, 1M, 2M, 5M
+
+// Privacy tiers control which protections are active:
+// STANDARD  — Gas normalization + proof padding
+// ENHANCED  — Above + message padding + relay jitter + multi-relayer quorum
+// MAXIMUM   — Above + mixnet enforcement + denomination enforcement + batching
+```
+
+### Proof & Message Padding
+
+Proofs and cross-chain messages are padded to fixed sizes to prevent size-based correlation:
+
+```typescript
+// ProofEnvelope.sol pads all proofs to 4 fixed sizes:
+//   SMALL (512 bytes), MEDIUM (1024), LARGE (2048), EXTRA_LARGE (4096)
+// FixedSizeMessageWrapper.sol pads messages to 3 tiers:
+//   STANDARD (1024 bytes), LARGE (4096), EXTRA_LARGE (16384)
+//
+// Both are enforced at the contract level — integrators benefit automatically.
+```
+
+### Relay Jitter & Multi-Relayer Quorum
+
+Relay timing is decorrelated via per-user jitter, and multi-relayer quorum prevents single-relayer correlation:
+
+```typescript
+// SDK-level: submission jitter adds random delay before broadcasting
+import { createZaseonClient } from "@zaseon/sdk";
+
+const client = createZaseonClient({
+  rpcUrl: process.env.RPC_URL!,
+  chainId: 11155111,
+  privateKey: "0x...",
+  // Jitter is applied automatically for ENHANCED and MAXIMUM tiers
+});
+
+// Contract-level: MultiRelayerQuorum requires 2-of-3 relayer agreement
+// for ENHANCED tier, 3-of-5 for MAXIMUM tier
+```
+
+### Denomination Enforcement
+
+ERC-20 transfers in MAXIMUM tier are restricted to fixed denominations to prevent amount-based correlation:
+
+```typescript
+// ERC20DenominationEnforcer.sol restricts deposits to standard amounts:
+// 0.1, 1, 10, 100, 1000 (token units)
+// This applies within CrossChainLiquidityVault for MAXIMUM tier
+```
+
+### Protection Summary by Tier
+
+| Protection                    | STANDARD | ENHANCED | MAXIMUM |
+| ----------------------------- | -------- | -------- | ------- |
+| Gas normalization             | Yes      | Yes      | Yes     |
+| Proof envelope padding        | Yes      | Yes      | Yes     |
+| Cross-chain message padding   | No       | Yes      | Yes     |
+| Per-user relay jitter         | No       | Yes      | Yes     |
+| Multi-relayer quorum          | No       | 2-of-3   | 3-of-5  |
+| Denomination enforcement      | No       | No       | Yes     |
+| Mixnet path enforcement       | No       | No       | Yes     |
+| Adaptive batching             | No       | Optional | Yes     |
+| SDK decoy traffic             | No       | Optional | Yes     |
+| SDK submission jitter         | No       | Yes      | Yes     |
+| SDK polling jitter            | No       | Yes      | Yes     |
 
 ---
 

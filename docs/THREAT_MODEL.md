@@ -373,17 +373,19 @@ Observer sees:
 If Δ is small and anonymity set is thin → high linkability probability
 ```
 
-**Status**: ⚠️ **Partially Mitigated**
+**Status**: ✅ **Substantially Mitigated** (March 2026)
 
 **Mitigations**:
 
-- ✅ `BatchAccumulator` — batches 8+ transactions for simultaneous release with 2KB fixed payload padding
+- ✅ `BatchAccumulator` — batches 8+ transactions with adaptive delay floor + dummy commitment padding for anonymity set maintenance
 - ✅ `DelayedClaimVault` — enforces 24-72 hour randomized delays with VRF scheduling
 - ✅ `PrivacyTierRouter` — auto-escalation requiring constant-time execution at MAXIMUM tier
+- ✅ Per-user relay jitter — `CrossChainPrivacyHub` assigns 5-30 min randomized delay per transfer using `keccak256(requestId, sender, prevrandao, timestamp)`
+- ✅ SDK polling jitter — `CrossChainPrivacyOrchestrator` randomizes polling interval (5-8s) via `crypto.getRandomValues`
+- ✅ SDK submission jitter — `BatchAccumulatorClient` applies cryptographic jitter to batch submission timing
 - ⚠️ Timing resistance depends on anonymity set size — thin markets have weak protection
-- ⚠️ BatchAccumulator's `maxWaitTime` (10 min) creates a timing ceiling
 
-**Residual Risk**: Medium. Sufficient anonymity set growth is load-dependent, not protocol-guaranteed.
+**Residual Risk**: Medium-Low. Multiple independent timing protections at contract and SDK level significantly reduce correlation probability.
 
 #### 4.6.2 Liquidity Vault Deposit/Withdrawal Correlation
 
@@ -398,16 +400,15 @@ Dest chain:    releaseLiquidity(requestId, ETH, recipient, 3.7 ETH, sourceChain)
 → Amount 3.7 ETH is a strong correlation signal
 ```
 
-**Status**: ⚠️ **Partially Mitigated**
+**Status**: ✅ **Substantially Mitigated** (March 2026)
 
 **Mitigations**:
 
 - ✅ Fixed denomination tiers in `DelayedClaimVault` (0.1/1/10/100 ETH)
+- ✅ ERC-20 denomination tier enforcement in `CrossChainLiquidityVault` — per-token tiers enforced at both deposit and release
 - ✅ Settlement batching obscures individual flows
-- ⚠️ `CrossChainLiquidityVault` itself does not enforce denomination bucketing — relies on upstream `DelayedClaimVault`
-- ⬜ Randomized release delays at the vault level (planned)
 
-**Residual Risk**: Medium-High for transfers that bypass `DelayedClaimVault`.
+**Residual Risk**: Low. Both `DelayedClaimVault` and `CrossChainLiquidityVault` now enforce denomination bucketing independently.
 
 #### 4.6.3 Relayer Metadata Exposure
 
@@ -424,17 +425,20 @@ Relayer observes:
   - Submission timing
 ```
 
-**Status**: ⚠️ **Partially Mitigated**
+**Status**: ✅ **Substantially Mitigated** (March 2026)
 
 **Mitigations**:
 
 - ✅ `BatchAccumulator` aggregates traffic to reduce per-transfer visibility
-- ✅ `PrivacyTierRouter` MAXIMUM tier requires `requireMixnet=true` (5+ relayers)
+- ✅ `PrivacyTierRouter` MAXIMUM tier requires `requireMixnet=true` with `MixnetNodeRegistry` enforcement (2-5 hops)
+- ✅ Multi-relayer quorum — HIGH/MAXIMUM transfers require 2+ independent relayer confirmations, preventing single-relayer metadata correlation
 - ✅ Ring Confidential Transactions with decoy keys obscure actual destinations
-- ⚠️ `MixnetNodeRegistry` declared in `CrossChainPrivacyHub` but not fully implemented
+- ✅ SDK `DecoyTrafficManager` generates valid-looking empty-commitment transactions at random intervals
+- ✅ `GasNormalizer` pads gas to fixed ceilings, preventing gas-based operation type inference by relayers
+- ✅ `ProofEnvelope` (2048B) + `FixedSizeMessageWrapper` (4096B) make all payloads uniform-sized, preventing payload fingerprinting
 - ⚠️ No on-chain mitigation for IP-level surveillance — users must use Tor/VPN
 
-**Residual Risk**: Medium. Relayers are semi-trusted for metadata; full privacy requires off-chain protections.
+**Residual Risk**: Low-Medium. Relayers can still observe IP and timing at network level; on-chain metadata is now substantially reduced.
 
 #### 4.6.4 On-Chain State Visibility
 
@@ -487,9 +491,9 @@ t=1: Before epoch E propagates to Chain B, attempt to use N on Chain B
 | Bridge Exploitation   | Medium     | Critical | High       | ✅ Mitigated            |
 | Key Compromise        | Medium     | Critical | Critical   | ✅ Mitigated            |
 | Griefing/DoS          | High       | Low      | Medium     | ✅ Mitigated            |
-| Timing Correlation    | High       | Medium   | High       | ⚠️ Partially Mitigated  |
-| Liquidity Correlation | Medium     | Medium   | Medium     | ⚠️ Partially Mitigated  |
-| Relayer Metadata      | High       | Medium   | High       | ⚠️ Partially Mitigated  |
+| Timing Correlation    | High       | Medium   | High       | ✅ Substantially Mitigated |
+| Liquidity Correlation | Medium     | Medium   | Medium     | ✅ Substantially Mitigated |
+| Relayer Metadata      | High       | Medium   | High       | ✅ Substantially Mitigated |
 | On-Chain Visibility   | High       | Low      | Medium     | ⚠️ Inherent Limitation  |
 | Nullifier Sync Window | Low        | Critical | High       | ⚠️ Partially Mitigated  |
 | Quantum Attack        | Low        | Critical | Medium     | 🔄 PQC Migration Active |
@@ -592,7 +596,7 @@ The following conditions should trigger immediate incident response:
 | Tool               | Findings          | Critical | High | Medium | Low |
 | ------------------ | ----------------- | -------- | ---- | ------ | --- |
 | Slither            | 9 (all addressed) | 0        | 0    | 2      | 7   |
-| Foundry Tests      | 5,760+            | N/A      | N/A  | N/A    | N/A |
+| Foundry Tests      | 5,880+            | N/A      | N/A  | N/A    | N/A |
 | Fuzz Tests         | 300+              | N/A      | N/A  | N/A    | N/A |
 | Halmos Symbolic    | 12 checks         | N/A      | N/A  | N/A    | N/A |
 | Echidna Properties | 6 invariants      | N/A      | N/A  | N/A    | N/A |

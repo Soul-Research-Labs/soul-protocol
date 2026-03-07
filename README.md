@@ -10,7 +10,7 @@
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.24-363636.svg?logo=solidity)](https://docs.soliditylang.org/)
 [![Foundry](https://img.shields.io/badge/Foundry-FFDB1C.svg?logo=ethereum)](https://getfoundry.sh/)
 [![OpenZeppelin](https://img.shields.io/badge/OpenZeppelin-5.4.0-4E5EE4.svg)](https://openzeppelin.com/contracts/)
-[![Tests](https://img.shields.io/badge/Tests-5%2C760%2B_passing-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-5%2C880%2B_passing-brightgreen.svg)]()
 [![Certora](https://img.shields.io/badge/Certora-69_specs-blue.svg)]()
 
 ```
@@ -50,9 +50,12 @@ Result → LOCK-IN Result → FREEDOM
 
 | Lock-In Vector         | How Zaseon Breaks It                                            |
 | ---------------------- | --------------------------------------------------------------- |
-| **Timing correlation** | ZK-SLocks + BatchAccumulator + DelayedClaimVault reduce timing linkability (see [Privacy Guarantees](#privacy-guarantees--known-limitations)) |
-| **Amount correlation** | Pedersen commitments + Bulletproofs hide amounts in fixed denomination tiers |
+| **Timing correlation** | ZK-SLocks + BatchAccumulator + DelayedClaimVault + per-user relay jitter reduce timing linkability (see [Privacy Guarantees](#privacy-guarantees--known-limitations)) |
+| **Amount correlation** | Pedersen commitments + Bulletproofs hide amounts in fixed denomination tiers (enforced at vault + bridge level) |
 | **Address linkage**    | Stealth addresses + CDNA nullifiers prevent graph analysis |
+| **Gas fingerprinting** | GasNormalizer pads all privacy operations to constant gas per tier |
+| **Message-size leaks** | ProofEnvelope (2048B) + FixedSizeMessageWrapper (4096B) pad all proofs and cross-chain messages |
+| **Relayer correlation** | Multi-relayer quorum + mixnet enforcement + SDK decoy traffic |
 | **Winner-take-most**   | Interoperability prevents any chain from monopolizing privacy |
 
 > **Zaseon is SMTP for private blockchain transactions.** Just as email moved from walled gardens to universal interoperability, Zaseon enables private transactions to flow freely across any chain.
@@ -65,12 +68,14 @@ Zaseon provides **cryptographic unlinkability** (commitments, nullifiers, stealt
 
 | Limitation | Description | Mitigation |
 | --- | --- | --- |
-| **Timing correlation** | Lock/unlock transactions are on-chain events. Statistical timing analysis remains possible (cf. Tornado Cash deanonymization research). | BatchAccumulator (8+ tx batching), DelayedClaimVault (24-72h randomized delays), PrivacyTierRouter auto-escalation |
-| **Bridge-boundary amount privacy** | Small anonymity sets at bridge boundaries can reveal transfer amounts. | Fixed denomination tiers (0.1/1/10/100 ETH), Pedersen commitments within shielded pools |
-| **On-chain state visibility** | Lock creation, container import, and nullifier registration are publicly visible state transitions. | Encrypted payloads, stealth addresses, relayer-mediated submission |
-| **Liquidity vault correlation** | Deposit→LP payout→settlement flows in `CrossChainLiquidityVault` can be correlated by observers. | Denomination bucketing, randomized release delays (in progress) |
-| **Relayer metadata** | Relayers observe submission IP, transaction order, and destination chain. | BatchAccumulator, mixnet integration (MAXIMUM privacy tier), user-side Tor/VPN |
-| **Cross-chain privacy < single-chain** | Every chain boundary (bridge, relay, message passing) expands the attack surface. Cross-chain privacy is strictly weaker than single-chain privacy. | Defense-in-depth: multiple independent mitigations per layer |
+| **Timing correlation** | Lock/unlock transactions are on-chain events. Statistical timing analysis remains possible (cf. Tornado Cash deanonymization research). | BatchAccumulator (8+ tx batching with adaptive delay floor + dummy padding), DelayedClaimVault (24-72h randomized delays), PrivacyTierRouter auto-escalation, per-user relay jitter (5-30 min randomized), SDK polling jitter |
+| **Bridge-boundary amount privacy** | Small anonymity sets at bridge boundaries can reveal transfer amounts. | Fixed denomination tiers (0.1/1/10/100 ETH) enforced at both `DelayedClaimVault` and `CrossChainLiquidityVault`, Pedersen commitments within shielded pools |
+| **On-chain state visibility** | Lock creation, container import, and nullifier registration are publicly visible state transitions. | Encrypted payloads, stealth addresses, relayer-mediated submission, GasNormalizer constant-gas execution |
+| **Liquidity vault correlation** | Deposit→LP payout→settlement flows in `CrossChainLiquidityVault` can be correlated by observers. | ERC-20 denomination tier enforcement at vault level, randomized release delays |
+| **Relayer metadata** | Relayers observe submission IP, transaction order, and destination chain. | Multi-relayer quorum (2+ relayers for HIGH/MAXIMUM tiers), MixnetNodeRegistry enforcement, SDK-side decoy traffic, user-side Tor/VPN |
+| **Gas fingerprinting** | Different operations consume different gas, enabling transaction type inference. | GasNormalizer burns gas to fixed ceilings per operation type (deposit, withdraw, transfer, relay) |
+| **Proof-system inference** | Different proof systems produce different-sized payloads, leaking proof system type. | ProofEnvelope pads all proofs to uniform 2048 bytes; FixedSizeMessageWrapper pads cross-chain messages to 4096 bytes |
+| **Cross-chain privacy < single-chain** | Every chain boundary (bridge, relay, message passing) expands the attack surface. Cross-chain privacy is strictly weaker than single-chain privacy. | Defense-in-depth: 12 independent metadata reduction layers |
 
 > **Honest assessment:** Cross-chain privacy is an unsolved research problem. Zaseon reduces metadata leakage significantly but does not eliminate it. See [Threat Model](docs/THREAT_MODEL.md) and [EIP Draft §Privacy Guarantees](docs/EIP_DRAFT.md) for detailed analysis.
 
@@ -220,31 +225,31 @@ forge test --match-path "test/fuzz/*"  # Fuzz tests
 ## Project Structure
 
 ```
-contracts/              243 Solidity contracts
+contracts/              254 Solidity contracts
 ├── core/               ZaseonProtocolHub, ConfidentialState, NullifierRegistry, PrivacyRouter
 ├── primitives/         ZK-SLocks, PC³, CDNA, EASC, Orchestrator
-├── crosschain/         12 bridge adapters (Arbitrum, Optimism, Base, Aztec, zkSync, Scroll, Linea, LZ, Hyperlane)
-├── privacy/            ShieldedPool, ProofTranslator, StealthAddresses, LiquidityVault
+├── crosschain/         15 bridge adapters (Arbitrum, Optimism, Base, Aztec, zkSync, Scroll, Linea, LZ, Hyperlane)
+├── privacy/            ShieldedPool, ProofTranslator, StealthAddresses, GasNormalizer, MixnetNodeRegistry, BatchAccumulator
 ├── bridge/             MultiBridgeRouter, CrossChainProofHubV3, AtomicSwap
 ├── verifiers/          47 verifiers (22 UltraHonk generated, CLSAG ring signature, VerifierRegistry)
-├── security/           20 modules: circuit breaker, rate limiter, MEV protection, emergency coordination
+├── security/           21 modules: circuit breaker, rate limiter, MEV protection, emergency coordination, nullifier challenge
 ├── compliance/         SanctionsOracle, SelectiveDisclosure, ComplianceReporting
 ├── governance/         ZaseonGovernor, UpgradeTimelock, ZaseonToken
-├── relayer/            DecentralizedRelayerRegistry, HealthMonitor, FeeMarket, SLA
+├── relayer/            DecentralizedRelayerRegistry, HealthMonitor, FeeMarket, SLA, PrivateRelayCommitReveal
 ├── upgradeable/        16 UUPS proxy implementations
-├── interfaces/         47 contract interfaces
-├── libraries/          BN254, CryptoLib, PoseidonYul, GasOptimizations
+├── interfaces/         50 contract interfaces
+├── libraries/          BN254, CryptoLib, PoseidonYul, ProofEnvelope, FixedSizeMessageWrapper, GasOptimizations
 └── adapters/           EVMUniversalAdapter, NativeL2BridgeWrapper
 
 noir/                   22 Noir ZK circuits
-sdk/                    TypeScript SDK (60 viem-based modules)
+sdk/                    TypeScript SDK (61 viem-based modules)
 certora/                69 formal verification specs (CVL)
 specs/                  K Framework + TLA+ formal specifications
-test/                   286 Foundry test files + 15 Hardhat tests
-scripts/                14 deploy scripts + security tooling
+test/                   288 Foundry test files + 15 Hardhat tests
+scripts/                16 deploy scripts + security tooling
 monitoring/             Defender + Tenderly configs
 examples/               3 examples (private-payment, sdk-quickstart, zk-locks-demo)
-docs/                   51 docs including 13 ADRs
+docs/                   52 docs including 12 ADRs
 ```
 
 ---
@@ -270,8 +275,18 @@ docs/                   51 docs including 13 ADRs
 | `UniversalShieldedPool`     | Multi-asset shielded pool with Poseidon Merkle tree                                                                     |
 | `UniversalProofTranslator`  | Same-family proof relay (PLONK/UltraPlonk/HONK); cross-family translation requires recursive wrapper circuits (planned) |
 | `StealthAddressRegistry`    | ERC-5564 stealth addresses (upgradeable)                                                                                |
-| `CrossChainPrivacyHub`      | Cross-chain privacy relay with vault-backed liquidity                                                                   |
+| `CrossChainPrivacyHub`      | Cross-chain privacy relay with per-user relay jitter, multi-relayer quorum, gas normalization                            |
+| `GasNormalizer`             | Pads gas to fixed ceilings per operation type — prevents gas fingerprinting                                              |
+| `MixnetNodeRegistry`        | 2-5 hop onion routing registry for MAXIMUM-tier relayer path enforcement                                                 |
+| `BatchAccumulator`          | Adaptive batching with minimum delay floor, dummy commitment padding, fixed payload sizing                               |
 | `CrossChainSanctionsOracle` | Multi-provider compliance screening with weighted quorum                                                                |
+
+### Metadata Protection Libraries
+
+| Library                    | Purpose                                                                                     |
+| -------------------------- | ------------------------------------------------------------------------------------------- |
+| `ProofEnvelope`            | Pads all ZK proofs (Groth16, UltraHonk, etc.) to uniform 2048-byte envelopes                |
+| `FixedSizeMessageWrapper`  | Pads all cross-chain bridge messages to uniform 4096-byte envelopes                          |
 
 Full API documentation: [SOLIDITY_API_REFERENCE.md](docs/SOLIDITY_API_REFERENCE.md)
 
@@ -316,7 +331,7 @@ All 12 adapters implement `IBridgeAdapter` with `bridgeMessage`, `estimateFee`, 
 
 ## Security
 
-### Defense Modules (20 contracts)
+### Defense Modules (21 contracts)
 
 | Module                                    | Function                          |
 | ----------------------------------------- | --------------------------------- |
@@ -330,10 +345,11 @@ All 12 adapters implement `IBridgeAdapter` with `bridgeMessage`, `estimateFee`, 
 | `RelayWatchtower` + `RelayProofValidator` | Real-time bridge monitoring       |
 | `ZKFraudProof`                            | ZK-based fraud proof system       |
 | `ExperimentalFeatureRegistry`             | Feature graduation pipeline       |
+| `OptimisticNullifierChallenge`            | Optimistic nullifier verification |
 
 ### Testing & Formal Verification
 
-286 Foundry test suites + 15 Hardhat tests covering unit, integration, fuzz, formal, invariant, attack simulation, and stress testing.
+288 Foundry test suites + 15 Hardhat tests covering unit, integration, fuzz, formal, invariant, attack simulation, and stress testing.
 
 ```bash
 forge test -vv                                             # All tests
@@ -482,7 +498,7 @@ Or use **GitHub Actions → Deploy Testnet** workflow for automated deployment t
 
 ## Documentation
 
-51 docs including 13 Architecture Decision Records.
+52 docs including 12 Architecture Decision Records.
 
 | Category         | Documents                                                                                                                                                                                       |
 | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -495,7 +511,7 @@ Or use **GitHub Actions → Deploy Testnet** workflow for automated deployment t
 | **Operations**   | [Deployment](docs/DEPLOYMENT.md) · [Checklist](docs/DEPLOYMENT_CHECKLIST.md) · [Monitoring](docs/MONITORING_CONFIG.md) · [Upgrades](docs/UPGRADE_GUIDE.md)                                      |
 | **Governance**   | [Governance](docs/GOVERNANCE.md) · [EIP Draft](docs/EIP_DRAFT.md)                                                                                                                               |
 | **Reference**    | [API Reference](docs/SOLIDITY_API_REFERENCE.md) · [NatSpec Guide](docs/NATSPEC_STYLE_GUIDE.md) · [Coverage](docs/TEST_COVERAGE_SUMMARY.md) · [Formal Verification](docs/FORMAL_VERIFICATION.md) |
-| **ADRs**         | [ADR-001 → ADR-013](docs/adr/) — Groth16, CDNA, relayer incentives, UUPS, ERC-5564, Poseidon, Noir migration, and more                                                                          |
+| **ADRs**         | [ADR-001 → ADR-012](docs/adr/) — Groth16, CDNA, relayer incentives, UUPS, ERC-5564, Poseidon, Noir migration, and more                                                                          |
 
 ---
 

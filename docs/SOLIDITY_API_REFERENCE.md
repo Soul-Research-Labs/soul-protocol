@@ -22,6 +22,12 @@
 14. [CrossChainEmergencyRelay](#14-crosschainemergencyrelay)
 15. [CrossChainNullifierSync](#15-crosschainnullifiersync)
 16. [ProtocolEmergencyCoordinator](#16-protocolemergencycoordinator)
+17. [GasNormalizer](#17-gasnormalizer)
+18. [ProofEnvelope Library](#18-proofenvelope-library)
+19. [FixedSizeMessageWrapper Library](#19-fixedsizemessagewrapper-library)
+20. [MultiRelayerQuorum](#20-multirelayerquorum)
+21. [ERC20DenominationEnforcer](#21-erc20denominationenforcer)
+22. [RelayJitterManager Library](#22-relayjittermanager-library)
 
 ---
 
@@ -1019,4 +1025,137 @@ function confirmRoleSeparation(address guardian, address responder, address reco
 function initiateIncident(EmergencySeverity severity, string calldata description) external
 function escalateIncident(bytes32 incidentId) external
 function resolveIncident(bytes32 incidentId) external
+```
+
+---
+
+## 17. GasNormalizer
+
+**Path:** `contracts/privacy/GasNormalizer.sol`
+**Solidity:** `^0.8.24`
+**Inherits:** `AccessControl`, `ReentrancyGuard`
+
+Normalizes gas consumption to fixed tiers to prevent gas-based fingerprinting of privacy operations. Integrated with the privacy tier system.
+
+### Gas Tiers
+
+| Tier | Target Gas |
+| ---- | ---------- |
+| TIER_1 | 100,000 |
+| TIER_2 | 200,000 |
+| TIER_3 | 500,000 |
+| TIER_4 | 1,000,000 |
+| TIER_5 | 2,000,000 |
+| TIER_6 | 5,000,000 |
+
+```solidity
+function normalizeGas(uint256 actualGas) public pure returns (uint256 normalizedGas)
+function executeNormalized(address target, bytes calldata data) external returns (bytes memory)
+function setTierEnabled(uint256 tier, bool enabled) external onlyRole(ADMIN_ROLE)
+```
+
+---
+
+## 18. ProofEnvelope Library
+
+**Path:** `contracts/libraries/ProofEnvelope.sol`
+**Solidity:** `^0.8.24`
+
+Pads ZK proofs to fixed sizes to prevent proof-system inference attacks. All proofs are wrapped in a standard envelope before on-chain submission.
+
+### Envelope Sizes
+
+| Size | Bytes |
+| ---- | ----- |
+| SMALL | 512 |
+| MEDIUM | 1,024 |
+| LARGE | 2,048 |
+| EXTRA_LARGE | 4,096 |
+
+```solidity
+function wrap(bytes memory proof) internal pure returns (bytes memory paddedProof)
+function unwrap(bytes memory paddedProof) internal pure returns (bytes memory proof)
+function getEnvelopeSize(uint256 proofLength) internal pure returns (uint256 size)
+```
+
+---
+
+## 19. FixedSizeMessageWrapper Library
+
+**Path:** `contracts/libraries/FixedSizeMessageWrapper.sol`
+**Solidity:** `^0.8.24`
+
+Pads cross-chain messages to fixed sizes to prevent payload-size correlation between source and destination chains.
+
+### Message Sizes
+
+| Tier | Bytes |
+| ---- | ----- |
+| STANDARD | 1,024 |
+| LARGE | 4,096 |
+| EXTRA_LARGE | 16,384 |
+
+```solidity
+function wrapMessage(bytes memory message) internal pure returns (bytes memory paddedMessage)
+function unwrapMessage(bytes memory paddedMessage) internal pure returns (bytes memory message)
+function getMessageTier(uint256 messageLength) internal pure returns (uint256 tier)
+```
+
+---
+
+## 20. MultiRelayerQuorum
+
+**Path:** `contracts/privacy/MultiRelayerQuorum.sol`
+**Solidity:** `^0.8.24`
+**Inherits:** `AccessControl`, `ReentrancyGuard`
+
+Requires multiple independent relayers to agree on a message before execution, preventing single-relayer correlation attacks.
+
+### Quorum Requirements
+
+| Privacy Tier | Required / Total |
+| ------------ | ---------------- |
+| ENHANCED | 2-of-3 |
+| MAXIMUM | 3-of-5 |
+
+```solidity
+function submitRelayAttestation(bytes32 messageHash, bytes calldata signature) external
+function executeQuorum(bytes32 messageHash) external
+function getQuorumStatus(bytes32 messageHash) external view returns (uint256 attestations, uint256 required)
+function setQuorumThreshold(uint8 privacyTier, uint256 required, uint256 total) external onlyRole(ADMIN_ROLE)
+```
+
+---
+
+## 21. ERC20DenominationEnforcer
+
+**Path:** `contracts/privacy/ERC20DenominationEnforcer.sol`
+**Solidity:** `^0.8.24`
+**Inherits:** `AccessControl`
+
+Restricts ERC-20 transfers to fixed denominations in MAXIMUM privacy tier to prevent amount-based correlation.
+
+### Standard Denominations
+
+0.1, 1, 10, 100, 1000 (token units)
+
+```solidity
+function enforceDeposit(address token, uint256 amount) external view returns (bool valid)
+function getAllowedDenominations(address token) external view returns (uint256[] memory)
+function setDenominations(address token, uint256[] calldata amounts) external onlyRole(ADMIN_ROLE)
+```
+
+---
+
+## 22. RelayJitterManager Library
+
+**Path:** `contracts/libraries/RelayJitterManager.sol`
+**Solidity:** `^0.8.24`
+
+Computes per-user timing jitter for relay operations to decorrelate submission timing.
+
+```solidity
+function computeJitter(address user, bytes32 seed) internal pure returns (uint256 delayMs)
+function getMaxJitter(uint8 privacyTier) internal pure returns (uint256 maxDelayMs)
+function isWithinJitterWindow(uint256 submittedAt, uint256 expectedAt, uint256 maxJitter) internal pure returns (bool)
 ```

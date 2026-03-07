@@ -238,14 +238,96 @@ See [SECURITY_AUDIT_REPORT.md](./SECURITY_AUDIT_REPORT.md) for complete details.
 
 ---
 
+## Phase 5: Metadata Leakage Reduction (March 2026)
+
+12 independent metadata protection layers implemented across contracts and SDK:
+
+### P5-1: Gas Normalization (High)
+
+**Issue:** Different privacy operations consume different gas amounts, allowing observers to infer transaction types from gas usage alone.
+
+**Fix:** `GasNormalizer.sol` pads gas consumption to fixed ceilings per operation type (deposit, withdraw, transfer, relay) via assembly burn loops. Wired into all 4 `CrossChainPrivacyHub` entry points. Interface: `IGasNormalizer.sol`.
+
+**Tests:** 21/21 passing in `test/privacy/GasNormalizer.t.sol`
+
+### P5-2: Proof Envelope Padding (Medium)
+
+**Issue:** Groth16 proofs (~288 bytes) vs UltraHonk proofs (~457 fields) have different sizes, leaking which proof system is used.
+
+**Fix:** `ProofEnvelope.sol` library pads all proofs to uniform 2048-byte envelopes before on-chain submission.
+
+**Tests:** 14/14 passing in `test/libraries/ProofEnvelope.t.sol`
+
+### P5-3: Cross-Chain Message Padding (Medium)
+
+**Issue:** Cross-chain messages vary in size depending on payload, enabling payload fingerprinting.
+
+**Fix:** `FixedSizeMessageWrapper.sol` pads all messages to uniform 4096 bytes. Wired into `LayerZeroAdapter` and `HyperlaneAdapter` outbound paths.
+
+**Tests:** 11/11 passing in `test/libraries/ProofEnvelope.t.sol`
+
+### P5-4: Adaptive Batching (Medium)
+
+**Issue:** During low-volume periods, small batches leak user activity patterns.
+
+**Fix:** `BatchAccumulator.sol` enhanced with minimum delay floor and dummy commitment padding to maintain minimum anonymity set size.
+
+**Tests:** 16/16 passing in `test/privacy/AdaptiveBatching.t.sol`
+
+### P5-5: Per-User Relay Jitter (High)
+
+**Issue:** Deterministic relay timing enables timing correlation attacks.
+
+**Fix:** `CrossChainPrivacyHub._buildAndStoreTransfer()` assigns per-transfer randomized jitter (5-30 min) using `keccak256(requestId, sender, prevrandao, timestamp)`. Relayers cannot relay before `transferRelayableAt[requestId]`.
+
+**Tests:** 17/17 passing (incl. 10k fuzz runs) in `test/privacy/RelayPrivacy.t.sol`
+
+### P5-6: Multi-Relayer Quorum (High)
+
+**Issue:** Single relayers observe full transaction metadata for every relay they process.
+
+**Fix:** `CrossChainPrivacyHub.relayTransfer()` supports configurable multi-relayer quorum per privacy level. HIGH requires 2 confirmations, MAXIMUM requires 3. Same relayer cannot confirm twice.
+
+**Tests:** 17/17 passing in `test/privacy/RelayPrivacy.t.sol`
+
+### P5-7: ERC-20 Denomination Enforcement (Medium)
+
+**Issue:** Non-standard amounts (e.g., 3.7 ETH) in liquidity vault flows leak through cross-chain correlation.
+
+**Fix:** `CrossChainLiquidityVault` enforces per-token denomination tiers at both deposit and release, with admin-configurable tiers per ERC-20 token.
+
+**Tests:** 22/22 passing in `test/bridge/CrossChainLiquidityVaultPrivacy.t.sol`
+
+### P5-8: Mixnet Path Enforcement (High)
+
+**Issue:** `requireMixnet` flag in `PrivacyTierRouter` was declared but not enforced.
+
+**Fix:** `PrivacyTierRouter` wired to `MixnetNodeRegistry` with auto-path selection (2-5 hops) and `isRelayerOnPath()` validation at relay time.
+
+**Tests:** 21/21 passing in `test/privacy/PrivacyTierRouter.t.sol`
+
+### P5-9 through P5-12: SDK Privacy Protections
+
+| Fix | Module | Description |
+| --- | ------ | ----------- |
+| P5-9 | `DecoyTrafficManager.ts` | Client-side decoy transaction generation at random intervals |
+| P5-10 | `BatchAccumulatorClient.ts` | Cryptographic jitter on batch submission timing |
+| P5-11 | `CrossChainPrivacyOrchestrator.ts` | Randomized polling interval (5-8s) for relay status |
+| P5-12 | `CrossChainPrivacyOrchestrator.ts` | `Math.random()` replaced with `crypto.getRandomValues` |
+
+---
+
 ## Verification
 
 ```bash
-# Run all tests (5,760+ passing)
+# Run all tests (5,880+ passing)
 forge test -vvv
 
 # Run security-focused tests
 forge test --match-path "test/security/*" -vvv
+
+# Run privacy metadata tests
+forge test --match-path "test/privacy/*" -vvv
 
 # Run fuzz tests (10,000 runs)
 forge test --match-contract Fuzz -vvv

@@ -13,12 +13,12 @@ Cross-chain ZK privacy middleware for confidential state transfer across L2 netw
 ## Project Structure
 
 ```
-contracts/           # Solidity source (~242 files)
+contracts/           # Solidity source (~254 files)
   adapters/          # EVMUniversalAdapter, NativeL2BridgeWrapper
   core/              # ZaseonProtocolHub, Orchestrator
   crosschain/        # Bridge adapters (9), DirectL2Messenger, IBridgeAdapter
   bridge/            # MultiBridgeRouter, CrossChainProofHubV3
-  privacy/           # StealthAddressRegistry, ShieldedPool, BatchAccumulator
+  privacy/           # StealthAddressRegistry, ShieldedPool, BatchAccumulator, GasNormalizer, MultiRelayerQuorum
   security/          # ExperimentalFeatureRegistry, SecurityModule, Emergency
   primitives/        # ZKBoundStateLocks, ProofCarryingContainer
   verifiers/         # Groth16, UltraHonk, Noir adapters + generated verifiers
@@ -26,12 +26,12 @@ contracts/           # Solidity source (~242 files)
   compliance/        # SelectiveDisclosure, ComplianceReporting
   governance/        # ZaseonGovernance, Timelock
   integrations/      # DeFi protocol integrations
-  interfaces/        # 46 interfaces
+  interfaces/        # 50 interfaces
   internal/          # Internal utilities
-  libraries/         # Shared libraries
+  libraries/         # Shared libraries (ProofEnvelope, FixedSizeMessageWrapper, RelayJitterManager)
   upgradeable/       # Upgradeable variants (UUPS proxies)
 noir/                # Noir ZK circuits (21 circuits)
-test/                # Foundry tests (282 files, 5,760+ passing) + 15 Hardhat tests
+test/                # Foundry tests (288 files, 5,880+ passing) + 15 Hardhat tests
 sdk/                 # TypeScript SDK (ZaseonSDK, StealthAddressClient, bridges)
 scripts/deploy/      # Foundry deploy scripts (16 scripts)
 specs/               # K Framework, TLA+ formal specs
@@ -75,6 +75,7 @@ All adapters implement `IBridgeAdapter` (`bridgeMessage`, `estimateFee`, `isMess
 - ReentrancyGuard on all state-changing functions
 - Zero-address validation on critical setters
 - Experimental feature registry with graduation pipeline
+- 12-layer metadata leakage reduction (gas normalization, proof/message padding, relay jitter, multi-relayer quorum, denomination enforcement, mixnet path enforcement, SDK decoy traffic/jitter)
 
 ## Development Guidelines
 

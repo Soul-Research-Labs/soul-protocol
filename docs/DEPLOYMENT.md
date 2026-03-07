@@ -168,6 +168,13 @@ This deploys:
 npx hardhat run scripts/deploy/deploy-privacy-middleware.ts --network sepolia
 ```
 
+This deploys privacy middleware including metadata protection contracts:
+
+- `GasNormalizer` — Gas normalization to fixed tiers
+- `MultiRelayerQuorum` — Multi-relayer quorum verification
+- `ERC20DenominationEnforcer` — Fixed denomination enforcement
+- Libraries: `ProofEnvelope`, `FixedSizeMessageWrapper`, `RelayJitterManager`
+
 ### Step 5: Deploy L2 Bridge Adapters
 
 ```bash
@@ -208,8 +215,11 @@ At ~30 gwei (Ethereum mainnet):
 | ZaseonCrossChainRelay             | ~2,500,000      | ~0.075     |
 | CrossChainNullifierSync           | ~2,200,000      | ~0.066     |
 | UniversalShieldedPool             | ~3,200,000      | ~0.096     |
-| UltraHonk Verifiers (×21)         | ~12,000,000     | ~0.360     |
-| **Total**                         | **~32,300,000** | **~0.97**  |
+| GasNormalizer                     | ~1,200,000      | ~0.036     |
+| MultiRelayerQuorum                | ~1,500,000      | ~0.045     |
+| ERC20DenominationEnforcer         | ~800,000        | ~0.024     |
+| UltraHonk Verifiers (x21)        | ~12,000,000     | ~0.360     |
+| **Total**                         | **~35,800,000** | **~1.07**  |
 
 L2 deployment costs are significantly lower (1-10% of L1).
 

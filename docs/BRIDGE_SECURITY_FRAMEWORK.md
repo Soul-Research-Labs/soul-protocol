@@ -655,6 +655,23 @@ The following bridge security enhancements were implemented in Session 8:
 
 - **Source Root Validation (S8-10):** `receiveCrossChainNullifiers()` now rejects `bytes32(0)` as a source Merkle root.
 
+## Layer 8: Metadata Leakage Reduction
+
+Bridge operations inherently expose metadata (message sizes, gas patterns, timing, amounts) that can be correlated across chains. The following contract-level protections are integrated into the bridge security framework:
+
+| Protection | Contract | Effect |
+| --- | --- | --- |
+| **Gas normalization** | `GasNormalizer.sol` | Pads gas to fixed tiers (100k–5M), preventing gas-based fingerprinting across bridge adapters |
+| **Message padding** | `FixedSizeMessageWrapper.sol` | Pads cross-chain payloads to 3 fixed sizes (1024, 4096, 16384 bytes) |
+| **Proof padding** | `ProofEnvelope.sol` | Normalizes proof sizes to 4 tiers (512, 1024, 2048, 4096 bytes) |
+| **Multi-relayer quorum** | `MultiRelayerQuorum.sol` | Prevents single-relayer correlation (2-of-3 for ENHANCED, 3-of-5 for MAXIMUM) |
+| **Relay jitter** | `RelayJitterManager.sol` | Per-user timing decorrelation with VRF-seeded random delays |
+| **Denomination enforcement** | `ERC20DenominationEnforcer.sol` | Restricts amounts to fixed denominations in MAXIMUM tier |
+| **Mixnet enforcement** | `MixnetNodeRegistry.sol` | Requires 2+ hop onion routing for MAXIMUM tier bridge operations |
+| **Adaptive batching** | `BatchAccumulator.sol` | Pools operations before execution to increase anonymity sets |
+
+SDK-level protections (decoy traffic, submission jitter, polling jitter) provide additional metadata cover for bridge operations. See [Privacy Middleware](./PRIVACY_MIDDLEWARE.md) for full details.
+
 ## Resources
 
 - [L2Beat Bridge Risk Analysis](https://l2beat.com/bridges/risk)
