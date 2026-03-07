@@ -355,6 +355,125 @@ Emergency Action → Guardian Signatures (M of N) → Timelock (24-72h) → Exec
 - ✅ Storage layout verification (StorageLayoutReport)
 - ✅ Governance approval required
 
+### 4.6 Metadata Leakage & Privacy Limitations
+
+> **Important:** Cross-chain privacy is strictly weaker than single-chain privacy. Every chain boundary (bridge, relay, message passing) expands the attack surface. The following limitations are inherent to the architecture and are **not fully solvable** at the protocol layer alone.
+
+#### 4.6.1 Timing Correlation
+
+**Threat**: Observers correlate lock transactions on the source chain with unlock transactions on the destination chain using timing analysis. Even with cryptographic unlinkability, statistical timing correlation remains possible — as demonstrated by Tornado Cash deanonymization research (Chainalysis 2022).
+
+**Attack Model**:
+
+```
+Observer sees:
+  t=0:  Lock(amount, chain_A)
+  t=Δ:  Unlock(amount, chain_B)
+
+If Δ is small and anonymity set is thin → high linkability probability
+```
+
+**Status**: ⚠️ **Partially Mitigated**
+
+**Mitigations**:
+
+- ✅ `BatchAccumulator` — batches 8+ transactions for simultaneous release with 2KB fixed payload padding
+- ✅ `DelayedClaimVault` — enforces 24-72 hour randomized delays with VRF scheduling
+- ✅ `PrivacyTierRouter` — auto-escalation requiring constant-time execution at MAXIMUM tier
+- ⚠️ Timing resistance depends on anonymity set size — thin markets have weak protection
+- ⚠️ BatchAccumulator's `maxWaitTime` (10 min) creates a timing ceiling
+
+**Residual Risk**: Medium. Sufficient anonymity set growth is load-dependent, not protocol-guaranteed.
+
+#### 4.6.2 Liquidity Vault Deposit/Withdrawal Correlation
+
+**Threat**: `CrossChainLiquidityVault` handles `deposit → LP payout → settlement` flows. Observers can correlate deposit amounts on the source chain with LP releases on the destination chain, especially for non-standard amounts.
+
+**Attack Model**:
+
+```
+Source chain:  lockLiquidity(requestId, ETH, 3.7 ETH, destChain)
+Dest chain:    releaseLiquidity(requestId, ETH, recipient, 3.7 ETH, sourceChain)
+
+→ Amount 3.7 ETH is a strong correlation signal
+```
+
+**Status**: ⚠️ **Partially Mitigated**
+
+**Mitigations**:
+
+- ✅ Fixed denomination tiers in `DelayedClaimVault` (0.1/1/10/100 ETH)
+- ✅ Settlement batching obscures individual flows
+- ⚠️ `CrossChainLiquidityVault` itself does not enforce denomination bucketing — relies on upstream `DelayedClaimVault`
+- ⬜ Randomized release delays at the vault level (planned)
+
+**Residual Risk**: Medium-High for transfers that bypass `DelayedClaimVault`.
+
+#### 4.6.3 Relayer Metadata Exposure
+
+**Threat**: Relayers in the `DecentralizedRelayerRegistry` observe submission IP addresses, transaction ordering, destination chains, and fee amounts. Even without seeing encrypted state, relayers can build traffic analysis profiles.
+
+**Attack Model**:
+
+```
+Relayer observes:
+  - Source IP (off-chain)
+  - Transaction calldata → adapter selection visible
+  - Destination chain ID
+  - Fee amount → correlates with transfer size
+  - Submission timing
+```
+
+**Status**: ⚠️ **Partially Mitigated**
+
+**Mitigations**:
+
+- ✅ `BatchAccumulator` aggregates traffic to reduce per-transfer visibility
+- ✅ `PrivacyTierRouter` MAXIMUM tier requires `requireMixnet=true` (5+ relayers)
+- ✅ Ring Confidential Transactions with decoy keys obscure actual destinations
+- ⚠️ `MixnetNodeRegistry` declared in `CrossChainPrivacyHub` but not fully implemented
+- ⚠️ No on-chain mitigation for IP-level surveillance — users must use Tor/VPN
+
+**Residual Risk**: Medium. Relayers are semi-trusted for metadata; full privacy requires off-chain protections.
+
+#### 4.6.4 On-Chain State Visibility
+
+**Threat**: Lock creation (`ZKBoundStateLocks.createStateLock()`), container import (`ProofCarryingContainer.importContainer()`), and nullifier registration (`NullifierRegistryV3.registerNullifier()`) are all publicly visible on-chain state transitions.
+
+**Status**: ⚠️ **Inherent Limitation**
+
+**Mitigations**:
+
+- ✅ Encrypted payloads inside containers (only recipient can decrypt)
+- ✅ Stealth addresses prevent address graph analysis
+- ✅ Relayer-mediated submission hides sender's EOA
+- ⚠️ The existence of operations is always visible — only the content is hidden
+
+**Residual Risk**: Low-Medium. This is inherent to transparent blockchains; only fully private chains (Aztec, Zcash) can hide transaction existence.
+
+#### 4.6.5 Cross-Chain Nullifier Synchronization Window
+
+**Threat**: Between epoch finalization in `CrossDomainNullifierAlgebra` and cross-chain propagation via bridge messages, there is a latency window where a nullifier consumed on chain A has not yet been registered on chain B. An attacker could attempt double-spend during this window.
+
+**Attack Model**:
+
+```
+t=0: Consume nullifier N on Chain A (epoch E not yet finalized)
+t=1: Before epoch E propagates to Chain B, attempt to use N on Chain B
+```
+
+**Status**: ⚠️ **Partially Mitigated**
+
+**Mitigations**:
+
+- ✅ Epoch-based finalization with merkle roots — nullifiers are batched, not individually synced
+- ✅ `NullifierRegistryV3` maintains 100 historical roots for delayed verification
+- ✅ `syncSequence` mapping in `CrossChainNullifierSync` prevents replay
+- ⚠️ Finalization latency (epoch duration: 1 hour default) creates a theoretical double-spend window
+- ⬜ Optimistic nullifier acceptance with fraud proof challenge period (planned)
+
+**Residual Risk**: Medium-High. This is the hardest engineering problem in the protocol. Bridge finality times (7 days for optimistic rollups) compound the synchronization challenge.
+
 ---
 
 ## 5. Risk Matrix
@@ -368,6 +487,11 @@ Emergency Action → Guardian Signatures (M of N) → Timelock (24-72h) → Exec
 | Bridge Exploitation   | Medium     | Critical | High       | ✅ Mitigated            |
 | Key Compromise        | Medium     | Critical | Critical   | ✅ Mitigated            |
 | Griefing/DoS          | High       | Low      | Medium     | ✅ Mitigated            |
+| Timing Correlation    | High       | Medium   | High       | ⚠️ Partially Mitigated  |
+| Liquidity Correlation | Medium     | Medium   | Medium     | ⚠️ Partially Mitigated  |
+| Relayer Metadata      | High       | Medium   | High       | ⚠️ Partially Mitigated  |
+| On-Chain Visibility   | High       | Low      | Medium     | ⚠️ Inherent Limitation  |
+| Nullifier Sync Window | Low        | Critical | High       | ⚠️ Partially Mitigated  |
 | Quantum Attack        | Low        | Critical | Medium     | 🔄 PQC Migration Active |
 
 ---

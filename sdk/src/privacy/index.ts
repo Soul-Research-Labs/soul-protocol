@@ -93,6 +93,12 @@ export {
   type OrchestratorConfig,
 } from "./CrossChainPrivacyOrchestrator";
 
+// Decoy Traffic Manager (metadata resistance)
+export {
+  DecoyTrafficManager,
+  type DecoyTrafficConfig,
+} from "./DecoyTrafficManager";
+
 // Convenience re-export
 import { PrivacyHubClient, PrivacyHubConfig } from "./PrivacyHubClient";
 import {

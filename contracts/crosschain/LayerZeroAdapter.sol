@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import {IBridgeAdapter} from "./IBridgeAdapter.sol";
+import {FixedSizeMessageWrapper} from "../libraries/FixedSizeMessageWrapper.sol";
 
 /**
  * @title LayerZeroAdapter
@@ -402,6 +403,9 @@ contract LayerZeroAdapter is
             if (!sent) revert TransferFailed();
         }
 
+        // Wrap payload to fixed size for privacy (prevent size-based inference)
+        bytes memory wrappedPayload = FixedSizeMessageWrapper.wrap(payload);
+
         // Forward to LZ endpoint
         (bool success, ) = lzEndpoint.call{value: lzFee}(
             abi.encodeWithSignature(
@@ -409,7 +413,7 @@ contract LayerZeroAdapter is
                 _buildMessagingParams(
                     dstEid,
                     receiver,
-                    payload,
+                    wrappedPayload,
                     dstGas,
                     options.extraOptions
                 ),
@@ -635,7 +639,7 @@ contract LayerZeroAdapter is
     function _buildMessagingParams(
         uint32 dstEid,
         address receiver,
-        bytes calldata payload,
+        bytes memory payload,
         uint128 dstGas,
         bytes calldata extraOptions
     ) internal view returns (bytes memory) {

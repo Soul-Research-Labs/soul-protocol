@@ -53,6 +53,50 @@ The following sections document cryptographic primitives. Some have been impleme
 
 ---
 
+## Cryptographic Primitive Selection
+
+> **Design principle:** Use ZK-friendly primitives inside circuits; use standard cryptography off-chain.
+
+| Context                    | Primitive                       | Rationale                                                                                                                                         |
+| -------------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **In-circuit hashing**     | Poseidon BN254                  | ZK-optimized: ~250 constraints vs. ~25,000 for SHA-256. Used for nullifiers, commitments, state hashes across all 22 Noir circuits.               |
+| **In-circuit commitments** | Pedersen hash                   | Perfectly hiding, computationally binding. Used for balance commitments in `encrypted_transfer`, `balance_proof`, `pedersen_commitment` circuits. |
+| **In-circuit nullifiers**  | Poseidon with domain separation | `H(secret, chain_domain, app_id, epoch)` — CDNA domain-separated nullifiers.                                                                      |
+| **On-chain hashing**       | Keccak256                       | EVM-native opcode, cheapest on-chain hash. Used for role hashes, message IDs, domain separators.                                                  |
+| **On-chain curve ops**     | BN254 (alt_bn128)               | EVM precompiles at 0x06/0x07/0x08 for ecAdd/ecMul/ecPairing. Cheapest on-chain curve operations.                                                  |
+| **Off-chain encryption**   | AES-256-GCM via ECIES           | SDK-only (`sdk/src/utils/crypto.ts`). Used for encrypting container payloads before on-chain submission. **Not used inside any ZK circuit.**      |
+| **Proof system**           | UltraHonk (Noir)                | Primary backend. 22 generated Solidity verifiers. Recursive-capable via `noir/aggregator/`.                                                       |
+| **Legacy verification**    | Groth16 BN254                   | EVM gas-optimal (~200k gas). Used for cross-chain proof verification on all EVM chains.                                                           |
+
+### Why AES-256-GCM is not used inside ZK circuits
+
+AES is not ZK-friendly. Implementing AES-GCM inside a SNARKcircuit would require ~25,000+ constraints per block (vs. ~250 for Poseidon). Most ZK protocols (Zcash, Railgun, Aztec) avoid AES entirely inside circuits.
+
+In Zaseon, AES-256-GCM is used **exclusively** in the TypeScript SDK for off-chain ECIES envelope encryption:
+
+1. Ephemeral ECDH key pair generation (secp256k1)
+2. Shared secret derived via ECDH
+3. AES-256-GCM key derived from shared secret
+4. Payload encrypted off-chain → submitted as opaque bytes on-chain
+5. Only the recipient's private key can decrypt
+
+The ZK circuits prove properties about the _plaintext commitment_ (Poseidon hash) without ever seeing the ciphertext. This separation keeps circuit constraints minimal while providing authenticated encryption for payloads.
+
+### Proof Translation Limitations
+
+| Translation               | Status             | Gas Cost     | Notes                                          |
+| ------------------------- | ------------------ | ------------ | ---------------------------------------------- |
+| PLONK ↔ UltraPlonk ↔ HONK | ✅ Supported       | ~200k gas    | Same family, native compatibility              |
+| Groth16 → Groth16         | ✅ Supported       | ~200k gas    | Same system relay                              |
+| STARK → STARK             | ✅ Supported       | ~200k gas    | Same system relay                              |
+| Groth16 ↔ PLONK           | ❌ Not implemented | ~500k-2M gas | Requires recursive wrapper circuit             |
+| STARK ↔ Groth16           | ❌ Not implemented | ~1-2M gas    | Requires recursive wrapper + field translation |
+| Any cross-family          | ❌ Research        | Varies       | N² circuits needed for N proof systems         |
+
+Cross-family translation requires embedding the verifier of system A inside a proof for system B (recursive proof wrapping). The `noir/aggregator/` circuit handles UltraHonk recursion (4 proofs, 457-field proof size) but cross-family recursion remains an active research area.
+
+---
+
 ## Architecture
 
 ### High-Level Flow

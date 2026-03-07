@@ -673,7 +673,7 @@ export class CrossChainPrivacyOrchestrator {
   }): Promise<{ status: string; targetTxHash: Hex; relayProof: Hex }> {
     const timeout = params.timeoutMs || this.relayTimeout;
     const startTime = Date.now();
-    const pollInterval = 5000;
+    const basePollInterval = 5000;
 
     const targetChain = this.chains.get(params.targetChainId);
     if (!targetChain)
@@ -681,6 +681,13 @@ export class CrossChainPrivacyOrchestrator {
 
     while (Date.now() - startTime < timeout) {
       try {
+        // PRIVACY: Add cryptographic jitter to polling interval to prevent
+        // observers from correlating polling patterns with specific users
+        const jitterBytes = new Uint8Array(2);
+        crypto.getRandomValues(jitterBytes);
+        const jitter = ((jitterBytes[0] << 8) | jitterBytes[1]) % 3000; // 0-3s jitter
+        const pollInterval = basePollInterval + jitter;
+
         // In production, query the relay contract
         // Mock implementation for now
         await new Promise((resolve) => setTimeout(resolve, pollInterval));

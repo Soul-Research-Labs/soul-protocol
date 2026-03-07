@@ -263,12 +263,12 @@ contract EconomicAttacksTest is Test {
 
         // Simulate operations up to MAX_OPS_PER_BLOCK (3)
         for (uint256 i = 0; i < 3; i++) {
-            bool safe = flashLoanGuard.validateOperation(
+            bool opSafe = flashLoanGuard.validateOperation(
                 protectedPool,
                 address(stakingToken),
                 0.01 ether
             );
-            assertTrue(safe, "First 3 ops should succeed");
+            assertTrue(opSafe, "First 3 ops should succeed");
         }
 
         // Fourth operation in the same block should be rejected (returns false)

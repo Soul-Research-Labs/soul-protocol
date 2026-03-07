@@ -3,13 +3,75 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import "../../contracts/privacy/PrivacyTierRouter.sol";
+import "../../contracts/interfaces/IMixnetNodeRegistry.sol";
+
+/// @dev Minimal mock MixnetNodeRegistry for testing
+contract MockMixnetRegistry is IMixnetNodeRegistry {
+    mapping(bytes32 => MixnetNode) private _nodes;
+    bytes32[] private _nodeIds;
+
+    function addNode(
+        bytes32 nodeId,
+        address op,
+        uint32[] memory chains
+    ) external {
+        _nodes[nodeId] = MixnetNode({
+            operator: op,
+            encryptionPubKey: hex"01",
+            stakeAmount: 1 ether,
+            registeredAt: block.timestamp,
+            lastActiveAt: block.timestamp,
+            status: NodeStatus.ACTIVE,
+            supportedChainIds: chains,
+            totalRelaysHandled: 0
+        });
+        _nodeIds.push(nodeId);
+    }
+
+    function registerNode(
+        bytes32,
+        bytes calldata,
+        uint32[] calldata
+    ) external payable override {}
+
+    function deactivateNode(bytes32) external override {}
+
+    function selectRelayPath(
+        uint32,
+        uint32,
+        uint8 hopCount
+    ) external view override returns (bytes32[] memory path) {
+        path = new bytes32[](hopCount);
+        for (uint8 i = 0; i < hopCount && i < _nodeIds.length; i++) {
+            path[i] = _nodeIds[i];
+        }
+    }
+
+    function getNode(
+        bytes32 nodeId
+    ) external view override returns (MixnetNode memory) {
+        return _nodes[nodeId];
+    }
+
+    function activeNodeCount(uint32) external pure override returns (uint256) {
+        return 5;
+    }
+
+    function minimumStake() external pure override returns (uint256) {
+        return 1 ether;
+    }
+}
 
 contract PrivacyTierRouterTest is Test {
     PrivacyTierRouter public router;
+    MockMixnetRegistry public mockMixnet;
     address public admin = address(this);
     address public user1 = makeAddr("user1");
     address public user2 = makeAddr("user2");
     address public operator = makeAddr("operator");
+
+    address public relayerA = makeAddr("relayerA");
+    address public relayerB = makeAddr("relayerB");
 
     uint32 constant SRC_CHAIN = 1;
     uint32 constant DST_CHAIN = 42161;
@@ -17,6 +79,25 @@ contract PrivacyTierRouterTest is Test {
     function setUp() public {
         router = new PrivacyTierRouter(admin);
         router.grantRole(router.OPERATOR_ROLE(), operator);
+
+        // Set up mock mixnet with 5 nodes
+        mockMixnet = new MockMixnetRegistry();
+        uint32[] memory chains = new uint32[](2);
+        chains[0] = SRC_CHAIN;
+        chains[1] = DST_CHAIN;
+        for (uint256 i = 0; i < 5; i++) {
+            address nodeOp = i == 0
+                ? relayerA
+                : (
+                    i == 1
+                        ? relayerB
+                        : makeAddr(string(abi.encodePacked("node", i)))
+                );
+            mockMixnet.addNode(bytes32(i + 1), nodeOp, chains);
+        }
+
+        // Configure router with mixnet
+        router.setMixnetRegistry(address(mockMixnet));
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -291,5 +372,125 @@ contract PrivacyTierRouterTest is Test {
                 uint8(IPrivacyTierRouter.PrivacyTier.STANDARD)
             );
         }
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                       MIXNET ENFORCEMENT TESTS
+    //////////////////////////////////////////////////////////////*/
+
+    function test_MaximumTier_assignsMixnetPath() public {
+        vm.prank(user1);
+        bytes32 opId = router.submitOperation(
+            SRC_CHAIN,
+            DST_CHAIN,
+            IPrivacyTierRouter.PrivacyTier.MAXIMUM,
+            1 ether
+        );
+
+        bytes32[] memory path = router.getMixnetPath(opId);
+        assertEq(path.length, 5, "MAXIMUM tier should assign 5-node path");
+    }
+
+    function test_StandardTier_noMixnetPath() public {
+        vm.prank(user1);
+        bytes32 opId = router.submitOperation(
+            SRC_CHAIN,
+            DST_CHAIN,
+            IPrivacyTierRouter.PrivacyTier.STANDARD,
+            1 ether
+        );
+
+        bytes32[] memory path = router.getMixnetPath(opId);
+        assertEq(path.length, 0, "STANDARD tier should not assign mixnet path");
+    }
+
+    function test_isRelayerOnPath_validRelayer() public {
+        vm.prank(user1);
+        bytes32 opId = router.submitOperation(
+            SRC_CHAIN,
+            DST_CHAIN,
+            IPrivacyTierRouter.PrivacyTier.MAXIMUM,
+            1 ether
+        );
+
+        // relayerA is node operator for node 1, which is always in the path
+        assertTrue(
+            router.isRelayerOnPath(opId, relayerA),
+            "relayerA should be on path"
+        );
+    }
+
+    function test_isRelayerOnPath_invalidRelayer() public {
+        vm.prank(user1);
+        bytes32 opId = router.submitOperation(
+            SRC_CHAIN,
+            DST_CHAIN,
+            IPrivacyTierRouter.PrivacyTier.MAXIMUM,
+            1 ether
+        );
+
+        address rogue = makeAddr("rogue");
+        assertFalse(
+            router.isRelayerOnPath(opId, rogue),
+            "Rogue relayer should not be on path"
+        );
+    }
+
+    function test_isRelayerOnPath_standardTier_alwaysTrue() public {
+        vm.prank(user1);
+        bytes32 opId = router.submitOperation(
+            SRC_CHAIN,
+            DST_CHAIN,
+            IPrivacyTierRouter.PrivacyTier.STANDARD,
+            1 ether
+        );
+
+        // For standard tier (no mixnet required), any relayer is valid
+        address anyone = makeAddr("anyone");
+        assertTrue(
+            router.isRelayerOnPath(opId, anyone),
+            "Standard tier should accept any relayer"
+        );
+    }
+
+    function test_MaximumTier_revertsWithoutMixnetRegistry() public {
+        // Create a router without mixnet
+        PrivacyTierRouter noMixnetRouter = new PrivacyTierRouter(admin);
+
+        vm.prank(user1);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                PrivacyTierRouter.MixnetRegistryNotSet.selector
+            )
+        );
+        noMixnetRouter.submitOperation(
+            SRC_CHAIN,
+            DST_CHAIN,
+            IPrivacyTierRouter.PrivacyTier.MAXIMUM,
+            1 ether
+        );
+    }
+
+    function test_setMixnetRegistry_onlyGovernance() public {
+        vm.prank(user1);
+        vm.expectRevert();
+        router.setMixnetRegistry(address(mockMixnet));
+    }
+
+    function test_autoEscalatedMaximum_alsoAssignsPath() public {
+        vm.prank(user1);
+        bytes32 opId = router.submitOperation(
+            SRC_CHAIN,
+            DST_CHAIN,
+            IPrivacyTierRouter.PrivacyTier.STANDARD,
+            200 ether // auto-escalates to MAXIMUM
+        );
+
+        bytes32[] memory path = router.getMixnetPath(opId);
+        assertGt(
+            path.length,
+            0,
+            "Auto-escalated MAXIMUM should have mixnet path"
+        );
     }
 }

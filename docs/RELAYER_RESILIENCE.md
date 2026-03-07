@@ -546,6 +546,144 @@ Implemented by: `GelatoRelayAdapter`, `SelfRelayAdapter`, and any future adapter
 
 ---
 
+## Relayer Privacy Model
+
+### What Relayers Can See
+
+Relayers are a **privacy chokepoint** — they observe relay request metadata even when payload contents are encrypted. A relayer handling a request learns:
+
+| Observable        | Detail                                    |
+| ----------------- | ----------------------------------------- |
+| Sender address    | `msg.sender` of the relay transaction     |
+| Target contract   | Destination address on the target chain   |
+| Payload size      | Byte length of encrypted payload          |
+| Gas limit         | Correlates with operation complexity      |
+| Timing            | Exact timestamp of submission             |
+| Fee amount        | `msg.value` sent with the relay           |
+| Adapter selection | Which adapter the router chose (on-chain) |
+
+Even without decrypting payloads, correlating sender + target + timing + size across chains degrades privacy significantly.
+
+### Mitigations
+
+#### Commit-Reveal Relay Requests (`PrivateRelayCommitReveal.sol`)
+
+Users can submit relay requests in two phases:
+
+1. **COMMIT**: Submit `hash(target, payload, gasLimit, salt)` — opaque on-chain
+2. **REVEAL**: After 1+ block delay, reveal parameters and execute
+
+This prevents:
+
+- Front-running by other relayers observing the mempool
+- Adapter selection leakage before execution
+- Payload correlation during the commit phase
+
+Trade-off: Adds 1 block latency minimum. Suitable for non-time-critical transfers.
+
+#### Mixnet Onion Routing (`MixnetNodeRegistry.sol`)
+
+For MAXIMUM privacy tier operations, relay requests are routed through 2+ staked mixnet nodes:
+
+1. SDK encrypts payload in layers (onion encryption) using node public keys
+2. Each hop decrypts one layer, forwards to next node
+3. Only the exit node sees the final destination
+
+Node selection uses Fisher-Yates shuffle with on-chain randomness. Nodes must stake ≥ 1 ETH, with 7-day withdrawal delay and slashing for misbehavior.
+
+**Known limitations:**
+
+- On-chain node set is publicly visible (sybil resistance via stake only)
+- Path selection randomness is validator-predictable (use VRF for high-value)
+- Actual onion encryption happens off-chain in the SDK, not on-chain
+- With few nodes (< 20), traffic analysis may still correlate paths
+
+#### Batch Accumulation (`BatchAccumulator.sol`)
+
+The existing BatchAccumulator pools multiple operations before executing, which:
+
+- Increases the anonymity set per batch
+- Adds timing jitter between submission and execution
+- Makes individual transfer correlation harder
+
+However, batch sizes are observable on-chain, and small batches (< 5 items) provide weak anonymity.
+
+### Privacy Tier Integration
+
+| Privacy Tier | Relayer Privacy                                   | Commit-Reveal | Mixnet             | Batch    |
+| ------------ | ------------------------------------------------- | ------------- | ------------------ | -------- |
+| STANDARD     | Basic: single relayer sees all metadata           | Optional      | No                 | Optional |
+| ENHANCED     | Ring sig: 3+ relayer cluster, request distributed | Optional      | No                 | Yes      |
+| MAXIMUM      | Full: commit-reveal + 2-hop mixnet + batching     | Required      | Required (2+ hops) | Required |
+
+### Honest Assessment
+
+Even with all mitigations active, relayer-level privacy is **weaker than single-chain mixing** because:
+
+1. Cross-chain relayers must know the destination chain (non-negotiable)
+2. On-chain adapter selection is publicly visible after execution
+3. Fee amounts and gas limits leak operation complexity
+4. The relayer node set is small compared to Tornado Cash's anonymity set
+5. Bridge finality delays create timing windows for correlation
+
+These are fundamental constraints of cross-chain privacy, not implementation bugs. Users requiring maximum metadata resistance should use the MAXIMUM tier and accept the latency/cost trade-offs.
+
+---
+
+## Registry Consolidation
+
+### Problem
+
+ZASEON has 3 overlapping relayer registries, each independently tracking who is a relayer, stake amounts, and slashing:
+
+| Registry                       | Staking Asset            | Struct Fields     | Slash Signature                          |
+| ------------------------------ | ------------------------ | ----------------- | ---------------------------------------- |
+| `DecentralizedRelayerRegistry` | Native ETH (10 ETH min)  | 4 (`RelayerInfo`) | `slash(address, uint256, address)`       |
+| `HeterogeneousRelayerRegistry` | Native ETH (role-tiered) | 13 (`Relayer`)    | `slashRelayer(address, uint256, string)` |
+| `RelayerStaking`               | ERC-20 token             | 8 (`Relayer`)     | `slash(address, string)`                 |
+
+Additionally, `RelayerHealthMonitor` and `RelayerSLAEnforcer` both independently track performance metrics.
+
+This fragmentation means:
+
+- No single `isActiveRelayer(address)` check across all registries
+- Slashing from fraud proofs (`OptimisticNullifierChallenge`) must know which registry to call
+- Relayer counts are inaccurate (registries count independently)
+- Migration between registries requires deregistration + re-registration
+
+### Solution: `UnifiedRelayerFacade`
+
+`contracts/relayer/UnifiedRelayerFacade.sol` provides a single consumption layer:
+
+```
+Consumer (e.g., OptimisticNullifierChallenge)
+       │
+       ▼
+  IUnifiedRelayerRegistry
+       │
+       ▼
+  UnifiedRelayerFacade
+       │
+       ├──▶ DecentralizedRelayerRegistry
+       ├──▶ HeterogeneousRelayerRegistry
+       └──▶ RelayerStaking
+```
+
+Unified operations:
+
+- `isActiveRelayer(address)` — checks all 3 registries
+- `getRelayer(address)` — returns normalized `RelayerView` struct
+- `slash(address, uint256, string)` — dispatches to correct registry
+- `totalActiveRelayers()` — aggregated count
+
+### Migration Path
+
+1. **Phase 1 (current)**: Facade provides read-through + slash-through. All 3 registries remain.
+2. **Phase 2 (recommended)**: New registrations go through `HeterogeneousRelayerRegistry` only (best API, role separation).
+3. **Phase 3 (future)**: Deprecate `DecentralizedRelayerRegistry` and `RelayerStaking`. Migrate existing relayers. Facade becomes direct proxy to single registry.
+
+---
+
 ## Resources
 
 - [Gelato Network Integration](https://docs.gelato.network/)

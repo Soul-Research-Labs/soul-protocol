@@ -439,10 +439,10 @@ contract CrossChainPrivacyHubTest is Test {
         vm.prank(relayer_);
         hub.relayProof(reqId, keccak256("destNull"), _groth16Proof());
 
-        CrossChainPrivacyHub.RelayRequest memory t = hub.getRelayRequest(reqId);
+        CrossChainPrivacyHub.TransferRequest memory t = hub.getRelayRequest(reqId);
         assertEq(
             uint256(t.status),
-            uint256(CrossChainPrivacyHub.RequestStatus.RELAYED)
+            uint256(CrossChainPrivacyHub.TransferStatus.RELAYED)
         );
     }
 
@@ -539,10 +539,10 @@ contract CrossChainPrivacyHubTest is Test {
         vm.prank(relayer_);
         hub.completeRelay(reqId, destNull, _groth16Proof());
 
-        CrossChainPrivacyHub.RelayRequest memory t = hub.getRelayRequest(reqId);
+        CrossChainPrivacyHub.TransferRequest memory t = hub.getRelayRequest(reqId);
         assertEq(
             uint256(t.status),
-            uint256(CrossChainPrivacyHub.RequestStatus.COMPLETED)
+            uint256(CrossChainPrivacyHub.TransferStatus.COMPLETED)
         );
         assertTrue(hub.consumedNullifiers(destNull));
     }
@@ -610,10 +610,10 @@ contract CrossChainPrivacyHubTest is Test {
         vm.prank(user);
         hub.refundRelay(reqId, "expired");
 
-        CrossChainPrivacyHub.RelayRequest memory t = hub.getRelayRequest(reqId);
+        CrossChainPrivacyHub.TransferRequest memory t = hub.getRelayRequest(reqId);
         assertEq(
             uint256(t.status),
-            uint256(CrossChainPrivacyHub.RequestStatus.REFUNDED)
+            uint256(CrossChainPrivacyHub.TransferStatus.REFUNDED)
         );
     }
 
@@ -634,10 +634,10 @@ contract CrossChainPrivacyHubTest is Test {
         vm.prank(guardian);
         hub.refundRelay(reqId, "guardian override");
 
-        CrossChainPrivacyHub.RelayRequest memory t = hub.getRelayRequest(reqId);
+        CrossChainPrivacyHub.TransferRequest memory t = hub.getRelayRequest(reqId);
         assertEq(
             uint256(t.status),
-            uint256(CrossChainPrivacyHub.RequestStatus.REFUNDED)
+            uint256(CrossChainPrivacyHub.TransferStatus.REFUNDED)
         );
     }
 

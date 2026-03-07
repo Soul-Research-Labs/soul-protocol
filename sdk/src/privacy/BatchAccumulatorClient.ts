@@ -450,11 +450,14 @@ export class BatchAccumulatorClient {
   // ─── Submission ──────────────────────────────────────────────────
 
   /**
-   * Submit a transaction to be batched for privacy
+   * Submit a transaction to be batched for privacy.
+   * Applies a cryptographically random delay before submission to prevent
+   * timing correlation at the client level.
    * @param commitment - State commitment (bytes32)
    * @param nullifierHash - Nullifier hash to prevent double-spend
    * @param encryptedPayload - Encrypted payload (will be padded to 2KB)
    * @param targetChainId - Destination chain for the batch
+   * @param skipJitter - If true, skip the random delay (for testing only)
    * @returns Transaction hash
    */
   async submitToBatch(
@@ -462,9 +465,17 @@ export class BatchAccumulatorClient {
     nullifierHash: Hex,
     encryptedPayload: Hex,
     targetChainId: bigint,
+    skipJitter = false,
   ): Promise<Hex> {
     if (!this.walletClient)
       throw new Error("Wallet client required for write operations");
+
+    // Apply cryptographic jitter: random 0-5 second delay before submission
+    // Uses crypto.getRandomValues() for unpredictable timing
+    if (!skipJitter) {
+      const delay = cryptoRandomJitter(0, 5000);
+      await sleep(delay);
+    }
 
     const { request } = await this.publicClient.simulateContract({
       address: this.address,
@@ -933,4 +944,26 @@ export class BatchAccumulatorClient {
       },
     });
   }
+}
+
+// ─── Cryptographic Jitter Helpers ───────────────────────────────────
+
+/**
+ * Generate a cryptographically random delay between min and max milliseconds.
+ * Uses crypto.getRandomValues() instead of Math.random() for unpredictability.
+ * This is critical for privacy — predictable jitter can be filtered out by
+ * statistical analysis, but cryptographic randomness cannot.
+ */
+function cryptoRandomJitter(minMs: number, maxMs: number): number {
+  const randomBytes = new Uint32Array(1);
+  crypto.getRandomValues(randomBytes);
+  const normalized = randomBytes[0] / 0x100000000; // [0, 1)
+  return Math.floor(minMs + normalized * (maxMs - minMs));
+}
+
+/**
+ * Sleep for a specified number of milliseconds.
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

@@ -4,7 +4,7 @@
 
 ### Cross-Chain ZK Privacy Middleware
 
-**Move privately between chains. No metadata. No lock-in.**
+**Move privately between chains. Minimized metadata. No lock-in.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.24-363636.svg?logo=solidity)](https://docs.soliditylang.org/)
@@ -13,8 +13,6 @@
 [![Tests](https://img.shields.io/badge/Tests-5%2C760%2B_passing-brightgreen.svg)]()
 [![Certora](https://img.shields.io/badge/Certora-69_specs-blue.svg)]()
 
-```
-243 contracts · 22 ZK circuits · 12 bridge adapters · 69 formal specs · 286 test suites
 ```
 
 [Getting Started](docs/GETTING_STARTED.md) · [Architecture](docs/ARCHITECTURE.md) · [SDK Docs](sdk/README.md) · [API Reference](docs/SOLIDITY_API_REFERENCE.md) · [Security](SECURITY.md)
@@ -27,35 +25,54 @@
 
 Bridging tokens is easy. **Bridging secrets is hard.**
 
-Privacy creates chain lock-in. When you cross the boundary between a private chain and a public one, metadata leaks everywhere — timing, amounts, address links. This traps users on whichever privacy chain they chose first, creating a winner-take-most dynamic where a handful of chains own all of crypto's privacy.
+Privacy creates chain lock-in. When you cross the boundary between a private chain and a public one, metadata leaks — timing, amounts, address links. This traps users on whichever privacy chain they chose first, creating a winner-take-most dynamic where a handful of chains own all of crypto's privacy.
 
 **Zaseon breaks this lock-in** by making secrets portable. Privacy becomes a network feature, not a cage.
 
 ```
-WITHOUT Zaseon                               WITH Zaseon
 
-  Chain A (private)                    Chain A (private)
-       │                                    │
-  ╔════╧════════════════╗             ╔═════╧═══════════════════╗
-  ║   METADATA LEAKED   ║             ║   ENCRYPTED CONTAINER   ║
-  ║  • Timing visible   ║             ║  • ZK proof travels     ║
-  ║  • Amount exposed   ║             ║  • Nullifiers split     ║
-  ║  • Addresses linked ║             ║  • Identity hidden      ║
-  ╚════╤════════════════╝             ╚═════╤═══════════════════╝
-       │                                    │
-  Chain B (private)                    Chain B (private)
+WITHOUT Zaseon WITH Zaseon
 
-  Result → LOCK-IN                   Result → FREEDOM
+Chain A (private) Chain A (private)
+│ │
+╔════╧════════════════╗ ╔═════╧═══════════════════╗
+║ METADATA LEAKED ║ ║ ENCRYPTED CONTAINER ║
+║ • Timing visible ║ ║ • ZK proof travels ║
+║ • Amount exposed ║ ║ • Nullifiers split ║
+║ • Addresses linked ║ ║ • Identity hidden ║
+╚════╤════════════════╝ ╚═════╤═══════════════════╝
+│ │
+Chain B (private) Chain B (private)
+
+Result → LOCK-IN Result → FREEDOM
+
 ```
 
 | Lock-In Vector         | How Zaseon Breaks It                                            |
 | ---------------------- | --------------------------------------------------------------- |
-| **Timing correlation** | ZK-SLocks decouple lock/unlock timing — proof generated offline |
-| **Amount correlation** | Pedersen commitments + Bulletproofs hide amounts                |
-| **Address linkage**    | Stealth addresses + CDNA nullifiers prevent graph analysis      |
-| **Winner-take-most**   | Interoperability prevents any chain from monopolizing privacy   |
+| **Timing correlation** | ZK-SLocks + BatchAccumulator + DelayedClaimVault reduce timing linkability (see [Privacy Guarantees](#privacy-guarantees--known-limitations)) |
+| **Amount correlation** | Pedersen commitments + Bulletproofs hide amounts in fixed denomination tiers |
+| **Address linkage**    | Stealth addresses + CDNA nullifiers prevent graph analysis |
+| **Winner-take-most**   | Interoperability prevents any chain from monopolizing privacy |
 
 > **Zaseon is SMTP for private blockchain transactions.** Just as email moved from walled gardens to universal interoperability, Zaseon enables private transactions to flow freely across any chain.
+
+---
+
+## Privacy Guarantees & Known Limitations
+
+Zaseon provides **cryptographic unlinkability** (commitments, nullifiers, stealth addresses) and **metadata reduction** (batching, delays, fixed denominations). It does **not** provide perfect metadata privacy. Known limitations:
+
+| Limitation | Description | Mitigation |
+| --- | --- | --- |
+| **Timing correlation** | Lock/unlock transactions are on-chain events. Statistical timing analysis remains possible (cf. Tornado Cash deanonymization research). | BatchAccumulator (8+ tx batching), DelayedClaimVault (24-72h randomized delays), PrivacyTierRouter auto-escalation |
+| **Bridge-boundary amount privacy** | Small anonymity sets at bridge boundaries can reveal transfer amounts. | Fixed denomination tiers (0.1/1/10/100 ETH), Pedersen commitments within shielded pools |
+| **On-chain state visibility** | Lock creation, container import, and nullifier registration are publicly visible state transitions. | Encrypted payloads, stealth addresses, relayer-mediated submission |
+| **Liquidity vault correlation** | Deposit→LP payout→settlement flows in `CrossChainLiquidityVault` can be correlated by observers. | Denomination bucketing, randomized release delays (in progress) |
+| **Relayer metadata** | Relayers observe submission IP, transaction order, and destination chain. | BatchAccumulator, mixnet integration (MAXIMUM privacy tier), user-side Tor/VPN |
+| **Cross-chain privacy < single-chain** | Every chain boundary (bridge, relay, message passing) expands the attack surface. Cross-chain privacy is strictly weaker than single-chain privacy. | Defense-in-depth: multiple independent mitigations per layer |
+
+> **Honest assessment:** Cross-chain privacy is an unsolved research problem. Zaseon reduces metadata leakage significantly but does not eliminate it. See [Threat Model](docs/THREAT_MODEL.md) and [EIP Draft §Privacy Guarantees](docs/EIP_DRAFT.md) for detailed analysis.
 
 ---
 
@@ -74,13 +91,15 @@ Zaseon introduces four novel cryptographic primitives that make private interope
 Lock confidential state on one chain. Unlock on another with only a ZK proof. No secret exposure, no timing correlation.
 
 ```
-Chain A                    Chain B
-   │                          │
+
+Chain A Chain B
+│ │
 [Lock] ─── ZK Proof ───→ [Unlock]
-   │                          │
-   └── Domain-split nullifier ┘
-       Cannot link src ↔ dest
-```
+│ │
+└── Domain-split nullifier ┘
+Cannot link src ↔ dest
+
+````
 
 </td>
 <td width="50%">
@@ -94,7 +113,7 @@ Self-authenticating containers that carry their own validity proof. No external 
 ```solidity
 container.verify()        // Self-validates
 container.transfer(dest)  // Proof travels with it
-```
+````
 
 </td>
 </tr>
@@ -143,7 +162,7 @@ Prove compliance without revealing identity. Verify across any proof system — 
 │  ├────────────────────────────────────────────────────────────┤  │
 │  │  L3  Middleware — ShieldedPool · Compliance · RelayerFees  │  │
 │  ├────────────────────────────────────────────────────────────┤  │
-│  │  L2  Proof Translation — Groth16 ↔ PLONK ↔ STARK          │  │
+│  │  L2  Proof Translation — Same-family relay + verification   │  │
 │  ├────────────────────────────────────────────────────────────┤  │
 │  │  L1  Core — Confidential State · Nullifier Registry        │  │
 │  └────────────────────────────────────────────────────────────┘  │
@@ -176,7 +195,7 @@ Chain B receives
   └─ New commitment created, nullifier registered
           │
 User controls funds on Chain B
-  └─ No one knows: who, what amount, or when
+  └─ Cryptographic unlinkability: who, what amount
 ```
 
 ---
@@ -245,14 +264,14 @@ docs/                   51 docs including 13 ADRs
 
 ### Privacy Layer
 
-| Contract                    | Purpose                                                  |
-| --------------------------- | -------------------------------------------------------- |
-| `PrivacyRouter`             | Unified facade — deposit, withdraw, cross-chain, stealth |
-| `UniversalShieldedPool`     | Multi-asset shielded pool with Poseidon Merkle tree      |
-| `UniversalProofTranslator`  | Proof system translation (Groth16 ↔ PLONK ↔ STARK)       |
-| `StealthAddressRegistry`    | ERC-5564 stealth addresses (upgradeable)                 |
-| `CrossChainPrivacyHub`      | Cross-chain privacy relay with vault-backed liquidity    |
-| `CrossChainSanctionsOracle` | Multi-provider compliance screening with weighted quorum |
+| Contract                    | Purpose                                                                                                                 |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `PrivacyRouter`             | Unified facade — deposit, withdraw, cross-chain, stealth                                                                |
+| `UniversalShieldedPool`     | Multi-asset shielded pool with Poseidon Merkle tree                                                                     |
+| `UniversalProofTranslator`  | Same-family proof relay (PLONK/UltraPlonk/HONK); cross-family translation requires recursive wrapper circuits (planned) |
+| `StealthAddressRegistry`    | ERC-5564 stealth addresses (upgradeable)                                                                                |
+| `CrossChainPrivacyHub`      | Cross-chain privacy relay with vault-backed liquidity                                                                   |
+| `CrossChainSanctionsOracle` | Multi-provider compliance screening with weighted quorum                                                                |
 
 Full API documentation: [SOLIDITY_API_REFERENCE.md](docs/SOLIDITY_API_REFERENCE.md)
 
@@ -285,7 +304,7 @@ All 12 adapters implement `IBridgeAdapter` with `bridgeMessage`, `estimateFee`, 
 | ------------------ | ---------------------------------------------------------------------- |
 | Proof System       | Groth16 on BN254 — production EVM, all chains                          |
 | Ring Signatures    | CLSAG on BN254 via ecAdd/ecMul/modExp precompiles (~26k gas/member)    |
-| Encryption         | AES-256-GCM for confidential state containers                          |
+| Encryption         | AES-256-GCM via ECIES (SDK off-chain only — not used in ZK circuits)   |
 | Hashing            | Poseidon (ZK-friendly) + Keccak256 (EVM-native)                        |
 | Signatures         | ECDSA with signature malleability protection                           |
 | Privacy            | ERC-5564 stealth addresses, CDNA domain-separated nullifiers           |

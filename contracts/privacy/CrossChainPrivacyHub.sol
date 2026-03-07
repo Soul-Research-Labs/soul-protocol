@@ -8,6 +8,7 @@ import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol
 import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "../interfaces/IGasNormalizer.sol";
 
 /**
  * @title CrossChainPrivacyHub
@@ -292,6 +293,35 @@ contract CrossChainPrivacyHub is
     address public complianceModule;
 
     // =========================================================================
+    // PRIVACY: Per-user relay scheduling jitter
+    // =========================================================================
+
+    /// @notice Minimum jitter delay before a transfer becomes relayable (default 5 min)
+    uint256 public minRelayJitter = 5 minutes;
+
+    /// @notice Maximum additional jitter on top of min (default 25 min, so total 5-30 min)
+    uint256 public maxRelayJitter = 25 minutes;
+
+    /// @notice Whether relay jitter is enabled
+    bool public relayJitterEnabled;
+
+    /// @notice Per-transfer relayable-at timestamp (0 = no jitter / immediately relayable)
+    mapping(bytes32 => uint64) public transferRelayableAt;
+
+    // =========================================================================
+    // PRIVACY: Multi-relayer relay quorum
+    // =========================================================================
+
+    /// @notice Required relay confirmations per privacy level (0 = single relayer, default)
+    mapping(PrivacyLevel => uint8) public requiredRelayConfirmations;
+
+    /// @notice Relay confirmations received: requestId => count
+    mapping(bytes32 => uint8) public relayConfirmationCount;
+
+    /// @notice Which relayers have confirmed: requestId => relayer => confirmed
+    mapping(bytes32 => mapping(address => bool)) public relayerConfirmed;
+
+    // =========================================================================
     // EVENTS
     // =========================================================================
 
@@ -358,6 +388,13 @@ contract CrossChainPrivacyHub is
 
     event CircuitBreakerReset(address indexed resetBy, uint256 timestamp);
 
+    event RelayConfirmationReceived(
+        bytes32 indexed requestId,
+        address indexed relayer,
+        uint8 confirmations,
+        uint8 required
+    );
+
     // =========================================================================
     // ERRORS
     // =========================================================================
@@ -385,6 +422,7 @@ contract CrossChainPrivacyHub is
     error FeeTransferFailed();
     error RefundFailed();
     error FeeTooHigh();
+    error TransferNotYetRelayable(bytes32 requestId, uint64 relayableAt);
 
     // =========================================================================
     // MODIFIERS
@@ -576,6 +614,46 @@ contract CrossChainPrivacyHub is
     }
 
     /**
+     * @notice Enable/disable relay jitter for timing correlation resistance
+     * @param _enabled Whether relay jitter is active
+     */
+    function setRelayJitterEnabled(
+        bool _enabled
+    ) external onlyRole(OPERATOR_ROLE) {
+        relayJitterEnabled = _enabled;
+    }
+
+    /**
+     * @notice Configure relay jitter parameters
+     * @param _minJitter Minimum delay before transfer is relayable (seconds)
+     * @param _maxJitter Maximum additional random delay on top of min (seconds)
+     */
+    function configureRelayJitter(
+        uint256 _minJitter,
+        uint256 _maxJitter
+    ) external onlyRole(OPERATOR_ROLE) {
+        if (_minJitter > 1 hours) revert InvalidAmount(_minJitter);
+        if (_maxJitter > 6 hours) revert InvalidAmount(_maxJitter);
+        minRelayJitter = _minJitter;
+        maxRelayJitter = _maxJitter;
+    }
+
+    /**
+     * @notice Set required relay confirmations for a privacy level
+     * @dev For HIGH/MAXIMUM, set to 2+ to require multi-relayer quorum.
+     *      0 or 1 = single relayer (default behavior).
+     * @param level Privacy level to configure
+     * @param confirmations Number of independent relayer confirmations required
+     */
+    function setRequiredRelayConfirmations(
+        PrivacyLevel level,
+        uint8 confirmations
+    ) external onlyRole(OPERATOR_ROLE) {
+        if (confirmations > 10) revert InvalidAmount(confirmations);
+        requiredRelayConfirmations[level] = confirmations;
+    }
+
+    /**
      * @notice Set Stealth Address Registry
      * @param _registry The StealthAddressRegistry contract address
      */
@@ -635,6 +713,9 @@ contract CrossChainPrivacyHub is
         validChain(destChainId)
         returns (bytes32 requestId)
     {
+        // Record gas start for normalization
+        uint256 gasStart = gasleft();
+
         // Validate amount
         if (amount < MIN_TRANSFER_AMOUNT) revert InvalidAmount(amount);
         if (amount > MAX_TRANSFER_AMOUNT)
@@ -676,6 +757,7 @@ contract CrossChainPrivacyHub is
             if (!sent) revert FeeTransferFailed();
         }
 
+        _normalizeGas(IGasNormalizer.OperationType.TRANSFER, gasStart);
         return requestId;
     }
 
@@ -707,6 +789,9 @@ contract CrossChainPrivacyHub is
         validChain(destChainId)
         returns (bytes32 requestId)
     {
+        // Record gas start for normalization
+        uint256 gasStart = gasleft();
+
         if (token == address(0)) revert ZeroAddress();
         if (amount < MIN_TRANSFER_AMOUNT) revert InvalidAmount(amount);
 
@@ -742,6 +827,7 @@ contract CrossChainPrivacyHub is
             IERC20(token).safeTransfer(feeRecipient, fee);
         }
 
+        _normalizeGas(IGasNormalizer.OperationType.TRANSFER, gasStart);
         return requestId;
     }
 
@@ -759,6 +845,8 @@ contract CrossChainPrivacyHub is
         bytes32 destNullifier,
         PrivacyProof calldata proof
     ) external onlyRole(RELAYER_ROLE) nonReentrant whenCircuitBreakerOff {
+        uint256 gasStart = gasleft();
+
         TransferRequest storage transfer = transfers[requestId];
         if (transfer.requestId == bytes32(0))
             revert TransferNotFound(requestId);
@@ -767,22 +855,70 @@ contract CrossChainPrivacyHub is
         if (block.timestamp > transfer.expiry)
             revert TransferExpired(requestId);
 
+        // PRIVACY: Enforce relay jitter — relayer cannot relay before jittered timestamp
+        {
+            uint64 relayable = transferRelayableAt[requestId];
+            if (relayable > 0 && block.timestamp < relayable)
+                revert TransferNotYetRelayable(requestId, relayable);
+        }
+
         // Verify proof
         if (!_verifyPrivacyProof(proof, transfer.destChainId)) {
             revert InvalidProof();
         }
 
-        // Create nullifier binding
-        _bindNullifier(
-            transfer.nullifier,
-            destNullifier,
-            transfer.sourceChainId,
-            transfer.destChainId
-        );
+        // PRIVACY: Multi-relayer quorum — require N independent relayer confirmations
+        uint8 required = requiredRelayConfirmations[transfer.privacyLevel];
+        if (required > 1) {
+            // Prevent same relayer from confirming twice
+            if (relayerConfirmed[requestId][msg.sender])
+                revert TransferAlreadyProcessed(requestId);
+            relayerConfirmed[requestId][msg.sender] = true;
+            relayConfirmationCount[requestId]++;
 
-        transfer.status = TransferStatus.RELAYED;
+            emit RelayConfirmationReceived(
+                requestId,
+                msg.sender,
+                relayConfirmationCount[requestId],
+                required
+            );
 
-        emit TransferRelayed(requestId, destNullifier, transfer.destChainId);
+            // Only bind nullifier and transition on first confirmation
+            if (relayConfirmationCount[requestId] == 1) {
+                _bindNullifier(
+                    transfer.nullifier,
+                    destNullifier,
+                    transfer.sourceChainId,
+                    transfer.destChainId
+                );
+            }
+
+            // Transition to RELAYED only when quorum is met
+            if (relayConfirmationCount[requestId] >= required) {
+                transfer.status = TransferStatus.RELAYED;
+                emit TransferRelayed(
+                    requestId,
+                    destNullifier,
+                    transfer.destChainId
+                );
+            }
+        } else {
+            // Single relayer mode (default)
+            _bindNullifier(
+                transfer.nullifier,
+                destNullifier,
+                transfer.sourceChainId,
+                transfer.destChainId
+            );
+            transfer.status = TransferStatus.RELAYED;
+            emit TransferRelayed(
+                requestId,
+                destNullifier,
+                transfer.destChainId
+            );
+        }
+
+        _normalizeGas(IGasNormalizer.OperationType.RELAY, gasStart);
     }
 
     /**
@@ -799,6 +935,8 @@ contract CrossChainPrivacyHub is
         bytes32 nullifier,
         PrivacyProof calldata proof
     ) external onlyRole(RELAYER_ROLE) nonReentrant whenCircuitBreakerOff {
+        uint256 gasStart = gasleft();
+
         TransferRequest storage transfer = transfers[requestId];
         if (transfer.requestId == bytes32(0))
             revert TransferNotFound(requestId);
@@ -827,6 +965,8 @@ contract CrossChainPrivacyHub is
             transfer.sourceChainId,
             transfer.destChainId
         );
+
+        _normalizeGas(IGasNormalizer.OperationType.CLAIM, gasStart);
     }
 
     /**
@@ -1136,6 +1276,23 @@ contract CrossChainPrivacyHub is
             }
         }
 
+        // PRIVACY: Assign per-user relay jitter to break timing correlation
+        if (relayJitterEnabled && maxRelayJitter > 0) {
+            uint256 jitter = uint256(
+                keccak256(
+                    abi.encode(
+                        requestId,
+                        msg.sender,
+                        block.prevrandao,
+                        block.timestamp
+                    )
+                )
+            ) % maxRelayJitter;
+            transferRelayableAt[requestId] = uint64(
+                block.timestamp + minRelayJitter + jitter
+            );
+        }
+
         emit TransferInitiated(
             requestId,
             msg.sender,
@@ -1177,6 +1334,19 @@ contract CrossChainPrivacyHub is
                     "Soul_COMMITMENT"
                 )
             );
+    }
+
+    /**
+     * @notice Normalize gas consumption to prevent operation-type inference
+     * @dev Calls the external GasNormalizer if configured. No-op if not set.
+     */
+    function _normalizeGas(
+        IGasNormalizer.OperationType opType,
+        uint256 gasStart
+    ) internal {
+        if (gasNormalizer != address(0)) {
+            IGasNormalizer(gasNormalizer).burnToTarget(opType, gasStart);
+        }
     }
 
     function _verifyPrivacyProof(

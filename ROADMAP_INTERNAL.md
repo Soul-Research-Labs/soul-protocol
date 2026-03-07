@@ -8,7 +8,7 @@
 >
 > **Author**: Soul Research Team
 >
-> **Objective**: Transform ZASEON from a single-developer AI-assisted codebase into a production-grade cross-chain privacy middleware platform comparable to LayerZero, Wormhole, or Hyperlane in operational maturity, adoption, and reliability.
+> **Objective**: Transform ZASEON into a production-grade cross-chain privacy middleware platform comparable to LayerZero, Wormhole, or Hyperlane in operational maturity, adoption, and reliability.
 
 ---
 

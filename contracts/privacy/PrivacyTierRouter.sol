@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IPrivacyTierRouter} from "../interfaces/IPrivacyTierRouter.sol";
+import {IMixnetNodeRegistry} from "../interfaces/IMixnetNodeRegistry.sol";
 
 /**
  * @title PrivacyTierRouter
@@ -91,6 +92,26 @@ contract PrivacyTierRouter is
     /// @notice Total operations completed
     uint256 public completedOperations;
 
+    /// @notice Mixnet node registry for path selection and enforcement
+    IMixnetNodeRegistry public mixnetRegistry;
+
+    /// @notice Assigned mixnet path per operation (only for operations requiring mixnet)
+    mapping(bytes32 => bytes32[]) private _operationMixnetPath;
+
+    /// @notice Quick lookup: operator address → nodeId (for relayer validation)
+    /// @dev Populated when a path is assigned so we can validate relayer operators
+    mapping(bytes32 => mapping(address => bool)) private _pathOperators;
+
+    /*//////////////////////////////////////////////////////////////
+                               ERRORS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Thrown when mixnet routing is required but no registry is configured
+    error MixnetRegistryNotSet();
+
+    /// @notice Thrown when a relayer is not on the assigned mixnet path
+    error RelayerNotOnMixnetPath(bytes32 operationId, address relayer);
+
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
@@ -173,6 +194,26 @@ contract PrivacyTierRouter is
 
         emit OperationSubmitted(operationId, msg.sender, effectiveTier, value);
 
+        // Enforce mixnet path selection for tiers requiring it
+        TierConfig memory config = _tierConfigs[effectiveTier];
+        if (config.requireMixnet) {
+            if (address(mixnetRegistry) == address(0))
+                revert MixnetRegistryNotSet();
+
+            bytes32[] memory path = mixnetRegistry.selectRelayPath(
+                sourceChainId,
+                destChainId,
+                config.minRelayers > 5 ? 5 : uint8(config.minRelayers)
+            );
+
+            _operationMixnetPath[operationId] = path;
+            for (uint256 i = 0; i < path.length; i++) {
+                IMixnetNodeRegistry.MixnetNode memory node = mixnetRegistry
+                    .getNode(path[i]);
+                _pathOperators[operationId][node.operator] = true;
+            }
+        }
+
         // Log escalation if tier was raised
         if (effectiveTier > requestedTier) {
             string memory reason;
@@ -239,6 +280,35 @@ contract PrivacyTierRouter is
         if (config.minRelayers == 0) revert InvalidTierConfig(tier);
         _tierConfigs[tier] = config;
         emit TierConfigUpdated(tier, config.minRelayers);
+    }
+
+    /// @notice Set the mixnet node registry used for path selection
+    /// @param _registry Address of the MixnetNodeRegistry contract
+    function setMixnetRegistry(
+        address _registry
+    ) external onlyRole(GOVERNANCE_ROLE) {
+        mixnetRegistry = IMixnetNodeRegistry(_registry);
+    }
+
+    /// @notice Check if a relayer is authorized on the mixnet path for an operation
+    /// @param operationId The operation to check
+    /// @param relayer The relayer address to validate
+    /// @return authorized True if the relayer is on the assigned mixnet path (or no mixnet required)
+    function isRelayerOnPath(
+        bytes32 operationId,
+        address relayer
+    ) external view returns (bool authorized) {
+        if (_operationMixnetPath[operationId].length == 0) return true;
+        return _pathOperators[operationId][relayer];
+    }
+
+    /// @notice Get the assigned mixnet path for an operation
+    /// @param operationId The operation ID
+    /// @return path Array of node IDs in the assigned path
+    function getMixnetPath(
+        bytes32 operationId
+    ) external view returns (bytes32[] memory path) {
+        return _operationMixnetPath[operationId];
     }
 
     /*//////////////////////////////////////////////////////////////

@@ -152,6 +152,9 @@ interface ICrossChainLiquidityVault {
     error WithdrawalCooldownActive(uint256 availableAt);
     error SettlementAlreadyExecuted(bytes32 batchId);
     error InsufficientLPBalance(uint256 requested, uint256 available);
+    error InvalidDenomination(uint256 amount);
+    error ReleaseNotClaimable(bytes32 requestId, uint256 claimableAt);
+    error ReleaseAlreadyClaimed(bytes32 requestId);
 
     // =========================================================================
     // LP FUNCTIONS

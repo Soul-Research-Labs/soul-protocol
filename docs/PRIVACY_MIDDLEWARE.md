@@ -76,22 +76,28 @@ Multi-asset shielded pool (Tornado Cash-style) with:
 
 ### UniversalProofTranslator (`contracts/privacy/UniversalProofTranslator.sol`)
 
-Translates ZK proofs between different proof systems. Essential for cross-chain interop where chains use different proving backends.
+> **Status: Implemented (same-family only).** Cross-family translation (e.g., Groth16 ↔ STARK) requires recursive wrapper circuits and is documented as future work. See [Proof Translation Limitations](#proof-translation-limitations).
+
+Translates ZK proofs between compatible proof systems. Essential for cross-chain interop where chains use different proving backends.
 
 ```
-Source Chain (PLONK)  ──→  UniversalProofTranslator  ──→  Dest Chain (Groth16)
+Source Chain (PLONK)  ──→  UniversalProofTranslator  ──→  Dest Chain (UltraHonk)
                            │
                            ├── Native compatibility check
-                           ├── Wrapper proof generation
+                           ├── Same-family dispatch (PLONK/UltraPlonk/HONK)
                            └── Source verifier validation
 ```
 
-**Supported translations:**
+**Supported translations (production):**
 
-- PLONK ↔ UltraPlonk (native compatibility)
-- Groth16 ↔ PLONK (wrapper proof required)
-- STARK ↔ Groth16 (wrapper proof required)
-- Any registered translation path
+- PLONK ↔ UltraPlonk ↔ HONK (same family — native compatibility)
+- Groth16 ↔ Groth16 (same system relay)
+
+**Requires recursive wrapper circuits (not yet implemented):**
+
+- Groth16 ↔ PLONK (wrapper proof required — ~500k-2M gas on EVM)
+- STARK ↔ Groth16 (wrapper proof required — extremely expensive on EVM)
+- Any cross-family translation path
 
 ### CrossChainSanctionsOracle (`contracts/compliance/CrossChainSanctionsOracle.sol`)
 

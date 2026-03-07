@@ -109,7 +109,28 @@ contract BatchAccumulator is
     /// @notice Cross-chain hub address
     address public crossChainHub;
 
+    /// @notice Minimum delay floor: batches never release before this time,
+    ///         even if minBatchSize is reached. Prevents frequency inference.
+    uint256 public minDelayFloor;
+
+    /// @notice Whether dummy commitment padding is enabled.
+    ///         When enabled, batches that release with fewer than minBatchSize
+    ///         entries are padded with dummy commitments to maintain anonymity.
+    bool public dummyPaddingEnabled;
+
+    /// @notice Counter for generating unique dummy commitments
+    uint256 private _dummyNonce;
+
     // Events and errors inherited from IBatchAccumulator
+
+    /// @notice Emitted when dummy commitments are injected into a batch
+    event DummyCommitmentsInjected(bytes32 indexed batchId, uint256 count);
+
+    /// @notice Emitted when adaptive batching config is updated
+    event AdaptiveBatchingConfigured(
+        uint256 minDelayFloor,
+        bool dummyPaddingEnabled
+    );
 
     // =========================================================================
     // INITIALIZER
@@ -192,6 +213,23 @@ contract BatchAccumulator is
     ) external onlyRole(OPERATOR_ROLE) {
         bytes32 routeHash = _getRouteHash(sourceChainId, targetChainId);
         routeConfigs[routeHash].isActive = false;
+    }
+
+    /**
+     * @notice Configure adaptive batching parameters
+     * @param _minDelayFloor Minimum time (seconds) before any batch can release,
+     *        even if minBatchSize is already reached. Set to 0 to disable.
+     * @param _dummyPaddingEnabled Whether to inject dummy commitments into
+     *        under-sized batches to maintain minimum anonymity set.
+     */
+    function configureAdaptiveBatching(
+        uint256 _minDelayFloor,
+        bool _dummyPaddingEnabled
+    ) external onlyRole(OPERATOR_ROLE) {
+        if (_minDelayFloor > MAX_WAIT_TIME) revert InvalidWaitTime();
+        minDelayFloor = _minDelayFloor;
+        dummyPaddingEnabled = _dummyPaddingEnabled;
+        emit AdaptiveBatchingConfigured(_minDelayFloor, _dummyPaddingEnabled);
     }
 
     // =========================================================================
@@ -573,7 +611,21 @@ contract BatchAccumulator is
         bool timeElapsed = block.timestamp >=
             batch.createdAt + config.maxWaitTime;
 
-        if (sizeReached || timeElapsed) {
+        // Enforce minimum delay floor: even if size is reached, don't release
+        // until minDelayFloor has passed. This prevents frequency-based inference
+        // where an attacker observes that fast-filling batches indicate high activity.
+        bool delayFloorMet = minDelayFloor == 0 ||
+            block.timestamp >= batch.createdAt + minDelayFloor;
+
+        if ((sizeReached && delayFloorMet) || timeElapsed) {
+            // If batch is under-sized and dummy padding is enabled, inject dummies
+            if (
+                dummyPaddingEnabled &&
+                batch.commitments.length < config.minBatchSize
+            ) {
+                _injectDummyCommitments(batchId, batch, config.minBatchSize);
+            }
+
             batch.status = BatchStatus.READY;
             batch.readyAt = block.timestamp;
 
@@ -582,6 +634,57 @@ contract BatchAccumulator is
                 : "TIME_ELAPSED";
             emit BatchReady(batchId, batch.commitments.length, reason);
         }
+    }
+
+    /**
+     * @notice Inject dummy commitments into an under-sized batch
+     * @dev Dummy commitments use a deterministic but unpredictable hash derived from
+     *      batch ID, block data, and an incrementing nonce. They are marked with
+     *      a zero submitter address so processors can distinguish them from real txs.
+     * @param batchId The batch to pad
+     * @param batch Storage reference to the batch
+     * @param targetSize The minimum batch size to pad to
+     */
+    function _injectDummyCommitments(
+        bytes32 batchId,
+        Batch storage batch,
+        uint256 targetSize
+    ) internal {
+        uint256 currentSize = batch.commitments.length;
+        uint256 dummiesNeeded = targetSize - currentSize;
+
+        for (uint256 i; i < dummiesNeeded; ) {
+            _dummyNonce++;
+            bytes32 dummyCommitment = keccak256(
+                abi.encodePacked(
+                    "ZASEON_DUMMY",
+                    batchId,
+                    block.timestamp,
+                    block.prevrandao,
+                    _dummyNonce
+                )
+            );
+
+            batch.commitments.push(dummyCommitment);
+
+            // Store dummy transaction with zero submitter to flag it
+            batchTransactions[batchId][currentSize + i] = BatchedTransaction({
+                commitment: dummyCommitment,
+                nullifierHash: keccak256(
+                    abi.encodePacked(dummyCommitment, "DUMMY_NULL")
+                ),
+                encryptedPayload: new bytes(FIXED_PAYLOAD_SIZE),
+                submittedAt: block.timestamp,
+                submitter: address(0), // Dummy marker
+                processed: false
+            });
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        emit DummyCommitmentsInjected(batchId, dummiesNeeded);
     }
 
     function _padPayload(

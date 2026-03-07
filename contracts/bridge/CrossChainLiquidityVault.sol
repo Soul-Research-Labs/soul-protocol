@@ -87,6 +87,32 @@ contract CrossChainLiquidityVault is
     uint256 public constant MAX_SETTLEMENT_BATCH = 100;
 
     // =========================================================================
+    // PRIVACY CONSTANTS — Timing correlation resistance
+    // =========================================================================
+
+    /// @notice Fixed denomination tiers for amount privacy (prevents correlation by non-standard amounts)
+    /// @dev Matches DelayedClaimVault denomination pattern
+    uint256 public constant DENOMINATION_TIER_1 = 0.1 ether;
+    uint256 public constant DENOMINATION_TIER_2 = 1 ether;
+    uint256 public constant DENOMINATION_TIER_3 = 10 ether;
+    uint256 public constant DENOMINATION_TIER_4 = 100 ether;
+
+    /// @notice Minimum hold period before release is eligible (timing correlation resistance)
+    uint256 public constant MIN_RELEASE_DELAY = 1 hours;
+
+    /// @notice Maximum additional randomized delay for releases
+    uint256 public constant MAX_RELEASE_JITTER = 4 hours;
+
+    /// @notice Whether denomination enforcement is active (can be toggled)
+    bool public denominationEnforcement = true;
+
+    /// @notice Maximum configurable denomination tiers per token
+    uint256 public constant MAX_TOKEN_DENOMINATION_TIERS = 8;
+
+    /// @notice Per-token denomination tiers: token => tier values (sorted ascending)
+    mapping(address => uint256[]) private _tokenDenominations;
+
+    // =========================================================================
     // STORAGE
     // =========================================================================
 
@@ -155,6 +181,23 @@ contract CrossChainLiquidityVault is
 
     /// @notice Total settlement nonce for unique batch IDs
     uint256 public settlementNonce;
+
+    // --- Privacy: Pending Releases ---
+
+    /// @notice Pending release entry (staged for delayed claim to break timing correlation)
+    struct PendingRelease {
+        address token;
+        address recipient;
+        uint256 amount;
+        uint256 claimableAt; // block.timestamp + MIN_RELEASE_DELAY + jitter
+        bool claimed;
+    }
+
+    /// @notice Pending releases: requestId => PendingRelease
+    mapping(bytes32 => PendingRelease) public pendingReleases;
+
+    /// @notice Count of pending releases for view queries
+    uint256 public pendingReleaseCount;
 
     // =========================================================================
     // CONSTRUCTOR
@@ -350,6 +393,17 @@ contract CrossChainLiquidityVault is
         // SECURITY FIX L-3: Use correct error for duplicate lock
         if (locks[requestId].amount != 0) revert LockAlreadyExists(requestId);
 
+        // PRIVACY: Enforce denomination bucketing to prevent amount correlation
+        if (denominationEnforcement) {
+            if (token == address(0)) {
+                if (!_isValidDenomination(amount))
+                    revert InvalidDenomination(amount);
+            } else {
+                if (!_isValidTokenDenomination(token, amount))
+                    revert InvalidDenomination(amount);
+            }
+        }
+
         // Check available liquidity (from LP deposits)
         if (token == address(0)) {
             uint256 available = totalETH - totalETHLocked;
@@ -387,8 +441,9 @@ contract CrossChainLiquidityVault is
     /**
      * @notice Release liquidity on the destination chain to the recipient
      * @dev Called by CrossChainPrivacyHub.completeRelay() on the destination chain.
-     *      This is where actual token value is delivered to the recipient. The vault
-     *      sends LP-deposited tokens to the recipient and tracks the flow for settlement.
+     *      PRIVACY: Funds are staged into a pending release with a randomized delay
+     *      to break timing correlation between source chain locks and destination releases.
+     *      Recipients must call claimRelease() after the delay expires.
      * @param requestId Matching request ID from the source chain
      * @param token Token address (address(0) for ETH)
      * @param recipient Recipient address
@@ -404,6 +459,17 @@ contract CrossChainLiquidityVault is
     ) external override onlyRole(PRIVACY_HUB_ROLE) nonReentrant whenNotPaused {
         if (recipient == address(0)) revert ZeroAddress();
         if (amount == 0) revert InvalidAmount();
+
+        // PRIVACY: Enforce denomination bucketing on releases too
+        if (denominationEnforcement) {
+            if (token == address(0)) {
+                if (!_isValidDenomination(amount))
+                    revert InvalidDenomination(amount);
+            } else {
+                if (!_isValidTokenDenomination(token, amount))
+                    revert InvalidDenomination(amount);
+            }
+        }
 
         // Check available liquidity on this (destination) chain
         if (token == address(0)) {
@@ -423,15 +489,53 @@ contract CrossChainLiquidityVault is
         // Track net flow: sourceChain owes us (we released on their behalf)
         netFlows[sourceChainId][token] += int256(amount);
 
-        // Transfer to recipient
-        if (token == address(0)) {
-            (bool sent, ) = recipient.call{value: amount}("");
-            require(sent, "ETH release failed");
-        } else {
-            IERC20(token).safeTransfer(recipient, amount);
-        }
+        // PRIVACY: Stage release with randomized delay to break timing correlation
+        // Jitter derived from request-specific entropy (not manipulable by recipient)
+        uint256 jitter = uint256(
+            keccak256(abi.encode(requestId, block.prevrandao))
+        ) % MAX_RELEASE_JITTER;
+        uint256 claimableAt = block.timestamp + MIN_RELEASE_DELAY + jitter;
+
+        pendingReleases[requestId] = PendingRelease({
+            token: token,
+            recipient: recipient,
+            amount: amount,
+            claimableAt: claimableAt,
+            claimed: false
+        });
+        ++pendingReleaseCount;
 
         emit LiquidityReleased(requestId, recipient, token, amount);
+    }
+
+    /**
+     * @notice Claim a pending release after the delay has expired
+     * @dev Anyone can call this on behalf of the recipient (relayer-friendly).
+     *      The funds always go to the original recipient, not msg.sender.
+     * @param requestId The request ID for the pending release
+     */
+    function claimRelease(
+        bytes32 requestId
+    ) external nonReentrant whenNotPaused {
+        PendingRelease storage release = pendingReleases[requestId];
+        if (release.amount == 0) revert LockNotFound(requestId);
+        if (release.claimed) revert ReleaseAlreadyClaimed(requestId);
+        if (block.timestamp < release.claimableAt) {
+            revert ReleaseNotClaimable(requestId, release.claimableAt);
+        }
+
+        release.claimed = true;
+
+        // Transfer to original recipient
+        if (release.token == address(0)) {
+            (bool sent, ) = release.recipient.call{value: release.amount}("");
+            require(sent, "ETH release failed");
+        } else {
+            IERC20(release.token).safeTransfer(
+                release.recipient,
+                release.amount
+            );
+        }
     }
 
     /**
@@ -772,6 +876,89 @@ contract CrossChainLiquidityVault is
     /// @notice Get number of active locks
     function getActiveLockCount() external view returns (uint256) {
         return activeLockIds.length;
+    }
+
+    // =========================================================================
+    // PRIVACY ADMIN
+    // =========================================================================
+
+    /**
+     * @notice Toggle denomination enforcement for ETH locks
+     * @param _enabled Whether denomination enforcement is active
+     */
+    function setDenominationEnforcement(
+        bool _enabled
+    ) external onlyRole(OPERATOR_ROLE) {
+        denominationEnforcement = _enabled;
+    }
+
+    /**
+     * @notice Configure denomination tiers for an ERC20 token
+     * @dev Tiers must be sorted ascending and non-zero. At most MAX_TOKEN_DENOMINATION_TIERS.
+     *      Tokens without configured tiers will pass denomination checks (permissive default).
+     * @param token ERC20 token address
+     * @param tiers Array of valid denomination amounts (sorted ascending)
+     */
+    function setTokenDenominations(
+        address token,
+        uint256[] calldata tiers
+    ) external onlyRole(OPERATOR_ROLE) {
+        if (token == address(0)) revert ZeroAddress();
+        if (tiers.length > MAX_TOKEN_DENOMINATION_TIERS) revert InvalidAmount();
+        for (uint256 i = 0; i < tiers.length; i++) {
+            if (tiers[i] == 0) revert InvalidAmount();
+            if (i > 0 && tiers[i] <= tiers[i - 1]) revert InvalidAmount();
+        }
+        _tokenDenominations[token] = tiers;
+    }
+
+    /**
+     * @notice Get configured denomination tiers for a token
+     * @param token Token address
+     * @return tiers Array of valid denominations
+     */
+    function getTokenDenominations(
+        address token
+    ) external view returns (uint256[] memory tiers) {
+        return _tokenDenominations[token];
+    }
+
+    // =========================================================================
+    // INTERNAL HELPERS
+    // =========================================================================
+
+    /**
+     * @notice Check if an ETH amount matches one of the fixed denomination tiers
+     * @param amount Amount to validate
+     * @return valid True if amount is a valid denomination
+     */
+    function _isValidDenomination(
+        uint256 amount
+    ) internal pure returns (bool valid) {
+        return
+            amount == DENOMINATION_TIER_1 ||
+            amount == DENOMINATION_TIER_2 ||
+            amount == DENOMINATION_TIER_3 ||
+            amount == DENOMINATION_TIER_4;
+    }
+
+    /**
+     * @notice Check if a token amount matches one of the configured denomination tiers
+     * @dev If no tiers are configured for the token, the check passes (permissive).
+     * @param token ERC20 token address
+     * @param amount Amount to validate
+     * @return valid True if amount is a valid denomination or token has no tiers configured
+     */
+    function _isValidTokenDenomination(
+        address token,
+        uint256 amount
+    ) internal view returns (bool valid) {
+        uint256[] storage tiers = _tokenDenominations[token];
+        if (tiers.length == 0) return true; // no tiers configured — permissive
+        for (uint256 i = 0; i < tiers.length; i++) {
+            if (amount == tiers[i]) return true;
+        }
+        return false;
     }
 
     // =========================================================================

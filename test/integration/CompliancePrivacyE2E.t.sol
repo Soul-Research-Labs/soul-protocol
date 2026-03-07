@@ -262,12 +262,12 @@ contract CompliancePrivacyE2E is Test {
         );
 
         // Transfer should be in PENDING status (not reverted)
-        CrossChainPrivacyHub.RelayRequest memory transfer = _getRelayRequest(
+        CrossChainPrivacyHub.TransferRequest memory transfer = _getRelayRequest(
             requestId
         );
         assertEq(
             uint256(transfer.status),
-            uint256(CrossChainPrivacyHub.RequestStatus.PENDING)
+            uint256(CrossChainPrivacyHub.TransferStatus.PENDING)
         );
     }
 
@@ -291,12 +291,12 @@ contract CompliancePrivacyE2E is Test {
             })
         );
 
-        CrossChainPrivacyHub.RelayRequest memory transfer = _getRelayRequest(
+        CrossChainPrivacyHub.TransferRequest memory transfer = _getRelayRequest(
             requestId
         );
         assertEq(
             uint256(transfer.status),
-            uint256(CrossChainPrivacyHub.RequestStatus.PENDING)
+            uint256(CrossChainPrivacyHub.TransferStatus.PENDING)
         );
     }
 
@@ -448,7 +448,7 @@ contract CompliancePrivacyE2E is Test {
 
     function _getRelayRequest(
         bytes32 requestId
-    ) internal view returns (CrossChainPrivacyHub.RelayRequest memory) {
+    ) internal view returns (CrossChainPrivacyHub.TransferRequest memory) {
         (
             bytes32 id,
             address sender,
@@ -463,11 +463,11 @@ contract CompliancePrivacyE2E is Test {
             bytes32 nullifier,
             uint64 timestamp,
             uint64 expiry,
-            CrossChainPrivacyHub.RequestStatus status
-        ) = privacyHub.relayRequests(requestId);
+            CrossChainPrivacyHub.TransferStatus status
+        ) = privacyHub.transfers(requestId);
 
         return
-            CrossChainPrivacyHub.RelayRequest({
+            CrossChainPrivacyHub.TransferRequest({
                 requestId: id,
                 sender: sender,
                 recipient: recipient,

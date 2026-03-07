@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import {IBridgeAdapter} from "./IBridgeAdapter.sol";
+import {FixedSizeMessageWrapper} from "../libraries/FixedSizeMessageWrapper.sol";
 
 /**
  * @title HyperlaneAdapter
@@ -359,13 +360,16 @@ contract HyperlaneAdapter is
             if (!sent) revert TransferFailed();
         }
 
+        // Wrap body to fixed size for privacy (prevent size-based inference)
+        bytes memory wrappedBody = FixedSizeMessageWrapper.wrap(body);
+
         // Dispatch via Hyperlane Mailbox
         (bool success, ) = mailbox.call{value: mailboxFee}(
             abi.encodeWithSignature(
                 "dispatch(uint32,bytes32,bytes)",
                 dstDomain,
                 recipient,
-                body
+                wrappedBody
             )
         );
 
