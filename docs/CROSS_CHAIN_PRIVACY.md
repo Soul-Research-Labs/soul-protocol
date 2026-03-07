@@ -67,7 +67,7 @@ The following sections document cryptographic primitives. Some have been impleme
 
 | Context                    | Primitive                       | Rationale                                                                                                                                         |
 | -------------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **In-circuit hashing**     | Poseidon BN254                  | ZK-optimized: ~250 constraints vs. ~25,000 for SHA-256. Used for nullifiers, commitments, state hashes across all 22 Noir circuits.               |
+| **In-circuit hashing**     | Poseidon BN254                  | ZK-optimized: ~250 constraints vs. ~25,000 for SHA-256. Used for nullifiers, commitments, state hashes across all 21 Noir circuits.               |
 | **In-circuit commitments** | Pedersen hash                   | Perfectly hiding, computationally binding. Used for balance commitments in `encrypted_transfer`, `balance_proof`, `pedersen_commitment` circuits. |
 | **In-circuit nullifiers**  | Poseidon with domain separation | `H(secret, chain_domain, app_id, epoch)` — CDNA domain-separated nullifiers.                                                                      |
 | **On-chain hashing**       | Keccak256                       | EVM-native opcode, cheapest on-chain hash. Used for role hashes, message IDs, domain separators.                                                  |
@@ -162,7 +162,7 @@ contracts/governance/
 └── ZaseonUpgradeTimelock.sol        # Time-locked admin operations
 
 contracts/security/
-└── BridgeWatchtower.sol           # Decentralized watchtower network
+└── RelayWatchtower.sol              # Decentralized watchtower network
 
 contracts/core/
 └── ZaseonProtocolHub.sol            # Central registry hub (threshold sig support)
@@ -707,24 +707,24 @@ const success = await ringCT.verifyAndExecuteRCT(
 
 ## Security Considerations
 
-| Threat                 | Mitigation                                                              |
-| ---------------------- | ----------------------------------------------------------------------- |
-| Double Spend           | Cross-domain nullifier registry (CDNA)                                  |
-| Front-running          | Commit-reveal for stealth announcements                                 |
-| Graph Analysis         | Stealth addresses + CDNA unlinkability                                  |
-| Amount Correlation     | Pedersen commitments + denomination tier enforcement at vault level      |
-| Timing Analysis        | Delayed relay + per-user relay jitter (5-30 min) + adaptive batching    |
-| Key Compromise         | Separate view/spending keys                                             |
-| Gas Fingerprinting     | GasNormalizer pads all operations to constant gas ceilings              |
-| Proof-System Inference | ProofEnvelope pads all proofs to uniform 2048-byte envelopes            |
-| Message-Size Leaks     | FixedSizeMessageWrapper pads cross-chain messages to 4096 bytes         |
-| Relayer Correlation    | Multi-relayer quorum (2-3 confirmations) + mixnet path enforcement      |
-| Stale Root Exploit     | Merkle root ring buffer eviction (S8-1)                                 |
-| Batch Verifier Bypass  | batchVerifier required for cross-chain (S8-3)                           |
-| Stealth Mismatch       | canClaimStealth aligned with generation (S8-4)                          |
-| Pool Insolvency        | Balance check before withdrawal (S8-12)                                 |
-| Nullifier Replay       | Binding validation in completeRelay (S8-9)                              |
-| Route Injection        | BatchAccumulator requires pre-config (S8-16)                            |
+| Threat                 | Mitigation                                                           |
+| ---------------------- | -------------------------------------------------------------------- |
+| Double Spend           | Cross-domain nullifier registry (CDNA)                               |
+| Front-running          | Commit-reveal for stealth announcements                              |
+| Graph Analysis         | Stealth addresses + CDNA unlinkability                               |
+| Amount Correlation     | Pedersen commitments + denomination tier enforcement at vault level  |
+| Timing Analysis        | Delayed relay + per-user relay jitter (5-30 min) + adaptive batching |
+| Key Compromise         | Separate view/spending keys                                          |
+| Gas Fingerprinting     | GasNormalizer pads all operations to constant gas ceilings           |
+| Proof-System Inference | ProofEnvelope pads all proofs to uniform 2048-byte envelopes         |
+| Message-Size Leaks     | FixedSizeMessageWrapper pads cross-chain messages to 4096 bytes      |
+| Relayer Correlation    | Multi-relayer quorum (2-3 confirmations) + mixnet path enforcement   |
+| Stale Root Exploit     | Merkle root ring buffer eviction (S8-1)                              |
+| Batch Verifier Bypass  | batchVerifier required for cross-chain (S8-3)                        |
+| Stealth Mismatch       | canClaimStealth aligned with generation (S8-4)                       |
+| Pool Insolvency        | Balance check before withdrawal (S8-12)                              |
+| Nullifier Replay       | Binding validation in completeRelay (S8-9)                           |
+| Route Injection        | BatchAccumulator requires pre-config (S8-16)                         |
 
 **Best Practices:** Use max privacy for high-value • Wait for anonymity set • Fresh addresses per tx • Verify proofs
 

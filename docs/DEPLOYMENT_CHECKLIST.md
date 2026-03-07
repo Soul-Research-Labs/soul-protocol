@@ -73,11 +73,11 @@
 - [ ] GasNormalizer deployed and gas tiers configured
 - [ ] ProofEnvelope library linked to all verifier adapters
 - [ ] FixedSizeMessageWrapper linked to all bridge adapters
-- [ ] MultiRelayerQuorum deployed with correct thresholds (2-of-3 ENHANCED, 3-of-5 MAXIMUM)
-- [ ] ERC20DenominationEnforcer configured with standard denominations
+- [ ] CrossChainPrivacyHub multi-relayer quorum configured (2-of-3 ENHANCED, 3-of-5 MAXIMUM)
+- [ ] CrossChainLiquidityVault denomination enforcement configured with standard denominations
 - [ ] MixnetNodeRegistry path enforcement enabled for MAXIMUM tier
-- [ ] RelayJitterManager parameters verified
-- [ ] AdaptiveBatchAccumulator deployed with tier-specific batch sizes
+- [ ] CrossChainPrivacyHub relay jitter parameters verified
+- [ ] BatchAccumulator adaptive batching configured with tier-specific batch sizes
 - [ ] Metadata protection test suite passes (122+ tests)
 
 ### 4a. Session 8 Security Checklist
@@ -211,7 +211,8 @@ npx hardhat run scripts/deploy-v3.ts --network optimismSepolia
 ### Phase 5: zkSync Sepolia
 
 ```bash
-forge script scripts/deploy/DeployZkSyncAdapter.s.sol --rpc-url $ZKSYNC_SEPOLIA_RPC --broadcast
+# All L2 adapters are deployed via the unified script:
+forge script scripts/deploy/DeployL2Bridges.s.sol --rpc-url $ZKSYNC_SEPOLIA_RPC --broadcast
 ```
 
 - [ ] zkSyncBridgeAdapter deployed
@@ -221,7 +222,7 @@ forge script scripts/deploy/DeployZkSyncAdapter.s.sol --rpc-url $ZKSYNC_SEPOLIA_
 ### Phase 6: Scroll Sepolia
 
 ```bash
-forge script scripts/deploy/DeployScrollAdapter.s.sol --rpc-url $SCROLL_SEPOLIA_RPC --broadcast
+forge script scripts/deploy/DeployL2Bridges.s.sol --rpc-url $SCROLL_SEPOLIA_RPC --broadcast
 ```
 
 - [ ] ScrollBridgeAdapter deployed
@@ -231,7 +232,7 @@ forge script scripts/deploy/DeployScrollAdapter.s.sol --rpc-url $SCROLL_SEPOLIA_
 ### Phase 7: Linea Sepolia
 
 ```bash
-forge script scripts/deploy/DeployLineaAdapter.s.sol --rpc-url $LINEA_SEPOLIA_RPC --broadcast
+forge script scripts/deploy/DeployL2Bridges.s.sol --rpc-url $LINEA_SEPOLIA_RPC --broadcast
 ```
 
 - [ ] LineaBridgeAdapter deployed

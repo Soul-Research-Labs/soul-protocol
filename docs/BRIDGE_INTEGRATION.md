@@ -191,15 +191,15 @@ try {
 
 ## Security Considerations
 
-| Check                  | Requirement                                          |
-| ---------------------- | ---------------------------------------------------- |
-| **Proof Verification** | Always verify ZK proofs on-chain before completing   |
-| **Timeout Handling**   | Set appropriate timeouts with refund address         |
-| **Challenge Period**   | Wait for 7-day challenge period (optimistic bridges) |
-| **Replay Protection**  | All transfers include nonces + chain IDs             |
-| **Amount Validation**  | Validate against min/max limits before transfer      |
-| **Gas Normalization**  | Gas usage padded to fixed tiers via `GasNormalizer`  |
-| **Message Padding**    | Cross-chain payloads padded by `FixedSizeMessageWrapper` to prevent size correlation |
+| Check                  | Requirement                                                                               |
+| ---------------------- | ----------------------------------------------------------------------------------------- |
+| **Proof Verification** | Always verify ZK proofs on-chain before completing                                        |
+| **Timeout Handling**   | Set appropriate timeouts with refund address                                              |
+| **Challenge Period**   | Wait for 7-day challenge period (optimistic bridges)                                      |
+| **Replay Protection**  | All transfers include nonces + chain IDs                                                  |
+| **Amount Validation**  | Validate against min/max limits before transfer                                           |
+| **Gas Normalization**  | Gas usage padded to fixed tiers via `GasNormalizer`                                       |
+| **Message Padding**    | Cross-chain payloads padded by `FixedSizeMessageWrapper` to prevent size correlation      |
 | **Proof Padding**      | Proofs padded to standard sizes by `ProofEnvelope` to prevent proof-system fingerprinting |
 
 ### Metadata Protection

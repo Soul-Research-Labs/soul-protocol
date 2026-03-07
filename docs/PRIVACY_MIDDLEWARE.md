@@ -189,37 +189,37 @@ Zaseon implements 12 independent metadata reduction layers across contracts and 
 
 ### Contract-Level
 
-| Layer | Contract | Description |
-| ----- | -------- | ----------- |
-| **Gas Normalization** | `GasNormalizer.sol` | Pads gas consumption to fixed ceilings per operation (deposit, withdraw, transfer, relay) via assembly burn loops. Wired into all 4 `CrossChainPrivacyHub` entry points. |
-| **Proof Padding** | `ProofEnvelope.sol` | Pads all ZK proofs to uniform 2048-byte envelopes. Prevents proof-system fingerprinting (Groth16 ~288B vs UltraHonk ~457 fields). |
-| **Message Padding** | `FixedSizeMessageWrapper.sol` | Pads all cross-chain messages to 4096 bytes via LayerZero + Hyperlane adapters. |
-| **Adaptive Batching** | `BatchAccumulator.sol` | Minimum delay floor before batch release + dummy commitment injection for anonymity set padding during low volume. |
-| **Relay Jitter** | `CrossChainPrivacyHub.sol` | Per-user randomized delay (5-30 min configurable) using `keccak256(requestId, sender, prevrandao, timestamp)`. |
-| **Multi-Relayer Quorum** | `CrossChainPrivacyHub.sol` | HIGH/MAXIMUM transfers require 2+ independent relayer confirmations before RELAYED status. |
-| **Denomination Enforcement** | `CrossChainLiquidityVault.sol` | Enforces ERC-20 denomination tiers (0.1/1/10/100 ETH equivalent) at the vault level. |
-| **Mixnet Enforcement** | `PrivacyTierRouter.sol` | MAXIMUM-tier transfers auto-select 2-5 hop paths via `MixnetNodeRegistry`. Validated via `isRelayerOnPath()`. |
+| Layer                        | Contract                       | Description                                                                                                                                                              |
+| ---------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Gas Normalization**        | `GasNormalizer.sol`            | Pads gas consumption to fixed ceilings per operation (deposit, withdraw, transfer, relay) via assembly burn loops. Wired into all 4 `CrossChainPrivacyHub` entry points. |
+| **Proof Padding**            | `ProofEnvelope.sol`            | Pads all ZK proofs to uniform 2048-byte envelopes. Prevents proof-system fingerprinting (Groth16 ~288B vs UltraHonk ~457 fields).                                        |
+| **Message Padding**          | `FixedSizeMessageWrapper.sol`  | Pads all cross-chain messages to 4096 bytes via LayerZero + Hyperlane adapters.                                                                                          |
+| **Adaptive Batching**        | `BatchAccumulator.sol`         | Minimum delay floor before batch release + dummy commitment injection for anonymity set padding during low volume.                                                       |
+| **Relay Jitter**             | `CrossChainPrivacyHub.sol`     | Per-user randomized delay (5-30 min configurable) using `keccak256(requestId, sender, prevrandao, timestamp)`.                                                           |
+| **Multi-Relayer Quorum**     | `CrossChainPrivacyHub.sol`     | HIGH/MAXIMUM transfers require 2+ independent relayer confirmations before RELAYED status.                                                                               |
+| **Denomination Enforcement** | `CrossChainLiquidityVault.sol` | Enforces ERC-20 denomination tiers (0.1/1/10/100 ETH equivalent) at the vault level.                                                                                     |
+| **Mixnet Enforcement**       | `PrivacyTierRouter.sol`        | MAXIMUM-tier transfers auto-select 2-5 hop paths via `MixnetNodeRegistry`. Validated via `isRelayerOnPath()`.                                                            |
 
 ### SDK-Level
 
-| Layer | Module | Description |
-| ----- | ------ | ----------- |
-| **Decoy Traffic** | `DecoyTrafficManager.ts` | Generates valid-looking empty-commitment transactions at random intervals. |
-| **Submission Jitter** | `BatchAccumulatorClient.ts` | Cryptographic jitter (`crypto.getRandomValues`) on batch submission timing. |
-| **Polling Jitter** | `CrossChainPrivacyOrchestrator.ts` | Randomized relay polling interval (5-8s) via `crypto.getRandomValues`. |
+| Layer                 | Module                             | Description                                                                 |
+| --------------------- | ---------------------------------- | --------------------------------------------------------------------------- |
+| **Decoy Traffic**     | `DecoyTrafficManager.ts`           | Generates valid-looking empty-commitment transactions at random intervals.  |
+| **Submission Jitter** | `BatchAccumulatorClient.ts`        | Cryptographic jitter (`crypto.getRandomValues`) on batch submission timing. |
+| **Polling Jitter**    | `CrossChainPrivacyOrchestrator.ts` | Randomized relay polling interval (5-8s) via `crypto.getRandomValues`.      |
 
 ### Protection by Privacy Tier
 
-| Protection | BASIC | HIGH | MAXIMUM |
-| ---------- | ----- | ---- | ------- |
-| Gas normalization | ✅ | ✅ | ✅ |
-| Proof/message padding | ✅ | ✅ | ✅ |
-| Adaptive batching | ✅ | ✅ | ✅ |
-| Relay jitter | Optional | ✅ | ✅ |
-| Multi-relayer quorum | ✗ | 2 relayers | 3 relayers |
-| Denomination enforcement | ✗ | ✅ | ✅ |
-| Mixnet routing | ✗ | ✗ | ✅ (2-5 hops) |
-| SDK decoy traffic | Optional | Optional | Recommended |
+| Protection               | BASIC    | HIGH       | MAXIMUM       |
+| ------------------------ | -------- | ---------- | ------------- |
+| Gas normalization        | ✅       | ✅         | ✅            |
+| Proof/message padding    | ✅       | ✅         | ✅            |
+| Adaptive batching        | ✅       | ✅         | ✅            |
+| Relay jitter             | Optional | ✅         | ✅            |
+| Multi-relayer quorum     | ✗        | 2 relayers | 3 relayers    |
+| Denomination enforcement | ✗        | ✅         | ✅            |
+| Mixnet routing           | ✗        | ✗          | ✅ (2-5 hops) |
+| SDK decoy traffic        | Optional | Optional   | Recommended   |
 
 ## Security Checklist
 

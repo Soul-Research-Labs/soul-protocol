@@ -8,13 +8,13 @@ Everything else — governance, relayer infrastructure, compliance, emergency sy
 
 ## Why This Exists
 
-| Concern          | Full Protocol                    | Zaseon Lite                            |
-| ---------------- | -------------------------------- | -------------------------------------- |
-| Contract count   | ~254 Solidity files              | 6 contracts                            |
-| Audit scope      | Months                           | Weeks                                  |
-| Attack surface   | 50 interfaces, 9 bridge adapters | 1 bridge adapter, core interfaces only |
-| Deployment cost  | ~$50-100k gas (8 phases)         | ~$5-10k gas (single tx)                |
-| Dependency chain | 17 components wired via Hub      | Linear: verifier → pool → registry     |
+| Concern          | Full Protocol                     | Zaseon Lite                            |
+| ---------------- | --------------------------------- | -------------------------------------- |
+| Contract count   | ~250 Solidity files               | 6 contracts                            |
+| Audit scope      | Months                            | Weeks                                  |
+| Attack surface   | 50 interfaces, 11 bridge adapters | 1 bridge adapter, core interfaces only |
+| Deployment cost  | ~$50-100k gas (8 phases)          | ~$5-10k gas (single tx)                |
+| Dependency chain | 17 components wired via Hub       | Linear: verifier → pool → registry     |
 
 ## Core Contracts
 

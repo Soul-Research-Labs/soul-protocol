@@ -61,7 +61,7 @@ Alternative proving systems evaluated:
 
 ### Key components
 
-1. **22 Noir circuits** in `noir/` — constraint counts from ~1,500 (state_commitment) to ~45,000 (aggregator recursive batch)
+1. **21 Noir circuits** in `noir/` — constraint counts from ~1,500 (state_commitment) to ~45,000 (aggregator recursive batch)
 2. **UltraHonkAdapter** — bridges Barretenberg's `(bytes proof, bytes32[] publicInputs)` to Zaseon's `IProofVerifier` interface `(bytes proof, uint256[] publicInputs)`
 3. **NoirVerifierAdapter** — abstract base for decoding generic bytes public inputs into Noir's `bytes32[]`
 4. **21 auto-generated verifiers** in `contracts/verifiers/generated/` — produced by `bb write_vk && bb contract`
@@ -83,7 +83,7 @@ All circuits migrated from external `poseidon` crate v0.2.3 to `std::hash::posei
 
 ### Positive
 
-- **Developer experience**: Rust-like syntax with generics, type safety, and module system across 22 circuits
+- **Developer experience**: Rust-like syntax with generics, type safety, and module system across 21 circuits
 - **No trusted setup**: UltraHonk uses a universal reference string — no per-circuit ceremony
 - **Native recursion**: First-class recursion support enables the aggregator circuit (4-proof batch) without cycle-of-curves hacks
 - **Backend agnostic**: ACIR compilation target allows future backend swaps without circuit rewrites

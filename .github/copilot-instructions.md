@@ -13,12 +13,12 @@ Cross-chain ZK privacy middleware for confidential state transfer across L2 netw
 ## Project Structure
 
 ```
-contracts/           # Solidity source (~254 files)
+contracts/           # Solidity source (~250 files)
   adapters/          # EVMUniversalAdapter, NativeL2BridgeWrapper
   core/              # ZaseonProtocolHub, Orchestrator
-  crosschain/        # Bridge adapters (9), DirectL2Messenger, IBridgeAdapter
+  crosschain/        # Bridge adapters (11), DirectL2Messenger, IBridgeAdapter
   bridge/            # MultiBridgeRouter, CrossChainProofHubV3
-  privacy/           # StealthAddressRegistry, ShieldedPool, BatchAccumulator, GasNormalizer, MultiRelayerQuorum
+  privacy/           # StealthAddressRegistry, ShieldedPool, BatchAccumulator, GasNormalizer
   security/          # ExperimentalFeatureRegistry, SecurityModule, Emergency
   primitives/        # ZKBoundStateLocks, ProofCarryingContainer
   verifiers/         # Groth16, UltraHonk, Noir adapters + generated verifiers
@@ -28,7 +28,7 @@ contracts/           # Solidity source (~254 files)
   integrations/      # DeFi protocol integrations
   interfaces/        # 50 interfaces
   internal/          # Internal utilities
-  libraries/         # Shared libraries (ProofEnvelope, FixedSizeMessageWrapper, RelayJitterManager)
+  libraries/         # Shared libraries (ProofEnvelope, FixedSizeMessageWrapper)
   upgradeable/       # Upgradeable variants (UUPS proxies)
 noir/                # Noir ZK circuits (21 circuits)
 test/                # Foundry tests (288 files, 5,880+ passing) + 15 Hardhat tests
@@ -53,7 +53,7 @@ examples/            # SDK quickstart examples
 - `ProtocolEmergencyCoordinator` - Multi-role emergency coordination
 - `CrossChainEmergencyRelay` - Cross-chain emergency propagation
 
-## Bridge Adapters (9)
+## Bridge Adapters (11)
 
 - `ArbitrumBridgeAdapter` - Arbitrum One/Nova native bridge (retryable tickets)
 - `OptimismBridgeAdapter` - OP Stack native messaging
@@ -64,6 +64,8 @@ examples/            # SDK quickstart examples
 - `LineaBridgeAdapter` - Linea native messaging (MessageService)
 - `LayerZeroAdapter` - LayerZero V2 OApp cross-chain messaging (120+ chains)
 - `HyperlaneAdapter` - Hyperlane Mailbox with modular ISM security
+- `EthereumL1Bridge` - Ethereum L1 native bridge (deposit/withdrawal)
+- `NativeL2BridgeWrapper` - Unified IBridgeAdapter wrapper for native L2 bridges
 
 All adapters implement `IBridgeAdapter` (`bridgeMessage`, `estimateFee`, `isMessageVerified`).
 

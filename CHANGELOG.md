@@ -14,9 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `GasNormalizer.sol` - Gas normalization to fixed tiers (100k, 200k, 500k, 1M, 2M, 5M) preventing gas-based fingerprinting (21 tests)
 - `ProofEnvelope.sol` - Proof padding library normalizing proof sizes to 4 tiers (512, 1024, 2048, 4096 bytes) (14 tests)
 - `FixedSizeMessageWrapper.sol` - Cross-chain message padding to 3 tiers (1024, 4096, 16384 bytes) (11 tests)
-- `MultiRelayerQuorum.sol` - Multi-relayer quorum verification (2-of-3 ENHANCED, 3-of-5 MAXIMUM) preventing single-relayer correlation (17 tests)
-- `ERC20DenominationEnforcer.sol` - Fixed denomination enforcement for MAXIMUM tier (22 tests)
-- `RelayJitterManager.sol` - Per-user relay timing decorrelation library (17 tests)
+- Multi-relayer quorum in `CrossChainPrivacyHub.sol` - 2-of-3 ENHANCED, 3-of-5 MAXIMUM preventing single-relayer correlation (17 tests)
+- Denomination enforcement in `CrossChainLiquidityVault.sol` - Fixed denomination tiers for MAXIMUM tier (22 tests)
+- Relay jitter in `CrossChainPrivacyHub.sol` - Per-user relay timing decorrelation (17 tests)
 - `MixnetNodeRegistry.sol` - Enhanced mixnet path enforcement for MAXIMUM tier (21 tests)
 - `BatchAccumulator.sol` - Enhanced adaptive batching with tier-specific batch sizes (16 tests)
 
@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Privacy tier system (STANDARD / ENHANCED / MAXIMUM) now controls progressive metadata protection
 - Updated 20+ documentation files with metadata protection coverage
 - Test count: 5,760+ to 5,880+ (122+ new metadata protection tests)
-- Contract count: 242 to 254 Solidity source files
+- Contract count: 242 to 250 Solidity source files
 - Test files: 286 to 288 Foundry test suites
 
 ## [0.9.0] - 2026-03-06

@@ -60,19 +60,19 @@ All verification jobs have been successfully submitted to the Certora cloud.
 
 ### Bridge Adapters (per-chain)
 
-| Bridge        | Spec                      | Config                             | Status       |
-| ------------- | ------------------------- | ---------------------------------- | ------------ |
-| Arbitrum      | `ArbitrumBridge.spec`     | `verify_arbitrum_bridge.conf`      | ✅ Submitted |
-| Base          | `BaseBridge.spec`         | `verify_base_bridge.conf`          | ✅ Submitted |
-| Optimism      | `OptimismBridge.spec`     | `verify_optimism_bridge.conf`      | ✅ Submitted |
-| Scroll        | `ScrollBridge.spec`       | `verify_scroll_bridge.conf`        | ✅ Submitted |
-| zkSync        | `ZkSyncBridge.spec`       | `verify_zksync_bridge.conf`        | ✅ Submitted |
-| Linea         | `LineaBridge.spec`        | `verify_linea_bridge.conf`         | ✅ Submitted |
-| Polygon zkEVM | `PolygonZkEVMBridge.spec` | `verify_polygon_zkevm_bridge.conf` | ✅ Submitted |
-| Ethereum L1   | `EthereumL1Bridge.spec`   | `verify_ethereum_l1_bridge.conf`   | ✅ Submitted |
-| Hyperlane     | `HyperlaneBridge.spec`    | `verify_hyperlane_bridge.conf`     | ✅ Submitted |
-| LayerZero     | `LayerZeroBridge.spec`    | `verify_layerzero_bridge.conf`     | ✅ Submitted |
-| L2 Adapters   | `L2BridgeAdapters.spec`   | `verify_l2_bridges.conf`           | ✅ Submitted |
+| Bridge        | Spec                      | Config                             | Status                                   |
+| ------------- | ------------------------- | ---------------------------------- | ---------------------------------------- |
+| Arbitrum      | `ArbitrumBridge.spec`     | `verify_arbitrum_bridge.conf`      | ✅ Submitted                             |
+| Base          | `BaseBridge.spec`         | `verify_base_bridge.conf`          | ✅ Submitted                             |
+| Optimism      | `OptimismBridge.spec`     | `verify_optimism_bridge.conf`      | ✅ Submitted                             |
+| Scroll        | `ScrollBridge.spec`       | `verify_scroll_bridge.conf`        | ✅ Submitted                             |
+| zkSync        | `ZkSyncBridge.spec`       | `verify_zksync_bridge.conf`        | ✅ Submitted                             |
+| Linea         | `LineaBridge.spec`        | `verify_linea_bridge.conf`         | ✅ Submitted                             |
+| Polygon zkEVM | `PolygonZkEVMBridge.spec` | `verify_polygon_zkevm_bridge.conf` | ⏳ Planned (adapter not yet implemented) |
+| Ethereum L1   | `EthereumL1Bridge.spec`   | `verify_ethereum_l1_bridge.conf`   | ✅ Submitted                             |
+| Hyperlane     | `HyperlaneBridge.spec`    | `verify_hyperlane_bridge.conf`     | ✅ Submitted                             |
+| LayerZero     | `LayerZeroBridge.spec`    | `verify_layerzero_bridge.conf`     | ✅ Submitted                             |
+| L2 Adapters   | `L2BridgeAdapters.spec`   | `verify_l2_bridges.conf`           | ✅ Submitted                             |
 
 ### Privacy & Security Modules
 
@@ -96,8 +96,8 @@ All verification jobs have been successfully submitted to the Certora cloud.
 | ---------------------------- | ----------------------------------- | ----------------------------------- | ------------ |
 | ZaseonGovernor               | `ZaseonGovernor.spec`               | `verify_governor.conf`              | ✅ Submitted |
 | BatchAccumulator             | `BatchAccumulator.spec`             | `verify_batch_accumulator.conf`     | ✅ Submitted |
-| BridgeCircuitBreaker         | `BridgeCircuitBreaker.spec`         | `verify_circuit_breaker.conf`       | ✅ Submitted |
-| BridgeRateLimiter            | `BridgeRateLimiter.spec`            | `verify_rate_limiter.conf`          | ✅ Submitted |
+| RelayCircuitBreaker          | `RelayCircuitBreaker.spec`          | `verify_circuit_breaker.conf`       | ✅ Submitted |
+| RelayRateLimiter             | `RelayRateLimiter.spec`             | `verify_rate_limiter.conf`          | ✅ Submitted |
 | DataAvailabilityOracle       | `DataAvailabilityOracle.spec`       | `verify_da_oracle.conf`             | ✅ Submitted |
 | DirectL2Messenger            | `DirectL2Messenger.spec`            | `verify_direct_l2_messenger.conf`   | ✅ Submitted |
 | EnhancedKillSwitch           | `EnhancedKillSwitch.spec`           | `verify_killswitch.conf`            | ✅ Submitted |

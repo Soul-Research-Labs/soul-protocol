@@ -50,28 +50,28 @@
 
 ### Privacy ✅
 
-| Contract                | Test File(s)                                       |
-| ----------------------- | -------------------------------------------------- |
-| `UniversalShieldedPool` | `test/privacy/UniversalShieldedPool.t.sol`         |
-| `DelayedClaimVault`     | `test/privacy/DelayedClaimVault.t.sol` _(batch 3)_ |
-| `GasNormalizer`         | `test/privacy/GasNormalizer.t.sol` (21 tests)      |
-| `MultiRelayerQuorum`    | `test/privacy/MultiRelayerQuorum.t.sol` (17 tests) |
-| `DenominationEnforcer`  | `test/privacy/ERC20DenominationEnforcer.t.sol` (22 tests) |
-| `MixnetEnforcement`     | `test/privacy/MixnetPathEnforcement.t.sol` (21 tests) |
-| `RelayJitter`           | `test/privacy/RelayJitterManager.t.sol` (17 tests) |
-| `AdaptiveBatching`      | `test/privacy/AdaptiveBatchAccumulator.t.sol` (16 tests) |
+| Contract                | Test File(s)                                                    |
+| ----------------------- | --------------------------------------------------------------- |
+| `UniversalShieldedPool` | `test/privacy/UniversalShieldedPool.t.sol`                      |
+| `DelayedClaimVault`     | `test/privacy/DelayedClaimVault.t.sol` _(batch 3)_              |
+| `GasNormalizer`         | `test/privacy/GasNormalizer.t.sol` (21 tests)                   |
+| `MultiRelayerQuorum`    | `test/privacy/RelayPrivacy.t.sol` (quorum tests)                |
+| `DenominationEnforcer`  | `test/bridge/CrossChainLiquidityVaultPrivacy.t.sol` (22 tests)  |
+| `MixnetEnforcement`     | `test/privacy/PrivacyTierRouter.t.sol` (tier enforcement tests) |
+| `RelayJitter`           | `test/privacy/RelayPrivacy.t.sol` (jitter tests)                |
+| `AdaptiveBatching`      | `test/privacy/AdaptiveBatching.t.sol` (16 tests)                |
 
 ### Security ✅
 
-| Contract               | Test File(s)                                   |
-| ---------------------- | ---------------------------------------------- |
-| `NullifierRegistryV3`  | `test/security/NullifierRegistryV3.t.sol`      |
-| `BridgeCircuitBreaker` | `test/security/BridgeCircuitBreaker.t.sol`     |
-| `BridgeRateLimiter`    | `test/security/BridgeRateLimiter.t.sol`        |
-| `EmergencyRecovery`    | `test/security/EmergencyRecovery.t.sol`        |
-| `EnhancedKillSwitch`   | `test/security/EnhancedKillSwitch.t.sol`       |
-| `ZKFraudProof`         | `test/security/ZKFraudProof.t.sol`             |
-| `BatchAccumulator`     | `test/security/BatchAccumulatorSecurity.t.sol` |
+| Contract              | Test File(s)                                   |
+| --------------------- | ---------------------------------------------- |
+| `NullifierRegistryV3` | `test/security/NullifierRegistryV3.t.sol`      |
+| `RelayCircuitBreaker` | `test/security/RelayCircuitBreaker.t.sol`      |
+| `RelayRateLimiter`    | `test/security/RelayRateLimiter.t.sol`         |
+| `EmergencyRecovery`   | `test/security/EmergencyRecovery.t.sol`        |
+| `EnhancedKillSwitch`  | `test/security/EnhancedKillSwitch.t.sol`       |
+| `ZKFraudProof`        | `test/security/ZKFraudProof.t.sol`             |
+| `BatchAccumulator`    | `test/security/BatchAccumulatorSecurity.t.sol` |
 
 ### Governance ✅
 
@@ -89,15 +89,15 @@
 
 ### Libraries ✅
 
-| Library            | Test File(s)                                        |
-| ------------------ | --------------------------------------------------- |
-| `GasOptimizations` | `test/libraries/LibraryBatchGas.t.sol` _(batch 3)_  |
-| `BatchProcessing`  | `test/libraries/LibraryBatchGas.t.sol` _(batch 3)_  |
-| `CryptoLib`        | `test/libraries/CryptoValidation.t.sol` _(batch 3)_ |
-| `ValidationLib`    | `test/libraries/CryptoValidation.t.sol` _(batch 3)_ |
-| `ProofEnvelope`    | `test/libraries/ProofEnvelope.t.sol` (14 tests)     |
-| `FixedSizeMessageWrapper` | `test/libraries/FixedSizeMessageWrapper.t.sol` (11 tests) |
-| `RelayJitterManager`      | `test/libraries/RelayJitterManager.t.sol` (17 tests) |
+| Library                   | Test File(s)                                                                                |
+| ------------------------- | ------------------------------------------------------------------------------------------- |
+| `GasOptimizations`        | `test/libraries/LibraryBatchGas.t.sol` _(batch 3)_                                          |
+| `BatchProcessing`         | `test/libraries/LibraryBatchGas.t.sol` _(batch 3)_                                          |
+| `CryptoLib`               | `test/libraries/CryptoValidation.t.sol` _(batch 3)_                                         |
+| `ValidationLib`           | `test/libraries/CryptoValidation.t.sol` _(batch 3)_                                         |
+| `ProofEnvelope`           | `test/libraries/ProofEnvelope.t.sol` (14 tests)                                             |
+| `FixedSizeMessageWrapper` | Inline in bridge adapters; tested via `test/libraries/ProofEnvelope.t.sol` and bridge tests |
+| `RelayJitterManager`      | Inline in `CrossChainPrivacyHub.sol`; tested via `test/privacy/RelayPrivacy.t.sol`          |
 
 ### Upgradeable ✅
 
@@ -107,15 +107,15 @@
 
 ## Specialized Test Suites
 
-| Suite Type             | Tests                                                  |
-| ---------------------- | ------------------------------------------------------ |
-| **Fuzz tests**         | 20 files in `test/fuzz/`                               |
-| **Invariant tests**    | 13 files in `test/invariant/`                          |
-| **Attack simulations** | 8 files in `test/attacks/`                             |
-| **Formal proofs**      | 11 files in `test/formal/`                             |
-| **Stress tests**       | 3 files in `test/stress/`                              |
-| **Gas benchmarks**     | 7 files in `test/gas/`                                 |
-| **Integration**        | 32 files in `test/integration/` + `test/integrations/` |
+| Suite Type              | Tests                                                                                                                                                                                          |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Fuzz tests**          | 20 files in `test/fuzz/`                                                                                                                                                                       |
+| **Invariant tests**     | 13 files in `test/invariant/`                                                                                                                                                                  |
+| **Attack simulations**  | 8 files in `test/attacks/`                                                                                                                                                                     |
+| **Formal proofs**       | 11 files in `test/formal/`                                                                                                                                                                     |
+| **Stress tests**        | 3 files in `test/stress/`                                                                                                                                                                      |
+| **Gas benchmarks**      | 7 files in `test/gas/`                                                                                                                                                                         |
+| **Integration**         | 32 files in `test/integration/` + `test/integrations/`                                                                                                                                         |
 | **Metadata protection** | 8 files in `test/privacy/` (122+ tests covering gas normalization, proof/message padding, relay jitter, multi-relayer quorum, denomination enforcement, mixnet enforcement, adaptive batching) |
 
 ## Known Gaps (Intentional)

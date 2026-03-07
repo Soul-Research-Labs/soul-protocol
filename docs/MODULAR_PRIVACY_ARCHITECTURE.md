@@ -151,9 +151,12 @@ Each service is:
 | Delayed disclosure     | Time-locked data release                       |
 | Cross-chain migration  | State transfer without exposure                |
 
-### Key Contract: `ConfidentialDataAvailability.sol`
+### Key Contract: `ConfidentialDataAvailability.sol` _(Removed)_
+
+> **Note:** This contract was removed during Q1 2026 cleanup (see [SECURITY_AUDIT_REPORT.md](./SECURITY_AUDIT_REPORT.md)). The design is retained here for reference. Confidential data availability is now handled via existing encrypted state in `ConfidentialStateContainerV3`.
 
 ```solidity
+// Historical design — contract removed
 struct ConfidentialBlob {
     bytes32 dataCommitment;        // Commitment to plaintext
     bytes32 encryptedDataRoot;     // Merkle root of encrypted shards
@@ -353,16 +356,16 @@ struct PrivacyPolicy {
 
 ### Complete Mapping Table
 
-| Celestia Concept    | Zaseon Equivalent         | Implementation                     |
-| ------------------- | ------------------------- | ---------------------------------- |
-| Modular blockchain  | Modular privacy network   | 6 core services                    |
-| DA layer            | Confidential DA           | `ConfidentialDataAvailability.sol` |
-| Sovereign rollups   | Sovereign privacy domains | `SovereignPrivacyDomain.sol`       |
-| Execution off-chain | Execution microservices   | `IExecutionMicroservice.sol`       |
-| Shared security     | Shared verification       | Kernel invariants (cannot weaken)  |
-| Namespaces          | Domain separation         | Domain separators in proofs        |
-| Light clients       | Stateless verifiers       | Constant-cost verification         |
-| Data sampling       | Availability proofs       | ZK proofs of shard validity        |
+| Celestia Concept    | Zaseon Equivalent         | Implementation                                                                   |
+| ------------------- | ------------------------- | -------------------------------------------------------------------------------- |
+| Modular blockchain  | Modular privacy network   | 6 core services                                                                  |
+| DA layer            | Confidential DA           | `ConfidentialDataAvailability.sol` _(removed; see ConfidentialStateContainerV3)_ |
+| Sovereign rollups   | Sovereign privacy domains | `SovereignPrivacyDomain.sol`                                                     |
+| Execution off-chain | Execution microservices   | `IExecutionMicroservice.sol`                                                     |
+| Shared security     | Shared verification       | Kernel invariants (cannot weaken)                                                |
+| Namespaces          | Domain separation         | Domain separators in proofs                                                      |
+| Light clients       | Stateless verifiers       | Constant-cost verification                                                       |
+| Data sampling       | Availability proofs       | ZK proofs of shard validity                                                      |
 
 ### Shared Security Model
 
@@ -439,33 +442,33 @@ Zaseon can do all of these, making it:
 
 ### Contracts Implemented
 
-| Contract                           | Status      | Description                               |
-| ---------------------------------- | ----------- | ----------------------------------------- |
-| `ConfidentialDataAvailability.sol` | ✅ Complete | Encrypted erasure-coded DA with ZK proofs |
-| `IExecutionMicroservice.sol`       | ✅ Complete | Standard interface for all backends       |
-| `IZKBackend.sol`                   | ✅ Complete | ZK-specific extensions                    |
-| `ITEEBackend.sol`                  | ✅ Complete | TEE-specific extensions                   |
-| `IMPCBackend.sol`                  | ✅ Complete | MPC-specific extensions                   |
-| `IExecutionRouter.sol`             | ✅ Complete | Backend routing                           |
-| `SovereignPrivacyDomain.sol`       | ✅ Complete | SPD implementation                        |
+| Contract                           | Status      | Description                                          |
+| ---------------------------------- | ----------- | ---------------------------------------------------- |
+| `ConfidentialDataAvailability.sol` | ⚠️ Removed  | Removed Q1 2026; DA via ConfidentialStateContainerV3 |
+| `IExecutionMicroservice.sol`       | ✅ Complete | Standard interface for all backends                  |
+| `IZKBackend.sol`                   | ✅ Complete | ZK-specific extensions                               |
+| `ITEEBackend.sol`                  | ✅ Complete | TEE-specific extensions                              |
+| `IMPCBackend.sol`                  | ✅ Complete | MPC-specific extensions                              |
+| `IExecutionRouter.sol`             | ✅ Complete | Backend routing                                      |
+| `SovereignPrivacyDomain.sol`       | ✅ Complete | SPD implementation                                   |
 
 ### Metadata Protection Layer
 
 The modular privacy architecture includes a 12-layer metadata leakage reduction system that operates across both contract and SDK levels:
 
-| Layer                         | Module                              | Scope    | Status      |
-| ----------------------------- | ----------------------------------- | -------- | ----------- |
-| Gas normalization             | `GasNormalizer.sol`                 | Contract | ✅ Complete |
-| Proof envelope padding        | `ProofEnvelope.sol`                 | Library  | ✅ Complete |
-| Cross-chain message padding   | `FixedSizeMessageWrapper.sol`       | Library  | ✅ Complete |
-| Adaptive batching             | `BatchAccumulator.sol` (enhanced)   | Contract | ✅ Complete |
-| Per-user relay jitter         | `RelayJitterManager.sol`            | Library  | ✅ Complete |
-| Multi-relayer quorum          | `MultiRelayerQuorum.sol`            | Contract | ✅ Complete |
-| Denomination enforcement      | `ERC20DenominationEnforcer.sol`     | Contract | ✅ Complete |
-| Mixnet path enforcement       | `MixnetNodeRegistry.sol` (enhanced) | Contract | ✅ Complete |
-| SDK decoy traffic             | `DecoyTrafficManager`               | SDK      | ✅ Complete |
-| SDK submission jitter         | `SubmissionJitter`                  | SDK      | ✅ Complete |
-| SDK polling jitter            | `PollingJitter`                     | SDK      | ✅ Complete |
+| Layer                       | Module                                  | Scope    | Status      |
+| --------------------------- | --------------------------------------- | -------- | ----------- |
+| Gas normalization           | `GasNormalizer.sol`                     | Contract | ✅ Complete |
+| Proof envelope padding      | `ProofEnvelope.sol`                     | Library  | ✅ Complete |
+| Cross-chain message padding | `FixedSizeMessageWrapper.sol`           | Library  | ✅ Complete |
+| Adaptive batching           | `BatchAccumulator.sol` (enhanced)       | Contract | ✅ Complete |
+| Per-user relay jitter       | `CrossChainPrivacyHub.sol` (inline)     | Contract | ✅ Complete |
+| Multi-relayer quorum        | `CrossChainPrivacyHub.sol` (inline)     | Contract | ✅ Complete |
+| Denomination enforcement    | `CrossChainLiquidityVault.sol` (inline) | Contract | ✅ Complete |
+| Mixnet path enforcement     | `MixnetNodeRegistry.sol` (enhanced)     | Contract | ✅ Complete |
+| SDK decoy traffic           | `DecoyTrafficManager`                   | SDK      | ✅ Complete |
+| SDK submission jitter       | `SubmissionJitter`                      | SDK      | ✅ Complete |
+| SDK polling jitter          | `PollingJitter`                         | SDK      | ✅ Complete |
 
 These layers integrate with the privacy tier system (STANDARD / ENHANCED / MAXIMUM) to provide progressive metadata protection.
 
@@ -474,7 +477,7 @@ These layers integrate with the privacy tier system (STANDARD / ENHANCED / MAXIM
 ```
 SovereignPrivacyDomain
         │
-        ├──▶ ConfidentialDataAvailability (for state storage)
+        ├──▶ ConfidentialStateContainerV3 (for state storage)
         │
         ├──▶ IExecutionMicroservice (for execution)
         │

@@ -25,9 +25,11 @@
 17. [GasNormalizer](#17-gasnormalizer)
 18. [ProofEnvelope Library](#18-proofenvelope-library)
 19. [FixedSizeMessageWrapper Library](#19-fixedsizemessagewrapper-library)
-20. [MultiRelayerQuorum](#20-multirelayerquorum)
-21. [ERC20DenominationEnforcer](#21-erc20denominationenforcer)
-22. [RelayJitterManager Library](#22-relayjittermanager-library)
+20. [Multi-Relayer Quorum (CrossChainPrivacyHub)](#20-multi-relayer-quorum-crosschainprivacyhub)
+21. [Denomination Enforcement (CrossChainLiquidityVault)](#21-denomination-enforcement-crosschainliquidityvault)
+22. [Relay Jitter (CrossChainPrivacyHub)](#22-relay-jitter-crosschainprivacyhub)
+23. [Integration Contracts](#23-integration-contracts)
+24. [Security Contracts](#24-security-contracts)
 
 ---
 
@@ -425,9 +427,9 @@ function setPrivateRelayerNetwork(address) external
 function setViewKeyRegistry(address) external
 
 // Security modules
-function setBridgeProofValidator(address) external
-function setBridgeWatchtower(address) external
-function setBridgeCircuitBreaker(address) external
+function setRelayProofValidator(address) external
+function setRelayWatchtower(address) external
+function setRelayCircuitBreaker(address) external
 
 // Primitives
 function setZKBoundStateLocks(address) external
@@ -1039,14 +1041,14 @@ Normalizes gas consumption to fixed tiers to prevent gas-based fingerprinting of
 
 ### Gas Tiers
 
-| Tier | Target Gas |
-| ---- | ---------- |
-| TIER_1 | 100,000 |
-| TIER_2 | 200,000 |
-| TIER_3 | 500,000 |
-| TIER_4 | 1,000,000 |
-| TIER_5 | 2,000,000 |
-| TIER_6 | 5,000,000 |
+| Tier   | Target Gas |
+| ------ | ---------- |
+| TIER_1 | 100,000    |
+| TIER_2 | 200,000    |
+| TIER_3 | 500,000    |
+| TIER_4 | 1,000,000  |
+| TIER_5 | 2,000,000  |
+| TIER_6 | 5,000,000  |
 
 ```solidity
 function normalizeGas(uint256 actualGas) public pure returns (uint256 normalizedGas)
@@ -1065,11 +1067,11 @@ Pads ZK proofs to fixed sizes to prevent proof-system inference attacks. All pro
 
 ### Envelope Sizes
 
-| Size | Bytes |
-| ---- | ----- |
-| SMALL | 512 |
-| MEDIUM | 1,024 |
-| LARGE | 2,048 |
+| Size        | Bytes |
+| ----------- | ----- |
+| SMALL       | 512   |
+| MEDIUM      | 1,024 |
+| LARGE       | 2,048 |
 | EXTRA_LARGE | 4,096 |
 
 ```solidity
@@ -1089,10 +1091,10 @@ Pads cross-chain messages to fixed sizes to prevent payload-size correlation bet
 
 ### Message Sizes
 
-| Tier | Bytes |
-| ---- | ----- |
-| STANDARD | 1,024 |
-| LARGE | 4,096 |
+| Tier        | Bytes  |
+| ----------- | ------ |
+| STANDARD    | 1,024  |
+| LARGE       | 4,096  |
 | EXTRA_LARGE | 16,384 |
 
 ```solidity
@@ -1103,59 +1105,575 @@ function getMessageTier(uint256 messageLength) internal pure returns (uint256 ti
 
 ---
 
-## 20. MultiRelayerQuorum
+## 20. Multi-Relayer Quorum (CrossChainPrivacyHub)
 
-**Path:** `contracts/privacy/MultiRelayerQuorum.sol`
+**Path:** `contracts/privacy/CrossChainPrivacyHub.sol` (inline feature)
 **Solidity:** `^0.8.24`
-**Inherits:** `AccessControl`, `ReentrancyGuard`
 
-Requires multiple independent relayers to agree on a message before execution, preventing single-relayer correlation attacks.
+Multi-relayer quorum verification is embedded in `CrossChainPrivacyHub`. It requires multiple independent relayers to confirm a transfer before execution, preventing single-relayer correlation attacks.
 
 ### Quorum Requirements
 
-| Privacy Tier | Required / Total |
-| ------------ | ---------------- |
-| ENHANCED | 2-of-3 |
-| MAXIMUM | 3-of-5 |
+| Privacy Tier | Required Confirmations |
+| ------------ | ---------------------- |
+| ENHANCED     | 2                      |
+| MAXIMUM      | 3                      |
 
 ```solidity
-function submitRelayAttestation(bytes32 messageHash, bytes calldata signature) external
-function executeQuorum(bytes32 messageHash) external
-function getQuorumStatus(bytes32 messageHash) external view returns (uint256 attestations, uint256 required)
-function setQuorumThreshold(uint8 privacyTier, uint256 required, uint256 total) external onlyRole(ADMIN_ROLE)
+// State variables in CrossChainPrivacyHub
+mapping(PrivacyLevel => uint8) public requiredRelayConfirmations;
+mapping(bytes32 => mapping(address => bool)) public relayConfirmed;
+mapping(bytes32 => uint8) public relayConfirmationCount;
+
+// Admin configuration
+function setRequiredRelayConfirmations(PrivacyLevel level, uint8 count) external onlyRole(DEFAULT_ADMIN_ROLE)
 ```
 
 ---
 
-## 21. ERC20DenominationEnforcer
+## 21. Denomination Enforcement (CrossChainLiquidityVault)
 
-**Path:** `contracts/privacy/ERC20DenominationEnforcer.sol`
+**Path:** `contracts/bridge/CrossChainLiquidityVault.sol` (inline feature)
 **Solidity:** `^0.8.24`
+
+Denomination enforcement is embedded in `CrossChainLiquidityVault`. It restricts ETH and ERC-20 transfers to fixed denominations in MAXIMUM privacy tier to prevent amount-based correlation.
+
+### Standard Denominations (ETH)
+
+0.1, 1, 10, 100 ether (configurable per-token)
+
+```solidity
+// Constants in CrossChainLiquidityVault
+uint256 public constant DENOMINATION_TIER_1 = 0.1 ether;
+uint256 public constant DENOMINATION_TIER_2 = 1 ether;
+uint256 public constant DENOMINATION_TIER_3 = 10 ether;
+uint256 public constant DENOMINATION_TIER_4 = 100 ether;
+bool public denominationEnforcement = true;
+
+// Per-token denomination tiers
+mapping(address => uint256[]) public tokenDenominationTiers;
+```
+
+---
+
+## 22. Relay Jitter (CrossChainPrivacyHub)
+
+**Path:** `contracts/privacy/CrossChainPrivacyHub.sol` (inline feature)
+**Solidity:** `^0.8.24`
+
+Per-user relay scheduling jitter is embedded in `CrossChainPrivacyHub`. It adds randomized delays before transfers become relayable, decorrelating submission timing.
+
+```solidity
+// State variables in CrossChainPrivacyHub
+uint256 public minRelayJitter = 5 minutes;
+uint256 public maxRelayJitter = 25 minutes;
+bool public relayJitterEnabled;
+mapping(bytes32 => uint256) public transferRelayableAt;
+
+// Admin configuration
+function setRelayJitter(uint256 _min, uint256 _max) external onlyRole(DEFAULT_ADMIN_ROLE)
+function setRelayJitterEnabled(bool _enabled) external onlyRole(DEFAULT_ADMIN_ROLE)
+```
+
+---
+
+## 23. Integration Contracts
+
+**Path:** `contracts/integrations/`
+
+Eight integration contracts unify ZASEON's core primitives (stealth addresses, ring signatures, ZK proofs, nullifiers) with DeFi protocols, bridges, oracles, and security modules.
+
+### 23.1 CorePrivacyIntegration
+
+**Path:** `contracts/integrations/CorePrivacyIntegration.sol`
+**Inherits:** `AccessControl`, `ReentrancyGuard`, `Pausable`
+
+Core `IPrivacyIntegration` implementation unifying stealth addresses (ERC-5564), CLSAG-style ring signatures, Pedersen commitments with Bulletproofs+ range proofs, and cross-domain nullifier algebra (CDNA).
+
+| Function                       | Visibility    | Description                            |
+| ------------------------------ | ------------- | -------------------------------------- |
+| `registerStealthMetaAddress`   | external      | Register ERC-5564 stealth meta-address |
+| `deriveStealthAddress`         | external      | Derive one-time stealth address        |
+| `checkStealthAddressOwnership` | external view | Verify stealth address ownership       |
+| `verifyRingSignature`          | external view | Verify CLSAG ring signature            |
+| `isKeyImageUsed`               | external view | Check key image double-spend status    |
+| `createCommitment`             | external      | Create Pedersen commitment             |
+| `verifyCommitment`             | external view | Verify commitment opening              |
+| `verifyRangeProof`             | external view | Verify Bulletproofs+ range proof       |
+| `computeNullifier`             | external view | Compute nullifier hash                 |
+| `isNullifierUsed`              | external view | Check nullifier spend status           |
+| `registerNullifier`            | external      | Register nullifier as spent            |
+
+### 23.2 CrossChainBridgeIntegration
+
+**Path:** `contracts/integrations/CrossChainBridgeIntegration.sol`
+**Inherits:** `AccessControl`, `ReentrancyGuard`, `Pausable`
+
+Unified cross-chain bridge entry point supporting 40+ chains across L2 rollups, interop protocols (LayerZero, Hyperlane), and privacy chains (Aztec). Auto-routing, batching, failover, and privacy integration.
+
+| Function                | Visibility       | Description                            |
+| ----------------------- | ---------------- | -------------------------------------- |
+| `configureChain`        | external         | Configure chain parameters             |
+| `registerBridgeAdapter` | external         | Register IBridgeAdapter implementation |
+| `configureRoute`        | external         | Configure cross-chain route            |
+| `bridgeTransfer`        | external payable | Initiate cross-chain transfer          |
+| `completeTransfer`      | external         | Finalize incoming transfer             |
+| `getQuote`              | external view    | Quote fees for a transfer              |
+| `getSupportedChains`    | external view    | List all supported chain IDs           |
+
+### 23.3 PrivacyOracleIntegration
+
+**Path:** `contracts/integrations/PrivacyOracleIntegration.sol`
+**Inherits:** `AccessControl`, `ReentrancyGuard`, `Pausable`
+
+Privacy-preserving oracle (`IPrivacyOracle`) for encrypted data feeds. Provides ECIES-encrypted price data from Chainlink/Pyth/Chronicle/private TEE oracles with Pedersen commitments and ZK range proofs.
+
+| Function                | Visibility    | Description                      |
+| ----------------------- | ------------- | -------------------------------- |
+| `addPair`               | external      | Register a price pair            |
+| `registerOracleNode`    | external      | Register an oracle node          |
+| `getEncryptedPrice`     | external view | Get encrypted latest price       |
+| `requestEncryptedPrice` | external      | Request fresh encrypted price    |
+| `verifyPriceProof`      | external view | Verify ZK proof of price         |
+| `verifyPriceInRange`    | external view | Verify price within range via ZK |
+| `submitPriceUpdate`     | external      | Submit plaintext price update    |
+| `submitEncryptedPrice`  | external      | Submit encrypted price update    |
+
+### 23.4 PrivacyPoolIntegration
+
+**Path:** `contracts/integrations/PrivacyPoolIntegration.sol`
+**Inherits:** `AccessControl`, `ReentrancyGuard`, `Pausable`
+
+Privacy-preserving pool (`IPrivacyPool`) with hidden-amount deposits, ZK proof withdrawals, and confidential token swaps. Three-layer architecture: Pedersen commitment, privacy operations, and cross-chain nullifier management.
+
+| Function              | Visibility       | Description                    |
+| --------------------- | ---------------- | ------------------------------ |
+| `privateDeposit`      | external payable | Deposit ETH with commitment    |
+| `privateDepositERC20` | external         | Deposit ERC20 with commitment  |
+| `privateWithdraw`     | external         | ZK-verified withdrawal         |
+| `privateSwap`         | external         | Confidential token swap        |
+| `getMerkleRoot`       | external view    | Current commitment Merkle root |
+| `commitmentExists`    | external view    | Check commitment inclusion     |
+| `isNullifierSpent`    | external view    | Check nullifier spend status   |
+| `emergencyWithdraw`   | external         | Admin emergency fund recovery  |
+
+### 23.5 PrivateProofRelayIntegration
+
+**Path:** `contracts/integrations/PrivateProofRelayIntegration.sol`
+**Inherits:** `AccessControl`, `ReentrancyGuard`, `Pausable`
+
+Cross-chain private proof relay connecting to CrossChainPrivacyHub. Stealth-address-based delivery, cross-chain nullifier tracking, ZK proofs for amount hiding, and encrypted metadata.
+
+| Function                    | Visibility       | Description                     |
+| --------------------------- | ---------------- | ------------------------------- |
+| `initiatePrivateRelay`      | external payable | Start cross-chain private relay |
+| `completePrivateRelay`      | external         | Finalize incoming relay         |
+| `verifyCrossChainNullifier` | external view    | Verify cross-chain nullifier    |
+| `refundExpiredRelay`        | external         | Refund expired relay            |
+| `getRelayRecord`            | external view    | Get relay details               |
+| `getSupportedChains`        | external view    | List supported chains           |
+
+### 23.6 ZKSLockIntegration
+
+**Path:** `contracts/integrations/ZKSLockIntegration.sol`
+**Inherits:** `AccessControl`, `ReentrancyGuard`
+
+Connects ZK-Bound State Locks with PC³ (ProofCarryingContainer), CDNA (CrossDomainNullifierAlgebra), EASC, and PBP primitives for unified cross-primitive operations.
+
+| Function                | Visibility    | Description                    |
+| ----------------------- | ------------- | ------------------------------ |
+| `lockContainer`         | external      | Lock a container with ZK proof |
+| `unlockContainer`       | external      | Unlock via ZK verification     |
+| `createCrossDomainLock` | external      | Create cross-domain state lock |
+| `createAtomicLock`      | external      | Create atomic multi-lock       |
+| `batchCreateLocks`      | external      | Batch lock creation            |
+| `getLockInfo`           | external view | Query lock details             |
+| `isContainerLocked`     | external view | Check container lock status    |
+
+### 23.7 AddedSecurityOrchestrator
+
+**Path:** `contracts/integrations/AddedSecurityOrchestrator.sol`
+**Inherits:** `AccessControl`, `ReentrancyGuard`
+
+Lightweight orchestrator for security modules. Manages centralized alerts, protected contract registry, and security score tracking. Coordinates RuntimeSecurityMonitor, ZKFraudProof, ThresholdSignature, CryptographicAttestation, and MEVProtection modules.
+
+| Function                | Visibility    | Description                         |
+| ----------------------- | ------------- | ----------------------------------- |
+| `protectContract`       | external      | Add contract to protection registry |
+| `unprotectContract`     | external      | Remove contract from protection     |
+| `updateSecurityScore`   | external      | Update security score for contract  |
+| `createAlert`           | external      | Create security alert               |
+| `resolveAlert`          | external      | Resolve alert                       |
+| `getModuleAddresses`    | external view | All registered module addresses     |
+| `getProtectedAddresses` | external view | All protected contracts             |
+
+### 23.8 ZaseonAtomicSwapSecurityIntegration
+
+**Path:** `contracts/integrations/ZaseonAtomicSwapSecurityIntegration.sol`
+**Inherits:** `AccessControl`, `ReentrancyGuard`, `Pausable`
+
+Security wrapper for atomic swaps with 4-layer protection: MEV protection (commit-reveal), flash loan detection (balance snapshots), rate limiting + circuit breaker, and HTLC execution with stealth addresses.
+
+| Function              | Visibility    | Description                     |
+| --------------------- | ------------- | ------------------------------- |
+| `commitSwap`          | external      | Phase 1: commit swap hash       |
+| `revealSwap`          | external      | Phase 2: reveal and execute     |
+| `takeBalanceSnapshot` | external      | Flash loan guard snapshot       |
+| `validateBalance`     | external view | Validate balance hasn't changed |
+| `claimSwap`           | external      | HTLC claim with preimage        |
+| `refundSwap`          | external      | HTLC refund after expiry        |
+
+---
+
+## 24. Security Contracts
+
+**Path:** `contracts/security/`
+
+Twenty security contracts providing circuit breakers, rate limiting, fraud proofs, MEV protection, flash loan guards, emergency recovery, watchtower networks, and health monitoring. `ProtocolEmergencyCoordinator` is documented in [Section 16](#16-protocolemergencycoordinator).
+
+### 24.1 SecurityModule (Abstract)
+
+**Path:** `contracts/security/SecurityModule.sol`
+**Inherits:** (standalone abstract)
+
+Inheritable security module providing rate limiting, circuit breakers, flash loan guards (same-block deposit/withdrawal detection), and daily/single withdrawal limits. Gas-optimized with packed boolean flags. Inherited by CrossChainProofHubV3, ZaseonAtomicSwapV2, etc.
+
+| Function                  | Visibility  | Description                   |
+| ------------------------- | ----------- | ----------------------------- |
+| `rateLimitingEnabled`     | public view | Rate limiting status          |
+| `circuitBreakerEnabled`   | public view | Circuit breaker status        |
+| `circuitBreakerTripped`   | public view | Whether breaker is tripped    |
+| `flashLoanGuardEnabled`   | public view | Flash loan guard status       |
+| `withdrawalLimitsEnabled` | public view | Withdrawal limits status      |
+| `getRemainingActions`     | public view | Remaining actions in window   |
+| `getRemainingWithdrawal`  | public view | Remaining withdrawal capacity |
+
+### 24.2 RelayCircuitBreaker
+
+**Path:** `contracts/security/RelayCircuitBreaker.sol`
+**Inherits:** `AccessControl`, `ReentrancyGuard`, `Pausable`
+
+Automatic circuit breaker with anomaly detection for bridge operations. Auto-pause on large withdrawals, velocity-based anomaly detection (WARNING/DEGRADED/HALTED), multi-sig recovery, and gradual recovery mechanism.
+
+| Function            | Visibility    | Description                              |
+| ------------------- | ------------- | ---------------------------------------- |
+| `recordTransaction` | external      | Record bridge transaction for monitoring |
+| `updateTVL`         | external      | Update tracked TVL                       |
+| `reportAnomaly`     | external      | Report detected anomaly                  |
+| `resolveAnomaly`    | external      | Mark anomaly as resolved                 |
+| `proposeRecovery`   | external      | Propose recovery from halt               |
+| `approveRecovery`   | external      | Approve recovery proposal                |
+| `executeRecovery`   | external      | Execute approved recovery                |
+| `emergencyHalt`     | external      | Immediate halt                           |
+| `isOperational`     | external view | Check operational status                 |
+| `isDegraded`        | external view | Check degraded status                    |
+
+### 24.3 RelayRateLimiter
+
+**Path:** `contracts/security/RelayRateLimiter.sol`
+**Inherits:** `AccessControl`, `ReentrancyGuard`, `Pausable`
+
+Per-user and global rate limiting with hourly/daily caps, TVL caps, automatic circuit breakers, anomaly detection triggers, whitelist/blacklist management.
+
+| Function                 | Visibility    | Description                    |
+| ------------------------ | ------------- | ------------------------------ |
+| `checkAndRecordTransfer` | external      | Validate and record a transfer |
+| `checkTransfer`          | external view | Dry-run transfer validation    |
+| `recordTVLChange`        | external      | Update TVL tracking            |
+| `triggerCircuitBreaker`  | external      | Manual circuit breaker trigger |
+| `resetCircuitBreaker`    | external      | Reset circuit breaker          |
+| `getRemainingLimits`     | external view | Remaining user/global limits   |
+| `isCircuitBreakerActive` | external view | Circuit breaker status         |
+
+### 24.4 RelayProofValidator
+
+**Path:** `contracts/security/RelayProofValidator.sol`
+**Inherits:** `AccessControl`, `ReentrancyGuard`, `Pausable`
+
+Proof validation pipeline with expiry timestamps (256-block default), 4-hour challenge periods, watchtower integration for multi-sig confirmations, and per-epoch withdrawal caps.
+
+| Function                    | Visibility    | Description                     |
+| --------------------------- | ------------- | ------------------------------- |
+| `submitProof`               | external      | Submit proof for validation     |
+| `finalizeProof`             | external      | Finalize after challenge period |
+| `challengeProof`            | external      | Challenge a pending proof       |
+| `resolveChallenge`          | external      | Resolve challenge outcome       |
+| `confirmProof`              | external      | Watchtower confirmation         |
+| `addWatchtower`             | external      | Register watchtower             |
+| `isProofValid`              | external view | Check proof validity            |
+| `getRemainingEpochCapacity` | external view | Remaining epoch withdrawal cap  |
+
+### 24.5 RelayWatchtower
+
+**Path:** `contracts/security/RelayWatchtower.sol`
+**Inherits:** `AccessControl`, `ReentrancyGuard`, `Pausable`
+
+Decentralized watchtower network for bridge monitoring with bonded registration, distributed proof verification, anomaly reporting with 2/3 consensus voting, slashing for misbehavior, and inactivity penalties.
+
+| Function       | Visibility       | Description                     |
+| -------------- | ---------------- | ------------------------------- |
+| `register`     | external payable | Register as watchtower (bonded) |
+| `addStake`     | external payable | Add additional stake            |
+| `requestExit`  | external         | Begin exit process              |
+| `completeExit` | external         | Complete exit and withdraw bond |
+| `submitReport` | external         | Submit anomaly report           |
+| `voteOnReport` | external         | Vote on report validity         |
+| `attestProof`  | external         | Attest to proof correctness     |
+| `slash`        | external         | Slash misbehaving watchtower    |
+| `hasConsensus` | external view    | Check 2/3 consensus status      |
+
+### 24.6 RelayFraudProof
+
+**Path:** `contracts/security/RelayFraudProof.sol`
 **Inherits:** `AccessControl`
 
-Restricts ERC-20 transfers to fixed denominations in MAXIMUM privacy tier to prevent amount-based correlation.
+Verifies fraud proofs and resolves challenges on `OptimisticRelayVerifier`. Validates original proof matches the pending transfer, then verifies fraud evidence.
 
-### Standard Denominations
+| Function           | Visibility | Description                   |
+| ------------------ | ---------- | ----------------------------- |
+| `submitFraudProof` | external   | Submit and verify fraud proof |
 
-0.1, 1, 10, 100, 1000 (token units)
+### 24.7 RelaySecurityScorecard
 
-```solidity
-function enforceDeposit(address token, uint256 amount) external view returns (bool valid)
-function getAllowedDenominations(address token) external view returns (uint256[] memory)
-function setDenominations(address token, uint256[] calldata amounts) external onlyRole(ADMIN_ROLE)
-```
+**Path:** `contracts/security/RelaySecurityScorecard.sol`
+**Inherits:** `AccessControl`
 
----
+Maintains 5-factor security scores (0–100) for bridge adapters: validator decentralization, economic security, audit quality, uptime, and incident history. Minimum safe score: 70.
 
-## 22. RelayJitterManager Library
+| Function              | Visibility    | Description                         |
+| --------------------- | ------------- | ----------------------------------- |
+| `updateScore`         | external      | Update adapter security score       |
+| `isBridgeSafe`        | external view | Check if bridge meets minimum score |
+| `getScore`            | external view | Get composite security score        |
+| `setMinimumSafeScore` | external      | Set minimum safe threshold          |
 
-**Path:** `contracts/libraries/RelayJitterManager.sol`
-**Solidity:** `^0.8.24`
+### 24.8 ExperimentalFeatureRegistry
 
-Computes per-user timing jitter for relay operations to decorrelate submission timing.
+**Path:** `contracts/security/ExperimentalFeatureRegistry.sol`
+**Inherits:** `AccessControl`, `ReentrancyGuard`
 
-```solidity
-function computeJitter(address user, bytes32 seed) internal pure returns (uint256 delayMs)
-function getMaxJitter(uint8 privacyTier) internal pure returns (uint256 maxDelayMs)
-function isWithinJitterWindow(uint256 submittedAt, uint256 expectedAt, uint256 maxJitter) internal pure returns (bool)
-```
+Registry for experimental features (`IExperimentalFeatureRegistry`) with status tracking (DISABLED → EXPERIMENTAL → BETA → PRODUCTION), per-feature value-at-risk limits, graduation requirements, and emergency disable.
+
+| Function                 | Visibility    | Description                       |
+| ------------------------ | ------------- | --------------------------------- |
+| `registerFeature`        | external      | Register new experimental feature |
+| `updateFeatureStatus`    | external      | Update feature lifecycle status   |
+| `emergencyDisable`       | external      | Emergency disable a feature       |
+| `isFeatureEnabled`       | external view | Check if feature is enabled       |
+| `requireFeatureEnabled`  | external view | Revert if feature not enabled     |
+| `requireProductionReady` | external view | Revert if not production-ready    |
+| `lockValue`              | external      | Lock value against feature limit  |
+| `unlockValue`            | external      | Release locked value              |
+| `getRemainingCapacity`   | external view | Remaining VAR capacity            |
+
+### 24.9 ExperimentalGraduationManager
+
+**Path:** `contracts/security/ExperimentalGraduationManager.sol`
+**Inherits:** `AccessControl`
+
+Formalizes the BETA → PRODUCTION graduation lifecycle. Enforces on-chain criteria (audit attestation, test coverage, minimum time-in-beta, security review) with timelock-gated execution.
+
+| Function               | Visibility    | Description                      |
+| ---------------------- | ------------- | -------------------------------- |
+| `setCriteria`          | external      | Set graduation criteria          |
+| `recordBetaEntry`      | external      | Record feature beta start        |
+| `attestAudit`          | external      | Attest audit completion          |
+| `attestTestCoverage`   | external      | Attest test coverage met         |
+| `attestSecurityReview` | external      | Attest security review done      |
+| `proposeGraduation`    | external      | Propose graduation to production |
+| `executeGraduation`    | external      | Execute after timelock           |
+| `demoteFeature`        | external      | Demote from production to beta   |
+| `isGraduationReady`    | external view | Check all criteria met           |
+
+### 24.10 EnhancedKillSwitch
+
+**Path:** `contracts/security/EnhancedKillSwitch.sol`
+**Inherits:** `AccessControl`, `ReentrancyGuard`
+
+5-level emergency response system (`IEnhancedKillSwitch`): WARNING → ELEVATED → SEVERE → CRITICAL → LOCKED. Guardian-confirmed escalation with increasing cooldowns (0 → 7 days) and confirmation thresholds (1 → 5). Multi-guardian recovery with 48h–7d delays.
+
+| Function            | Visibility    | Description                         |
+| ------------------- | ------------- | ----------------------------------- |
+| `escalateEmergency` | external      | Propose escalation                  |
+| `confirmEscalation` | external      | Guardian confirms escalation        |
+| `executeEscalation` | external      | Execute confirmed escalation        |
+| `initiateRecovery`  | external      | Start recovery process              |
+| `confirmRecovery`   | external      | Guardian confirms recovery          |
+| `executeRecovery`   | external      | Execute recovery de-escalation      |
+| `isActionAllowed`   | external view | Check if action is allowed at level |
+| `getProtocolState`  | external view | Current emergency level             |
+
+### 24.11 EmergencyRecovery
+
+**Path:** `contracts/security/EmergencyRecovery.sol`
+**Inherits:** `AccessControl`, `ReentrancyGuard`
+
+Multi-stage emergency recovery with 5 graduated stages (Monitoring → Alert → Degraded → Emergency → Recovery). Multi-sig approval for stage escalation, automatic cooldowns, asset protection, and audit trail.
+
+| Function                    | Visibility    | Description                      |
+| --------------------------- | ------------- | -------------------------------- |
+| `proposeStageChange`        | external      | Propose stage escalation         |
+| `approveAction`             | external      | Multi-sig approval               |
+| `registerProtectedContract` | external      | Register contract for protection |
+| `pauseContract`             | external      | Pause a protected contract       |
+| `pauseAll`                  | external      | Pause all protected contracts    |
+| `freezeAssets`              | external      | Freeze assets                    |
+| `releaseAssets`             | external      | Release frozen assets            |
+| `emergencyWithdraw`         | external      | Emergency fund recovery          |
+| `getRecoveryStatus`         | external view | Current recovery stage           |
+
+### 24.12 MEVProtection
+
+**Path:** `contracts/security/MEVProtection.sol`
+**Inherits:** `AccessControl`, `ReentrancyGuard`, `Pausable`
+
+Commit-reveal scheme for sensitive operations: frontrunning prevention, sandwich attack mitigation, time-locked reveals, and commitment expiry management.
+
+| Function                    | Visibility    | Description                     |
+| --------------------------- | ------------- | ------------------------------- |
+| `commit`                    | external      | Phase 1: submit commitment hash |
+| `reveal`                    | external      | Phase 2: reveal with preimage   |
+| `cancelCommitment`          | external      | Cancel unexpired commitment     |
+| `calculateCommitHash`       | external pure | Compute expected commit hash    |
+| `getCommitmentStatus`       | external view | Query commitment state          |
+| `getPendingCommitments`     | external view | List pending commitments        |
+| `cleanupExpiredCommitments` | external      | Prune expired entries           |
+
+### 24.13 CrossChainMEVShield
+
+**Path:** `contracts/security/CrossChainMEVShield.sol`
+**Inherits:** `AccessControl`, `ReentrancyGuard`, `Pausable`
+
+Source-chain commit-reveal for cross-chain privacy operations (`ICrossChainMEVShield`). 2-phase flow: commit hash → wait `commitmentDelay` blocks → reveal. Per chain-pair configuration for different L2 block times.
+
+| Function               | Visibility    | Description                       |
+| ---------------------- | ------------- | --------------------------------- |
+| `commit`               | external      | Commit cross-chain operation hash |
+| `reveal`               | external      | Reveal after delay                |
+| `expireCommitment`     | external      | Expire stale commitment           |
+| `configureShield`      | external      | Set per-chain-pair delays         |
+| `getCommitment`        | external view | Query commitment details          |
+| `isReadyToReveal`      | external view | Check if reveal window open       |
+| `getEffectivenessRate` | external view | MEV prevention rate metrics       |
+
+### 24.14 CrossChainMessageVerifier
+
+**Path:** `contracts/security/CrossChainMessageVerifier.sol`
+**Inherits:** `AccessControl`, `ReentrancyGuard`, `Pausable`
+
+Multi-oracle N-of-M cross-chain message verification with time-bounded verification, replay protection, dynamic verifier rotation, and challenge periods before execution.
+
+| Function              | Visibility    | Description                |
+| --------------------- | ------------- | -------------------------- |
+| `submitMessage`       | external      | Submit cross-chain message |
+| `confirmMessage`      | external      | Oracle confirms message    |
+| `executeMessage`      | external      | Execute after threshold    |
+| `challengeMessage`    | external      | Challenge message validity |
+| `resolveChallenge`    | external      | Resolve challenge outcome  |
+| `hasReachedThreshold` | external view | Check N-of-M threshold     |
+| `isExecutionReady`    | external view | Ready for execution        |
+| `addVerifier`         | external      | Add oracle verifier        |
+
+### 24.15 FlashLoanGuard
+
+**Path:** `contracts/security/FlashLoanGuard.sol`
+**Inherits:** `AccessControl`, `Pausable`
+
+Multi-layer flash loan attack defense: block-level reentrancy prevention, balance snapshot validation, price oracle cross-reference, velocity checks, and TVL delta limits per block.
+
+| Function                    | Visibility    | Description                                   |
+| --------------------------- | ------------- | --------------------------------------------- |
+| `validateOperation`         | external      | Validate operation against flash loan vectors |
+| `canOperateThisBlock`       | external view | Check block-level operation limit             |
+| `getRemainingOperations`    | external view | Remaining ops this block                      |
+| `whitelistToken`            | external      | Whitelist token for monitoring                |
+| `updateTVLDeltaLimit`       | external      | Set max TVL change per block                  |
+| `registerProtectedContract` | external      | Register contract for guarding                |
+
+### 24.16 GriefingProtection
+
+**Path:** `contracts/security/GriefingProtection.sol`
+**Inherits:** `AccessControl`, `ReentrancyGuard`
+
+Anti-griefing and DoS protection with gas limits for external calls, refund caps, batch size restrictions, failure rate limiting, cost-recovery deposits, and user suspension system.
+
+| Function              | Visibility       | Description                 |
+| --------------------- | ---------------- | --------------------------- |
+| `canPerformOperation` | external view    | Check if user can operate   |
+| `validateOperation`   | external         | Pre-operation validation    |
+| `recordFailure`       | external         | Record operation failure    |
+| `recordSuccess`       | external         | Record operation success    |
+| `deposit`             | external payable | Cost-recovery deposit       |
+| `withdrawDeposit`     | external         | Withdraw deposit            |
+| `requestRefund`       | external         | Request refund for failures |
+| `suspendUser`         | external         | Suspend abusive user        |
+| `unsuspendUser`       | external         | Unsuspend user              |
+
+### 24.17 OptimisticNullifierChallenge
+
+**Path:** `contracts/security/OptimisticNullifierChallenge.sol`
+**Inherits:** `AccessControl`, `ReentrancyGuard`, `Pausable`
+
+Optimistic verification layer for cross-chain nullifier sync. Quarantines nullifiers in PENDING state during challenge period (default 1h) before forwarding to NullifierRegistryV3. Bond-based challenge/slashing (0.1 ETH min bond, 50/50 split).
+
+| Function                  | Visibility       | Description                     |
+| ------------------------- | ---------------- | ------------------------------- |
+| `submitPendingNullifiers` | external         | Submit nullifier batch          |
+| `challengeNullifier`      | external payable | Challenge with bond             |
+| `upholdChallenge`         | external         | Uphold valid challenge          |
+| `dismissChallenge`        | external         | Dismiss invalid challenge       |
+| `finalizeNullifiers`      | external         | Finalize after challenge period |
+| `getBatch`                | external view    | Query batch status              |
+
+### 24.18 OptimisticRelayVerifier
+
+**Path:** `contracts/security/OptimisticRelayVerifier.sol`
+**Inherits:** `AccessControl`, `ReentrancyGuard`, `Pausable`
+
+Optimistic verification with challenge periods for high-value transfers. Bond-based dispute resolution with auto-finalization after timeout.
+
+| Function            | Visibility       | Description                      |
+| ------------------- | ---------------- | -------------------------------- |
+| `submitTransfer`    | external         | Submit transfer for verification |
+| `challengeTransfer` | external payable | Challenge with bond              |
+| `resolveChallenge`  | external         | Resolve challenge                |
+| `finalizeTransfer`  | external         | Finalize after timeout           |
+| `canFinalize`       | external view    | Check finalization readiness     |
+
+### 24.19 ProtocolHealthAggregator
+
+**Path:** `contracts/security/ProtocolHealthAggregator.sol`
+**Inherits:** `AccessControl`, `ReentrancyGuard`, `Pausable`
+
+Unified protocol health monitoring aggregating circuit breaker, relayer health, routing health, and security scorecard signals into a weighted composite score (0–100). Auto-triggers graduated emergency responses (HEALTHY ≥70, WARNING 40–69, CRITICAL <40).
+
+| Function                 | Visibility    | Description                   |
+| ------------------------ | ------------- | ----------------------------- |
+| `registerSubsystem`      | external      | Register health subsystem     |
+| `updateHealth`           | external      | Update subsystem health score |
+| `batchUpdateHealth`      | external      | Batch update health scores    |
+| `registerPausableTarget` | external      | Register auto-pause target    |
+| `guardianEmergencyPause` | external      | Guardian manual pause         |
+| `guardianRecoverPause`   | external      | Guardian manual unpause       |
+| `getProtocolHealth`      | external view | Get composite health score    |
+| `getSubsystemHealth`     | external view | Get subsystem health          |
+| `setAutoPauseEnabled`    | external      | Toggle auto-pause             |
+
+### 24.20 ZKFraudProof
+
+**Path:** `contracts/security/ZKFraudProof.sol`
+**Inherits:** `AccessControl`, `ReentrancyGuard`, `Pausable`
+
+ZK-based fraud proofs for optimistic rollup security. Supports 8 proof types (execution, inclusion, ordering, DA, censorship, double-spend, invalid signature, custom) with 3 dispute windows (standard 7d, expedited 1d with ZK proof, instant with full ZK verification).
+
+| Function               | Visibility    | Description                   |
+| ---------------------- | ------------- | ----------------------------- |
+| `submitBatch`          | external      | Submit batch for verification |
+| `finalizeBatch`        | external      | Finalize after dispute window |
+| `submitFraudProof`     | external      | Submit fraud proof            |
+| `verifyFraudProof`     | external      | Verify fraud proof validity   |
+| `applyFraudProof`      | external      | Apply fraud proof penalty     |
+| `addVerificationKey`   | external      | Register verification key     |
+| `isInDisputePeriod`    | external view | Check dispute window          |
+| `getPendingProofCount` | external view | Pending fraud proofs          |
+| `emergencyWithdraw`    | external      | Emergency fund recovery       |

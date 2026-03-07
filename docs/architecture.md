@@ -388,22 +388,22 @@ Chain A                    Relayer Network                    Chain B
 
 ### Threat Model
 
-| Threat                    | Mitigation                                                     |
-| ------------------------- | -------------------------------------------------------------- |
-| State theft               | ZK proof required for transfers                                |
-| Double-spending           | Nullifier registry with cross-chain sync + syncSequence replay |
-| Replay attacks            | Unique nullifiers per state + syncSequence mapping             |
-| Relayer censorship        | Multiple independent relayers with VRF selection               |
-| Relayer collusion         | Economic slashing, reputation, overpayment refund              |
-| Traffic analysis          | Mixnet routing, decoy traffic, GasNormalizer, fixed-size envelopes   |
-| Front-running             | Commit-reveal schemes                                          |
-| Reentrancy                | ReentrancyGuard on all state-changing functions                |
-| DoS via .transfer()       | Using .call{value:}() for all ETH transfers                    |
-| Access control bypass     | Role-based access with `confirmRoleSeparation()` (3 addresses) |
-| Signature malleability    | ECDSA `s` value enforcement (s < secp256k1n/2)                 |
-| Cross-chain source spoof  | `sourceChainId` validation against active chain set            |
-| Value-based DoS           | `_checkRateLimit(count, value)` with hourly value caps         |
-| Bridge adapter compromise | ICrossChainBridge interface + per-adapter emergency withdrawal |
+| Threat                    | Mitigation                                                         |
+| ------------------------- | ------------------------------------------------------------------ |
+| State theft               | ZK proof required for transfers                                    |
+| Double-spending           | Nullifier registry with cross-chain sync + syncSequence replay     |
+| Replay attacks            | Unique nullifiers per state + syncSequence mapping                 |
+| Relayer censorship        | Multiple independent relayers with VRF selection                   |
+| Relayer collusion         | Economic slashing, reputation, overpayment refund                  |
+| Traffic analysis          | Mixnet routing, decoy traffic, GasNormalizer, fixed-size envelopes |
+| Front-running             | Commit-reveal schemes                                              |
+| Reentrancy                | ReentrancyGuard on all state-changing functions                    |
+| DoS via .transfer()       | Using .call{value:}() for all ETH transfers                        |
+| Access control bypass     | Role-based access with `confirmRoleSeparation()` (3 addresses)     |
+| Signature malleability    | ECDSA `s` value enforcement (s < secp256k1n/2)                     |
+| Cross-chain source spoof  | `sourceChainId` validation against active chain set                |
+| Value-based DoS           | `_checkRateLimit(count, value)` with hourly value caps             |
+| Bridge adapter compromise | ICrossChainBridge interface + per-adapter emergency withdrawal     |
 
 ### Security Hardening (February–March 2026)
 
@@ -470,38 +470,38 @@ Zaseon implements 12 independent metadata reduction layers to minimize informati
 
 ### Contract-Level Protections
 
-| Layer | Component | What It Protects |
-| ----- | --------- | ---------------- |
-| **Gas Normalization** | `GasNormalizer.sol` | Pads gas consumption to fixed ceilings per operation type (deposit, withdraw, transfer, relay) via assembly burn loops. Prevents gas-based transaction type inference. |
-| **Proof Padding** | `ProofEnvelope.sol` | All ZK proofs (Groth16 ~288B, UltraHonk ~457 fields) are padded to a uniform 2048-byte envelope before on-chain submission. Prevents proof-system fingerprinting. |
-| **Message Padding** | `FixedSizeMessageWrapper.sol` | All cross-chain bridge messages are padded to a uniform 4096-byte envelope via LayerZero + Hyperlane adapters. Prevents payload-size correlation. |
-| **Adaptive Batching** | `BatchAccumulator.sol` | Enforces minimum delay floor before batch release regardless of batch size. Injects dummy commitments to maintain minimum anonymity set during low-volume periods. |
-| **Relay Jitter** | `CrossChainPrivacyHub.sol` | Per-user randomized delay (5-30 min, configurable) before transfers become relayable. Uses `keccak256(requestId, sender, prevrandao, timestamp)` for entropy. |
-| **Multi-Relayer Quorum** | `CrossChainPrivacyHub.sol` | HIGH/MAXIMUM tier transfers require 2+ independent relayer confirmations before status transitions. Prevents single-relayer metadata correlation. |
-| **Denomination Enforcement** | `CrossChainLiquidityVault.sol` | Enforces ERC-20 denomination tiers (matching 0.1/1/10/100 ETH equivalent) at the liquidity vault level, preventing non-standard amount leakage. |
-| **Mixnet Enforcement** | `PrivacyTierRouter.sol` + `MixnetNodeRegistry.sol` | MAXIMUM-tier transfers auto-select 2-5 hop onion routing paths via registered mixnet nodes. `isRelayerOnPath()` validation enforced at relay time. |
+| Layer                        | Component                                          | What It Protects                                                                                                                                                       |
+| ---------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Gas Normalization**        | `GasNormalizer.sol`                                | Pads gas consumption to fixed ceilings per operation type (deposit, withdraw, transfer, relay) via assembly burn loops. Prevents gas-based transaction type inference. |
+| **Proof Padding**            | `ProofEnvelope.sol`                                | All ZK proofs (Groth16 ~288B, UltraHonk ~457 fields) are padded to a uniform 2048-byte envelope before on-chain submission. Prevents proof-system fingerprinting.      |
+| **Message Padding**          | `FixedSizeMessageWrapper.sol`                      | All cross-chain bridge messages are padded to a uniform 4096-byte envelope via LayerZero + Hyperlane adapters. Prevents payload-size correlation.                      |
+| **Adaptive Batching**        | `BatchAccumulator.sol`                             | Enforces minimum delay floor before batch release regardless of batch size. Injects dummy commitments to maintain minimum anonymity set during low-volume periods.     |
+| **Relay Jitter**             | `CrossChainPrivacyHub.sol`                         | Per-user randomized delay (5-30 min, configurable) before transfers become relayable. Uses `keccak256(requestId, sender, prevrandao, timestamp)` for entropy.          |
+| **Multi-Relayer Quorum**     | `CrossChainPrivacyHub.sol`                         | HIGH/MAXIMUM tier transfers require 2+ independent relayer confirmations before status transitions. Prevents single-relayer metadata correlation.                      |
+| **Denomination Enforcement** | `CrossChainLiquidityVault.sol`                     | Enforces ERC-20 denomination tiers (matching 0.1/1/10/100 ETH equivalent) at the liquidity vault level, preventing non-standard amount leakage.                        |
+| **Mixnet Enforcement**       | `PrivacyTierRouter.sol` + `MixnetNodeRegistry.sol` | MAXIMUM-tier transfers auto-select 2-5 hop onion routing paths via registered mixnet nodes. `isRelayerOnPath()` validation enforced at relay time.                     |
 
 ### SDK-Level Protections
 
-| Layer | Component | What It Protects |
-| ----- | --------- | ---------------- |
-| **Decoy Traffic** | `DecoyTrafficManager.ts` | Generates valid-looking but empty-commitment transactions at random intervals to obscure real activity patterns. |
-| **Submission Jitter** | `BatchAccumulatorClient.ts` | Applies cryptographic jitter (`crypto.getRandomValues`) to batch submission timing, preventing timing correlation. |
-| **Polling Jitter** | `CrossChainPrivacyOrchestrator.ts` | Randomizes relay status polling interval (5-8s) to prevent observers from correlating polling patterns with users. |
+| Layer                 | Component                          | What It Protects                                                                                                   |
+| --------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| **Decoy Traffic**     | `DecoyTrafficManager.ts`           | Generates valid-looking but empty-commitment transactions at random intervals to obscure real activity patterns.   |
+| **Submission Jitter** | `BatchAccumulatorClient.ts`        | Applies cryptographic jitter (`crypto.getRandomValues`) to batch submission timing, preventing timing correlation. |
+| **Polling Jitter**    | `CrossChainPrivacyOrchestrator.ts` | Randomizes relay status polling interval (5-8s) to prevent observers from correlating polling patterns with users. |
 
 ### Protection Matrix by Privacy Tier
 
-| Protection | BASIC | HIGH | MAXIMUM |
-| ---------- | ----- | ---- | ------- |
-| Gas normalization | ✅ | ✅ | ✅ |
-| Proof padding | ✅ | ✅ | ✅ |
-| Message padding | ✅ | ✅ | ✅ |
-| Adaptive batching | ✅ | ✅ | ✅ |
-| Relay jitter | Optional | ✅ | ✅ |
-| Multi-relayer quorum | ✗ | 2 relayers | 3 relayers |
-| Denomination enforcement | ✗ | ✅ | ✅ |
-| Mixnet routing | ✗ | ✗ | ✅ (2-5 hops) |
-| SDK decoy traffic | Optional | Optional | Recommended |
+| Protection               | BASIC    | HIGH       | MAXIMUM       |
+| ------------------------ | -------- | ---------- | ------------- |
+| Gas normalization        | ✅       | ✅         | ✅            |
+| Proof padding            | ✅       | ✅         | ✅            |
+| Message padding          | ✅       | ✅         | ✅            |
+| Adaptive batching        | ✅       | ✅         | ✅            |
+| Relay jitter             | Optional | ✅         | ✅            |
+| Multi-relayer quorum     | ✗        | 2 relayers | 3 relayers    |
+| Denomination enforcement | ✗        | ✅         | ✅            |
+| Mixnet routing           | ✗        | ✗          | ✅ (2-5 hops) |
+| SDK decoy traffic        | Optional | Optional   | Recommended   |
 
 ---
 
@@ -565,15 +565,15 @@ function registerState(
 
 ### Phase 4: Advanced Cryptography
 
-| Component                       | Status        | Path                                            |
-| ------------------------------- | ------------- | ----------------------------------------------- |
-| **CLSAG Verifier**              | ✅ Production | `contracts/verifiers/RingSignatureVerifier.sol` |
-| **BN254 Library**               | ✅ Production | `contracts/libraries/BN254.sol`                 |
-| **Recursive Proof Aggregation** | Research      | IVC/Nova-style proof folding                    |
-| **Homomorphic Hiding**          | Research      | Research-grade homomorphic operations           |
+| Component                       | Status        | Path                                                                |
+| ------------------------------- | ------------- | ------------------------------------------------------------------- |
+| **CLSAG Verifier**              | ✅ Production | `contracts/verifiers/RingSignatureVerifier.sol`                     |
+| **BN254 Library**               | ✅ Production | `contracts/libraries/BN254.sol`                                     |
+| **Recursive Proof Aggregation** | Research      | IVC/Nova-style proof folding                                        |
+| **Homomorphic Hiding**          | Research      | Research-grade homomorphic operations                               |
 | **Mixnet Routing**              | ✅ Production | `contracts/privacy/MixnetNodeRegistry.sol`, `PrivacyTierRouter.sol` |
 | **Gas Normalization**           | ✅ Production | `contracts/privacy/GasNormalizer.sol`                               |
-| **Side-Channel Defense**        | ✅ Production | GasNormalizer + ProofEnvelope + FixedSizeMessageWrapper              |
+| **Side-Channel Defense**        | ✅ Production | GasNormalizer + ProofEnvelope + FixedSizeMessageWrapper             |
 
 ---
 

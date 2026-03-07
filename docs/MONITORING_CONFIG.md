@@ -604,7 +604,7 @@ events:
       critical: "> 20/day"
 ```
 
-### MultiRelayerQuorum
+### CrossChainPrivacyHub — Multi-Relayer Quorum
 
 ```yaml
 events:
@@ -628,7 +628,7 @@ events:
       critical: "> 0"
 ```
 
-### ERC20DenominationEnforcer
+### CrossChainLiquidityVault — Denomination Enforcement
 
 ```yaml
 events:

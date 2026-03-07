@@ -828,8 +828,8 @@ const client = createZaseonClient({
   // Jitter is applied automatically for ENHANCED and MAXIMUM tiers
 });
 
-// Contract-level: MultiRelayerQuorum requires 2-of-3 relayer agreement
-// for ENHANCED tier, 3-of-5 for MAXIMUM tier
+// Contract-level: CrossChainPrivacyHub requires 2-of-3 relayer agreement
+// for ENHANCED tier, 3-of-5 for MAXIMUM tier (inline multi-relayer quorum)
 ```
 
 ### Denomination Enforcement
@@ -837,26 +837,26 @@ const client = createZaseonClient({
 ERC-20 transfers in MAXIMUM tier are restricted to fixed denominations to prevent amount-based correlation:
 
 ```typescript
-// ERC20DenominationEnforcer.sol restricts deposits to standard amounts:
-// 0.1, 1, 10, 100, 1000 (token units)
+// CrossChainLiquidityVault enforces denomination restrictions:
+// 0.1, 1, 10, 100 ETH (configurable per-token)
 // This applies within CrossChainLiquidityVault for MAXIMUM tier
 ```
 
 ### Protection Summary by Tier
 
-| Protection                    | STANDARD | ENHANCED | MAXIMUM |
-| ----------------------------- | -------- | -------- | ------- |
-| Gas normalization             | Yes      | Yes      | Yes     |
-| Proof envelope padding        | Yes      | Yes      | Yes     |
-| Cross-chain message padding   | No       | Yes      | Yes     |
-| Per-user relay jitter         | No       | Yes      | Yes     |
-| Multi-relayer quorum          | No       | 2-of-3   | 3-of-5  |
-| Denomination enforcement      | No       | No       | Yes     |
-| Mixnet path enforcement       | No       | No       | Yes     |
-| Adaptive batching             | No       | Optional | Yes     |
-| SDK decoy traffic             | No       | Optional | Yes     |
-| SDK submission jitter         | No       | Yes      | Yes     |
-| SDK polling jitter            | No       | Yes      | Yes     |
+| Protection                  | STANDARD | ENHANCED | MAXIMUM |
+| --------------------------- | -------- | -------- | ------- |
+| Gas normalization           | Yes      | Yes      | Yes     |
+| Proof envelope padding      | Yes      | Yes      | Yes     |
+| Cross-chain message padding | No       | Yes      | Yes     |
+| Per-user relay jitter       | No       | Yes      | Yes     |
+| Multi-relayer quorum        | No       | 2-of-3   | 3-of-5  |
+| Denomination enforcement    | No       | No       | Yes     |
+| Mixnet path enforcement     | No       | No       | Yes     |
+| Adaptive batching           | No       | Optional | Yes     |
+| SDK decoy traffic           | No       | Optional | Yes     |
+| SDK submission jitter       | No       | Yes      | Yes     |
+| SDK polling jitter          | No       | Yes      | Yes     |
 
 ---
 

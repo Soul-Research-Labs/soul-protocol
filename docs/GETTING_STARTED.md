@@ -201,16 +201,16 @@ const unlockTx = await client.unlockWithProof({
 
 All privacy operations benefit from a 12-layer metadata leakage reduction system:
 
-| Layer | Contract/Module | Purpose |
-| ----- | --------------- | ------- |
-| Gas normalization | `GasNormalizer` | Pads gas to fixed tiers to prevent fingerprinting |
-| Proof padding | `ProofEnvelope` | Normalizes proof sizes to 4 standard tiers |
-| Message padding | `FixedSizeMessageWrapper` | Pads cross-chain messages to fixed sizes |
-| Multi-relayer quorum | `MultiRelayerQuorum` | Requires relayer agreement to prevent correlation |
-| Relay jitter | `RelayJitterManager` | Per-user timing decorrelation |
-| Denomination enforcement | `ERC20DenominationEnforcer` | Fixed amounts in MAXIMUM tier |
-| Mixnet enforcement | `MixnetNodeRegistry` | 2+ hop onion routing in MAXIMUM tier |
-| Adaptive batching | `BatchAccumulator` | Pools operations to increase anonymity sets |
+| Layer                    | Contract/Module            | Purpose                                           |
+| ------------------------ | -------------------------- | ------------------------------------------------- |
+| Gas normalization        | `GasNormalizer`            | Pads gas to fixed tiers to prevent fingerprinting |
+| Proof padding            | `ProofEnvelope`            | Normalizes proof sizes to 4 standard tiers        |
+| Message padding          | `FixedSizeMessageWrapper`  | Pads cross-chain messages to fixed sizes          |
+| Multi-relayer quorum     | `CrossChainPrivacyHub`     | Requires relayer agreement to prevent correlation |
+| Relay jitter             | `CrossChainPrivacyHub`     | Per-user timing decorrelation                     |
+| Denomination enforcement | `CrossChainLiquidityVault` | Fixed amounts in MAXIMUM tier                     |
+| Mixnet enforcement       | `MixnetNodeRegistry`       | 2+ hop onion routing in MAXIMUM tier              |
+| Adaptive batching        | `BatchAccumulator`         | Pools operations to increase anonymity sets       |
 
 Protections are automatically applied based on the selected privacy tier (STANDARD / ENHANCED / MAXIMUM).
 

@@ -154,9 +154,8 @@ mutate:
     contract: CrossChainEmergencyRelay
   - filename: contracts/crosschain/CrossChainNullifierSync.sol
     contract: CrossChainNullifierSync
-  # NOTE: The following adapters are planned but not yet implemented:
-  # - LayerZeroBridgeAdapter, HyperlaneAdapter, ScrollBridgeAdapter,
-  #   LineaBridgeAdapter, zkSyncBridgeAdapter, PolygonZkEVMBridgeAdapter
+  # NOTE: The following adapter is planned but not yet implemented:
+  #   PolygonZkEVMBridgeAdapter
   - filename: contracts/crosschain/ZaseonL2Messenger.sol
     contract: ZaseonL2Messenger
   - filename: contracts/crosschain/L2ProofRouter.sol

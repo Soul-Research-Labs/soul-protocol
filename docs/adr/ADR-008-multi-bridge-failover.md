@@ -40,7 +40,7 @@ MultiBridgeRouter
 
 ### IBridgeAdapter interface
 
-All 9 bridge adapters implement:
+All 11 bridge adapters implement:
 
 - `bridgeMessage(uint256, address, bytes)`: Send a cross-chain message
 - `estimateFee(uint256, bytes)`: Quote the fee for a message

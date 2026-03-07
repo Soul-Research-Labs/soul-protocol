@@ -76,7 +76,7 @@ Adapters translate between EVM chain IDs and protocol-specific identifiers:
 
 ## Consequences
 
-- All 9 bridge adapters implement `IBridgeAdapter`
+- All 11 bridge adapters implement `IBridgeAdapter`
 - Adapter-specific features (e.g., LayerZero DVN config) accessed via adapter-specific interfaces
 - `MultiBridgeRouter` manages adapter registry and routing configuration
 - Testing: Each adapter has unit tests + an `IBridgeAdapter` compatibility test suite

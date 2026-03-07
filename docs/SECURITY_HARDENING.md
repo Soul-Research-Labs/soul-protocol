@@ -308,12 +308,12 @@ See [SECURITY_AUDIT_REPORT.md](./SECURITY_AUDIT_REPORT.md) for complete details.
 
 ### P5-9 through P5-12: SDK Privacy Protections
 
-| Fix | Module | Description |
-| --- | ------ | ----------- |
-| P5-9 | `DecoyTrafficManager.ts` | Client-side decoy transaction generation at random intervals |
-| P5-10 | `BatchAccumulatorClient.ts` | Cryptographic jitter on batch submission timing |
-| P5-11 | `CrossChainPrivacyOrchestrator.ts` | Randomized polling interval (5-8s) for relay status |
-| P5-12 | `CrossChainPrivacyOrchestrator.ts` | `Math.random()` replaced with `crypto.getRandomValues` |
+| Fix   | Module                             | Description                                                  |
+| ----- | ---------------------------------- | ------------------------------------------------------------ |
+| P5-9  | `DecoyTrafficManager.ts`           | Client-side decoy transaction generation at random intervals |
+| P5-10 | `BatchAccumulatorClient.ts`        | Cryptographic jitter on batch submission timing              |
+| P5-11 | `CrossChainPrivacyOrchestrator.ts` | Randomized polling interval (5-8s) for relay status          |
+| P5-12 | `CrossChainPrivacyOrchestrator.ts` | `Math.random()` replaced with `crypto.getRandomValues`       |
 
 ---
 

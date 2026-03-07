@@ -469,7 +469,7 @@ sequenceDiagram
 
 ### Supported L2 Networks
 
-Arbitrum, Optimism, Base, zkSync Era, Scroll, Linea, and Polygon zkEVM — each with a dedicated bridge adapter in the ZASEON protocol.
+Arbitrum, Optimism, Base, zkSync Era, Scroll, and Linea — each with a dedicated bridge adapter in the ZASEON protocol. Polygon zkEVM support is planned.
 
 ---
 

@@ -46,12 +46,12 @@ This document provides a prioritized, actionable roadmap to address the four key
 
 ```bash
 # Deploy security contracts
-forge script scripts/deploy/DeployBridgeSecurity.s.sol --broadcast
+forge script scripts/deploy/DeploySecurityComponents.s.sol --broadcast
 
 # Contracts to deploy:
 - OptimisticBridgeVerifier
-- BridgeRateLimiterV2 (with anomaly detection)
-- BridgeWatchtowerV2 (enhanced monitoring)
+- RelayRateLimiter (with anomaly detection)
+- RelayWatchtower (enhanced monitoring)
 - BridgeSecurityScorecard
 ```
 
@@ -217,9 +217,9 @@ Bridges (3 major L2s):
 └── BaseBridgeAdapter
 
 Security:
-├── BridgeCircuitBreaker
-├── BridgeRateLimiter
-├── BridgeWatchtower
+├── RelayCircuitBreaker
+├── RelayRateLimiter
+├── RelayWatchtower
 └── ZaseonTimelock
 
 Total: ~15 contracts (vs. 100+)

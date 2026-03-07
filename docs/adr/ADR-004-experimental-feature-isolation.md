@@ -118,9 +118,9 @@ Per the graduation criteria defined in the `ExperimentalFeatureRegistry`:
 Four contracts have completed the full pipeline:
 
 - `HomomorphicHiding`, `AggregateDisclosureAlgebra`, `ComposableRevocationProofs` → `contracts/primitives/`
-- `PolygonZkEVMBridgeAdapter` → `contracts/crosschain/`
+- `ScrollBridgeAdapter`, `LineaBridgeAdapter`, `zkSyncBridgeAdapter` → `contracts/crosschain/`
 
-> **Note:** `ScrollBridgeAdapter`, `LineaBridgeAdapter`, and `zkSyncBridgeAdapter` are on the roadmap but not yet implemented.
+> **Note:** `PolygonZkEVMBridgeAdapter` is on the roadmap but not yet implemented.
 
 ## Consequences
 

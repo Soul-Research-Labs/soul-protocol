@@ -548,14 +548,8 @@ npx hardhat run scripts/deploy-l2-adapters.ts --network arbitrumSepolia
 npx hardhat run scripts/deploy-l2-adapters.ts --network baseSepolia
 npx hardhat run scripts/deploy-l2-adapters.ts --network optimismSepolia
 
-# Deploy new ZK-rollup adapters
-forge script scripts/deploy/DeployZkSyncAdapter.s.sol --rpc-url $SEPOLIA_RPC --broadcast
-forge script scripts/deploy/DeployScrollAdapter.s.sol --rpc-url $SEPOLIA_RPC --broadcast
-forge script scripts/deploy/DeployLineaAdapter.s.sol --rpc-url $SEPOLIA_RPC --broadcast
-
-# Deploy cross-chain messaging adapters
-forge script scripts/deploy/DeployLayerZeroAdapter.s.sol --rpc-url $SEPOLIA_RPC --broadcast
-forge script scripts/deploy/DeployHyperlaneAdapter.s.sol --rpc-url $SEPOLIA_RPC --broadcast
+# Deploy new ZK-rollup and messaging adapters (unified script)
+forge script scripts/deploy/DeployL2Bridges.s.sol --rpc-url $SEPOLIA_RPC --broadcast
 ```
 
 ### Configuration

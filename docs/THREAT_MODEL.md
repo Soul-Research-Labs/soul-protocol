@@ -101,7 +101,7 @@ This document provides a comprehensive threat model for the ZASEON (Zaseon), a c
 - `ZaseonAtomicSwapV2.sol`
 - `ConfidentialStateContainerV3.sol`
 - `ZaseonUpgradeTimelock.sol`
-- `BridgeWatchtower.sol`
+- `RelayWatchtower.sol`
 - `ZaseonProtocolHub.sol`
 - `ZaseonL2Messenger.sol`
 
@@ -482,21 +482,21 @@ t=1: Before epoch E propagates to Chain B, attempt to use N on Chain B
 
 ## 5. Risk Matrix
 
-| Threat                | Likelihood | Impact   | Risk Score | Status                  |
-| --------------------- | ---------- | -------- | ---------- | ----------------------- |
-| Reentrancy            | Low        | High     | Medium     | ✅ Mitigated            |
-| Proof Forgery         | Very Low   | Critical | Medium     | ✅ Mitigated            |
-| Access Control Bypass | Low        | Critical | High       | ✅ Mitigated            |
-| Front-Running         | High       | Medium   | High       | ⚠️ Partially Mitigated  |
-| Bridge Exploitation   | Medium     | Critical | High       | ✅ Mitigated            |
-| Key Compromise        | Medium     | Critical | Critical   | ✅ Mitigated            |
-| Griefing/DoS          | High       | Low      | Medium     | ✅ Mitigated            |
+| Threat                | Likelihood | Impact   | Risk Score | Status                     |
+| --------------------- | ---------- | -------- | ---------- | -------------------------- |
+| Reentrancy            | Low        | High     | Medium     | ✅ Mitigated               |
+| Proof Forgery         | Very Low   | Critical | Medium     | ✅ Mitigated               |
+| Access Control Bypass | Low        | Critical | High       | ✅ Mitigated               |
+| Front-Running         | High       | Medium   | High       | ⚠️ Partially Mitigated     |
+| Bridge Exploitation   | Medium     | Critical | High       | ✅ Mitigated               |
+| Key Compromise        | Medium     | Critical | Critical   | ✅ Mitigated               |
+| Griefing/DoS          | High       | Low      | Medium     | ✅ Mitigated               |
 | Timing Correlation    | High       | Medium   | High       | ✅ Substantially Mitigated |
 | Liquidity Correlation | Medium     | Medium   | Medium     | ✅ Substantially Mitigated |
 | Relayer Metadata      | High       | Medium   | High       | ✅ Substantially Mitigated |
-| On-Chain Visibility   | High       | Low      | Medium     | ⚠️ Inherent Limitation  |
-| Nullifier Sync Window | Low        | Critical | High       | ⚠️ Partially Mitigated  |
-| Quantum Attack        | Low        | Critical | Medium     | 🔄 PQC Migration Active |
+| On-Chain Visibility   | High       | Low      | Medium     | ⚠️ Inherent Limitation     |
+| Nullifier Sync Window | Low        | Critical | High       | ⚠️ Partially Mitigated     |
+| Quantum Attack        | Low        | Critical | Medium     | 🔄 PQC Migration Active    |
 
 ---
 

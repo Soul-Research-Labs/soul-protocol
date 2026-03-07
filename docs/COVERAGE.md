@@ -71,12 +71,12 @@ enough to avoid stack-too-deep errors. CI runs these in parallel via matrix stra
 
 ### Security Contracts (Target: 90%)
 
-| Contract               | Fuzz Runs | Attack Tests                                     | Status    |
-| ---------------------- | --------- | ------------------------------------------------ | --------- |
-| `SecurityModule`       | 10,000    | ✅                                               | 🟢 Tested |
-| `BridgeCircuitBreaker` | 10,000    | ✅                                               | 🟢 Tested |
-| `FlashLoanGuard`       | 10,000    | ✅                                               | 🟢 Tested |
-| `BatchAccumulator`     | 10,000    | ✅ (`test/attacks/BatchAccumulatorAttack.t.sol`) | 🟢 Tested |
+| Contract              | Fuzz Runs | Attack Tests                                     | Status    |
+| --------------------- | --------- | ------------------------------------------------ | --------- |
+| `SecurityModule`      | 10,000    | ✅                                               | 🟢 Tested |
+| `RelayCircuitBreaker` | 10,000    | ✅                                               | 🟢 Tested |
+| `FlashLoanGuard`      | 10,000    | ✅                                               | 🟢 Tested |
+| `BatchAccumulator`    | 10,000    | ✅ (`test/attacks/BatchAccumulatorAttack.t.sol`) | 🟢 Tested |
 
 ### Bridge Adapters (Target: 85%)
 

@@ -61,7 +61,7 @@
 - [x] Historical Merkle root eviction on ring buffer overwrite
 - [x] MultiBridgeRouter ETH forwarding and emergency withdrawal
 - [x] NullifierRegistryV3 source Merkle root validation
-- [x] All 9 bridge adapters have ERC20 emergency withdrawal
+- [x] All 11 bridge adapters have ERC20 emergency withdrawal
 
 #### 🔄 Pending Verification
 

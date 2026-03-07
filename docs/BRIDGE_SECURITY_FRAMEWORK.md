@@ -241,7 +241,7 @@ contract IndependentBridgeVerifier {
 **Limit damage** from bridge exploits.
 
 ```solidity
-// contracts/security/BridgeRateLimiter.sol (Enhanced)
+// contracts/security/RelayRateLimiter.sol (Enhanced)
 contract BridgeRateLimiterV2 {
     struct RateLimit {
         uint256 maxPerTransaction;
@@ -373,7 +373,7 @@ contract BridgeSecurityBonds {
 **Real-time monitoring** with automated response.
 
 ```solidity
-// contracts/security/BridgeWatchtowerV2.sol (Enhanced)
+// contracts/security/RelayWatchtower.sol (Enhanced)
 contract BridgeWatchtowerV2 {
     struct Alert {
         AlertType alertType;
@@ -648,7 +648,7 @@ The following bridge security enhancements were implemented in Session 8:
 
 ### Bridge Adapter Enhancements
 
-- **ERC20 Emergency Recovery (S8-20):** All 7 bridge adapters (Starknet, Mantle, Blast, Taiko, Mode, MantaPacific, PolygonZkEVM) now include `emergencyWithdrawERC20()` for recovering accidentally sent ERC20 tokens.
+- **ERC20 Emergency Recovery (S8-20):** Bridge adapters with custody of funds (e.g., `AztecBridgeAdapter`, `CrossChainLiquidityVault`, `MultiBridgeRouter`) include `emergencyWithdrawERC20()` for recovering accidentally sent ERC20 tokens.
 - Both `emergencyWithdrawETH()` and `emergencyWithdrawERC20()` are protected by `onlyRole(DEFAULT_ADMIN_ROLE)` and `nonReentrant`.
 
 ### NullifierRegistryV3
@@ -659,16 +659,16 @@ The following bridge security enhancements were implemented in Session 8:
 
 Bridge operations inherently expose metadata (message sizes, gas patterns, timing, amounts) that can be correlated across chains. The following contract-level protections are integrated into the bridge security framework:
 
-| Protection | Contract | Effect |
-| --- | --- | --- |
-| **Gas normalization** | `GasNormalizer.sol` | Pads gas to fixed tiers (100k–5M), preventing gas-based fingerprinting across bridge adapters |
-| **Message padding** | `FixedSizeMessageWrapper.sol` | Pads cross-chain payloads to 3 fixed sizes (1024, 4096, 16384 bytes) |
-| **Proof padding** | `ProofEnvelope.sol` | Normalizes proof sizes to 4 tiers (512, 1024, 2048, 4096 bytes) |
-| **Multi-relayer quorum** | `MultiRelayerQuorum.sol` | Prevents single-relayer correlation (2-of-3 for ENHANCED, 3-of-5 for MAXIMUM) |
-| **Relay jitter** | `RelayJitterManager.sol` | Per-user timing decorrelation with VRF-seeded random delays |
-| **Denomination enforcement** | `ERC20DenominationEnforcer.sol` | Restricts amounts to fixed denominations in MAXIMUM tier |
-| **Mixnet enforcement** | `MixnetNodeRegistry.sol` | Requires 2+ hop onion routing for MAXIMUM tier bridge operations |
-| **Adaptive batching** | `BatchAccumulator.sol` | Pools operations before execution to increase anonymity sets |
+| Protection                   | Contract                                | Effect                                                                                        |
+| ---------------------------- | --------------------------------------- | --------------------------------------------------------------------------------------------- |
+| **Gas normalization**        | `GasNormalizer.sol`                     | Pads gas to fixed tiers (100k–5M), preventing gas-based fingerprinting across bridge adapters |
+| **Message padding**          | `FixedSizeMessageWrapper.sol`           | Pads cross-chain payloads to 3 fixed sizes (1024, 4096, 16384 bytes)                          |
+| **Proof padding**            | `ProofEnvelope.sol`                     | Normalizes proof sizes to 4 tiers (512, 1024, 2048, 4096 bytes)                               |
+| **Multi-relayer quorum**     | `CrossChainPrivacyHub.sol` (inline)     | Prevents single-relayer correlation (2-of-3 for ENHANCED, 3-of-5 for MAXIMUM)                 |
+| **Relay jitter**             | `CrossChainPrivacyHub.sol` (inline)     | Per-user timing decorrelation with VRF-seeded random delays                                   |
+| **Denomination enforcement** | `CrossChainLiquidityVault.sol` (inline) | Restricts amounts to fixed denominations in MAXIMUM tier                                      |
+| **Mixnet enforcement**       | `MixnetNodeRegistry.sol`                | Requires 2+ hop onion routing for MAXIMUM tier bridge operations                              |
+| **Adaptive batching**        | `BatchAccumulator.sol`                  | Pools operations before execution to increase anonymity sets                                  |
 
 SDK-level protections (decoy traffic, submission jitter, polling jitter) provide additional metadata cover for bridge operations. See [Privacy Middleware](./PRIVACY_MIDDLEWARE.md) for full details.
 
