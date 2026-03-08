@@ -597,7 +597,9 @@ contract CrossDomainNullifierAlgebraTest is Test {
     }
 
     function test_SetDerivationVerifier_RevertZeroAddress() public {
-        vm.expectRevert("Zero verifier address");
+        vm.expectRevert(
+            CrossDomainNullifierAlgebra.ZeroVerifierAddress.selector
+        );
         cdna.setDerivationVerifier(address(0));
     }
 

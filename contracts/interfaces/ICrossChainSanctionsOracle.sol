@@ -53,6 +53,9 @@ interface ICrossChainSanctionsOracle {
     error ProviderNotRegistered();
     error InvalidWeight();
     error InvalidThreshold();
+    error ProviderNotActive();
+    error AlreadyFlaggedByProvider(address provider, address flagged);
+    error ExpiryTooShort(uint256 provided, uint256 minimum);
 
     /*//////////////////////////////////////////////////////////////
                        SCREENING FUNCTIONS

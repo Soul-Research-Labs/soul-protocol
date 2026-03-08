@@ -182,6 +182,10 @@ interface IUniversalChainAdapter {
     error ZeroAddress();
     error InvalidStateCommitment();
     error ProofExpired(uint256 timestamp, uint256 maxAge);
+    error PayloadTooLarge(uint256 size, uint256 maxSize);
+    error ProofVerifierNotConfigured();
+    error ProofTranslatorNotConfigured();
+    error EmptyAdapter();
 
     /*//////////////////////////////////////////////////////////////
                           CORE FUNCTIONS

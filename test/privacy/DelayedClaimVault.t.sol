@@ -494,13 +494,23 @@ contract DelayedClaimVaultTest is Test {
 
     function test_SetClaimWindowDuration_TooShort() public {
         vm.prank(admin);
-        vm.expectRevert("Invalid duration");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                DelayedClaimVault.InvalidClaimWindowDuration.selector,
+                12 hours
+            )
+        );
         vault.setClaimWindowDuration(12 hours);
     }
 
     function test_SetClaimWindowDuration_TooLong() public {
         vm.prank(admin);
-        vm.expectRevert("Invalid duration");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                DelayedClaimVault.InvalidClaimWindowDuration.selector,
+                31 days
+            )
+        );
         vault.setClaimWindowDuration(31 days);
     }
 

@@ -143,6 +143,7 @@ contract NullifierRegistryV3Upgradeable is
 
     // Other errors inherited from INullifierRegistryV3
     error ZeroAddress();
+    error ChainIdExceedsUint64();
 
     /*//////////////////////////////////////////////////////////////
                              INITIALIZER
@@ -167,7 +168,7 @@ contract NullifierRegistryV3Upgradeable is
         __ReentrancyGuard_init();
 
         chainId = block.chainid;
-        require(block.chainid <= type(uint64).max, "Chain ID exceeds uint64");
+        if (block.chainid > type(uint64).max) revert ChainIdExceedsUint64();
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(REGISTRAR_ROLE, admin);

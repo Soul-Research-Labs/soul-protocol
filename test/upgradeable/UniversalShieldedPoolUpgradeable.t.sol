@@ -587,7 +587,7 @@ contract UniversalShieldedPoolUpgradeableTest is Test {
 
     function test_confirmProductionReady_testModeReverts() public {
         vm.prank(admin);
-        vm.expectRevert("Test mode still enabled");
+        vm.expectRevert(abi.encodeWithSignature("TestModeStillEnabled()"));
         pool.confirmProductionReady();
     }
 

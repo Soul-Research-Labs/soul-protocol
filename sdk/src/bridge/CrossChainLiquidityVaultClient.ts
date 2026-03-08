@@ -282,6 +282,67 @@ const LIQUIDITY_VAULT_ABI = [
       { name: "amount", type: "uint256", indexed: false },
     ],
   },
+  // ── Settlement Swap functions ──
+  {
+    name: "executeSettlementWithSwap",
+    type: "function",
+    stateMutability: "payable",
+    inputs: [
+      { name: "batchId", type: "bytes32" },
+      { name: "targetToken", type: "address" },
+      { name: "minAmountOut", type: "uint256" },
+      { name: "deadline", type: "uint256" },
+    ],
+    outputs: [],
+  },
+  {
+    name: "receiveSettlementWithSwap",
+    type: "function",
+    stateMutability: "payable",
+    inputs: [
+      { name: "remoteChainId", type: "uint256" },
+      { name: "tokenIn", type: "address" },
+      { name: "amount", type: "uint256" },
+      { name: "targetToken", type: "address" },
+      { name: "minAmountOut", type: "uint256" },
+      { name: "deadline", type: "uint256" },
+    ],
+    outputs: [],
+  },
+  {
+    name: "setRebalanceAdapter",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "_adapter", type: "address" }],
+    outputs: [],
+  },
+  {
+    name: "rebalanceAdapter",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "address" }],
+  },
+  // ── Settlement Swap events ──
+  {
+    name: "RebalanceAdapterUpdated",
+    type: "event",
+    inputs: [
+      { name: "oldAdapter", type: "address", indexed: true },
+      { name: "newAdapter", type: "address", indexed: true },
+    ],
+  },
+  {
+    name: "SettlementSwapExecuted",
+    type: "event",
+    inputs: [
+      { name: "batchId", type: "bytes32", indexed: true },
+      { name: "tokenIn", type: "address", indexed: false },
+      { name: "targetToken", type: "address", indexed: false },
+      { name: "amountIn", type: "uint256", indexed: false },
+      { name: "amountOut", type: "uint256", indexed: false },
+    ],
+  },
 ] as const;
 
 // ─── Types ────────────────────────────────────────────────────────────
@@ -700,6 +761,89 @@ export class CrossChainLiquidityVaultClient {
         }
       },
     });
+  }
+
+  // ── Settlement Swap Operations ─────────────────────────────────
+
+  /**
+   * Execute a settlement batch with a token swap via the rebalance adapter.
+   * Swaps the outflow token into targetToken before sending to settler.
+   * @param batchId Settlement batch ID
+   * @param targetToken Token to swap into
+   * @param minAmountOut Minimum acceptable output (slippage protection)
+   * @param deadline Unix timestamp after which the swap reverts
+   * @param ethValue ETH value to send (for ETH outflow settlements)
+   * @returns Transaction hash
+   */
+  async executeSettlementWithSwap(
+    batchId: Hex,
+    targetToken: Address,
+    minAmountOut: bigint,
+    deadline: bigint,
+    ethValue?: bigint,
+  ): Promise<Hex> {
+    this.requireWallet();
+    const hash = await this.walletClient!.writeContract({
+      address: this.address,
+      abi: LIQUIDITY_VAULT_ABI,
+      functionName: "executeSettlementWithSwap",
+      args: [batchId, targetToken, minAmountOut, deadline],
+      value: ethValue ?? 0n,
+      chain: null,
+    } as any);
+    return hash;
+  }
+
+  /**
+   * Receive a settlement from a remote chain with a token swap.
+   * Swaps the inbound token into the target token for vault inventory.
+   * @param remoteChainId Remote chain that sent the settlement
+   * @param tokenIn Token being received
+   * @param amount Amount received
+   * @param targetToken Token to swap into for vault inventory
+   * @param minAmountOut Minimum acceptable output
+   * @param deadline Swap deadline
+   * @param ethValue ETH value to send (for ETH inflow settlements)
+   * @returns Transaction hash
+   */
+  async receiveSettlementWithSwap(
+    remoteChainId: bigint,
+    tokenIn: Address,
+    amount: bigint,
+    targetToken: Address,
+    minAmountOut: bigint,
+    deadline: bigint,
+    ethValue?: bigint,
+  ): Promise<Hex> {
+    this.requireWallet();
+    const hash = await this.walletClient!.writeContract({
+      address: this.address,
+      abi: LIQUIDITY_VAULT_ABI,
+      functionName: "receiveSettlementWithSwap",
+      args: [
+        remoteChainId,
+        tokenIn,
+        amount,
+        targetToken,
+        minAmountOut,
+        deadline,
+      ],
+      value: ethValue ?? 0n,
+      chain: null,
+    } as any);
+    return hash;
+  }
+
+  /**
+   * Get the current rebalance swap adapter address
+   * @returns Adapter address (zero address if not set)
+   */
+  async getRebalanceAdapter(): Promise<Address> {
+    return (await this.publicClient.readContract({
+      address: this.address,
+      abi: LIQUIDITY_VAULT_ABI,
+      functionName: "rebalanceAdapter",
+    })) as Address;
   }
 
   // ── Multi-chain Aggregation ──────────────────────────────────────

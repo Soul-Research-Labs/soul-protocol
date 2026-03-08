@@ -17,41 +17,41 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
  * @notice I ZASEON Hub Upgradeable interface
  */
 interface IZaseonProtocolHubUpgradeable {
-        /**
+    /**
      * @notice Shielded pool
      * @return The result value
      */
-function shieldedPool() external view returns (address);
+    function shieldedPool() external view returns (address);
 
-        /**
+    /**
      * @notice Cross chain privacy hub
      * @return The result value
      */
-function crossChainPrivacyHub() external view returns (address);
+    function crossChainPrivacyHub() external view returns (address);
 
-        /**
+    /**
      * @notice Stealth address registry
      * @return The result value
      */
-function stealthAddressRegistry() external view returns (address);
+    function stealthAddressRegistry() external view returns (address);
 
-        /**
+    /**
      * @notice Nullifier manager
      * @return The result value
      */
-function nullifierManager() external view returns (address);
+    function nullifierManager() external view returns (address);
 
-        /**
+    /**
      * @notice Compliance oracle
      * @return The result value
      */
-function complianceOracle() external view returns (address);
+    function complianceOracle() external view returns (address);
 
-        /**
+    /**
      * @notice Proof translator
      * @return The result value
      */
-function proofTranslator() external view returns (address);
+    function proofTranslator() external view returns (address);
 }
 
 /**
@@ -233,6 +233,8 @@ contract PrivacyRouterUpgradeable is
     error ZeroAmount();
     error OperationFailed(string reason);
     error InvalidParams();
+    error AssetLookupFailed(bytes32 assetId);
+    error NotAContract(address implementation);
 
     /*//////////////////////////////////////////////////////////////
                              INITIALIZER
@@ -244,7 +246,7 @@ contract PrivacyRouterUpgradeable is
     }
 
     /// @notice Initialize the upgradeable privacy router
-        /**
+    /**
      * @notice Initializes the operation
      * @param _admin The _admin bound
      * @param _shieldedPool The _shielded pool
@@ -254,7 +256,7 @@ contract PrivacyRouterUpgradeable is
      * @param _compliance The _compliance
      * @param _proofTranslator The _proof translator
      */
-function initialize(
+    function initialize(
         address _admin,
         address _shieldedPool,
         address _crossChainHub,
@@ -296,12 +298,12 @@ function initialize(
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Deposit native ETH into the shielded pool
-        /**
+    /**
      * @notice Deposits e t h
      * @param commitment The cryptographic commitment
      * @return operationId The operation id
      */
-function depositETH(
+    function depositETH(
         bytes32 commitment
     )
         external
@@ -327,14 +329,14 @@ function depositETH(
     }
 
     /// @notice Deposit ERC20 tokens — user approves THIS router, router handles pool approval
-        /**
+    /**
      * @notice Deposits e r c20
      * @param assetId The assetId identifier
      * @param amount The amount to process
      * @param commitment The cryptographic commitment
      * @return operationId The operation id
      */
-function depositERC20(
+    function depositERC20(
         bytes32 assetId,
         uint256 amount,
         bytes32 commitment
@@ -377,12 +379,12 @@ function depositERC20(
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Withdraw from the shielded pool with a ZK proof
-        /**
+    /**
      * @notice Withdraws the operation
      * @param params The params
      * @return operationId The operation id
      */
-function withdraw(
+    function withdraw(
         WithdrawParams calldata params
     ) external nonReentrant whenNotPaused returns (bytes32 operationId) {
         _requireComponent(shieldedPool, "shieldedPool");
@@ -419,12 +421,12 @@ function withdraw(
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Initiate a private cross-chain transfer via the Privacy Hub
-        /**
+    /**
      * @notice Initiates private transfer
      * @param params The params
      * @return operationId The operation id
      */
-function initiatePrivateTransfer(
+    function initiatePrivateTransfer(
         CrossChainTransferParams calldata params
     )
         external
@@ -471,14 +473,14 @@ function initiatePrivateTransfer(
                        STEALTH ADDRESS OPERATIONS
     //////////////////////////////////////////////////////////////*/
 
-        /**
+    /**
      * @notice Registers stealth meta address
      * @param spendingPubKey The spending pub key
      * @param viewingPubKey The viewing pub key
      * @param curveType The curve type
      * @param schemeId The schemeId identifier
      */
-function registerStealthMetaAddress(
+    function registerStealthMetaAddress(
         bytes calldata spendingPubKey,
         bytes calldata viewingPubKey,
         uint8 curveType,
@@ -498,7 +500,7 @@ function registerStealthMetaAddress(
         );
     }
 
-        /**
+    /**
      * @notice Derive stealth address
      * @param recipient The recipient address
      * @param ephemeralPubKey The ephemeral pub key
@@ -506,7 +508,7 @@ function registerStealthMetaAddress(
      * @return stealthAddress The stealth address
      * @return viewTag The view tag
      */
-function deriveStealthAddress(
+    function deriveStealthAddress(
         address recipient,
         bytes calldata ephemeralPubKey,
         bytes32 sharedSecretHash
@@ -528,12 +530,12 @@ function deriveStealthAddress(
                          QUERY FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-        /**
+    /**
      * @notice Checks if nullifier spent
      * @param nullifier The nullifier hash
      * @return The result value
      */
-function isNullifierSpent(bytes32 nullifier) external view returns (bool) {
+    function isNullifierSpent(bytes32 nullifier) external view returns (bool) {
         if (nullifierManager == address(0)) return false;
         (bool success, bytes memory result) = nullifierManager.staticcall(
             abi.encodeWithSignature("isNullifierSpent(bytes32)", nullifier)
@@ -542,12 +544,12 @@ function isNullifierSpent(bytes32 nullifier) external view returns (bool) {
         return abi.decode(result, (bool));
     }
 
-        /**
+    /**
      * @notice Checks compliance
      * @param user The user
      * @return passes The passes
      */
-function checkCompliance(address user) external view returns (bool passes) {
+    function checkCompliance(address user) external view returns (bool passes) {
         if (!complianceEnabled || compliance == address(0)) return true;
         (bool success, bytes memory result) = compliance.staticcall(
             abi.encodeWithSignature("isKYCValid(address)", user)
@@ -556,23 +558,23 @@ function checkCompliance(address user) external view returns (bool passes) {
         passes = abi.decode(result, (bool));
     }
 
-        /**
+    /**
      * @notice Returns the operation count
      * @param opType The op type
      * @return The result value
      */
-function getOperationCount(
+    function getOperationCount(
         OperationType opType
     ) external view returns (uint256) {
         return operationCounts[opType];
     }
 
-        /**
+    /**
      * @notice Returns the receipt
      * @param operationId The operationId identifier
      * @return The result value
      */
-function getReceipt(
+    function getReceipt(
         bytes32 operationId
     ) external view returns (OperationReceipt memory) {
         return receipts[operationId];
@@ -582,12 +584,12 @@ function getReceipt(
                           ADMIN FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-        /**
+    /**
      * @notice Sets the component
      * @param name The name
      * @param addr The target address
      */
-function setComponent(
+    function setComponent(
         string calldata name,
         address addr
     ) external onlyRole(OPERATOR_ROLE) {
@@ -606,11 +608,11 @@ function setComponent(
     }
 
     /// @notice Sync all component addresses from ZaseonProtocolHub
-        /**
+    /**
      * @notice Sync from hub
      * @param hub The hub
      */
-function syncFromHub(address hub) external onlyRole(OPERATOR_ROLE) {
+    function syncFromHub(address hub) external onlyRole(OPERATOR_ROLE) {
         if (hub == address(0)) revert ZeroAddress();
         IZaseonProtocolHubUpgradeable h = IZaseonProtocolHubUpgradeable(hub);
 
@@ -632,33 +634,33 @@ function syncFromHub(address hub) external onlyRole(OPERATOR_ROLE) {
         emit SyncedFromHub(hub);
     }
 
-        /**
+    /**
      * @notice Sets the compliance enabled
      * @param enabled Whether the feature is enabled
      */
-function setComplianceEnabled(
+    function setComplianceEnabled(
         bool enabled
     ) external onlyRole(OPERATOR_ROLE) {
         complianceEnabled = enabled;
         emit ComplianceToggled(enabled);
     }
 
-        /**
+    /**
      * @notice Sets the minimum k y c tier
      * @param tier The tier
      */
-function setMinimumKYCTier(uint8 tier) external onlyRole(OPERATOR_ROLE) {
+    function setMinimumKYCTier(uint8 tier) external onlyRole(OPERATOR_ROLE) {
         uint8 oldTier = minimumKYCTier;
         minimumKYCTier = tier;
         emit MinimumKYCTierUpdated(oldTier, tier);
     }
 
     /// @notice Withdraw ETH accidentally sent to this contract
-        /**
+    /**
      * @notice Withdraws e t h
      * @param to The destination address
      */
-function withdrawETH(
+    function withdrawETH(
         address payable to
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (to == address(0)) revert ZeroAddress();
@@ -669,17 +671,17 @@ function withdrawETH(
         emit ETHWithdrawn(to, balance);
     }
 
-        /**
+    /**
      * @notice Pauses the operation
- */
-function pause() external onlyRole(EMERGENCY_ROLE) {
+     */
+    function pause() external onlyRole(EMERGENCY_ROLE) {
         _pause();
     }
 
-        /**
+    /**
      * @notice Unpauses the operation
- */
-function unpause() external onlyRole(EMERGENCY_ROLE) {
+     */
+    function unpause() external onlyRole(EMERGENCY_ROLE) {
         _unpause();
     }
 
@@ -702,17 +704,15 @@ function unpause() external onlyRole(EMERGENCY_ROLE) {
         (bool readSuccess, bytes memory assetData) = shieldedPool.staticcall(
             abi.encodeWithSignature("assets(bytes32)", assetId)
         );
-        require(
-            readSuccess && assetData.length >= 160,
-            "PrivacyRouter: asset lookup failed"
-        );
+        if (!readSuccess || assetData.length < 160)
+            revert AssetLookupFailed(assetId);
 
         // AssetConfig: (address tokenAddress, bytes32 assetId, uint256 totalDeposited, uint256 totalWithdrawn, bool active)
         (tokenAddress, , , , ) = abi.decode(
             assetData,
             (address, bytes32, uint256, uint256, bool)
         );
-        require(tokenAddress != address(0), "PrivacyRouter: invalid token");
+        if (tokenAddress == address(0)) revert ZeroAddress();
     }
 
     function _recordReceipt(
@@ -774,14 +774,9 @@ function unpause() external onlyRole(EMERGENCY_ROLE) {
     function _authorizeUpgrade(
         address newImplementation
     ) internal override onlyRole(UPGRADER_ROLE) {
-        require(
-            newImplementation != address(0),
-            "PrivacyRouter: zero implementation"
-        );
-        require(
-            newImplementation.code.length > 0,
-            "PrivacyRouter: implementation not a contract"
-        );
+        if (newImplementation == address(0)) revert ZeroAddress();
+        if (newImplementation.code.length == 0)
+            revert NotAContract(newImplementation);
         uint256 oldVersion = contractVersion;
         contractVersion = oldVersion + 1;
         emit ContractUpgraded(oldVersion, contractVersion);

@@ -108,6 +108,8 @@ contract PrivateRelayCommitReveal is AccessControl, ReentrancyGuard {
     error AlreadyRevealed(bytes32 commitId);
     error NotExpired(bytes32 commitId);
     error NotCommitter(address caller, address committer);
+    error RelayExecutionFailed();
+    error RefundFailed();
 
     // =========================================================================
     // CONSTRUCTOR
@@ -213,7 +215,7 @@ contract PrivateRelayCommitReveal is AccessControl, ReentrancyGuard {
                 gasLimit
             )
         );
-        require(success, "Relay execution failed");
+        if (!success) revert RelayExecutionFailed();
 
         emit RelayRevealed(commitId, msg.sender, target, gasLimit);
     }
@@ -242,7 +244,7 @@ contract PrivateRelayCommitReveal is AccessControl, ReentrancyGuard {
         uint256 refund = c.depositedFee;
         if (refund > 0) {
             (bool sent, ) = c.sender.call{value: refund}("");
-            require(sent, "Refund failed");
+            if (!sent) revert RefundFailed();
         }
 
         emit CommitmentExpired(commitId, c.sender, refund);

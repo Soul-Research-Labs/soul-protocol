@@ -72,6 +72,8 @@ contract StealthAddressRegistry is
     ReentrancyGuardUpgradeable,
     IStealthAddressRegistry
 {
+    error ETHTransferFailed();
+
     // =========================================================================
     // ROLES (Pre-computed for gas efficiency)
     // =========================================================================
@@ -874,7 +876,7 @@ contract StealthAddressRegistry is
         if (transferAmount > balance) revert InsufficientFee();
 
         (bool success, ) = recipient.call{value: transferAmount}("");
-        require(success, "ETH transfer failed");
+        if (!success) revert ETHTransferFailed();
     }
 
     // =========================================================================

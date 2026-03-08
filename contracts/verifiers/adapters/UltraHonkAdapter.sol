@@ -9,13 +9,13 @@ import {IProofVerifier} from "../../interfaces/IProofVerifier.sol";
  * @dev bb write_solidity_verifier generates contracts with this signature
  */
 interface IUltraHonkVerifier {
-        /**
+    /**
      * @notice Verifys the operation
      * @param _proof The _proof
      * @param _publicInputs The _public inputs
      * @return The result value
      */
-function verify(
+    function verify(
         bytes calldata _proof,
         bytes32[] calldata _publicInputs
     ) external view returns (bool);
@@ -55,6 +55,7 @@ contract UltraHonkAdapter is IProofVerifier {
 
     error VerifierNotSet();
     error InvalidPublicInputCount(uint256 expected, uint256 actual);
+    error ZeroVerifierAddress();
 
     /**
      * @param _verifier Address of the bb-generated UltraHonk verifier
@@ -66,7 +67,7 @@ contract UltraHonkAdapter is IProofVerifier {
         uint256 _publicInputCount,
         bytes32 _circuitId
     ) {
-        require(_verifier != address(0), "Zero verifier address");
+        if (_verifier == address(0)) revert ZeroVerifierAddress();
         honkVerifier = IUltraHonkVerifier(_verifier);
         publicInputCount = _publicInputCount;
         circuitId = _circuitId;
@@ -74,13 +75,13 @@ contract UltraHonkAdapter is IProofVerifier {
     }
 
     /// @inheritdoc IProofVerifier
-        /**
+    /**
      * @notice Verifys the operation
      * @param proof The ZK proof data
      * @param publicInputs The public inputs
      * @return success The success
      */
-function verify(
+    function verify(
         bytes calldata proof,
         uint256[] calldata publicInputs
     ) external view override returns (bool success) {
@@ -104,13 +105,13 @@ function verify(
     }
 
     /// @inheritdoc IProofVerifier
-        /**
+    /**
      * @notice Verifys proof
      * @param proof The ZK proof data
      * @param publicInputs The public inputs
      * @return success The success
      */
-function verifyProof(
+    function verifyProof(
         bytes calldata proof,
         bytes calldata publicInputs
     ) external view override returns (bool success) {
@@ -132,37 +133,38 @@ function verifyProof(
     }
 
     /// @inheritdoc IProofVerifier
-        /**
+    /**
      * @notice Verifys single
      * @param proof The ZK proof data
      * @param publicInput The public input
      * @return success The success
      */
-function verifySingle(
+    function verifySingle(
         bytes calldata proof,
         uint256 publicInput
     ) external view override returns (bool success) {
-        require(publicInputCount == 1, "Circuit expects multiple inputs");
+        if (publicInputCount != 1)
+            revert InvalidPublicInputCount(1, publicInputCount);
         bytes32[] memory honkInputs = new bytes32[](1);
         honkInputs[0] = bytes32(publicInput);
         return honkVerifier.verify(proof, honkInputs);
     }
 
     /// @inheritdoc IProofVerifier
-        /**
+    /**
      * @notice Returns the public input count
      * @return The result value
      */
-function getPublicInputCount() external view override returns (uint256) {
+    function getPublicInputCount() external view override returns (uint256) {
         return publicInputCount;
     }
 
     /// @inheritdoc IProofVerifier
-        /**
+    /**
      * @notice Checks if ready
      * @return The result value
      */
-function isReady() external view override returns (bool) {
+    function isReady() external view override returns (bool) {
         return _initialized && address(honkVerifier) != address(0);
     }
 }

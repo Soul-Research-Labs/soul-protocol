@@ -2,7 +2,8 @@
 pragma solidity ^0.8.24;
 
 import "./IRelayerAdapter.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 // Mock Gelato Interface
 /**
@@ -11,27 +12,27 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * @notice I Gelato Relay interface
  */
 interface IGelatoRelay {
-        /**
+    /**
      * @notice Call with sync fee
      * @param _target The _target
      * @param _data The _data
      * @param _feeToken The _fee token
      * @return The result value
      */
-function callWithSyncFee(
+    function callWithSyncFee(
         address _target,
         bytes calldata _data,
         address _feeToken
     ) external returns (bytes32);
 
-        /**
+    /**
      * @notice Returns the fee estimate
      * @param _target The _target
      * @param _data The _data
      * @param _feeToken The _fee token
      * @return The result value
      */
-function getFeeEstimate(
+    function getFeeEstimate(
         address _target,
         bytes calldata _data,
         address _feeToken
@@ -51,7 +52,10 @@ function getFeeEstimate(
  *
  * @custom:security-contact security@zaseonprotocol.io
  */
-contract GelatoRelayAdapter is IRelayerAdapter, Ownable {
+contract GelatoRelayAdapter is IRelayerAdapter, AccessControl, ReentrancyGuard {
+    /// @notice Role for addresses authorized to relay messages
+    bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
+
     /// @notice Address of the Gelato Relay contract (immutable, set at deployment)
     address public immutable GELATO_RELAY;
 
@@ -67,10 +71,14 @@ contract GelatoRelayAdapter is IRelayerAdapter, Ownable {
     /**
      * @notice Deploy the GelatoRelayAdapter
      * @param _gelatoRelay Address of the Gelato Relay contract
+     * @param _admin Address granted DEFAULT_ADMIN_ROLE
      */
-    constructor(address _gelatoRelay) Ownable(msg.sender) {
+    constructor(address _gelatoRelay, address _admin) {
         if (_gelatoRelay == address(0)) revert ZeroAddress();
+        if (_admin == address(0)) revert ZeroAddress();
         GELATO_RELAY = _gelatoRelay;
+        _grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        _grantRole(RELAYER_ROLE, _admin);
     }
 
     /**
@@ -85,7 +93,7 @@ contract GelatoRelayAdapter is IRelayerAdapter, Ownable {
         address target,
         bytes calldata payload,
         uint256 /* gasLimit */
-    ) external payable override returns (bytes32) {
+    ) external payable override nonReentrant returns (bytes32) {
         if (target == address(0)) revert InvalidTarget();
         return IGelatoRelay(GELATO_RELAY).callWithSyncFee(target, payload, ETH);
     }

@@ -256,7 +256,9 @@ contract PrivacyLayerHardeningTest is Test {
 
     function test_CDNA_RejectsZeroVerifier() public {
         vm.prank(admin);
-        vm.expectRevert("Zero verifier address");
+        vm.expectRevert(
+            CrossDomainNullifierAlgebra.ZeroVerifierAddress.selector
+        );
         cdna.setDerivationVerifier(address(0));
     }
 
@@ -330,7 +332,9 @@ contract PrivacyLayerHardeningTest is Test {
 
     function test_EASC_RejectsZeroVerifier() public {
         vm.prank(admin);
-        vm.expectRevert("Zero verifier address");
+        vm.expectRevert(
+            ExecutionAgnosticStateCommitments.ZeroVerifierAddress.selector
+        );
         easc.setAttestationVerifier(address(0));
     }
 
@@ -415,7 +419,7 @@ contract PrivacyLayerHardeningTest is Test {
 
     function test_PBP_RejectsZeroVerifier() public {
         vm.prank(admin);
-        vm.expectRevert("Zero verifier address");
+        vm.expectRevert(PolicyBoundProofs.ZeroVerifierAddress.selector);
         pbp.setPolicyVerifier(address(0));
     }
 

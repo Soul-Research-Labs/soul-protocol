@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title RelayRateLimiter
@@ -41,7 +42,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
  * │           └───────────────────────┘                                    │
  * └────────────────────────────────────────────────────────────────────────┘
  */
-contract RelayRateLimiter is AccessControl, Pausable {
+contract RelayRateLimiter is AccessControl, Pausable, ReentrancyGuard {
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
@@ -195,6 +196,7 @@ contract RelayRateLimiter is AccessControl, Pausable {
     error AddressBlacklistedError(address account);
     error InvalidConfiguration();
     error CooldownNotExpired(uint256 remaining);
+    error BridgePaused();
 
     /*//////////////////////////////////////////////////////////////
                             CONSTRUCTOR
@@ -365,65 +367,73 @@ contract RelayRateLimiter is AccessControl, Pausable {
         uint256 amount
     ) external onlyRole(OPERATOR_ROLE) {
         // Check blacklist
-        require(!blacklisted[user], "Address blacklisted");
-        require(!whitelisted[user] || true, ""); // whitelisted bypass, always proceed
+        if (blacklisted[user]) revert AddressBlacklistedError(user);
 
         // Check circuit breaker
         if (
             breakerStatus.isTriggered &&
             block.timestamp < breakerStatus.cooldownEnds
         ) {
-            revert(breakerStatus.reason);
+            revert CircuitBreakerActive(breakerStatus.reason);
         }
-        require(!paused(), "Bridge paused");
+        if (paused()) revert BridgePaused();
 
         // Check TVL cap
         if (tvlCap > 0) {
-            require(
-                globalStats.currentTVL + amount <= tvlCap,
-                "TVL cap exceeded"
-            );
+            if (globalStats.currentTVL + amount > tvlCap) {
+                revert ExceedsTVLCap(globalStats.currentTVL + amount, tvlCap);
+            }
         }
 
         // Check global limits
         if (globalConfig.enabled) {
             (uint256 hourlyVol, uint256 dailyVol) = _getGlobalUsage();
-            require(
-                amount <= globalConfig.maxSingleTx,
-                "Exceeds global single tx limit"
-            );
-            require(
-                hourlyVol + amount <= globalConfig.hourlyLimit,
-                "Exceeds global hourly limit"
-            );
-            require(
-                dailyVol + amount <= globalConfig.dailyLimit,
-                "Exceeds global daily limit"
-            );
+            if (amount > globalConfig.maxSingleTx) {
+                revert ExceedsSingleTxLimit(amount, globalConfig.maxSingleTx);
+            }
+            if (hourlyVol + amount > globalConfig.hourlyLimit) {
+                revert ExceedsHourlyLimit(
+                    hourlyVol + amount,
+                    globalConfig.hourlyLimit
+                );
+            }
+            if (dailyVol + amount > globalConfig.dailyLimit) {
+                revert ExceedsDailyLimit(
+                    dailyVol + amount,
+                    globalConfig.dailyLimit
+                );
+            }
         }
 
         // Check user limits (skip for whitelisted)
         if (userConfig.enabled && !whitelisted[user]) {
             UserUsage storage usage = userUsage[user];
             (uint256 hourlyUsed, uint256 dailyUsed) = _getUserUsage(usage);
-            require(
-                amount <= userConfig.maxSingleTx,
-                "Exceeds user single tx limit"
-            );
-            require(
-                hourlyUsed + amount <= userConfig.hourlyLimit,
-                "Exceeds user hourly limit"
-            );
-            require(
-                dailyUsed + amount <= userConfig.dailyLimit,
-                "Exceeds user daily limit"
-            );
-            if (userConfig.minTimeBetweenTx > 0 && usage.lastTxTime > 0) {
-                require(
-                    block.timestamp - usage.lastTxTime >=
-                        userConfig.minTimeBetweenTx,
-                    "Too soon between transactions"
+            if (amount > userConfig.maxSingleTx) {
+                revert ExceedsSingleTxLimit(amount, userConfig.maxSingleTx);
+            }
+            if (hourlyUsed + amount > userConfig.hourlyLimit) {
+                revert ExceedsHourlyLimit(
+                    hourlyUsed + amount,
+                    userConfig.hourlyLimit
                 );
+            }
+            if (dailyUsed + amount > userConfig.dailyLimit) {
+                revert ExceedsDailyLimit(
+                    dailyUsed + amount,
+                    userConfig.dailyLimit
+                );
+            }
+            if (userConfig.minTimeBetweenTx > 0 && usage.lastTxTime > 0) {
+                if (
+                    block.timestamp - usage.lastTxTime <
+                    userConfig.minTimeBetweenTx
+                ) {
+                    revert TooSoonBetweenTx(
+                        block.timestamp - usage.lastTxTime,
+                        userConfig.minTimeBetweenTx
+                    );
+                }
             }
         }
 
@@ -538,7 +548,7 @@ contract RelayRateLimiter is AccessControl, Pausable {
 
     /**
      * @notice Update global rate limit configuration
-          * @param hourlyLimit The hourly limit
+     * @param hourlyLimit The hourly limit
      * @param dailyLimit The daily limit
      * @param maxSingleTx The maxSingleTx bound
      * @param minTimeBetweenTx The minTimeBetweenTx timestamp
@@ -568,7 +578,7 @@ contract RelayRateLimiter is AccessControl, Pausable {
 
     /**
      * @notice Update per-user rate limit configuration
-          * @param hourlyLimit The hourly limit
+     * @param hourlyLimit The hourly limit
      * @param dailyLimit The daily limit
      * @param maxSingleTx The maxSingleTx bound
      * @param minTimeBetweenTx The minTimeBetweenTx timestamp
@@ -599,7 +609,7 @@ contract RelayRateLimiter is AccessControl, Pausable {
 
     /**
      * @notice Update circuit breaker configuration
-          * @param largeTransferThreshold The large transfer threshold
+     * @param largeTransferThreshold The large transfer threshold
      * @param velocityThreshold The velocity threshold
      * @param tvlDropThreshold The tvl drop threshold
      * @param cooldownPeriod The cooldown period
@@ -642,7 +652,7 @@ contract RelayRateLimiter is AccessControl, Pausable {
 
     /**
      * @notice Add/remove address from whitelist
-          * @param account The account address
+     * @param account The account address
      * @param status The status value
      */
     function setWhitelist(
@@ -655,7 +665,7 @@ contract RelayRateLimiter is AccessControl, Pausable {
 
     /**
      * @notice Add/remove address from blacklist
-          * @param account The account address
+     * @param account The account address
      * @param status The status value
      */
     function setBlacklist(
@@ -686,7 +696,7 @@ contract RelayRateLimiter is AccessControl, Pausable {
 
     /**
      * @notice Get remaining limits for a user
-          * @param user The user
+     * @param user The user
      * @return hourlyRemaining The hourly remaining
      * @return dailyRemaining The daily remaining
      * @return globalHourlyRemaining The global hourly remaining
@@ -735,7 +745,7 @@ contract RelayRateLimiter is AccessControl, Pausable {
 
     /**
      * @notice Check if circuit breaker is currently active
-          * @return The result value
+     * @return The result value
      */
     function isCircuitBreakerActive() external view returns (bool) {
         return
@@ -745,7 +755,7 @@ contract RelayRateLimiter is AccessControl, Pausable {
 
     /**
      * @notice Get current global stats
-          * @return hourlyVolume The hourly volume
+     * @return hourlyVolume The hourly volume
      * @return dailyVolume The daily volume
      * @return currentTVL The current t v l
      * @return peakTVL The peak t v l

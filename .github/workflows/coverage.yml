@@ -61,6 +61,16 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
 
+      - name: Upload to Codecov
+        if: always()
+        uses: codecov/codecov-action@v4
+        with:
+          files: lcov.info
+          flags: solidity
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
   modular-coverage:
     name: Modular Forge Coverage (per-module)
     runs-on: ubuntu-latest

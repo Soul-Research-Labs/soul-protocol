@@ -10,6 +10,7 @@
 - [Environment Setup](#environment-setup)
 - [ZK Circuit Setup](#zk-circuit-setup)
 - [Deployment Steps](#deployment-steps)
+- [Production Mainnet Deployment Sequence](#production-mainnet-deployment-sequence)
 - [Post-Deployment Verification](#post-deployment-verification)
 - [Multi-Chain Deployment](#multi-chain-deployment)
 - [Security](#security)
@@ -216,6 +217,114 @@ At ~30 gwei (Ethereum mainnet):
 | **Total**                                     | **~35,800,000** | **~1.07**  |
 
 L2 deployment costs are significantly lower (1-10% of L1).
+
+---
+
+## Production Mainnet Deployment Sequence
+
+The production deployment uses `DeployMainnet.s.sol` and follows a strict 8-phase sequence. Each phase must complete before the next begins.
+
+```bash
+# Full mainnet deployment
+forge script scripts/deploy/DeployMainnet.s.sol \
+  --rpc-url $MAINNET_RPC_URL \
+  --broadcast \
+  --verify \
+  --etherscan-api-key $ETHERSCAN_API_KEY
+```
+
+### Phase 1 — Security Infrastructure
+
+Deploys foundational security contracts that all subsequent contracts depend on.
+
+| Contract                   | Purpose                                        |
+| -------------------------- | ---------------------------------------------- |
+| `CrossChainProofHubV3`     | Proof aggregation with optimistic verification |
+| `NullifierRegistryV3`      | Cross-domain nullifier tracking (CDNA)         |
+| `RelayCircuitBreaker`      | Automatic circuit breaker for relay anomalies  |
+| `RelayRateLimiter`         | Rate limiting for relay operations             |
+| `EnhancedKillSwitch`       | Global emergency kill switch                   |
+| `ZKFraudProof`             | ZK-based fraud proof verification              |
+| `RelayProofValidator`      | Relay proof validation pipeline                |
+| `EmergencyRecovery`        | Emergency fund recovery module                 |
+| `ProtocolHealthAggregator` | Aggregated health scoring                      |
+
+### Phase 2 — Verifiers
+
+Deploys the ZK verifier infrastructure.
+
+| Contract                  | Purpose                                             |
+| ------------------------- | --------------------------------------------------- |
+| `VerifierRegistryV2`      | Registry for all ZK verifier contracts              |
+| `ZaseonUniversalVerifier` | Unified verifier routing (Groth16, UltraHonk, Noir) |
+
+### Phase 3 — Core Primitives
+
+Deploys the protocol's primitive building blocks.
+
+| Contract                      | Purpose                                  |
+| ----------------------------- | ---------------------------------------- |
+| `ZKBoundStateLocks`           | Cross-chain state locks with ZK unlock   |
+| `ProofCarryingContainer`      | Bundles state transitions with ZK proofs |
+| `CrossDomainNullifierAlgebra` | Cross-domain nullifier algebra           |
+| `PolicyBoundProofs`           | Policy-enforced proof constraints        |
+
+### Phase 3.5 — Liquidity
+
+| Contract                   | Purpose                                           |
+| -------------------------- | ------------------------------------------------- |
+| `CrossChainLiquidityVault` | LP deposits, settlement, denomination enforcement |
+
+### Phase 4 — Protocol Hub
+
+| Contract            | Purpose                                                     |
+| ------------------- | ----------------------------------------------------------- |
+| `ZaseonProtocolHub` | Central coordination hub with `wireAll()` for 23 components |
+
+### Phase 5 — Governance
+
+Deploys governance token, timelock, and governor. Governor receives proposer/executor/canceller roles on the timelock.
+
+| Contract                | Purpose                              |
+| ----------------------- | ------------------------------------ |
+| `ZaseonToken`           | Governance token                     |
+| `ZaseonUpgradeTimelock` | Upgrade timelock (48h default delay) |
+| `ZaseonGovernor`        | On-chain governance                  |
+
+### Phase 6 — Configuration
+
+- Register 12 L2 chains on `CrossChainProofHubV3`
+- Set rate limits on relay infrastructure
+- Call `hub.wireAll(...)` with 23 component addresses
+- Wire circuit breaker to monitored contracts
+- Deploy `ProtocolEmergencyCoordinator` + `CrossChainEmergencyRelay`
+- Request PCC verification lock (48h grace period)
+
+### Phase 7 — Role Transfer
+
+Grant all roles to the multisig admin (`MULTISIG_ADMIN`) for every contract deployed in Phases 1–6:
+
+`CrossChainProofHubV3`, `NullifierRegistryV3`, `VerifierRegistryV2`, `ZaseonProtocolHub`, `ZKFraudProof`, `ZKBoundStateLocks`, `ProofCarryingContainer`, `CrossDomainNullifierAlgebra`, `PolicyBoundProofs`, `EmergencyRecovery`
+
+### Phase 8 — Renounce Deployer
+
+Renounce all deployer roles across every contract. The `PRIVACY_HUB_ROLE` on `CrossChainLiquidityVault` is kept temporarily until `CrossChainPrivacyHub` is deployed and wired.
+
+### Post-Deploy Checklist
+
+After all 8 phases complete:
+
+1. Verify all contracts on Etherscan
+2. Deploy L2 bridge adapters (`DeployL2Bridges.s.sol`)
+3. Run `ConfigureCrossChain.s.sol` to link L1↔L2
+4. Register UltraHonk verifier adapters via multisig
+5. Wire remaining Hub components via multisig (`WireRemainingComponents.s.sol`)
+6. Grant `PRIVACY_HUB_ROLE` to deployed `CrossChainPrivacyHub` on `LiquidityVault`
+7. Run `verify-deployment.ts`
+8. Run `ConfirmRoleSeparation.s.sol` from multisig
+9. Execute PCC verification lock after 48h wait
+
+> **All deploy scripts:** See `scripts/deploy/` — 16 scripts covering mainnet, testnets, bridges, compliance, intents, routing, relayer, security, and wiring.
 
 ---
 

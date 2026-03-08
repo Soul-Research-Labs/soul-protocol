@@ -7,6 +7,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ICrossChainLiquidityVault} from "../interfaces/ICrossChainLiquidityVault.sol";
+import {IRebalanceSwapAdapter} from "../interfaces/IRebalanceSwapAdapter.sol";
 
 /**
  * @title CrossChainLiquidityVault
@@ -182,6 +183,26 @@ contract CrossChainLiquidityVault is
     /// @notice Total settlement nonce for unique batch IDs
     uint256 public settlementNonce;
 
+    // --- Rebalance Swap Adapter ---
+
+    /// @notice Optional DEX adapter for swapping tokens during settlement rebalancing
+    IRebalanceSwapAdapter public rebalanceAdapter;
+
+    /// @notice Emitted when the rebalance adapter is updated
+    event RebalanceAdapterUpdated(
+        address indexed oldAdapter,
+        address indexed newAdapter
+    );
+
+    /// @notice Emitted when a settlement includes a DEX swap
+    event SettlementSwapExecuted(
+        bytes32 indexed batchId,
+        address indexed tokenIn,
+        address indexed tokenOut,
+        uint256 amountIn,
+        uint256 amountOut
+    );
+
     // --- Privacy: Pending Releases ---
 
     /// @notice Pending release entry (staged for delayed claim to break timing correlation)
@@ -317,7 +338,7 @@ contract CrossChainLiquidityVault is
         totalETH -= amount;
 
         (bool sent, ) = msg.sender.call{value: amount}("");
-        require(sent, "ETH transfer failed");
+        if (!sent) revert TransferFailed();
 
         emit LiquidityWithdrawn(msg.sender, address(0), amount);
     }
@@ -529,7 +550,7 @@ contract CrossChainLiquidityVault is
         // Transfer to original recipient
         if (release.token == address(0)) {
             (bool sent, ) = release.recipient.call{value: release.amount}("");
-            require(sent, "ETH release failed");
+            if (!sent) revert TransferFailed();
         } else {
             IERC20(release.token).safeTransfer(
                 release.recipient,
@@ -672,7 +693,7 @@ contract CrossChainLiquidityVault is
                 totalETH -= batch.netAmount;
                 // Transfer ETH to settler for bridging
                 (bool sent, ) = msg.sender.call{value: batch.netAmount}("");
-                require(sent, "ETH settlement transfer failed");
+                if (!sent) revert TransferFailed();
             } else {
                 totalTokens[batch.token] -= batch.netAmount;
                 // Transfer tokens to settler for bridging
@@ -711,6 +732,155 @@ contract CrossChainLiquidityVault is
     }
 
     // =========================================================================
+    // SETTLEMENT WITH SWAP (Rebalance via DEX)
+    // =========================================================================
+
+    /**
+     * @notice Execute a settlement batch with a token swap before bridging
+     * @dev For outflows: swaps the settlement token to a target token before sending
+     *      to the settler for bridging. Useful when the vault has excess of one token
+     *      but needs to send a different one.
+     *
+     *      Example: Vault has excess USDC, owes remote chain ETH.
+     *      Settler calls executeSettlementWithSwap(batchId, WETH, minOut, deadline)
+     *      → Vault swaps USDC→WETH via Uniswap V3, sends WETH to settler.
+     *
+     * @param batchId The settlement batch to execute
+     * @param targetToken Token to swap INTO before sending to settler
+     * @param minAmountOut Minimum acceptable output from the swap (slippage protection)
+     * @param deadline Timestamp after which the swap reverts
+     */
+    function executeSettlementWithSwap(
+        bytes32 batchId,
+        address targetToken,
+        uint256 minAmountOut,
+        uint256 deadline
+    ) external payable onlyRole(SETTLER_ROLE) nonReentrant {
+        if (address(rebalanceAdapter) == address(0)) revert ZeroAddress();
+
+        SettlementBatch storage batch = settlements[batchId];
+        if (batch.netAmount == 0) revert LockNotFound(batchId);
+        if (batch.executed) revert SettlementAlreadyExecuted(batchId);
+        if (!batch.isOutflow) revert InvalidAmount(); // Swap only on outflows
+
+        batch.executed = true;
+        netFlows[batch.remoteChainId][batch.token] = 0;
+
+        uint256 amountOut;
+
+        if (batch.token == address(0)) {
+            // ETH outflow → swap ETH to targetToken
+            totalETH -= batch.netAmount;
+            amountOut = rebalanceAdapter.swap{value: batch.netAmount}(
+                address(0),
+                targetToken,
+                batch.netAmount,
+                minAmountOut,
+                msg.sender,
+                deadline
+            );
+        } else {
+            // ERC20 outflow → swap to targetToken
+            totalTokens[batch.token] -= batch.netAmount;
+            IERC20(batch.token).forceApprove(
+                address(rebalanceAdapter),
+                batch.netAmount
+            );
+            amountOut = rebalanceAdapter.swap(
+                batch.token,
+                targetToken,
+                batch.netAmount,
+                minAmountOut,
+                msg.sender,
+                deadline
+            );
+            // Reset approval
+            IERC20(batch.token).forceApprove(address(rebalanceAdapter), 0);
+        }
+
+        emit SettlementSwapExecuted(
+            batchId,
+            batch.token,
+            targetToken,
+            batch.netAmount,
+            amountOut
+        );
+        emit SettlementExecuted(batchId, batch.remoteChainId, amountOut);
+    }
+
+    /**
+     * @notice Receive settlement inflow and swap to a different token for vault inventory
+     * @dev Called when the inbound settlement token doesn't match what the vault needs.
+     *      Example: Received USDC from remote settlement, but LP pool needs ETH.
+     *
+     * @param remoteChainId The remote chain that sent the settlement
+     * @param tokenIn Token being received from settlement
+     * @param amount Amount received
+     * @param targetToken Token to swap INTO for vault inventory
+     * @param minAmountOut Minimum acceptable swap output
+     * @param deadline Swap deadline
+     */
+    function receiveSettlementWithSwap(
+        uint256 remoteChainId,
+        address tokenIn,
+        uint256 amount,
+        address targetToken,
+        uint256 minAmountOut,
+        uint256 deadline
+    ) external payable onlyRole(SETTLER_ROLE) nonReentrant {
+        if (address(rebalanceAdapter) == address(0)) revert ZeroAddress();
+        if (remoteVaults[remoteChainId] == address(0)) {
+            revert ChainNotRegistered(remoteChainId);
+        }
+
+        uint256 amountOut;
+
+        if (tokenIn == address(0)) {
+            if (msg.value != amount) revert InvalidAmount();
+            // Swap ETH → targetToken, receive into vault
+            amountOut = rebalanceAdapter.swap{value: amount}(
+                address(0),
+                targetToken,
+                amount,
+                minAmountOut,
+                address(this),
+                deadline
+            );
+            totalTokens[targetToken] += amountOut;
+        } else {
+            // Pull tokens from settler
+            IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amount);
+            // Approve adapter and swap
+            IERC20(tokenIn).forceApprove(address(rebalanceAdapter), amount);
+            if (targetToken == address(0)) {
+                // Swap ERC20 → ETH
+                amountOut = rebalanceAdapter.swap(
+                    tokenIn,
+                    address(0),
+                    amount,
+                    minAmountOut,
+                    address(this),
+                    deadline
+                );
+                totalETH += amountOut;
+            } else {
+                // Swap ERC20 → ERC20
+                amountOut = rebalanceAdapter.swap(
+                    tokenIn,
+                    targetToken,
+                    amount,
+                    minAmountOut,
+                    address(this),
+                    deadline
+                );
+                totalTokens[targetToken] += amountOut;
+            }
+            // Reset approval
+            IERC20(tokenIn).forceApprove(address(rebalanceAdapter), 0);
+        }
+    }
+
+    // =========================================================================
     // ADMIN FUNCTIONS
     // =========================================================================
 
@@ -745,6 +915,19 @@ contract CrossChainLiquidityVault is
     }
 
     /**
+     * @notice Set or update the rebalance swap adapter (e.g., UniswapV3RebalanceAdapter)
+     * @dev Set to address(0) to disable settlement swaps
+     * @param _adapter Address of the IRebalanceSwapAdapter implementation
+     */
+    function setRebalanceAdapter(
+        address _adapter
+    ) external onlyRole(OPERATOR_ROLE) {
+        address old = address(rebalanceAdapter);
+        rebalanceAdapter = IRebalanceSwapAdapter(_adapter);
+        emit RebalanceAdapterUpdated(old, _adapter);
+    }
+
+    /**
      * @notice Emergency pause
      */
     function pause() external onlyRole(GUARDIAN_ROLE) {
@@ -768,7 +951,7 @@ contract CrossChainLiquidityVault is
         address token,
         address to
     ) external onlyRole(GUARDIAN_ROLE) {
-        require(paused(), "Must be paused");
+        if (!paused()) revert NotPaused();
         if (to == address(0)) revert ZeroAddress();
 
         if (token == address(0)) {
@@ -776,7 +959,7 @@ contract CrossChainLiquidityVault is
             totalETH = 0;
             totalETHLocked = 0;
             (bool sent, ) = to.call{value: balance}("");
-            require(sent, "Emergency ETH transfer failed");
+            if (!sent) revert TransferFailed();
         } else {
             uint256 balance = IERC20(token).balanceOf(address(this));
             totalTokens[token] = 0;

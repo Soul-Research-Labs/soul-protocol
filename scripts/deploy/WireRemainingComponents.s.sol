@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import {Script, console} from "forge-std/Script.sol";
 import {ZaseonProtocolHub} from "../../contracts/core/ZaseonProtocolHub.sol";
+import {CrossChainLiquidityVault} from "../../contracts/bridge/CrossChainLiquidityVault.sol";
 import "../../contracts/interfaces/IZaseonProtocolHub.sol";
 
 /**
@@ -39,6 +40,8 @@ import "../../contracts/interfaces/IZaseonProtocolHub.sol";
  *   MULTI_PROVER=0x...       \
  *   RELAY_WATCHTOWER=0x...   \
  *   RELAY_CIRCUIT_BREAKER=0x... \
+ *   LIQUIDITY_VAULT=0x...      \
+ *   REBALANCE_ADAPTER=0x...    \
  *   forge script scripts/deploy/WireRemainingComponents.s.sol \
  *     --rpc-url $RPC_URL --broadcast --verify
  *
@@ -62,6 +65,8 @@ contract WireRemainingComponents is Script {
         address multiProver = _envOr("MULTI_PROVER");
         address relayWatchtower = _envOr("RELAY_WATCHTOWER");
         address relayCircuitBreaker = _envOr("RELAY_CIRCUIT_BREAKER");
+        address liquidityVault = _envOr("LIQUIDITY_VAULT");
+        address rebalanceAdapter = _envOr("REBALANCE_ADAPTER");
 
         ZaseonProtocolHub hub = ZaseonProtocolHub(hubAddr);
 
@@ -79,6 +84,8 @@ contract WireRemainingComponents is Script {
         console.log("Multi Prover:       ", multiProver);
         console.log("Relay Watchtower:   ", relayWatchtower);
         console.log("Relay Circuit Breaker:", relayCircuitBreaker);
+        console.log("Liquidity Vault:    ", liquidityVault);
+        console.log("Rebalance Adapter:  ", rebalanceAdapter);
 
         vm.startBroadcast();
 
@@ -115,6 +122,13 @@ contract WireRemainingComponents is Script {
         if (relayCircuitBreaker != address(0)) {
             hub.setRelayCircuitBreaker(relayCircuitBreaker);
             console.log("RelayCircuitBreaker wired to Hub");
+        }
+
+        // Wire rebalance adapter into liquidity vault (not in wireAll struct)
+        if (liquidityVault != address(0) && rebalanceAdapter != address(0)) {
+            CrossChainLiquidityVault(payable(liquidityVault))
+                .setRebalanceAdapter(rebalanceAdapter);
+            console.log("RebalanceAdapter wired to LiquidityVault");
         }
 
         vm.stopBroadcast();

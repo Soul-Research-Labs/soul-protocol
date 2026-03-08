@@ -253,7 +253,7 @@ contract UniversalShieldedPool is
     ) external payable nonReentrant whenNotPaused {
         // SECURITY FIX: Block deposits in testMode to prevent loss of real funds
         // In testMode, withdrawal proofs are not verified — depositing real assets is unsafe
-        require(!testMode, "Deposits disabled in test mode");
+        if (testMode) revert DepositsDisabledInTestMode();
         if (commitment == bytes32(0) || uint256(commitment) >= FIELD_SIZE) {
             revert InvalidCommitment();
         }
@@ -280,7 +280,7 @@ contract UniversalShieldedPool is
         bytes32 commitment
     ) external nonReentrant whenNotPaused {
         // SECURITY FIX: Block deposits in testMode
-        require(!testMode, "Deposits disabled in test mode");
+        if (testMode) revert DepositsDisabledInTestMode();
         if (commitment == bytes32(0) || uint256(commitment) >= FIELD_SIZE) {
             revert InvalidCommitment();
         }
@@ -352,16 +352,11 @@ contract UniversalShieldedPool is
         // This prevents withdrawal failures from cross-chain commitment insolvency
         // from manifesting as unexpected reverts deep in the call stack.
         if (asset.tokenAddress == address(0)) {
-            require(
-                address(this).balance >= wp.amount,
-                "Insufficient pool ETH balance"
-            );
+            if (address(this).balance < wp.amount)
+                revert InsufficientPoolBalance();
         } else {
-            require(
-                IERC20(asset.tokenAddress).balanceOf(address(this)) >=
-                    wp.amount,
-                "Insufficient pool token balance"
-            );
+            if (IERC20(asset.tokenAddress).balanceOf(address(this)) < wp.amount)
+                revert InsufficientPoolBalance();
         }
 
         // Transfer assets
@@ -516,8 +511,8 @@ contract UniversalShieldedPool is
      * @notice Confirm production ready
      */
     function confirmProductionReady() external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(!testMode, "Test mode still enabled");
-        require(withdrawalVerifier != address(0), "No withdrawal verifier set");
+        if (testMode) revert TestModeStillEnabled();
+        if (withdrawalVerifier == address(0)) revert NoWithdrawalVerifierSet();
         emit ProductionReadinessConfirmed(msg.sender, withdrawalVerifier);
     }
 
@@ -745,12 +740,12 @@ contract UniversalShieldedPool is
     ) internal view returns (bool) {
         if (withdrawalVerifier == address(0)) {
             // No verifier set — only allow in explicit test mode (irreversibly disableable)
-            require(testMode, "No verifier configured");
+            if (!testMode) revert NoVerifierConfigured();
             /// @custom:security TEST-ONLY bypass — testMode must be disabled before production.
             /// disableTestMode() is irreversible and enforced by deployment scripts.
             // SECURITY FIX M-8: Require minimum proof length even in test mode
             // to prevent trivially bypassing with empty proof data.
-            require(wp.proof.length >= 32, "Test mode: proof too short");
+            if (wp.proof.length < 32) revert TestModeProofTooShort();
             return true;
         }
 
@@ -825,7 +820,7 @@ contract UniversalShieldedPool is
      */
     function _safeTransferETH(address to, uint256 amount) internal {
         (bool success, ) = to.call{value: amount}("");
-        require(success, "ETH transfer failed");
+        if (!success) revert TransferFailed();
     }
 
     /// @notice Allow receiving ETH

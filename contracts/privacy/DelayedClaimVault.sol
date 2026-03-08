@@ -187,6 +187,10 @@ contract DelayedClaimVault is
     error NullifierAlreadyUsed();
     error TransferFailed();
     error ZeroAddress();
+    error DelayTooShort(uint256 minDelay);
+    error DelayTooLong(uint256 maxDelay);
+    error InvalidDelayRange(uint256 minDelay, uint256 maxDelay);
+    error InvalidClaimWindowDuration(uint256 duration);
 
     // =========================================================================
     // INITIALIZER
@@ -197,11 +201,11 @@ contract DelayedClaimVault is
         _disableInitializers();
     }
 
-        /**
+    /**
      * @notice Initializes the operation
      * @param admin The admin bound
      */
-function initialize(address admin) external initializer {
+    function initialize(address admin) external initializer {
         if (admin == address(0)) revert ZeroAddress();
 
         __AccessControl_init();
@@ -284,7 +288,7 @@ function initialize(address admin) external initializer {
      * @param denomination Fixed tier amount
      * @param minDelay Minimum delay in seconds
      * @param maxDelay Maximum delay in seconds
-          * @return claimId The claim id
+     * @return claimId The claim id
      */
     function depositWithCustomDelay(
         bytes32 commitment,
@@ -295,9 +299,9 @@ function initialize(address admin) external initializer {
         if (commitment == bytes32(0)) revert InvalidCommitment();
         if (!_isValidDenomination(denomination)) revert InvalidDenomination();
         if (msg.value != denomination) revert InvalidAmount();
-        require(minDelay >= 1 hours, "Delay too short");
-        require(maxDelay <= 30 days, "Delay too long");
-        require(minDelay <= maxDelay, "Invalid delay range");
+        if (minDelay < 1 hours) revert DelayTooShort(minDelay);
+        if (maxDelay > 30 days) revert DelayTooLong(maxDelay);
+        if (minDelay > maxDelay) revert InvalidDelayRange(minDelay, maxDelay);
 
         claimId = keccak256(
             abi.encodePacked(
@@ -401,7 +405,7 @@ function initialize(address admin) external initializer {
 
     /**
      * @notice Claim using commitment directly (alternative lookup)
-          * @param commitment The cryptographic commitment
+     * @param commitment The cryptographic commitment
      * @param recipient The recipient address
      * @param proof The ZK proof data
      */
@@ -601,7 +605,7 @@ function initialize(address admin) external initializer {
 
     /**
      * @notice Get claim details
-          * @param claimId The claimId identifier
+     * @param claimId The claimId identifier
      * @return The result value
      */
     function getClaim(
@@ -612,7 +616,7 @@ function initialize(address admin) external initializer {
 
     /**
      * @notice Check if claim is ready
-          * @param claimId The claimId identifier
+     * @param claimId The claimId identifier
      * @return ready The ready
      * @return timeRemaining The time remaining
      */
@@ -637,7 +641,7 @@ function initialize(address admin) external initializer {
 
     /**
      * @notice Get anonymity set size for a denomination
-          * @param denomination The denomination bound
+     * @param denomination The denomination bound
      * @return The result value
      */
     function getAnonymitySetSize(
@@ -648,7 +652,7 @@ function initialize(address admin) external initializer {
 
     /**
      * @notice Get all denomination tiers
-          * @return tiers The tiers
+     * @return tiers The tiers
      */
     function getDenominationTiers()
         external
@@ -664,7 +668,7 @@ function initialize(address admin) external initializer {
 
     /**
      * @notice Calculate time until claim is ready
-          * @param claimId The claimId identifier
+     * @param claimId The claimId identifier
      * @return The result value
      */
     function timeUntilClaimable(
@@ -679,28 +683,29 @@ function initialize(address admin) external initializer {
     // ADMIN FUNCTIONS
     // =========================================================================
 
-        /**
+    /**
      * @notice Sets the claim window duration
      * @param duration The duration in seconds
      */
-function setClaimWindowDuration(
+    function setClaimWindowDuration(
         uint256 duration
     ) external onlyRole(OPERATOR_ROLE) {
-        require(duration >= 1 days && duration <= 30 days, "Invalid duration");
+        if (duration < 1 days || duration > 30 days)
+            revert InvalidClaimWindowDuration(duration);
         claimWindowDuration = duration;
     }
 
-        /**
+    /**
      * @notice Pauses the operation
      */
-function pause() external onlyRole(OPERATOR_ROLE) {
+    function pause() external onlyRole(OPERATOR_ROLE) {
         _pause();
     }
 
-        /**
+    /**
      * @notice Unpauses the operation
      */
-function unpause() external onlyRole(OPERATOR_ROLE) {
+    function unpause() external onlyRole(OPERATOR_ROLE) {
         _unpause();
     }
 

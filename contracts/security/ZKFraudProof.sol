@@ -194,6 +194,7 @@ contract ZKFraudProof is AccessControl, ReentrancyGuard, Pausable {
     error TransferFailed();
     error RewardTransferFailed();
     error InsufficientFunds();
+    error MissingZKEvidence();
 
     /// @notice Emitted on emergency withdrawal
     event EmergencyWithdrawal(address indexed recipient, uint256 amount);
@@ -204,12 +205,9 @@ contract ZKFraudProof is AccessControl, ReentrancyGuard, Pausable {
         address _bondManager,
         address _zkVerifier
     ) {
-        require(
-            _stateCommitmentChain != address(0),
-            "ZKFraudProof: zero stateCommitmentChain"
-        );
-        require(_bondManager != address(0), "ZKFraudProof: zero bondManager");
-        require(_zkVerifier != address(0), "ZKFraudProof: zero zkVerifier");
+        if (_stateCommitmentChain == address(0)) revert ZeroAddress();
+        if (_bondManager == address(0)) revert ZeroAddress();
+        if (_zkVerifier == address(0)) revert ZeroAddress();
 
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(PROVER_ROLE, msg.sender);
@@ -534,7 +532,7 @@ contract ZKFraudProof is AccessControl, ReentrancyGuard, Pausable {
     /**
      * @notice Get fraud proof details
      * @param proofId Proof ID
-          * @return The result value
+     * @return The result value
      */
     function getFraudProof(
         bytes32 proofId
@@ -545,7 +543,7 @@ contract ZKFraudProof is AccessControl, ReentrancyGuard, Pausable {
     /**
      * @notice Get batch details
      * @param batchId Batch ID
-          * @return stateRoot The state root
+     * @return stateRoot The state root
      * @return previousStateRoot The previous state root
      * @return submittedAt The submitted at
      * @return finalized The finalized
@@ -580,7 +578,7 @@ contract ZKFraudProof is AccessControl, ReentrancyGuard, Pausable {
     /**
      * @notice Get prover statistics
      * @param prover Prover address
-          * @return The result value
+     * @return The result value
      */
     function getProverStats(
         address prover
@@ -591,7 +589,7 @@ contract ZKFraudProof is AccessControl, ReentrancyGuard, Pausable {
     /**
      * @notice Check if batch is in dispute period
      * @param batchId Batch ID
-          * @return The result value
+     * @return The result value
      */
     function isInDisputePeriod(bytes32 batchId) external view returns (bool) {
         Batch storage batch = batches[batchId];
@@ -602,7 +600,7 @@ contract ZKFraudProof is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Get pending proof count
-          * @return The result value
+     * @return The result value
      */
     function getPendingProofCount() external view returns (uint256) {
         return pendingProofs.length;
@@ -611,7 +609,7 @@ contract ZKFraudProof is AccessControl, ReentrancyGuard, Pausable {
     /**
      * @notice Get effective dispute period for a proof type
      * @param hasZKProof Whether ZK proof is provided
-          * @return The result value
+     * @return The result value
      */
     function getDisputePeriod(bool hasZKProof) external pure returns (uint256) {
         return hasZKProof ? EXPEDITED_DISPUTE_PERIOD : STANDARD_DISPUTE_PERIOD;
@@ -659,12 +657,12 @@ contract ZKFraudProof is AccessControl, ReentrancyGuard, Pausable {
      * @param amount Amount of ETH to withdraw
      */
     // slither-disable-next-line arbitrary-send-eth
-        /**
+    /**
      * @notice Emergency withdraw
      * @param to The destination address
      * @param amount The amount to process
- */
-function emergencyWithdraw(
+     */
+    function emergencyWithdraw(
         address to,
         uint256 amount
     ) external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
@@ -727,10 +725,7 @@ function emergencyWithdraw(
         // The proof must include the ZK proof path for full security
         // Interactive-only verification is restricted to fraud that is
         // self-evident from state root divergence
-        require(
-            proof.zkProof.length > 0,
-            "Interactive verification requires ZK evidence"
-        );
+        if (proof.zkProof.length == 0) revert MissingZKEvidence();
         return true;
     }
 

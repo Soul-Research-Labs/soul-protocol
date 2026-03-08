@@ -165,6 +165,7 @@ contract InstantRelayerRewards is AccessControl, ReentrancyGuard {
     error RelayNotClaimed();
     error NotAssignedRelayer();
     error NoFeesToWithdraw();
+    error ETHTransferFailed();
 
     /*//////////////////////////////////////////////////////////////
                              CONSTRUCTOR
@@ -186,12 +187,12 @@ contract InstantRelayerRewards is AccessControl, ReentrancyGuard {
     /// @param relayId Unique relay identifier
     /// @param requester The user who is paying for the relay
     /// @dev Called by the fee market or intent layer when a relay request is created
-        /**
+    /**
      * @notice Deposits relay fee
      * @param relayId The relayId identifier
      * @param requester The requester
      */
-function depositRelayFee(
+    function depositRelayFee(
         bytes32 relayId,
         address requester
     ) external payable nonReentrant onlyRole(RELAY_MANAGER_ROLE) {
@@ -214,12 +215,12 @@ function depositRelayFee(
     /// @notice Record that a relayer has claimed a relay
     /// @param relayId The relay being claimed
     /// @param relayer The relayer claiming it
-        /**
+    /**
      * @notice Claims relay
      * @param relayId The relayId identifier
      * @param relayer The relayer address
      */
-function claimRelay(
+    function claimRelay(
         bytes32 relayId,
         address relayer
     ) external nonReentrant onlyRole(RELAY_MANAGER_ROLE) {
@@ -237,11 +238,11 @@ function claimRelay(
     /// @notice Complete a relay and pay the instant reward
     /// @param relayId The completed relay
     /// @dev Only callable by RELAY_MANAGER_ROLE. Calculates speed tier and pays tiered reward.
-        /**
+    /**
      * @notice Completes relay with reward
      * @param relayId The relayId identifier
      */
-function completeRelayWithReward(
+    function completeRelayWithReward(
         bytes32 relayId
     ) external nonReentrant onlyRole(RELAY_MANAGER_ROLE) {
         RelayDeposit storage deposit = deposits[relayId];
@@ -306,11 +307,11 @@ function completeRelayWithReward(
 
     /// @notice Refund a deposit that was never completed
     /// @param relayId The relay to refund
-        /**
+    /**
      * @notice Refund deposit
      * @param relayId The relayId identifier
      */
-function refundDeposit(
+    function refundDeposit(
         bytes32 relayId
     ) external nonReentrant onlyRole(RELAY_MANAGER_ROLE) {
         RelayDeposit storage deposit = deposits[relayId];
@@ -330,11 +331,11 @@ function refundDeposit(
 
     /// @notice Withdraw accumulated protocol fees
     /// @param to Recipient address
-        /**
+    /**
      * @notice Withdraws protocol fees
      * @param to The destination address
      */
-function withdrawProtocolFees(
+    function withdrawProtocolFees(
         address to
     ) external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
         if (to == address(0)) revert ZeroAddress();
@@ -353,13 +354,13 @@ function withdrawProtocolFees(
     /// @param responseTime Time in seconds from claim to completion
     /// @return tier The speed tier classification
     /// @return multiplier The reward multiplier in basis points
-        /**
+    /**
      * @notice Returns the speed tier
      * @param responseTime The responseTime timestamp
      * @return tier The tier
      * @return multiplier The multiplier
      */
-function getSpeedTier(
+    function getSpeedTier(
         uint256 responseTime
     ) external pure returns (SpeedTier tier, uint256 multiplier) {
         return _getSpeedTier(responseTime);
@@ -369,13 +370,13 @@ function getSpeedTier(
     /// @param baseReward Deposit amount (funds max possible payout)
     /// @param responseTime Expected response time in seconds
     /// @return reward The calculated reward after tier and protocol fee
-        /**
+    /**
      * @notice Calculates reward
      * @param baseReward The base reward
      * @param responseTime The responseTime timestamp
      * @return reward The reward
      */
-function calculateReward(
+    function calculateReward(
         uint256 baseReward,
         uint256 responseTime
     ) external pure returns (uint256 reward) {
@@ -386,24 +387,24 @@ function calculateReward(
     }
 
     /// @notice Get a relayer's aggregate statistics
-        /**
+    /**
      * @notice Returns the relayer stats
      * @param relayer The relayer address
      * @return The result value
      */
-function getRelayerStats(
+    function getRelayerStats(
         address relayer
     ) external view returns (RelayerStats memory) {
         return relayerStats[relayer];
     }
 
     /// @notice Get deposit details
-        /**
+    /**
      * @notice Returns the deposit
      * @param relayId The relayId identifier
      * @return The result value
      */
-function getDeposit(
+    function getDeposit(
         bytes32 relayId
     ) external view returns (RelayDeposit memory) {
         return deposits[relayId];
@@ -458,14 +459,14 @@ function getDeposit(
         }
     }
 
-        /**
+    /**
      * @notice _safe transfer e t h
      * @param to The destination address
      * @param amount The amount to process
      */
-function _safeTransferETH(address to, uint256 amount) internal {
+    function _safeTransferETH(address to, uint256 amount) internal {
         (bool success, ) = to.call{value: amount}("");
-        require(success, "ETH transfer failed");
+        if (!success) revert ETHTransferFailed();
     }
 
     /// @notice Receive ETH (for direct deposits)

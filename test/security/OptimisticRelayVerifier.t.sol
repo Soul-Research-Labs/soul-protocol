@@ -135,7 +135,13 @@ contract OptimisticRelayVerifierTest is Test {
 
     function test_submitTransfer_RevertsIfBelowThreshold() public {
         vm.prank(submitter);
-        vm.expectRevert("Below optimistic threshold");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                OptimisticRelayVerifier.BelowOptimisticThreshold.selector,
+                5 ether,
+                10 ether
+            )
+        );
         verifier.submitTransfer{value: 1 ether}(
             MSG_HASH,
             5 ether,
@@ -353,7 +359,12 @@ contract OptimisticRelayVerifierTest is Test {
         verifier.challengeTransfer{value: 0.1 ether}(id, bytes("evidence"));
 
         vm.prank(resolver);
-        vm.expectRevert("Proof hash mismatch");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                OptimisticRelayVerifier.ProofHashMismatch.selector,
+                id
+            )
+        );
         verifier.resolveChallenge(id, bytes("wrong_proof"), true);
     }
 
@@ -503,12 +514,22 @@ contract OptimisticRelayVerifierTest is Test {
     }
 
     function test_setChallengePeriod_RevertsTooLow() public {
-        vm.expectRevert("Invalid period");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                OptimisticRelayVerifier.InvalidChallengePeriod.selector,
+                5 minutes
+            )
+        );
         verifier.setChallengePeriod(5 minutes); // < 10 min
     }
 
     function test_setChallengePeriod_RevertsTooHigh() public {
-        vm.expectRevert("Invalid period");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                OptimisticRelayVerifier.InvalidChallengePeriod.selector,
+                25 hours
+            )
+        );
         verifier.setChallengePeriod(25 hours); // > 24 hours
     }
 
@@ -571,7 +592,7 @@ contract OptimisticRelayVerifierTest is Test {
 
     function test_withdrawBond_RevertsIfNoBond() public {
         vm.prank(alice);
-        vm.expectRevert("No bond to withdraw");
+        vm.expectRevert(OptimisticRelayVerifier.NoBondToWithdraw.selector);
         verifier.withdrawBond();
     }
 

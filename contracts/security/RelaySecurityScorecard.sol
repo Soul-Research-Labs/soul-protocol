@@ -9,19 +9,21 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
  * @dev Used by the protocol to determine if a bridge is safe to use for high-value transfers.
  */
 contract RelaySecurityScorecard is AccessControl {
-    
     bytes32 public constant SCORE_ADMIN_ROLE = keccak256("SCORE_ADMIN_ROLE");
 
+    error ScoreComponentOutOfRange(uint256 value);
+    error InvalidMinimumScore(uint256 value);
+
     struct SecurityScore {
-        uint256 validatorDecentralization;  // 0-20 points
-        uint256 economicSecurity;           // 0-20 points
-        uint256 auditScore;                 // 0-20 points
-        uint256 uptimeScore;                // 0-20 points
-        uint256 incidentHistory;            // 0-20 points
-        uint256 totalScore;                 // 0-100 points
+        uint256 validatorDecentralization; // 0-20 points
+        uint256 economicSecurity; // 0-20 points
+        uint256 auditScore; // 0-20 points
+        uint256 uptimeScore; // 0-20 points
+        uint256 incidentHistory; // 0-20 points
+        uint256 totalScore; // 0-100 points
         uint256 lastUpdated;
     }
-    
+
     mapping(address => SecurityScore) public bridgeScores;
     uint256 public minimumSafeScore = 70;
 
@@ -50,11 +52,12 @@ contract RelaySecurityScorecard is AccessControl {
         uint256 uptime,
         uint256 history
     ) external onlyRole(SCORE_ADMIN_ROLE) {
-        require(decentralization <= 20, "Score component > 20");
-        require(economic <= 20, "Score component > 20");
-        require(audit <= 20, "Score component > 20");
-        require(uptime <= 20, "Score component > 20");
-        require(history <= 20, "Score component > 20");
+        if (decentralization > 20)
+            revert ScoreComponentOutOfRange(decentralization);
+        if (economic > 20) revert ScoreComponentOutOfRange(economic);
+        if (audit > 20) revert ScoreComponentOutOfRange(audit);
+        if (uptime > 20) revert ScoreComponentOutOfRange(uptime);
+        if (history > 20) revert ScoreComponentOutOfRange(history);
 
         uint256 total = decentralization + economic + audit + uptime + history;
 
@@ -70,7 +73,7 @@ contract RelaySecurityScorecard is AccessControl {
 
         emit ScoreUpdated(bridge, total);
     }
-    
+
     /**
      * @notice Check if a bridge is considered safe.
      * @param bridge The address of the bridge adapter.
@@ -82,19 +85,23 @@ contract RelaySecurityScorecard is AccessControl {
 
     /**
      * @notice Get the full score details for a bridge.
-          * @param bridge The bridge contract address
+     * @param bridge The bridge contract address
      * @return The result value
      */
-    function getScore(address bridge) external view returns (SecurityScore memory) {
+    function getScore(
+        address bridge
+    ) external view returns (SecurityScore memory) {
         return bridgeScores[bridge];
     }
 
     /**
      * @notice Update the minimum score required for a bridge to be considered safe.
-          * @param newMin The new Min value
+     * @param newMin The new Min value
      */
-    function setMinimumSafeScore(uint256 newMin) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(newMin <= 100, "Invalid score");
+    function setMinimumSafeScore(
+        uint256 newMin
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (newMin > 100) revert InvalidMinimumScore(newMin);
         minimumSafeScore = newMin;
         emit MinimumSafeScoreUpdated(newMin);
     }

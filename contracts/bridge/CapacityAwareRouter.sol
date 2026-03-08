@@ -210,12 +210,12 @@ contract CapacityAwareRouter is
         IDynamicRoutingOrchestrator.Route memory route = orchestrator.getRoute(
             routeId
         );
-        require(route.chainPath.length > 0, "Invalid route");
-        require(
-            route.status == IDynamicRoutingOrchestrator.RouteStatus.PENDING,
-            "Route not pending"
-        );
-        require(block.timestamp <= route.expiresAt, "Route expired");
+        if (route.chainPath.length == 0) revert InvalidRoute(routeId);
+        if (route.status != IDynamicRoutingOrchestrator.RouteStatus.PENDING) {
+            revert RouteNotPending(routeId);
+        }
+        if (block.timestamp > route.expiresAt)
+            revert RouteExpired(routeId, route.expiresAt);
 
         // Calculate fees
         uint256 protocolFee = (route.totalCost * RELAY_FEE_BPS) / BPS;
@@ -260,7 +260,7 @@ contract CapacityAwareRouter is
         uint256 excess = msg.value - totalRequired - amount;
         if (excess > 0) {
             (bool ok, ) = msg.sender.call{value: excess}("");
-            require(ok, "Refund failed");
+            if (!ok) revert RefundFailed();
         }
 
         emit RelayCommitted(
@@ -363,7 +363,7 @@ contract CapacityAwareRouter is
         uint256 refundAmount = t.amount + t.fee;
         if (refundAmount > 0) {
             (bool ok, ) = t.user.call{value: refundAmount}("");
-            require(ok, "Refund failed");
+            if (!ok) revert RefundFailed();
         }
 
         // Record failure in orchestrator
@@ -409,7 +409,7 @@ contract CapacityAwareRouter is
 
         if (refundAmount > 0) {
             (bool ok, ) = t.user.call{value: refundAmount}("");
-            require(ok, "Refund failed");
+            if (!ok) revert RefundFailed();
         }
 
         emit RelayRefunded(relayId, t.user, refundAmount);
@@ -505,25 +505,26 @@ contract CapacityAwareRouter is
     function setTimeout(
         uint48 newTimeout
     ) external override onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(newTimeout >= 10 minutes, "Timeout too short");
+        if (newTimeout < 10 minutes)
+            revert TimeoutTooShort(newTimeout, uint48(10 minutes));
         uint48 oldTimeout = relayTimeout;
         relayTimeout = newTimeout;
         emit TimeoutUpdated(oldTimeout, newTimeout);
     }
 
     /// @notice Pause the router
-        /**
+    /**
      * @notice Pauses the operation
      */
-function pause() external override onlyRole(DEFAULT_ADMIN_ROLE) {
+    function pause() external override onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
 
     /// @notice Unpause the router
-        /**
+    /**
      * @notice Unpauses the operation
      */
-function unpause() external override onlyRole(DEFAULT_ADMIN_ROLE) {
+    function unpause() external override onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
 

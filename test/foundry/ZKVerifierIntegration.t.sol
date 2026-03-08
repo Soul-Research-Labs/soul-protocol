@@ -108,7 +108,7 @@ contract ZKVerifierIntegrationTest is Test {
     }
 
     function test_adapterRejectsZeroVerifier() public {
-        vm.expectRevert("Zero verifier address");
+        vm.expectRevert(UltraHonkAdapter.ZeroVerifierAddress.selector);
         new UltraHonkAdapter(address(0), 20, keccak256("test"));
     }
 

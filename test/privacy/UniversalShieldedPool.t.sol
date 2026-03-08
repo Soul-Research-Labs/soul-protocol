@@ -395,7 +395,7 @@ contract UniversalShieldedPoolTest is Test {
 
         // Should revert because no verifier is configured and test mode is off
         vm.prank(user);
-        vm.expectRevert("No verifier configured");
+        vm.expectRevert(IUniversalShieldedPool.NoVerifierConfigured.selector);
         noVerifierPool.withdraw(wp);
     }
 

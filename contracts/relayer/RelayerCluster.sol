@@ -38,6 +38,8 @@ import {IRelayerCluster} from "../interfaces/IRelayerCluster.sol";
  * - ReentrancyGuard on all stake-related operations
  */
 contract RelayerCluster is IRelayerCluster, AccessControl, ReentrancyGuard {
+    error StakeReturnFailed();
+
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
@@ -234,7 +236,7 @@ contract RelayerCluster is IRelayerCluster, AccessControl, ReentrancyGuard {
         // Return stake
         if (stakeReturn > 0) {
             (bool ok, ) = msg.sender.call{value: stakeReturn}("");
-            require(ok, "Stake return failed");
+            if (!ok) revert StakeReturnFailed();
         }
     }
 

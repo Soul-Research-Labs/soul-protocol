@@ -695,7 +695,7 @@ contract MultiRelayerRouterTest is Test {
 
     function test_emergencyRelay_revertsForUnauthorized() public {
         vm.prank(user);
-        vm.expectRevert("Not authorized for emergency relay");
+        vm.expectRevert(IMultiRelayerRouter.Unauthorized.selector);
         router.emergencyRelay(
             address(target),
             abi.encodeCall(MockTarget.execute, (1)),
@@ -813,7 +813,12 @@ contract MultiRelayerRouterTest is Test {
         router.registerAdapter(address(adapterA), "A", 1);
 
         vm.prank(user);
-        vm.expectRevert("Invalid gas limit");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IMultiRelayerRouter.InvalidGasLimit.selector,
+                uint256(100)
+            )
+        );
         router.relay{value: 0.01 ether}(
             address(target),
             abi.encodeCall(MockTarget.execute, (1)),
@@ -826,7 +831,12 @@ contract MultiRelayerRouterTest is Test {
         router.registerAdapter(address(adapterA), "A", 1);
 
         vm.prank(user);
-        vm.expectRevert("Invalid gas limit");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IMultiRelayerRouter.InvalidGasLimit.selector,
+                uint256(100_000_000)
+            )
+        );
         router.relay{value: 0.01 ether}(
             address(target),
             abi.encodeCall(MockTarget.execute, (1)),

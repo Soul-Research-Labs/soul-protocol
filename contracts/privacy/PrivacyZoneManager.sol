@@ -47,6 +47,9 @@ contract PrivacyZoneManager is
     Pausable,
     IPrivacyZoneManager
 {
+    error TransferFailed();
+    error VerifierNotConfigured();
+
     // ============================================
     // ROLES (pre-computed for gas optimization)
     // ============================================
@@ -55,10 +58,12 @@ contract PrivacyZoneManager is
     bytes32 public constant ZONE_ADMIN_ROLE = keccak256("ZONE_ADMIN_ROLE");
 
     /// @notice Role for migration operators
-    bytes32 public constant MIGRATION_OPERATOR_ROLE = keccak256("MIGRATION_OPERATOR_ROLE");
+    bytes32 public constant MIGRATION_OPERATOR_ROLE =
+        keccak256("MIGRATION_OPERATOR_ROLE");
 
     /// @notice Role for policy managers
-    bytes32 public constant POLICY_MANAGER_ROLE = keccak256("POLICY_MANAGER_ROLE");
+    bytes32 public constant POLICY_MANAGER_ROLE =
+        keccak256("POLICY_MANAGER_ROLE");
 
     // ============================================
     // CONSTANTS
@@ -145,12 +150,14 @@ contract PrivacyZoneManager is
     // ============================================
 
     /// @inheritdoc IPrivacyZoneManager
-        /**
+    /**
      * @notice Creates zone
      * @param config The config
      * @return zoneId The zone id
      */
-function createZone(ZoneConfig calldata config)
+    function createZone(
+        ZoneConfig calldata config
+    )
         external
         onlyRole(ZONE_ADMIN_ROLE)
         whenNotPaused
@@ -162,8 +169,14 @@ function createZone(ZoneConfig calldata config)
         if (treeDepth == 0) treeDepth = DEFAULT_TREE_DEPTH;
         if (treeDepth > MAX_TREE_DEPTH) treeDepth = MAX_TREE_DEPTH;
 
-        if (config.epochDuration > 0 && config.epochDuration < MIN_EPOCH_DURATION) {
-            revert DepositBelowMinimum(config.epochDuration, MIN_EPOCH_DURATION);
+        if (
+            config.epochDuration > 0 &&
+            config.epochDuration < MIN_EPOCH_DURATION
+        ) {
+            revert DepositBelowMinimum(
+                config.epochDuration,
+                MIN_EPOCH_DURATION
+            );
         }
 
         // Generate deterministic zone ID
@@ -187,13 +200,17 @@ function createZone(ZoneConfig calldata config)
             privacyLevel: config.privacyLevel,
             policyHash: config.policyHash,
             maxThroughput: config.maxThroughput,
-            epochDuration: config.epochDuration > 0 ? config.epochDuration : 3600, // default 1h
+            epochDuration: config.epochDuration > 0
+                ? config.epochDuration
+                : 3600, // default 1h
             currentEpochTxCount: 0,
             currentEpochStart: block.timestamp,
             totalDeposits: 0,
             totalWithdrawals: 0,
             minDepositAmount: config.minDepositAmount,
-            maxDepositAmount: config.maxDepositAmount > 0 ? config.maxDepositAmount : type(uint256).max,
+            maxDepositAmount: config.maxDepositAmount > 0
+                ? config.maxDepositAmount
+                : type(uint256).max,
             merkleTreeDepth: treeDepth,
             merkleTreeLeafCount: 0,
             merkleRoot: ZERO_VALUE,
@@ -214,15 +231,15 @@ function createZone(ZoneConfig calldata config)
     }
 
     /// @inheritdoc IPrivacyZoneManager
-        /**
+    /**
      * @notice Sets the zone status
      * @param zoneId The zoneId identifier
      * @param newStatus The new Status value
      */
-function setZoneStatus(bytes32 zoneId, ZoneStatus newStatus)
-        external
-        onlyRole(ZONE_ADMIN_ROLE)
-    {
+    function setZoneStatus(
+        bytes32 zoneId,
+        ZoneStatus newStatus
+    ) external onlyRole(ZONE_ADMIN_ROLE) {
         Zone storage zone = _zones[zoneId];
         if (zone.createdAt == 0) revert ZoneDoesNotExist(zoneId);
 
@@ -230,7 +247,9 @@ function setZoneStatus(bytes32 zoneId, ZoneStatus newStatus)
         zone.status = newStatus;
 
         // If shutting down, remove from active list
-        if (newStatus == ZoneStatus.Shutdown || newStatus == ZoneStatus.Inactive) {
+        if (
+            newStatus == ZoneStatus.Shutdown || newStatus == ZoneStatus.Inactive
+        ) {
             _removeFromActiveZones(zoneId);
         }
 
@@ -238,15 +257,15 @@ function setZoneStatus(bytes32 zoneId, ZoneStatus newStatus)
     }
 
     /// @inheritdoc IPrivacyZoneManager
-        /**
+    /**
      * @notice Sets the zone policy
      * @param zoneId The zoneId identifier
      * @param newPolicyHash The newPolicyHash hash value
      */
-function setZonePolicy(bytes32 zoneId, bytes32 newPolicyHash)
-        external
-        onlyRole(POLICY_MANAGER_ROLE)
-    {
+    function setZonePolicy(
+        bytes32 zoneId,
+        bytes32 newPolicyHash
+    ) external onlyRole(POLICY_MANAGER_ROLE) {
         Zone storage zone = _zones[zoneId];
         if (zone.createdAt == 0) revert ZoneDoesNotExist(zoneId);
 
@@ -257,19 +276,19 @@ function setZonePolicy(bytes32 zoneId, bytes32 newPolicyHash)
     }
 
     /// @inheritdoc IPrivacyZoneManager
-        /**
+    /**
      * @notice Sets the zone deposit cap
      * @param zoneId The zoneId identifier
      * @param newCap The new Cap value
      */
-function setZoneDepositCap(bytes32 zoneId, uint256 newCap)
-        external
-        onlyRole(ZONE_ADMIN_ROLE)
-    {
+    function setZoneDepositCap(
+        bytes32 zoneId,
+        uint256 newCap
+    ) external onlyRole(ZONE_ADMIN_ROLE) {
         Zone storage zone = _zones[zoneId];
         if (zone.createdAt == 0) revert ZoneDoesNotExist(zoneId);
-        
-        // Emitting event would be nice but not in interface yet? 
+
+        // Emitting event would be nice but not in interface yet?
         // Oh wait, I didn't add the event to interface.
         // I should just update state.
         zone.maxTotalDeposits = newCap;
@@ -280,17 +299,15 @@ function setZoneDepositCap(bytes32 zoneId, uint256 newCap)
     // ============================================
 
     /// @inheritdoc IPrivacyZoneManager
-        /**
+    /**
      * @notice Deposits to zone
      * @param zoneId The zoneId identifier
      * @param commitment The cryptographic commitment
      */
-function depositToZone(bytes32 zoneId, bytes32 commitment)
-        external
-        payable
-        nonReentrant
-        whenNotPaused
-    {
+    function depositToZone(
+        bytes32 zoneId,
+        bytes32 commitment
+    ) external payable nonReentrant whenNotPaused {
         Zone storage zone = _zones[zoneId];
         if (zone.createdAt == 0) revert ZoneDoesNotExist(zoneId);
         if (zone.status != ZoneStatus.Active) revert ZoneNotActive(zoneId);
@@ -312,7 +329,11 @@ function depositToZone(bytes32 zoneId, bytes32 commitment)
         // Check TVL cap
         if (zone.maxTotalDeposits > 0) {
             if (zone.totalValueLocked + msg.value > zone.maxTotalDeposits) {
-                revert ZoneDepositCapReached(zoneId, zone.totalValueLocked + msg.value, zone.maxTotalDeposits);
+                revert ZoneDepositCapReached(
+                    zoneId,
+                    zone.totalValueLocked + msg.value,
+                    zone.maxTotalDeposits
+                );
             }
         }
 
@@ -330,17 +351,22 @@ function depositToZone(bytes32 zoneId, bytes32 commitment)
         bytes32 currentHash = commitment;
 
         // Incremental Merkle tree insertion
-        for (uint32 i = 0; i < zone.merkleTreeDepth;) {
+        for (uint32 i = 0; i < zone.merkleTreeDepth; ) {
             if (leafIndex % 2 == 0) {
                 // Left child — store and hash with zero
                 _zoneMerkleLevels[zoneId][i] = currentHash;
                 currentHash = _hashPair(currentHash, ZERO_VALUE);
             } else {
                 // Right child — hash with stored left sibling
-                currentHash = _hashPair(_zoneMerkleLevels[zoneId][i], currentHash);
+                currentHash = _hashPair(
+                    _zoneMerkleLevels[zoneId][i],
+                    currentHash
+                );
             }
             leafIndex /= 2;
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
 
         // Update zone state
@@ -362,7 +388,7 @@ function depositToZone(bytes32 zoneId, bytes32 commitment)
     // ============================================
 
     /// @inheritdoc IPrivacyZoneManager
-        /**
+    /**
      * @notice Withdraws from zone
      * @param zoneId The zoneId identifier
      * @param nullifier The nullifier hash
@@ -370,26 +396,26 @@ function depositToZone(bytes32 zoneId, bytes32 commitment)
      * @param amount The amount to process
      * @param proof The ZK proof data
      */
-function withdrawFromZone(
+    function withdrawFromZone(
         bytes32 zoneId,
         bytes32 nullifier,
         address recipient,
         uint256 amount,
         bytes calldata proof
-    )
-        external
-        nonReentrant
-        whenNotPaused
-    {
+    ) external nonReentrant whenNotPaused {
         Zone storage zone = _zones[zoneId];
         if (zone.createdAt == 0) revert ZoneDoesNotExist(zoneId);
-        if (zone.status != ZoneStatus.Active && zone.status != ZoneStatus.Deprecated) {
+        if (
+            zone.status != ZoneStatus.Active &&
+            zone.status != ZoneStatus.Deprecated
+        ) {
             revert ZoneNotActive(zoneId);
         }
 
         // Validate nullifier
         if (nullifier == bytes32(0)) revert InvalidCommitment();
-        if (zoneNullifiers[zoneId][nullifier]) revert NullifierAlreadySpent(nullifier);
+        if (zoneNullifiers[zoneId][nullifier])
+            revert NullifierAlreadySpent(nullifier);
 
         // Validate recipient
         if (recipient == address(0)) revert InvalidCommitment();
@@ -405,7 +431,7 @@ function withdrawFromZone(
 
         // Transfer funds
         (bool success, ) = recipient.call{value: amount}("");
-        require(success, "Transfer failed");
+        if (!success) revert TransferFailed();
 
         unchecked {
             ++zone.totalWithdrawals;
@@ -425,7 +451,7 @@ function withdrawFromZone(
     // ============================================
 
     /// @inheritdoc IPrivacyZoneManager
-        /**
+    /**
      * @notice Migrates state
      * @param sourceZoneId The sourceZoneId identifier
      * @param destZoneId The destZoneId identifier
@@ -434,41 +460,50 @@ function withdrawFromZone(
      * @param proof The ZK proof data
      * @return migrationId The migration id
      */
-function migrateState(
+    function migrateState(
         bytes32 sourceZoneId,
         bytes32 destZoneId,
         bytes32 nullifier,
         bytes32 newCommitment,
         bytes calldata proof
-    )
-        external
-        nonReentrant
-        whenNotPaused
-        returns (bytes32 migrationId)
-    {
+    ) external nonReentrant whenNotPaused returns (bytes32 migrationId) {
         Zone storage sourceZone = _zones[sourceZoneId];
         Zone storage destZone = _zones[destZoneId];
 
         // Validate zones
         if (sourceZone.createdAt == 0) revert ZoneDoesNotExist(sourceZoneId);
         if (destZone.createdAt == 0) revert ZoneDoesNotExist(destZoneId);
-        if (sourceZone.status != ZoneStatus.Active && sourceZone.status != ZoneStatus.Deprecated) {
+        if (
+            sourceZone.status != ZoneStatus.Active &&
+            sourceZone.status != ZoneStatus.Deprecated
+        ) {
             revert ZoneNotActive(sourceZoneId);
         }
-        if (destZone.status != ZoneStatus.Active) revert ZoneNotActive(destZoneId);
+        if (destZone.status != ZoneStatus.Active)
+            revert ZoneNotActive(destZoneId);
 
         // Check migration permissions
-        if (!sourceZone.crossZoneMigration) revert MigrationNotAllowed(sourceZoneId);
-        if (!destZone.crossZoneMigration) revert MigrationNotAllowed(destZoneId);
+        if (!sourceZone.crossZoneMigration)
+            revert MigrationNotAllowed(sourceZoneId);
+        if (!destZone.crossZoneMigration)
+            revert MigrationNotAllowed(destZoneId);
 
         // Validate inputs
-        if (nullifier == bytes32(0) || newCommitment == bytes32(0)) revert InvalidCommitment();
+        if (nullifier == bytes32(0) || newCommitment == bytes32(0))
+            revert InvalidCommitment();
         if (uint256(newCommitment) >= FIELD_SIZE) revert InvalidCommitment();
-        if (zoneNullifiers[sourceZoneId][nullifier]) revert NullifierAlreadySpent(nullifier);
+        if (zoneNullifiers[sourceZoneId][nullifier])
+            revert NullifierAlreadySpent(nullifier);
 
         // Verify migration proof (bypass in test mode)
         if (!testMode) {
-            _verifyMigrationProof(sourceZoneId, destZoneId, nullifier, newCommitment, proof);
+            _verifyMigrationProof(
+                sourceZoneId,
+                destZoneId,
+                nullifier,
+                newCommitment,
+                proof
+            );
         }
 
         // Generate migration ID
@@ -521,80 +556,88 @@ function migrateState(
     // ============================================
 
     /// @inheritdoc IPrivacyZoneManager
-        /**
+    /**
      * @notice Returns the zone
      * @param zoneId The zoneId identifier
      * @return The result value
      */
-function getZone(bytes32 zoneId) external view returns (Zone memory) {
+    function getZone(bytes32 zoneId) external view returns (Zone memory) {
         if (_zones[zoneId].createdAt == 0) revert ZoneDoesNotExist(zoneId);
         return _zones[zoneId];
     }
 
     /// @inheritdoc IPrivacyZoneManager
-        /**
+    /**
      * @notice Returns the zone stats
      * @param zoneId The zoneId identifier
      * @return The result value
      */
-function getZoneStats(bytes32 zoneId) external view returns (ZoneStats memory) {
+    function getZoneStats(
+        bytes32 zoneId
+    ) external view returns (ZoneStats memory) {
         Zone storage zone = _zones[zoneId];
         if (zone.createdAt == 0) revert ZoneDoesNotExist(zoneId);
 
         uint256 utilization = 0;
         if (zone.maxThroughput > 0) {
-            utilization = (zone.currentEpochTxCount * 10000) / zone.maxThroughput;
+            utilization =
+                (zone.currentEpochTxCount * 10000) /
+                zone.maxThroughput;
         }
 
-        return ZoneStats({
-            zoneId: zoneId,
-            totalDeposits: zone.totalDeposits,
-            totalWithdrawals: zone.totalWithdrawals,
-            activeCommitments: zone.merkleTreeLeafCount,
-            currentEpochTxCount: zone.currentEpochTxCount,
-            maxThroughput: zone.maxThroughput,
-            utilizationBps: utilization,
-            avgTxLatency: 0 // Computed off-chain
-        });
+        return
+            ZoneStats({
+                zoneId: zoneId,
+                totalDeposits: zone.totalDeposits,
+                totalWithdrawals: zone.totalWithdrawals,
+                activeCommitments: zone.merkleTreeLeafCount,
+                currentEpochTxCount: zone.currentEpochTxCount,
+                maxThroughput: zone.maxThroughput,
+                utilizationBps: utilization,
+                avgTxLatency: 0 // Computed off-chain
+            });
     }
 
     /// @inheritdoc IPrivacyZoneManager
-        /**
+    /**
      * @notice Returns the active zone ids
      * @return The result value
      */
-function getActiveZoneIds() external view returns (bytes32[] memory) {
+    function getActiveZoneIds() external view returns (bytes32[] memory) {
         return _activeZoneIds;
     }
 
     /// @inheritdoc IPrivacyZoneManager
-        /**
+    /**
      * @notice Checks if nullifier spent
      * @param zoneId The zoneId identifier
      * @param nullifier The nullifier hash
      * @return The result value
      */
-function isNullifierSpent(bytes32 zoneId, bytes32 nullifier) external view returns (bool) {
+    function isNullifierSpent(
+        bytes32 zoneId,
+        bytes32 nullifier
+    ) external view returns (bool) {
         return zoneNullifiers[zoneId][nullifier];
     }
 
     /// @inheritdoc IPrivacyZoneManager
-        /**
+    /**
      * @notice Returns the zone merkle root
      * @param zoneId The zoneId identifier
      * @return The result value
      */
-function getZoneMerkleRoot(bytes32 zoneId) external view returns (bytes32) {
+    function getZoneMerkleRoot(bytes32 zoneId) external view returns (bytes32) {
         if (_zones[zoneId].createdAt == 0) revert ZoneDoesNotExist(zoneId);
         return _zones[zoneId].merkleRoot;
     }
 
     /// @inheritdoc IPrivacyZoneManager
-        /**
+    /**
      * @notice Returns the total zones
      * @return The result value
      */
-function getTotalZones() external view returns (uint256) {
+    function getTotalZones() external view returns (uint256) {
         return totalZonesCreated;
     }
 
@@ -603,45 +646,49 @@ function getTotalZones() external view returns (uint256) {
     // ============================================
 
     /// @notice Set the migration proof verifier
-        /**
+    /**
      * @notice Sets the migration verifier
      * @param _verifier The _verifier
      */
-function setMigrationVerifier(address _verifier) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setMigrationVerifier(
+        address _verifier
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         migrationVerifier = _verifier;
     }
 
     /// @notice Set the withdrawal proof verifier
-        /**
+    /**
      * @notice Sets the withdrawal verifier
      * @param _verifier The _verifier
      */
-function setWithdrawalVerifier(address _verifier) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setWithdrawalVerifier(
+        address _verifier
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         withdrawalVerifier = _verifier;
     }
 
     /// @notice Permanently disable test mode
-        /**
+    /**
      * @notice Disables test mode
      */
-function disableTestMode() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function disableTestMode() external onlyRole(DEFAULT_ADMIN_ROLE) {
         testMode = false;
         testModePermanentlyDisabled = true;
     }
 
     /// @notice Pause the contract
-        /**
+    /**
      * @notice Pauses the operation
      */
-function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
 
     /// @notice Unpause the contract
-        /**
+    /**
      * @notice Unpauses the operation
      */
-function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
 
@@ -659,13 +706,19 @@ function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         }
 
         // Check throughput limit (0 = unlimited)
-        if (zone.maxThroughput > 0 && zone.currentEpochTxCount >= zone.maxThroughput) {
+        if (
+            zone.maxThroughput > 0 &&
+            zone.currentEpochTxCount >= zone.maxThroughput
+        ) {
             revert ZoneThroughputExceeded(zone.zoneId);
         }
     }
 
     /// @dev Insert a commitment into a zone's Merkle tree
-    function _insertCommitmentToZone(bytes32 zoneId, bytes32 commitment) internal {
+    function _insertCommitmentToZone(
+        bytes32 zoneId,
+        bytes32 commitment
+    ) internal {
         Zone storage zone = _zones[zoneId];
 
         uint256 maxLeaves = uint256(1) << zone.merkleTreeDepth;
@@ -676,15 +729,20 @@ function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         uint32 leafIndex = zone.merkleTreeLeafCount;
         bytes32 currentHash = commitment;
 
-        for (uint32 i = 0; i < zone.merkleTreeDepth;) {
+        for (uint32 i = 0; i < zone.merkleTreeDepth; ) {
             if (leafIndex % 2 == 0) {
                 _zoneMerkleLevels[zoneId][i] = currentHash;
                 currentHash = _hashPair(currentHash, ZERO_VALUE);
             } else {
-                currentHash = _hashPair(_zoneMerkleLevels[zoneId][i], currentHash);
+                currentHash = _hashPair(
+                    _zoneMerkleLevels[zoneId][i],
+                    currentHash
+                );
             }
             leafIndex /= 2;
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
 
         zone.merkleRoot = currentHash;
@@ -696,20 +754,25 @@ function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
     }
 
     /// @dev Hash two nodes together (keccak256 for now, Poseidon in production)
-    function _hashPair(bytes32 left, bytes32 right) internal pure returns (bytes32) {
+    function _hashPair(
+        bytes32 left,
+        bytes32 right
+    ) internal pure returns (bytes32) {
         return keccak256(abi.encodePacked(left, right));
     }
 
     /// @dev Remove a zone from the active zones array
     function _removeFromActiveZones(bytes32 zoneId) internal {
         uint256 len = _activeZoneIds.length;
-        for (uint256 i = 0; i < len;) {
+        for (uint256 i = 0; i < len; ) {
             if (_activeZoneIds[i] == zoneId) {
                 _activeZoneIds[i] = _activeZoneIds[len - 1];
                 _activeZoneIds.pop();
                 return;
             }
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
     }
 
@@ -723,7 +786,7 @@ function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
     ) internal view {
         // In production, this calls the ZK verifier contract
         // For now, require a verifier is set
-        require(withdrawalVerifier != address(0), "No withdrawal verifier");
+        if (withdrawalVerifier == address(0)) revert VerifierNotConfigured();
         // The actual verification call would be:
         // IProofVerifier(withdrawalVerifier).verify(proof, publicInputs)
         // where publicInputs = abi.encode(zoneId, nullifier, recipient, amount, merkleRoot)
@@ -738,7 +801,7 @@ function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         bytes32 newCommitment,
         bytes calldata proof
     ) internal view {
-        require(migrationVerifier != address(0), "No migration verifier");
+        if (migrationVerifier == address(0)) revert VerifierNotConfigured();
         // The actual verification call would be:
         // IProofVerifier(migrationVerifier).verify(proof, publicInputs)
         // where publicInputs = abi.encode(sourceZoneId, destZoneId, nullifier, newCommitment, sourceMerkleRoot)

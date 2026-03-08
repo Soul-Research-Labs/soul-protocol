@@ -40,6 +40,12 @@ contract SimpleMultiBridgeRouter is AccessControl, ReentrancyGuard {
     event MessageExecuted(bytes32 indexed messageId, address target);
     event AdapterSendFailed(address indexed adapter, string reason);
 
+    error InsufficientAdapters(uint256 available, uint256 required);
+    error InsufficientConfirmations(uint256 succeeded, uint256 required);
+    error AlreadyConfirmed(bytes32 messageId, address adapter);
+    error ExecutionFailed(bytes32 messageId);
+    error InvalidConfirmationThreshold(uint256 n, uint256 adapterCount);
+
     /// @notice Initializes the router with N-of-M confirmation threshold
     /// @param _admin Address to receive admin roles
     /// @param _requiredConfirmations Minimum bridge confirmations required (N)
@@ -51,7 +57,7 @@ contract SimpleMultiBridgeRouter is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Add a bridge adapter
-          * @param _adapter The _adapter
+     * @param _adapter The _adapter
      */
     function addAdapter(address _adapter) external onlyRole(ADMIN_ROLE) {
         _grantRole(ADAPTER_ROLE, _adapter);
@@ -60,7 +66,7 @@ contract SimpleMultiBridgeRouter is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Send a message via all active adapters
-          * @param target The target
+     * @param target The target
      * @param payload The message payload
      * @param refundAddress The refundAddress address
      * @return messageId The message id
@@ -70,10 +76,12 @@ contract SimpleMultiBridgeRouter is AccessControl, ReentrancyGuard {
         bytes calldata payload,
         address refundAddress
     ) external payable nonReentrant returns (bytes32 messageId) {
-        require(
-            activeAdapters.length >= requiredConfirmations,
-            "Not enough adapters"
-        );
+        if (activeAdapters.length < requiredConfirmations) {
+            revert InsufficientAdapters(
+                activeAdapters.length,
+                requiredConfirmations
+            );
+        }
 
         // Generate unique ID
         messageId = keccak256(
@@ -103,10 +111,12 @@ contract SimpleMultiBridgeRouter is AccessControl, ReentrancyGuard {
             }
         }
 
-        require(
-            successCount >= requiredConfirmations,
-            "Insufficient adapters succeeded"
-        );
+        if (successCount < requiredConfirmations) {
+            revert InsufficientConfirmations(
+                successCount,
+                requiredConfirmations
+            );
+        }
 
         // Refund unused ETH from failed adapters
         if (unusedValue > 0 && refundAddress != address(0)) {
@@ -123,7 +133,7 @@ contract SimpleMultiBridgeRouter is AccessControl, ReentrancyGuard {
     /**
      * @notice Receive a message from an adapter
      * @dev Wrapper function that decodes valid MultiBridge payloads
-          * @param wrappedPayload The wrapped payload
+     * @param wrappedPayload The wrapped payload
      */
     function receiveBridgeMessage(
         bytes calldata wrappedPayload
@@ -138,7 +148,8 @@ contract SimpleMultiBridgeRouter is AccessControl, ReentrancyGuard {
         // If already executed, ignore? Or just return?
         if (status.executed) return;
 
-        require(!status.hasConfirmed[msg.sender], "Already confirmed");
+        if (status.hasConfirmed[msg.sender])
+            revert AlreadyConfirmed(messageId, msg.sender);
 
         status.hasConfirmed[msg.sender] = true;
         status.confirmations++;
@@ -159,19 +170,21 @@ contract SimpleMultiBridgeRouter is AccessControl, ReentrancyGuard {
         );
 
         (bool success, ) = target.call(data);
-        require(success, "Execution failed");
+        if (!success) revert ExecutionFailed(messageId);
 
         emit MessageExecuted(messageId, target);
     }
 
     /**
      * @notice Set required confirmations (N)
-          * @param _n The _n
+     * @param _n The _n
      */
     function setRequiredConfirmations(
         uint256 _n
     ) external onlyRole(ADMIN_ROLE) {
-        require(_n > 0 && _n <= activeAdapters.length, "Invalid N");
+        if (_n == 0 || _n > activeAdapters.length) {
+            revert InvalidConfirmationThreshold(_n, activeAdapters.length);
+        }
         requiredConfirmations = _n;
     }
 }

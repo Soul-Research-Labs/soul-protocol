@@ -186,6 +186,10 @@ interface IDynamicRoutingOrchestrator {
     error InvalidAmount();
     error StaleOracleData(uint256 chainId, uint48 lastUpdated);
     error ZeroAddress();
+    error LengthMismatch(uint256 a, uint256 b);
+    error InvalidWeights(uint256 sum);
+    error InsufficientPayment(uint256 required, uint256 provided);
+    error RefundFailed();
 
     /*//////////////////////////////////////////////////////////////
                            CORE FUNCTIONS

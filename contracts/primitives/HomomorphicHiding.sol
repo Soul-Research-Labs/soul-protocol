@@ -169,6 +169,7 @@ contract HomomorphicHiding is AccessControl, ReentrancyGuard, Pausable {
     error InvalidOperation();
     error Unauthorized();
     error InvalidBounds();
+    error ZeroAddress();
 
     /*//////////////////////////////////////////////////////////////
                              CONSTRUCTOR
@@ -603,7 +604,7 @@ contract HomomorphicHiding is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Get commitment details
-          * @param commitmentId The commitmentId identifier
+     * @param commitmentId The commitmentId identifier
      * @return The result value
      */
     function getCommitment(
@@ -614,7 +615,7 @@ contract HomomorphicHiding is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Get operation result
-          * @param resultId The resultId identifier
+     * @param resultId The resultId identifier
      * @return The result value
      */
     function getOperation(
@@ -625,7 +626,7 @@ contract HomomorphicHiding is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Get range proof
-          * @param proofId The proofId identifier
+     * @param proofId The proofId identifier
      * @return The result value
      */
     function getRangeProof(
@@ -636,7 +637,7 @@ contract HomomorphicHiding is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Get aggregate proof
-          * @param proofId The proofId identifier
+     * @param proofId The proofId identifier
      * @return The result value
      */
     function getAggregateProof(
@@ -647,7 +648,7 @@ contract HomomorphicHiding is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Get all commitments for an owner
-          * @param owner The owner address
+     * @param owner The owner address
      * @return The result value
      */
     function getOwnerCommitments(
@@ -658,7 +659,7 @@ contract HomomorphicHiding is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Check if a commitment is valid
-          * @param commitmentId The commitmentId identifier
+     * @param commitmentId The commitmentId identifier
      * @return The result value
      */
     function isCommitmentValid(
@@ -676,38 +677,38 @@ contract HomomorphicHiding is AccessControl, ReentrancyGuard, Pausable {
                            ADMIN FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-        /**
+    /**
      * @notice Pauses the operation
      */
-function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
 
-        /**
+    /**
      * @notice Unpauses the operation
      */
-function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
 
-        /**
+    /**
      * @notice Deactivate commitment
      * @param commitmentId The commitmentId identifier
      */
-function deactivateCommitment(
+    function deactivateCommitment(
         bytes32 commitmentId
     ) external onlyRole(COMMITMENT_MANAGER_ROLE) {
         commitments[commitmentId].isActive = false;
     }
 
-        /**
+    /**
      * @notice Sets the range proof verifier
      * @param verifier The verifier contract address
      */
-function setRangeProofVerifier(
+    function setRangeProofVerifier(
         address verifier
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(verifier != address(0), "Zero address");
+        if (verifier == address(0)) revert ZeroAddress();
         rangeProofVerifier = verifier;
     }
 }

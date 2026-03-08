@@ -132,7 +132,13 @@ contract MultiBridgeRouterTest is Test {
         router.receiveBridgeMessage(wrappedPayload);
 
         // Try confirming again
-        vm.expectRevert("Already confirmed");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                SimpleMultiBridgeRouter.AlreadyConfirmed.selector,
+                messageId,
+                address(adapter1)
+            )
+        );
         router.receiveBridgeMessage(wrappedPayload);
         vm.stopPrank();
     }
@@ -155,7 +161,12 @@ contract MultiBridgeRouterTest is Test {
 
         // Adapter 2 triggers execution which reverts
         vm.prank(address(adapter2));
-        vm.expectRevert("Execution failed");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                SimpleMultiBridgeRouter.ExecutionFailed.selector,
+                messageId
+            )
+        );
         router.receiveBridgeMessage(wrappedPayload);
     }
 }

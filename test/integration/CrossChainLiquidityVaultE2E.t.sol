@@ -669,7 +669,7 @@ contract CrossChainLiquidityVaultTest is Test {
         vault.depositETH{value: 10 ether}();
 
         vm.prank(guardian);
-        vm.expectRevert("Must be paused");
+        vm.expectRevert(ICrossChainLiquidityVault.NotPaused.selector);
         vault.emergencyWithdraw(address(0), admin);
     }
 

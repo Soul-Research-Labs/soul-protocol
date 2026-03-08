@@ -248,6 +248,8 @@ contract ProtocolHealthAggregator is AccessControl, ReentrancyGuard, Pausable {
     error InvalidThresholds(uint16 healthy, uint16 critical);
     error AutoPauseCooldownActive(uint48 nextAllowed);
     error NoOverrideActive();
+    error LengthMismatch(uint256 idsLen, uint256 scoresLen);
+    error EmptyBatch();
 
     /*//////////////////////////////////////////////////////////////
                              CONSTRUCTOR
@@ -411,8 +413,9 @@ contract ProtocolHealthAggregator is AccessControl, ReentrancyGuard, Pausable {
         uint16[] calldata scores
     ) external onlyRole(MONITOR_ROLE) nonReentrant {
         uint256 len = ids.length;
-        require(len == scores.length, "Length mismatch");
-        require(len > 0, "Empty batch");
+        if (len != scores.length)
+            revert LengthMismatch(ids.length, scores.length);
+        if (len == 0) revert EmptyBatch();
 
         for (uint256 i; i < len; ) {
             if (scores[i] > MAX_SCORE) revert ScoreOutOfRange(scores[i]);
@@ -601,18 +604,18 @@ contract ProtocolHealthAggregator is AccessControl, ReentrancyGuard, Pausable {
     }
 
     /// @notice Emergency pause this aggregator itself
-        /**
+    /**
      * @notice Pauses the operation
      */
-function pause() external onlyRole(GUARDIAN_ROLE) {
+    function pause() external onlyRole(GUARDIAN_ROLE) {
         _pause();
     }
 
     /// @notice Unpause this aggregator
-        /**
+    /**
      * @notice Unpauses the operation
      */
-function unpause() external onlyRole(GUARDIAN_ROLE) {
+    function unpause() external onlyRole(GUARDIAN_ROLE) {
         _unpause();
     }
 
@@ -693,7 +696,7 @@ function unpause() external onlyRole(GUARDIAN_ROLE) {
 
     /**
      * @notice Get count of registered subsystems
-          * @return The result value
+     * @return The result value
      */
     function subsystemCount() external view returns (uint256) {
         return subsystemIds.length;
@@ -701,7 +704,7 @@ function unpause() external onlyRole(GUARDIAN_ROLE) {
 
     /**
      * @notice Get count of registered pausable targets
-          * @return The result value
+     * @return The result value
      */
     function pausableTargetCount() external view returns (uint256) {
         return pausableTargetList.length;

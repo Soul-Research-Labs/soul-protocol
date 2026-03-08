@@ -1323,6 +1323,29 @@ Security wrapper for atomic swaps with 4-layer protection: MEV protection (commi
 | `claimSwap`           | external      | HTLC claim with preimage        |
 | `refundSwap`          | external      | HTLC refund after expiry        |
 
+### 23.9 UniswapV3RebalanceAdapter
+
+**Path:** `contracts/integrations/UniswapV3RebalanceAdapter.sol`
+**Inherits:** `IRebalanceSwapAdapter`, `AccessControl`, `ReentrancyGuard`, `Pausable`
+
+DEX adapter for settlement rebalancing via Uniswap V3. Authorized vaults call `swap()` during cross-chain settlement to convert received tokens into the target denomination. Supports ETH↔ERC20 via WETH wrapping, configurable fee tiers per token pair, slippage protection, and deadline enforcement.
+
+| Function              | Visibility    | Description                                             |
+| --------------------- | ------------- | ------------------------------------------------------- |
+| `swap`                | external      | Execute swap via Uniswap V3 (authorized callers only)   |
+| `getQuote`            | external      | Estimate output amount for a given input                |
+| `isSwapSupported`     | external view | Check if a swap pair is supported (pool exists)         |
+| `setAuthorizedCaller` | external      | Authorize/deauthorize a vault to call swap (admin only) |
+| `setFeeTierOverride`  | external      | Override Uniswap fee tier for a token pair (admin only) |
+
+**Key Features:**
+
+- Automatic ETH↔WETH wrapping/unwrapping for native ETH swaps
+- Per-pair fee tier overrides (default: 3000 = 0.3%)
+- Caller whitelist via `authorizedCallers` mapping
+- Slippage protection via `minAmountOut` parameter
+- Uses Uniswap V3 `ISwapRouter.exactInputSingle` for optimal single-hop execution
+
 ---
 
 ## 24. Security Contracts

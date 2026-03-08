@@ -129,7 +129,7 @@ contract HeterogeneousRelayerRegistry is
     /// @notice Initialize the registry with an admin who receives all management roles
     /// @param _admin Address to grant admin, task assigner, slasher, and performance reporter roles
     constructor(address _admin) {
-        require(_admin != address(0), "Zero address");
+        if (_admin == address(0)) revert ZeroAddress();
 
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(REGISTRY_ADMIN_ROLE, _admin);
@@ -143,12 +143,12 @@ contract HeterogeneousRelayerRegistry is
     // ============================================
 
     /// @inheritdoc IHeterogeneousRelayerRegistry
-        /**
+    /**
      * @notice Registers proof generator
      * @param supportedChainIds The supportedChainIds identifier
      * @param capabilityHash The capabilityHash hash value
      */
-function registerProofGenerator(
+    function registerProofGenerator(
         uint256[] calldata supportedChainIds,
         bytes32 capabilityHash
     ) external payable nonReentrant whenNotPaused {
@@ -163,11 +163,11 @@ function registerProofGenerator(
     }
 
     /// @inheritdoc IHeterogeneousRelayerRegistry
-        /**
+    /**
      * @notice Registers light relayer
      * @param supportedChainIds The supportedChainIds identifier
      */
-function registerLightRelayer(
+    function registerLightRelayer(
         uint256[] calldata supportedChainIds
     ) external payable nonReentrant whenNotPaused {
         if (msg.value < LIGHT_RELAYER_MIN_STAKE) {
@@ -181,10 +181,10 @@ function registerLightRelayer(
     }
 
     /// @inheritdoc IHeterogeneousRelayerRegistry
-        /**
+    /**
      * @notice Registers watchtower
      */
-function registerWatchtower() external payable nonReentrant whenNotPaused {
+    function registerWatchtower() external payable nonReentrant whenNotPaused {
         if (msg.value < WATCHTOWER_MIN_STAKE) {
             revert InsufficientStake(msg.value, WATCHTOWER_MIN_STAKE);
         }
@@ -193,10 +193,10 @@ function registerWatchtower() external payable nonReentrant whenNotPaused {
     }
 
     /// @inheritdoc IHeterogeneousRelayerRegistry
-        /**
+    /**
      * @notice Exit relayer
      */
-function exitRelayer() external nonReentrant {
+    function exitRelayer() external nonReentrant {
         Relayer storage relayer = _relayers[msg.sender];
         if (relayer.registeredAt == 0) revert RelayerNotRegistered(msg.sender);
 
@@ -224,7 +224,7 @@ function exitRelayer() external nonReentrant {
             }
 
             (bool success, ) = msg.sender.call{value: stakeToReturn}("");
-            require(success, "Transfer failed");
+            if (!success) revert TransferFailed();
 
             emit RelayerExited(msg.sender, stakeToReturn);
         }
@@ -235,7 +235,7 @@ function exitRelayer() external nonReentrant {
     // ============================================
 
     /// @inheritdoc IHeterogeneousRelayerRegistry
-        /**
+    /**
      * @notice Assign task
      * @param taskType The task type
      * @param proofDataHash The proofDataHash hash value
@@ -244,7 +244,7 @@ function exitRelayer() external nonReentrant {
      * @param deadline The deadline timestamp
      * @return taskId The task id
      */
-function assignTask(
+    function assignTask(
         TaskType taskType,
         bytes32 proofDataHash,
         uint256 sourceChainId,
@@ -290,11 +290,11 @@ function assignTask(
     }
 
     /// @inheritdoc IHeterogeneousRelayerRegistry
-        /**
+    /**
      * @notice Completes task
      * @param taskId The taskId identifier
- */
-function completeTask(
+     */
+    function completeTask(
         bytes32 taskId,
         bytes calldata /* result */
     ) external nonReentrant {
@@ -326,12 +326,12 @@ function completeTask(
     }
 
     /// @inheritdoc IHeterogeneousRelayerRegistry
-        /**
+    /**
      * @notice Reports task failure
      * @param taskId The taskId identifier
      * @param reason The reason string
      */
-function reportTaskFailure(
+    function reportTaskFailure(
         bytes32 taskId,
         string calldata reason
     ) external {
@@ -362,12 +362,12 @@ function reportTaskFailure(
     // ============================================
 
     /// @inheritdoc IHeterogeneousRelayerRegistry
-        /**
+    /**
      * @notice Reports performance
      * @param relayerAddr The relayerAddr address
      * @param metrics The metrics
      */
-function reportPerformance(
+    function reportPerformance(
         address relayerAddr,
         PerformanceMetrics calldata metrics
     ) external onlyRole(PERFORMANCE_REPORTER_ROLE) {
@@ -388,13 +388,13 @@ function reportPerformance(
     }
 
     /// @inheritdoc IHeterogeneousRelayerRegistry
-        /**
+    /**
      * @notice Slashs relayer
      * @param relayerAddr The relayerAddr address
      * @param amount The amount to process
      * @param reason The reason string
      */
-function slashRelayer(
+    function slashRelayer(
         address relayerAddr,
         uint256 amount,
         string calldata reason
@@ -413,16 +413,16 @@ function slashRelayer(
     }
 
     /// @notice Claim accumulated rewards
-        /**
+    /**
      * @notice Claims rewards
      */
-function claimRewards() external nonReentrant {
+    function claimRewards() external nonReentrant {
         uint256 rewards = unclaimedRewards[msg.sender];
-        require(rewards > 0, "No rewards");
+        if (rewards == 0) revert NoRewards();
         unclaimedRewards[msg.sender] = 0;
 
         (bool success, ) = msg.sender.call{value: rewards}("");
-        require(success, "Transfer failed");
+        if (!success) revert TransferFailed();
     }
 
     // ============================================
@@ -430,44 +430,44 @@ function claimRewards() external nonReentrant {
     // ============================================
 
     /// @inheritdoc IHeterogeneousRelayerRegistry
-        /**
+    /**
      * @notice Returns the relayer
      * @param addr The target address
      * @return The result value
      */
-function getRelayer(address addr) external view returns (Relayer memory) {
+    function getRelayer(address addr) external view returns (Relayer memory) {
         return _relayers[addr];
     }
 
     /// @inheritdoc IHeterogeneousRelayerRegistry
-        /**
+    /**
      * @notice Returns the task
      * @param taskId The taskId identifier
      * @return The result value
      */
-function getTask(bytes32 taskId) external view returns (Task memory) {
+    function getTask(bytes32 taskId) external view returns (Task memory) {
         return _tasks[taskId];
     }
 
     /// @inheritdoc IHeterogeneousRelayerRegistry
-        /**
+    /**
      * @notice Returns the relayers by role
      * @param role The access control role
      * @return The result value
      */
-function getRelayersByRole(
+    function getRelayersByRole(
         RelayerRole role
     ) external view returns (address[] memory) {
         return _relayersByRole[role];
     }
 
     /// @inheritdoc IHeterogeneousRelayerRegistry
-        /**
+    /**
      * @notice Returns the min stake
      * @param role The access control role
      * @return The result value
      */
-function getMinStake(RelayerRole role) external pure returns (uint256) {
+    function getMinStake(RelayerRole role) external pure returns (uint256) {
         if (role == RelayerRole.ProofGenerator)
             return PROOF_GENERATOR_MIN_STAKE;
         if (role == RelayerRole.LightRelayer) return LIGHT_RELAYER_MIN_STAKE;
@@ -476,12 +476,12 @@ function getMinStake(RelayerRole role) external pure returns (uint256) {
     }
 
     /// @inheritdoc IHeterogeneousRelayerRegistry
-        /**
+    /**
      * @notice Returns the relayer count
      * @param role The access control role
      * @return The result value
      */
-function getRelayerCount(RelayerRole role) external view returns (uint256) {
+    function getRelayerCount(RelayerRole role) external view returns (uint256) {
         return relayerCounts[role];
     }
 
@@ -490,26 +490,26 @@ function getRelayerCount(RelayerRole role) external view returns (uint256) {
     // ============================================
 
     /// @notice Withdraw slashed funds
-        /**
+    /**
      * @notice Withdraws slashed funds
      * @param to The destination address
      */
-function withdrawSlashedFunds(
+    function withdrawSlashedFunds(
         address to
     ) external onlyRole(REGISTRY_ADMIN_ROLE) nonReentrant {
-        require(to != address(0), "Zero address");
+        if (to == address(0)) revert ZeroAddress();
         uint256 amount = slashedFunds;
         slashedFunds = 0;
         (bool success, ) = to.call{value: amount}("");
-        require(success, "Transfer failed");
+        if (!success) revert TransferFailed();
     }
 
     /// @notice Reinstate a suspended relayer
-        /**
+    /**
      * @notice Reinstate relayer
      * @param relayerAddr The relayerAddr address
      */
-function reinstateRelayer(
+    function reinstateRelayer(
         address relayerAddr
     ) external onlyRole(REGISTRY_ADMIN_ROLE) {
         Relayer storage relayer = _relayers[relayerAddr];
@@ -518,18 +518,18 @@ function reinstateRelayer(
     }
 
     /// @notice Pause the registry, disabling registration and task assignment
-        /**
+    /**
      * @notice Pauses the operation
      */
-function pause() external onlyRole(REGISTRY_ADMIN_ROLE) {
+    function pause() external onlyRole(REGISTRY_ADMIN_ROLE) {
         _pause();
     }
 
     /// @notice Unpause the registry, re-enabling registration and task assignment
-        /**
+    /**
      * @notice Unpauses the operation
      */
-function unpause() external onlyRole(REGISTRY_ADMIN_ROLE) {
+    function unpause() external onlyRole(REGISTRY_ADMIN_ROLE) {
         _unpause();
     }
 

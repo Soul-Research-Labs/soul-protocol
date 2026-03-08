@@ -49,7 +49,11 @@ import {IZaseonMultiProver} from "../interfaces/IZaseonMultiProver.sol";
  * @author ZASEON Team
  * @notice Zaseon Multi Prover contract
  */
-contract ZaseonMultiProver is ReentrancyGuard, AccessControl, IZaseonMultiProver {
+contract ZaseonMultiProver is
+    ReentrancyGuard,
+    AccessControl,
+    IZaseonMultiProver
+{
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
@@ -132,6 +136,7 @@ contract ZaseonMultiProver is ReentrancyGuard, AccessControl, IZaseonMultiProver
     error InsufficientProvers();
     error VerificationFailed();
     error InvalidProverConfig();
+    error LengthMismatch(uint256 a, uint256 b);
 
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
@@ -198,13 +203,13 @@ contract ZaseonMultiProver is ReentrancyGuard, AccessControl, IZaseonMultiProver
     /// @param system The prover system
     /// @param verifier On-chain verifier address
     /// @param weight Voting weight
-        /**
+    /**
      * @notice Registers prover
      * @param system The system
      * @param verifier The verifier contract address
      * @param weight The weight value
      */
-function registerProver(
+    function registerProver(
         ProverSystem system,
         address verifier,
         uint256 weight
@@ -229,11 +234,11 @@ function registerProver(
     }
 
     /// @notice Deactivate a prover
-        /**
+    /**
      * @notice Deactivate prover
      * @param system The system
      */
-function deactivateProver(
+    function deactivateProver(
         ProverSystem system
     ) external onlyRole(OPERATOR_ROLE) {
         provers[system].isActive = false;
@@ -249,14 +254,14 @@ function deactivateProver(
     /// @param publicInputsHash Hash of public inputs
     /// @param prover The prover system
     /// @param proof The proof bytes
-        /**
+    /**
      * @notice Submits proof
      * @param proofId The proofId identifier
      * @param publicInputsHash The publicInputsHash hash value
      * @param prover The prover
      * @param proof The ZK proof data
      */
-function submitProof(
+    function submitProof(
         bytes32 proofId,
         bytes32 publicInputsHash,
         ProverSystem prover,
@@ -306,20 +311,21 @@ function submitProof(
     /// @param publicInputsHash Hash of public inputs
     /// @param proverList List of provers
     /// @param proofs List of proofs
-        /**
+    /**
      * @notice Submits multiple proofs
      * @param proofId The proofId identifier
      * @param publicInputsHash The publicInputsHash hash value
      * @param proverList The prover list
      * @param proofs The proofs
      */
-function submitMultipleProofs(
+    function submitMultipleProofs(
         bytes32 proofId,
         bytes32 publicInputsHash,
         ProverSystem[] calldata proverList,
         bytes[] calldata proofs
     ) external nonReentrant {
-        require(proverList.length == proofs.length, "Length mismatch");
+        if (proverList.length != proofs.length)
+            revert LengthMismatch(proverList.length, proofs.length);
 
         for (uint i = 0; i < proverList.length; i++) {
             ProverConfig storage config = provers[proverList[i]];
@@ -411,11 +417,11 @@ function submitMultipleProofs(
     }
 
     /// @notice Force consensus check (called after timeout)
-        /**
+    /**
      * @notice Finalizes proof
      * @param proofId The proofId identifier
      */
-function finalizeProof(bytes32 proofId) external nonReentrant {
+    function finalizeProof(bytes32 proofId) external nonReentrant {
         MultiProof storage mp = multiProofs[proofId];
         if (mp.proofId == bytes32(0)) revert ProofNotFound();
         if (mp.isVerified) return;
@@ -492,12 +498,12 @@ function finalizeProof(bytes32 proofId) external nonReentrant {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Get verification result for a proof
-        /**
+    /**
      * @notice Returns the verification result
      * @param proofId The proofId identifier
      * @return result The result
      */
-function getVerificationResult(
+    function getVerificationResult(
         bytes32 proofId
     ) external view returns (VerificationResult memory result) {
         MultiProof storage mp = multiProofs[proofId];
@@ -533,21 +539,21 @@ function getVerificationResult(
     }
 
     /// @notice Check if a proof is verified
-        /**
+    /**
      * @notice Checks if proof verified
      * @param proofId The proofId identifier
      * @return The result value
      */
-function isProofVerified(bytes32 proofId) external view returns (bool) {
+    function isProofVerified(bytes32 proofId) external view returns (bool) {
         return multiProofs[proofId].isVerified;
     }
 
     /// @notice Get active prover count
-        /**
+    /**
      * @notice Returns the active prover count
      * @return The result value
      */
-function getActiveProverCount() external view returns (uint256) {
+    function getActiveProverCount() external view returns (uint256) {
         uint256 count = 0;
         for (uint i = 0; i < activeProvers.length; ) {
             if (provers[activeProvers[i]].isActive) {
@@ -561,11 +567,11 @@ function getActiveProverCount() external view returns (uint256) {
     }
 
     /// @notice Get all active provers
-        /**
+    /**
      * @notice Returns the active provers
      * @return The result value
      */
-function getActiveProvers() external view returns (ProverSystem[] memory) {
+    function getActiveProvers() external view returns (ProverSystem[] memory) {
         return activeProvers;
     }
 
@@ -574,12 +580,12 @@ function getActiveProvers() external view returns (ProverSystem[] memory) {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Update consensus requirements
-        /**
+    /**
      * @notice Updates consensus requirements
      * @param _requiredConsensus The _required consensus
      * @param _minProvers The _minProvers bound
      */
-function updateConsensusRequirements(
+    function updateConsensusRequirements(
         uint256 _requiredConsensus,
         uint256 _minProvers
     ) external onlyRole(OPERATOR_ROLE) {
@@ -588,11 +594,11 @@ function updateConsensusRequirements(
     }
 
     /// @notice Update proof timeout
-        /**
+    /**
      * @notice Sets the proof timeout
      * @param timeout The timeout duration
      */
-function setProofTimeout(uint256 timeout) external onlyRole(OPERATOR_ROLE) {
+    function setProofTimeout(uint256 timeout) external onlyRole(OPERATOR_ROLE) {
         proofTimeout = timeout;
     }
 }

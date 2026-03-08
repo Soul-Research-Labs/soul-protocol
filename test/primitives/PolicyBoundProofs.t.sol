@@ -754,7 +754,7 @@ contract PolicyBoundProofsTest is Test {
     }
 
     function test_SetPolicyVerifier_RevertZeroAddress() public {
-        vm.expectRevert("Zero verifier address");
+        vm.expectRevert(PolicyBoundProofs.ZeroVerifierAddress.selector);
         pbp.setPolicyVerifier(address(0));
     }
 

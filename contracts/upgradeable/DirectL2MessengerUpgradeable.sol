@@ -65,6 +65,7 @@ contract DirectL2MessengerUpgradeable is
     error MessageExecutionFailed();
     error ZeroAddress();
     error InvalidConfirmationCount();
+    error NotAContract(address addr);
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -1000,8 +1001,9 @@ contract DirectL2MessengerUpgradeable is
     function _authorizeUpgrade(
         address newImplementation
     ) internal override onlyRole(UPGRADER_ROLE) {
-        require(newImplementation != address(0), "Zero address");
-        require(newImplementation.code.length > 0, "Not a contract");
+        if (newImplementation == address(0)) revert ZeroAddress();
+        if (newImplementation.code.length == 0)
+            revert NotAContract(newImplementation);
         contractVersion++;
     }
 

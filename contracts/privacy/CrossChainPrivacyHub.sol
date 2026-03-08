@@ -423,6 +423,7 @@ contract CrossChainPrivacyHub is
     error RefundFailed();
     error FeeTooHigh();
     error TransferNotYetRelayable(bytes32 requestId, uint64 relayableAt);
+    error VerifierNotConfigured(ProofSystem system);
 
     // =========================================================================
     // MODIFIERS
@@ -1381,7 +1382,8 @@ contract CrossChainPrivacyHub is
         PrivacyProof calldata proof
     ) internal view returns (bool) {
         address verifier = proofVerifiers[ProofSystem.GROTH16];
-        require(verifier != address(0), "Groth16 verifier not configured");
+        if (verifier == address(0))
+            revert VerifierNotConfigured(ProofSystem.GROTH16);
         return _delegateVerify(verifier, proof.proof);
     }
 
@@ -1391,7 +1393,8 @@ contract CrossChainPrivacyHub is
         PrivacyProof calldata proof
     ) internal view returns (bool) {
         address verifier = proofVerifiers[ProofSystem.PLONK];
-        require(verifier != address(0), "PLONK verifier not configured");
+        if (verifier == address(0))
+            revert VerifierNotConfigured(ProofSystem.PLONK);
         return _delegateVerify(verifier, proof.proof);
     }
 
@@ -1401,7 +1404,8 @@ contract CrossChainPrivacyHub is
         PrivacyProof calldata proof
     ) internal view returns (bool) {
         address verifier = proofVerifiers[ProofSystem.STARK];
-        require(verifier != address(0), "STARK verifier not configured");
+        if (verifier == address(0))
+            revert VerifierNotConfigured(ProofSystem.STARK);
         return _delegateVerify(verifier, proof.proof);
     }
 
@@ -1411,7 +1415,8 @@ contract CrossChainPrivacyHub is
         PrivacyProof calldata proof
     ) internal view returns (bool) {
         address verifier = proofVerifiers[ProofSystem.BULLETPROOF];
-        require(verifier != address(0), "Bulletproof verifier not configured");
+        if (verifier == address(0))
+            revert VerifierNotConfigured(ProofSystem.BULLETPROOF);
         return _delegateVerify(verifier, proof.proof);
     }
 
@@ -1421,7 +1426,8 @@ contract CrossChainPrivacyHub is
         PrivacyProof calldata proof
     ) internal view returns (bool) {
         address verifier = proofVerifiers[ProofSystem.HALO2];
-        require(verifier != address(0), "Halo2 verifier not configured");
+        if (verifier == address(0))
+            revert VerifierNotConfigured(ProofSystem.HALO2);
         return _delegateVerify(verifier, proof.proof);
     }
 
@@ -1431,7 +1437,8 @@ contract CrossChainPrivacyHub is
         PrivacyProof calldata proof
     ) internal view returns (bool) {
         address verifier = proofVerifiers[ProofSystem.CLSAG];
-        require(verifier != address(0), "CLSAG verifier not configured");
+        if (verifier == address(0))
+            revert VerifierNotConfigured(ProofSystem.CLSAG);
         return _delegateVerify(verifier, proof.proof);
     }
 

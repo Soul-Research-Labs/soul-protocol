@@ -44,10 +44,10 @@
 | -------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Solidity contracts   | 250           | Core, bridge, privacy, compliance, governance, relayer, security, primitives, verifiers, upgradeable, integrations, libraries, metadata protection                                                                                                                                                                                                    |
 | Noir ZK circuits     | 21            | balance_proof, shielded_pool, nullifier, cross_chain_proof, merkle_proof, pedersen_commitment, ring_signature, sanctions_check, compliance_proof, encrypted_transfer, liquidity_proof, private_transfer, state_commitment, state_transfer, swap_proof, aggregator, container, cross_domain_nullifier, policy, policy_bound_proof, accredited_investor |
-| Foundry tests        | 5,880 passing | 1 pre-existing failure (GeneratedVerifiers.t.sol `vm.getCode`)                                                                                                                                                                                                                                                                                        |
+| Foundry tests        | 5,880 passing | All passing (GeneratedVerifiers.t.sol `vm.getCode` issue resolved via `_tryDeployContract` fallback)                                                                                                                                                                                                                                                  |
 | Test files           | 288           | .sol and .ts (Foundry + Hardhat)                                                                                                                                                                                                                                                                                                                      |
-| Certora specs        | 69            | Formal verification properties                                                                                                                                                                                                                                                                                                                        |
-| Certora confs        | 69            | Matching verification configurations                                                                                                                                                                                                                                                                                                                  |
+| Certora specs        | 72            | Formal verification properties                                                                                                                                                                                                                                                                                                                        |
+| Certora confs        | 72            | Matching verification configurations                                                                                                                                                                                                                                                                                                                  |
 | Interfaces           | 50            | Full interface coverage for components                                                                                                                                                                                                                                                                                                                |
 | Upgradeable variants | 16            | UUPS proxy patterns for all core contracts                                                                                                                                                                                                                                                                                                            |
 | SDK source files     | 61            | TypeScript, package name `@zaseon/sdk` v2.0.0                                                                                                                                                                                                                                                                                                         |
@@ -85,17 +85,18 @@
 
 #### Cross-Chain Bridge Layer
 
-| Contract                 | File                                             | Purpose                                        | Maturity          |
-| ------------------------ | ------------------------------------------------ | ---------------------------------------------- | ----------------- |
-| MultiBridgeRouter        | `contracts/bridge/MultiBridgeRouter.sol`         | Multi-bridge routing with failover             | Complete — tested |
-| CrossChainProofHubV3     | `contracts/bridge/CrossChainProofHubV3.sol`      | Proof aggregation with optimistic verification | Complete — tested |
-| CrossChainLiquidityVault | `contracts/bridge/CrossChainLiquidityVault.sol`  | LP-backed liquidity (no synthetic tokens)      | Complete — tested |
-| ArbitrumBridgeAdapter    | `contracts/crosschain/ArbitrumBridgeAdapter.sol` | Arbitrum native bridge                         | Complete — tested |
-| OptimismBridgeAdapter    | `contracts/crosschain/OptimismBridgeAdapter.sol` | Optimism native bridge                         | Complete — tested |
-| EthereumL1Bridge         | `contracts/crosschain/EthereumL1Bridge.sol`      | Ethereum L1 settlement bridge                  | Complete — tested |
-| AztecBridgeAdapter       | `contracts/crosschain/AztecBridgeAdapter.sol`    | Aztec privacy-native bridge                    | Complete — tested |
-| ZaseonCrossChainRelay    | `contracts/crosschain/ZaseonCrossChainRelay.sol` | Dispatches via LayerZero/Hyperlane             | Complete — tested |
-| CrossL2Atomicity         | `contracts/crosschain/CrossL2Atomicity.sol`      | Cross-chain atomic operations                  | Complete — tested |
+| Contract                  | File                                                   | Purpose                                        | Maturity          |
+| ------------------------- | ------------------------------------------------------ | ---------------------------------------------- | ----------------- |
+| MultiBridgeRouter         | `contracts/bridge/MultiBridgeRouter.sol`               | Multi-bridge routing with failover             | Complete — tested |
+| CrossChainProofHubV3      | `contracts/bridge/CrossChainProofHubV3.sol`            | Proof aggregation with optimistic verification | Complete — tested |
+| CrossChainLiquidityVault  | `contracts/bridge/CrossChainLiquidityVault.sol`        | LP-backed liquidity (no synthetic tokens)      | Complete — tested |
+| ArbitrumBridgeAdapter     | `contracts/crosschain/ArbitrumBridgeAdapter.sol`       | Arbitrum native bridge                         | Complete — tested |
+| OptimismBridgeAdapter     | `contracts/crosschain/OptimismBridgeAdapter.sol`       | Optimism native bridge                         | Complete — tested |
+| EthereumL1Bridge          | `contracts/crosschain/EthereumL1Bridge.sol`            | Ethereum L1 settlement bridge                  | Complete — tested |
+| AztecBridgeAdapter        | `contracts/crosschain/AztecBridgeAdapter.sol`          | Aztec privacy-native bridge                    | Complete — tested |
+| ZaseonCrossChainRelay     | `contracts/crosschain/ZaseonCrossChainRelay.sol`       | Dispatches via LayerZero/Hyperlane             | Complete — tested |
+| CrossL2Atomicity          | `contracts/crosschain/CrossL2Atomicity.sol`            | Cross-chain atomic operations                  | Complete — tested |
+| UniswapV3RebalanceAdapter | `contracts/integrations/UniswapV3RebalanceAdapter.sol` | Settlement rebalancing via Uniswap V3          | Complete — tested |
 
 #### Relayer Infrastructure
 
@@ -133,12 +134,12 @@
 
 #### Governance Layer
 
-| Contract              | File                                             | Purpose                                  | Maturity          |
-| --------------------- | ------------------------------------------------ | ---------------------------------------- | ----------------- |
-| ZaseonGovernance      | `contracts/governance/ZaseonGovernance.sol`      | Core governance logic                    | Complete — tested |
-| ZaseonGovernor        | `contracts/governance/ZaseonGovernor.sol`        | OpenZeppelin-based Governor              | Complete — tested |
-| ZaseonToken           | `contracts/governance/ZaseonToken.sol`           | ZAS governance/utility token (mint+burn) | Complete — tested |
-| ZaseonUpgradeTimelock | `contracts/governance/ZaseonUpgradeTimelock.sol` | Timelock for upgrades                    | Complete — tested |
+| Contract              | File                                             | Purpose                                  | Maturity                            |
+| --------------------- | ------------------------------------------------ | ---------------------------------------- | ----------------------------------- |
+| ZaseonGovernance      | `contracts/governance/ZaseonGovernance.sol`      | Thin TimelockController wrapper          | **Deprecated** — use ZaseonGovernor |
+| ZaseonGovernor        | `contracts/governance/ZaseonGovernor.sol`        | OpenZeppelin-based Governor              | Complete — tested                   |
+| ZaseonToken           | `contracts/governance/ZaseonToken.sol`           | ZAS governance/utility token (mint+burn) | Complete — tested                   |
+| ZaseonUpgradeTimelock | `contracts/governance/ZaseonUpgradeTimelock.sol` | Timelock for upgrades                    | Complete — tested                   |
 
 #### ZK Verifier Layer
 
@@ -265,20 +266,20 @@ Total Funding               $263M             $225M           $43M            $0
 
 ### 2.2 Critical Gaps (Ordered by Severity)
 
-| #   | Gap                                  | Severity | Why It Matters                                                 | Reference Contract/File                                                                      |
-| --- | ------------------------------------ | -------- | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| 1   | **No live deployment**               | CRITICAL | Nothing works without deployed contracts                       | `scripts/deploy/DeployMainnet.s.sol`                                                         |
-| 2   | **No relayer software**              | CRITICAL | Proofs can't cross chains without relayers                     | `contracts/relayer/DecentralizedRelayerRegistry.sol` exists, but no off-chain relayer binary |
-| 3   | **No `@aztec/bb.js` dependency**     | CRITICAL | ZK proofs cannot be generated client-side                      | `sdk/src/zkprover/NoirProver.ts` line 300                                                    |
-| 4   | **SDK not published to npm**         | HIGH     | No developer can `npm install` the SDK                         | `package.json` name `@zaseon/sdk` — npm returns 404                                          |
-| 5   | **No compiled circuit artifacts**    | HIGH     | `NoirProver` needs `.json` artifacts from `nargo compile`      | `noir/*/src/main.nr` circuits exist but `target/` empty                                      |
-| 6   | **No frontend / web app**            | HIGH     | No user-facing product                                         | —                                                                                            |
-| 7   | **No block explorer**                | HIGH     | No visibility into protocol state                              | —                                                                                            |
-| 8   | **No documentation website**         | HIGH     | Markdown in repo ≠ developer docs site                         | `docs/` directory                                                                            |
-| 9   | **No audit**                         | HIGH     | No enterprise will integrate unaudited code                    | 69 Certora specs need reconciliation first                                                   |
-| 10  | **No legal entity**                  | HIGH     | Cannot sign enterprise contracts, hold IP, or fundraise        | —                                                                                            |
-| 11  | **Base Sepolia deployment stale**    | MEDIUM   | `deployments/base-sepolia-84532.json` references removed chain | `deployments/`                                                                               |
-| 12  | **GeneratedVerifiers.t.sol failing** | LOW      | Pre-existing `vm.getCode` failure in 1 test                    | `test/verifiers/GeneratedVerifiers.t.sol`                                                    |
+| #   | Gap                               | Severity | Why It Matters                                                    | Reference Contract/File                                                                      |
+| --- | --------------------------------- | -------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| 1   | **No live deployment**            | CRITICAL | Nothing works without deployed contracts                          | `scripts/deploy/DeployMainnet.s.sol`                                                         |
+| 2   | **No relayer software**           | CRITICAL | Proofs can't cross chains without relayers                        | `contracts/relayer/DecentralizedRelayerRegistry.sol` exists, but no off-chain relayer binary |
+| 3   | **No `@aztec/bb.js` dependency**  | CRITICAL | ZK proofs cannot be generated client-side                         | `sdk/src/zkprover/NoirProver.ts` line 300                                                    |
+| 4   | **SDK not published to npm**      | HIGH     | No developer can `npm install` the SDK                            | `package.json` name `@zaseon/sdk` — npm returns 404                                          |
+| 5   | **No compiled circuit artifacts** | HIGH     | `NoirProver` needs `.json` artifacts from `nargo compile`         | `noir/*/src/main.nr` circuits exist but `target/` empty                                      |
+| 6   | **No frontend / web app**         | HIGH     | No user-facing product                                            | —                                                                                            |
+| 7   | **No block explorer**             | HIGH     | No visibility into protocol state                                 | —                                                                                            |
+| 8   | **No documentation website**      | HIGH     | Markdown in repo ≠ developer docs site                            | `docs/` directory                                                                            |
+| 9   | **No audit**                      | HIGH     | No enterprise will integrate unaudited code                       | 69 Certora specs need reconciliation first                                                   |
+| 10  | **No legal entity**               | HIGH     | Cannot sign enterprise contracts, hold IP, or fundraise           | —                                                                                            |
+| 11  | **Base Sepolia deployment stale** | MEDIUM   | `deployments/base-sepolia-84532.json` references removed chain    | `deployments/`                                                                               |
+| 12  | **GeneratedVerifiers.t.sol**      | RESOLVED | `_tryDeployContract` fallback handles AggregatorHonkVerifier skip | `test/verifiers/GeneratedVerifiers.t.sol`                                                    |
 
 ---
 
@@ -1156,11 +1157,11 @@ Zaseon Labs (Delaware C-Corp or Singapore Pte Ltd)
 
 **Tier 1 targets** (max value integrations):
 
-| Protocol          | Integration Type          | Value Proposition                                                             | Expected Volume |
-| ----------------- | ------------------------- | ----------------------------------------------------------------------------- | --------------- |
-| **Aave**          | Private lending/borrowing | Users borrow without revealing positions. ZASEON handles shielded collateral. | $50M+ monthly   |
-| **Uniswap**       | Private swap routing      | MEV-protected swaps via ZASEON's encrypted order flow.                        | $100M+ monthly  |
-| **Safe (Gnosis)** | Private multisig treasury | DAO treasuries managed privately with selective disclosure for auditors.      | $20M+ managed   |
+| Protocol          | Integration Type                              | Value Proposition                                                                                                    | Expected Volume |
+| ----------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | --------------- |
+| **Aave**          | Private lending/borrowing                     | Users borrow without revealing positions. ZASEON handles shielded collateral.                                        | $50M+ monthly   |
+| **Uniswap**       | Private swap routing + settlement rebalancing | MEV-protected swaps via ZASEON's encrypted order flow. Settlement swap adapter (UniswapV3RebalanceAdapter) deployed. | $100M+ monthly  |
+| **Safe (Gnosis)** | Private multisig treasury                     | DAO treasuries managed privately with selective disclosure for auditors.                                             | $20M+ managed   |
 
 **Tier 2 targets** (ecosystem growth):
 

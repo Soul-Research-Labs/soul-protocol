@@ -186,6 +186,9 @@ contract OptimisticNullifierChallenge is
     error EmptyBatch();
     error BatchTooLarge(uint256 size, uint256 maxSize);
     error InvalidChallengePeriod(uint256 period);
+    error RewardTransferFailed();
+    error RegistryForwardingFailed();
+    error FeeWithdrawalFailed();
 
     // =========================================================================
     // CONSTRUCTOR
@@ -365,7 +368,7 @@ contract OptimisticNullifierChallenge is
         // Return bond + reward to challenger
         uint256 reward = c.bondAmount;
         (bool sent, ) = c.challenger.call{value: reward}("");
-        require(sent, "Reward transfer failed");
+        if (!sent) revert RewardTransferFailed();
 
         emit ChallengeResolved(challengeId, ChallengeStatus.UPHELD, reward);
         emit BatchRejected(c.batchId, challengeId);
@@ -447,7 +450,7 @@ contract OptimisticNullifierChallenge is
                 batch.sourceMerkleRoot
             )
         );
-        require(success, "Registry forwarding failed");
+        if (!success) revert RegistryForwardingFailed();
 
         emit BatchFinalized(batchId, batch.nullifiers.length);
     }
@@ -536,7 +539,7 @@ contract OptimisticNullifierChallenge is
         uint256 amount = protocolFees;
         protocolFees = 0;
         (bool sent, ) = recipient.call{value: amount}("");
-        require(sent, "Fee withdrawal failed");
+        if (!sent) revert FeeWithdrawalFailed();
     }
 
     /// @notice Emergency pause

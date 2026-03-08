@@ -106,13 +106,18 @@ contract MultiBridgeRouter is
     // BridgeNotConfigured, BridgeNotActive, NoBridgeAvailable, AllBridgesFailed,
     // InvalidSecurityScore, ChainNotSupported, MessageAlreadyFinalized, InsufficientConfirmations
 
-    /*//////////////////////////////////////////////////////////////
+    error LengthMismatch();
+    error InternalOnly();
+    error NoETHToWithdraw();
+    error TransferFailed();
+
+    /*////////////////////////////////////////////////////////////// 
                             CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
     constructor(address admin) {
         // SECURITY FIX H-4: Prevent bricking contract with zero-address admin
-        require(admin != address(0), "Zero admin");
+        if (admin == address(0)) revert ZeroAddress();
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(BRIDGE_ADMIN, admin);
         _grantRole(OPERATOR_ROLE, admin);
@@ -307,7 +312,7 @@ contract MultiBridgeRouter is
         uint256 chainId,
         address target
     ) external onlyRole(BRIDGE_ADMIN) {
-        require(target != address(0), "Invalid target");
+        if (target == address(0)) revert ZeroAddress();
         chainTargets[chainId] = target;
     }
 
@@ -320,9 +325,9 @@ contract MultiBridgeRouter is
         uint256[] calldata chainIds,
         address[] calldata targets
     ) external onlyRole(BRIDGE_ADMIN) {
-        require(chainIds.length == targets.length, "Length mismatch");
+        if (chainIds.length != targets.length) revert LengthMismatch();
         for (uint256 i = 0; i < chainIds.length; i++) {
-            require(targets[i] != address(0), "Invalid target");
+            if (targets[i] == address(0)) revert ZeroAddress();
             chainTargets[chainIds[i]] = targets[i];
         }
     }
@@ -620,11 +625,11 @@ contract MultiBridgeRouter is
         uint256 chainId,
         bytes calldata message
     ) external payable {
-        require(msg.sender == address(this), "Internal only");
+        if (msg.sender != address(this)) revert InternalOnly();
         // Look up the target contract on the destination chain.
         // Each chain must have a registered target (e.g., ZaseonProtocolHub on L2).
         address target = chainTargets[chainId];
-        require(target != address(0), "No target for chain");
+        if (target == address(0)) revert NoBridgeAvailable(chainId);
         // Delegate to the registered IBridgeAdapter implementation.
         // The adapter is responsible for encoding the chainId into its own
         // protocol-specific messaging (LayerZero eid, Hyperlane domain, etc.).
@@ -710,10 +715,10 @@ contract MultiBridgeRouter is
     function emergencyWithdrawETH(
         address to
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(to != address(0), "Zero address");
+        if (to == address(0)) revert ZeroAddress();
         uint256 balance = address(this).balance;
-        require(balance > 0, "No ETH to withdraw");
+        if (balance == 0) revert NoETHToWithdraw();
         (bool success, ) = to.call{value: balance}("");
-        require(success, "ETH transfer failed");
+        if (!success) revert TransferFailed();
     }
 }

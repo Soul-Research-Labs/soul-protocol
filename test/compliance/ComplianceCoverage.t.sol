@@ -12,7 +12,7 @@ contract ComplianceCoverageTest is Test {
 
     function setUp() public {
         // Deploy contracts
-        compliance = new ZaseonComplianceV2();
+        compliance = new ZaseonComplianceV2(admin);
     }
 
     function test_ZaseonComplianceV2_Lifecycle() public {

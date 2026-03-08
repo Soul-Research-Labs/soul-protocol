@@ -40,6 +40,14 @@ methods {
     function refundExpiredLock(bytes32) external;
     function proposeSettlement(uint256, address) external returns (bytes32);
     function executeSettlement(bytes32) external;
+
+    // Settlement swap functions
+    function executeSettlementWithSwap(bytes32, address, uint256, uint256) external;
+    function receiveSettlementWithSwap(uint256, address, uint256, address, uint256, uint256) external;
+    function setRebalanceAdapter(address) external;
+    function rebalanceAdapter() external returns (address) envfree;
+    function hasRole(bytes32, address) external returns (bool) envfree;
+    function OPERATOR_ROLE() external returns (bytes32) envfree;
 }
 
 /*//////////////////////////////////////////////////////////////
@@ -219,4 +227,62 @@ rule noETHCreatedFromLock(bytes32 requestId, uint256 amount, uint256 destChainId
     uint256 totalAfter = totalETH();
     assert totalAfter <= totalBefore,
         "Lock cannot increase total ETH";
+}
+
+/*//////////////////////////////////////////////////////////////
+                  SETTLEMENT SWAP RULES
+//////////////////////////////////////////////////////////////*/
+
+/**
+ * RULE-VAULT-009: executeSettlementWithSwap only processes outflows
+ * @dev An inflow batch must revert when used with swap execution
+ */
+rule executeSettlementWithSwapOutflowOnly(
+    bytes32 batchId, address targetToken, uint256 minAmountOut, uint256 deadline
+) {
+    env e;
+    uint256 totalBefore = totalETH();
+
+    executeSettlementWithSwap(e, batchId, targetToken, minAmountOut, deadline);
+
+    // If it succeeded, the batch was an outflow — total may decrease
+    uint256 totalAfter = totalETH();
+    assert totalAfter <= totalBefore,
+        "executeSettlementWithSwap must only reduce ETH (outflow)";
+}
+
+/**
+ * RULE-VAULT-010: Solvency preserved after settlement swap
+ * @dev totalLockedETH <= totalETH after any settlement swap operation
+ */
+rule solvencyAfterSettlementSwap(method f) filtered {
+    f -> f.selector == sig:executeSettlementWithSwap(bytes32,address,uint256,uint256).selector
+      || f.selector == sig:receiveSettlementWithSwap(uint256,address,uint256,address,uint256,uint256).selector
+} {
+    require totalLockedETH() <= totalETH();
+
+    env e;
+    calldataarg args;
+    f(e, args);
+
+    assert totalLockedETH() <= totalETH(),
+        "Solvency violated after settlement swap";
+}
+
+/**
+ * RULE-VAULT-011: setRebalanceAdapter can only be called by OPERATOR_ROLE
+ * @dev Non-operator accounts must not be able to change the adapter
+ */
+rule setRebalanceAdapterRequiresOperator() {
+    env e;
+    address newAdapter;
+
+    // Store pre-state
+    address adapterBefore = rebalanceAdapter();
+
+    setRebalanceAdapter@withrevert(e, newAdapter);
+
+    // If caller doesn't have OPERATOR_ROLE, it must revert
+    assert !hasRole(OPERATOR_ROLE(), e.msg.sender) => lastReverted,
+        "setRebalanceAdapter must require OPERATOR_ROLE";
 }

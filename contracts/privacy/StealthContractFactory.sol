@@ -171,11 +171,11 @@ contract StealthContractFactory is
         _disableInitializers();
     }
 
-        /**
+    /**
      * @notice Initializes the operation
      * @param admin The admin bound
      */
-function initialize(address admin) external initializer {
+    function initialize(address admin) external initializer {
         if (admin == address(0)) revert ZeroAddress();
 
         __AccessControl_init();
@@ -197,7 +197,7 @@ function initialize(address admin) external initializer {
      * @notice Register as a stealth address recipient
      * @param spendingPubKey Public key for spending (33 bytes compressed)
      * @param viewingPubKey Public key for viewing/scanning (33 bytes compressed)
-          * @return recipientId The recipient id
+     * @return recipientId The recipient id
      */
     function registerRecipient(
         bytes calldata spendingPubKey,
@@ -221,13 +221,13 @@ function initialize(address admin) external initializer {
     /**
      * @notice Deactivate recipient registration
      * @dev Only callable by an operator to prevent unauthorized deactivation
-          * @param recipientId The recipientId identifier
+     * @param recipientId The recipientId identifier
      */
     function deactivateRecipient(
         bytes32 recipientId
     ) external onlyRole(OPERATOR_ROLE) {
         StealthKeys storage keys = registeredRecipients[recipientId];
-        require(keys.isActive, "Not active");
+        if (!keys.isActive) revert NotAuthorized();
 
         keys.isActive = false;
         emit RecipientDeactivated(recipientId);
@@ -302,7 +302,7 @@ function initialize(address admin) external initializer {
      * @param ephemeralPubKey Ephemeral public key
      * @param encryptedMetadata Encrypted metadata
      * @param nonce Expected nonce
-          * @return The result value
+     * @return The result value
      */
     function computeStealthAddress(
         bytes calldata ephemeralPubKey,
@@ -375,7 +375,7 @@ function initialize(address admin) external initializer {
 
     /**
      * @notice Batch withdraw from multiple stealth contracts
-          * @param contractAddresses The contractAddresses address
+     * @param contractAddresses The contractAddresses address
      * @param recipient The recipient address
      * @param signatures The signatures
      * @param zkProofs The zk proofs
@@ -497,7 +497,7 @@ function initialize(address admin) external initializer {
      * @notice Get all deployed contract addresses for scanning
      * @param offset Start index
      * @param limit Maximum results
-          * @return addresses The addresses
+     * @return addresses The addresses
      * @return metaHashes The meta hashes
      * @return values The values
      */
@@ -539,7 +539,7 @@ function initialize(address admin) external initializer {
 
     /**
      * @notice Get deployments since timestamp (for efficient scanning)
-          * @param timestamp The timestamp timestamp
+     * @param timestamp The timestamp timestamp
      * @return addresses The addresses
      * @return metaHashes The meta hashes
      */
@@ -584,7 +584,7 @@ function initialize(address admin) external initializer {
 
     /**
      * @notice Get deployment info
-          * @param contractAddress The contractAddress address
+     * @param contractAddress The contractAddress address
      * @return The result value
      */
     function getDeployment(
@@ -595,7 +595,7 @@ function initialize(address admin) external initializer {
 
     /**
      * @notice Get recipient keys
-          * @param recipientId The recipientId identifier
+     * @param recipientId The recipientId identifier
      * @return The result value
      */
     function getRecipientKeys(
@@ -606,7 +606,7 @@ function initialize(address admin) external initializer {
 
     /**
      * @notice Get total deployed count
-          * @return The result value
+     * @return The result value
      */
     function getTotalDeployments() external view returns (uint256) {
         return deployedContracts.length;
@@ -614,7 +614,7 @@ function initialize(address admin) external initializer {
 
     /**
      * @notice Get unwithdrawn contracts count
-          * @return The result value
+     * @return The result value
      */
     function getUnwithdrawnCount() external view returns (uint256) {
         return totalDeployments - totalWithdrawn;
@@ -641,22 +641,22 @@ contract StealthWallet {
     error NotFactory();
     error TransferFailed();
 
-        /**
+    /**
      * @notice Initializes the operation
      * @param _factory The _factory
      */
-function initialize(address _factory) external payable {
+    function initialize(address _factory) external payable {
         if (initialized) revert AlreadyInitialized();
         factory = _factory;
         initialized = true;
     }
 
-        /**
+    /**
      * @notice Withdraws the operation
      * @param recipient The recipient address
      * @param amount The amount to process
      */
-function withdraw(address recipient, uint256 amount) external {
+    function withdraw(address recipient, uint256 amount) external {
         if (msg.sender != factory) revert NotFactory();
 
         (bool success, ) = recipient.call{value: amount}("");

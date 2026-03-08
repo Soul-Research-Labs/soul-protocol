@@ -454,6 +454,83 @@ Privacy Note:
   user's private transfer. It's a batched settlement of many transfers.
 ```
 
+### Settlement Swaps via Uniswap V3
+
+When vaults hold mismatched token inventories (e.g., excess USDC but need ETH), settlements can include an on-chain swap via the `IRebalanceSwapAdapter` interface. The default adapter routes through Uniswap V3.
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                 Settlement with Swap Flow                        │
+│                                                                  │
+│  OUTFLOW (vault owes remote chain):                              │
+│    1. Settler calls executeSettlementWithSwap(batchId,           │
+│       targetToken, minAmountOut, deadline)                        │
+│    2. Vault approves adapter for batch.netAmount of batch.token  │
+│    3. Adapter swaps via Uniswap V3 exactInputSingle              │
+│    4. Swapped tokens sent to settler for bridging                │
+│                                                                  │
+│  INFLOW (remote chain sends settlement in wrong token):          │
+│    1. Settler calls receiveSettlementWithSwap(remoteChainId,     │
+│       tokenIn, amount, targetToken, minAmountOut, deadline)      │
+│    2. Vault pulls tokens from settler, approves adapter          │
+│    3. Adapter swaps via Uniswap V3                               │
+│    4. Swapped tokens credited to vault inventory                 │
+│                                                                  │
+│  SLIPPAGE PROTECTION:                                            │
+│    - minAmountOut enforced by both adapter and Uniswap router    │
+│    - deadline parameter prevents stale transactions              │
+│    - Fee tiers configurable per token pair (default 0.3%)        │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+**Adapter Architecture:**
+
+| Contract                    | Purpose                                              |
+| --------------------------- | ---------------------------------------------------- |
+| `IRebalanceSwapAdapter`     | DEX-agnostic interface for settlement swaps          |
+| `UniswapV3RebalanceAdapter` | Uniswap V3 implementation (exactInputSingle routing) |
+| `MockRebalanceSwapAdapter`  | Test mock with configurable exchange rate            |
+
+**Configuration:**
+
+```solidity
+// Set the adapter on the vault (OPERATOR_ROLE required)
+vault.setRebalanceAdapter(address(uniswapAdapter));
+
+// Authorize the vault to call swap() on the adapter
+uniswapAdapter.setAuthorizedCaller(address(vault), true);
+
+// Optional: set fee tier for specific token pair (e.g., 500 = 0.05% for stablecoins)
+uniswapAdapter.setFeeTierOverride(usdc, dai, 500);
+```
+
+**SDK Usage:**
+
+```typescript
+import { CrossChainLiquidityVaultClient } from "@zaseon/sdk";
+
+// Execute settlement with swap (settler flow)
+await vault.executeSettlementWithSwap(
+  batchId,
+  targetToken,
+  minAmountOut,
+  deadline,
+);
+
+// Receive settlement with swap
+await vault.receiveSettlementWithSwap(
+  remoteChainId,
+  tokenIn,
+  amount,
+  targetToken,
+  minAmountOut,
+  deadline,
+);
+
+// Check adapter
+const adapter = await vault.getRebalanceAdapter();
+```
+
 ---
 
 ## Fee Architecture

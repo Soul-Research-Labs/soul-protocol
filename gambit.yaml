@@ -104,8 +104,6 @@ mutate:
   # ── Governance ──
   - filename: contracts/governance/ZaseonGovernor.sol
     contract: ZaseonGovernor
-  - filename: contracts/governance/ZaseonGovernance.sol
-    contract: ZaseonGovernance
   - filename: contracts/governance/ZaseonToken.sol
     contract: ZaseonToken
   - filename: contracts/governance/ZaseonUpgradeTimelock.sol

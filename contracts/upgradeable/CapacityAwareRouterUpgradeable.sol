@@ -212,6 +212,11 @@ contract CapacityAwareRouterUpgradeable is
     error InsufficientPayment(uint256 required, uint256 provided);
     error NoFeesToWithdraw();
     error WithdrawFailed();
+    error InvalidRoute(bytes32 routeId);
+    error RouteNotPending(bytes32 routeId);
+    error RouteExpired(bytes32 routeId, uint256 expiresAt);
+    error RefundFailed();
+    error TimeoutTooShort(uint48 provided, uint48 minimum);
 
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
@@ -328,12 +333,12 @@ contract CapacityAwareRouterUpgradeable is
         IDynamicRoutingOrchestrator.Route memory route = orchestrator.getRoute(
             routeId
         );
-        require(route.chainPath.length > 0, "Invalid route");
-        require(
-            route.status == IDynamicRoutingOrchestrator.RouteStatus.PENDING,
-            "Route not pending"
-        );
-        require(block.timestamp <= route.expiresAt, "Route expired");
+        if (route.chainPath.length == 0) revert InvalidRoute(routeId);
+        if (route.status != IDynamicRoutingOrchestrator.RouteStatus.PENDING) {
+            revert RouteNotPending(routeId);
+        }
+        if (block.timestamp > route.expiresAt)
+            revert RouteExpired(routeId, route.expiresAt);
 
         // Calculate fees
         uint256 protocolFee = (route.totalCost * RELAY_FEE_BPS) / BPS;
@@ -378,7 +383,7 @@ contract CapacityAwareRouterUpgradeable is
         uint256 excess = msg.value - totalRequired - amount;
         if (excess > 0) {
             (bool ok, ) = msg.sender.call{value: excess}("");
-            require(ok, "Refund failed");
+            if (!ok) revert RefundFailed();
         }
 
         emit RelayCommitted(
@@ -481,7 +486,7 @@ contract CapacityAwareRouterUpgradeable is
         uint256 refundAmount = t.amount + t.fee;
         if (refundAmount > 0) {
             (bool ok, ) = t.user.call{value: refundAmount}("");
-            require(ok, "Refund failed");
+            if (!ok) revert RefundFailed();
         }
 
         // Record failure in orchestrator
@@ -527,7 +532,7 @@ contract CapacityAwareRouterUpgradeable is
 
         if (refundAmount > 0) {
             (bool ok, ) = t.user.call{value: refundAmount}("");
-            require(ok, "Refund failed");
+            if (!ok) revert RefundFailed();
         }
 
         emit RelayRefunded(relayId, t.user, refundAmount);
@@ -623,25 +628,26 @@ contract CapacityAwareRouterUpgradeable is
     function setTimeout(
         uint48 newTimeout
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(newTimeout >= 10 minutes, "Timeout too short");
+        if (newTimeout < 10 minutes)
+            revert TimeoutTooShort(newTimeout, uint48(10 minutes));
         uint48 oldTimeout = relayTimeout;
         relayTimeout = newTimeout;
         emit TimeoutUpdated(oldTimeout, newTimeout);
     }
 
     /// @notice Pause the router
-        /**
+    /**
      * @notice Pauses the operation
      */
-function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
 
     /// @notice Unpause the router
-        /**
+    /**
      * @notice Unpauses the operation
      */
-function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
 

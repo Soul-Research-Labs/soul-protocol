@@ -16,7 +16,7 @@ contract ZaseonComplianceV2Test is Test {
 
     function setUp() public {
         vm.prank(owner);
-        compliance = new ZaseonComplianceV2();
+        compliance = new ZaseonComplianceV2(owner);
 
         vm.startPrank(owner);
         compliance.authorizeProvider(provider);

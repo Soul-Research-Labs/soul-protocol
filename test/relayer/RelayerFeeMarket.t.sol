@@ -452,7 +452,7 @@ contract RelayerFeeMarketTest is Test {
 
     function test_RevertSetFeeBpsTooHigh() public {
         vm.prank(admin);
-        vm.expectRevert("Max 10%");
+        vm.expectRevert(abi.encodeWithSignature("InvalidFee()"));
         market.setProtocolFeeBps(1500);
     }
 

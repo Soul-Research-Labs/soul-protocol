@@ -179,11 +179,11 @@ contract EVMUniversalAdapter is
     //////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IUniversalChainAdapter
-        /**
+    /**
      * @notice Returns the chain descriptor
      * @return The result value
      */
-function getChainDescriptor()
+    function getChainDescriptor()
         external
         view
         override
@@ -193,20 +193,20 @@ function getChainDescriptor()
     }
 
     /// @inheritdoc IUniversalChainAdapter
-        /**
+    /**
      * @notice Returns the universal chain id
      * @return The result value
      */
-function getUniversalChainId() external view override returns (bytes32) {
+    function getUniversalChainId() external view override returns (bytes32) {
         return chainDescriptor.universalChainId;
     }
 
     /// @inheritdoc IUniversalChainAdapter
-        /**
+    /**
      * @notice Returns the native proof system
      * @return The result value
      */
-function getNativeProofSystem()
+    function getNativeProofSystem()
         external
         view
         override
@@ -216,14 +216,14 @@ function getNativeProofSystem()
     }
 
     /// @inheritdoc IUniversalChainAdapter
-        /**
+    /**
      * @notice Verifys proof
      * @param proof The ZK proof data
      * @param publicInputs The public inputs
      * @param proofSystem The proof system
      * @return valid The valid
      */
-function verifyProof(
+    function verifyProof(
         bytes calldata proof,
         bytes32[] calldata publicInputs,
         ProofSystem proofSystem
@@ -251,12 +251,12 @@ function verifyProof(
     }
 
     /// @inheritdoc IUniversalChainAdapter
-        /**
+    /**
      * @notice Receive encrypted state
      * @param transfer The transfer
      * @return The result value
      */
-function receiveEncryptedState(
+    function receiveEncryptedState(
         EncryptedStateTransfer calldata transfer
     )
         external
@@ -287,10 +287,12 @@ function receiveEncryptedState(
         }
 
         // Validate payload size
-        require(
-            transfer.encryptedPayload.length <= MAX_PAYLOAD_SIZE,
-            "Payload too large"
-        );
+        if (transfer.encryptedPayload.length > MAX_PAYLOAD_SIZE) {
+            revert PayloadTooLarge(
+                transfer.encryptedPayload.length,
+                MAX_PAYLOAD_SIZE
+            );
+        }
 
         // Verify the ZK proof via the registered verifier
         {
@@ -346,7 +348,7 @@ function receiveEncryptedState(
     }
 
     /// @inheritdoc IUniversalChainAdapter
-        /**
+    /**
      * @notice Send encrypted state
      * @param destChainId The destination chain identifier
      * @param stateCommitment The state commitment
@@ -355,7 +357,7 @@ function receiveEncryptedState(
      * @param nullifier The nullifier hash
      * @return transferId The transfer id
      */
-function sendEncryptedState(
+    function sendEncryptedState(
         bytes32 destChainId,
         bytes32 stateCommitment,
         bytes calldata encryptedPayload,
@@ -372,15 +374,15 @@ function sendEncryptedState(
         if (nullifierUsed[nullifier]) revert NullifierAlreadyUsed(nullifier);
 
         // Validate destination chain has a registered adapter
-        require(remoteAdapters[destChainId].length > 0, "No remote adapter");
-        require(
-            encryptedPayload.length <= MAX_PAYLOAD_SIZE,
-            "Payload too large"
-        );
+        if (remoteAdapters[destChainId].length == 0)
+            revert ChainNotSupported(destChainId);
+        if (encryptedPayload.length > MAX_PAYLOAD_SIZE) {
+            revert PayloadTooLarge(encryptedPayload.length, MAX_PAYLOAD_SIZE);
+        }
         // Verify ZK proof via registered verifier (same as receiveEncryptedState)
         {
             address verifier = proofVerifiers[chainDescriptor.proofSystem];
-            require(verifier != address(0), "No proof verifier configured");
+            if (verifier == address(0)) revert ProofVerifierNotConfigured();
 
             uint256[] memory publicInputs = new uint256[](3);
             publicInputs[0] = uint256(stateCommitment);
@@ -391,7 +393,7 @@ function sendEncryptedState(
                 proof,
                 publicInputs
             );
-            require(proofValid, "Proof verification failed");
+            if (!proofValid) revert ProofVerificationFailed(bytes32(0));
         }
 
         // Generate unique transfer ID
@@ -430,12 +432,12 @@ function sendEncryptedState(
     }
 
     /// @inheritdoc IUniversalChainAdapter
-        /**
+    /**
      * @notice Submits universal proof
      * @param universalProof The universal proof
      * @return The result value
      */
-function submitUniversalProof(
+    function submitUniversalProof(
         UniversalProof calldata universalProof
     )
         external
@@ -528,38 +530,38 @@ function submitUniversalProof(
     }
 
     /// @inheritdoc IUniversalChainAdapter
-        /**
+    /**
      * @notice Checks if nullifier used
      * @param nullifier The nullifier hash
      * @return The result value
      */
-function isNullifierUsed(
+    function isNullifierUsed(
         bytes32 nullifier
     ) external view override returns (bool) {
         return nullifierUsed[nullifier];
     }
 
     /// @inheritdoc IUniversalChainAdapter
-        /**
+    /**
      * @notice Checks if proof system supported
      * @param proofSystem The proof system
      * @return The result value
      */
-function isProofSystemSupported(
+    function isProofSystemSupported(
         ProofSystem proofSystem
     ) external view override returns (bool) {
         return supportedProofSystems[proofSystem];
     }
 
     /// @inheritdoc IUniversalChainAdapter
-        /**
+    /**
      * @notice Translate proof
      * @param proof The ZK proof data
      * @param fromSystem The from system
      * @param toSystem The to system
      * @return The result value
- */
-function translateProof(
+     */
+    function translateProof(
         bytes calldata proof,
         bytes32[] calldata /* publicInputs */,
         ProofSystem fromSystem,
@@ -582,10 +584,8 @@ function translateProof(
         }
 
         // Delegate to the UniversalProofTranslator for cross-system translation
-        require(
-            proofTranslator != address(0),
-            "Proof translator not configured"
-        );
+        if (proofTranslator == address(0))
+            revert ProofTranslatorNotConfigured();
 
         // The translator handles off-chain translation attestation + wrapper proof
         // verification. For view calls, return the proof bytes for client-side handling.
@@ -599,16 +599,16 @@ function translateProof(
     /// @notice Register a remote chain adapter
     /// @param chainId The universal chain ID of the remote chain
     /// @param adapter The adapter address/identifier (bytes for cross-VM compatibility)
-        /**
+    /**
      * @notice Registers remote adapter
      * @param chainId The chain identifier
      * @param adapter The bridge adapter address
      */
-function registerRemoteAdapter(
+    function registerRemoteAdapter(
         bytes32 chainId,
         bytes calldata adapter
     ) external onlyRole(OPERATOR_ROLE) {
-        require(adapter.length > 0, "Empty adapter");
+        if (adapter.length == 0) revert EmptyAdapter();
         remoteAdapters[chainId] = adapter;
         emit RemoteAdapterRegistered(chainId, adapter);
     }
@@ -616,12 +616,12 @@ function registerRemoteAdapter(
     /// @notice Set a proof verifier contract for a specific proof system
     /// @param proofSystem The proof system
     /// @param verifier The verifier contract address
-        /**
+    /**
      * @notice Sets the proof verifier
      * @param proofSystem The proof system
      * @param verifier The verifier contract address
      */
-function setProofVerifier(
+    function setProofVerifier(
         ProofSystem proofSystem,
         address verifier
     ) external onlyRole(OPERATOR_ROLE) {
@@ -634,12 +634,12 @@ function setProofVerifier(
     /// @notice Enable or disable a proof system
     /// @param proofSystem The proof system to toggle
     /// @param enabled Whether to enable or disable
-        /**
+    /**
      * @notice Sets the proof system support
      * @param proofSystem The proof system
      * @param enabled Whether the feature is enabled
      */
-function setProofSystemSupport(
+    function setProofSystemSupport(
         ProofSystem proofSystem,
         bool enabled
     ) external onlyRole(OPERATOR_ROLE) {
@@ -648,21 +648,21 @@ function setProofSystemSupport(
 
     /// @notice Update the chain descriptor
     /// @param active Whether the adapter is active
-        /**
+    /**
      * @notice Sets the active
      * @param active Whether the feature is active
      */
-function setActive(bool active) external onlyRole(OPERATOR_ROLE) {
+    function setActive(bool active) external onlyRole(OPERATOR_ROLE) {
         chainDescriptor.active = active;
     }
 
     /// @notice Set the proof translator contract
     /// @param translator The UniversalProofTranslator address
-        /**
+    /**
      * @notice Sets the proof translator
      * @param translator The translator
      */
-function setProofTranslator(
+    function setProofTranslator(
         address translator
     ) external onlyRole(OPERATOR_ROLE) {
         if (translator == address(0)) revert ZeroAddress();
@@ -670,18 +670,18 @@ function setProofTranslator(
     }
 
     /// @notice Emergency pause
-        /**
+    /**
      * @notice Pauses the operation
      */
-function pause() external onlyRole(EMERGENCY_ROLE) {
+    function pause() external onlyRole(EMERGENCY_ROLE) {
         _pause();
     }
 
     /// @notice Unpause
-        /**
+    /**
      * @notice Unpauses the operation
      */
-function unpause() external onlyRole(EMERGENCY_ROLE) {
+    function unpause() external onlyRole(EMERGENCY_ROLE) {
         _unpause();
     }
 
@@ -715,14 +715,14 @@ function unpause() external onlyRole(EMERGENCY_ROLE) {
     /// @return received Total states received
     /// @return sent Total states sent
     /// @return nullifiers Total nullifiers consumed
-        /**
+    /**
      * @notice Returns the stats
      * @return proofs The proofs
      * @return received The received
      * @return sent The sent
      * @return nullifiers The nullifiers
      */
-function getStats()
+    function getStats()
         external
         view
         returns (
@@ -743,12 +743,12 @@ function getStats()
     /// @notice Check if a remote adapter is registered for a chain
     /// @param chainId The universal chain ID
     /// @return registered Whether an adapter is registered
-        /**
+    /**
      * @notice Checks if remote adapter registered
      * @param chainId The chain identifier
      * @return The result value
      */
-function isRemoteAdapterRegistered(
+    function isRemoteAdapterRegistered(
         bytes32 chainId
     ) external view returns (bool) {
         return remoteAdapters[chainId].length > 0;

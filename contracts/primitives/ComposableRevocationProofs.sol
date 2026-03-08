@@ -205,6 +205,7 @@ contract ComposableRevocationProofs is
     error ProofInvalid();
     error VersionMismatch();
     error Unauthorized();
+    error ZeroAddress();
 
     /*//////////////////////////////////////////////////////////////
                              CONSTRUCTOR
@@ -696,92 +697,92 @@ contract ComposableRevocationProofs is
                            VIEW FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-        /**
+    /**
      * @notice Returns the accumulator
      * @param accumulatorId The accumulatorId identifier
      * @return The result value
      */
-function getAccumulator(
+    function getAccumulator(
         bytes32 accumulatorId
     ) external view returns (RevocationAccumulator memory) {
         return accumulators[accumulatorId];
     }
 
-        /**
+    /**
      * @notice Returns the revocation entry
      * @param entryId The entryId identifier
      * @return The result value
      */
-function getRevocationEntry(
+    function getRevocationEntry(
         bytes32 entryId
     ) external view returns (RevocationEntry memory) {
         return revocationEntries[entryId];
     }
 
-        /**
+    /**
      * @notice Returns the non membership proof
      * @param proofId The proofId identifier
      * @return The result value
      */
-function getNonMembershipProof(
+    function getNonMembershipProof(
         bytes32 proofId
     ) external view returns (NonMembershipProof memory) {
         return nonMembershipProofs[proofId];
     }
 
-        /**
+    /**
      * @notice Returns the delta update
      * @param updateId The updateId identifier
      * @return The result value
      */
-function getDeltaUpdate(
+    function getDeltaUpdate(
         bytes32 updateId
     ) external view returns (DeltaUpdate memory) {
         return deltaUpdates[updateId];
     }
 
-        /**
+    /**
      * @notice Returns the composable proof
      * @param composableId The composableId identifier
      * @return The result value
      */
-function getComposableProof(
+    function getComposableProof(
         bytes32 composableId
     ) external view returns (ComposableProof memory) {
         return composableProofs[composableId];
     }
 
-        /**
+    /**
      * @notice Returns the accumulator value at version
      * @param accumulatorId The accumulatorId identifier
      * @param version The version number
      * @return The result value
      */
-function getAccumulatorValueAtVersion(
+    function getAccumulatorValueAtVersion(
         bytes32 accumulatorId,
         uint256 version
     ) external view returns (bytes32) {
         return accumulatorHistory[accumulatorId][version];
     }
 
-        /**
+    /**
      * @notice Checks if credential revoked
      * @param accumulatorId The accumulatorId identifier
      * @param credentialHash The credentialHash hash value
      * @return The result value
      */
-function isCredentialRevoked(
+    function isCredentialRevoked(
         bytes32 accumulatorId,
         bytes32 credentialHash
     ) external view returns (bool) {
         return isRevoked[accumulatorId][credentialHash];
     }
 
-        /**
+    /**
      * @notice Returns the active accumulators
      * @return The result value
      */
-function getActiveAccumulators() external view returns (bytes32[] memory) {
+    function getActiveAccumulators() external view returns (bytes32[] memory) {
         return activeAccumulators;
     }
 
@@ -789,38 +790,38 @@ function getActiveAccumulators() external view returns (bytes32[] memory) {
                            ADMIN FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-        /**
+    /**
      * @notice Pauses the operation
      */
-function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
 
-        /**
+    /**
      * @notice Unpauses the operation
      */
-function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
 
-        /**
+    /**
      * @notice Deactivate accumulator
      * @param accumulatorId The accumulatorId identifier
      */
-function deactivateAccumulator(
+    function deactivateAccumulator(
         bytes32 accumulatorId
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         accumulators[accumulatorId].isActive = false;
     }
 
-        /**
+    /**
      * @notice Sets the non membership verifier
      * @param verifier The verifier contract address
      */
-function setNonMembershipVerifier(
+    function setNonMembershipVerifier(
         address verifier
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(verifier != address(0), "Zero address");
+        if (verifier == address(0)) revert ZeroAddress();
         nonMembershipVerifier = verifier;
     }
 }

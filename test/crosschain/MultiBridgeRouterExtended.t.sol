@@ -187,7 +187,13 @@ contract MultiBridgeRouterExtended is Test {
             abi.encodeWithSignature("execute(bytes)", hex"bb")
         );
 
-        vm.expectRevert("Insufficient adapters succeeded");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                SimpleMultiBridgeRouter.InsufficientConfirmations.selector,
+                uint256(0),
+                uint256(1)
+            )
+        );
         router2.sendMultiBridgeMessage(address(target), payload, admin);
     }
 
@@ -237,13 +243,25 @@ contract MultiBridgeRouterExtended is Test {
     }
 
     function test_setConfirmations_zeroReverts() public {
-        vm.expectRevert("Invalid N");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                SimpleMultiBridgeRouter.InvalidConfirmationThreshold.selector,
+                uint256(0),
+                uint256(3)
+            )
+        );
         router.setRequiredConfirmations(0);
     }
 
     function test_setConfirmations_exceedsAdaptersReverts() public {
         // We have 3 adapters
-        vm.expectRevert("Invalid N");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                SimpleMultiBridgeRouter.InvalidConfirmationThreshold.selector,
+                uint256(4),
+                uint256(3)
+            )
+        );
         router.setRequiredConfirmations(4);
     }
 
@@ -252,7 +270,10 @@ contract MultiBridgeRouterExtended is Test {
     // ====================================================================
 
     function test_sendWithZeroAdapters_reverts() public {
-        SimpleMultiBridgeRouter emptyRouter = new SimpleMultiBridgeRouter(admin, 1);
+        SimpleMultiBridgeRouter emptyRouter = new SimpleMultiBridgeRouter(
+            admin,
+            1
+        );
         // No adapters added
 
         bytes memory payload = abi.encode(
@@ -260,7 +281,13 @@ contract MultiBridgeRouterExtended is Test {
             abi.encodeWithSignature("execute(bytes)", hex"dd")
         );
 
-        vm.expectRevert("Not enough adapters");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                SimpleMultiBridgeRouter.InsufficientAdapters.selector,
+                uint256(0),
+                uint256(1)
+            )
+        );
         emptyRouter.sendMultiBridgeMessage(address(target), payload, admin);
     }
 

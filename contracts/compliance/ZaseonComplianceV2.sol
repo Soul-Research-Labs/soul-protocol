@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
@@ -14,7 +14,14 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
  * @author ZASEON Team
  * @notice Zaseon Compliance V2 contract
  */
-contract ZaseonComplianceV2 is Ownable, ReentrancyGuard, Pausable {
+contract ZaseonComplianceV2 is AccessControl, ReentrancyGuard, Pausable {
+    /// @notice Role for compliance administrators (manage providers, auditors, sanctions)
+    bytes32 public constant COMPLIANCE_ADMIN_ROLE =
+        keccak256("COMPLIANCE_ADMIN_ROLE");
+
+    /// @notice Role for compliance officers (manage jurisdictions, tiers, durations)
+    bytes32 public constant COMPLIANCE_OFFICER_ROLE =
+        keccak256("COMPLIANCE_OFFICER_ROLE");
     /// @notice KYC status enum
     enum KYCStatus {
         None,
@@ -142,15 +149,22 @@ contract ZaseonComplianceV2 is Ownable, ReentrancyGuard, Pausable {
         _;
     }
 
-    constructor() Ownable(msg.sender) {}
+    constructor(address admin) {
+        if (admin == address(0)) revert ZeroAddress();
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(COMPLIANCE_ADMIN_ROLE, admin);
+        _grantRole(COMPLIANCE_OFFICER_ROLE, admin);
+    }
 
     /// @notice Authorizes a KYC provider
     /// @param provider The provider address
-        /**
+    /**
      * @notice Authorize provider
      * @param provider The provider identifier
      */
-function authorizeProvider(address provider) external onlyOwner {
+    function authorizeProvider(
+        address provider
+    ) external onlyRole(COMPLIANCE_ADMIN_ROLE) {
         if (provider == address(0)) revert ZeroAddress();
         authorizedProviders[provider] = true;
         emit KYCProviderAuthorized(provider);
@@ -158,11 +172,13 @@ function authorizeProvider(address provider) external onlyOwner {
 
     /// @notice Revokes a KYC provider
     /// @param provider The provider address
-        /**
+    /**
      * @notice Revokes provider
      * @param provider The provider identifier
      */
-function revokeProvider(address provider) external onlyOwner {
+    function revokeProvider(
+        address provider
+    ) external onlyRole(COMPLIANCE_ADMIN_ROLE) {
         if (provider == address(0)) revert ZeroAddress();
         authorizedProviders[provider] = false;
         emit KYCProviderRevoked(provider);
@@ -170,11 +186,13 @@ function revokeProvider(address provider) external onlyOwner {
 
     /// @notice Authorizes an auditor
     /// @param auditor The auditor address
-        /**
+    /**
      * @notice Authorize auditor
      * @param auditor The auditor
      */
-function authorizeAuditor(address auditor) external onlyOwner {
+    function authorizeAuditor(
+        address auditor
+    ) external onlyRole(COMPLIANCE_ADMIN_ROLE) {
         if (auditor == address(0)) revert ZeroAddress();
         authorizedAuditors[auditor] = true;
         emit AuditorAuthorized(auditor);
@@ -182,11 +200,13 @@ function authorizeAuditor(address auditor) external onlyOwner {
 
     /// @notice Revokes an auditor
     /// @param auditor The auditor address
-        /**
+    /**
      * @notice Revokes auditor
      * @param auditor The auditor
      */
-function revokeAuditor(address auditor) external onlyOwner {
+    function revokeAuditor(
+        address auditor
+    ) external onlyRole(COMPLIANCE_ADMIN_ROLE) {
         if (auditor == address(0)) revert ZeroAddress();
         authorizedAuditors[auditor] = false;
         emit AuditorRevoked(auditor);
@@ -197,14 +217,14 @@ function revokeAuditor(address auditor) external onlyOwner {
     /// @param tier The KYC tier achieved
     /// @param credentialHash Hash of credentials
     /// @param jurisdiction User's jurisdiction
-        /**
+    /**
      * @notice Verifys k y c
      * @param user The user
      * @param tier The tier
      * @param credentialHash The credentialHash hash value
      * @param jurisdiction The jurisdiction
      */
-function verifyKYC(
+    function verifyKYC(
         address user,
         KYCTier tier,
         bytes32 credentialHash,
@@ -230,12 +250,12 @@ function verifyKYC(
     /// @notice Revokes a user's KYC
     /// @param user The user address
     /// @param reason Reason for revocation
-        /**
+    /**
      * @notice Revokes k y c
      * @param user The user
      * @param reason The reason string
- */
-function revokeKYC(
+     */
+    function revokeKYC(
         address user,
         string calldata reason
     ) external onlyProvider {
@@ -246,12 +266,12 @@ function revokeKYC(
     /// @notice Checks if a user's KYC is valid
     /// @param user The user address
     /// @return valid True if KYC is valid
-        /**
+    /**
      * @notice Checks if k y c valid
      * @param user The user
      * @return valid The valid
      */
-function isKYCValid(address user) public view returns (bool valid) {
+    function isKYCValid(address user) public view returns (bool valid) {
         KYCRecord storage record = kycRecords[user];
         return
             record.status == KYCStatus.Approved &&
@@ -263,13 +283,13 @@ function isKYCValid(address user) public view returns (bool valid) {
     /// @param user The user address
     /// @param requiredTier The required tier
     /// @return meets True if user meets requirement
-        /**
+    /**
      * @notice Meets k y c tier
      * @param user The user
      * @param requiredTier The required tier
      * @return meets The meets
      */
-function meetsKYCTier(
+    function meetsKYCTier(
         address user,
         KYCTier requiredTier
     ) external view returns (bool meets) {
@@ -286,7 +306,7 @@ function meetsKYCTier(
     /// @param proof Compliance proof
     /// @param result Audit result
     /// @return auditId The audit trail ID
-        /**
+    /**
      * @notice Record audit
      * @param user The user
      * @param stateRoot The state root
@@ -294,7 +314,7 @@ function meetsKYCTier(
      * @param result The result
      * @return auditId The audit id
      */
-function recordAudit(
+    function recordAudit(
         address user,
         bytes32 stateRoot,
         bytes calldata proof,
@@ -319,11 +339,13 @@ function recordAudit(
 
     /// @notice Sanctions an address
     /// @param user The address to sanction
-        /**
+    /**
      * @notice Sanction address
      * @param user The user
      */
-function sanctionAddress(address user) external onlyOwner {
+    function sanctionAddress(
+        address user
+    ) external onlyRole(COMPLIANCE_ADMIN_ROLE) {
         if (user == address(0)) revert ZeroAddress();
         sanctionedAddresses[user] = true;
         kycRecords[user].status = KYCStatus.Rejected;
@@ -332,11 +354,13 @@ function sanctionAddress(address user) external onlyOwner {
 
     /// @notice Removes sanction from an address
     /// @param user The address to unsanction
-        /**
+    /**
      * @notice Unsanction address
      * @param user The user
      */
-function unsanctionAddress(address user) external onlyOwner {
+    function unsanctionAddress(
+        address user
+    ) external onlyRole(COMPLIANCE_ADMIN_ROLE) {
         if (user == address(0)) revert ZeroAddress();
         sanctionedAddresses[user] = false;
         emit AddressUnsanctioned(user);
@@ -344,33 +368,39 @@ function unsanctionAddress(address user) external onlyOwner {
 
     /// @notice Restricts a jurisdiction
     /// @param jurisdiction The jurisdiction code
-        /**
+    /**
      * @notice Restrict jurisdiction
      * @param jurisdiction The jurisdiction
      */
-function restrictJurisdiction(bytes2 jurisdiction) external onlyOwner {
+    function restrictJurisdiction(
+        bytes2 jurisdiction
+    ) external onlyRole(COMPLIANCE_OFFICER_ROLE) {
         restrictedJurisdictions[jurisdiction] = true;
         emit JurisdictionRestricted(jurisdiction);
     }
 
     /// @notice Unrestricts a jurisdiction
     /// @param jurisdiction The jurisdiction code
-        /**
+    /**
      * @notice Unrestrict jurisdiction
      * @param jurisdiction The jurisdiction
      */
-function unrestrictJurisdiction(bytes2 jurisdiction) external onlyOwner {
+    function unrestrictJurisdiction(
+        bytes2 jurisdiction
+    ) external onlyRole(COMPLIANCE_OFFICER_ROLE) {
         restrictedJurisdictions[jurisdiction] = false;
         emit JurisdictionUnrestricted(jurisdiction);
     }
 
     /// @notice Updates minimum required KYC tier
     /// @param tier The new minimum tier
-        /**
+    /**
      * @notice Sets the min required tier
      * @param tier The tier
      */
-function setMinRequiredTier(KYCTier tier) external onlyOwner {
+    function setMinRequiredTier(
+        KYCTier tier
+    ) external onlyRole(COMPLIANCE_OFFICER_ROLE) {
         KYCTier oldTier = minRequiredTier;
         minRequiredTier = tier;
         emit MinRequiredTierUpdated(oldTier, tier);
@@ -378,11 +408,13 @@ function setMinRequiredTier(KYCTier tier) external onlyOwner {
 
     /// @notice Updates KYC validity duration
     /// @param duration The new duration in seconds
-        /**
+    /**
      * @notice Sets the k y c validity duration
      * @param duration The duration in seconds
      */
-function setKYCValidityDuration(uint256 duration) external onlyOwner {
+    function setKYCValidityDuration(
+        uint256 duration
+    ) external onlyRole(COMPLIANCE_OFFICER_ROLE) {
         if (duration < 1 days) revert DurationTooShort();
         if (duration > 730 days) revert DurationTooLong();
         uint256 oldDuration = kycValidityDuration;
@@ -393,30 +425,30 @@ function setKYCValidityDuration(uint256 duration) external onlyOwner {
     /// @notice Gets a user's audit history
     /// @param user The user address
     /// @return auditIds Array of audit IDs
-        /**
+    /**
      * @notice Returns the user audit history
      * @param user The user
      * @return auditIds The audit ids
      */
-function getUserAuditHistory(
+    function getUserAuditHistory(
         address user
     ) external view returns (bytes32[] memory auditIds) {
         return userAuditHistory[user];
     }
 
     /// @notice Pause the contract
-        /**
+    /**
      * @notice Pauses the operation
      */
-function pause() external onlyOwner {
+    function pause() external onlyRole(COMPLIANCE_ADMIN_ROLE) {
         _pause();
     }
 
     /// @notice Unpause the contract
-        /**
+    /**
      * @notice Unpauses the operation
      */
-function unpause() external onlyOwner {
+    function unpause() external onlyRole(COMPLIANCE_ADMIN_ROLE) {
         _unpause();
     }
 }

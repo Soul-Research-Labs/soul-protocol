@@ -32,6 +32,9 @@ contract MessageBatcher is AccessControl, ReentrancyGuard {
         bytes32 messageId
     );
 
+    error QueueEmpty(uint64 destChainId);
+    error TransferFailed();
+
     /// @notice Initializes the batcher with a relay contract and admin
     /// @param _relay Address of the ZaseonCrossChainRelay contract
     /// @param _admin Address to receive the default admin role
@@ -43,7 +46,7 @@ contract MessageBatcher is AccessControl, ReentrancyGuard {
     /**
      * @notice Queue a proof for batch relay.
      *         User sends ETH to cover their share of the bridge fee.
-          * @param proofId The proofId identifier
+     * @param proofId The proofId identifier
      * @param proof The ZK proof data
      * @param publicInputs The public inputs
      * @param commitment The cryptographic commitment
@@ -91,11 +94,11 @@ contract MessageBatcher is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Manually trigger batch sending (e.g. by keeper if time aligns)
-          * @param destChainId The destination chain identifier
+     * @param destChainId The destination chain identifier
      */
     function sendBatch(uint64 destChainId) external nonReentrant {
         // Only allow if not empty
-        require(queues[destChainId].length > 0, "Queue empty");
+        if (queues[destChainId].length == 0) revert QueueEmpty(destChainId);
         _sendBatch(destChainId);
     }
 
@@ -125,11 +128,11 @@ contract MessageBatcher is AccessControl, ReentrancyGuard {
 
     /// @notice Update the maximum number of messages per batch
     /// @param _size New maximum batch size
-        /**
+    /**
      * @notice Sets the max batch size
      * @param _size The _size
      */
-function setMaxBatchSize(
+    function setMaxBatchSize(
         uint256 _size
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         maxBatchSize = _size;
@@ -138,18 +141,18 @@ function setMaxBatchSize(
     /// @notice Rescue stuck tokens or ETH from the contract
     /// @param token Token address (address(0) for native ETH)
     /// @param amount Amount to rescue
-        /**
+    /**
      * @notice Rescue funds
      * @param token The token address
      * @param amount The amount to process
      */
-function rescueFunds(
+    function rescueFunds(
         address token,
         uint256 amount
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (token == address(0)) {
             (bool success, ) = msg.sender.call{value: amount}("");
-            require(success, "Transfer failed");
+            if (!success) revert TransferFailed();
         } else {
             (bool success, ) = token.call(
                 abi.encodeWithSignature(
@@ -158,7 +161,7 @@ function rescueFunds(
                     amount
                 )
             );
-            require(success, "Transfer failed");
+            if (!success) revert TransferFailed();
         }
     }
 }

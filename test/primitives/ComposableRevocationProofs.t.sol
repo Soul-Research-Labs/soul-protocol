@@ -376,7 +376,7 @@ contract ComposableRevocationProofsTest is Test {
 
     function test_setNonMembershipVerifier_revertsZeroAddress() public {
         vm.prank(admin);
-        vm.expectRevert("Zero address");
+        vm.expectRevert(ComposableRevocationProofs.ZeroAddress.selector);
         crp.setNonMembershipVerifier(address(0));
     }
 

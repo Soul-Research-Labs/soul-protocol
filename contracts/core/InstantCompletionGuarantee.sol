@@ -42,6 +42,8 @@ contract InstantCompletionGuarantee is
     ReentrancyGuard,
     IInstantCompletionGuarantee
 {
+    error ETHTransferFailed();
+
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
@@ -461,7 +463,7 @@ contract InstantCompletionGuarantee is
 
     function _safeTransferETH(address to, uint256 amount) internal {
         (bool success, ) = to.call{value: amount}("");
-        require(success, "ETH transfer failed");
+        if (!success) revert ETHTransferFailed();
     }
 
     /// @notice Receive ETH (for insurance pool deposits)

@@ -102,6 +102,13 @@ interface IUniversalShieldedPool {
     error ZeroAddress();
     error DepositTooLarge();
     error DepositTooSmall();
+    error DepositsDisabledInTestMode();
+    error InsufficientPoolBalance();
+    error TestModeStillEnabled();
+    error NoWithdrawalVerifierSet();
+    error NoVerifierConfigured();
+    error TestModeProofTooShort();
+    error TransferFailed();
 
     /*//////////////////////////////////////////////////////////////
                         DEPOSIT FUNCTIONS

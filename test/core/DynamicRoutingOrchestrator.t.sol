@@ -308,7 +308,13 @@ contract DynamicRoutingOrchestratorTest is Test {
         liquidities[0] = 800 ether;
 
         vm.prank(oracle);
-        vm.expectRevert("Length mismatch");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IDynamicRoutingOrchestrator.LengthMismatch.selector,
+                2,
+                1
+            )
+        );
         orchestrator.batchUpdateCapacity(chainIds, liquidities);
     }
 
@@ -877,7 +883,12 @@ contract DynamicRoutingOrchestratorTest is Test {
             });
 
         vm.prank(admin);
-        vm.expectRevert("Weights must sum to 10000");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IDynamicRoutingOrchestrator.InvalidWeights.selector,
+                uint256(20000)
+            )
+        );
         orchestrator.setScoringWeights(weights);
     }
 

@@ -783,13 +783,23 @@ contract RelayerSLAEnforcerTest is Test {
 
     function test_setEpochDuration_revertsOnTooShort() public {
         vm.prank(admin);
-        vm.expectRevert("Invalid epoch duration");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                RelayerSLAEnforcer.InvalidEpochDuration.selector,
+                uint48(30 minutes)
+            )
+        );
         enforcer.setEpochDuration(30 minutes); // < 1 hour
     }
 
     function test_setEpochDuration_revertsOnTooLong() public {
         vm.prank(admin);
-        vm.expectRevert("Invalid epoch duration");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                RelayerSLAEnforcer.InvalidEpochDuration.selector,
+                uint48(14 days)
+            )
+        );
         enforcer.setEpochDuration(14 days); // > 7 days
     }
 

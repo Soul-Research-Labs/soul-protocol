@@ -842,6 +842,61 @@ ERC-20 transfers in MAXIMUM tier are restricted to fixed denominations to preven
 // This applies within CrossChainLiquidityVault for MAXIMUM tier
 ```
 
+### Settlement Swap Integration
+
+When vaults require token rebalancing during settlement, the SDK exposes swap-enabled settlement methods:
+
+```typescript
+import { CrossChainLiquidityVaultClient } from "@zaseon/sdk";
+import { UniswapV3AdapterClient } from "@zaseon/sdk";
+
+// Vault client (settler role required for swap operations)
+const vault = new CrossChainLiquidityVaultClient(
+  vaultAddress,
+  publicClient,
+  walletClient,
+);
+
+// Check adapter status
+const adapterAddr = await vault.getRebalanceAdapter();
+console.log("Rebalance adapter:", adapterAddr);
+
+// Execute outflow settlement with swap (e.g., USDC → WETH before bridging)
+const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600); // 1 hour
+await vault.executeSettlementWithSwap(
+  batchId,
+  wethAddress,
+  minAmountOut,
+  deadline,
+);
+
+// Receive inflow settlement with swap (e.g., received USDC, need ETH for LP pool)
+await vault.receiveSettlementWithSwap(
+  remoteChainId,
+  usdcAddress,
+  amount,
+  ethAddress,
+  minAmountOut,
+  deadline,
+);
+
+// Adapter admin client (for configuring the adapter)
+const adapter = new UniswapV3AdapterClient(
+  adapterAddr,
+  publicClient,
+  walletClient,
+);
+
+// Authorize vault for swaps
+await adapter.setAuthorizedCaller(vaultAddress, true);
+
+// Configure fee tier for stablecoin pair (0.05%)
+await adapter.setFeeTierOverride(usdcAddress, daiAddress, 500);
+
+// Check swap support
+const supported = await adapter.isSwapSupported(usdcAddress, wethAddress);
+```
+
 ### Protection Summary by Tier
 
 | Protection                  | STANDARD | ENHANCED | MAXIMUM |

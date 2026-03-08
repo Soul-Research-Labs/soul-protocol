@@ -200,6 +200,7 @@ contract ExecutionAgnosticStateCommitments is AccessControl, Pausable {
     error ZeroStateHash();
     error ZeroNullifier();
     error InvalidTrustScore(uint256 score);
+    error ZeroVerifierAddress();
 
     /*//////////////////////////////////////////////////////////////
                              CONSTRUCTOR
@@ -221,7 +222,7 @@ contract ExecutionAgnosticStateCommitments is AccessControl, Pausable {
     /// @param attestationKey Key for verifying attestations
     /// @param configHash Hash of backend configuration
     /// @return backendId The unique backend identifier
-        /**
+    /**
      * @notice Registers backend
      * @param backendType The backend type
      * @param name The name
@@ -229,7 +230,7 @@ contract ExecutionAgnosticStateCommitments is AccessControl, Pausable {
      * @param configHash The configHash hash value
      * @return backendId The backend id
      */
-function registerBackend(
+    function registerBackend(
         BackendType backendType,
         string calldata name,
         bytes32 attestationKey,
@@ -267,12 +268,12 @@ function registerBackend(
     /// @notice Update backend trust score
     /// @param backendId The backend to update
     /// @param trustScore New trust score (0-10000)
-        /**
+    /**
      * @notice Updates backend trust
      * @param backendId The backendId identifier
      * @param trustScore The trust score
      */
-function updateBackendTrust(
+    function updateBackendTrust(
         bytes32 backendId,
         uint256 trustScore
     ) external onlyRole(BACKEND_ADMIN_ROLE) {
@@ -292,11 +293,11 @@ function updateBackendTrust(
 
     /// @notice Deactivate a backend
     /// @param backendId The backend to deactivate
-        /**
+    /**
      * @notice Deactivate backend
      * @param backendId The backendId identifier
      */
-function deactivateBackend(
+    function deactivateBackend(
         bytes32 backendId
     ) external onlyRole(BACKEND_ADMIN_ROLE) {
         if (backends[backendId].registeredAt == 0) {
@@ -316,14 +317,14 @@ function deactivateBackend(
     /// @param transitionHash Hash of the state transition
     /// @param nullifier Unique nullifier
     /// @return commitmentId The unique commitment identifier
-        /**
+    /**
      * @notice Creates commitment
      * @param stateHash The state hash
      * @param transitionHash The transitionHash hash value
      * @param nullifier The nullifier hash
      * @return commitmentId The commitment id
      */
-function createCommitment(
+    function createCommitment(
         bytes32 stateHash,
         bytes32 transitionHash,
         bytes32 nullifier
@@ -372,14 +373,14 @@ function createCommitment(
     /// @param backendId The attesting backend
     /// @param attestationProof Proof from the backend
     /// @param executionHash Hash of execution trace
-        /**
+    /**
      * @notice Attest commitment
      * @param commitmentId The commitmentId identifier
      * @param backendId The backendId identifier
      * @param attestationProof The attestation proof
      * @param executionHash The executionHash hash value
      */
-function attestCommitment(
+    function attestCommitment(
         bytes32 commitmentId,
         bytes32 backendId,
         bytes calldata attestationProof,
@@ -473,11 +474,11 @@ function attestCommitment(
 
     /// @notice Consume a finalized commitment
     /// @param commitmentId The commitment to consume
-        /**
+    /**
      * @notice Consume commitment
      * @param commitmentId The commitmentId identifier
      */
-function consumeCommitment(
+    function consumeCommitment(
         bytes32 commitmentId
     ) external whenNotPaused onlyRole(COMMITMENT_REGISTRAR_ROLE) {
         AgnosticCommitment storage commitment = _commitments[commitmentId];
@@ -504,12 +505,12 @@ function consumeCommitment(
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Get commitment details
-        /**
+    /**
      * @notice Returns the commitment
      * @param commitmentId The commitmentId identifier
      * @return view_ The view_
      */
-function getCommitment(
+    function getCommitment(
         bytes32 commitmentId
     ) external view returns (CommitmentView memory view_) {
         AgnosticCommitment storage commitment = _commitments[commitmentId];
@@ -526,7 +527,7 @@ function getCommitment(
     }
 
     /// @notice Get attestation for a commitment by backend
-        /**
+    /**
      * @notice Returns the attestation
      * @param commitmentId The commitmentId identifier
      * @param backendId The backendId identifier
@@ -536,7 +537,7 @@ function getCommitment(
      * @return attestedAt The attested at
      * @return isValid The is valid
      */
-function getAttestation(
+    function getAttestation(
         bytes32 commitmentId,
         bytes32 backendId
     )
@@ -562,35 +563,35 @@ function getAttestation(
     }
 
     /// @notice Get backend details
-        /**
+    /**
      * @notice Returns the backend
      * @param backendId The backendId identifier
      * @return The result value
      */
-function getBackend(
+    function getBackend(
         bytes32 backendId
     ) external view returns (ExecutionBackend memory) {
         return backends[backendId];
     }
 
     /// @notice Get backends by type
-        /**
+    /**
      * @notice Returns the backends by type
      * @param backendType The backend type
      * @return The result value
      */
-function getBackendsByType(
+    function getBackendsByType(
         BackendType backendType
     ) external view returns (bytes32[] memory) {
         return backendsByType[backendType];
     }
 
     /// @notice Get all active backend IDs
-        /**
+    /**
      * @notice Returns the active backends
      * @return The result value
      */
-function getActiveBackends() external view returns (bytes32[] memory) {
+    function getActiveBackends() external view returns (bytes32[] memory) {
         // First pass: count active backends
         uint256 activeCount = 0;
         uint256 typeCount = uint256(BackendType.Native) + 1;
@@ -641,12 +642,12 @@ function getActiveBackends() external view returns (bytes32[] memory) {
     }
 
     /// @notice Check if commitment is valid and finalized
-        /**
+    /**
      * @notice Checks if commitment valid
      * @param commitmentId The commitmentId identifier
      * @return The result value
      */
-function isCommitmentValid(
+    function isCommitmentValid(
         bytes32 commitmentId
     ) external view returns (bool) {
         AgnosticCommitment storage commitment = _commitments[commitmentId];
@@ -656,12 +657,12 @@ function isCommitmentValid(
     /// @notice Batch check commitment validity
     /// @param commitmentIds Array of commitment IDs to check
     /// @return validities Array of validity results
-        /**
+    /**
      * @notice Batchs check commitments
      * @param commitmentIds The commitmentIds identifier
      * @return validities The validities
      */
-function batchCheckCommitments(
+    function batchCheckCommitments(
         bytes32[] calldata commitmentIds
     ) external view returns (bool[] memory validities) {
         uint256 len = commitmentIds.length;
@@ -678,13 +679,13 @@ function batchCheckCommitments(
     /// @return total Total commitments
     /// @return finalized Total finalized commitments (approximate)
     /// @return backends_ Total registered backends
-        /**
+    /**
      * @notice Returns the stats
      * @return total The total
      * @return finalized The finalized
      * @return backends_ The backends_
      */
-function getStats()
+    function getStats()
         external
         view
         returns (uint256 total, uint256 finalized, uint256 backends_)
@@ -699,22 +700,22 @@ function getStats()
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Set required attestation count
-        /**
+    /**
      * @notice Sets the required attestations
      * @param count The count value
      */
-function setRequiredAttestations(
+    function setRequiredAttestations(
         uint256 count
     ) external onlyRole(BACKEND_ADMIN_ROLE) {
         requiredAttestations = count;
     }
 
     /// @notice Set minimum trust score
-        /**
+    /**
      * @notice Sets the min trust score
      * @param score The score value
      */
-function setMinTrustScore(
+    function setMinTrustScore(
         uint256 score
     ) external onlyRole(BACKEND_ADMIN_ROLE) {
         minTrustScore = score;
@@ -723,14 +724,14 @@ function setMinTrustScore(
     /// @notice Set the ZK verifier for attestation proofs
     /// @dev Phase 3: Required for real SNARK verification of attestations
     /// @param _verifier Address of the IProofVerifier-compatible contract
-        /**
+    /**
      * @notice Sets the attestation verifier
      * @param _verifier The _verifier
      */
-function setAttestationVerifier(
+    function setAttestationVerifier(
         address _verifier
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(_verifier != address(0), "Zero verifier address");
+        if (_verifier == address(0)) revert ZeroVerifierAddress();
         attestationVerifier = IProofVerifier(_verifier);
         emit AttestationVerifierUpdated(_verifier);
     }
@@ -738,18 +739,18 @@ function setAttestationVerifier(
     event AttestationVerifierUpdated(address indexed newVerifier);
 
     /// @notice Pause contract
-        /**
+    /**
      * @notice Pauses the operation
      */
-function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
 
     /// @notice Unpause contract
-        /**
+    /**
      * @notice Unpauses the operation
      */
-function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
 }

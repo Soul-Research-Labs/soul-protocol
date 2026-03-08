@@ -34,6 +34,8 @@ import {IUnifiedRelayerRegistry} from "../interfaces/IUnifiedRelayerRegistry.sol
  *      for its role separation), and this facade becomes the migration bridge.
  */
 contract UnifiedRelayerFacade is IUnifiedRelayerRegistry, AccessControl {
+    error ZeroAdmin();
+
     // =========================================================================
     // ROLES
     // =========================================================================
@@ -63,7 +65,7 @@ contract UnifiedRelayerFacade is IUnifiedRelayerRegistry, AccessControl {
         address _heterogeneousRegistry,
         address _tokenStakingRegistry
     ) {
-        require(_admin != address(0), "Zero admin");
+        if (_admin == address(0)) revert ZeroAdmin();
 
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(SLASHER_ROLE, _admin);

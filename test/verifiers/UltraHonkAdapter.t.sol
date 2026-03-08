@@ -103,7 +103,13 @@ contract UltraHonkAdapterTest is Test {
 
     function test_verifySingle_wrongCountReverts() public {
         // adapter expects 2 inputs; verifySingle provides 1
-        vm.expectRevert("Circuit expects multiple inputs");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                UltraHonkAdapter.InvalidPublicInputCount.selector,
+                1,
+                2
+            )
+        );
         adapter.verifySingle(bytes("proof"), 42);
     }
 

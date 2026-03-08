@@ -69,7 +69,8 @@ const CONTRACTS: Record<string, string> = {
   SelectiveDisclosure: "SelectiveDisclosure",
 
   // Governance
-  ZaseonGovernance: "ZaseonGovernance",
+  ZaseonGovernor: "ZaseonGovernor",
+  ZaseonUpgradeTimelock: "ZaseonUpgradeTimelock",
 
   // Verifiers
   VerifierRegistryV2: "VerifierRegistryV2",

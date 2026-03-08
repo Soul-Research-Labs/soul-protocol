@@ -22,18 +22,81 @@ jobs:
     if: ${{ github.repository_owner == 'zaseon' || github.event_name == 'workflow_dispatch' }}
     strategy:
       fail-fast: false
+      max-parallel: 16
       matrix:
         conf:
+          - certora/conf/OperationTimelockModule.conf
           - certora/conf/ZaseonProtocolHub.conf
-          - certora/conf/verify_zkslocks.conf
-          - certora/conf/verify_stealth_address.conf
-          - certora/conf/verify_nullifier_sync.conf
-          - certora/conf/verify_security_module.conf
-          - certora/conf/verify_emergency_relay.conf
-          - certora/conf/verify_flash_loan_guard.conf
+          - certora/conf/verify.conf
+          - certora/conf/verify_advanced_privacy.conf
+          - certora/conf/verify_aggregate_disclosure.conf
+          - certora/conf/verify_arbitrum_bridge.conf
+          - certora/conf/verify_atomicswap.conf
+          - certora/conf/verify_aztec_bridge.conf
+          - certora/conf/verify_base_bridge.conf
+          - certora/conf/verify_batch_accumulator.conf
+          - certora/conf/verify_cdna.conf
+          - certora/conf/verify_circuit_breaker.conf
+          - certora/conf/verify_cross_chain_privacy.conf
+          - certora/conf/verify_crosschain.conf
+          - certora/conf/verify_crosschain_security.conf
+          - certora/conf/verify_crp.conf
+          - certora/conf/verify_csc.conf
+          - certora/conf/verify_da_oracle.conf
           - certora/conf/verify_decentralized_relayer_registry.conf
-          - certora/conf/verify_security.conf
+          - certora/conf/verify_direct_l2_messenger.conf
+          - certora/conf/verify_easc.conf
+          - certora/conf/verify_emergency_coordinator.conf
+          - certora/conf/verify_emergency_relay.conf
+          - certora/conf/verify_ethereum_l1_bridge.conf
+          - certora/conf/verify_experimental_feature_registry.conf
+          - certora/conf/verify_flash_loan_guard.conf
+          - certora/conf/verify_formal.conf
+          - certora/conf/verify_fraud_proof.conf
+          - certora/conf/verify_gas_optimized_privacy.conf
+          - certora/conf/verify_governor.conf
+          - certora/conf/verify_heterogeneous_relayer.conf
+          - certora/conf/verify_homomorphic_hiding.conf
+          - certora/conf/verify_hyperlane_bridge.conf
+          - certora/conf/verify_intent_completion.conf
+          - certora/conf/verify_killswitch.conf
+          - certora/conf/verify_layerzero_bridge.conf
+          - certora/conf/verify_linea_bridge.conf
+          - certora/conf/verify_mev_protection.conf
+          - certora/conf/verify_multi_bridge_router.conf
+          - certora/conf/verify_native_l2_bridge_wrapper.conf
+          - certora/conf/verify_network_invariants.conf
+          - certora/conf/verify_nullifier.conf
+          - certora/conf/verify_nullifier_sync.conf
+          - certora/conf/verify_optimism_bridge.conf
+          - certora/conf/verify_pbp.conf
           - certora/conf/verify_pc3.conf
+          - certora/conf/verify_privacy_oracle.conf
+          - certora/conf/verify_privacy_pool_integration.conf
+          - certora/conf/verify_privacy_router.conf
+          - certora/conf/verify_privacy_zone_manager.conf
+          - certora/conf/verify_proofhub.conf
+          - certora/conf/verify_protocol_health_aggregator.conf
+          - certora/conf/verify_rate_limiter.conf
+          - certora/conf/verify_relayer_fee_market.conf
+          - certora/conf/verify_relayer_staking.conf
+          - certora/conf/verify_ring_signature.conf
+          - certora/conf/verify_scroll_bridge.conf
+          - certora/conf/verify_security.conf
+          - certora/conf/verify_security_module.conf
+          - certora/conf/verify_shielded_pool.conf
+          - certora/conf/verify_sptc.conf
+          - certora/conf/verify_stealth_address.conf
+          - certora/conf/verify_timelock.conf
+          - certora/conf/verify_unified_nullifier.conf
+          - certora/conf/verify_uniswap_adapter.conf
+          - certora/conf/verify_upgradeable.conf
+          - certora/conf/verify_upgradeable_shielded_pool.conf
+          - certora/conf/verify_verifier_registry_v2.conf
+          - certora/conf/verify_view_key_registry.conf
+          - certora/conf/verify_zkslocks.conf
+          - certora/conf/verify_zkslocks_enhanced.conf
+          - certora/conf/verify_zksync_bridge.conf
     steps:
       - uses: actions/checkout@v4
         with:

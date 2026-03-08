@@ -69,31 +69,56 @@ contract RelaySecurityScorecardTest is Test {
 
     function test_updateScore_revertsOnDecentralizationAbove20() public {
         vm.prank(admin);
-        vm.expectRevert("Score component > 20");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                RelaySecurityScorecard.ScoreComponentOutOfRange.selector,
+                uint256(21)
+            )
+        );
         scorecard.updateScore(bridge1, 21, 10, 10, 10, 10);
     }
 
     function test_updateScore_revertsOnEconomicAbove20() public {
         vm.prank(admin);
-        vm.expectRevert("Score component > 20");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                RelaySecurityScorecard.ScoreComponentOutOfRange.selector,
+                uint256(21)
+            )
+        );
         scorecard.updateScore(bridge1, 10, 21, 10, 10, 10);
     }
 
     function test_updateScore_revertsOnAuditAbove20() public {
         vm.prank(admin);
-        vm.expectRevert("Score component > 20");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                RelaySecurityScorecard.ScoreComponentOutOfRange.selector,
+                uint256(21)
+            )
+        );
         scorecard.updateScore(bridge1, 10, 10, 21, 10, 10);
     }
 
     function test_updateScore_revertsOnUptimeAbove20() public {
         vm.prank(admin);
-        vm.expectRevert("Score component > 20");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                RelaySecurityScorecard.ScoreComponentOutOfRange.selector,
+                uint256(21)
+            )
+        );
         scorecard.updateScore(bridge1, 10, 10, 10, 21, 10);
     }
 
     function test_updateScore_revertsOnHistoryAbove20() public {
         vm.prank(admin);
-        vm.expectRevert("Score component > 20");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                RelaySecurityScorecard.ScoreComponentOutOfRange.selector,
+                uint256(21)
+            )
+        );
         scorecard.updateScore(bridge1, 10, 10, 10, 10, 21);
     }
 
@@ -162,7 +187,12 @@ contract RelaySecurityScorecardTest is Test {
 
     function test_setMinimumSafeScore_revertsAbove100() public {
         vm.prank(admin);
-        vm.expectRevert("Invalid score");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                RelaySecurityScorecard.InvalidMinimumScore.selector,
+                uint256(101)
+            )
+        );
         scorecard.setMinimumSafeScore(101);
     }
 

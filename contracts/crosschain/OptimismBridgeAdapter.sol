@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IOptimismBridgeAdapter} from "../interfaces/IOptimismBridgeAdapter.sol";
+import {IBridgeAdapter} from "./IBridgeAdapter.sol";
 
 /**
  * @title OptimismBridgeAdapter
@@ -61,11 +62,14 @@ import {IOptimismBridgeAdapter} from "../interfaces/IOptimismBridgeAdapter.sol";
  */
 contract OptimismBridgeAdapter is
     IOptimismBridgeAdapter,
+    IBridgeAdapter,
     AccessControl,
     ReentrancyGuard,
     Pausable
 {
     using SafeERC20 for IERC20;
+
+    error ZKProofVerifierNotConfigured();
 
     /*//////////////////////////////////////////////////////////////
                                  ROLES
@@ -984,7 +988,7 @@ contract OptimismBridgeAdapter is
     ) internal view returns (bool) {
         // Delegate to external verifier — require it to be configured
         address verifier = zkProofVerifier;
-        require(verifier != address(0), "ZK proof verifier not configured");
+        if (verifier == address(0)) revert ZKProofVerifierNotConfigured();
 
         (bool success, bytes memory result) = verifier.staticcall(
             abi.encodeWithSignature(
@@ -1003,4 +1007,31 @@ contract OptimismBridgeAdapter is
 
     /// @notice Accept ETH for escrow operations
     receive() external payable {}
+
+    /*//////////////////////////////////////////////////////////////
+                        IBRIDGEADAPTER COMPATIBILITY
+    //////////////////////////////////////////////////////////////*/
+
+    /// @inheritdoc IBridgeAdapter
+    function bridgeMessage(
+        address,
+        bytes calldata,
+        address
+    ) external payable returns (bytes32) {
+        revert("Use initiateOPDeposit() or initiateWithdrawal()");
+    }
+
+    /// @inheritdoc IBridgeAdapter
+    function estimateFee(
+        address,
+        bytes calldata
+    ) external pure returns (uint256) {
+        // Return protocol fee per ETH unit (3 BPS)
+        return BRIDGE_FEE_BPS;
+    }
+
+    /// @inheritdoc IBridgeAdapter
+    function isMessageVerified(bytes32 messageId) external view returns (bool) {
+        return deposits[messageId].status == DepositStatus.COMPLETED;
+    }
 }

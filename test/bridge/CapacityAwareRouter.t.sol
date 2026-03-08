@@ -181,7 +181,13 @@ contract CapacityAwareRouterTest is Test {
 
     function test_SetTimeout_RevertTooShort() public {
         vm.prank(admin);
-        vm.expectRevert("Timeout too short");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ICapacityAwareRouter.TimeoutTooShort.selector,
+                uint48(5 minutes),
+                uint48(10 minutes)
+            )
+        );
         router.setTimeout(5 minutes);
     }
 

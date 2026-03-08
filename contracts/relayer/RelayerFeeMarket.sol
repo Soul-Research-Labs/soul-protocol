@@ -129,7 +129,7 @@ contract RelayerFeeMarket is AccessControl, ReentrancyGuard, IRelayerFeeMarket {
     /// @param priorityFee Priority tip above base fee
     /// @param deadline Request deadline (0 = default)
     /// @return requestId The relay request identifier
-        /**
+    /**
      * @notice Submits relay request
      * @param sourceChainId The source chain identifier
      * @param destChainId The destination chain identifier
@@ -139,7 +139,7 @@ contract RelayerFeeMarket is AccessControl, ReentrancyGuard, IRelayerFeeMarket {
      * @param deadline The deadline timestamp
      * @return requestId The request id
      */
-function submitRelayRequest(
+    function submitRelayRequest(
         bytes32 sourceChainId,
         bytes32 destChainId,
         bytes32 proofId,
@@ -209,11 +209,11 @@ function submitRelayRequest(
 
     /// @notice Claim a relay request (relayer)
     /// @param requestId The request to claim
-        /**
+    /**
      * @notice Claims relay request
      * @param requestId The requestId identifier
      */
-function claimRelayRequest(
+    function claimRelayRequest(
         bytes32 requestId
     ) external nonReentrant onlyRole(RELAYER_ROLE) {
         RelayRequest storage request = requests[requestId];
@@ -230,11 +230,11 @@ function claimRelayRequest(
 
     /// @notice Complete a relay and collect fee (relayer)
     /// @param requestId The completed request
-        /**
+    /**
      * @notice Completes relay
      * @param requestId The requestId identifier
      */
-function completeRelay(
+    function completeRelay(
         bytes32 requestId
     ) external nonReentrant onlyRole(RELAYER_ROLE) {
         RelayRequest storage request = requests[requestId];
@@ -284,11 +284,11 @@ function completeRelay(
 
     /// @notice Cancel a pending relay request (requester only)
     /// @param requestId Unique identifier of the relay request to cancel
-        /**
+    /**
      * @notice Cancels relay request
      * @param requestId The requestId identifier
      */
-function cancelRelayRequest(bytes32 requestId) external nonReentrant {
+    function cancelRelayRequest(bytes32 requestId) external nonReentrant {
         RelayRequest storage request = requests[requestId];
         if (request.requester != msg.sender) revert NotRequester();
         if (request.status != RequestStatus.PENDING) revert RequestNotPending();
@@ -303,11 +303,11 @@ function cancelRelayRequest(bytes32 requestId) external nonReentrant {
 
     /// @notice Expire a stale request (anyone can call)
     /// @param requestId Unique identifier of the relay request to expire
-        /**
+    /**
      * @notice Expire request
      * @param requestId The requestId identifier
      */
-function expireRequest(bytes32 requestId) external nonReentrant {
+    function expireRequest(bytes32 requestId) external nonReentrant {
         RelayRequest storage request = requests[requestId];
         if (request.requester == address(0)) revert RequestNotFound();
         if (
@@ -325,7 +325,7 @@ function expireRequest(bytes32 requestId) external nonReentrant {
                 (block.timestamp > request.claimedAt + CLAIM_TIMEOUT);
         }
 
-        require(canExpire, "Not expired yet");
+        if (!canExpire) revert RequestNotPending();
 
         request.status = RequestStatus.EXPIRED;
 
@@ -343,13 +343,13 @@ function expireRequest(bytes32 requestId) external nonReentrant {
     /// @param sourceChainId The source chain identifier
     /// @param destChainId The destination chain identifier
     /// @return The current base fee in fee-token units
-        /**
+    /**
      * @notice Returns the base fee
      * @param sourceChainId The source chain identifier
      * @param destChainId The destination chain identifier
      * @return The result value
      */
-function getBaseFee(
+    function getBaseFee(
         bytes32 sourceChainId,
         bytes32 destChainId
     ) external view returns (uint256) {
@@ -362,7 +362,7 @@ function getBaseFee(
     /// @param priorityFee Additional priority fee offered by the requester
     /// @return totalFee The total fee (base + priority)
     /// @return baseFee The current base fee component
-        /**
+    /**
      * @notice Estimate fee
      * @param sourceChainId The source chain identifier
      * @param destChainId The destination chain identifier
@@ -370,7 +370,7 @@ function getBaseFee(
      * @return totalFee The total fee
      * @return baseFee The base fee
      */
-function estimateFee(
+    function estimateFee(
         bytes32 sourceChainId,
         bytes32 destChainId,
         uint256 priorityFee
@@ -388,13 +388,13 @@ function estimateFee(
     /// @param sourceChainId The source chain identifier
     /// @param destChainId The destination chain identifier
     /// @param initialBaseFee The starting base fee for this route
-        /**
+    /**
      * @notice Initializes route
      * @param sourceChainId The source chain identifier
      * @param destChainId The destination chain identifier
      * @param initialBaseFee The initial base fee
      */
-function initializeRoute(
+    function initializeRoute(
         bytes32 sourceChainId,
         bytes32 destChainId,
         uint256 initialBaseFee
@@ -413,22 +413,22 @@ function initializeRoute(
 
     /// @notice Update protocol fee percentage
     /// @param _bps The new protocol fee in basis points (max 1000 = 10%)
-        /**
+    /**
      * @notice Sets the protocol fee bps
      * @param _bps The _bps
      */
-function setProtocolFeeBps(uint256 _bps) external onlyRole(OPERATOR_ROLE) {
-        require(_bps <= 1000, "Max 10%");
+    function setProtocolFeeBps(uint256 _bps) external onlyRole(OPERATOR_ROLE) {
+        if (_bps > 1000) revert InvalidFee();
         protocolFeeBps = _bps;
     }
 
     /// @notice Withdraw accumulated protocol fees
     /// @param to The recipient address for the withdrawn fees
-        /**
+    /**
      * @notice Withdraws protocol fees
      * @param to The destination address
      */
-function withdrawProtocolFees(
+    function withdrawProtocolFees(
         address to
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (to == address(0)) revert ZeroAddress();

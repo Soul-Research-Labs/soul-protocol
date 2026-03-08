@@ -24,7 +24,7 @@ contracts/           # Solidity source (~250 files)
   verifiers/         # Groth16, UltraHonk, Noir adapters + generated verifiers
   relayer/           # DecentralizedRelayerRegistry, RelayerHealthMonitor
   compliance/        # SelectiveDisclosure, ComplianceReporting
-  governance/        # ZaseonGovernance, Timelock
+  governance/        # ZaseonGovernor, ZaseonUpgradeTimelock
   integrations/      # DeFi protocol integrations
   interfaces/        # 50 interfaces
   internal/          # Internal utilities

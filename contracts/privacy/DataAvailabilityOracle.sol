@@ -118,7 +118,7 @@ contract DataAvailabilityOracle is
     // ============================================
 
     constructor(address _admin) {
-        require(_admin != address(0), "Zero address");
+        if (_admin == address(0)) revert ZeroAddress();
 
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(DA_ADMIN_ROLE, _admin);
@@ -371,7 +371,7 @@ contract DataAvailabilityOracle is
         (bool success, ) = challenge.challenger.call{value: challengerReward}(
             ""
         );
-        require(success, "Transfer failed");
+        if (!success) revert TransferFailed();
 
         emit ChallengeResolved(challengeId, true, totalSlashed);
     }
@@ -427,7 +427,7 @@ contract DataAvailabilityOracle is
         }
 
         (bool success, ) = msg.sender.call{value: stakeToReturn}("");
-        require(success, "Transfer failed");
+        if (!success) revert TransferFailed();
 
         emit AttestorExited(msg.sender, stakeToReturn);
     }
@@ -515,11 +515,11 @@ contract DataAvailabilityOracle is
     function withdrawProtocolFees(
         address to
     ) external onlyRole(DA_ADMIN_ROLE) nonReentrant {
-        require(to != address(0), "Zero address");
+        if (to == address(0)) revert ZeroAddress();
         uint256 amount = protocolFees;
         protocolFees = 0;
         (bool success, ) = to.call{value: amount}("");
-        require(success, "Transfer failed");
+        if (!success) revert TransferFailed();
     }
 
     /// @notice Pause the oracle
@@ -604,7 +604,7 @@ contract DataAvailabilityOracle is
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (to == address(0)) revert InvalidPayloadHash(); // reuse existing zero-check error
         (bool success, ) = to.call{value: amount}("");
-        require(success, "ETH transfer failed");
+        if (!success) revert TransferFailed();
     }
 
     /// @dev Accept ETH for bonds and stakes

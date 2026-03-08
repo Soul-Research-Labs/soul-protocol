@@ -9,14 +9,24 @@ import "../../contracts/crosschain/MessageBatcher.sol";
 // Mock ProofHub
 contract MockProofHub {
     function submitProofInstant(
-        bytes calldata, bytes calldata, bytes32, uint64, uint64, bytes32
+        bytes calldata,
+        bytes calldata,
+        bytes32,
+        uint64,
+        uint64,
+        bytes32
     ) external pure {}
 }
 
 // Mock Bridge Adapter
 contract MockRelayAdapter {
     event MessageSent(bytes payload);
-    function dispatch(uint32, bytes32, bytes calldata payload) external payable {
+
+    function dispatch(
+        uint32,
+        bytes32,
+        bytes calldata payload
+    ) external payable {
         emit MessageSent(payload);
     }
 }
@@ -39,15 +49,19 @@ contract Phase4Test is Test {
         relayAdapter = new MockRelayAdapter();
 
         // Deploy Relay
-        relay = new ZaseonCrossChainRelay(address(proofHub), ZaseonCrossChainRelay.BridgeType.HYPERLANE);
-        
+        relay = new ZaseonCrossChainRelay(
+            address(proofHub),
+            ZaseonCrossChainRelay.BridgeType.HYPERLANE
+        );
+
         // Configure Relay
-        ZaseonCrossChainRelay.ChainConfig memory config = ZaseonCrossChainRelay.ChainConfig({
-            proofHub: address(proofHub),
-            relayAdapter: address(relayAdapter),
-            bridgeChainId: 100,
-            active: true
-        });
+        ZaseonCrossChainRelay.ChainConfig memory config = ZaseonCrossChainRelay
+            .ChainConfig({
+                proofHub: address(proofHub),
+                relayAdapter: address(relayAdapter),
+                bridgeChainId: 100,
+                active: true
+            });
         relay.configureChain(100, config);
 
         // Deploy Governance
@@ -55,7 +69,7 @@ contract Phase4Test is Test {
         proposers[0] = proposer;
         address[] memory executors = new address[](1);
         executors[0] = executor;
-        
+
         governance = new ZaseonGovernance(
             1 days, // minDelay
             proposers,
@@ -73,7 +87,7 @@ contract Phase4Test is Test {
         // It does NOT have `onlyRole(RELAYER_ROLE)`!
         // It is `external payable nonReentrant whenNotPaused`.
         // So anyone can call relayBatch. Good.
-        
+
         vm.deal(user, 100 ether);
     }
 
@@ -85,13 +99,13 @@ contract Phase4Test is Test {
         // Proposal: Update Relay pause state (requires OPERATOR_ROLE, or ADMIN to grant role?)
         // Governance is ADMIN.
         // Let's propose to grant OPERATOR_ROLE to user.
-        
+
         bytes memory data = abi.encodeWithSelector(
             AccessControl.grantRole.selector,
             relay.OPERATOR_ROLE(),
             user
         );
-        
+
         vm.startPrank(proposer);
         governance.schedule(
             address(relay),
@@ -124,47 +138,72 @@ contract Phase4Test is Test {
     function test_MessageBatching() public {
         // Queue 2 messages
         bytes32 proofId = keccak256("proof");
-        
+
         vm.startPrank(user);
-        
+
         // Message 1
         batcher.queueProof{value: 0.1 ether}(
-            proofId, hex"AA", hex"BB", bytes32(0), 100, bytes32("type")
+            proofId,
+            hex"AA",
+            hex"BB",
+            bytes32(0),
+            100,
+            bytes32("type")
         );
-        
+
         // Message 2
         batcher.queueProof{value: 0.1 ether}(
-            proofId, hex"CC", hex"DD", bytes32(0), 100, bytes32("type")
+            proofId,
+            hex"CC",
+            hex"DD",
+            bytes32(0),
+            100,
+            bytes32("type")
         );
-        
+
         assertEq(address(batcher).balance, 0.2 ether);
-        
+
         // Trigger send
         vm.expectEmit(true, true, false, false); // Don't check data
-        emit MockRelayAdapter.MessageSent(hex""); 
+        emit MockRelayAdapter.MessageSent(hex"");
         batcher.sendBatch(100);
-        
+
         vm.stopPrank();
-        
+
         assertEq(address(batcher).balance, 0 ether); // All sent to relay/bridge
     }
-    
+
     function test_AutoBatchSend() public {
         batcher.setMaxBatchSize(2);
-        
+
         vm.startPrank(user);
         batcher.queueProof{value: 0.1 ether}(
-            bytes32("1"), hex"", hex"", bytes32(0), 100, bytes32(0)
+            bytes32("1"),
+            hex"",
+            hex"",
+            bytes32(0),
+            100,
+            bytes32(0)
         );
         // Should trigger auto-send on 2nd
         batcher.queueProof{value: 0.1 ether}(
-            bytes32("2"), hex"", hex"", bytes32(0), 100, bytes32(0)
+            bytes32("2"),
+            hex"",
+            hex"",
+            bytes32(0),
+            100,
+            bytes32(0)
         );
         vm.stopPrank();
-        
+
         // Queue should be empty
         // Cannot access mapping length directly easily, but next send should fail
-        vm.expectRevert("Queue empty");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                MessageBatcher.QueueEmpty.selector,
+                uint64(100)
+            )
+        );
         batcher.sendBatch(100);
     }
 }

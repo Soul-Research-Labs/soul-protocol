@@ -15,18 +15,18 @@ interface IDataAvailabilityOracle {
 
     /// @notice Status of a DA commitment
     enum CommitmentStatus {
-        Pending,      // Submitted, awaiting attestation
-        Attested,     // At least one attestor has confirmed availability
-        Challenged,   // Availability has been disputed
-        Verified,     // Challenge resolved — data proven available
-        Unavailable,  // Challenge resolved — data proven unavailable
-        Expired       // TTL expired
+        Pending, // Submitted, awaiting attestation
+        Attested, // At least one attestor has confirmed availability
+        Challenged, // Availability has been disputed
+        Verified, // Challenge resolved — data proven available
+        Unavailable, // Challenge resolved — data proven unavailable
+        Expired // TTL expired
     }
 
     /// @notice Role of a DA participant
     enum ParticipantRole {
-        Attestor,     // Confirms data availability
-        Challenger    // Disputes data availability
+        Attestor, // Confirms data availability
+        Challenger // Disputes data availability
     }
 
     // ============================================
@@ -35,38 +35,38 @@ interface IDataAvailabilityOracle {
 
     /// @notice On-chain DA commitment (replaces storing full encrypted payloads)
     struct DACommitment {
-        bytes32 commitmentId;        // Unique commitment ID
-        bytes32 payloadHash;         // Keccak256 hash of the encrypted payload
-        bytes32 erasureCodingRoot;   // Merkle root of erasure-coded fragments
-        uint256 dataSize;            // Size of the payload in bytes
-        string storageURI;           // Off-chain storage location (IPFS CID, Arweave TX, etc.)
-        address submitter;           // Who submitted the commitment
-        uint64 submittedAt;          // Submission timestamp
-        uint64 expiresAt;            // TTL expiry timestamp
-        uint256 attestationCount;    // Number of attestations
-        CommitmentStatus status;     // Current status
+        bytes32 commitmentId; // Unique commitment ID
+        bytes32 payloadHash; // Keccak256 hash of the encrypted payload
+        bytes32 erasureCodingRoot; // Merkle root of erasure-coded fragments
+        uint256 dataSize; // Size of the payload in bytes
+        string storageURI; // Off-chain storage location (IPFS CID, Arweave TX, etc.)
+        address submitter; // Who submitted the commitment
+        uint64 submittedAt; // Submission timestamp
+        uint64 expiresAt; // TTL expiry timestamp
+        uint256 attestationCount; // Number of attestations
+        CommitmentStatus status; // Current status
     }
 
     /// @notice Attestor registration
     struct Attestor {
-        address addr;                // Attestor address
-        uint256 stake;               // Staked amount (bond)
+        address addr; // Attestor address
+        uint256 stake; // Staked amount (bond)
         uint256 successfulAttestations; // Total successful attestations
-        uint256 failedAttestations;  // Attestations that were challenged and lost
-        uint64 registeredAt;         // Registration timestamp
-        bool active;                 // Currently active
+        uint256 failedAttestations; // Attestations that were challenged and lost
+        uint64 registeredAt; // Registration timestamp
+        bool active; // Currently active
     }
 
     /// @notice Availability challenge
     struct Challenge {
-        bytes32 challengeId;         // Unique challenge ID
-        bytes32 commitmentId;        // Target commitment
-        address challenger;          // Who raised the challenge
-        uint256 challengerBond;      // Bond posted by challenger
-        uint64 raisedAt;             // Challenge timestamp
-        uint64 responseDeadline;     // Deadline for attestor response
-        bool resolved;               // Whether resolved
-        bool challengerWon;          // Challenge outcome
+        bytes32 challengeId; // Unique challenge ID
+        bytes32 commitmentId; // Target commitment
+        address challenger; // Who raised the challenge
+        uint256 challengerBond; // Bond posted by challenger
+        uint64 raisedAt; // Challenge timestamp
+        uint64 responseDeadline; // Deadline for attestor response
+        bool resolved; // Whether resolved
+        bool challengerWon; // Challenge outcome
     }
 
     // ============================================
@@ -119,6 +119,8 @@ interface IDataAvailabilityOracle {
     error ChallengeResponseDeadlineNotPassed(bytes32 challengeId);
     error InvalidPayloadHash();
     error InvalidStorageURI();
+    error ZeroAddress();
+    error TransferFailed();
 
     // ============================================
     // DA COMMITMENT MANAGEMENT
@@ -141,10 +143,15 @@ interface IDataAvailabilityOracle {
     // ============================================
 
     /// @notice Challenge the availability of data
-    function challengeAvailability(bytes32 commitmentId) external payable returns (bytes32 challengeId);
+    function challengeAvailability(
+        bytes32 commitmentId
+    ) external payable returns (bytes32 challengeId);
 
     /// @notice Respond to a challenge by providing a retrieval proof
-    function resolveChallenge(bytes32 challengeId, bytes calldata retrievalProof) external;
+    function resolveChallenge(
+        bytes32 challengeId,
+        bytes calldata retrievalProof
+    ) external;
 
     /// @notice Finalize an unresponded challenge (challenger wins by default)
     function finalizeExpiredChallenge(bytes32 challengeId) external;
@@ -163,10 +170,19 @@ interface IDataAvailabilityOracle {
     // VIEW FUNCTIONS
     // ============================================
 
-    function getCommitment(bytes32 commitmentId) external view returns (DACommitment memory);
+    function getCommitment(
+        bytes32 commitmentId
+    ) external view returns (DACommitment memory);
+
     function getAttestor(address addr) external view returns (Attestor memory);
-    function getChallenge(bytes32 challengeId) external view returns (Challenge memory);
+
+    function getChallenge(
+        bytes32 challengeId
+    ) external view returns (Challenge memory);
+
     function isDataAvailable(bytes32 commitmentId) external view returns (bool);
+
     function getMinAttestorStake() external view returns (uint256);
+
     function getMinChallengerBond() external view returns (uint256);
 }

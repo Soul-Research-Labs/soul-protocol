@@ -258,6 +258,13 @@ export type {
   LPPosition,
 } from "./bridge/CrossChainLiquidityVaultClient";
 
+// Uniswap V3 Rebalance Adapter SDK Client
+export {
+  UniswapV3AdapterClient,
+  UNISWAP_ADAPTER_ABI,
+} from "./adapters/UniswapV3AdapterClient";
+export type { AdapterConfig } from "./adapters/UniswapV3AdapterClient";
+
 // zkSync Bridge SDK Client
 export {
   ZkSyncBridgeClient,
@@ -399,3 +406,97 @@ export type {
   GrantDetails,
   AuditEntry,
 } from "./client/ViewKeyRegistryClient";
+
+// Experimental Feature Registry
+export {
+  ExperimentalFeatureRegistryClient,
+  FeatureStatus,
+  FEATURE_IDS,
+  type Feature,
+} from "./security/ExperimentalFeatureRegistryClient";
+
+// Proof Preprocessor
+export {
+  ProofPreprocessor,
+  MemoryPreprocessorStorage,
+  type PreprocessableCircuit,
+  type PreprocessorConfig,
+  type PreprocessedData,
+  type FinalizedProofResult,
+  type PreprocessorStorage,
+  type PreprocessorStats,
+} from "./zkprover/ProofPreprocessor";
+
+// Utility modules
+export {
+  ZaseonError,
+  ValidationError,
+  ContractError,
+  NetworkError,
+  ProofError,
+  StateError,
+  ComplianceError,
+  TimeoutError,
+  ZaseonErrorCode,
+  parseContractError,
+  isZaseonError,
+} from "./utils/errors";
+
+export {
+  retry,
+  retryable,
+  retryAll,
+  retryWithFallback,
+  CircuitBreaker,
+  type RetryOptions,
+  type CircuitBreakerOptions,
+} from "./utils/retry";
+
+export {
+  validateAddress,
+  validateBytes32,
+  validateBytes,
+  validateUint256,
+  validateTimestamp,
+  validateChainId,
+  validateProof,
+  validatePolicyConfig,
+  validate,
+  validateAll,
+  type ValidationResult,
+  type Validator,
+  type ProofData,
+  type PolicyConfig,
+} from "./utils/validation";
+
+// Additional bridge exports
+export {
+  L2BridgeAdapter,
+  BridgeFactory,
+  type BridgeAddresses,
+} from "./bridges";
+
+// Bridge namespace re-exports
+export {
+  ArbitrumBridge,
+  EthereumBridge,
+  BaseBridge,
+  AztecBridge,
+  ZkSyncBridge,
+  ScrollBridge,
+  LineaBridge,
+  LayerZeroBridge,
+  HyperlaneBridge,
+  NativeWrapper,
+} from "./bridges";
+
+// React hooks (optional — requires React peer dependency)
+export {
+  useZaseonPrivacy,
+  useZaseonBridge,
+  useZaseonProver,
+  type ZaseonConfig,
+  type UseZaseonPrivacyReturn,
+  type UseZaseonBridgeReturn,
+  type UseZaseonProverReturn,
+} from "./react/hooks";

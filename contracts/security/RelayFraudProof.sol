@@ -16,6 +16,10 @@ contract RelayFraudProof is AccessControl {
     event FraudProofSubmitted(bytes32 indexed transferId, address submitter);
     event FraudVerified(bytes32 indexed transferId);
 
+    error TransferNotChallenged(bytes32 transferId);
+    error ProofMismatch(bytes32 transferId);
+    error FraudNotProven(bytes32 transferId);
+
     constructor(address _optimisticVerifier, address _admin) {
         optimisticVerifier = OptimisticRelayVerifier(_optimisticVerifier);
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
@@ -35,22 +39,19 @@ contract RelayFraudProof is AccessControl {
         // 1. Verify that the original proof matches the pending transfer
         OptimisticRelayVerifier.PendingTransfer
             memory transfer = optimisticVerifier.getVerification(transferId);
-        require(
-            transfer.status ==
-                OptimisticRelayVerifier.TransferStatus.CHALLENGED,
-            "Not challenged"
-        );
-        require(
-            keccak256(originalProof) == transfer.proofHash,
-            "Original proof mismatch"
-        );
+        if (
+            transfer.status != OptimisticRelayVerifier.TransferStatus.CHALLENGED
+        ) revert TransferNotChallenged(transferId);
+        if (keccak256(originalProof) != transfer.proofHash) {
+            revert ProofMismatch(transferId);
+        }
 
         // 2. Mock verification of fraud evidence
         // In production, this would verify the ZK proof or state transition logic.
         // For this implementation, we assume if evidence is non-empty and starts with "FRAUD", it's valid.
         bool isFraudulent = _verifyEvidence(originalProof, fraudEvidence);
 
-        require(isFraudulent, "Fraud not proven");
+        if (!isFraudulent) revert FraudNotProven(transferId);
 
         emit FraudProofSubmitted(transferId, msg.sender);
         emit FraudVerified(transferId);

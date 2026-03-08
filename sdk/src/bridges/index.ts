@@ -13,6 +13,9 @@ export * as AztecBridge from "./aztec";
 export * as ZkSyncBridge from "./zksync";
 export * as ScrollBridge from "./scroll";
 export * as LineaBridge from "./linea";
+export * as LayerZeroBridge from "./layerzero";
+export * as HyperlaneBridge from "./hyperlane";
+export * as NativeWrapper from "./native-wrapper";
 
 import {
   type PublicClient,

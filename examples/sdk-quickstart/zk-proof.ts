@@ -3,6 +3,11 @@
  *
  * Shows how to use the ZaseonSDK to send encrypted private state
  * across chains and subscribe to incoming state on the receiver side.
+ *
+ * Setup:
+ *   Export PRIVATE_KEY, RELAYER_URL, PROVER_URL, DEST_CHAIN, LOCAL_CHAIN
+ *   before running. The fallback private key is for local testing only —
+ *   NEVER use it with real funds.
  */
 import { ZaseonSDK } from "../../sdk/src/client/ZaseonSDK";
 import type { ZaseonConfig } from "../../sdk/src/utils/crypto";

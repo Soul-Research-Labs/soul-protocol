@@ -37,6 +37,10 @@ contract MixnetNodeRegistry is
     AccessControl,
     ReentrancyGuard
 {
+    error NodeMustBeInactive(bytes32 nodeId);
+    error WithdrawalDelayNotMet(bytes32 nodeId);
+    error WithdrawalFailed();
+
     // =========================================================================
     // CONSTANTS
     // =========================================================================
@@ -162,17 +166,16 @@ contract MixnetNodeRegistry is
         if (node.registeredAt == 0) revert NodeNotFound(nodeId);
         if (msg.sender != node.operator)
             revert NotNodeOperator(msg.sender, node.operator);
-        require(node.status == NodeStatus.INACTIVE, "Node must be inactive");
-        require(
-            block.timestamp >= withdrawalTimestamps[nodeId],
-            "Withdrawal delay not met"
-        );
+        if (node.status != NodeStatus.INACTIVE)
+            revert NodeMustBeInactive(nodeId);
+        if (block.timestamp < withdrawalTimestamps[nodeId])
+            revert WithdrawalDelayNotMet(nodeId);
 
         uint256 amount = node.stakeAmount;
         node.stakeAmount = 0;
 
         (bool sent, ) = msg.sender.call{value: amount}("");
-        require(sent, "Withdrawal failed");
+        if (!sent) revert WithdrawalFailed();
     }
 
     /// @inheritdoc IMixnetNodeRegistry

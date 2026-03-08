@@ -155,6 +155,8 @@ interface ICrossChainLiquidityVault {
     error InvalidDenomination(uint256 amount);
     error ReleaseNotClaimable(bytes32 requestId, uint256 claimableAt);
     error ReleaseAlreadyClaimed(bytes32 requestId);
+    error TransferFailed();
+    error NotPaused();
 
     // =========================================================================
     // LP FUNCTIONS

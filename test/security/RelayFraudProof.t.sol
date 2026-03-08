@@ -71,7 +71,12 @@ contract RelayFraudProofTest is Test {
     function test_InvalidEvidence_Reverts() public {
         bytes32 transferId = _submitAndChallenge(keccak256("msg2"));
 
-        vm.expectRevert("Fraud not proven");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                RelayFraudProof.FraudNotProven.selector,
+                transferId
+            )
+        );
         fraudProof.submitFraudProof(transferId, PROOF, bytes("WEAK"));
     }
 
@@ -83,7 +88,12 @@ contract RelayFraudProofTest is Test {
         bytes32 transferId = _submitAndChallenge(keccak256("msg3"));
 
         // Exactly 4 bytes (< 5 required)
-        vm.expectRevert("Fraud not proven");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                RelayFraudProof.FraudNotProven.selector,
+                transferId
+            )
+        );
         fraudProof.submitFraudProof(transferId, PROOF, bytes("FRAU"));
     }
 
@@ -105,7 +115,12 @@ contract RelayFraudProofTest is Test {
         bytes32 transferId = _submitAndChallenge(keccak256("msg5"));
 
         // 5 bytes but doesn't start with "FRAUD"
-        vm.expectRevert("Fraud not proven");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                RelayFraudProof.FraudNotProven.selector,
+                transferId
+            )
+        );
         fraudProof.submitFraudProof(transferId, PROOF, bytes("HELLO"));
     }
 
@@ -117,7 +132,12 @@ contract RelayFraudProofTest is Test {
         bytes32 transferId = _submitAndChallenge(keccak256("msg6"));
 
         // Submit fraud proof with wrong original proof
-        vm.expectRevert("Original proof mismatch");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                RelayFraudProof.ProofMismatch.selector,
+                transferId
+            )
+        );
         fraudProof.submitFraudProof(
             transferId,
             hex"deadbeef", // Wrong proof
@@ -140,7 +160,12 @@ contract RelayFraudProofTest is Test {
             NULLIFIER_HASH
         );
 
-        vm.expectRevert("Not challenged");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                RelayFraudProof.TransferNotChallenged.selector,
+                transferId
+            )
+        );
         fraudProof.submitFraudProof(transferId, PROOF, bytes("FRAUD_EVIDENCE"));
     }
 
@@ -189,7 +214,12 @@ contract RelayFraudProofTest is Test {
         fraudProof.submitFraudProof(transferId, PROOF, bytes("FRAUD_EV"));
 
         // Second submission — transfer is now REJECTED, not CHALLENGED
-        vm.expectRevert("Not challenged");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                RelayFraudProof.TransferNotChallenged.selector,
+                transferId
+            )
+        );
         fraudProof.submitFraudProof(transferId, PROOF, bytes("FRAUD_EV"));
     }
 
@@ -241,7 +271,12 @@ contract RelayFraudProofTest is Test {
                 uint(OptimisticRelayVerifier.TransferStatus.REJECTED)
             );
         } else {
-            vm.expectRevert("Fraud not proven");
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    RelayFraudProof.FraudNotProven.selector,
+                    transferId
+                )
+            );
             fraudProof.submitFraudProof(transferId, PROOF, evidence);
         }
     }

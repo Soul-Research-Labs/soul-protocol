@@ -207,11 +207,13 @@ contract ProofCarryingContainer is AccessControl, ReentrancyGuard, Pausable {
                              CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
+    error ChainIdExceedsUint64();
+
     constructor() {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(CONTAINER_ADMIN_ROLE, msg.sender);
         CHAIN_ID = block.chainid;
-        require(block.chainid <= type(uint64).max, "Chain ID exceeds uint64");
+        if (block.chainid > type(uint64).max) revert ChainIdExceedsUint64();
     }
 
     /*//////////////////////////////////////////////////////////////

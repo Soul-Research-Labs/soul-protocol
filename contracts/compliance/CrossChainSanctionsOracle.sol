@@ -91,12 +91,12 @@ contract CrossChainSanctionsOracle is
     /// @dev Called by ShieldedPool, PrivacyRouter, etc.
     /// @param addr The address to screen
     /// @return sanctioned Whether the address is sanctioned
-        /**
+    /**
      * @notice Checks if sanctioned
      * @param addr The target address
      * @return sanctioned The sanctioned
      */
-function isSanctioned(
+    function isSanctioned(
         address addr
     ) external view returns (bool sanctioned) {
         SanctionsEntry storage entry = sanctions[addr];
@@ -113,14 +113,14 @@ function isSanctioned(
     }
 
     /// @notice Check if address is sanctioned and get details
-        /**
+    /**
      * @notice Returns the sanctions status
      * @param addr The target address
      * @return flagged The flagged
      * @return flagCount The flag count
      * @return lastUpdated The last updated
      */
-function getSanctionsStatus(
+    function getSanctionsStatus(
         address addr
     )
         external
@@ -138,23 +138,22 @@ function getSanctionsStatus(
     /// @notice Flag an address as sanctioned
     /// @param addr The address to flag
     /// @param reason Reason hash (e.g., keccak256 of sanctions list entry)
-        /**
+    /**
      * @notice Flag address
      * @param addr The target address
      * @param reason The reason string
      */
-function flagAddress(
+    function flagAddress(
         address addr,
         bytes32 reason
     ) external onlyRole(PROVIDER_ROLE) {
         ScreeningProvider storage provider = providers[msg.sender];
-        require(provider.active, "Provider not active");
+        if (!provider.active) revert ProviderNotActive();
 
         // SECURITY FIX H-8b: Prevent duplicate flags from same provider
-        require(
-            !providerHasFlagged[msg.sender][addr],
-            "Already flagged by this provider"
-        );
+        if (providerHasFlagged[msg.sender][addr]) {
+            revert AlreadyFlaggedByProvider(msg.sender, addr);
+        }
         providerHasFlagged[msg.sender][addr] = true;
 
         SanctionsEntry storage entry = sanctions[addr];
@@ -173,11 +172,11 @@ function flagAddress(
 
     /// @notice Clear a sanctioned address
     /// @param addr The address to clear
-        /**
+    /**
      * @notice Clear address
      * @param addr The target address
- */
-function clearAddress(address addr) external onlyRole(OPERATOR_ROLE) {
+     */
+    function clearAddress(address addr) external onlyRole(OPERATOR_ROLE) {
         sanctions[addr].flagged = false;
         sanctions[addr].flagCount = 0;
         sanctions[addr].lastUpdated = block.timestamp;
@@ -186,12 +185,12 @@ function clearAddress(address addr) external onlyRole(OPERATOR_ROLE) {
     }
 
     /// @notice Batch screen multiple addresses
-        /**
+    /**
      * @notice Batchs screen
      * @param addrs The addrs address
      * @return results The results
      */
-function batchScreen(
+    function batchScreen(
         address[] calldata addrs
     ) external view returns (bool[] memory results) {
         results = new bool[](addrs.length);
@@ -216,13 +215,13 @@ function batchScreen(
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Register a screening provider
-        /**
+    /**
      * @notice Registers provider
      * @param providerAddress The providerAddress address
      * @param name The name
      * @param weight The weight value
      */
-function registerProvider(
+    function registerProvider(
         address providerAddress,
         string calldata name,
         uint256 weight
@@ -249,11 +248,11 @@ function registerProvider(
     }
 
     /// @notice Deactivate a provider
-        /**
+    /**
      * @notice Deactivate provider
      * @param providerAddress The providerAddress address
      */
-function deactivateProvider(
+    function deactivateProvider(
         address providerAddress
     ) external onlyRole(OPERATOR_ROLE) {
         ScreeningProvider storage provider = providers[providerAddress];
@@ -267,11 +266,11 @@ function deactivateProvider(
     }
 
     /// @notice Update quorum threshold
-        /**
+    /**
      * @notice Sets the quorum threshold
      * @param _threshold The _threshold
      */
-function setQuorumThreshold(
+    function setQuorumThreshold(
         uint256 _threshold
     ) external onlyRole(OPERATOR_ROLE) {
         if (_threshold == 0) revert InvalidThreshold();
@@ -280,24 +279,24 @@ function setQuorumThreshold(
     }
 
     /// @notice Set fail-open/closed policy
-        /**
+    /**
      * @notice Sets the fail open
      * @param _failOpen The _fail open
      */
-function setFailOpen(bool _failOpen) external onlyRole(OPERATOR_ROLE) {
+    function setFailOpen(bool _failOpen) external onlyRole(OPERATOR_ROLE) {
         failOpen = _failOpen;
     }
 
     /// @notice Set sanctions expiry period
-        /**
+    /**
      * @notice Sets the sanctions expiry
      * @param _expiry The _expiry
      */
-function setSanctionsExpiry(
+    function setSanctionsExpiry(
         uint256 _expiry
     ) external onlyRole(OPERATOR_ROLE) {
         // SECURITY FIX M-5: Enforce minimum expiry to prevent accidental sanctions bypass
-        require(_expiry >= 1 days, "Expiry too short");
+        if (_expiry < 1 days) revert ExpiryTooShort(_expiry, 1 days);
         sanctionsExpiry = _expiry;
     }
 

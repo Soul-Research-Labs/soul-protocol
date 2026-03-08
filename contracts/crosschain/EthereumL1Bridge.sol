@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "../interfaces/IEthereumL1Bridge.sol";
+import {IBridgeAdapter} from "./IBridgeAdapter.sol";
 
 /**
  * @title EthereumL1Bridge
@@ -40,6 +41,7 @@ import "../interfaces/IEthereumL1Bridge.sol";
  */
 contract EthereumL1Bridge is
     IEthereumL1Bridge,
+    IBridgeAdapter,
     AccessControl,
     ReentrancyGuard,
     Pausable
@@ -1055,4 +1057,30 @@ contract EthereumL1Bridge is
      * @notice Receive ETH for deposits
      */
     receive() external payable {}
+
+    /*//////////////////////////////////////////////////////////////
+                        IBRIDGEADAPTER COMPATIBILITY
+    //////////////////////////////////////////////////////////////*/
+
+    /// @inheritdoc IBridgeAdapter
+    function bridgeMessage(
+        address,
+        bytes calldata,
+        address
+    ) external payable returns (bytes32) {
+        revert("Use depositETH() with explicit parameters");
+    }
+
+    /// @inheritdoc IBridgeAdapter
+    function estimateFee(
+        address,
+        bytes calldata
+    ) external pure returns (uint256) {
+        return 0; // No protocol fee on L1 bridge
+    }
+
+    /// @inheritdoc IBridgeAdapter
+    function isMessageVerified(bytes32 messageId) external view returns (bool) {
+        return relayedProofs[messageId];
+    }
 }

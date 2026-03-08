@@ -131,6 +131,12 @@ contract OptimisticRelayVerifier is AccessControl, ReentrancyGuard, Pausable {
     error ChallengeNotFound(bytes32 transferId);
     error ChallengeAlreadyResolved(bytes32 transferId);
     error NotChallenger(address caller, address challenger);
+    error BelowOptimisticThreshold(uint256 value, uint256 threshold);
+    error TransferAlreadyExists(bytes32 transferId);
+    error ProofHashMismatch(bytes32 transferId);
+    error TransferFailed();
+    error InvalidChallengePeriod(uint256 period);
+    error NoBondToWithdraw();
 
     /*//////////////////////////////////////////////////////////////
                             CONSTRUCTOR
@@ -163,16 +169,15 @@ contract OptimisticRelayVerifier is AccessControl, ReentrancyGuard, Pausable {
         bytes32 nullifier
     ) external payable nonReentrant whenNotPaused returns (bytes32 transferId) {
         // Only high-value transfers use optimistic verification
-        require(value >= optimisticThreshold, "Below optimistic threshold");
+        if (value < optimisticThreshold)
+            revert BelowOptimisticThreshold(value, optimisticThreshold);
 
         transferId = keccak256(
             abi.encodePacked(messageHash, block.timestamp, msg.sender)
         );
 
-        require(
-            pendingTransfers[transferId].timestamp == 0,
-            "Transfer already exists"
-        );
+        if (pendingTransfers[transferId].timestamp != 0)
+            revert TransferAlreadyExists(transferId);
 
         pendingTransfers[transferId] = PendingTransfer({
             messageHash: messageHash,
@@ -220,7 +225,10 @@ contract OptimisticRelayVerifier is AccessControl, ReentrancyGuard, Pausable {
             revert TransferAlreadyChallenged(transferId);
         }
         if (block.timestamp >= transfer.finalizeAfter) {
-            revert ChallengePeriodNotExpired(transferId, transfer.finalizeAfter);
+            revert ChallengePeriodNotExpired(
+                transferId,
+                transfer.finalizeAfter
+            );
         }
         if (msg.value < MIN_CHALLENGE_BOND) {
             revert InsufficientBond(msg.value, MIN_CHALLENGE_BOND);
@@ -262,10 +270,8 @@ contract OptimisticRelayVerifier is AccessControl, ReentrancyGuard, Pausable {
         if (challenge.resolved) revert ChallengeAlreadyResolved(transferId);
 
         // Verify proof hash matches
-        require(
-            keccak256(proof) == transfer.proofHash,
-            "Proof hash mismatch"
-        );
+        if (keccak256(proof) != transfer.proofHash)
+            revert ProofHashMismatch(transferId);
 
         challenge.resolved = true;
         challenge.challengerWon = challengerWon;
@@ -277,7 +283,7 @@ contract OptimisticRelayVerifier is AccessControl, ReentrancyGuard, Pausable {
             // Slash submitter bond, reward challenger
             uint256 submitterBond = submitterBonds[transfer.submitter];
             uint256 slashAmount = submitterBond > 0 ? submitterBond : 0;
-            
+
             if (slashAmount > 0) {
                 submitterBonds[transfer.submitter] = 0;
             }
@@ -285,10 +291,15 @@ contract OptimisticRelayVerifier is AccessControl, ReentrancyGuard, Pausable {
             uint256 reward = challenge.bond + slashAmount;
 
             (bool success, ) = challenge.challenger.call{value: reward}("");
-            require(success, "Reward transfer failed");
+            if (!success) revert TransferFailed();
 
             emit TransferRejected(transferId, "Challenge successful");
-            emit ChallengeResolved(transferId, true, challenge.challenger, reward);
+            emit ChallengeResolved(
+                transferId,
+                true,
+                challenge.challenger,
+                reward
+            );
         } else {
             // Submitter wins - transfer is valid
             transfer.status = TransferStatus.FINALIZED;
@@ -297,10 +308,15 @@ contract OptimisticRelayVerifier is AccessControl, ReentrancyGuard, Pausable {
             uint256 reward = challenge.bond;
 
             (bool success, ) = transfer.submitter.call{value: reward}("");
-            require(success, "Reward transfer failed");
+            if (!success) revert TransferFailed();
 
             emit TransferFinalized(transferId);
-            emit ChallengeResolved(transferId, false, transfer.submitter, reward);
+            emit ChallengeResolved(
+                transferId,
+                false,
+                transfer.submitter,
+                reward
+            );
         }
     }
 
@@ -316,7 +332,10 @@ contract OptimisticRelayVerifier is AccessControl, ReentrancyGuard, Pausable {
             revert TransferAlreadyFinalized(transferId);
         }
         if (block.timestamp < transfer.finalizeAfter) {
-            revert ChallengePeriodNotExpired(transferId, transfer.finalizeAfter);
+            revert ChallengePeriodNotExpired(
+                transferId,
+                transfer.finalizeAfter
+            );
         }
 
         transfer.status = TransferStatus.FINALIZED;
@@ -326,7 +345,7 @@ contract OptimisticRelayVerifier is AccessControl, ReentrancyGuard, Pausable {
         if (bond > 0) {
             submitterBonds[transfer.submitter] = 0;
             (bool success, ) = transfer.submitter.call{value: bond}("");
-            require(success, "Bond return failed");
+            if (!success) revert TransferFailed();
         }
 
         emit TransferFinalized(transferId);
@@ -343,7 +362,8 @@ contract OptimisticRelayVerifier is AccessControl, ReentrancyGuard, Pausable {
     function setChallengePeriod(
         uint256 newPeriod
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(newPeriod >= 10 minutes && newPeriod <= 24 hours, "Invalid period");
+        if (newPeriod < 10 minutes || newPeriod > 24 hours)
+            revert InvalidChallengePeriod(newPeriod);
         challengePeriod = newPeriod;
     }
 
@@ -362,12 +382,12 @@ contract OptimisticRelayVerifier is AccessControl, ReentrancyGuard, Pausable {
      */
     function withdrawBond() external nonReentrant {
         uint256 bond = submitterBonds[msg.sender];
-        require(bond > 0, "No bond to withdraw");
+        if (bond == 0) revert NoBondToWithdraw();
 
         submitterBonds[msg.sender] = 0;
 
         (bool success, ) = msg.sender.call{value: bond}("");
-        require(success, "Withdrawal failed");
+        if (!success) revert TransferFailed();
     }
 
     /*//////////////////////////////////////////////////////////////

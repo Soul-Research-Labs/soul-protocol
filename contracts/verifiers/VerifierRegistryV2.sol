@@ -176,6 +176,7 @@ contract VerifierRegistryV2 is AccessControl {
     error NoPreviousVersion(CircuitType circuitType);
     error RegistryPausedError();
     error InvalidCircuitType(uint256 typeId);
+    error LengthMismatch(uint256 a, uint256 b);
 
     /*//////////////////////////////////////////////////////////////
                             MODIFIERS
@@ -404,7 +405,8 @@ contract VerifierRegistryV2 is AccessControl {
         validCircuitType(circuitType)
         returns (bool[] memory results)
     {
-        require(proofs.length == publicInputsArray.length, "Length mismatch");
+        if (proofs.length != publicInputsArray.length)
+            revert LengthMismatch(proofs.length, publicInputsArray.length);
 
         VerifierEntry storage entry = verifiers[circuitType];
         if (entry.adapter == address(0)) {
@@ -587,7 +589,8 @@ contract VerifierRegistryV2 is AccessControl {
         bytes32[] calldata proofTypes,
         CircuitType[] calldata circuitTypes
     ) external onlyRole(REGISTRY_ADMIN_ROLE) {
-        require(proofTypes.length == circuitTypes.length, "Length mismatch");
+        if (proofTypes.length != circuitTypes.length)
+            revert LengthMismatch(proofTypes.length, circuitTypes.length);
         for (uint256 i = 0; i < proofTypes.length; ) {
             if (uint256(circuitTypes[i]) >= CIRCUIT_TYPE_COUNT) {
                 revert InvalidCircuitType(uint256(circuitTypes[i]));

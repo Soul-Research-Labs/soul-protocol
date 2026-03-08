@@ -214,6 +214,7 @@ contract CrossDomainNullifierAlgebra is AccessControl, Pausable {
     error InvalidEpochDuration(uint64 duration);
     error ZeroAppId();
     error InvalidChainId();
+    error ZeroVerifierAddress();
 
     /*//////////////////////////////////////////////////////////////
                              CONSTRUCTOR
@@ -247,14 +248,14 @@ contract CrossDomainNullifierAlgebra is AccessControl, Pausable {
     /// @param appId Application identifier
     /// @param epochEnd Optional epoch end time (0 = infinite)
     /// @return domainId The unique domain identifier
-        /**
+    /**
      * @notice Registers domain
      * @param chainId The chain identifier
      * @param appId The appId identifier
      * @param epochEnd The epoch end
      * @return domainId The domain id
      */
-function registerDomain(
+    function registerDomain(
         uint64 chainId,
         bytes32 appId,
         uint64 epochEnd
@@ -301,11 +302,11 @@ function registerDomain(
     }
 
     /// @notice Deactivate a domain
-        /**
+    /**
      * @notice Deactivate domain
      * @param domainId The domain identifier
      */
-function deactivateDomain(
+    function deactivateDomain(
         bytes32 domainId
     ) external onlyRole(DOMAIN_ADMIN_ROLE) {
         if (domains[domainId].registeredAt == 0) {
@@ -326,7 +327,7 @@ function deactivateDomain(
     /// @param commitmentHash Associated commitment
     /// @param transitionId State transition identifier
     /// @return nullifier The registered nullifier
-        /**
+    /**
      * @notice Registers nullifier
      * @param domainId The domain identifier
      * @param nullifierValue The nullifier value
@@ -334,7 +335,7 @@ function deactivateDomain(
      * @param transitionId The transitionId identifier
      * @return nullifier The nullifier
      */
-function registerNullifier(
+    function registerNullifier(
         bytes32 domainId,
         bytes32 nullifierValue,
         bytes32 commitmentHash,
@@ -405,7 +406,7 @@ function registerNullifier(
     /// @param transitionId New transition identifier
     /// @param derivationProof ZK proof of valid derivation
     /// @return childNullifier The derived nullifier
-        /**
+    /**
      * @notice Registers derived nullifier
      * @param parentNullifier The parent nullifier
      * @param targetDomainId The targetDomainId identifier
@@ -413,7 +414,7 @@ function registerNullifier(
      * @param derivationProof The derivation proof
      * @return childNullifier The child nullifier
      */
-function registerDerivedNullifier(
+    function registerDerivedNullifier(
         bytes32 parentNullifier,
         bytes32 targetDomainId,
         bytes32 transitionId,
@@ -521,11 +522,11 @@ function registerDerivedNullifier(
     }
 
     /// @notice Consume a nullifier (mark as used)
-        /**
+    /**
      * @notice Consume nullifier
      * @param nullifier The nullifier hash
      */
-function consumeNullifier(
+    function consumeNullifier(
         bytes32 nullifier
     ) external whenNotPaused onlyRole(NULLIFIER_REGISTRAR_ROLE) {
         if (!nullifierExists[nullifier]) {
@@ -549,12 +550,12 @@ function consumeNullifier(
     /// @notice Verify a cross-domain nullifier proof
     /// @param proof The cross-domain proof
     /// @return valid Whether the proof is valid
-        /**
+    /**
      * @notice Verifys cross domain proof
      * @param proof The ZK proof data
      * @return valid The valid
      */
-function verifyCrossDomainProof(
+    function verifyCrossDomainProof(
         CrossDomainProof calldata proof
     ) external view returns (bool valid) {
         // Verify source nullifier exists
@@ -641,11 +642,11 @@ function verifyCrossDomainProof(
 
     /// @notice Finalize current epoch
     /// @param merkleRoot Merkle root of all nullifiers in epoch
-        /**
+    /**
      * @notice Finalizes epoch
      * @param merkleRoot The Merkle tree root
      */
-function finalizeEpoch(
+    function finalizeEpoch(
         bytes32 merkleRoot
     ) external onlyRole(DOMAIN_ADMIN_ROLE) {
         Epoch storage epoch = epochs[currentEpochId];
@@ -700,14 +701,14 @@ function finalizeEpoch(
     /// @param appId Application identifier
     /// @param epochId Epoch identifier
     /// @return separator The domain separator
-        /**
+    /**
      * @notice Computes domain separator
      * @param chainId The chain identifier
      * @param appId The appId identifier
      * @param epochId The epochId identifier
      * @return separator The separator
      */
-function computeDomainSeparator(
+    function computeDomainSeparator(
         uint64 chainId,
         bytes32 appId,
         uint64 epochId
@@ -720,14 +721,14 @@ function computeDomainSeparator(
     /// @param domainSeparator The domain separator
     /// @param transitionId The transition identifier
     /// @return nullifier The computed nullifier
-        /**
+    /**
      * @notice Computes nullifier
      * @param secret The secret value
      * @param domainSeparator The domain separator
      * @param transitionId The transitionId identifier
      * @return nullifier The nullifier
      */
-function computeNullifier(
+    function computeNullifier(
         bytes32 secret,
         bytes32 domainSeparator,
         bytes32 transitionId
@@ -741,7 +742,7 @@ function computeNullifier(
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Get nullifier details
-        /**
+    /**
      * @notice Returns the nullifier
      * @param nullifier The nullifier hash
      * @return domainId The domain id
@@ -752,7 +753,7 @@ function computeNullifier(
      * @return epochId The epoch id
      * @return isConsumed The is consumed
      */
-function getNullifier(
+    function getNullifier(
         bytes32 nullifier
     )
         external
@@ -780,33 +781,33 @@ function getNullifier(
     }
 
     /// @notice Get child nullifiers
-        /**
+    /**
      * @notice Returns the child nullifiers
      * @param nullifier The nullifier hash
      * @return The result value
      */
-function getChildNullifiers(
+    function getChildNullifiers(
         bytes32 nullifier
     ) external view returns (bytes32[] memory) {
         return nullifiers[nullifier].childNullifiers;
     }
 
     /// @notice Get domain details
-        /**
+    /**
      * @notice Returns the domain
      * @param domainId The domain identifier
      * @return The result value
      */
-function getDomain(bytes32 domainId) external view returns (Domain memory) {
+    function getDomain(bytes32 domainId) external view returns (Domain memory) {
         return domains[domainId];
     }
 
     /// @notice Get all active domain IDs
-        /**
+    /**
      * @notice Returns the active domains
      * @return The result value
      */
-function getActiveDomains() external view returns (bytes32[] memory) {
+    function getActiveDomains() external view returns (bytes32[] memory) {
         uint256 domainLen = _domainIds.length;
         uint256 activeCount = 0;
 
@@ -842,46 +843,46 @@ function getActiveDomains() external view returns (bytes32[] memory) {
     }
 
     /// @notice Get nullifiers in a domain
-        /**
+    /**
      * @notice Returns the nullifiers by domain
      * @param domainId The domain identifier
      * @return The result value
      */
-function getNullifiersByDomain(
+    function getNullifiersByDomain(
         bytes32 domainId
     ) external view returns (bytes32[] memory) {
         return nullifiersByDomain[domainId];
     }
 
     /// @notice Get epoch details
-        /**
+    /**
      * @notice Returns the epoch
      * @param epochId The epochId identifier
      * @return The result value
      */
-function getEpoch(uint64 epochId) external view returns (Epoch memory) {
+    function getEpoch(uint64 epochId) external view returns (Epoch memory) {
         return epochs[epochId];
     }
 
     /// @notice Check if nullifier is valid (exists and not consumed)
-        /**
+    /**
      * @notice Checks if nullifier valid
      * @param nullifier The nullifier hash
      * @return The result value
      */
-function isNullifierValid(bytes32 nullifier) external view returns (bool) {
+    function isNullifierValid(bytes32 nullifier) external view returns (bool) {
         return nullifierExists[nullifier] && !nullifiers[nullifier].isConsumed;
     }
 
     /// @notice Batch check nullifier validity
     /// @param nullifierList Array of nullifiers to check
     /// @return validities Array of validity results
-        /**
+    /**
      * @notice Batchs check nullifiers
      * @param nullifierList The nullifier list
      * @return validities The validities
      */
-function batchCheckNullifiers(
+    function batchCheckNullifiers(
         bytes32[] calldata nullifierList
     ) external view returns (bool[] memory validities) {
         uint256 len = nullifierList.length;
@@ -897,11 +898,11 @@ function batchCheckNullifiers(
 
     /// @notice Batch consume multiple nullifiers
     /// @param nullifierList Array of nullifiers to consume
-        /**
+    /**
      * @notice Batchs consume nullifiers
      * @param nullifierList The nullifier list
      */
-function batchConsumeNullifiers(
+    function batchConsumeNullifiers(
         bytes32[] calldata nullifierList
     ) external whenNotPaused onlyRole(NULLIFIER_REGISTRAR_ROLE) {
         uint256 len = nullifierList.length;
@@ -926,14 +927,14 @@ function batchConsumeNullifiers(
     /// @return nullifiers_ Total nullifiers
     /// @return crossLinks Total cross-domain links
     /// @return currentEpoch Current epoch ID
-        /**
+    /**
      * @notice Returns the stats
      * @return domains_ The domains_
      * @return nullifiers_ The nullifiers_
      * @return crossLinks The cross links
      * @return currentEpoch The current epoch
      */
-function getStats()
+    function getStats()
         external
         view
         returns (
@@ -951,11 +952,11 @@ function getStats()
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Set epoch duration with validation
-        /**
+    /**
      * @notice Sets the epoch duration
      * @param duration The duration in seconds
      */
-function setEpochDuration(
+    function setEpochDuration(
         uint64 duration
     ) external onlyRole(DOMAIN_ADMIN_ROLE) {
         if (duration < MIN_EPOCH_DURATION || duration > MAX_EPOCH_DURATION) {
@@ -967,14 +968,14 @@ function setEpochDuration(
     /// @notice Set the ZK verifier for nullifier derivation proofs
     /// @dev Phase 3: Required for real SNARK verification of cross-domain nullifiers
     /// @param _verifier Address of the IProofVerifier-compatible contract
-        /**
+    /**
      * @notice Sets the derivation verifier
      * @param _verifier The _verifier
      */
-function setDerivationVerifier(
+    function setDerivationVerifier(
         address _verifier
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(_verifier != address(0), "Zero verifier address");
+        if (_verifier == address(0)) revert ZeroVerifierAddress();
         derivationVerifier = IProofVerifier(_verifier);
         emit DerivationVerifierUpdated(_verifier);
     }
@@ -982,18 +983,18 @@ function setDerivationVerifier(
     event DerivationVerifierUpdated(address indexed newVerifier);
 
     /// @notice Pause contract
-        /**
+    /**
      * @notice Pauses the operation
      */
-function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
 
     /// @notice Unpause contract
-        /**
+    /**
      * @notice Unpauses the operation
      */
-function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
 }

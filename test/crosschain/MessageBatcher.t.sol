@@ -129,7 +129,12 @@ contract MessageBatcherTest is Test {
 
     /// @notice sendBatch reverts on empty queue
     function test_sendBatch_revertsEmpty() public {
-        vm.expectRevert("Queue empty");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                MessageBatcher.QueueEmpty.selector,
+                DEST_CHAIN
+            )
+        );
         batcher.sendBatch(DEST_CHAIN);
     }
 
@@ -148,7 +153,12 @@ contract MessageBatcherTest is Test {
         batcher.sendBatch(DEST_CHAIN);
 
         // Queue should be empty — sending again should revert
-        vm.expectRevert("Queue empty");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                MessageBatcher.QueueEmpty.selector,
+                DEST_CHAIN
+            )
+        );
         batcher.sendBatch(DEST_CHAIN);
     }
 

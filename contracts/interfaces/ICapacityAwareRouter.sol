@@ -101,6 +101,11 @@ interface ICapacityAwareRouter {
     error InsufficientPayment(uint256 required, uint256 provided);
     error NoFeesToWithdraw();
     error WithdrawFailed();
+    error InvalidRoute(bytes32 routeId);
+    error RouteNotPending(bytes32 routeId);
+    error RouteExpired(bytes32 routeId, uint256 expiresAt);
+    error RefundFailed();
+    error TimeoutTooShort(uint48 provided, uint48 minimum);
 
     /*//////////////////////////////////////////////////////////////
                           CONSTANTS / STATE

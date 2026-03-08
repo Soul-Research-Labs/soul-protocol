@@ -29,6 +29,8 @@ contract InstantCompletionGuaranteeUpgradeable is
     UUPSUpgradeable,
     IInstantCompletionGuarantee
 {
+    error ETHTransferFailed();
+
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
@@ -413,7 +415,7 @@ contract InstantCompletionGuaranteeUpgradeable is
      */
     function _safeTransferETH(address to, uint256 amount) internal {
         (bool success, ) = to.call{value: amount}("");
-        require(success, "ETH transfer failed");
+        if (!success) revert ETHTransferFailed();
     }
 
     receive() external payable {

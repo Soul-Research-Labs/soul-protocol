@@ -43,6 +43,11 @@
       "import": "./dist/esm/relayer/CrossChainProofRelayer.js",
       "require": "./dist/relayer/CrossChainProofRelayer.js",
       "types": "./dist/relayer/CrossChainProofRelayer.d.ts"
+    },
+    "./adapters": {
+      "import": "./dist/esm/adapters/UniswapV3AdapterClient.js",
+      "require": "./dist/adapters/UniswapV3AdapterClient.js",
+      "types": "./dist/adapters/UniswapV3AdapterClient.d.ts"
     }
   },
   "scripts": {

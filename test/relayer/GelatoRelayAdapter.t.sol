@@ -52,7 +52,7 @@ contract GelatoRelayAdapterTest is Test {
 
     function setUp() public {
         mockRelay = new MockGelatoRelay();
-        adapter = new GelatoRelayAdapter(address(mockRelay));
+        adapter = new GelatoRelayAdapter(address(mockRelay), address(this));
         target = makeAddr("target");
     }
 
@@ -64,13 +64,20 @@ contract GelatoRelayAdapterTest is Test {
         assertEq(adapter.GELATO_RELAY(), address(mockRelay));
     }
 
-    function test_constructor_revertsOnZeroAddress() public {
+    function test_constructor_revertsOnZeroRelay() public {
         vm.expectRevert(GelatoRelayAdapter.ZeroAddress.selector);
-        new GelatoRelayAdapter(address(0));
+        new GelatoRelayAdapter(address(0), address(this));
     }
 
-    function test_constructor_setsOwner() public view {
-        assertEq(adapter.owner(), address(this));
+    function test_constructor_revertsOnZeroAdmin() public {
+        vm.expectRevert(GelatoRelayAdapter.ZeroAddress.selector);
+        new GelatoRelayAdapter(address(mockRelay), address(0));
+    }
+
+    function test_constructor_setsAdmin() public view {
+        assertTrue(
+            adapter.hasRole(adapter.DEFAULT_ADMIN_ROLE(), address(this))
+        );
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -118,7 +125,8 @@ contract GelatoRelayAdapterTest is Test {
     function test_relayMessage_propagatesGelatoRevert() public {
         RevertingGelatoRelay badRelay = new RevertingGelatoRelay();
         GelatoRelayAdapter badAdapter = new GelatoRelayAdapter(
-            address(badRelay)
+            address(badRelay),
+            address(this)
         );
 
         vm.expectRevert("Gelato: relay failed");

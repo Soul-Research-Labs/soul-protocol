@@ -233,6 +233,10 @@ contract UniversalShieldedPoolUpgradeable is
     error DepositTooSmall();
     error DepositRateLimitExceeded();
     error CircuitBreakerActive();
+    error TestModeStillEnabled();
+    error VerifierNotSet();
+    error NoVerifierConfigured();
+    error ETHTransferFailed();
 
     /*//////////////////////////////////////////////////////////////
                              INITIALIZER
@@ -532,8 +536,8 @@ contract UniversalShieldedPoolUpgradeable is
      * @notice Confirm production ready
      */
     function confirmProductionReady() external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(!testMode, "Test mode still enabled");
-        require(withdrawalVerifier != address(0), "No withdrawal verifier set");
+        if (testMode) revert TestModeStillEnabled();
+        if (withdrawalVerifier == address(0)) revert VerifierNotSet();
         emit ProductionReadinessConfirmed(msg.sender, withdrawalVerifier);
     }
 
@@ -765,7 +769,7 @@ contract UniversalShieldedPoolUpgradeable is
     ) internal view returns (bool) {
         if (withdrawalVerifier == address(0)) {
             // No verifier set — only allow in explicit test mode (irreversibly disableable)
-            require(testMode, "No verifier configured");
+            if (!testMode) revert NoVerifierConfigured();
             /// @custom:security TEST-ONLY bypass — testMode must be disabled before production.
             /// disableTestMode() is irreversible and enforced by deployment scripts.
             return true;
@@ -891,7 +895,7 @@ contract UniversalShieldedPoolUpgradeable is
 
     function _safeTransferETH(address to, uint256 amount) internal {
         (bool success, ) = to.call{value: amount}("");
-        require(success, "ETH transfer failed");
+        if (!success) revert ETHTransferFailed();
     }
 
     /// @notice Authorize UUPS upgrade — restricted to UPGRADER_ROLE

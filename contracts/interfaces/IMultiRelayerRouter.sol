@@ -96,6 +96,9 @@ interface IMultiRelayerRouter {
     error MaxAdaptersReached();
     error InsufficientPayment(uint256 required, uint256 provided);
     error EmergencyRelayFailed();
+    error InvalidGasLimit(uint256 gasLimit);
+    error RefundFailed();
+    error Unauthorized();
 
     /*//////////////////////////////////////////////////////////////
                           RELAY FUNCTIONS

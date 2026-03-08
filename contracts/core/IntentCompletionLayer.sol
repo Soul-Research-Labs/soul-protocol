@@ -39,6 +39,8 @@ contract IntentCompletionLayer is
     Pausable,
     IIntentCompletionLayer
 {
+    error ETHTransferFailed();
+
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
@@ -142,11 +144,11 @@ contract IntentCompletionLayer is
 
     /// @notice Set the ZK proof verifier for intent fulfillment
     /// @param _verifier New verifier address
-        /**
+    /**
      * @notice Sets the intent verifier
      * @param _verifier The _verifier
      */
-function setIntentVerifier(
+    function setIntentVerifier(
         address _verifier
     ) external onlyRole(OPERATOR_ROLE) {
         if (_verifier == address(0)) revert ZeroAddress();
@@ -157,12 +159,12 @@ function setIntentVerifier(
     /// @notice Enable or disable a chain for intents
     /// @param chainId The chain ID to configure
     /// @param enabled Whether the chain is supported
-        /**
+    /**
      * @notice Sets the supported chain
      * @param chainId The chain identifier
      * @param enabled Whether the feature is enabled
      */
-function setSupportedChain(
+    function setSupportedChain(
         uint256 chainId,
         bool enabled
     ) external onlyRole(OPERATOR_ROLE) {
@@ -173,11 +175,11 @@ function setSupportedChain(
 
     /// @notice Withdraw accumulated protocol fees
     /// @param to Recipient address
-        /**
+    /**
      * @notice Withdraws protocol fees
      * @param to The destination address
      */
-function withdrawProtocolFees(
+    function withdrawProtocolFees(
         address to
     ) external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
         if (to == address(0)) revert ZeroAddress();
@@ -189,18 +191,18 @@ function withdrawProtocolFees(
     }
 
     /// @notice Emergency pause
-        /**
+    /**
      * @notice Pauses the operation
      */
-function pause() external onlyRole(EMERGENCY_ROLE) {
+    function pause() external onlyRole(EMERGENCY_ROLE) {
         _pause();
     }
 
     /// @notice Unpause
-        /**
+    /**
      * @notice Unpauses the operation
      */
-function unpause() external onlyRole(EMERGENCY_ROLE) {
+    function unpause() external onlyRole(EMERGENCY_ROLE) {
         _unpause();
     }
 
@@ -209,7 +211,7 @@ function unpause() external onlyRole(EMERGENCY_ROLE) {
     //////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IIntentCompletionLayer
-        /**
+    /**
      * @notice Submits intent
      * @param sourceChainId The source chain identifier
      * @param destChainId The destination chain identifier
@@ -220,7 +222,7 @@ function unpause() external onlyRole(EMERGENCY_ROLE) {
      * @param policyHash The policyHash hash value
      * @return intentId The intent id
      */
-function submitIntent(
+    function submitIntent(
         uint256 sourceChainId,
         uint256 destChainId,
         bytes32 sourceCommitment,
@@ -292,11 +294,11 @@ function submitIntent(
     }
 
     /// @inheritdoc IIntentCompletionLayer
-        /**
+    /**
      * @notice Cancels intent
      * @param intentId The intentId identifier
      */
-function cancelIntent(bytes32 intentId) external nonReentrant {
+    function cancelIntent(bytes32 intentId) external nonReentrant {
         Intent storage intent = _intents[intentId];
         if (intent.user == address(0)) revert IntentNotFound();
         if (intent.user != msg.sender) revert NotIntentUser();
@@ -315,10 +317,10 @@ function cancelIntent(bytes32 intentId) external nonReentrant {
     //////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IIntentCompletionLayer
-        /**
+    /**
      * @notice Registers solver
      */
-function registerSolver() external payable nonReentrant whenNotPaused {
+    function registerSolver() external payable nonReentrant whenNotPaused {
         if (msg.value < MIN_SOLVER_STAKE) revert InsufficientStake();
         Solver storage solver = _solvers[msg.sender];
         if (solver.isActive) revert SolverAlreadyRegistered();
@@ -334,10 +336,10 @@ function registerSolver() external payable nonReentrant whenNotPaused {
     }
 
     /// @inheritdoc IIntentCompletionLayer
-        /**
+    /**
      * @notice Deactivate solver
      */
-function deactivateSolver() external nonReentrant {
+    function deactivateSolver() external nonReentrant {
         Solver storage solver = _solvers[msg.sender];
         if (!solver.isActive) revert SolverNotActive();
 
@@ -353,11 +355,11 @@ function deactivateSolver() external nonReentrant {
     }
 
     /// @inheritdoc IIntentCompletionLayer
-        /**
+    /**
      * @notice Claims intent
      * @param intentId The intentId identifier
      */
-function claimIntent(bytes32 intentId) external nonReentrant whenNotPaused {
+    function claimIntent(bytes32 intentId) external nonReentrant whenNotPaused {
         Intent storage intent = _intents[intentId];
         if (intent.user == address(0)) revert IntentNotFound();
         if (intent.status != IntentStatus.PENDING) revert IntentNotPending();
@@ -375,14 +377,14 @@ function claimIntent(bytes32 intentId) external nonReentrant whenNotPaused {
     }
 
     /// @inheritdoc IIntentCompletionLayer
-        /**
+    /**
      * @notice Fulfill intent
      * @param intentId The intentId identifier
      * @param proof The ZK proof data
      * @param publicInputs The public inputs
      * @param newCommitment The new Commitment value
      */
-function fulfillIntent(
+    function fulfillIntent(
         bytes32 intentId,
         bytes calldata proof,
         bytes calldata publicInputs,
@@ -430,13 +432,13 @@ function fulfillIntent(
     /// @param intentId The intent to dispute
     /// @param disputeProof Proof that the fulfillment is invalid
     /// @param disputeInputs Public inputs for the dispute proof
-        /**
+    /**
      * @notice Dispute intent
      * @param intentId The intentId identifier
      * @param disputeProof The dispute proof
      * @param disputeInputs The dispute inputs
      */
-function disputeIntent(
+    function disputeIntent(
         bytes32 intentId,
         bytes calldata disputeProof,
         bytes calldata disputeInputs
@@ -480,11 +482,11 @@ function disputeIntent(
     }
 
     /// @inheritdoc IIntentCompletionLayer
-        /**
+    /**
      * @notice Finalizes intent
      * @param intentId The intentId identifier
      */
-function finalizeIntent(bytes32 intentId) external nonReentrant {
+    function finalizeIntent(bytes32 intentId) external nonReentrant {
         Intent storage intent = _intents[intentId];
         if (intent.user == address(0)) revert IntentNotFound();
         if (intent.status != IntentStatus.FULFILLED)
@@ -516,11 +518,11 @@ function finalizeIntent(bytes32 intentId) external nonReentrant {
 
     /// @notice Expire an intent that passed its deadline without fulfillment
     /// @param intentId The intent to expire
-        /**
+    /**
      * @notice Expire intent
      * @param intentId The intentId identifier
      */
-function expireIntent(bytes32 intentId) external nonReentrant {
+    function expireIntent(bytes32 intentId) external nonReentrant {
         Intent storage intent = _intents[intentId];
         if (intent.user == address(0)) revert IntentNotFound();
 
@@ -564,32 +566,32 @@ function expireIntent(bytes32 intentId) external nonReentrant {
     //////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IIntentCompletionLayer
-        /**
+    /**
      * @notice Returns the intent
      * @param intentId The intentId identifier
      * @return The result value
      */
-function getIntent(bytes32 intentId) external view returns (Intent memory) {
+    function getIntent(bytes32 intentId) external view returns (Intent memory) {
         return _intents[intentId];
     }
 
     /// @inheritdoc IIntentCompletionLayer
-        /**
+    /**
      * @notice Returns the solver
      * @param solver The solver
      * @return The result value
      */
-function getSolver(address solver) external view returns (Solver memory) {
+    function getSolver(address solver) external view returns (Solver memory) {
         return _solvers[solver];
     }
 
     /// @inheritdoc IIntentCompletionLayer
-        /**
+    /**
      * @notice Can finalize
      * @param intentId The intentId identifier
      * @return The result value
      */
-function canFinalize(bytes32 intentId) external view returns (bool) {
+    function canFinalize(bytes32 intentId) external view returns (bool) {
         Intent storage intent = _intents[intentId];
         return
             intent.status == IntentStatus.FULFILLED &&
@@ -597,31 +599,31 @@ function canFinalize(bytes32 intentId) external view returns (bool) {
     }
 
     /// @inheritdoc IIntentCompletionLayer
-        /**
+    /**
      * @notice Checks if finalized
      * @param intentId The intentId identifier
      * @return The result value
      */
-function isFinalized(bytes32 intentId) external view returns (bool) {
+    function isFinalized(bytes32 intentId) external view returns (bool) {
         return _intents[intentId].status == IntentStatus.FINALIZED;
     }
 
     /// @notice Get the number of active solvers
-        /**
+    /**
      * @notice Active solver count
      * @return The result value
      */
-function activeSolverCount() external view returns (uint256) {
+    function activeSolverCount() external view returns (uint256) {
         return activeSolvers.length;
     }
 
     /// @notice Get intent status
-        /**
+    /**
      * @notice Intent status
      * @param intentId The intentId identifier
      * @return The result value
      */
-function intentStatus(
+    function intentStatus(
         bytes32 intentId
     ) external view returns (IntentStatus) {
         return _intents[intentId].status;
@@ -652,7 +654,7 @@ function intentStatus(
 
     function _safeTransferETH(address to, uint256 amount) internal {
         (bool success, ) = to.call{value: amount}("");
-        require(success, "ETH transfer failed");
+        if (!success) revert ETHTransferFailed();
     }
 
     /*//////////////////////////////////////////////////////////////

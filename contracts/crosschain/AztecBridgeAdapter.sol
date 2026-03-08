@@ -251,6 +251,10 @@ contract AztecBridgeAdapter is
     error FeeTooHigh(uint256 fee);
     error InsufficientFee(uint256 required, uint256 provided);
     error TransferFailed();
+    error InsufficientPublicInputs(uint256 provided, uint256 required);
+    error PayloadHashMismatch();
+    error InsufficientBalance(uint256 requested, uint256 available);
+    error NoTokenBalance(address token);
 
     /*//////////////////////////////////////////////////////////////
                             CONSTRUCTOR
@@ -467,7 +471,8 @@ contract AztecBridgeAdapter is
         // [1] = nullifier (unique per note spend)
         // [2] = noteCommitmentOut (output note, if any)
         // [3] = payloadHash (keccak256 of the payload)
-        require(publicInputs.length >= 4, "Insufficient public inputs");
+        if (publicInputs.length < 4)
+            revert InsufficientPublicInputs(publicInputs.length, 4);
 
         // Verify the proof through DeFi bridge convert mechanism
         // The convert call with interactionNonce derived from the proof validates the withdrawal
@@ -486,7 +491,7 @@ contract AztecBridgeAdapter is
         bytes32 payloadHash = bytes32(publicInputs[3]);
 
         // Verify payload integrity
-        require(keccak256(payload) == payloadHash, "Payload hash mismatch");
+        if (keccak256(payload) != payloadHash) revert PayloadHashMismatch();
 
         // Double-spend protection via nullifier
         if (usedNullifiers[nullifier]) revert NullifierAlreadyUsed(nullifier);
@@ -634,7 +639,8 @@ contract AztecBridgeAdapter is
         uint256 amount
     ) external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
         if (to == address(0)) revert InvalidTarget();
-        require(amount <= address(this).balance, "Insufficient balance");
+        if (amount > address(this).balance)
+            revert InsufficientBalance(amount, address(this).balance);
         (bool sent, ) = to.call{value: amount}("");
         if (!sent) revert TransferFailed();
         emit EmergencyWithdrawal(to, amount);
@@ -649,7 +655,7 @@ contract AztecBridgeAdapter is
     ) external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
         if (token == address(0) || to == address(0)) revert InvalidTarget();
         uint256 balance = IERC20(token).balanceOf(address(this));
-        require(balance > 0, "No tokens");
+        if (balance == 0) revert NoTokenBalance(token);
         IERC20(token).safeTransfer(to, balance);
     }
 

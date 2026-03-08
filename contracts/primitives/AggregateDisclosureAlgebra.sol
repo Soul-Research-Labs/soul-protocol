@@ -205,6 +205,7 @@ contract AggregateDisclosureAlgebra is
     error Unauthorized();
     error ConditionNotMet();
     error AttributeNotRegistered();
+    error ZeroAddress();
 
     /*//////////////////////////////////////////////////////////////
                              CONSTRUCTOR
@@ -418,10 +419,7 @@ contract AggregateDisclosureAlgebra is
         if (credential.isRevoked) revert CredentialIsRevoked();
 
         // Delegate to external verifier — reverts if not configured
-        require(
-            disclosureProofVerifier != address(0),
-            "Disclosure proof verifier not configured"
-        );
+        if (disclosureProofVerifier == address(0)) revert ZeroAddress();
         {
             (bool success, bytes memory result) = disclosureProofVerifier
                 .staticcall(
@@ -629,67 +627,67 @@ contract AggregateDisclosureAlgebra is
                            VIEW FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-        /**
+    /**
      * @notice Returns the credential
      * @param credentialId The credentialId identifier
      * @return The result value
      */
-function getCredential(
+    function getCredential(
         bytes32 credentialId
     ) external view returns (AttributeCredential memory) {
         return credentials[credentialId];
     }
 
-        /**
+    /**
      * @notice Returns the disclosure
      * @param disclosureId The disclosureId identifier
      * @return The result value
      */
-function getDisclosure(
+    function getDisclosure(
         bytes32 disclosureId
     ) external view returns (SelectiveDisclosure memory) {
         return disclosures[disclosureId];
     }
 
-        /**
+    /**
      * @notice Returns the aggregate
      * @param aggregateId The aggregateId identifier
      * @return The result value
      */
-function getAggregate(
+    function getAggregate(
         bytes32 aggregateId
     ) external view returns (AggregateDisclosure memory) {
         return aggregates[aggregateId];
     }
 
-        /**
+    /**
      * @notice Returns the subject credentials
      * @param subject The subject
      * @return The result value
      */
-function getSubjectCredentials(
+    function getSubjectCredentials(
         address subject
     ) external view returns (bytes32[] memory) {
         return subjectCredentials[subject];
     }
 
-        /**
+    /**
      * @notice Returns the subject disclosures
      * @param subject The subject
      * @return The result value
      */
-function getSubjectDisclosures(
+    function getSubjectDisclosures(
         address subject
     ) external view returns (bytes32[] memory) {
         return subjectDisclosures[subject];
     }
 
-        /**
+    /**
      * @notice Checks if credential valid
      * @param credentialId The credentialId identifier
      * @return The result value
      */
-function isCredentialValid(
+    function isCredentialValid(
         bytes32 credentialId
     ) external view returns (bool) {
         AttributeCredential storage cred = credentials[credentialId];
@@ -704,28 +702,28 @@ function isCredentialValid(
                            ADMIN FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-        /**
+    /**
      * @notice Pauses the operation
      */
-function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
 
-        /**
+    /**
      * @notice Unpauses the operation
      */
-function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
 
-        /**
+    /**
      * @notice Sets the disclosure proof verifier
      * @param verifier The verifier contract address
      */
-function setDisclosureProofVerifier(
+    function setDisclosureProofVerifier(
         address verifier
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(verifier != address(0), "Zero address");
+        if (verifier == address(0)) revert ZeroAddress();
         disclosureProofVerifier = verifier;
     }
 }
