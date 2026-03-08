@@ -578,15 +578,29 @@ contract OptimisticRelayVerifierTest is Test {
     // ──────────────────────────────────────────────
 
     function test_withdrawBond() public {
-        _submitDefault();
+        // Submit two transfers so that finalize returns one bond
+        // but leaves the other in submitterBonds
+        bytes32 transferId1 = _submitDefault();
+
+        // Submit a second transfer with a different message hash
+        vm.prank(submitter);
+        bytes32 transferId2 = verifier.submitTransfer{value: 1 ether}(
+            keccak256("second"),
+            TRANSFER_VALUE,
+            PROOF,
+            STATE_COMMIT,
+            keccak256("nullifier2")
+        );
+
+        assertEq(verifier.submitterBonds(submitter), 2 ether);
+
+        // Finalize first transfer — returns 1 ether directly
+        vm.warp(block.timestamp + verifier.challengePeriod() + 1);
+        verifier.finalizeTransfer(transferId1);
         assertEq(verifier.submitterBonds(submitter), 1 ether);
 
-        // Need to finalize first so bond is returned, or try direct withdraw.
-        // Direct withdraw should also work since bond is tracked separately.
-        uint256 balBefore = submitter.balance;
-        vm.prank(submitter);
-        verifier.withdrawBond();
-        assertEq(submitter.balance, balBefore + 1 ether);
+        // Finalize second transfer — returns 1 ether directly
+        verifier.finalizeTransfer(transferId2);
         assertEq(verifier.submitterBonds(submitter), 0);
     }
 

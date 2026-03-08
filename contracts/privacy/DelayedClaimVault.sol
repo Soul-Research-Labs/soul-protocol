@@ -724,4 +724,11 @@ contract DelayedClaimVault is
     receive() external payable {
         revert("Use deposit()");
     }
+
+    // =========================================================================
+    // STORAGE GAP
+    // =========================================================================
+
+    /// @dev Reserved storage gap for future upgrades
+    uint256[50] private __gap;
 }

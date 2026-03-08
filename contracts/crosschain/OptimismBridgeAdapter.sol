@@ -1026,8 +1026,8 @@ contract OptimismBridgeAdapter is
         address,
         bytes calldata
     ) external pure returns (uint256) {
-        // Return protocol fee per ETH unit (3 BPS)
-        return BRIDGE_FEE_BPS;
+        // OP Stack native bridge has no extra fee beyond gas costs
+        return 0;
     }
 
     /// @inheritdoc IBridgeAdapter

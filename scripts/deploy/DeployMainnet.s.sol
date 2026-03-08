@@ -416,6 +416,9 @@ contract DeployMainnet is Script {
 
         // ZKFraudProof
         zkFraudProof.grantRole(zkFraudProof.DEFAULT_ADMIN_ROLE(), admin);
+        zkFraudProof.grantRole(zkFraudProof.PROVER_ROLE(), admin);
+        zkFraudProof.grantRole(zkFraudProof.VERIFIER_ROLE(), admin);
+        zkFraudProof.grantRole(zkFraudProof.OPERATOR_ROLE(), admin);
 
         // CrossChainLiquidityVault — admin already set via constructor
         // PRIVACY_HUB_ROLE stays with deployer temporarily until PrivacyHub is deployed

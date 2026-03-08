@@ -26,6 +26,7 @@ contract SimpleMultiBridgeRouter is AccessControl, ReentrancyGuard {
     // Config
     uint256 public requiredConfirmations; // N
     address[] public activeAdapters; // M
+    mapping(address => bool) public allowedTargets;
 
     // State
     mapping(bytes32 => MessageStatus) public messages;
@@ -39,12 +40,17 @@ contract SimpleMultiBridgeRouter is AccessControl, ReentrancyGuard {
     event ConfirmationReceived(bytes32 indexed messageId, address adapter);
     event MessageExecuted(bytes32 indexed messageId, address target);
     event AdapterSendFailed(address indexed adapter, string reason);
+    event TargetAllowed(address indexed target, bool allowed);
+    event AdapterRemoved(address indexed adapter);
 
     error InsufficientAdapters(uint256 available, uint256 required);
     error InsufficientConfirmations(uint256 succeeded, uint256 required);
     error AlreadyConfirmed(bytes32 messageId, address adapter);
     error ExecutionFailed(bytes32 messageId);
     error InvalidConfirmationThreshold(uint256 n, uint256 adapterCount);
+    error TargetNotAllowed(address target);
+    error AdapterAlreadyAdded(address adapter);
+    error AdapterNotFound(address adapter);
 
     /// @notice Initializes the router with N-of-M confirmation threshold
     /// @param _admin Address to receive admin roles
@@ -60,8 +66,42 @@ contract SimpleMultiBridgeRouter is AccessControl, ReentrancyGuard {
      * @param _adapter The _adapter
      */
     function addAdapter(address _adapter) external onlyRole(ADMIN_ROLE) {
+        if (hasRole(ADAPTER_ROLE, _adapter))
+            revert AdapterAlreadyAdded(_adapter);
         _grantRole(ADAPTER_ROLE, _adapter);
         activeAdapters.push(_adapter);
+    }
+
+    /**
+     * @notice Remove a bridge adapter
+     * @param _adapter The adapter to remove
+     */
+    function removeAdapter(address _adapter) external onlyRole(ADMIN_ROLE) {
+        if (!hasRole(ADAPTER_ROLE, _adapter)) revert AdapterNotFound(_adapter);
+        _revokeRole(ADAPTER_ROLE, _adapter);
+
+        uint256 len = activeAdapters.length;
+        for (uint256 i = 0; i < len; i++) {
+            if (activeAdapters[i] == _adapter) {
+                activeAdapters[i] = activeAdapters[len - 1];
+                activeAdapters.pop();
+                break;
+            }
+        }
+        emit AdapterRemoved(_adapter);
+    }
+
+    /**
+     * @notice Set whether a target address is allowed for execution
+     * @param target The target address
+     * @param allowed Whether the target is allowed
+     */
+    function setAllowedTarget(
+        address target,
+        bool allowed
+    ) external onlyRole(ADMIN_ROLE) {
+        allowedTargets[target] = allowed;
+        emit TargetAllowed(target, allowed);
     }
 
     /**
@@ -168,6 +208,8 @@ contract SimpleMultiBridgeRouter is AccessControl, ReentrancyGuard {
             payload,
             (address, bytes)
         );
+
+        if (!allowedTargets[target]) revert TargetNotAllowed(target);
 
         (bool success, ) = target.call(data);
         if (!success) revert ExecutionFailed(messageId);

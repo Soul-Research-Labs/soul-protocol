@@ -139,6 +139,9 @@ contract MultiBridgeRouterExtended is Test {
         router.addAdapter(address(adapter1));
         router.addAdapter(address(adapter2));
         router.addAdapter(address(adapter3));
+
+        // Whitelist target for execution
+        router.setAllowedTarget(address(target), true);
     }
 
     // ====================================================================

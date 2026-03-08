@@ -680,8 +680,17 @@ contract CrossChainLiquidityVault is
 
         batch.executed = true;
 
-        // Reset net flows
-        netFlows[batch.remoteChainId][batch.token] = 0;
+        // Subtract settled amount from net flows instead of zeroing
+        // This preserves any flows that accumulated between propose and execute
+        if (batch.isOutflow) {
+            netFlows[batch.remoteChainId][batch.token] += int256(
+                batch.netAmount
+            );
+        } else {
+            netFlows[batch.remoteChainId][batch.token] -= int256(
+                batch.netAmount
+            );
+        }
 
         // If outflow, the funds need to be sent to the bridge
         // The operator handles the actual bridge call off-chain and sends

@@ -89,8 +89,14 @@ contract OptimisticRelayVerifier is AccessControl, ReentrancyGuard, Pausable {
     /// @notice Value threshold for optimistic verification
     uint256 public optimisticThreshold = 10 ether;
 
-    /// @notice Submitter bonds
+    /// @notice Submitter total bonds
     mapping(address => uint256) public submitterBonds;
+
+    /// @notice Per-transfer bond amounts
+    mapping(bytes32 => uint256) public transferBonds;
+
+    /// @notice Count of active (PENDING or CHALLENGED) transfers per submitter
+    mapping(address => uint256) public activeTransferCount;
 
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
@@ -137,6 +143,7 @@ contract OptimisticRelayVerifier is AccessControl, ReentrancyGuard, Pausable {
     error TransferFailed();
     error InvalidChallengePeriod(uint256 period);
     error NoBondToWithdraw();
+    error HasActiveTransfers(address submitter, uint256 count);
 
     /*//////////////////////////////////////////////////////////////
                             CONSTRUCTOR
@@ -193,10 +200,12 @@ contract OptimisticRelayVerifier is AccessControl, ReentrancyGuard, Pausable {
             nullifier: nullifier
         });
 
-        // Store submitter bond
+        // Store per-transfer bond
         if (msg.value > 0) {
             submitterBonds[msg.sender] += msg.value;
+            transferBonds[transferId] = msg.value;
         }
+        activeTransferCount[msg.sender]++;
 
         emit TransferSubmitted(
             transferId,
@@ -279,13 +288,13 @@ contract OptimisticRelayVerifier is AccessControl, ReentrancyGuard, Pausable {
         if (challengerWon) {
             // Challenger wins - transfer is invalid
             transfer.status = TransferStatus.REJECTED;
+            activeTransferCount[transfer.submitter]--;
 
-            // Slash submitter bond, reward challenger
-            uint256 submitterBond = submitterBonds[transfer.submitter];
-            uint256 slashAmount = submitterBond > 0 ? submitterBond : 0;
-
+            // Slash only this transfer's bond, not all bonds
+            uint256 slashAmount = transferBonds[transferId];
             if (slashAmount > 0) {
-                submitterBonds[transfer.submitter] = 0;
+                submitterBonds[transfer.submitter] -= slashAmount;
+                transferBonds[transferId] = 0;
             }
 
             uint256 reward = challenge.bond + slashAmount;
@@ -303,6 +312,7 @@ contract OptimisticRelayVerifier is AccessControl, ReentrancyGuard, Pausable {
         } else {
             // Submitter wins - transfer is valid
             transfer.status = TransferStatus.FINALIZED;
+            activeTransferCount[transfer.submitter]--;
 
             // Slash challenger bond, reward submitter
             uint256 reward = challenge.bond;
@@ -339,11 +349,13 @@ contract OptimisticRelayVerifier is AccessControl, ReentrancyGuard, Pausable {
         }
 
         transfer.status = TransferStatus.FINALIZED;
+        activeTransferCount[transfer.submitter]--;
 
-        // Return submitter bond
-        uint256 bond = submitterBonds[transfer.submitter];
+        // Return this transfer's bond
+        uint256 bond = transferBonds[transferId];
         if (bond > 0) {
-            submitterBonds[transfer.submitter] = 0;
+            submitterBonds[transfer.submitter] -= bond;
+            transferBonds[transferId] = 0;
             (bool success, ) = transfer.submitter.call{value: bond}("");
             if (!success) revert TransferFailed();
         }
@@ -381,6 +393,9 @@ contract OptimisticRelayVerifier is AccessControl, ReentrancyGuard, Pausable {
      * @notice Withdraw submitter bond
      */
     function withdrawBond() external nonReentrant {
+        uint256 active = activeTransferCount[msg.sender];
+        if (active > 0) revert HasActiveTransfers(msg.sender, active);
+
         uint256 bond = submitterBonds[msg.sender];
         if (bond == 0) revert NoBondToWithdraw();
 
