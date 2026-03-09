@@ -106,6 +106,7 @@ contract ZaseonGovernorTest is Test {
         timelock.grantRole(timelock.PROPOSER_ROLE(), address(governor));
         timelock.grantRole(timelock.EXECUTOR_ROLE(), address(governor));
         timelock.grantRole(timelock.CANCELLER_ROLE(), address(governor));
+        timelock.setGovernor(address(governor));
         vm.stopPrank();
 
         // Advance 1 block so voting power is checkpointed

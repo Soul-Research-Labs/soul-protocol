@@ -323,6 +323,46 @@ methods {
     // Universal methods across contracts
     function paused() external returns (bool) envfree;
     function hasRole(bytes32, address) external returns (bool) envfree;
+    function DEFAULT_ADMIN_ROLE() external returns (bytes32) envfree;
+}
+
+/**
+ * SAFETY-GLOBAL-002: No unauthorized DEFAULT_ADMIN_ROLE escalation
+ * A caller without DEFAULT_ADMIN_ROLE cannot grant themselves admin.
+ */
+rule noAdminSelfEscalation(method f) filtered {
+    f -> f.isView == false && f.isFallback == false
+} {
+    env e;
+    calldataarg args;
+    bytes32 adminRole = DEFAULT_ADMIN_ROLE();
+    
+    require !hasRole(adminRole, e.msg.sender);
+    
+    f(e, args);
+    
+    assert !hasRole(adminRole, e.msg.sender),
+        "Non-admin must not be able to self-escalate to DEFAULT_ADMIN_ROLE";
+}
+
+/**
+ * SAFETY-GLOBAL-003: Paused state is sticky under non-admin callers
+ * If paused, only an admin can unpause.
+ */
+rule pauseStickiness(method f) filtered {
+    f -> f.isView == false && f.isFallback == false
+} {
+    env e;
+    calldataarg args;
+    bytes32 adminRole = DEFAULT_ADMIN_ROLE();
+    
+    require paused();
+    require !hasRole(adminRole, e.msg.sender);
+    
+    f(e, args);
+    
+    assert paused(),
+        "Non-admin callers cannot unpause the contract";
 }
 
 /**

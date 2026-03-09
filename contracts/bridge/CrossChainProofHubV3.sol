@@ -155,9 +155,6 @@ contract CrossChainProofHubV3 is
     /// @notice Trusted remote contract addresses per chain
     mapping(uint256 => address) public trustedRemotes;
 
-    /// @notice Error thrown when hourly value rate limit is exceeded
-    error ValueRateLimitExceeded();
-
     /*//////////////////////////////////////////////////////////////
                              CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
@@ -293,11 +290,8 @@ contract CrossChainProofHubV3 is
         // Verify the proof immediately — uses shared verifier resolution
         IProofVerifier verifier = _resolveVerifier(proofType);
 
-        if (address(verifier) == address(0)) {
-            verifier = verifiers[DEFAULT_PROOF_TYPE];
-            if (address(verifier) == address(0))
-                revert VerifierNotSet(proofType);
-        }
+        // H-1 FIX: Do not fall back to default verifier — respect _resolveVerifier's security design
+        if (address(verifier) == address(0)) revert VerifierNotSet(proofType);
 
         if (!verifier.verifyProof(proof, publicInputs)) revert InvalidProof();
 
@@ -517,12 +511,16 @@ contract CrossChainProofHubV3 is
         bytes32 proofHash = keccak256(proof);
         bytes32 inputsHash = keccak256(publicInputs);
 
-        if (
-            proofHash != submission.proofHash ||
-            inputsHash != submission.publicInputsHash
-        ) {
-            return false;
-        }
+        // SECURITY FIX C1: Revert on hash mismatch instead of returning false.
+        // Returning false would let a malicious challenger submit garbage data
+        // (hash mismatch → false → challenger wins), exploiting the system.
+        // By reverting, the challenger must provide the original proof data
+        // for on-chain verification.
+        require(
+            proofHash == submission.proofHash &&
+                inputsHash == submission.publicInputsHash,
+            "Proof data mismatch"
+        );
 
         // Resolve verifier
         IProofVerifier verifier = _resolveVerifier(proofType);

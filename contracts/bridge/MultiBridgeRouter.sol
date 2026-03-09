@@ -111,6 +111,9 @@ contract MultiBridgeRouter is
     error NoETHToWithdraw();
     error TransferFailed();
 
+    /// @dev M-3 FIX: Nonce to prevent message hash collisions within the same block
+    uint256 private _messageNonce;
+
     /*////////////////////////////////////////////////////////////// 
                             CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
@@ -145,8 +148,9 @@ contract MultiBridgeRouter is
         whenNotPaused
         returns (bytes32 messageHash)
     {
+        // M-3 FIX: Include nonce to prevent hash collisions for same sender/block
         messageHash = keccak256(
-            abi.encode(message, block.timestamp, msg.sender)
+            abi.encode(message, block.timestamp, msg.sender, _messageNonce++)
         );
 
         // Determine routing strategy

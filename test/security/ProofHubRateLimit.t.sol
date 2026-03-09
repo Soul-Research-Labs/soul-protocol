@@ -201,7 +201,7 @@ contract ProofHubRateLimitTest is Test {
 
         // 6th submission should trigger ValueRateLimitExceeded
         vm.prank(relayer);
-        vm.expectRevert(CrossChainProofHubV3.ValueRateLimitExceeded.selector);
+        vm.expectRevert(ICrossChainProofHubV3.ValueRateLimitExceeded.selector);
         hub.submitProof{value: 0.001 ether}(
             hex"ee",
             hex"ff",

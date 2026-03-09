@@ -733,6 +733,12 @@ export class MultiBridgeRouterClient {
         // Bridge not registered — skip
       }
     }
+    // L3 FIX: Throw if no valid bridges found instead of silently returning empty
+    if (summaries.length === 0) {
+      throw new Error(
+        "No valid bridge adapters found — all adapters are unregistered or zero-address",
+      );
+    }
     return summaries;
   }
 

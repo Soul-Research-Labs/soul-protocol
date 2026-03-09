@@ -178,6 +178,8 @@ contract GasNormalizer is IGasNormalizer, AccessControl, ReentrancyGuard {
 
         toBurn -= BURN_OVERHEAD_MARGIN;
         uint256 iterations = toBurn / GAS_PER_BURN_ITERATION;
+        // M11 FIX: Burn remainder gas to prevent fingerprinting
+        uint256 remainder = toBurn % GAS_PER_BURN_ITERATION;
 
         // Tight burn loop — no state changes, just gas consumption
         // Uses assembly to prevent optimizer from removing the loop
@@ -191,6 +193,10 @@ contract GasNormalizer is IGasNormalizer, AccessControl, ReentrancyGuard {
             } {
                 // Each iteration: comparison + increment + jump ≈ 12 gas
                 // The `pop(gas())` prevents the optimizer from eliminating this
+                pop(gas())
+            }
+            // M11 FIX: Burn remainder with nop reads to avoid gas fingerprinting
+            if gt(remainder, 0) {
                 pop(gas())
             }
         }

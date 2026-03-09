@@ -124,6 +124,9 @@ contract ZKFraudProof is AccessControl, ReentrancyGuard, Pausable {
     mapping(address => ProverStats) public proverStats;
     mapping(bytes32 => DisputeResolution) public resolutions;
 
+    /// @notice Claimable bond/reward balances for pull-based withdrawal
+    mapping(address => uint256) public claimableRewards;
+
     bytes32[] public proofIds;
     bytes32[] public batchIds;
     bytes32[] public pendingProofs;
@@ -468,11 +471,11 @@ contract ZKFraudProof is AccessControl, ReentrancyGuard, Pausable {
             _rewardProver(proof.challenger, reward, proofId);
         }
 
-        // Return prover's bond
-        (bool bondSuccess, ) = payable(proof.challenger).call{
-            value: proof.bondAmount
-        }("");
-        if (!bondSuccess) revert BondTransferFailed();
+        // SECURITY FIX H2: Use pull-based bond return to prevent DoS.
+        // If the prover is a contract without receive(), a direct transfer would
+        // revert the entire applyFraudProof call, permanently blocking fraud proof
+        // application. Using claimableRewards allows the prover to withdraw later.
+        claimableRewards[proof.challenger] += proof.bondAmount;
 
         // Record resolution
         resolutions[proofId] = DisputeResolution({
@@ -490,6 +493,17 @@ contract ZKFraudProof is AccessControl, ReentrancyGuard, Pausable {
     }
 
     // ============ Verification Key Management ============
+
+    /**
+     * @notice Withdraw accumulated claimable rewards/bonds
+     */
+    function withdrawClaimableRewards() external nonReentrant {
+        uint256 amount = claimableRewards[msg.sender];
+        if (amount == 0) revert InsufficientFunds();
+        claimableRewards[msg.sender] = 0;
+        (bool success, ) = payable(msg.sender).call{value: amount}("");
+        if (!success) revert TransferFailed();
+    }
 
     /**
      * @notice Add a verification key for a proof type

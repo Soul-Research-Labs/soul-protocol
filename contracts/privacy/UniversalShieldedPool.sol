@@ -5,6 +5,7 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IUniversalShieldedPool} from "../interfaces/IUniversalShieldedPool.sol";
 import {UniversalChainRegistry} from "../libraries/UniversalChainRegistry.sol";
@@ -173,6 +174,10 @@ contract UniversalShieldedPool is
     uint256 public totalWithdrawals;
     uint256 public totalCrossChainDeposits;
 
+    // ─── Token Decimals (H22 FIX) ──────────────────────────────
+    /// @notice Token decimals per asset for deposit bounds scaling
+    mapping(bytes32 => uint8) public assetDecimals;
+
     /*//////////////////////////////////////////////////////////////
                                EVENTS
     //////////////////////////////////////////////////////////////*/
@@ -284,8 +289,21 @@ contract UniversalShieldedPool is
         if (commitment == bytes32(0) || uint256(commitment) >= FIELD_SIZE) {
             revert InvalidCommitment();
         }
-        if (amount < MIN_DEPOSIT) revert DepositTooSmall();
-        if (amount > MAX_DEPOSIT) revert DepositTooLarge();
+        // H22 FIX: Scale deposit bounds to token's decimals
+        uint8 tokenDecimals = assetDecimals[assetId];
+        uint256 scaledMin;
+        uint256 scaledMax;
+        if (tokenDecimals <= 18) {
+            uint256 scaleFactor = 10 ** (18 - tokenDecimals);
+            scaledMin = MIN_DEPOSIT / scaleFactor;
+            scaledMax = MAX_DEPOSIT / scaleFactor;
+        } else {
+            uint256 scaleFactor = 10 ** (tokenDecimals - 18);
+            scaledMin = MIN_DEPOSIT * scaleFactor;
+            scaledMax = MAX_DEPOSIT * scaleFactor;
+        }
+        if (amount < scaledMin) revert DepositTooSmall();
+        if (amount > scaledMax) revert DepositTooLarge();
 
         AssetConfig storage asset = assets[assetId];
         if (!asset.active) revert AssetNotActive(assetId);
@@ -475,6 +493,14 @@ contract UniversalShieldedPool is
             totalWithdrawn: 0,
             active: true
         });
+        // H22 FIX: Query and store token decimals for deposit bounds scaling
+        uint8 tokenDecimals = 18;
+        if (tokenAddress.code.length > 0) {
+            try IERC20Metadata(tokenAddress).decimals() returns (uint8 d) {
+                tokenDecimals = d;
+            } catch {}
+        }
+        assetDecimals[assetId] = tokenDecimals;
         tokenToAssetId[tokenAddress] = assetId;
         assetIds.push(assetId);
 

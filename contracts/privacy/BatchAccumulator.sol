@@ -667,15 +667,31 @@ contract BatchAccumulator is
 
             batch.commitments.push(dummyCommitment);
 
-            // Store dummy transaction with zero submitter to flag it
+            // M-2 FIX: Use indistinguishable dummy data to prevent on-chain fingerprinting
+            bytes32 dummyNullifier = keccak256(
+                abi.encodePacked(dummyCommitment, _dummyNonce, block.prevrandao)
+            );
+            bytes memory dummyPayload = new bytes(FIXED_PAYLOAD_SIZE);
+            // Fill payload with pseudorandom data
+            bytes32 payloadSeed = keccak256(
+                abi.encodePacked(dummyCommitment, "PAD")
+            );
+            for (uint256 j; j < FIXED_PAYLOAD_SIZE / 32; ) {
+                assembly {
+                    mstore(add(add(dummyPayload, 32), mul(j, 32)), payloadSeed)
+                }
+                payloadSeed = keccak256(abi.encodePacked(payloadSeed));
+                unchecked {
+                    ++j;
+                }
+            }
+
             batchTransactions[batchId][currentSize + i] = BatchedTransaction({
                 commitment: dummyCommitment,
-                nullifierHash: keccak256(
-                    abi.encodePacked(dummyCommitment, "DUMMY_NULL")
-                ),
-                encryptedPayload: new bytes(FIXED_PAYLOAD_SIZE),
+                nullifierHash: dummyNullifier,
+                encryptedPayload: dummyPayload,
                 submittedAt: block.timestamp,
-                submitter: address(0), // Dummy marker
+                submitter: address(uint160(uint256(dummyCommitment))),
                 processed: false
             });
 

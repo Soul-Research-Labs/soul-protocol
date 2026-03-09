@@ -116,12 +116,15 @@ fn verify_state_transfer<let STATE_FIELDS: u32>(
     let new_value = inputs.new_state_fields[0];
     let value_conserved = old_value == new_value;
     
+    // Constrain transfer_value public input to match actual state value
+    let transfer_value_valid = public_inputs.transfer_value == old_value;
+    
     // 
     // FINAL: Combine all validity checks
     // 
     
     old_commitment_valid & sender_valid & nullifier_valid & 
-    new_commitment_valid & recipient_valid & value_conserved
+    new_commitment_valid & recipient_valid & value_conserved & transfer_value_valid
 }
 
 /// Main entry point with 8 state fields

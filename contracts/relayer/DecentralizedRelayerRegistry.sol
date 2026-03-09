@@ -235,7 +235,9 @@ contract DecentralizedRelayerRegistry is
         address _recipient
     ) external onlyRole(SLASHER_ROLE) nonReentrant {
         RelayerInfo storage info = relayers[_relayer];
-        if (info.stake < _amount)
+        // M12 FIX: Cap slash per call to 50% of stake to prevent disproportionate seizure
+        uint256 maxSlash = info.stake / 2;
+        if (_amount > maxSlash)
             revert InsufficientStakeForSlash(info.stake, _amount);
 
         info.stake -= _amount;

@@ -210,13 +210,14 @@ contract DecentralizedRelayerRegistryTest is Test {
 
     function test_Slash() public {
         vm.prank(relayer);
-        registry.register{value: 20 ether}();
+        registry.register{value: 10 ether}();
 
+        // Slash 5 ether = 50% of 10 ether stake (max allowed per M12 cap)
         vm.prank(slasher);
         registry.slash(relayer, 5 ether, insuranceFund);
 
         (uint256 stake, , , ) = registry.relayers(relayer);
-        assertEq(stake, 15 ether);
+        assertEq(stake, 5 ether);
         assertEq(insuranceFund.balance, 5 ether);
     }
 
@@ -249,16 +250,17 @@ contract DecentralizedRelayerRegistryTest is Test {
 
     function test_SlashDuringUnbonding() public {
         vm.startPrank(relayer);
-        registry.register{value: 20 ether}();
+        registry.register{value: 10 ether}();
         registry.initiateUnstake();
         vm.stopPrank();
 
         // Slashing during unbonding should succeed (design requirement)
+        // M12 cap: max 50% of 10 ether = 5 ether
         vm.prank(slasher);
         registry.slash(relayer, 5 ether, insuranceFund);
 
         (uint256 stake, , , ) = registry.relayers(relayer);
-        assertEq(stake, 15 ether);
+        assertEq(stake, 5 ether);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -352,15 +354,16 @@ contract DecentralizedRelayerRegistryTest is Test {
 
     function testFuzz_SlashAmount(uint256 slashAmt) public {
         vm.prank(relayer);
-        registry.register{value: 20 ether}();
+        registry.register{value: 10 ether}();
 
-        slashAmt = bound(slashAmt, 1, 20 ether);
+        // M12 cap: max slash = 50% of 10 ether = 5 ether
+        slashAmt = bound(slashAmt, 1, 5 ether);
 
         vm.prank(slasher);
         registry.slash(relayer, slashAmt, insuranceFund);
 
         (uint256 stake, , , ) = registry.relayers(relayer);
-        assertEq(stake, 20 ether - slashAmt);
+        assertEq(stake, 10 ether - slashAmt);
         assertEq(insuranceFund.balance, slashAmt);
     }
 }

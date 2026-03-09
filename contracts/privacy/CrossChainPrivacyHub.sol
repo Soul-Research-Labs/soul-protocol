@@ -1455,10 +1455,9 @@ contract CrossChainPrivacyHub is
         (bool success, bytes memory result) = verifier.staticcall(
             abi.encodeWithSignature("verify(bytes)", proof)
         );
-        if (success && result.length >= 32) {
-            valid = abi.decode(result, (bool));
-        }
-        // Returns false if staticcall fails or returns unexpected data
+        // H21 FIX: Revert on verifier call failure instead of silent false return
+        require(success && result.length >= 32, "Verifier call failed");
+        valid = abi.decode(result, (bool));
     }
 
     function _checkAndUpdateDailyLimit(

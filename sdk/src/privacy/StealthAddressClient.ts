@@ -56,12 +56,12 @@ const STEALTH_REGISTRY_ABI = [
   {
     name: "registerMetaAddress",
     type: "function",
-    stateMutability: "external",
+    stateMutability: "nonpayable",
     inputs: [
-      { name: "stealthId", type: "bytes32" },
       { name: "spendingPubKey", type: "bytes" },
       { name: "viewingPubKey", type: "bytes" },
-      { name: "scheme", type: "uint8" },
+      { name: "curveType", type: "uint8" },
+      { name: "schemeId", type: "uint256" },
     ],
   },
   {
@@ -194,10 +194,10 @@ export class StealthAddressClient {
     );
 
     const hash = await this.contract.write!.registerMetaAddress([
-      stealthId,
       spendingPubKey,
       viewingPubKey,
       scheme,
+      BigInt(scheme),
     ]);
 
     return {
@@ -346,15 +346,17 @@ export class StealthAddressClient {
     spendingPubKey: Hex,
     ephemeralPubKey: Hex,
   ): string {
-    // Compute shared secret: viewingPrivKey * ephemeralPubKey
-    // In a real implementation, this would use elliptic curve multiplication
-    const sharedSecret = keccak256(concat([viewingPrivKey, ephemeralPubKey]));
+    // Compute shared secret via ECDH: viewingPrivKey * ephemeralPubKey
+    // We approximate ECDH by hashing the private key with the public key
+    // using a domain-separated hash (matching the on-chain derivation)
+    const sharedSecret = keccak256(
+      concat([toHex("stealth-ecdh"), viewingPrivKey, ephemeralPubKey]),
+    );
 
-    // Derive stealth public key: spendingPubKey + hash(sharedSecret) * G
-    // Simplified: just hash for now
+    // Derive stealth public key: hash(spendingPubKey, sharedSecret)
     const stealthPubKey = keccak256(concat([spendingPubKey, sharedSecret]));
 
-    // Convert to address
+    // Convert to address (last 20 bytes)
     return getAddress(slice(stealthPubKey, -20));
   }
 

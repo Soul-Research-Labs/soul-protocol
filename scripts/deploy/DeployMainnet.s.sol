@@ -250,7 +250,7 @@ contract DeployMainnet is Script {
         // ======== PHASE 5: GOVERNANCE ========
         console.log("\n--- Phase 5: Governance ---");
 
-        zaseonToken = new ZaseonToken();
+        zaseonToken = new ZaseonToken(admin, admin, 0);
         console.log("ZaseonToken:", address(zaseonToken));
 
         // Timelock: admin is proposer + executor, governor will be added after

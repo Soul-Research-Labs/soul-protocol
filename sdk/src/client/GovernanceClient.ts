@@ -338,7 +338,8 @@ export class GovernanceClient {
 
   async getVotingPower(account: Address, timepoint?: bigint): Promise<bigint> {
     this.requireGovernor();
-    const tp = timepoint ?? BigInt(Math.floor(Date.now() / 1000));
+    // H27 FIX: Use latest block timestamp instead of client clock to avoid ERC5805FutureLookup
+    const tp = timepoint ?? (await this.publicClient.getBlock()).timestamp;
     return this.publicClient.readContract({
       address: this.governorAddress!,
       abi: GOVERNOR_ABI,

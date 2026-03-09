@@ -600,6 +600,11 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
         // Reserve the nullifier immediately to prevent parallel unlock attempts
         nullifierUsed[unlockProof.nullifier] = true;
 
+        // H19 FIX: Prevent overwriting an active optimistic unlock (DoS protection)
+        if (optimisticUnlocks[unlockProof.lockId].unlocker != address(0)) {
+            revert("Active optimistic unlock exists");
+        }
+
         // Store optimistic unlock for dispute resolution
         optimisticUnlocks[unlockProof.lockId] = OptimisticUnlock({
             unlocker: msg.sender,
@@ -747,8 +752,9 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
             // Mark as disputed
             optimistic.disputed = true;
 
-            // SECURITY FIX H-5b: Free the nullifier so it can be reused for legitimate unlock
-            nullifierUsed[optimistic.nullifier] = false;
+            // H20 FIX: Do NOT free the nullifier — freeing enables double-spend
+            // The nullifier stays permanently consumed to prevent reuse
+            // nullifierUsed[optimistic.nullifier] = false; // REMOVED
 
             // Update statistics
             unchecked {

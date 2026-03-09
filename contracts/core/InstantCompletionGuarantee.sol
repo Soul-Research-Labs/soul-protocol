@@ -74,6 +74,9 @@ contract InstantCompletionGuarantee is
     /// @notice Minimum guarantee amount
     uint256 public constant MIN_GUARANTEE_AMOUNT = 0.001 ether;
 
+    /// @notice Grace period for beneficiary to claim before bond goes to insurance
+    uint256 public constant CLAIM_GRACE_PERIOD = 24 hours;
+
     /*//////////////////////////////////////////////////////////////
                                 STORAGE
     //////////////////////////////////////////////////////////////*/
@@ -366,8 +369,12 @@ contract InstantCompletionGuarantee is
             _safeTransferETH(g.guarantor, g.bond);
             emit GuaranteeSettled(guaranteeId, g.guarantor, g.bond, 0);
         } else {
-            // Not finalized and expired — mark as expired
-            // Beneficiary can still call claimGuarantee
+            // Not finalized and expired — beneficiary gets a grace period to claim
+            // SECURITY FIX M1: Prevent front-running by requiring a grace period
+            // before the bond can be sent to the insurance pool.
+            if (block.timestamp < g.expiresAt + CLAIM_GRACE_PERIOD) {
+                revert GuaranteeNotExpired();
+            }
             g.status = GuaranteeStatus.EXPIRED;
             guarantorActiveCount[g.guarantor]--;
 

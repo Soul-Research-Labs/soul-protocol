@@ -1,4 +1,5 @@
 use std::verify_proof_with_type;
+use poseidon::poseidon::bn254;
 
 /**
  * @title AggregatorCircuit
@@ -33,15 +34,11 @@ global HONK_VK_SIZE: u32 = 115;
 /// UltraHonk proof type identifier (non-ZK)
 global PROOF_TYPE_HONK: u32 = 0;
 
-/// Simple Poseidon-like hash for committing to a set of fields
-/// Uses repeated hashing since we can't import poseidon in the recursive context
+/// Cryptographic hash commitment over a set of fields using Poseidon
 fn commit_fields(fields: [Field; 7]) -> Field {
-    let mut acc = fields[0];
-    for i in 1..7 {
-        // XOR-fold with index separation to avoid collisions
-        acc = acc + fields[i] * (i as Field + 1);
-    }
-    acc
+    let h1 = bn254::hash_4([fields[0], fields[1], fields[2], fields[3]]);
+    let h2 = bn254::hash_4([fields[4], fields[5], fields[6], 0]);
+    bn254::hash_2([h1, h2])
 }
 
 fn main(

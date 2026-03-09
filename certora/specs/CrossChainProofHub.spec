@@ -205,3 +205,22 @@ rule finalizationMonotonic(method f) filtered { f -> !f.isView } {
  */
 invariant challengePeriodMinimum()
     challengePeriod() >= 600; // 10 minutes = 600 seconds
+
+/**
+ * INV-HUB-004: Fee solvency — accumulated fees only increase
+ * Fees collected from proof submissions must never decrease,
+ * ensuring protocol fee accounting integrity.
+ */
+rule feeSolvencyMonotonic(method f) filtered { f -> !f.isView } {
+    env e;
+    calldataarg args;
+    
+    mathint feesBefore = accumulatedFees();
+    
+    f(e, args);
+    
+    mathint feesAfter = accumulatedFees();
+    
+    assert feesAfter >= feesBefore,
+        "Accumulated fees must never decrease";
+}

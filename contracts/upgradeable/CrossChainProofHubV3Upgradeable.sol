@@ -451,7 +451,7 @@ contract CrossChainProofHubV3Upgradeable is
                 minRelayerStake
             );
 
-        _checkRateLimit(len);
+        _checkRateLimit(len, msg.value);
 
         unchecked {
             relayerPendingProofs[msg.sender] += len;
@@ -755,7 +755,7 @@ contract CrossChainProofHubV3Upgradeable is
                         INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    function _checkRateLimit(uint256 count) internal {
+    function _checkRateLimit(uint256 count, uint256 value) internal {
         if (block.timestamp >= lastRateLimitReset + 1 hours) {
             hourlyProofCount = 0;
             hourlyValueRelayed = 0;
@@ -765,8 +765,13 @@ contract CrossChainProofHubV3Upgradeable is
         if (hourlyProofCount + count > maxProofsPerHour) {
             revert ProofRateLimitExceeded();
         }
+        // H-2 FIX: Check and accumulate hourly value relayed
+        if (hourlyValueRelayed + value > maxValuePerHour) {
+            revert ValueRateLimitExceeded();
+        }
         unchecked {
             hourlyProofCount += count;
+            hourlyValueRelayed += value;
         }
     }
 
@@ -778,7 +783,7 @@ contract CrossChainProofHubV3Upgradeable is
         uint64 destChainId,
         bool instant
     ) internal returns (bytes32 proofId) {
-        _checkRateLimit(1);
+        _checkRateLimit(1, msg.value);
 
         uint256 requiredFee = instant
             ? proofSubmissionFee * 3

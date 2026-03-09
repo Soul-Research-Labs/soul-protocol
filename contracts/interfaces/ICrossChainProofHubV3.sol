@@ -150,6 +150,7 @@ interface ICrossChainProofHubV3 {
     error RolesNotSeparated();
     error TransferFailed();
     error ProofRateLimitExceeded();
+    error ValueRateLimitExceeded();
 
     /*//////////////////////////////////////////////////////////////
                          RELAYER STAKE MGMT

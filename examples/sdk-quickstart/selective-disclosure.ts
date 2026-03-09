@@ -73,7 +73,7 @@ async function main() {
 
   // ─── 5. Retrieve Provider Info ────────────────────────────────────────
   console.log("\nProvider info:");
-  const info = await provider.getProviderInfo();
+  const info = await provider.getProviderInfo(provider.config.contractAddress);
   console.log("  Name:", info.name);
   console.log("  Credentials issued:", info.credentialsIssued.toString());
   console.log("  Active:", info.isActive);

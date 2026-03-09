@@ -886,10 +886,36 @@ contract ArbitrumBridgeAdapter is
     function bridgeMessage(
         address targetAddress,
         bytes calldata payload,
-        address /*refundAddress*/
+        address refundAddress
     ) external payable nonReentrant whenNotPaused returns (bytes32 messageId) {
-        // Use deposit() for full Arbitrum retryable ticket control
-        revert("Use deposit() with explicit parameters");
+        // H23 FIX: Implement bridgeMessage via retryable ticket with defaults
+        RollupConfig storage config = rollupConfigs[ARB_ONE_CHAIN_ID];
+        if (!config.active) revert RollupNotConfigured();
+
+        address refund = refundAddress != address(0)
+            ? refundAddress
+            : msg.sender;
+        uint256 submissionCost = DEFAULT_MAX_SUBMISSION_COST;
+
+        messageId = keccak256(
+            abi.encodePacked(
+                targetAddress,
+                payload,
+                transferNonce++,
+                block.chainid
+            )
+        );
+
+        IInbox(config.inbox).createRetryableTicket{value: msg.value}(
+            targetAddress,
+            0, // l2CallValue
+            submissionCost,
+            refund,
+            refund,
+            DEFAULT_L2_GAS_LIMIT,
+            0, // maxFeePerGas (auto)
+            payload
+        );
     }
 
     /// @inheritdoc IBridgeAdapter
@@ -897,8 +923,8 @@ contract ArbitrumBridgeAdapter is
         address /*targetAddress*/,
         bytes calldata /*payload*/
     ) external pure returns (uint256 nativeFee) {
-        // Arbitrum fees depend on retryable ticket parameters
-        revert("Use Arbitrum-specific fee estimation");
+        // Return default submission cost as baseline estimate
+        nativeFee = DEFAULT_MAX_SUBMISSION_COST;
     }
 
     /// @inheritdoc IBridgeAdapter

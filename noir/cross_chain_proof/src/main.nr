@@ -44,12 +44,13 @@ fn compute_dest_proof_hash(
     proof_commitment: Field,
     dest: DestinationContext
 ) -> Field {
-    bn254::hash_4([
+    let h1 = bn254::hash_4([
         proof_commitment,
         dest.chain_id,
         dest.relayer_pubkey,
         dest.timestamp
-    ])
+    ]);
+    bn254::hash_2([h1, dest.fee])
 }
 
 /// Verify a cross-chain proof

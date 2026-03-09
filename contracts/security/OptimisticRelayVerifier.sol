@@ -86,6 +86,9 @@ contract OptimisticRelayVerifier is AccessControl, ReentrancyGuard, Pausable {
     /// @notice Minimum challenge bond
     uint256 public constant MIN_CHALLENGE_BOND = 0.01 ether;
 
+    /// @notice Maximum challenge bond (M10 FIX: prevent irrational bond amounts)
+    uint256 public constant MAX_CHALLENGE_BOND = 10 ether;
+
     /// @notice Value threshold for optimistic verification
     uint256 public optimisticThreshold = 10 ether;
 
@@ -241,6 +244,10 @@ contract OptimisticRelayVerifier is AccessControl, ReentrancyGuard, Pausable {
         }
         if (msg.value < MIN_CHALLENGE_BOND) {
             revert InsufficientBond(msg.value, MIN_CHALLENGE_BOND);
+        }
+        // M10 FIX: Cap challenge bond to prevent irrational amounts
+        if (msg.value > MAX_CHALLENGE_BOND) {
+            revert InsufficientBond(msg.value, MAX_CHALLENGE_BOND);
         }
 
         transfer.status = TransferStatus.CHALLENGED;

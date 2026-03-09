@@ -50,6 +50,7 @@ contract DeployPrivacyComponents is Script {
         address deployer = vm.addr(deployerPrivateKey);
 
         address guardian = _envAddressOr("GUARDIAN", deployer);
+        address admin = _envAddressOr("MULTISIG_ADMIN", guardian);
         address feeRecipient = _envAddressOr("FEE_RECIPIENT", deployer);
         address withdrawalVerifier = _envAddressOr(
             "WITHDRAWAL_VERIFIER",
@@ -67,6 +68,7 @@ contract DeployPrivacyComponents is Script {
         console.log("Deployer:              ", deployer);
         console.log("Chain ID:              ", block.chainid);
         console.log("Guardian:              ", guardian);
+        console.log("Multisig Admin:        ", admin);
         console.log("Fee Recipient:         ", feeRecipient);
         console.log("Withdrawal Verifier:   ", withdrawalVerifier);
         console.log("Proof Verifier:        ", proofVerifier);
@@ -149,6 +151,7 @@ contract DeployPrivacyComponents is Script {
         console.log("");
         console.log("--- Phase 4: Batch Accumulator ---");
 
+        BatchAccumulator batch;
         if (proofVerifier != address(0)) {
             BatchAccumulator batchImpl = new BatchAccumulator();
             ERC1967Proxy batchProxy = new ERC1967Proxy(
@@ -160,7 +163,7 @@ contract DeployPrivacyComponents is Script {
                     address(privacyHub)
                 )
             );
-            BatchAccumulator batch = BatchAccumulator(address(batchProxy));
+            batch = BatchAccumulator(address(batchProxy));
             console.log("BatchAccumulator:      ", address(batch));
         } else {
             console.log(
@@ -177,6 +180,106 @@ contract DeployPrivacyComponents is Script {
         bytes32 relayerRole = shieldedPool.RELAYER_ROLE();
         shieldedPool.grantRole(relayerRole, address(privacyHub));
         console.log("Granted RELAYER_ROLE on ShieldedPool to PrivacyHub");
+
+        // ─── Phase 6: Transfer Roles to Multisig ───────────────────
+        console.log("");
+        console.log("--- Phase 6: Transfer Roles to Multisig ---");
+
+        // StealthAddressRegistry
+        stealth.grantRole(stealth.DEFAULT_ADMIN_ROLE(), admin);
+        stealth.grantRole(stealth.OPERATOR_ROLE(), admin);
+        stealth.grantRole(stealth.ANNOUNCER_ROLE(), admin);
+        stealth.grantRole(stealth.UPGRADER_ROLE(), admin);
+
+        // ViewKeyRegistry
+        viewKey.grantRole(viewKey.DEFAULT_ADMIN_ROLE(), admin);
+        viewKey.grantRole(viewKey.ADMIN_ROLE(), admin);
+        viewKey.grantRole(viewKey.REGISTRAR_ROLE(), admin);
+
+        // DataAvailabilityOracle
+        daOracle.grantRole(daOracle.DEFAULT_ADMIN_ROLE(), admin);
+        daOracle.grantRole(daOracle.DA_ADMIN_ROLE(), admin);
+        daOracle.grantRole(daOracle.ATTESTOR_ROLE(), admin);
+
+        // PrivacyZoneManager
+        zoneManager.grantRole(zoneManager.DEFAULT_ADMIN_ROLE(), admin);
+        zoneManager.grantRole(zoneManager.ZONE_ADMIN_ROLE(), admin);
+        zoneManager.grantRole(zoneManager.MIGRATION_OPERATOR_ROLE(), admin);
+        zoneManager.grantRole(zoneManager.POLICY_MANAGER_ROLE(), admin);
+
+        // UniversalShieldedPool
+        shieldedPool.grantRole(shieldedPool.DEFAULT_ADMIN_ROLE(), admin);
+        shieldedPool.grantRole(shieldedPool.OPERATOR_ROLE(), admin);
+        shieldedPool.grantRole(shieldedPool.COMPLIANCE_ROLE(), admin);
+
+        // CrossChainPrivacyHub
+        privacyHub.grantRole(privacyHub.DEFAULT_ADMIN_ROLE(), admin);
+        privacyHub.grantRole(privacyHub.OPERATOR_ROLE(), admin);
+        privacyHub.grantRole(privacyHub.RELAYER_ROLE(), admin);
+        privacyHub.grantRole(privacyHub.GUARDIAN_ROLE(), admin);
+        privacyHub.grantRole(privacyHub.UPGRADER_ROLE(), admin);
+
+        // BatchAccumulator (if deployed)
+        if (address(batch) != address(0)) {
+            batch.grantRole(batch.DEFAULT_ADMIN_ROLE(), admin);
+            batch.grantRole(batch.OPERATOR_ROLE(), admin);
+            batch.grantRole(batch.RELAYER_ROLE(), admin);
+            batch.grantRole(batch.UPGRADER_ROLE(), admin);
+        }
+
+        console.log("All roles granted to multisig:", admin);
+
+        // ─── Phase 7: Renounce Deployer Roles ──────────────────────
+        console.log("");
+        console.log("--- Phase 7: Renounce Deployer Roles ---");
+
+        // StealthAddressRegistry
+        stealth.renounceRole(stealth.ANNOUNCER_ROLE(), deployer);
+        stealth.renounceRole(stealth.OPERATOR_ROLE(), deployer);
+        stealth.renounceRole(stealth.UPGRADER_ROLE(), deployer);
+        stealth.renounceRole(stealth.DEFAULT_ADMIN_ROLE(), deployer);
+
+        // ViewKeyRegistry
+        viewKey.renounceRole(viewKey.REGISTRAR_ROLE(), deployer);
+        viewKey.renounceRole(viewKey.ADMIN_ROLE(), deployer);
+        viewKey.renounceRole(viewKey.DEFAULT_ADMIN_ROLE(), deployer);
+
+        // DataAvailabilityOracle
+        daOracle.renounceRole(daOracle.ATTESTOR_ROLE(), deployer);
+        daOracle.renounceRole(daOracle.DA_ADMIN_ROLE(), deployer);
+        daOracle.renounceRole(daOracle.DEFAULT_ADMIN_ROLE(), deployer);
+
+        // PrivacyZoneManager
+        zoneManager.renounceRole(zoneManager.POLICY_MANAGER_ROLE(), deployer);
+        zoneManager.renounceRole(
+            zoneManager.MIGRATION_OPERATOR_ROLE(),
+            deployer
+        );
+        zoneManager.renounceRole(zoneManager.ZONE_ADMIN_ROLE(), deployer);
+        zoneManager.renounceRole(zoneManager.DEFAULT_ADMIN_ROLE(), deployer);
+
+        // UniversalShieldedPool
+        shieldedPool.renounceRole(shieldedPool.COMPLIANCE_ROLE(), deployer);
+        shieldedPool.renounceRole(shieldedPool.OPERATOR_ROLE(), deployer);
+        shieldedPool.renounceRole(relayerRole, deployer);
+        shieldedPool.renounceRole(shieldedPool.DEFAULT_ADMIN_ROLE(), deployer);
+
+        // CrossChainPrivacyHub
+        privacyHub.renounceRole(privacyHub.GUARDIAN_ROLE(), deployer);
+        privacyHub.renounceRole(privacyHub.RELAYER_ROLE(), deployer);
+        privacyHub.renounceRole(privacyHub.OPERATOR_ROLE(), deployer);
+        privacyHub.renounceRole(privacyHub.UPGRADER_ROLE(), deployer);
+        privacyHub.renounceRole(privacyHub.DEFAULT_ADMIN_ROLE(), deployer);
+
+        // BatchAccumulator (if deployed)
+        if (address(batch) != address(0)) {
+            batch.renounceRole(batch.RELAYER_ROLE(), deployer);
+            batch.renounceRole(batch.OPERATOR_ROLE(), deployer);
+            batch.renounceRole(batch.UPGRADER_ROLE(), deployer);
+            batch.renounceRole(batch.DEFAULT_ADMIN_ROLE(), deployer);
+        }
+
+        console.log("All deployer roles renounced for:", deployer);
 
         vm.stopBroadcast();
 

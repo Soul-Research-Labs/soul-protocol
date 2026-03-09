@@ -19,7 +19,9 @@ const config: ZaseonConfig = {
   proverUrl: process.env.PROVER_URL ?? "http://localhost:3001",
   privateKey:
     process.env.PRIVATE_KEY ??
-    "0x0000000000000000000000000000000000000000000000000000000000000001",
+    (() => {
+      throw new Error("PRIVATE_KEY environment variable is required");
+    })(),
 };
 
 const DEST_CHAIN = process.env.DEST_CHAIN ?? "arbitrum-sepolia";

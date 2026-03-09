@@ -115,6 +115,7 @@ contract FullDeploymentE2E is Test {
             upgradeTimelock.CANCELLER_ROLE(),
             address(governor)
         );
+        upgradeTimelock.setGovernor(address(governor));
         vm.stopPrank();
 
         // Distribute tokens to voters and delegate

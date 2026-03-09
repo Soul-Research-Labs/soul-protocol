@@ -99,6 +99,12 @@ contract ZaseonUpgradeTimelock is TimelockController, IZaseonUpgradeTimelock {
     mapping(bytes32 => mapping(address => bool)) public signatures;
     mapping(bytes32 => uint256) public signatureCount;
 
+    /// @dev C-1 FIX: Flag to allow internal calls to inherited functions
+    bool private _internalCallAllowed;
+
+    /// @dev Address of the ZaseonGovernor that routes through this timelock
+    address public governor;
+
     /*//////////////////////////////////////////////////////////////
                               EVENTS
     //////////////////////////////////////////////////////////////*/
@@ -155,6 +161,13 @@ contract ZaseonUpgradeTimelock is TimelockController, IZaseonUpgradeTimelock {
         }
     }
 
+    /// @notice Set the governor address that may interact with inherited schedule/execute
+    function setGovernor(
+        address _governor
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        governor = _governor;
+    }
+
     /*//////////////////////////////////////////////////////////////
                       UPGRADE PROPOSAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
@@ -178,7 +191,9 @@ contract ZaseonUpgradeTimelock is TimelockController, IZaseonUpgradeTimelock {
         operationId = hashOperation(target, 0, data, bytes32(0), salt);
 
         // Schedule with standard delay using public function
+        _internalCallAllowed = true;
         schedule(target, 0, data, bytes32(0), salt, STANDARD_DELAY);
+        _internalCallAllowed = false;
 
         upgradeProposals[operationId] = UpgradeProposal({
             operationId: operationId,
@@ -228,7 +243,9 @@ contract ZaseonUpgradeTimelock is TimelockController, IZaseonUpgradeTimelock {
         operationId = hashOperation(target, 0, data, bytes32(0), salt);
 
         // Schedule with extended delay using public function
+        _internalCallAllowed = true;
         schedule(target, 0, data, bytes32(0), salt, EXTENDED_DELAY);
+        _internalCallAllowed = false;
 
         upgradeProposals[operationId] = UpgradeProposal({
             operationId: operationId,
@@ -280,7 +297,9 @@ contract ZaseonUpgradeTimelock is TimelockController, IZaseonUpgradeTimelock {
         operationId = hashOperation(target, 0, data, bytes32(0), salt);
 
         // Schedule with emergency delay using public function
+        _internalCallAllowed = true;
         schedule(target, 0, data, bytes32(0), salt, EMERGENCY_DELAY);
+        _internalCallAllowed = false;
 
         upgradeProposals[operationId] = UpgradeProposal({
             operationId: operationId,
@@ -362,7 +381,9 @@ contract ZaseonUpgradeTimelock is TimelockController, IZaseonUpgradeTimelock {
         }
 
         // Execute through parent
+        _internalCallAllowed = true;
         execute(target, 0, data, predecessor, salt);
+        _internalCallAllowed = false;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -465,7 +486,7 @@ contract ZaseonUpgradeTimelock is TimelockController, IZaseonUpgradeTimelock {
 
     /**
      * @notice Get proposal count
-          * @return The result value
+     * @return The result value
      */
     function getProposalCount() external view returns (uint256) {
         return proposalIds.length;
@@ -473,7 +494,7 @@ contract ZaseonUpgradeTimelock is TimelockController, IZaseonUpgradeTimelock {
 
     /**
      * @notice Get proposal details
-          * @param operationId The operationId identifier
+     * @param operationId The operationId identifier
      * @return The result value
      */
     function getProposal(
@@ -484,7 +505,7 @@ contract ZaseonUpgradeTimelock is TimelockController, IZaseonUpgradeTimelock {
 
     /**
      * @notice Check if upgrade is ready to execute
-          * @param operationId The operationId identifier
+     * @param operationId The operationId identifier
      * @return The result value
      */
     function isUpgradeReady(bytes32 operationId) external view returns (bool) {
@@ -499,7 +520,7 @@ contract ZaseonUpgradeTimelock is TimelockController, IZaseonUpgradeTimelock {
 
     /**
      * @notice Get time until upgrade can be executed
-          * @param operationId The operationId identifier
+     * @param operationId The operationId identifier
      * @return The result value
      */
     function getTimeUntilExecutable(
@@ -511,5 +532,74 @@ contract ZaseonUpgradeTimelock is TimelockController, IZaseonUpgradeTimelock {
             return 0;
         }
         return proposal.executableAt - block.timestamp;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                    C-1 FIX: Block inherited bypass paths
+    //////////////////////////////////////////////////////////////*/
+
+    /// @dev Override inherited execute() to force all executions through executeUpgrade()
+    function execute(
+        address target,
+        uint256 value,
+        bytes calldata payload,
+        bytes32 predecessor,
+        bytes32 salt
+    ) public payable override {
+        if (!_internalCallAllowed && msg.sender != governor) {
+            revert("Use executeUpgrade()");
+        }
+        super.execute(target, value, payload, predecessor, salt);
+    }
+
+    /// @dev Override inherited executeBatch() to prevent bypass
+    function executeBatch(
+        address[] calldata targets,
+        uint256[] calldata values,
+        bytes[] calldata payloads,
+        bytes32 predecessor,
+        bytes32 salt
+    ) public payable override {
+        if (msg.sender != governor) {
+            revert("Use executeUpgrade()");
+        }
+        super.executeBatch(targets, values, payloads, predecessor, salt);
+    }
+
+    /// @dev Override inherited schedule() to force all scheduling through proposeUpgrade()
+    function schedule(
+        address target,
+        uint256 value,
+        bytes calldata data,
+        bytes32 predecessor,
+        bytes32 salt,
+        uint256 delay
+    ) public override {
+        if (!_internalCallAllowed && msg.sender != governor) {
+            revert("Use proposeUpgrade()");
+        }
+        super.schedule(target, value, data, predecessor, salt, delay);
+    }
+
+    /// @dev Override inherited scheduleBatch() to prevent bypass
+    function scheduleBatch(
+        address[] calldata targets,
+        uint256[] calldata values,
+        bytes[] calldata payloads,
+        bytes32 predecessor,
+        bytes32 salt,
+        uint256 delay
+    ) public override {
+        if (msg.sender != governor) {
+            revert("Use proposeUpgrade()");
+        }
+        super.scheduleBatch(
+            targets,
+            values,
+            payloads,
+            predecessor,
+            salt,
+            delay
+        );
     }
 }

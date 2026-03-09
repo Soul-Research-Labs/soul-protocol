@@ -31,6 +31,7 @@ export interface CircuitWitnesses {
 export interface SendParams {
   sourceChain: string;
   destChain: string;
+  recipientPublicKey: string;
   payload: ZaseonPayload;
   circuitId: string;
   disclosurePolicy: DisclosurePolicy;
@@ -62,35 +63,49 @@ export class CryptoModule {
    */
   async encrypt(
     data: Buffer,
-    recipientPublicKey?: string | Buffer
+    recipientPublicKey?: string | Buffer,
   ): Promise<{ ciphertext: Buffer; ephemeralKey: Buffer; mac: Buffer }> {
     const iv = crypto.randomBytes(12);
 
     // Generate ephemeral key pair for ECDH
-    const ephemeral = crypto.createECDH(this.curve === 'secp256k1' ? 'secp256k1' : 'prime256v1');
+    const ephemeral = crypto.createECDH(
+      this.curve === "secp256k1" ? "secp256k1" : "prime256v1",
+    );
     ephemeral.generateKeys();
 
     let aesKey: Buffer;
     if (recipientPublicKey) {
       // ECIES: derive shared secret via ECDH, then HKDF to get AES key
-      const pubKeyBuf = typeof recipientPublicKey === 'string'
-        ? Buffer.from(recipientPublicKey.replace(/^0x/, ''), 'hex')
-        : recipientPublicKey;
+      const pubKeyBuf =
+        typeof recipientPublicKey === "string"
+          ? Buffer.from(recipientPublicKey.replace(/^0x/, ""), "hex")
+          : recipientPublicKey;
       const sharedSecret = ephemeral.computeSecret(pubKeyBuf);
-      aesKey = crypto.createHash('sha256').update(sharedSecret).update('zaseon-ecies-v1').digest();
+      aesKey = crypto
+        .createHash("sha256")
+        .update(sharedSecret)
+        .update("zaseon-ecies-v1")
+        .digest();
     } else {
       // Self-contained mode: derive key from ephemeral private key (for dev/testing)
-      aesKey = crypto.createHash('sha256').update(ephemeral.getPrivateKey()).digest();
+      aesKey = crypto
+        .createHash("sha256")
+        .update(ephemeral.getPrivateKey())
+        .digest();
     }
 
-    const cipher = crypto.createCipheriv('aes-256-gcm', aesKey, iv);
+    const cipher = crypto.createCipheriv("aes-256-gcm", aesKey, iv);
     const encrypted = Buffer.concat([cipher.update(data), cipher.final()]);
     const tag = cipher.getAuthTag();
 
     // Return ephemeral PUBLIC key (not the symmetric key)
     // Ciphertext format: [12-byte IV | encrypted data]
     const ciphertext = Buffer.concat([iv, encrypted]);
-    return { ciphertext, ephemeralKey: ephemeral.getPublicKey() as Buffer, mac: tag };
+    return {
+      ciphertext,
+      ephemeralKey: ephemeral.getPublicKey() as Buffer,
+      mac: tag,
+    };
   }
 
   /**
@@ -105,21 +120,26 @@ export class CryptoModule {
     ciphertext: Buffer,
     ephemeralPublicKey: Buffer,
     mac: Buffer,
-    recipientPrivateKey: Buffer
+    recipientPrivateKey: Buffer,
   ): Promise<Buffer> {
     // Reconstruct ECDH shared secret
-    const ecdh = crypto.createECDH(this.curve === 'secp256k1' ? 'secp256k1' : 'prime256v1');
+    const ecdh = crypto.createECDH(
+      this.curve === "secp256k1" ? "secp256k1" : "prime256v1",
+    );
     ecdh.setPrivateKey(recipientPrivateKey);
     const sharedSecret = ecdh.computeSecret(ephemeralPublicKey);
-    const aesKey = crypto.createHash('sha256').update(sharedSecret).update('zaseon-ecies-v1').digest();
+    const aesKey = crypto
+      .createHash("sha256")
+      .update(sharedSecret)
+      .update("zaseon-ecies-v1")
+      .digest();
 
     // Extract IV from ciphertext prefix
     const iv = ciphertext.subarray(0, 12);
     const encryptedData = ciphertext.subarray(12);
 
-    const decipher = crypto.createDecipheriv('aes-256-gcm', aesKey, iv);
+    const decipher = crypto.createDecipheriv("aes-256-gcm", aesKey, iv);
     decipher.setAuthTag(mac);
     return Buffer.concat([decipher.update(encryptedData), decipher.final()]);
   }
 }
-

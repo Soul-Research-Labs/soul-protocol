@@ -70,6 +70,11 @@ ghost uint256 ghostLeafIndex {
     init_state axiom ghostLeafIndex == 0;
 }
 
+/// @dev Hook to update ghostLeafIndex when nextLeafIndex storage changes
+hook Sstore nextLeafIndex uint256 newVal {
+    ghostLeafIndex = newVal;
+}
+
 // =============================================================================
 // INVARIANTS
 // =============================================================================

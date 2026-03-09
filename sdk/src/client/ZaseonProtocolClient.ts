@@ -34,6 +34,7 @@ import {
   ATOMIC_SWAP_ABI,
 } from "../config/abis";
 import { NoirProver } from "../zkprover/NoirProver";
+import { poseidonHash } from "../zkprover/prover";
 
 /*//////////////////////////////////////////////////////////////
                         TYPES
@@ -179,10 +180,14 @@ export class ZaseonProtocolClient {
     secret: Hex,
     nullifier: Hex,
   ): { commitment: Hex; nullifierHash: Hex } {
-    const commitment = keccak256(
-      encodePacked(["bytes32", "bytes32"], [secret, nullifier]),
-    );
-    const nullifierHash = keccak256(nullifier);
+    const secretBn = BigInt(secret);
+    const nullifierBn = BigInt(nullifier);
+    const commitmentBn = poseidonHash([secretBn, nullifierBn]);
+    const nullifierHashBn = poseidonHash([nullifierBn]);
+    const commitment =
+      `0x${commitmentBn.toString(16).padStart(64, "0")}` as Hex;
+    const nullifierHash =
+      `0x${nullifierHashBn.toString(16).padStart(64, "0")}` as Hex;
     return { commitment, nullifierHash };
   }
 

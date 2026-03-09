@@ -698,4 +698,37 @@ contract ProtocolEmergencyCoordinator is
     function _tryHealthAggregatorPause() internal {
         try healthAggregator.guardianEmergencyPause() {} catch {}
     }
+
+    // M-1 FIX: Reset roleSeparationConfirmed when critical roles change
+    function _grantRole(
+        bytes32 role,
+        address account
+    ) internal virtual override returns (bool) {
+        bool granted = super._grantRole(role, account);
+        if (
+            granted &&
+            (role == GUARDIAN_ROLE ||
+                role == RESPONDER_ROLE ||
+                role == RECOVERY_ROLE)
+        ) {
+            roleSeparationConfirmed = false;
+        }
+        return granted;
+    }
+
+    function _revokeRole(
+        bytes32 role,
+        address account
+    ) internal virtual override returns (bool) {
+        bool revoked = super._revokeRole(role, account);
+        if (
+            revoked &&
+            (role == GUARDIAN_ROLE ||
+                role == RESPONDER_ROLE ||
+                role == RECOVERY_ROLE)
+        ) {
+            roleSeparationConfirmed = false;
+        }
+        return revoked;
+    }
 }

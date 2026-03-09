@@ -47,6 +47,13 @@ contract ConfirmRoleSeparation is Script {
 
         vm.startBroadcast(adminPK);
 
+        // M15 FIX: Verify targets are contracts, not EOAs (.call on EOA silently succeeds)
+        require(proofHubAddr.code.length > 0, "ProofHub is not a contract");
+        require(
+            zkBoundStateLocksAddr.code.length > 0,
+            "ZKBoundStateLocks is not a contract"
+        );
+
         // 1. Confirm role separation on CrossChainProofHubV3
         // Requires: caller has DEFAULT_ADMIN_ROLE, does NOT have RELAYER_ROLE or CHALLENGER_ROLE
         (bool success1, ) = proofHubAddr.call(

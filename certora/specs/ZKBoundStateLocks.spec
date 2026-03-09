@@ -13,6 +13,7 @@ methods {
     function totalDisputes() external returns (uint256) envfree;
     function paused() external returns (bool) envfree;
     function getActiveLockCount() external returns (uint256) envfree;
+    function MAX_ACTIVE_LOCKS() external returns (uint256) envfree;
 }
 
 /*//////////////////////////////////////////////////////////////
@@ -101,11 +102,11 @@ rule maxActiveLocksEnforced(method f) filtered { f -> !f.isView } {
     
     mathint activeAfter = getActiveLockCount();
     
-    assert activeAfter <= 1000000, "Active locks must not exceed max";
+    assert activeAfter <= MAX_ACTIVE_LOCKS(), "Active locks must not exceed max";
 }
 
 /**
  * INV-ZKS-004: Active locks bounded by MAX_ACTIVE_LOCKS
  */
 invariant activeLocksWithinLimit()
-    getActiveLockCount() <= 1000000;
+    getActiveLockCount() <= MAX_ACTIVE_LOCKS();

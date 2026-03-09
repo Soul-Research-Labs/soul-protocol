@@ -184,6 +184,9 @@ contract HyperlaneAdapter is
         uint256 fee
     );
 
+    /// @notice Emitted when IGP payment fails (M9 FIX)
+    event IGPPaymentFailed(bytes32 indexed messageId, uint32 indexed dstDomain);
+
     event MessageDelivered(
         bytes32 indexed messageId,
         uint32 indexed srcDomain,
@@ -379,8 +382,8 @@ contract HyperlaneAdapter is
 
         // Pay interchain gas if IGP is configured
         if (igp != address(0) && config.gasOverhead > 0) {
-            // IGP payment is best-effort; failure doesn't revert dispatch
-            igp.call(
+            // M9 FIX: Check IGP payment success and emit on failure
+            (bool igpSuccess, ) = igp.call(
                 abi.encodeWithSignature(
                     "payForGas(bytes32,uint32,uint256,address)",
                     messageId,
@@ -389,6 +392,9 @@ contract HyperlaneAdapter is
                     msg.sender
                 )
             );
+            if (!igpSuccess) {
+                emit IGPPaymentFailed(messageId, dstDomain);
+            }
         }
 
         totalDispatched++;

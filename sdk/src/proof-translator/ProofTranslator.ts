@@ -600,9 +600,10 @@ function computeMerkleRoot(leaves: string[]): string {
   }
 
   let layer = [...leaves];
-  // Pad to power of 2
+  // Pad to power of 2 with zero hashes (not leaf duplication)
+  const ZERO_HASH = "0x" + "0".repeat(64);
   while (layer.length > 1 && layer.length % 2 !== 0) {
-    layer.push(layer[layer.length - 1]);
+    layer.push(ZERO_HASH);
   }
 
   while (layer.length > 1) {

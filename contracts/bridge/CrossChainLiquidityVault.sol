@@ -773,7 +773,12 @@ contract CrossChainLiquidityVault is
         if (!batch.isOutflow) revert InvalidAmount(); // Swap only on outflows
 
         batch.executed = true;
-        netFlows[batch.remoteChainId][batch.token] = 0;
+
+        // SECURITY FIX H1: Delta-adjust netFlows instead of zeroing.
+        // Preserves any flows accumulated between propose and execute.
+        // executeSettlementWithSwap only handles outflows (isOutflow required above),
+        // so we add back the settled amount.
+        netFlows[batch.remoteChainId][batch.token] += int256(batch.netAmount);
 
         uint256 amountOut;
 

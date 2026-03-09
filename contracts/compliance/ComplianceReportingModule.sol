@@ -417,25 +417,25 @@ contract ComplianceReportingModule is AccessControl, ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Get a report's details
-        /**
+    /**
      * @notice Returns the report
      * @param reportId The reportId identifier
      * @return The result value
      */
-function getReport(
+    function getReport(
         bytes32 reportId
     ) external view returns (ComplianceReport memory) {
         return reports[reportId];
     }
 
     /// @notice Check if a viewer can access a report
-        /**
+    /**
      * @notice Can access report
      * @param reportId The reportId identifier
      * @param viewer The viewer
      * @return The result value
      */
-function canAccessReport(
+    function canAccessReport(
         bytes32 reportId,
         address viewer
     ) external view returns (bool) {
@@ -449,46 +449,46 @@ function canAccessReport(
     }
 
     /// @notice Get all report IDs for an entity
-        /**
+    /**
      * @notice Returns the entity reports
      * @param entity The entity
      * @return The result value
      */
-function getEntityReports(
+    function getEntityReports(
         address entity
     ) external view returns (bytes32[] memory) {
         return entityReports[entity];
     }
 
     /// @notice Get the audit trail for a report
-        /**
+    /**
      * @notice Returns the report audit trail
      * @param reportId The reportId identifier
      * @return The result value
      */
-function getReportAuditTrail(
+    function getReportAuditTrail(
         bytes32 reportId
     ) external view returns (ReportAuditEntry[] memory) {
         return _reportAuditTrail[reportId];
     }
 
     /// @notice Check if a report has been ZK-verified
-        /**
+    /**
      * @notice Checks if report verified
      * @param reportId The reportId identifier
      * @return The result value
      */
-function isReportVerified(bytes32 reportId) external view returns (bool) {
+    function isReportVerified(bytes32 reportId) external view returns (bool) {
         return reports[reportId].status == ReportStatus.VERIFIED;
     }
 
     /// @notice Check if a report is expired
-        /**
+    /**
      * @notice Checks if report expired
      * @param reportId The reportId identifier
      * @return The result value
      */
-function isReportExpired(bytes32 reportId) external view returns (bool) {
+    function isReportExpired(bytes32 reportId) external view returns (bool) {
         ComplianceReport storage report = reports[reportId];
         return report.expiresAt != 0 && block.timestamp >= report.expiresAt;
     }
@@ -498,24 +498,26 @@ function isReportExpired(bytes32 reportId) external view returns (bool) {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Update the compliance proof verifier
-        /**
+    /**
      * @notice Sets the compliance verifier
      * @param newVerifier The new Verifier value
      */
-function setComplianceVerifier(
+    function setComplianceVerifier(
         address newVerifier
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        // L-1 FIX: Prevent setting verifier to address(0)
+        require(newVerifier != address(0), "Zero address verifier");
         address old = address(complianceVerifier);
         complianceVerifier = IProofVerifier(newVerifier);
         emit ComplianceVerifierUpdated(old, newVerifier);
     }
 
     /// @notice Update the default retention period
-        /**
+    /**
      * @notice Sets the default retention period
      * @param period The period
      */
-function setDefaultRetentionPeriod(
+    function setDefaultRetentionPeriod(
         uint256 period
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (period < MIN_RETENTION_PERIOD || period > MAX_RETENTION_PERIOD)
@@ -526,11 +528,11 @@ function setDefaultRetentionPeriod(
     }
 
     /// @notice Grant REPORT_AUDITOR role
-        /**
+    /**
      * @notice Authorize auditor
      * @param auditor The auditor
      */
-function authorizeAuditor(
+    function authorizeAuditor(
         address auditor
     ) external onlyRole(COMPLIANCE_OFFICER) {
         if (auditor == address(0)) revert ZeroAddress();
@@ -538,11 +540,11 @@ function authorizeAuditor(
     }
 
     /// @notice Revoke REPORT_AUDITOR role
-        /**
+    /**
      * @notice Revokes auditor
      * @param auditor The auditor
      */
-function revokeAuditor(
+    function revokeAuditor(
         address auditor
     ) external onlyRole(COMPLIANCE_OFFICER) {
         _revokeRole(REPORT_AUDITOR, auditor);

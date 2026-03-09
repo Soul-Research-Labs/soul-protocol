@@ -157,12 +157,9 @@ fn verify_withdrawal(
     assert(in_tree, "Commitment not in tree");
 
     // 4. Verify fee constraint (fee <= amount)
-    // In Noir, we verify this using a range check
-    // amount - fee must be non-negative
+    assert(fee as u64 <= amount as u64, "Fee exceeds amount");
     let net_amount = amount - fee;
-    // The constraint that amount >= fee is implicit:
-    // if fee > amount, subtraction would underflow in the field
-    // We bind through the hash to prevent manipulation
+    // Bind recipient and relayer to prevent front-running
     let _binding = bn254::hash_4([recipient, relayer, net_amount, nullifier]);
 
     true

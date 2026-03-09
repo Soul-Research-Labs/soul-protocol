@@ -211,7 +211,7 @@ export class ZaseonRelayer {
         .map((b) => b.toString(16).padStart(2, "0"))
         .join("")) as Hash;
 
-    await this.publicClient.simulateContract({
+    await this.writeContract({
       address: this.config.contractAddress,
       abi: RELAYER_ABI,
       functionName: "commitRelay",
@@ -219,7 +219,7 @@ export class ZaseonRelayer {
     });
 
     // Step 2: Reveal and relay
-    const tx = await this.publicClient.simulateContract({
+    const txHash = await this.writeContract({
       address: this.config.contractAddress,
       abi: RELAYER_ABI,
       functionName: "revealRelay",
@@ -228,7 +228,7 @@ export class ZaseonRelayer {
 
     return {
       success: true,
-      txHash: tx.request as unknown as Hash,
+      txHash,
       fee: 0n,
       gasUsed: 0n,
     };

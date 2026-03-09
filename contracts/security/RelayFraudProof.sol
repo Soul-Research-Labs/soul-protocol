@@ -35,7 +35,7 @@ contract RelayFraudProof is AccessControl {
         bytes32 transferId,
         bytes calldata originalProof,
         bytes calldata fraudEvidence
-    ) external {
+    ) external onlyRole(VERIFIER_ROLE) {
         // 1. Verify that the original proof matches the pending transfer
         OptimisticRelayVerifier.PendingTransfer
             memory transfer = optimisticVerifier.getVerification(transferId);

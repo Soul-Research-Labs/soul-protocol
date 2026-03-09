@@ -328,7 +328,7 @@ export class ZaseonSDK {
     const serializedState = Buffer.from(JSON.stringify(params.payload));
     const { ciphertext, ephemeralKey, mac } = await this.crypto.encrypt(
       serializedState,
-      params.destChain,
+      params.recipientPublicKey,
     );
 
     // 2. Generate validity proof
@@ -380,7 +380,10 @@ export class ZaseonSDK {
         return; // Skip this packet — cannot decrypt
       }
 
-      const isValid = await this.prover.verifyProof(packet.proof, "stateRoot");
+      const isValid = await this.prover.verifyProof(
+        packet.proof,
+        packet.stateRoot ?? "",
+      );
       if (isValid) {
         callback(decrypted);
       }
