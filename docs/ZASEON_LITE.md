@@ -2,7 +2,7 @@
 
 ## Overview
 
-Zaseon Lite is the minimal deployment profile for cross-chain private note transfers. It extracts the **security-critical core** from the full protocol (~242 contracts) into **6 auditable contracts**.
+Zaseon Lite is the minimal deployment profile for cross-chain private note transfers. It extracts the **security-critical core** from the full protocol (~256 contracts) into **6 auditable contracts**.
 
 Everything else — governance, relayer infrastructure, compliance, emergency systems, fee markets, privacy tiers, intent routing — is an **optional module** layered on top.
 
@@ -10,11 +10,11 @@ Everything else — governance, relayer infrastructure, compliance, emergency sy
 
 | Concern          | Full Protocol                     | Zaseon Lite                            |
 | ---------------- | --------------------------------- | -------------------------------------- |
-| Contract count   | ~250 Solidity files               | 6 contracts                            |
+| Contract count   | ~256 Solidity files               | 6 contracts                            |
 | Audit scope      | Months                            | Weeks                                  |
-| Attack surface   | 50 interfaces, 11 bridge adapters | 1 bridge adapter, core interfaces only |
+| Attack surface   | 51 interfaces, 11 bridge adapters | 1 bridge adapter, core interfaces only |
 | Deployment cost  | ~$50-100k gas (8 phases)          | ~$5-10k gas (single tx)                |
-| Dependency chain | 17 components wired via Hub       | Linear: verifier → pool → registry     |
+| Dependency chain | 23 components wired via Hub       | Linear: verifier → pool → registry     |
 
 ## Core Contracts
 
@@ -165,8 +165,8 @@ The core has **no governance dependencies, no upgradability (except ShieldedPool
 
 ```
 Full Protocol:
-  ZaseonProtocolHub.wireAll() connects 17 components
-  → 8-phase deployment, ~242 contracts
+  ZaseonProtocolHub.wireAll() connects 23 components
+  → 8-phase deployment, ~256 contracts
   → Complex role hierarchy across admin/operator/guardian/emergency
   → Monthly audit cycles recommended
 

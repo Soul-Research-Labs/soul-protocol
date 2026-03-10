@@ -120,9 +120,9 @@
 
 ---
 
-## 9. `contracts/crosschain/HyperlaneAdapter.sol` (🔮 Planned — not yet implemented)
+## 9. `contracts/crosschain/HyperlaneAdapter.sol` (✅ Implemented)
 
-**Adapter not yet implemented. NatSpec audit deferred.**
+**NatSpec present.** Contract-level `@title`, `@author`, `@notice`, `@dev` with architecture diagram. Function-level documentation follows standard patterns.
 
 ---
 
@@ -159,9 +159,9 @@
 
 ---
 
-## 12. `contracts/crosschain/LayerZeroAdapter.sol` (🔮 Planned — not yet implemented)
+## 12. `contracts/crosschain/LayerZeroAdapter.sol` (✅ Implemented)
 
-**Adapter not yet implemented. NatSpec audit deferred.**
+**NatSpec present.** Contract-level `@title`, `@author`, `@notice`, `@dev` with architecture diagram. Function-level documentation follows standard patterns.
 
 ---
 

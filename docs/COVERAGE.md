@@ -46,14 +46,26 @@ enough to avoid stack-too-deep errors. CI runs these in parallel via matrix stra
 
 | Category      | Files                      | Tests | Command                                        |
 | ------------- | -------------------------- | ----- | ---------------------------------------------- |
-| Foundry Unit  | `test/foundry/*.t.sol`     | 56    | `forge test --match-path 'test/foundry/*'`     |
-| Fuzz          | `test/fuzz/*.t.sol`        | 19    | `forge test --match-path 'test/fuzz/*'`        |
-| Invariant     | `test/invariant/*.t.sol`   | 5     | `forge test --match-path 'test/invariant/*'`   |
-| Attack        | `test/attacks/*.t.sol`     | 7     | `forge test --match-path 'test/attacks/*'`     |
-| Security      | `test/security/*.t.sol`    | 31    | `forge test --match-path 'test/security/*'`    |
-| Gas Benchmark | `test/gas/*.t.sol`         | 3     | `forge test --match-path 'test/gas/*'`         |
-| Integration   | `test/integration/*.t.sol` | 6     | `forge test --match-path 'test/integration/*'` |
+| Foundry Unit  | `test/foundry/*.t.sol`     | 3     | `forge test --match-path 'test/foundry/*'`     |
+| Core          | `test/core/*.t.sol`        | 6     | `forge test --match-path 'test/core/*'`        |
+| Cross-Chain   | `test/crosschain/*.t.sol`  | 26    | `forge test --match-path 'test/crosschain/*'`  |
+| Bridge        | `test/bridge/*.t.sol`      | 4     | `forge test --match-path 'test/bridge/*'`      |
+| Privacy       | `test/privacy/*.t.sol`     | 18    | `forge test --match-path 'test/privacy/*'`     |
+| Security      | `test/security/*.t.sol`    | 33    | `forge test --match-path 'test/security/*'`    |
+| Governance    | `test/governance/*.t.sol`  | 6     | `forge test --match-path 'test/governance/*'`  |
+| Fuzz          | `test/fuzz/*.t.sol`        | 25    | `forge test --match-path 'test/fuzz/*'`        |
+| Invariant     | `test/invariant/*.t.sol`   | 13    | `forge test --match-path 'test/invariant/*'`   |
+| Attack        | `test/attacks/*.t.sol`     | 8     | `forge test --match-path 'test/attacks/*'`     |
+| Formal        | `test/formal/*.t.sol`      | 11    | `forge test --match-path 'test/formal/*'`      |
+| Gas Benchmark | `test/gas/*.t.sol`         | 7     | `forge test --match-path 'test/gas/*'`         |
+| Integration   | `test/integration/*.t.sol` | 33    | `forge test --match-path 'test/integration/*'` |
 | Stress        | `test/stress/*.t.sol`      | 3     | `forge test --match-path 'test/stress/*'`      |
+| Verifiers     | `test/verifiers/*.t.sol`   | 18    | `forge test --match-path 'test/verifiers/*'`   |
+| Upgradeable   | `test/upgradeable/*.t.sol` | 20    | `forge test --match-path 'test/upgradeable/*'` |
+| Libraries     | `test/libraries/*.t.sol`   | 16    | `forge test --match-path 'test/libraries/*'`   |
+| Relayer       | `test/relayer/*.t.sol`     | 10    | `forge test --match-path 'test/relayer/*'`     |
+| Primitives    | `test/primitives/*.t.sol`  | 10    | `forge test --match-path 'test/primitives/*'`  |
+| Compliance    | `test/compliance/*.t.sol`  | 6     | `forge test --match-path 'test/compliance/*'`  |
 
 ---
 
@@ -80,14 +92,18 @@ enough to avoid stack-too-deep errors. CI runs these in parallel via matrix stra
 
 ### Bridge Adapters (Target: 85%)
 
-| Contract                | Integration Tests                        | Status |
-| ----------------------- | ---------------------------------------- | ------ |
-| `ArbitrumBridgeAdapter` | ✅                                       | 🟢     |
-| `OptimismBridgeAdapter` | ✅                                       | 🟢     |
-| `BaseBridgeAdapter`     | ✅                                       | 🟢     |
-| `ScrollBridgeAdapter`   | 🔮 Planned — adapter not yet implemented | 🔴     |
-| `LayerZeroAdapter`      | 🔮 Planned — adapter not yet implemented | 🔴     |
-| `HyperlaneAdapter`      | 🔮 Planned — adapter not yet implemented | 🔴     |
+| Contract                | Integration Tests | Status |
+| ----------------------- | ----------------- | ------ |
+| `ArbitrumBridgeAdapter` | ✅                | 🟢     |
+| `OptimismBridgeAdapter` | ✅                | 🟢     |
+| `BaseBridgeAdapter`     | ✅                | 🟢     |
+| `ScrollBridgeAdapter`   | ✅                | 🟢     |
+| `zkSyncBridgeAdapter`   | ✅                | 🟢     |
+| `LineaBridgeAdapter`    | ✅                | 🟢     |
+| `LayerZeroAdapter`      | ✅                | 🟢     |
+| `HyperlaneAdapter`      | ✅                | 🟢     |
+| `EthereumL1Bridge`      | ✅                | 🟢     |
+| `AztecBridgeAdapter`    | ✅                | 🟢     |
 
 ### SDK (Target: 80%)
 
@@ -146,7 +162,7 @@ make certora-verify
 > **Note:** The `certora-check` target only validates compilation (`--compilation_steps_only`).
 > Use `certora-verify` for full prover runs. Requires a valid `CERTORAKEY` environment variable.
 
-**Specs:** 57 CVL specifications covering:
+**Specs:** 72 CVL specifications covering:
 
 - ZK-SLocks properties
 - Nullifier uniqueness

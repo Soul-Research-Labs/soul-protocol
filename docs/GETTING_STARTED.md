@@ -46,8 +46,8 @@
 ### From Source
 
 ```bash
-git clone https://github.com/Soul-Research-Labs/SOUL.git
-cd SOUL
+git clone https://github.com/Soul-Research-Labs/ZASEON.git
+cd ZASEON
 npm install
 ```
 

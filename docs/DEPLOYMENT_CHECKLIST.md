@@ -54,7 +54,7 @@
 - [x] TLA+ model checking: 4 safety properties
 - [x] Storage layout compatibility verified for all upgradeable contracts
 - [x] CLSAG ring signature verifier tested (18 test vectors)
-- [x] Foundry test suite: 5,880+ tests passing (288 suites)
+- [x] Foundry test suite: 5,880+ tests passing (291 suites)
 - [x] Total: 5,880+ tests passing
 
 ### 4. Pre-Mainnet Security Checklist

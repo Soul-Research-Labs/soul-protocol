@@ -13,7 +13,7 @@ Cross-chain ZK privacy middleware for confidential state transfer across L2 netw
 ## Project Structure
 
 ```
-contracts/           # Solidity source (~250 files)
+contracts/           # Solidity source (~256 files)
   adapters/          # EVMUniversalAdapter, NativeL2BridgeWrapper
   core/              # ZaseonProtocolHub, Orchestrator
   crosschain/        # Bridge adapters (11), DirectL2Messenger, IBridgeAdapter
@@ -26,16 +26,16 @@ contracts/           # Solidity source (~250 files)
   compliance/        # SelectiveDisclosure, ComplianceReporting
   governance/        # ZaseonGovernor, ZaseonUpgradeTimelock
   integrations/      # DeFi protocol integrations
-  interfaces/        # 50 interfaces
+  interfaces/        # 51 interfaces
   internal/          # Internal utilities
   libraries/         # Shared libraries (ProofEnvelope, FixedSizeMessageWrapper)
   upgradeable/       # Upgradeable variants (UUPS proxies)
 noir/                # Noir ZK circuits (21 circuits)
-test/                # Foundry tests (288 files, 5,880+ passing) + 15 Hardhat tests
+test/                # Foundry tests (291 files) + 15 Hardhat tests
 sdk/                 # TypeScript SDK (ZaseonSDK, StealthAddressClient, bridges)
-scripts/deploy/      # Foundry deploy scripts (16 scripts)
+scripts/deploy/      # Foundry deploy scripts (18 scripts)
 specs/               # K Framework, TLA+ formal specs
-certora/             # Certora CVL specs (69 specs)
+certora/             # Certora CVL specs (72 specs, 72 configs)
 monitoring/          # Defender + Tenderly configs
 docs/                # Documentation
 examples/            # SDK quickstart examples
@@ -43,7 +43,7 @@ examples/            # SDK quickstart examples
 
 ## Key Contracts
 
-- `ZaseonProtocolHub` - Central coordination hub with wireAll() for 17 components
+- `ZaseonProtocolHub` - Central coordination hub with wireAll() for 23 components
 - `CrossChainProofHubV3` - Proof aggregation with optimistic verification
 - `MultiBridgeRouter` - Multi-bridge routing with failover via IBridgeAdapter
 - `ZKBoundStateLocks` - Cross-chain state locks with ZK unlock
@@ -100,7 +100,18 @@ npx hardhat test                                   # Test (Hardhat)
 
 - `DeployMainnet.s.sol` - Full production 8-phase deploy
 - `DeployL2Bridges.s.sol` - Deploy bridge adapters per L2 (Optimism/Arbitrum/Aztec/zkSync/Scroll/Linea/LayerZero/Hyperlane)
+- `DeployMinimalCore.s.sol` - Minimal core contract deployment
+- `DeploySecurityComponents.s.sol` - Security infrastructure deployment
+- `DeployPrivacyComponents.s.sol` - Privacy module deployment
+- `DeployComplianceSuite.s.sol` - Compliance contracts deployment
+- `DeployIntentSuite.s.sol` - Intent completion layer deployment
+- `DeployRoutingSuite.s.sol` - Dynamic routing deployment
+- `DeployRelayerInfrastructure.s.sol` - Relayer infrastructure deployment
+- `DeployRiskMitigation.s.sol` - Risk mitigation contracts
+- `DeployUniswapAdapters.s.sol` - Uniswap integration adapters
+- `DeployZaseonLite.s.sol` - Lightweight deployment variant
 - `WireRemainingComponents.s.sol` - Post-deploy Hub wiring for separately-deployed components
+- `WireIntentComponents.s.sol` - Wire intent completion components
 - `ConfigureCrossChain.s.sol` - Link L1 hub with L2 chains
 - `ConfirmRoleSeparation.s.sol` - Lock admin/operator role separation (multisig)
 

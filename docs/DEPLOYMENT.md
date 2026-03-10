@@ -324,7 +324,7 @@ After all 8 phases complete:
 8. Run `ConfirmRoleSeparation.s.sol` from multisig
 9. Execute PCC verification lock after 48h wait
 
-> **All deploy scripts:** See `scripts/deploy/` — 16 scripts covering mainnet, testnets, bridges, compliance, intents, routing, relayer, security, and wiring.
+> **All deploy scripts:** See `scripts/deploy/` — 18 scripts covering mainnet, testnets, bridges, compliance, intents, routing, relayer, security, and wiring.
 
 ---
 

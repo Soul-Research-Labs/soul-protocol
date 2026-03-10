@@ -25,7 +25,7 @@ This document describes the formal verification setup for the ZASEON ZASEON usin
 
 All verification jobs have been successfully submitted to the Certora cloud.
 
-> **Status (March 2026):** 69 CVL specs across 69 configurations. Results updated as Certora Prover returns. Local Foundry symbolic tests (Halmos) and fuzz tests (10,000+ runs) complement online verification. See `certora/specs/` for full CVL source. Foundry: 5,880+ tests passing (288 suites), SDK: 816 tests passing.
+> **Status (March 2026):** 72 CVL specs across 72 configurations. Results updated as Certora Prover returns. Local Foundry symbolic tests (Halmos) and fuzz tests (10,000+ runs) complement online verification. See `certora/specs/` for full CVL source. Foundry: 5,880+ tests passing (291 suites), SDK: 816 tests passing.
 
 ### Core Contracts
 

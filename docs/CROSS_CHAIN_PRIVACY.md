@@ -601,15 +601,17 @@ Source Chain                    Zaseon                      Destination Chain
 | ------------- | --------------------------- | -------- | -------- |
 | Polygon zkEVM | `PolygonZkEVMBridgeAdapter` | 1101     | Medium   |
 
-### Privacy Chain Adapters (Production)
+### Privacy Chain Adapters (Roadmap)
 
-| Chain          | Adapter                 | Notes                                 |
-| -------------- | ----------------------- | ------------------------------------- |
-| Zcash          | `ZcashBridgeAdapter`    | Halo 2 Orchard proofs, shielded UTXO  |
-| Secret Network | `SecretBridgeAdapter`   | TEE attestation, Secret Gateway       |
-| Railgun        | `RailgunBridgeAdapter`  | Groth16 SNARKs, shielded UTXO pool    |
-| Penumbra       | `PenumbraBridgeAdapter` | Groth16 decaf377, shielded SCT        |
-| Aztec          | `AztecBridgeAdapter`    | UltraHonk proofs, encrypted note tree |
+> **Note:** These adapters are planned and **do not yet exist** in the codebase, except `AztecBridgeAdapter` which is production-ready.
+
+| Chain          | Adapter                 | Notes                                 | Status        |
+| -------------- | ----------------------- | ------------------------------------- | ------------- |
+| Aztec          | `AztecBridgeAdapter`    | UltraHonk proofs, encrypted note tree | ✅ Production |
+| Zcash          | `ZcashBridgeAdapter`    | Halo 2 Orchard proofs, shielded UTXO  | 🔮 Planned    |
+| Secret Network | `SecretBridgeAdapter`   | TEE attestation, Secret Gateway       | 🔮 Planned    |
+| Railgun        | `RailgunBridgeAdapter`  | Groth16 SNARKs, shielded UTXO pool    | 🔮 Planned    |
+| Penumbra       | `PenumbraBridgeAdapter` | Groth16 decaf377, shielded SCT        | 🔮 Planned    |
 
 ### Research Roadmap
 

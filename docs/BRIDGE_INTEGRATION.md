@@ -37,6 +37,11 @@ interface IBridgeAdapter {
 | Optimism         | `OptimismBridgeAdapter` | OP Stack          | 7 days              | ✅ Production |
 | Ethereum L1      | `EthereumL1Bridge`      | Native            | Finalized           | ✅ Production |
 | Aztec            | `AztecBridgeAdapter`    | UltraHonk         | Finalized           | ✅ Production |
+| zkSync Era       | `zkSyncBridgeAdapter`   | Diamond Proxy     | ~1 hour             | ✅ Production |
+| Scroll           | `ScrollBridgeAdapter`   | Native Messaging  | ~30 min             | ✅ Production |
+| Linea            | `LineaBridgeAdapter`    | MessageService    | ~20 min             | ✅ Production |
+| LayerZero (120+) | `LayerZeroAdapter`      | LZ V2 OApp        | Configurable        | ✅ Production |
+| Hyperlane (100+) | `HyperlaneAdapter`      | Mailbox + ISM     | Configurable        | ✅ Production |
 
 ---
 

@@ -21,7 +21,7 @@
 
 #### ✅ Completed Checks
 
-- [x] All tests pass: `forge test --summary` (5,880+ tests / 288 suites)
+- [x] All tests pass: `forge test --summary` (5,880+ tests / 291 suites)
 - [x] Fuzz testing: 300+ fuzz tests with high iterations
 - [x] Invariant testing: 8 invariant tests
 - [x] Attack simulation: 44 attack vectors tested
