@@ -13,7 +13,8 @@ contract PrivacyCoverageTest is Test {
     CrossChainPrivacyHub public privacyHub;
     CrossChainPrivacyHub public hubImpl;
 
-    bytes32 public constant RELAY_ROLE = keccak256("RELAY_ROLE");
+    bytes32 public constant BRIDGE_ROLE =
+        0x52ba824bfabc2bcfcdf7f0edbb486ebb05e1836c90e78047efeb949990f72e5f;
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
 
     function setUp() public {
@@ -52,11 +53,11 @@ contract PrivacyCoverageTest is Test {
         bytes32 commitment = keccak256("test_commitment");
         uint256 chainId = 1;
 
-        // Grant RELAY_ROLE to this test contract (already admin, but ensuring role separation logic)
+        // BRIDGE_ROLE is required for nullifier registration/spending.
         // Admin has all roles granted in initialize, let's verify
         assertTrue(
-            nullifierManager.hasRole(RELAY_ROLE, address(this)),
-            "Should have RELAY_ROLE"
+            nullifierManager.hasRole(BRIDGE_ROLE, address(this)),
+            "Should have BRIDGE_ROLE"
         );
 
         // Register Nullifier

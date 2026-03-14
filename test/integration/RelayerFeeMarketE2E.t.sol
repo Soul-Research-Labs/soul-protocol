@@ -218,14 +218,19 @@ contract RelayerFeeMarketE2E is Test {
         registry.register{value: 15 ether}();
 
         (uint256 stakeBefore, , , ) = registry.relayers(relayer1);
-        assertEq(stakeBefore, 15 ether);
+        // Registry records MIN_STAKE and refunds any excess registration ETH.
+        assertEq(stakeBefore, MIN_STAKE);
 
         // Slash 2 ETH for misbehavior
         vm.prank(admin);
         registry.slash(relayer1, 2 ether, admin);
 
         (uint256 stakeAfter, , , ) = registry.relayers(relayer1);
-        assertEq(stakeAfter, 13 ether, "Stake reduced by slash amount");
+        assertEq(
+            stakeAfter,
+            MIN_STAKE - 2 ether,
+            "Stake reduced by slash amount"
+        );
     }
 
     // ═════════════════════════════════════════════════════════════

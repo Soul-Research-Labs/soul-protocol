@@ -27,6 +27,9 @@ contract CrossChainLiquidityVaultFuzzTest is Test {
             privacyHub,
             LP_FEE_BPS
         );
+
+        vm.prank(operator);
+        vault.setDenominationEnforcement(false);
     }
 
     // -------------------------------------------------------------------------

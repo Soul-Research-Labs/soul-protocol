@@ -207,10 +207,10 @@ contract DecentralizedRelayerRegistry is
         activeRelayers.pop();
         delete relayerIndex[msg.sender];
 
+        emit StakeWithdrawn(msg.sender, amount);
+
         (bool success, ) = msg.sender.call{value: amount}("");
         if (!success) revert TransferFailed(msg.sender, amount);
-
-        emit StakeWithdrawn(msg.sender, amount);
     }
 
     /*//////////////////////////////////////////////////////////////

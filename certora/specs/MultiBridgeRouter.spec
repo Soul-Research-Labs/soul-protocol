@@ -14,7 +14,7 @@
  *   - Bridge health monitoring with auto-degradation
  */
 
-using SimpleMultiBridgeRouter as router;
+using MultiBridgeRouter as router;
 
 methods {
     // ── Constants & Config ──
@@ -46,7 +46,7 @@ methods {
     // ── State-changing functions ──
     function routeMessage(uint256, bytes, uint256) external returns (bytes32);
     function verifyMessage(bytes32, uint8, bool) external;
-    function registerBridge(uint8, address, uint256, uint256) external;
+    function registerAdapter(uint8, address, uint256, uint256) external;
     function updateBridgeStatus(uint8, uint8) external;
     function addSupportedChain(uint8, uint256) external;
     function recordSuccess(uint8) external;
@@ -87,7 +87,7 @@ rule onlyBridgeAdminCanRegister(
 ) {
     bool isAdmin = hasRole(router.BRIDGE_ADMIN(), e.msg.sender);
 
-    registerBridge@withrevert(e, bridgeType, adapter, securityScore, maxValue);
+    registerAdapter@withrevert(e, bridgeType, adapter, securityScore, maxValue);
 
     assert !lastReverted => isAdmin,
         "Only BRIDGE_ADMIN can register bridges";
@@ -169,7 +169,7 @@ rule securityScoreBounded(
     uint256 securityScore,
     uint256 maxValue
 ) {
-    registerBridge@withrevert(e, bridgeType, adapter, securityScore, maxValue);
+    registerAdapter@withrevert(e, bridgeType, adapter, securityScore, maxValue);
 
     assert !lastReverted => securityScore <= 100,
         "Security score must be at most 100";
@@ -183,7 +183,7 @@ rule registerSetsActive(
     uint256 securityScore,
     uint256 maxValue
 ) {
-    registerBridge(e, bridgeType, adapter, securityScore, maxValue);
+    registerAdapter(e, bridgeType, adapter, securityScore, maxValue);
 
     // Read back the bridge config (status is field index 6)
     address a; uint256 ss; uint256 mv; uint256 sc; uint256 fc; uint256 lft; uint8 status; uint256 art;

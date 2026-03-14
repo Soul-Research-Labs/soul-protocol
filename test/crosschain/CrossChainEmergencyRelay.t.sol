@@ -339,9 +339,14 @@ contract CrossChainEmergencyRelayReceiveTest is Test {
     CrossChainEmergencyRelay relay;
     address admin = address(0xAD);
     uint256 sourceChainId = 1; // mainnet
+    address sourceMessenger = address(0xBEEF);
+    address sourceReceiver = address(0xCAFE);
 
     function setUp() public {
         relay = new CrossChainEmergencyRelay(admin);
+
+        vm.prank(admin);
+        relay.registerChain(sourceChainId, sourceMessenger, sourceReceiver);
     }
 
     function _makeMessage(
@@ -548,14 +553,18 @@ contract CrossChainEmergencyRelayHeartbeatTest is Test {
     MockMessenger messenger;
     address admin = address(0xAD);
     address remote = address(0xBB);
+    address sourceReceiver = address(0xCAFE);
     uint256 chainId1 = 42161;
+    uint256 sourceChainId = 1;
 
     function setUp() public {
         relay = new CrossChainEmergencyRelay(admin);
         messenger = new MockMessenger();
 
-        vm.prank(admin);
+        vm.startPrank(admin);
         relay.registerChain(chainId1, address(messenger), remote);
+        relay.registerChain(sourceChainId, address(messenger), sourceReceiver);
+        vm.stopPrank();
     }
 
     function test_SendHeartbeat_Success() public {
@@ -811,6 +820,7 @@ contract CrossChainEmergencyRelayViewTest is Test {
     CrossChainEmergencyRelay relay;
     MockMessenger messenger;
     address admin = address(0xAD);
+    uint256 sourceChainId = 1;
 
     function setUp() public {
         relay = new CrossChainEmergencyRelay(admin);
@@ -849,6 +859,9 @@ contract CrossChainEmergencyRelayViewTest is Test {
     }
 
     function test_IsInEmergency_True() public {
+        vm.prank(admin);
+        relay.registerChain(sourceChainId, address(messenger), address(0xAA));
+
         // Receive an emergency message to set receivedSeverity
         ICrossChainEmergencyRelay.EmergencyMessage
             memory msg_ = ICrossChainEmergencyRelay.EmergencyMessage({
@@ -876,6 +889,7 @@ contract CrossChainEmergencyRelayFuzzTest is Test {
     CrossChainEmergencyRelay relay;
     MockMessenger messenger;
     address admin = address(0xAD);
+    uint256 sourceChainId = 1;
 
     function setUp() public {
         relay = new CrossChainEmergencyRelay(admin);
@@ -916,6 +930,9 @@ contract CrossChainEmergencyRelayFuzzTest is Test {
         uint256 nonce1,
         uint256 nonce2
     ) public {
+        vm.prank(admin);
+        relay.registerChain(sourceChainId, address(messenger), address(0xAA));
+
         nonce1 = bound(nonce1, 1, type(uint128).max - 1);
         nonce2 = bound(nonce2, nonce1 + 1, type(uint128).max);
 

@@ -190,6 +190,37 @@ abstract contract SecurityModule {
         }
     }
 
+    /**
+     * @notice Initialize SecurityModule defaults for proxy deployments
+     * @dev Solidity state initializers are not executed behind proxies. Child
+     *      upgradeable contracts should call this from their initialize().
+     */
+    function __initSecurityModule() internal {
+        _securityFlags =
+            FLAG_RATE_LIMITING |
+            FLAG_CIRCUIT_BREAKER |
+            FLAG_FLASH_LOAN_GUARD |
+            FLAG_WITHDRAWAL_LIMITS;
+
+        rateLimitWindow = 1 hours;
+        maxActionsPerWindow = 50;
+
+        volumeThreshold = 10_000_000 * 1e18;
+        circuitBreakerCooldown = 1 hours;
+        circuitBreakerTrippedAt = 0;
+        lastHourlyVolume = 0;
+        lastHourTimestamp = 0;
+
+        minBlocksForWithdrawal = 1;
+
+        maxSingleWithdrawal = 100_000 * 1e18;
+        maxDailyWithdrawal = 1_000_000 * 1e18;
+        accountMaxDailyWithdrawal = 100_000 * 1e18;
+
+        dailyWithdrawn = 0;
+        lastWithdrawalDay = 0;
+    }
+
     /*//////////////////////////////////////////////////////////////
                                EVENTS
     //////////////////////////////////////////////////////////////*/

@@ -31,12 +31,11 @@ methods {
     function totalMessagesSent() external returns (uint256) envfree;
     function totalMessagesReceived() external returns (uint256) envfree;
     function totalFeesCollected() external returns (uint256) envfree;
-    function nonce() external returns (uint256) envfree;
 
     function outboundNonce(uint32) external returns (uint64) envfree;
     function inboundNonces(uint32, uint64) external returns (bool) envfree;
     function peers(uint32) external returns (bytes32) envfree;
-    function processedMessages(bytes32) external returns (bool) envfree;
+    function isMessageVerified(bytes32) external returns (bool) envfree;
 
     function MAX_PAYLOAD_SIZE() external returns (uint256) envfree;
     function MAX_DST_GAS() external returns (uint256) envfree;
@@ -81,9 +80,9 @@ invariant feeBpsValid()
 invariant payloadSizePositive()
     MAX_PAYLOAD_SIZE() > 0
 
-/// @title Processed messages remain processed
-invariant processedMessagePermanent(bytes32 msgId)
-    processedMessages(msgId) == true =>
+/// @title Verified messages remain verified
+invariant verifiedMessagePermanent(bytes32 msgId)
+    isMessageVerified(msgId) == true =>
     ghostProcessedMessages[msgId] == true
 
 // =============================================================================
@@ -147,11 +146,11 @@ rule messageCountIntegrity() {
 
 /// @title No double message processing
 rule noDoubleMessageProcessing(bytes32 msgId) {
-    bool before = processedMessages(msgId);
+    bool before = isMessageVerified(msgId);
     require before == true;
 
-    assert processedMessages(msgId) == true,
-        "Processed message must remain processed";
+    assert isMessageVerified(msgId) == true,
+        "Verified message must remain verified";
 }
 
 /// @title Cross-domain nullifier uniqueness

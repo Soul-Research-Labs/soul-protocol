@@ -121,5 +121,5 @@ jobs:
 
       - name: Run Certora verification
         env:
-          CERTORAKEY: ${{  }}
+          CERTORAKEY: ${{ secrets.CERTORAKEY }}
         run: certoraRun ${{ matrix.conf }}

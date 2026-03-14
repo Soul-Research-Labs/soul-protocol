@@ -132,14 +132,16 @@ contract CrossChainPrivacyExtendedTest is Test {
         uint256 dailyLimit
     ) internal {
         hub.registerAdapter(
-            chainId,
-            address(uint160(0xADA0 + chainId)),
-            CrossChainPrivacyHub.ChainType.EVM,
-            CrossChainPrivacyHub.ProofSystem.GROTH16,
-            true,
-            1,
-            maxRelay,
-            dailyLimit
+            CrossChainPrivacyHub.AdapterRegistrationParams({
+                chainId: chainId,
+                adapter: address(uint160(0xADA0 + chainId)),
+                chainType: CrossChainPrivacyHub.ChainType.EVM,
+                proofSystem: CrossChainPrivacyHub.ProofSystem.GROTH16,
+                supportsPrivacy: true,
+                minConfirmations: 1,
+                maxTransfer: maxRelay,
+                dailyLimit: dailyLimit
+            })
         );
     }
 
@@ -217,7 +219,7 @@ contract CrossChainPrivacyExtendedTest is Test {
         }
 
         assertEq(
-            hub.totalRelays(),
+            hub.totalTransfers(),
             6,
             "Should have 6 total relays across all chains"
         );
@@ -248,7 +250,7 @@ contract CrossChainPrivacyExtendedTest is Test {
             reqOp,
             "Different chains should produce different request IDs"
         );
-        assertEq(hub.totalRelays(), 2);
+        assertEq(hub.totalTransfers(), 2);
     }
 
     function test_multiChain_differentUsersToSameChain() public {
@@ -282,7 +284,7 @@ contract CrossChainPrivacyExtendedTest is Test {
         assertNotEq(req1, req2);
         assertNotEq(req2, req3);
         assertNotEq(req1, req3);
-        assertEq(hub.totalRelays(), 3);
+        assertEq(hub.totalTransfers(), 3);
     }
 
     // =========================================================================
@@ -311,7 +313,11 @@ contract CrossChainPrivacyExtendedTest is Test {
             _groth16Proof()
         );
         assertNotEq(reqId, bytes32(0));
-        assertEq(hub.totalPrivateRelays(), 1, "Should count as private relay");
+        assertEq(
+            hub.totalPrivateTransfers(),
+            1,
+            "Should count as private relay"
+        );
     }
 
     function test_privacyLevels_highWithProof() public {
@@ -465,7 +471,7 @@ contract CrossChainPrivacyExtendedTest is Test {
             _groth16Proof()
         );
 
-        assertEq(hub.totalRelays(), 3);
+        assertEq(hub.totalTransfers(), 3);
         assertTrue(user1.balance < user1Before);
         assertTrue(user2.balance < user2Before);
         assertTrue(user3.balance < user3Before);
@@ -496,7 +502,7 @@ contract CrossChainPrivacyExtendedTest is Test {
                 );
             }
         }
-        assertEq(hub.totalRelays(), 10);
+        assertEq(hub.totalTransfers(), 10);
     }
 
     // =========================================================================
@@ -518,20 +524,17 @@ contract CrossChainPrivacyExtendedTest is Test {
         );
     }
 
-    function test_adapter_reactivateChainAllowsTransfers() public {
-        // Deactivate then reactivate
+    function test_adapter_reactivateChainBlockedByValidChain() public {
+        // Deactivate then try reactivate — validChain modifier prevents reactivation
         hub.updateAdapter(CHAIN_LINEA, false, 2_000 ether, 10_000 ether);
-        hub.updateAdapter(CHAIN_LINEA, true, 2_000 ether, 10_000 ether);
 
-        vm.prank(user1);
-        bytes32 reqId = hub.initiatePrivateTransfer{value: 1.003 ether}(
-            CHAIN_LINEA,
-            keccak256("r"),
-            1 ether,
-            CrossChainPrivacyHub.PrivacyLevel.BASIC,
-            _emptyProof()
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                CrossChainPrivacyHub.AdapterNotActive.selector,
+                CHAIN_LINEA
+            )
         );
-        assertNotEq(reqId, bytes32(0));
+        hub.updateAdapter(CHAIN_LINEA, true, 2_000 ether, 10_000 ether);
     }
 
     function test_adapter_updateDailyLimitMidOperation() public {
@@ -587,14 +590,16 @@ contract CrossChainPrivacyExtendedTest is Test {
         // Register a chain using PLONK
         uint256 testChain = 99_999;
         hub.registerAdapter(
-            testChain,
-            address(0xADA9),
-            CrossChainPrivacyHub.ChainType.EVM,
-            CrossChainPrivacyHub.ProofSystem.PLONK,
-            true,
-            1,
-            10_000 ether,
-            50_000 ether
+            CrossChainPrivacyHub.AdapterRegistrationParams({
+                chainId: testChain,
+                adapter: address(0xADA9),
+                chainType: CrossChainPrivacyHub.ChainType.EVM,
+                proofSystem: CrossChainPrivacyHub.ProofSystem.PLONK,
+                supportsPrivacy: true,
+                minConfirmations: 1,
+                maxTransfer: 10_000 ether,
+                dailyLimit: 50_000 ether
+            })
         );
 
         bytes32[] memory pubInputs = new bytes32[](1);
@@ -706,14 +711,16 @@ contract CrossChainPrivacyExtendedTest is Test {
         vm.prank(user1);
         vm.expectRevert();
         hub.registerAdapter(
-            777,
-            address(0xADA9),
-            CrossChainPrivacyHub.ChainType.EVM,
-            CrossChainPrivacyHub.ProofSystem.NONE,
-            true,
-            1,
-            1000 ether,
-            5000 ether
+            CrossChainPrivacyHub.AdapterRegistrationParams({
+                chainId: 777,
+                adapter: address(0xADA9),
+                chainType: CrossChainPrivacyHub.ChainType.EVM,
+                proofSystem: CrossChainPrivacyHub.ProofSystem.NONE,
+                supportsPrivacy: true,
+                minConfirmations: 1,
+                maxTransfer: 1000 ether,
+                dailyLimit: 5000 ether
+            })
         );
     }
 
@@ -883,7 +890,7 @@ contract CrossChainPrivacyExtendedTest is Test {
 
         vm.stopPrank();
 
-        assertEq(hub.totalRelays(), 2);
+        assertEq(hub.totalTransfers(), 2);
     }
 
     // =========================================================================
@@ -925,7 +932,7 @@ contract CrossChainPrivacyExtendedTest is Test {
             CHAIN_ARBITRUM
         );
         assertTrue(config.isActive);
-        assertEq(config.maxRelayAmount, 10_000 ether);
+        assertEq(config.maxTransfer, 10_000 ether);
         assertEq(config.dailyLimit, 50_000 ether);
     }
 
@@ -937,8 +944,8 @@ contract CrossChainPrivacyExtendedTest is Test {
         assertEq(hub.defaultRingSize(), 8);
     }
 
-    function test_views_totalRelaysIncrements() public {
-        assertEq(hub.totalRelays(), 0);
+    function test_views_totalTransfersIncrements() public {
+        assertEq(hub.totalTransfers(), 0);
 
         vm.prank(user1);
         hub.initiatePrivateTransfer{value: 1.003 ether}(
@@ -949,7 +956,7 @@ contract CrossChainPrivacyExtendedTest is Test {
             _emptyProof()
         );
 
-        assertEq(hub.totalRelays(), 1);
+        assertEq(hub.totalTransfers(), 1);
     }
 
     // =========================================================================

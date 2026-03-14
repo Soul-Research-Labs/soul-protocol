@@ -335,7 +335,7 @@ contract InstantCompletionGuaranteeTest is Test {
     function test_ExpireGuarantee_IntentNotFinalized() public {
         bytes32 gId = _postGuarantee(solver1, INTENT_ID_1, user1, 1 ether);
 
-        vm.warp(block.timestamp + 1 hours + 1);
+        vm.warp(block.timestamp + 1 hours + guarantee.CLAIM_GRACE_PERIOD() + 1);
 
         guarantee.expireGuarantee(gId);
 
@@ -394,7 +394,7 @@ contract InstantCompletionGuaranteeTest is Test {
     function test_WithdrawInsurance() public {
         // Fund insurance via expired guarantee
         bytes32 gId = _postGuarantee(solver1, INTENT_ID_1, user1, 1 ether);
-        vm.warp(block.timestamp + 1 hours + 1);
+        vm.warp(block.timestamp + 1 hours + guarantee.CLAIM_GRACE_PERIOD() + 1);
         guarantee.expireGuarantee(gId);
 
         uint256 pool = guarantee.insurancePoolBalance();

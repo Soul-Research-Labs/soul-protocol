@@ -268,6 +268,10 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
     uint256 public constant MIN_CHALLENGER_STAKE = 0.01 ether;
     uint256 public constant MAX_ACTIVE_LOCKS = 1000000;
 
+    /// @notice Maximum number of pending nullifiers in the retry queue (DoS prevention)
+    /// @dev Prevents unbounded growth if the nullifier registry is persistently unavailable
+    uint256 public constant MAX_PENDING_NULLIFIERS = 10000;
+
     /// @notice Maximum locks any single address can create (DoS prevention)
     /// @dev Prevents a single address from filling the global lock cap
     uint256 public constant MAX_LOCKS_PER_ADDRESS = 100;
@@ -1079,8 +1083,13 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
             );
             // On failure, queue for retry instead of silently dropping
             if (!success) {
-                pendingNullifiers.push(nullifier);
-                pendingNullifierCommitments[nullifier] = commitment;
+                // SECURITY FIX: Cap the retry queue to prevent unbounded growth DoS.
+                // If the registry is persistently unavailable, the queue would grow
+                // without limit, consuming storage and making retries increasingly expensive.
+                if (pendingNullifiers.length < MAX_PENDING_NULLIFIERS) {
+                    pendingNullifiers.push(nullifier);
+                    pendingNullifierCommitments[nullifier] = commitment;
+                }
                 emit NullifierPropagationFailed(nullifier, registry);
             }
         }

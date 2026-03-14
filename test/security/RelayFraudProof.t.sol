@@ -23,6 +23,8 @@ contract RelayFraudProofTest is Test {
 
         // Grant RESOLVER_ROLE to fraudProof contract
         verifier.grantRole(verifier.RESOLVER_ROLE(), address(fraudProof));
+        // submitFraudProof is restricted to VERIFIER_ROLE
+        fraudProof.grantRole(fraudProof.VERIFIER_ROLE(), address(this));
 
         vm.deal(submitter, 100 ether);
         vm.deal(challenger, 100 ether);
@@ -227,19 +229,13 @@ contract RelayFraudProofTest is Test {
     //  9. Anyone can submit fraud proof
     // ──────────────────────────────────────────────
 
-    function test_AnyoneCanSubmitFraudProof() public {
+    function test_OnlyVerifierRoleCanSubmitFraudProof() public {
         bytes32 transferId = _submitAndChallenge(keccak256("msg12"));
 
-        // Alice isn't the challenger, but can submit fraud proof
+        // Alice does not have VERIFIER_ROLE
         vm.prank(alice);
+        vm.expectRevert();
         fraudProof.submitFraudProof(transferId, PROOF, bytes("FRAUD_EV"));
-
-        OptimisticRelayVerifier.PendingTransfer memory t = verifier
-            .getVerification(transferId);
-        assertEq(
-            uint(t.status),
-            uint(OptimisticRelayVerifier.TransferStatus.REJECTED)
-        );
     }
 
     // ──────────────────────────────────────────────

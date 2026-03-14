@@ -339,7 +339,7 @@ contract CrossChainProofHubV3Test is Test {
         hub.setVerifier(PROOF_TYPE, address(falseVerifier));
 
         vm.prank(challenger);
-        hub.resolveChallenge(proofId, hex"aa", hex"bb", PROOF_TYPE);
+        hub.resolveChallenge(proofId, hex"deadbeef", hex"cafe", PROOF_TYPE);
 
         ICrossChainProofHubV3.Challenge memory c = hub.getChallenge(proofId);
         assertTrue(c.resolved);

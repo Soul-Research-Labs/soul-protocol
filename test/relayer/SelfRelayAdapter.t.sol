@@ -268,10 +268,14 @@ contract SelfRelayAdapterTest is Test {
         vm.prank(user);
         adapter.relayMessage(address(target), payload, 100_000);
 
-        // Health monitor should have recorded for the adapter address
-        // (best-effort reporting — adapter calls monitor on behalf of msg.sender)
-        // We just verify no revert occurred
-        assertTrue(true);
+        // Verify the relay itself succeeded (totalRelayed incremented)
+        (uint256 relayed, ) = adapter.getStats();
+        assertEq(
+            relayed,
+            1,
+            "totalRelayed should increment after successful relay"
+        );
+        assertEq(target.lastValue(), 1, "Target should have been called");
     }
 
     function test_RelayMessage_NoMonitor_StillWorks() public {

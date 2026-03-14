@@ -72,6 +72,11 @@ contract CrossChainLiquidityVaultTest is Test {
         vault.registerRemoteVault(DEST_CHAIN_ID, makeAddr("remoteVault"));
         vm.prank(operator);
         vault.registerRemoteVault(SOURCE_CHAIN_ID, makeAddr("remoteVaultOpt"));
+
+        // Use unconstrained transfer sizes in this suite; privacy denomination
+        // bucketing is covered separately.
+        vm.prank(operator);
+        vault.setDenominationEnforcement(false);
     }
 
     // =========================================================================
@@ -273,6 +278,14 @@ contract CrossChainLiquidityVaultTest is Test {
             SOURCE_CHAIN_ID
         );
 
+        (, , , uint256 claimableAt, bool claimedBefore) = vault.pendingReleases(
+            requestId
+        );
+        assertFalse(claimedBefore);
+
+        vm.warp(claimableAt);
+        vault.claimRelease(requestId);
+
         assertEq(recipient.balance, recipientBalBefore + 3 ether);
         assertEq(vault.totalETH(), 7 ether); // 10 - 3
     }
@@ -292,6 +305,14 @@ contract CrossChainLiquidityVaultTest is Test {
             30e18,
             SOURCE_CHAIN_ID
         );
+
+        (, , , uint256 claimableAt, bool claimedBefore) = vault.pendingReleases(
+            requestId
+        );
+        assertFalse(claimedBefore);
+
+        vm.warp(claimableAt);
+        vault.claimRelease(requestId);
 
         assertEq(token.balanceOf(recipient), 30e18);
         assertEq(vault.totalTokens(address(token)), 70e18);
@@ -370,6 +391,11 @@ contract CrossChainLiquidityVaultTest is Test {
             5000
         );
 
+        vm.startPrank(operator);
+        sourceVault.setDenominationEnforcement(false);
+        destVault.setDenominationEnforcement(false);
+        vm.stopPrank();
+
         // Register remote vaults
         vm.prank(operator);
         sourceVault.registerRemoteVault(DEST_CHAIN_ID, address(destVault));
@@ -409,6 +435,13 @@ contract CrossChainLiquidityVaultTest is Test {
             transferAmount,
             SOURCE_CHAIN_ID
         );
+
+        (, , , uint256 claimableAt, bool claimedBefore) = destVault
+            .pendingReleases(requestId);
+        assertFalse(claimedBefore);
+
+        vm.warp(claimableAt);
+        destVault.claimRelease(requestId);
 
         // Verify recipient received tokens
         assertEq(recipient.balance, recipientBalBefore + transferAmount);

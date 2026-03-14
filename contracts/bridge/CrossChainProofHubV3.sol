@@ -136,6 +136,10 @@ contract CrossChainProofHubV3 is
     /// @notice Fee per proof submission (in wei)
     uint256 public proofSubmissionFee = 0.001 ether;
 
+    /// @notice Maximum age of a proof before it is considered stale and cannot be finalized
+    /// @dev Prevents very old proofs from being finalized after extended periods of inactivity
+    uint256 public maxProofAge = 7 days;
+
     /// @notice Relayer stakes
     mapping(address => uint256) public relayerStakes;
 
@@ -183,6 +187,34 @@ contract CrossChainProofHubV3 is
         if (hasRole(RELAYER_ROLE, msg.sender)) revert AdminNotAllowed();
         if (hasRole(CHALLENGER_ROLE, msg.sender)) revert AdminNotAllowed();
         rolesSeparated = true;
+    }
+
+    /// @dev Override _grantRole to enforce role separation after confirmation.
+    ///      Prevents admin from granting RELAYER_ROLE or CHALLENGER_ROLE to themselves
+    ///      after rolesSeparated is set, closing the post-confirmation bypass vector.
+    function _grantRole(
+        bytes32 role,
+        address account
+    ) internal virtual override returns (bool) {
+        if (rolesSeparated) {
+            // Prevent any admin from also holding relayer or challenger roles
+            if (
+                (role == RELAYER_ROLE || role == CHALLENGER_ROLE) &&
+                hasRole(DEFAULT_ADMIN_ROLE, account)
+            ) {
+                revert AdminNotAllowed();
+            }
+            // Prevent relayers/challengers from being granted admin
+            if (role == DEFAULT_ADMIN_ROLE) {
+                if (
+                    hasRole(RELAYER_ROLE, account) ||
+                    hasRole(CHALLENGER_ROLE, account)
+                ) {
+                    revert AdminNotAllowed();
+                }
+            }
+        }
+        return super._grantRole(role, account);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -522,14 +554,8 @@ contract CrossChainProofHubV3 is
             "Proof data mismatch"
         );
 
-        // Resolve verifier
+        // Resolve verifier — _resolveVerifier reverts if no verifier is found
         IProofVerifier verifier = _resolveVerifier(proofType);
-
-        // SECURITY FIX: Do NOT fallback to default verifier - this could allow
-        // attackers to bypass specific verifier requirements
-        if (address(verifier) == address(0)) {
-            return false;
-        }
 
         return verifier.verifyProof(proof, publicInputs);
     }
@@ -541,8 +567,7 @@ contract CrossChainProofHubV3 is
     ) internal view returns (IProofVerifier verifier) {
         verifier = verifiers[proofType];
 
-        // SECURITY FIX: If specific verifier not found, DO NOT fallback to default
-        // This prevents proof type bypass attacks where attacker uses weaker verifier
+        // If specific verifier not found, check the registry as a second source
         if (address(verifier) == address(0) && verifierRegistry != address(0)) {
             (bool regSuccess, bytes memory regData) = verifierRegistry
                 .staticcall(
@@ -552,6 +577,10 @@ contract CrossChainProofHubV3 is
                 verifier = IProofVerifier(abi.decode(regData, (address)));
             }
         }
+
+        // SECURITY FIX: Revert explicitly if no verifier found instead of returning address(0).
+        // Callers should not need to check — a zero-address verifier leads to silent verification skip.
+        if (address(verifier) == address(0)) revert VerifierNotSet(proofType);
     }
 
     /// @dev Handles challenge resolution when the relayer wins (valid proof).
@@ -654,6 +683,13 @@ contract CrossChainProofHubV3 is
     ) external nonReentrant whenNotPaused {
         ProofSubmission storage submission = proofs[proofId];
         if (submission.relayer == address(0)) revert ProofNotFound(proofId);
+
+        // SECURITY FIX: Reject stale proofs that have been sitting unfinalized too long.
+        // This prevents very old proofs from being finalized after extended inactivity,
+        // which could reference outdated state or expired commitments.
+        if (block.timestamp > submission.submittedAt + maxProofAge) {
+            revert ProofTooStale(proofId, submission.submittedAt);
+        }
 
         if (submission.status == ProofStatus.Pending) {
             if (block.timestamp < submission.challengeDeadline)

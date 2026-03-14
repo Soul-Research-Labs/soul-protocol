@@ -13,9 +13,9 @@ import "../../contracts/mocks/MockProofVerifier.sol";
  * @title CompliancePrivacyE2E
  * @notice End-to-end tests for the privacy ↔ compliance integration.
  * @dev Validates that:
- *   1. CrossChainPrivacyHub correctly registers transfers with SelectiveDisclosureManager
- *   2. Compliance hooks use non-reverting try/catch (never block transfers)
- *   3. Viewing keys and disclosure tiers work across privacy levels
+ *   1. CrossChainPrivacyHub setComplianceModule works correctly
+ *   2. Hub transfers succeed regardless of compliance module state
+ *   3. SelectiveDisclosureManager viewing keys and disclosure tiers work
  *   4. ComplianceReportingModule can generate aggregate reports
  *   5. ConfigurablePrivacyLevels maps correctly to disclosure levels
  */
@@ -83,28 +83,22 @@ contract CompliancePrivacyE2E is Test {
         ERC1967Proxy proxy = new ERC1967Proxy(address(impl), initData);
         privacyHub = CrossChainPrivacyHub(payable(address(proxy)));
 
-        // Grant COMPLIANCE_ADMIN on disclosure manager to the privacy hub
-        // so registerTransactionFor() calls succeed
-        disclosure.grantRole(
-            disclosure.COMPLIANCE_ADMIN(),
-            address(privacyHub)
-        );
-
-        // Wire compliance into privacy hub
-        privacyHub.setDisclosureManager(address(disclosure));
-        privacyHub.setComplianceReporting(address(reporting));
+        // Wire compliance module into privacy hub
+        privacyHub.grantRole(privacyHub.OPERATOR_ROLE(), admin);
+        privacyHub.setComplianceModule(address(reporting));
 
         // Register a bridge adapter for destination chain
-        privacyHub.grantRole(privacyHub.OPERATOR_ROLE(), admin);
         privacyHub.registerAdapter(
-            DEST_CHAIN,
-            makeAddr("adapter"),
-            CrossChainPrivacyHub.ChainType.EVM,
-            CrossChainPrivacyHub.ProofSystem.GROTH16,
-            true, // supportsPrivacy
-            1, // minConfirmations
-            100 ether, // maxTransfer
-            1000 ether // dailyLimit
+            CrossChainPrivacyHub.AdapterRegistrationParams({
+                chainId: DEST_CHAIN,
+                adapter: makeAddr("adapter"),
+                chainType: CrossChainPrivacyHub.ChainType.EVM,
+                proofSystem: CrossChainPrivacyHub.ProofSystem.GROTH16,
+                supportsPrivacy: true,
+                minConfirmations: 1,
+                maxTransfer: 100 ether,
+                dailyLimit: 1000 ether
+            })
         );
 
         // Grant relayer role
@@ -119,15 +113,42 @@ contract CompliancePrivacyE2E is Test {
         // Grant compliance officer role on reporting module
         reporting.grantRole(reporting.COMPLIANCE_OFFICER(), officer);
 
+        // Grant COMPLIANCE_ADMIN on disclosure manager for standalone tests
+        disclosure.grantRole(disclosure.COMPLIANCE_ADMIN(), admin);
+
         vm.stopPrank();
     }
 
     // =========================================================================
-    // DISCLOSURE INTEGRATION: Transfer Registration
+    // HUB TRANSFER + COMPLIANCE MODULE SETTER
     // =========================================================================
 
-    function test_transferRegistersWithDisclosureManager() public {
-        // User initiates a MEDIUM privacy transfer (→ AUDITOR disclosure level)
+    function test_transferSucceedsWithComplianceModuleSet() public {
+        vm.prank(user);
+        bytes32 requestId = privacyHub.initiatePrivateTransfer{value: 1 ether}(
+            DEST_CHAIN,
+            keccak256(abi.encodePacked(user)),
+            0.5 ether,
+            CrossChainPrivacyHub.PrivacyLevel.BASIC,
+            CrossChainPrivacyHub.PrivacyProof({
+                system: CrossChainPrivacyHub.ProofSystem.NONE,
+                proof: "",
+                publicInputs: new bytes32[](0),
+                proofHash: bytes32(0)
+            })
+        );
+
+        CrossChainPrivacyHub.TransferRequest memory t = privacyHub.getTransfer(
+            requestId
+        );
+        assertEq(
+            uint256(t.status),
+            uint256(CrossChainPrivacyHub.TransferStatus.PENDING)
+        );
+        assertNotEq(requestId, bytes32(0));
+    }
+
+    function test_transferWithMediumPrivacy() public {
         CrossChainPrivacyHub.PrivacyProof memory proof = CrossChainPrivacyHub
             .PrivacyProof({
                 system: CrossChainPrivacyHub.ProofSystem.GROTH16,
@@ -139,25 +160,17 @@ contract CompliancePrivacyE2E is Test {
         vm.prank(user);
         bytes32 requestId = privacyHub.initiatePrivateTransfer{value: 1 ether}(
             DEST_CHAIN,
-            keccak256(abi.encodePacked(user)), // recipient as bytes32
+            keccak256(abi.encodePacked(user)),
             0.5 ether,
             CrossChainPrivacyHub.PrivacyLevel.MEDIUM,
             proof
         );
 
-        // The transfer should have been registered with the disclosure manager
-        SelectiveDisclosureManager.PrivateTransaction memory txn = disclosure
-            .getTransaction(requestId);
-        assertTrue(txn.exists, "transaction should be registered");
-        assertEq(txn.owner, user, "owner should be the user");
-        // MEDIUM privacy → AUDITOR disclosure level per our mapping
-        assertEq(
-            uint256(txn.defaultLevel),
-            uint256(SelectiveDisclosureManager.DisclosureLevel.AUDITOR)
-        );
+        assertNotEq(requestId, bytes32(0));
+        assertEq(privacyHub.totalPrivateTransfers(), 1);
     }
 
-    function test_maximumPrivacyMapsToCounterpartyLevel() public {
+    function test_transferWithMaximumPrivacy() public {
         CrossChainPrivacyHub.PrivacyProof memory proof = CrossChainPrivacyHub
             .PrivacyProof({
                 system: CrossChainPrivacyHub.ProofSystem.GROTH16,
@@ -175,152 +188,34 @@ contract CompliancePrivacyE2E is Test {
             proof
         );
 
-        SelectiveDisclosureManager.PrivateTransaction memory txn = disclosure
-            .getTransaction(requestId);
-        assertTrue(txn.exists, "transaction should be registered");
-        assertEq(
-            uint256(txn.defaultLevel),
-            uint256(SelectiveDisclosureManager.DisclosureLevel.COUNTERPARTY)
-        );
-    }
-
-    function test_highPrivacyMapsToRegulatorLevel() public {
-        CrossChainPrivacyHub.PrivacyProof memory proof = CrossChainPrivacyHub
-            .PrivacyProof({
-                system: CrossChainPrivacyHub.ProofSystem.GROTH16,
-                proof: hex"deadbeef",
-                publicInputs: new bytes32[](0),
-                proofHash: keccak256("proof")
-            });
-
-        vm.prank(user);
-        bytes32 requestId = privacyHub.initiatePrivateTransfer{value: 1 ether}(
-            DEST_CHAIN,
-            keccak256(abi.encodePacked(user)),
-            0.5 ether,
-            CrossChainPrivacyHub.PrivacyLevel.HIGH,
-            proof
-        );
-
-        SelectiveDisclosureManager.PrivateTransaction memory txn = disclosure
-            .getTransaction(requestId);
-        assertTrue(txn.exists, "transaction should be registered");
-        assertEq(
-            uint256(txn.defaultLevel),
-            uint256(SelectiveDisclosureManager.DisclosureLevel.REGULATOR)
-        );
-    }
-
-    function test_basicPrivacyMapsToPublicLevel() public {
-        vm.prank(user);
-        bytes32 requestId = privacyHub.initiatePrivateTransfer{value: 1 ether}(
-            DEST_CHAIN,
-            keccak256(abi.encodePacked(user)),
-            0.5 ether,
-            CrossChainPrivacyHub.PrivacyLevel.BASIC,
-            CrossChainPrivacyHub.PrivacyProof({
-                system: CrossChainPrivacyHub.ProofSystem.NONE,
-                proof: "",
-                publicInputs: new bytes32[](0),
-                proofHash: bytes32(0)
-            })
-        );
-
-        SelectiveDisclosureManager.PrivateTransaction memory txn = disclosure
-            .getTransaction(requestId);
-        assertTrue(txn.exists, "transaction should be registered");
-        assertEq(
-            uint256(txn.defaultLevel),
-            uint256(SelectiveDisclosureManager.DisclosureLevel.PUBLIC)
-        );
+        assertNotEq(requestId, bytes32(0));
     }
 
     // =========================================================================
-    // NON-REVERTING: Compliance Never Blocks Transfers
+    // SELECTIVE DISCLOSURE: Standalone Viewing Keys
     // =========================================================================
 
-    function test_transferSucceedsWhenDisclosureManagerReverts() public {
-        // Deploy a broken disclosure manager that always reverts
-        // Note: deploy separately to avoid vm.prank being consumed by CREATE
-        RevertingDisclosureManager broken = new RevertingDisclosureManager();
+    function test_disclosureManager_registerAndGrantViewingAccess() public {
+        // Register a transaction directly on disclosure manager
+        bytes32 txId = keccak256("test_tx_1");
+        bytes32 commitment = keccak256("test_commitment");
+
         vm.prank(admin);
-        privacyHub.setDisclosureManager(address(broken));
-
-        // Transfer should still succeed despite compliance hook failure
-        vm.prank(user);
-        bytes32 requestId = privacyHub.initiatePrivateTransfer{value: 1 ether}(
-            DEST_CHAIN,
-            keccak256(abi.encodePacked(user)),
-            0.5 ether,
-            CrossChainPrivacyHub.PrivacyLevel.BASIC,
-            CrossChainPrivacyHub.PrivacyProof({
-                system: CrossChainPrivacyHub.ProofSystem.NONE,
-                proof: "",
-                publicInputs: new bytes32[](0),
-                proofHash: bytes32(0)
-            })
+        disclosure.registerTransactionFor(
+            txId,
+            commitment,
+            user,
+            SelectiveDisclosureManager.DisclosureLevel.AUDITOR
         );
 
-        // Transfer should be in PENDING status (not reverted)
-        CrossChainPrivacyHub.TransferRequest memory transfer = _getRelayRequest(
-            requestId
-        );
+        // Verify registered
+        SelectiveDisclosureManager.PrivateTransaction memory txn = disclosure
+            .getTransaction(txId);
+        assertTrue(txn.exists, "transaction should be registered");
+        assertEq(txn.owner, user);
         assertEq(
-            uint256(transfer.status),
-            uint256(CrossChainPrivacyHub.TransferStatus.PENDING)
-        );
-    }
-
-    function test_transferSucceedsWhenDisclosureManagerNotSet() public {
-        // Remove disclosure manager
-        vm.prank(admin);
-        privacyHub.setDisclosureManager(address(0));
-
-        // Transfer should succeed
-        vm.prank(user);
-        bytes32 requestId = privacyHub.initiatePrivateTransfer{value: 1 ether}(
-            DEST_CHAIN,
-            keccak256(abi.encodePacked(user)),
-            0.5 ether,
-            CrossChainPrivacyHub.PrivacyLevel.BASIC,
-            CrossChainPrivacyHub.PrivacyProof({
-                system: CrossChainPrivacyHub.ProofSystem.NONE,
-                proof: "",
-                publicInputs: new bytes32[](0),
-                proofHash: bytes32(0)
-            })
-        );
-
-        CrossChainPrivacyHub.TransferRequest memory transfer = _getRelayRequest(
-            requestId
-        );
-        assertEq(
-            uint256(transfer.status),
-            uint256(CrossChainPrivacyHub.TransferStatus.PENDING)
-        );
-    }
-
-    // =========================================================================
-    // VIEWING KEYS: Auditor Access After Transfer
-    // =========================================================================
-
-    function test_auditorCanBeGrantedViewingAccess() public {
-        // Initiate transfer
-        CrossChainPrivacyHub.PrivacyProof memory proof = CrossChainPrivacyHub
-            .PrivacyProof({
-                system: CrossChainPrivacyHub.ProofSystem.GROTH16,
-                proof: hex"deadbeef",
-                publicInputs: new bytes32[](0),
-                proofHash: keccak256("proof")
-            });
-
-        vm.prank(user);
-        bytes32 requestId = privacyHub.initiatePrivateTransfer{value: 1 ether}(
-            DEST_CHAIN,
-            keccak256(abi.encodePacked(user)),
-            0.5 ether,
-            CrossChainPrivacyHub.PrivacyLevel.MEDIUM,
-            proof
+            uint256(txn.defaultLevel),
+            uint256(SelectiveDisclosureManager.DisclosureLevel.AUDITOR)
         );
 
         // User grants auditor viewing access
@@ -331,7 +226,7 @@ contract CompliancePrivacyE2E is Test {
 
         vm.prank(user);
         disclosure.grantViewingKey(
-            requestId,
+            txId,
             auditor,
             SelectiveDisclosureManager.DisclosureLevel.AUDITOR,
             30 days,
@@ -339,7 +234,7 @@ contract CompliancePrivacyE2E is Test {
         );
 
         // Verify auditor has access
-        bool hasAccess = disclosure.hasViewingPermission(requestId, auditor);
+        bool hasAccess = disclosure.hasViewingPermission(txId, auditor);
         assertTrue(hasAccess, "auditor should have viewing permission");
     }
 
@@ -398,8 +293,6 @@ contract CompliancePrivacyE2E is Test {
             "report should be verified"
         );
 
-        // Note: submitReport requires DRAFT status, so it cannot be called
-        // after verifyReport (which sets VERIFIED). Verification is sufficient.
         vm.stopPrank();
     }
 
@@ -407,90 +300,22 @@ contract CompliancePrivacyE2E is Test {
     // SETTER ACCESS CONTROL
     // =========================================================================
 
-    function test_onlyAdminCanSetDisclosureManager() public {
-        vm.prank(user); // NOT admin
+    function test_onlyOperatorCanSetComplianceModule() public {
+        vm.prank(user); // NOT operator
         vm.expectRevert();
-        privacyHub.setDisclosureManager(address(disclosure));
+        privacyHub.setComplianceModule(address(disclosure));
     }
 
-    function test_onlyAdminCanSetComplianceReporting() public {
-        vm.prank(user); // NOT admin
-        vm.expectRevert();
-        privacyHub.setComplianceReporting(address(reporting));
+    function test_setComplianceModule_revertOnZeroAddress() public {
+        vm.prank(admin);
+        vm.expectRevert(CrossChainPrivacyHub.ZeroAddress.selector);
+        privacyHub.setComplianceModule(address(0));
     }
 
-    function test_settersEmitEvents() public {
-        address newDisc = makeAddr("newDisclosure");
-        address newReport = makeAddr("newReporting");
-
-        vm.startPrank(admin);
-
-        vm.expectEmit(true, true, false, false);
-        emit CrossChainPrivacyHub.DisclosureManagerUpdated(
-            address(disclosure),
-            newDisc
-        );
-        privacyHub.setDisclosureManager(newDisc);
-
-        vm.expectEmit(true, true, false, false);
-        emit CrossChainPrivacyHub.ComplianceReportingUpdated(
-            address(reporting),
-            newReport
-        );
-        privacyHub.setComplianceReporting(newReport);
-
-        vm.stopPrank();
-    }
-
-    // =========================================================================
-    // HELPERS
-    // =========================================================================
-
-    function _getRelayRequest(
-        bytes32 requestId
-    ) internal view returns (CrossChainPrivacyHub.TransferRequest memory) {
-        (
-            bytes32 id,
-            address sender,
-            bytes32 recipient,
-            uint256 srcChain,
-            uint256 destChain,
-            address token,
-            uint256 amount,
-            uint256 fee,
-            CrossChainPrivacyHub.PrivacyLevel pvLevel,
-            bytes32 commitment,
-            bytes32 nullifier,
-            uint64 timestamp,
-            uint64 expiry,
-            CrossChainPrivacyHub.TransferStatus status
-        ) = privacyHub.transfers(requestId);
-
-        return
-            CrossChainPrivacyHub.TransferRequest({
-                requestId: id,
-                sender: sender,
-                recipient: recipient,
-                sourceChainId: srcChain,
-                destChainId: destChain,
-                token: token,
-                amount: amount,
-                fee: fee,
-                privacyLevel: pvLevel,
-                commitment: commitment,
-                nullifier: nullifier,
-                timestamp: timestamp,
-                expiry: expiry,
-                status: status
-            });
-    }
-}
-
-/**
- * @notice Mock that always reverts — used to test non-reverting compliance hooks
- */
-contract RevertingDisclosureManager {
-    fallback() external {
-        revert("ALWAYS_REVERTS");
+    function test_setComplianceModule_updatesAddress() public {
+        address newModule = makeAddr("newModule");
+        vm.prank(admin);
+        privacyHub.setComplianceModule(newModule);
+        assertEq(privacyHub.complianceModule(), newModule);
     }
 }

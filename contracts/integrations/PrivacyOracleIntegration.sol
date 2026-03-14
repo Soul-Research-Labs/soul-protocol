@@ -448,6 +448,10 @@ contract PrivacyOracleIntegration is
         }
 
         uint256 validSignatures = 0;
+        // SECURITY FIX: Track seen signer public keys to prevent duplicate signature attacks.
+        // Without this, the same oracle node's signature could be submitted multiple times
+        // to meet the threshold, bypassing multi-party security.
+        uint256 seenBitmap = 0; // Supports up to 256 oracle nodes
         for (uint256 i = 0; i < update.signatures.length; ) {
             if (
                 _verifyOracleSignature(
@@ -458,7 +462,16 @@ contract PrivacyOracleIntegration is
                     update.signatures[i]
                 )
             ) {
-                validSignatures++;
+                // Find oracle node index for dedup
+                uint256 nodeIndex = _findOracleNodeIndex(
+                    update.signerPubKeys[i]
+                );
+                uint256 bit = 1 << nodeIndex;
+                // Only count if this signer hasn't been seen yet
+                if (seenBitmap & bit == 0) {
+                    seenBitmap |= bit;
+                    validSignatures++;
+                }
             }
             unchecked {
                 ++i;
@@ -609,6 +622,23 @@ contract PrivacyOracleIntegration is
             }
         }
         return false;
+    }
+
+    /// @dev Finds the index of an oracle node by its public key for dedup tracking
+    /// @param pubKey The oracle node's public key
+    /// @return index The index in oracleNodeList (bounded by 256 for bitmap)
+    function _findOracleNodeIndex(
+        bytes32 pubKey
+    ) internal view returns (uint256 index) {
+        for (uint256 i = 0; i < oracleNodeList.length; ) {
+            if (oracleNodes[oracleNodeList[i]].publicKey == pubKey) {
+                return i;
+            }
+            unchecked {
+                ++i;
+            }
+        }
+        return 0;
     }
 
     /*//////////////////////////////////////////////////////////////

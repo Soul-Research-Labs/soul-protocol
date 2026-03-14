@@ -244,8 +244,11 @@ contract RelayCircuitBreakerTest is Test {
         vm.prank(monitor);
         breaker.recordTransaction(amount, address(0xAAA));
 
-        // Should not revert
-        assertTrue(true);
+        // Verify metrics were recorded
+        (uint256 txCount, uint256 totalVolume, , , ) = breaker
+            .currentHourMetrics();
+        assertGe(txCount, 1, "txCount should be at least 1");
+        assertGe(totalVolume, amount, "totalVolume should include amount");
     }
 
     function testFuzz_updateTVL(uint256 tvl) public {

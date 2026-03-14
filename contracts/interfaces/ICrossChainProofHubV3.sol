@@ -151,6 +151,7 @@ interface ICrossChainProofHubV3 {
     error TransferFailed();
     error ProofRateLimitExceeded();
     error ValueRateLimitExceeded();
+    error ProofTooStale(bytes32 proofId, uint256 submittedAt);
 
     /*//////////////////////////////////////////////////////////////
                          RELAYER STAKE MGMT
