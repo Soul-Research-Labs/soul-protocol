@@ -86,6 +86,7 @@ contract CrossChainAdapterRoutingE2E is Test {
     ConfigurableMockAdapter public ccipAdapter; // Simulates Chainlink CCIP
     ConfigurableMockAdapter public hypAdapter; // Simulates Hyperlane
     ConfigurableMockAdapter public nativeAdapter; // Simulates native L2 bridge
+    ConfigurableMockAdapter public bitvmAdapter; // Simulates BitVM adapter
 
     address public admin = makeAddr("admin");
     address public operator = makeAddr("operator");
@@ -110,6 +111,8 @@ contract CrossChainAdapterRoutingE2E is Test {
         hypAdapter = new ConfigurableMockAdapter("Hyperlane", 0.01 ether);
         // Native L2: cheapest fee (score 70)
         nativeAdapter = new ConfigurableMockAdapter("NativeL2", 0.001 ether);
+        // BitVM: high security interop option (score 88)
+        bitvmAdapter = new ConfigurableMockAdapter("BitVM", 0.02 ether);
 
         // Register adapters with security scores
         router.registerAdapter(
@@ -130,6 +133,12 @@ contract CrossChainAdapterRoutingE2E is Test {
             80,
             500 ether
         );
+        router.registerAdapter(
+            IMultiBridgeRouter.BridgeType.BITVM,
+            address(bitvmAdapter),
+            88,
+            250 ether
+        );
 
         // Register chains for all adapters
         router.addSupportedChain(
@@ -144,6 +153,7 @@ contract CrossChainAdapterRoutingE2E is Test {
             IMultiBridgeRouter.BridgeType.HYPERLANE,
             ARB_CHAIN
         );
+        router.addSupportedChain(IMultiBridgeRouter.BridgeType.BITVM, ARB_CHAIN);
 
         router.addSupportedChain(
             IMultiBridgeRouter.BridgeType.NATIVE_L2,
@@ -157,6 +167,7 @@ contract CrossChainAdapterRoutingE2E is Test {
             IMultiBridgeRouter.BridgeType.HYPERLANE,
             OP_CHAIN
         );
+        router.addSupportedChain(IMultiBridgeRouter.BridgeType.BITVM, OP_CHAIN);
 
         router.addSupportedChain(
             IMultiBridgeRouter.BridgeType.NATIVE_L2,
@@ -168,6 +179,10 @@ contract CrossChainAdapterRoutingE2E is Test {
         );
         router.addSupportedChain(
             IMultiBridgeRouter.BridgeType.HYPERLANE,
+            BASE_CHAIN
+        );
+        router.addSupportedChain(
+            IMultiBridgeRouter.BridgeType.BITVM,
             BASE_CHAIN
         );
 
@@ -417,6 +432,39 @@ contract CrossChainAdapterRoutingE2E is Test {
             ccipAdapter.callCount(),
             0,
             "Disabled CCIP bridge should not receive messages"
+        );
+    }
+
+    // ═════════════════════════════════════════════════════════════
+    //  8b. BITVM ROUTING PATH — only BitVM remains active
+    // ═════════════════════════════════════════════════════════════
+
+    function test_E2E_BitVMFallbackRoutingPath() public {
+        vm.startPrank(admin);
+        router.updateBridgeStatus(
+            IMultiBridgeRouter.BridgeType.NATIVE_L2,
+            IMultiBridgeRouter.BridgeStatus.DISABLED
+        );
+        router.updateBridgeStatus(
+            IMultiBridgeRouter.BridgeType.LAYERZERO,
+            IMultiBridgeRouter.BridgeStatus.DISABLED
+        );
+        router.updateBridgeStatus(
+            IMultiBridgeRouter.BridgeType.HYPERLANE,
+            IMultiBridgeRouter.BridgeStatus.DISABLED
+        );
+        vm.stopPrank();
+
+        bytes memory message = abi.encodePacked("bitvm-route");
+
+        vm.prank(user);
+        bytes32 msgHash = router.routeMessage(ARB_CHAIN, message, 1 ether);
+
+        assertTrue(msgHash != bytes32(0), "BitVM route should succeed");
+        assertGt(
+            bitvmAdapter.callCount(),
+            0,
+            "BitVM adapter should be used when other adapters are disabled"
         );
     }
 

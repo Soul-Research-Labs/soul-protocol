@@ -186,6 +186,28 @@ This deploys all core contracts including privacy middleware. Metadata protectio
 forge script scripts/deploy/DeployL2Bridges.s.sol --rpc-url $RPC_URL --broadcast
 ```
 
+BitVM adapter deployment (single target):
+
+```bash
+export DEPLOY_TARGET=bitvm
+export DEPLOYER_PRIVATE_KEY=0x...
+export MULTISIG_ADMIN=0x...
+export BITVM_TREASURY=0x...
+
+# Optional: register in MultiBridgeRouter
+export MULTI_BRIDGE_ROUTER=0x...
+export BITVM_SECURITY_SCORE=85
+export BITVM_MAX_VALUE_PER_TX=10000000000000000000
+export BITVM_SUPPORTED_CHAIN=42161
+
+# Optional: register in DynamicRoutingOrchestrator
+export DYNAMIC_ROUTING_ORCHESTRATOR=0x...
+export BITVM_DRO_SUPPORTED_CHAIN=42161
+export BITVM_DRO_SECURITY_BPS=8500
+
+forge script scripts/deploy/DeployL2Bridges.s.sol --rpc-url $RPC_URL --broadcast
+```
+
 ### Step 6: Verify Contracts
 
 ```bash
