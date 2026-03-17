@@ -48,6 +48,8 @@
 | `BaseBridgeAdapter`         | `test/crosschain/BaseBridgeAdapter.t.sol`                     |
 | `BitVMAdapter`              | `test/crosschain/BitVMAdapter.t.sol`                          |
 | `CrossL2Atomicity`          | `test/crosschain/CrossL2Atomicity.t.sol`                      |
+| `BitVMAdapter (fuzz)`       | `test/fuzz/BitVMAdapterFuzz.t.sol`                            |
+| `BitVMAdapter (invariant)`  | `test/invariant/BitVMAdapterInvariant.t.sol`                  |
 
 ### Privacy ✅
 
