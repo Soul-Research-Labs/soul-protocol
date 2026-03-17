@@ -64,20 +64,21 @@ All specs have corresponding configuration files. See `certora/specs/` and `cert
 
 ### Bridge Adapters
 
-| Spec                    | Contract(s)               | Key Properties              |
-| ----------------------- | ------------------------- | --------------------------- |
-| `ArbitrumBridge`        | `ArbitrumBridgeAdapter`   | Retryable tickets, finality |
-| `OptimismBridge`        | `OptimismBridgeAdapter`   | OP Stack messaging          |
-| `BaseBridge`            | `BaseBridgeAdapter`       | Base bridge (OP Stack)      |
-| `zkSyncBridge`          | `zkSyncBridgeAdapter`     | Diamond Proxy bridging      |
-| `ScrollBridge`          | `ScrollBridgeAdapter`     | Scroll messenger            |
-| `LineaBridge`           | `LineaBridgeAdapter`      | Linea MessageService        |
-| `HyperlaneBridge`       | `HyperlaneAdapter`        | ISM security                |
-| `LayerZeroBridge`       | `LayerZeroAdapter`        | DVN/executor                |
-| `EthereumL1Bridge`      | `EthereumL1Bridge`        | L1 deposit/withdrawal       |
-| `NativeL2BridgeWrapper` | `NativeL2BridgeWrapper`   | Wrapper correctness         |
-| `BridgeAdapters`        | All IBridgeAdapter impls  | Shared interface invariants |
-| `CrossChainBridges`     | Multiple bridge contracts | Cross-bridge invariants     |
+| Spec                    | Contract(s)               | Key Properties               |
+| ----------------------- | ------------------------- | ---------------------------- |
+| `ArbitrumBridge`        | `ArbitrumBridgeAdapter`   | Retryable tickets, finality  |
+| `OptimismBridge`        | `OptimismBridgeAdapter`   | OP Stack messaging           |
+| `BaseBridge`            | `BaseBridgeAdapter`       | Base bridge (OP Stack)       |
+| `zkSyncBridge`          | `zkSyncBridgeAdapter`     | Diamond Proxy bridging       |
+| `ScrollBridge`          | `ScrollBridgeAdapter`     | Scroll messenger             |
+| `LineaBridge`           | `LineaBridgeAdapter`      | Linea MessageService         |
+| `HyperlaneBridge`       | `HyperlaneAdapter`        | ISM security                 |
+| `LayerZeroBridge`       | `LayerZeroAdapter`        | DVN/executor                 |
+| `EthereumL1Bridge`      | `EthereumL1Bridge`        | L1 deposit/withdrawal        |
+| `BitVMBridge`           | `BitVMAdapter`            | Challenge/finality lifecycle |
+| `NativeL2BridgeWrapper` | `NativeL2BridgeWrapper`   | Wrapper correctness          |
+| `BridgeAdapters`        | All IBridgeAdapter impls  | Shared interface invariants  |
+| `CrossChainBridges`     | Multiple bridge contracts | Cross-bridge invariants      |
 
 ### Security
 

@@ -72,6 +72,7 @@ All verification jobs have been successfully submitted to the Certora cloud.
 | Ethereum L1   | `EthereumL1Bridge.spec`   | `verify_ethereum_l1_bridge.conf`   | ✅ Submitted                             |
 | Hyperlane     | `HyperlaneBridge.spec`    | `verify_hyperlane_bridge.conf`     | ✅ Submitted                             |
 | LayerZero     | `LayerZeroBridge.spec`    | `verify_layerzero_bridge.conf`     | ✅ Submitted                             |
+| BitVM         | `BitVMBridge.spec`        | `verify_bitvm_bridge.conf`         | ✅ Submitted                             |
 | L2 Adapters   | `L2BridgeAdapters.spec`   | `verify_l2_bridges.conf`           | ✅ Submitted                             |
 
 ### Privacy & Security Modules
