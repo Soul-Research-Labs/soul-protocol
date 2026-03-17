@@ -4,6 +4,25 @@ pragma solidity ^0.8.24;
 import "forge-std/Test.sol";
 import "../../contracts/crosschain/BitVMAdapter.sol";
 
+contract MockERC20 {
+    mapping(address => uint256) private _balances;
+
+    function mint(address to, uint256 amount) external {
+        _balances[to] += amount;
+    }
+
+    function balanceOf(address account) external view returns (uint256) {
+        return _balances[account];
+    }
+
+    function transfer(address to, uint256 amount) external returns (bool) {
+        require(_balances[msg.sender] >= amount, "insufficient");
+        _balances[msg.sender] -= amount;
+        _balances[to] += amount;
+        return true;
+    }
+}
+
 contract BitVMAdapterTest is Test {
     BitVMAdapter internal adapter;
 
@@ -12,6 +31,7 @@ contract BitVMAdapterTest is Test {
     address internal user = address(0xCAFE);
     address internal target = address(0xD00D);
     address internal treasury = address(0x7EA5);
+    address internal outsider = address(0xBAD);
 
     bytes32 internal constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
     bytes32 internal constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE");
@@ -230,5 +250,124 @@ contract BitVMAdapterTest is Test {
         adapter.emergencyWithdrawETH(payable(user), 1 ether);
 
         assertEq(user.balance, beforeBal + 1 ether);
+    }
+
+    function test_FinalizeRevertsDuringChallengeWindow() public {
+        bytes memory payload = abi.encode("window");
+        uint256 fee = adapter.estimateFee(target, payload);
+
+        vm.prank(user);
+        bytes32 messageId = adapter.bridgeMessage{value: fee}(
+            target,
+            payload,
+            user
+        );
+
+        vm.prank(admin);
+        adapter.markVerified(messageId, keccak256("proof-window"));
+
+        vm.prank(admin);
+        vm.expectRevert(BitVMAdapter.ChallengeWindowActive.selector);
+        adapter.finalizeMessage(messageId);
+    }
+
+    function test_SetTreasury_AdminOnly() public {
+        vm.prank(outsider);
+        vm.expectRevert();
+        adapter.setTreasury(address(0x1111));
+
+        vm.prank(admin);
+        adapter.setTreasury(address(0x1111));
+        assertEq(adapter.treasury(), address(0x1111));
+    }
+
+    function test_PauseBlocksBridgeAndUnpauseRestores() public {
+        bytes memory payload = abi.encode("pause-test");
+        uint256 fee = adapter.estimateFee(target, payload);
+
+        vm.prank(guardian);
+        adapter.pause();
+
+        vm.prank(user);
+        vm.expectRevert();
+        adapter.bridgeMessage{value: fee}(target, payload, user);
+
+        vm.prank(admin);
+        adapter.unpause();
+
+        vm.prank(user);
+        bytes32 messageId = adapter.bridgeMessage{value: fee}(target, payload, user);
+        assertTrue(messageId != bytes32(0));
+    }
+
+    function test_EmergencyWithdrawETH_RevertZeroRecipient() public {
+        vm.deal(address(adapter), 1 ether);
+
+        vm.prank(admin);
+        vm.expectRevert(BitVMAdapter.ZeroAddress.selector);
+        adapter.emergencyWithdrawETH(payable(address(0)), 1 ether);
+    }
+
+    function test_EmergencyWithdrawERC20_AdminOnlyAndTransfers() public {
+        MockERC20 token = new MockERC20();
+        token.mint(address(adapter), 5 ether);
+
+        vm.prank(outsider);
+        vm.expectRevert();
+        adapter.emergencyWithdrawERC20(address(token), user);
+
+        vm.prank(admin);
+        adapter.emergencyWithdrawERC20(address(token), user);
+
+        assertEq(token.balanceOf(user), 5 ether);
+    }
+
+    function test_ChallengeMessageRevertsWhenNotVerified() public {
+        bytes memory payload = abi.encode("not-verified");
+        uint256 fee = adapter.estimateFee(target, payload);
+
+        vm.prank(user);
+        bytes32 messageId = adapter.bridgeMessage{value: fee}(
+            target,
+            payload,
+            user
+        );
+
+        vm.prank(guardian);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                BitVMAdapter.InvalidStatus.selector,
+                messageId,
+                BitVMAdapter.MessageStatus.SENT,
+                BitVMAdapter.MessageStatus.VERIFIED
+            )
+        );
+        adapter.challengeMessage(messageId, keccak256("bad-status"));
+    }
+
+    function test_ResolveChallengeRevertsWhenNotChallenged() public {
+        bytes memory payload = abi.encode("not-challenged");
+        uint256 fee = adapter.estimateFee(target, payload);
+
+        vm.prank(user);
+        bytes32 messageId = adapter.bridgeMessage{value: fee}(
+            target,
+            payload,
+            user
+        );
+
+        vm.prank(admin);
+        adapter.markVerified(messageId, keccak256("proof"));
+
+        vm.prank(admin);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                BitVMAdapter.InvalidStatus.selector,
+                messageId,
+                BitVMAdapter.MessageStatus.VERIFIED,
+                BitVMAdapter.MessageStatus.CHALLENGED
+            )
+        );
+        adapter.resolveChallenge(messageId, false);
     }
 }
