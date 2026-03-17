@@ -11,6 +11,9 @@ import {LineaBridgeAdapter} from "../../contracts/crosschain/LineaBridgeAdapter.
 import {LayerZeroAdapter} from "../../contracts/crosschain/LayerZeroAdapter.sol";
 import {HyperlaneAdapter} from "../../contracts/crosschain/HyperlaneAdapter.sol";
 import {BitVMAdapter} from "../../contracts/crosschain/BitVMAdapter.sol";
+import {MultiBridgeRouter} from "../../contracts/bridge/MultiBridgeRouter.sol";
+import {IMultiBridgeRouter} from "../../contracts/interfaces/IMultiBridgeRouter.sol";
+import {IDynamicRoutingOrchestrator} from "../../contracts/interfaces/IDynamicRoutingOrchestrator.sol";
 
 /**
  * @title ZASEON L2 Bridge Deployment Script
@@ -58,6 +61,13 @@ import {BitVMAdapter} from "../../contracts/crosschain/BitVMAdapter.sol";
  *
  * For BitVM:
  *   BITVM_TREASURY          - Treasury address for adapter fee collection
+ *   MULTI_BRIDGE_ROUTER     - Optional MultiBridgeRouter for post-deploy registration
+ *   BITVM_SECURITY_SCORE    - Optional security score (default 85)
+ *   BITVM_MAX_VALUE_PER_TX  - Optional max value per tx (default 10 ether)
+ *   BITVM_SUPPORTED_CHAIN   - Optional chain ID to mark as supported in router
+ *   DYNAMIC_ROUTING_ORCHESTRATOR - Optional orchestrator for registerAdapter()
+ *   BITVM_DRO_SUPPORTED_CHAIN    - Optional chain ID for orchestrator registration
+ *   BITVM_DRO_SECURITY_BPS       - Optional security score bps for orchestrator (default 8500)
  *
  * Usage:
  *   DEPLOY_TARGET=optimism   forge script scripts/deploy/DeployL2Bridges.s.sol --broadcast
@@ -406,6 +416,74 @@ contract DeployL2Bridges is Script {
         if (guardian != address(0)) {
             adapter.grantRole(adapter.GUARDIAN_ROLE(), guardian);
             console.log("Guardian granted:", guardian);
+        }
+
+        address routerAddress = vm.envOr("MULTI_BRIDGE_ROUTER", address(0));
+        if (routerAddress != address(0)) {
+            MultiBridgeRouter router = MultiBridgeRouter(routerAddress);
+            uint256 securityScore = vm.envOr(
+                "BITVM_SECURITY_SCORE",
+                uint256(85)
+            );
+            uint256 maxValuePerTx = vm.envOr(
+                "BITVM_MAX_VALUE_PER_TX",
+                uint256(10 ether)
+            );
+
+            router.registerAdapter(
+                IMultiBridgeRouter.BridgeType.BITVM,
+                address(adapter),
+                securityScore,
+                maxValuePerTx
+            );
+
+            uint256 supportedChain = vm.envOr(
+                "BITVM_SUPPORTED_CHAIN",
+                uint256(0)
+            );
+            if (supportedChain != 0) {
+                router.addSupportedChain(
+                    IMultiBridgeRouter.BridgeType.BITVM,
+                    supportedChain
+                );
+                console.log("BitVM supported chain added:", supportedChain);
+            }
+
+            console.log(
+                "BitVM registered in MultiBridgeRouter:",
+                routerAddress
+            );
+        }
+
+        address orchestratorAddress = vm.envOr(
+            "DYNAMIC_ROUTING_ORCHESTRATOR",
+            address(0)
+        );
+        if (orchestratorAddress != address(0)) {
+            uint256 supportedChain = vm.envOr(
+                "BITVM_DRO_SUPPORTED_CHAIN",
+                uint256(0)
+            );
+            if (supportedChain != 0) {
+                uint256[] memory supportedChains = new uint256[](1);
+                supportedChains[0] = supportedChain;
+
+                uint16 securityScoreBps = uint16(
+                    vm.envOr("BITVM_DRO_SECURITY_BPS", uint256(8500))
+                );
+
+                IDynamicRoutingOrchestrator(orchestratorAddress)
+                    .registerAdapter(
+                        address(adapter),
+                        supportedChains,
+                        securityScoreBps
+                    );
+
+                console.log(
+                    "BitVM registered in DynamicRoutingOrchestrator:",
+                    orchestratorAddress
+                );
+            }
         }
 
         adapter.renounceRole(adapter.GUARDIAN_ROLE(), deployer);

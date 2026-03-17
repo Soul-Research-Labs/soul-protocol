@@ -1,6 +1,6 @@
 # Bridge Adapter Comparison Matrix
 
-> **Overview of all 11 bridge adapters implementing `IBridgeAdapter` in ZASEON**
+> **Overview of all 12 bridge adapters implementing `IBridgeAdapter` in ZASEON**
 
 ---
 
@@ -23,19 +23,20 @@ interface IBridgeAdapter {
 
 ## Comparison Matrix
 
-| Adapter                   | Network           | Type                 | Finality                | Security Model             | Unique Features                                    |
-| ------------------------- | ----------------- | -------------------- | ----------------------- | -------------------------- | -------------------------------------------------- |
-| **ArbitrumBridgeAdapter** | Arbitrum One/Nova | Native L2            | ~7 days (fraud proof)   | Optimistic rollup          | Retryable tickets, fast exits, LP liquidity        |
-| **OptimismBridgeAdapter** | Optimism          | Native L2 (OP Stack) | ~7 days (fraud proof)   | Optimistic rollup          | L2 output proposals, HTLC escrow, privacy deposits |
-| **BaseBridgeAdapter**     | Base              | Native L2 (OP Stack) | ~7 days (fraud proof)   | Optimistic rollup          | Shared OP Stack messaging                          |
-| **zkSyncBridgeAdapter**   | zkSync Era        | Native L2            | ~1 hour (ZK proof)      | ZK rollup (Diamond Proxy)  | ZK proof finality, L2 log inclusion proofs         |
-| **ScrollBridgeAdapter**   | Scroll            | Native L2            | ~1 hour (ZK proof)      | ZK rollup                  | Batch ZK proof verification                        |
-| **LineaBridgeAdapter**    | Linea             | Native L2            | ~1 hour (ZK proof)      | ZK rollup (MessageService) | Linea MessageService API                           |
-| **AztecBridgeAdapter**    | Aztec             | Privacy L2           | ~10 min (ZK proof)      | ZK rollup (shielded)       | Shielded deposits, nullifier tracking, DeFi bridge |
-| **EthereumL1Bridge**      | Ethereum L1       | Native L1            | Immediate (L1 finality) | L1 consensus               | Deposit/withdrawal, direct L1 messaging            |
-| **LayerZeroAdapter**      | 120+ chains       | Interop protocol     | Varies by chain         | DVN + executor             | Ultra-light nodes, OApp V2, configurable security  |
-| **HyperlaneAdapter**      | 50+ chains        | Interop protocol     | Varies by ISM           | Modular ISM                | Configurable per-domain ISM, quorum validation     |
-| **NativeL2BridgeWrapper** | Any L2            | Wrapper              | Inherits wrapped        | Inherits wrapped           | Unified IBridgeAdapter for any native bridge       |
+| Adapter                   | Network           | Type                 | Finality                | Security Model             | Unique Features                                     |
+| ------------------------- | ----------------- | -------------------- | ----------------------- | -------------------------- | --------------------------------------------------- |
+| **ArbitrumBridgeAdapter** | Arbitrum One/Nova | Native L2            | ~7 days (fraud proof)   | Optimistic rollup          | Retryable tickets, fast exits, LP liquidity         |
+| **OptimismBridgeAdapter** | Optimism          | Native L2 (OP Stack) | ~7 days (fraud proof)   | Optimistic rollup          | L2 output proposals, HTLC escrow, privacy deposits  |
+| **BaseBridgeAdapter**     | Base              | Native L2 (OP Stack) | ~7 days (fraud proof)   | Optimistic rollup          | Shared OP Stack messaging                           |
+| **zkSyncBridgeAdapter**   | zkSync Era        | Native L2            | ~1 hour (ZK proof)      | ZK rollup (Diamond Proxy)  | ZK proof finality, L2 log inclusion proofs          |
+| **ScrollBridgeAdapter**   | Scroll            | Native L2            | ~1 hour (ZK proof)      | ZK rollup                  | Batch ZK proof verification                         |
+| **LineaBridgeAdapter**    | Linea             | Native L2            | ~1 hour (ZK proof)      | ZK rollup (MessageService) | Linea MessageService API                            |
+| **AztecBridgeAdapter**    | Aztec             | Privacy L2           | ~10 min (ZK proof)      | ZK rollup (shielded)       | Shielded deposits, nullifier tracking, DeFi bridge  |
+| **EthereumL1Bridge**      | Ethereum L1       | Native L1            | Immediate (L1 finality) | L1 consensus               | Deposit/withdrawal, direct L1 messaging             |
+| **LayerZeroAdapter**      | 120+ chains       | Interop protocol     | Varies by chain         | DVN + executor             | Ultra-light nodes, OApp V2, configurable security   |
+| **HyperlaneAdapter**      | 50+ chains        | Interop protocol     | Varies by ISM           | Modular ISM                | Configurable per-domain ISM, quorum validation      |
+| **BitVMAdapter**          | Bitcoin (BitVM)   | Interop protocol     | Challenge-window based  | Operator + guardian roles  | Proof commitment lifecycle, on-chain challenge flow |
+| **NativeL2BridgeWrapper** | Any L2            | Wrapper              | Inherits wrapped        | Inherits wrapped           | Unified IBridgeAdapter for any native bridge        |
 
 ---
 
@@ -55,6 +56,7 @@ interface IBridgeAdapter {
 | EthereumL1 | ✅       | ✅       | —        | —       | —        | —      |
 | LayerZero  | ✅       | ✅       | —        | —       | —        | —      |
 | Hyperlane  | ✅       | ✅       | —        | ✅      | —        | —      |
+| BitVM      | ✅       | ✅       | —        | —       | ✅       | —      |
 
 ### Feature Support
 
@@ -73,17 +75,18 @@ interface IBridgeAdapter {
 
 ### Finality Times
 
-| Adapter   | Optimistic Exit | ZK Proven | Fast Path     |
-| --------- | --------------- | --------- | ------------- |
-| Arbitrum  | 7 days          | —         | LP-backed     |
-| Optimism  | 7 days          | —         | —             |
-| Base      | 7 days          | —         | —             |
-| zkSync    | —               | ~1 hour   | —             |
-| Scroll    | —               | ~1 hour   | —             |
-| Linea     | —               | ~1 hour   | —             |
-| Aztec     | —               | ~10 min   | —             |
-| LayerZero | —               | —         | Minutes (DVN) |
-| Hyperlane | —               | —         | Minutes (ISM) |
+| Adapter   | Optimistic Exit | ZK Proven | Fast Path               |
+| --------- | --------------- | --------- | ----------------------- |
+| Arbitrum  | 7 days          | —         | LP-backed               |
+| Optimism  | 7 days          | —         | —                       |
+| Base      | 7 days          | —         | —                       |
+| zkSync    | —               | ~1 hour   | —                       |
+| Scroll    | —               | ~1 hour   | —                       |
+| Linea     | —               | ~1 hour   | —                       |
+| Aztec     | —               | ~10 min   | —                       |
+| LayerZero | —               | —         | Minutes (DVN)           |
+| Hyperlane | —               | —         | Minutes (ISM)           |
+| BitVM     | —               | —         | Challenge window expiry |
 
 ---
 
@@ -97,13 +100,14 @@ interface IBridgeAdapter {
 | **Shielded cross-chain**         | AztecBridgeAdapter (native privacy)          |
 | **Multi-chain hub-and-spoke**    | LayerZeroAdapter (broadest reach)            |
 | **Custom security requirements** | HyperlaneAdapter (modular ISM)               |
+| **Bitcoin bridge attestations**  | BitVMAdapter                                 |
 | **Fallover / redundancy**        | MultiBridgeRouter auto-selects from multiple |
 
 ---
 
 ## Certora Verification
 
-All adapters have formal verification specs:
+Core adapters have formal verification specs; BitVM formal spec is pending:
 
 | Adapter                 | Spec File              | Conf File                      |
 | ----------------------- | ---------------------- | ------------------------------ |
@@ -115,6 +119,7 @@ All adapters have formal verification specs:
 | Hyperlane               | `HyperlaneBridge.spec` | `verify_hyperlane_bridge.conf` |
 | Linea                   | `LineaBridge.spec`     | `verify_linea_bridge.conf`     |
 | Base                    | `BaseBridge.spec`      | `verify_base_bridge.conf`      |
+| BitVM                   | _(pending)_            | _(pending)_                    |
 | Shared (IBridgeAdapter) | `BridgeAdapters.spec`  | —                              |
 
 See `certora/specs/` and `certora/conf/` for full specifications.

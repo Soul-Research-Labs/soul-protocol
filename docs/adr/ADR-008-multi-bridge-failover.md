@@ -40,7 +40,7 @@ MultiBridgeRouter
 
 ### IBridgeAdapter interface
 
-All 11 bridge adapters implement:
+All 12 bridge adapters implement:
 
 - `bridgeMessage(uint256, address, bytes)`: Send a cross-chain message
 - `estimateFee(uint256, bytes)`: Quote the fee for a message
@@ -66,4 +66,4 @@ All 11 bridge adapters implement:
 - Bridge adapters are independently pausable via Guardian role
 - Route changes require Operator role + optional timelock
 - Gas overhead: ~5k per bridge query in cheapest mode
-- 9 adapters currently deployed: Arbitrum, Optimism, Base, Aztec, zkSync, Scroll, Linea, LayerZero, Hyperlane
+- 10 adapters currently deployed in crosschain set: Arbitrum, Optimism, Base, Aztec, zkSync, Scroll, Linea, LayerZero, Hyperlane, BitVM

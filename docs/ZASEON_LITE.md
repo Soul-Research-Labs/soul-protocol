@@ -12,7 +12,7 @@ Everything else — governance, relayer infrastructure, compliance, emergency sy
 | ---------------- | --------------------------------- | -------------------------------------- |
 | Contract count   | ~256 Solidity files               | 6 contracts                            |
 | Audit scope      | Months                            | Weeks                                  |
-| Attack surface   | 51 interfaces, 11 bridge adapters | 1 bridge adapter, core interfaces only |
+| Attack surface   | 51 interfaces, 12 bridge adapters | 1 bridge adapter, core interfaces only |
 | Deployment cost  | ~$50-100k gas (8 phases)          | ~$5-10k gas (single tx)                |
 | Dependency chain | 23 components wired via Hub       | Linear: verifier → pool → registry     |
 

@@ -287,7 +287,7 @@ forge script scripts/deploy/DeployL2Bridges.s.sol --rpc-url $LINEA_SEPOLIA_RPC -
 3. [ ] Core state containers
 4. [ ] Privacy middleware (PrivacyRouter, ShieldedPool)
 5. [ ] ZaseonProtocolHub (central registry)
-6. [ ] Bridge contracts + L2 adapters (12 adapters: Arbitrum, Optimism, Base, Aztec, zkSync, Scroll, Linea, LayerZero, Hyperlane, EthereumL1Bridge, L2ChainAdapter, DirectL2Messenger)
+6. [ ] Bridge contracts + L2 adapters (12 adapters: Arbitrum, Optimism, Base, Aztec, zkSync, Scroll, Linea, LayerZero, Hyperlane, EthereumL1Bridge, BitVMAdapter, NativeL2BridgeWrapper)
 7. [ ] Governance contracts (Timelock, Governor)
 8. [ ] Application layer (swaps, compliance)
 

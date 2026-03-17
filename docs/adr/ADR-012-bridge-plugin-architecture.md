@@ -28,14 +28,14 @@ Define a minimal **`IBridgeAdapter`** interface that all bridge adapters impleme
 ```solidity
 interface IBridgeAdapter {
     function bridgeMessage(
-        uint256 dstChainId,
-        address receiver,
-        bytes calldata message
+        address targetAddress,
+        bytes calldata payload,
+        address refundAddress
     ) external payable returns (bytes32 messageId);
 
     function estimateFee(
-        uint256 dstChainId,
-        bytes calldata message
+        address targetAddress,
+        bytes calldata payload
     ) external view returns (uint256 nativeFee);
 
     function isMessageVerified(
@@ -76,7 +76,7 @@ Adapters translate between EVM chain IDs and protocol-specific identifiers:
 
 ## Consequences
 
-- All 11 bridge adapters implement `IBridgeAdapter`
+- All 12 bridge adapters implement `IBridgeAdapter`
 - Adapter-specific features (e.g., LayerZero DVN config) accessed via adapter-specific interfaces
 - `MultiBridgeRouter` manages adapter registry and routing configuration
 - Testing: Each adapter has unit tests + an `IBridgeAdapter` compatibility test suite

@@ -12,7 +12,7 @@ interface IMultiBridgeRouter {
     //////////////////////////////////////////////////////////////*/
 
     /// @dev Enum values are ABI-stable. Do NOT reorder or remove entries.
-    ///      Active adapters: NATIVE_L2, LAYERZERO, HYPERLANE, AZTEC.
+    ///      Active adapters: NATIVE_L2, LAYERZERO, HYPERLANE, AZTEC, BITVM.
     ///      Other entries are retained for ABI compatibility.
     enum BridgeType {
         NATIVE_L2,
@@ -56,7 +56,8 @@ interface IMultiBridgeRouter {
         STELLAR,
         ACROSS,
         STARGATE,
-        DEBRIDGE
+        DEBRIDGE,
+        BITVM
     }
 
     enum BridgeStatus {

@@ -235,9 +235,9 @@ bytes32 nullifier = keccak256(abi.encodePacked(
 - ✅ Finality requirements before proof acceptance
 - ✅ (Session 9) Source chain validation — `CrossChainEmergencyRelay` validates `sourceChainId` against `chains[].active`
 - ✅ (Session 9) Per-adapter emergency withdrawal (`emergencyWithdrawETH`, `emergencyWithdrawERC20`)
-- ✅ (Session 9) `ICrossChainBridge` unified interface enforces consistent security across all 9 adapters
+- ✅ (Session 9) `ICrossChainBridge` unified interface enforces consistent security across all 10 adapters
 
-**Bridge Adapter Attack Surface** (9 adapters):
+**Bridge Adapter Attack Surface** (10 adapters):
 
 | Adapter               | Verification                | Finality             |
 | --------------------- | --------------------------- | -------------------- |

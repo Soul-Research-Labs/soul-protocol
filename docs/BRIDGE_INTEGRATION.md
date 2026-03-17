@@ -156,6 +156,7 @@ const messageId = await messenger.sendMessage({
 | zkSync Era | ✅ Implemented | `zkSyncBridgeAdapter` | High     |
 | Scroll     | ✅ Implemented | `ScrollBridgeAdapter` | High     |
 | Linea      | ✅ Implemented | `LineaBridgeAdapter`  | High     |
+| BitVM      | ✅ Implemented | `BitVMAdapter`        | High     |
 
 ### Planned
 

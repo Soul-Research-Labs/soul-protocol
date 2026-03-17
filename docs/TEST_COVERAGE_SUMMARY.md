@@ -46,6 +46,7 @@
 | `ArbitrumBridgeAdapter`     | `test/crosschain/ArbitrumBridgeAdapter.t.sol`                 |
 | `OptimismBridgeAdapter`     | `test/crosschain/OptimismBridgeAdapter.t.sol`                 |
 | `BaseBridgeAdapter`         | `test/crosschain/BaseBridgeAdapter.t.sol`                     |
+| `BitVMAdapter`              | `test/crosschain/BitVMAdapter.t.sol`                          |
 | `CrossL2Atomicity`          | `test/crosschain/CrossL2Atomicity.t.sol`                      |
 
 ### Privacy ✅

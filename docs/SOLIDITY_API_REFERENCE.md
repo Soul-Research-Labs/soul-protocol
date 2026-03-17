@@ -898,7 +898,7 @@ function markKeyImageUsed(bytes32 keyImageHash) external
 
 ### Overview
 
-All bridge adapters implement the `IBridgeAdapter` pattern with shared roles (`OPERATOR_ROLE`, `GUARDIAN_ROLE`, `EXECUTOR_ROLE`), `ReentrancyGuard`, and `Pausable`.
+All bridge adapters implement the `IBridgeAdapter` pattern and use role-based access control with `ReentrancyGuard` and `Pausable`.
 
 ### zkSyncBridgeAdapter
 
@@ -955,6 +955,24 @@ function handle(uint32 srcDomain, bytes32 sender, bytes calldata body) external
 function quoteDispatch(uint32 dstDomain, bytes calldata body) external view returns (uint256 nativeFee)
 function configureDomain(uint32 domain, bytes32 router, address ism, uint256 gasOverhead) external
 function configureISM(uint32 domain, ISMType ismType, address ismAddress, uint8 threshold, address[] calldata validators) external
+```
+
+### BitVMAdapter
+
+**Path:** `contracts/crosschain/BitVMAdapter.sol`
+
+```solidity
+function bridgeMessage(address targetAddress, bytes calldata payload, address refundAddress) external payable returns (bytes32 messageId)
+function estimateFee(address targetAddress, bytes calldata payload) external view returns (uint256 nativeFee)
+function isMessageVerified(bytes32 messageId) external view returns (bool verified)
+function markVerified(bytes32 messageId, bytes32 proofCommitment) external
+function challengeMessage(bytes32 messageId, bytes32 challengeHash) external
+function resolveChallenge(bytes32 messageId, bool challengeAccepted) external
+function finalizeMessage(bytes32 messageId) external
+function setFeeParams(uint256 _baseFee, uint256 _perByteFee, uint256 _bridgeFeeBps) external
+function setChallengeWindow(uint256 newWindow) external
+function emergencyWithdrawETH(address payable to, uint256 amount) external
+function emergencyWithdrawERC20(address token, address to) external
 ```
 
 ---

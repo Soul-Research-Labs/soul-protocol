@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IBridgeAdapter} from "./IBridgeAdapter.sol";
 
 /**
@@ -24,6 +25,10 @@ contract BitVMAdapter is
 
     uint256 public constant MAX_PAYLOAD_SIZE = 32_768;
     uint256 public constant MAX_FEE_BPS = 100;
+    uint256 public constant MIN_CHALLENGE_WINDOW = 1 hours;
+    uint256 public constant MAX_CHALLENGE_WINDOW = 30 days;
+    uint256 public constant MAX_BASE_FEE = 0.1 ether;
+    uint256 public constant MAX_PER_BYTE_FEE = 100 gwei;
 
     enum MessageStatus {
         NONE,
@@ -76,6 +81,17 @@ contract BitVMAdapter is
         uint256 bridgeFeeBps
     );
     event ChallengeWindowUpdated(uint256 oldWindow, uint256 newWindow);
+    event RefundIssued(
+        bytes32 indexed messageId,
+        address indexed recipient,
+        uint256 amount
+    );
+    event EmergencyETHWithdrawn(address indexed to, uint256 amount);
+    event EmergencyERC20Withdrawn(
+        address indexed token,
+        address indexed to,
+        uint256 amount
+    );
 
     error ZeroAddress();
     error PayloadTooLarge(uint256 size, uint256 maxSize);
@@ -87,7 +103,10 @@ contract BitVMAdapter is
         MessageStatus expected
     );
     error FeeTooHigh(uint256 bps);
+    error BaseFeeTooHigh(uint256 baseFee);
+    error PerByteFeeTooHigh(uint256 perByteFee);
     error ChallengeWindowActive(uint256 remaining);
+    error InvalidChallengeWindow(uint256 challengeWindow);
     error TransferFailed();
 
     constructor(address admin, address _treasury) {
@@ -152,9 +171,13 @@ contract BitVMAdapter is
         _forwardFee(requiredFee);
 
         uint256 refund = msg.value - requiredFee;
-        if (refund > 0 && refundAddress != address(0)) {
-            (bool ok, ) = refundAddress.call{value: refund}("");
+        if (refund > 0) {
+            address recipient = refundAddress == address(0)
+                ? msg.sender
+                : refundAddress;
+            (bool ok, ) = recipient.call{value: refund}("");
             if (!ok) revert TransferFailed();
+            emit RefundIssued(messageId, recipient, refund);
         }
 
         emit MessageBridged(
@@ -191,10 +214,7 @@ contract BitVMAdapter is
         BridgeMessage storage message = messages[messageId];
         if (message.status == MessageStatus.NONE)
             revert UnknownMessage(messageId);
-        if (
-            message.status != MessageStatus.SENT &&
-            message.status != MessageStatus.CHALLENGED
-        ) {
+        if (message.status != MessageStatus.SENT) {
             revert InvalidStatus(messageId, message.status, MessageStatus.SENT);
         }
 
@@ -288,6 +308,9 @@ contract BitVMAdapter is
         uint256 _bridgeFeeBps
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_bridgeFeeBps > MAX_FEE_BPS) revert FeeTooHigh(_bridgeFeeBps);
+        if (_baseFee > MAX_BASE_FEE) revert BaseFeeTooHigh(_baseFee);
+        if (_perByteFee > MAX_PER_BYTE_FEE)
+            revert PerByteFeeTooHigh(_perByteFee);
 
         baseFee = _baseFee;
         perByteFee = _perByteFee;
@@ -299,6 +322,12 @@ contract BitVMAdapter is
     function setChallengeWindow(
         uint256 newWindow
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (
+            newWindow < MIN_CHALLENGE_WINDOW || newWindow > MAX_CHALLENGE_WINDOW
+        ) {
+            revert InvalidChallengeWindow(newWindow);
+        }
+
         uint256 oldWindow = challengeWindow;
         challengeWindow = newWindow;
 
@@ -317,4 +346,32 @@ contract BitVMAdapter is
         (bool ok, ) = treasury.call{value: amount}("");
         if (!ok) revert TransferFailed();
     }
+
+    function emergencyWithdrawETH(
+        address payable to,
+        uint256 amount
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
+        if (to == address(0)) revert ZeroAddress();
+        if (amount > address(this).balance) revert TransferFailed();
+
+        (bool ok, ) = to.call{value: amount}("");
+        if (!ok) revert TransferFailed();
+
+        emit EmergencyETHWithdrawn(to, amount);
+    }
+
+    function emergencyWithdrawERC20(
+        address token,
+        address to
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
+        if (token == address(0) || to == address(0)) revert ZeroAddress();
+
+        uint256 amount = IERC20(token).balanceOf(address(this));
+        bool ok = IERC20(token).transfer(to, amount);
+        if (!ok) revert TransferFailed();
+
+        emit EmergencyERC20Withdrawn(token, to, amount);
+    }
+
+    receive() external payable {}
 }

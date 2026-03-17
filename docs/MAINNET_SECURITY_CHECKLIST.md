@@ -29,7 +29,7 @@
 - [x] Halmos symbolic execution: 12 symbolic checks (CrossChainProofHub + ZKBoundStateLocks)
 - [x] Slither analysis: No critical/high findings (all 9 findings addressed)
 - [x] Code coverage: >80% on core contracts
-- [x] Bridge adapter tests: 300+ tests across 9 adapters
+- [x] Bridge adapter tests: 300+ tests across 10 adapters
 - [x] Privacy contract tests: 183 tests across 3 contracts + 122 metadata protection tests
 - [x] Certora formal specs: 69 spec files with invariants
 - [x] K Framework: 5 algebraic specifications for protocol invariants
@@ -61,7 +61,7 @@
 - [x] Historical Merkle root eviction on ring buffer overwrite
 - [x] MultiBridgeRouter ETH forwarding and emergency withdrawal
 - [x] NullifierRegistryV3 source Merkle root validation
-- [x] All 11 bridge adapters have ERC20 emergency withdrawal
+- [x] All 12 bridge adapters have ERC20 emergency withdrawal
 
 #### 🔄 Pending Verification
 

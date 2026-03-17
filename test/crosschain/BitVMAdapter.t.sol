@@ -135,4 +135,100 @@ contract BitVMAdapterTest is Test {
         );
         adapter.bridgeMessage{value: fee - 1}(target, payload, user);
     }
+
+    function test_RefundFallsBackToSenderWhenRefundAddressZero() public {
+        bytes memory payload = abi.encode("refund-fallback");
+        uint256 fee = adapter.estimateFee(target, payload);
+        uint256 overpay = fee + 1 ether;
+
+        uint256 beforeBal = user.balance;
+
+        vm.prank(user);
+        adapter.bridgeMessage{value: overpay}(target, payload, address(0));
+
+        assertEq(user.balance, beforeBal - fee);
+    }
+
+    function test_RevertMarkVerifiedWhenMessageAlreadyChallenged() public {
+        bytes memory payload = abi.encode("challenged");
+        uint256 fee = adapter.estimateFee(target, payload);
+
+        vm.prank(user);
+        bytes32 messageId = adapter.bridgeMessage{value: fee}(
+            target,
+            payload,
+            user
+        );
+
+        vm.prank(admin);
+        adapter.markVerified(messageId, keccak256("proof-A"));
+
+        vm.prank(guardian);
+        adapter.challengeMessage(messageId, keccak256("challenge"));
+
+        vm.prank(admin);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                BitVMAdapter.InvalidStatus.selector,
+                messageId,
+                BitVMAdapter.MessageStatus.CHALLENGED,
+                BitVMAdapter.MessageStatus.SENT
+            )
+        );
+        adapter.markVerified(messageId, keccak256("proof-B"));
+    }
+
+    function test_SetChallengeWindowBounds() public {
+        vm.prank(admin);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                BitVMAdapter.InvalidChallengeWindow.selector,
+                uint256(1)
+            )
+        );
+        adapter.setChallengeWindow(1);
+
+        vm.prank(admin);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                BitVMAdapter.InvalidChallengeWindow.selector,
+                uint256(31 days)
+            )
+        );
+        adapter.setChallengeWindow(31 days);
+    }
+
+    function test_SetFeeParamsBounds() public {
+        vm.prank(admin);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                BitVMAdapter.BaseFeeTooHigh.selector,
+                uint256(0.100000000000000001 ether)
+            )
+        );
+        adapter.setFeeParams(0.100000000000000001 ether, 1 gwei, 10);
+
+        vm.prank(admin);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                BitVMAdapter.PerByteFeeTooHigh.selector,
+                uint256(100000000001)
+            )
+        );
+        adapter.setFeeParams(1 wei, 100000000001, 10);
+    }
+
+    function test_EmergencyWithdrawETH_AdminOnly() public {
+        vm.deal(address(adapter), 1 ether);
+
+        vm.prank(user);
+        vm.expectRevert();
+        adapter.emergencyWithdrawETH(payable(user), 1 ether);
+
+        uint256 beforeBal = user.balance;
+        vm.prank(admin);
+        adapter.emergencyWithdrawETH(payable(user), 1 ether);
+
+        assertEq(user.balance, beforeBal + 1 ether);
+    }
 }
