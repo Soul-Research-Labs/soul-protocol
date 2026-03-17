@@ -21,15 +21,15 @@ forge test -vvv
 
 ## At a Glance
 
-|                         |                                                                                                |
-| ----------------------- | ---------------------------------------------------------------------------------------------- |
-| **Contracts**           | 256 Solidity (0.8.24) — core, bridges, privacy, security, governance, relayer                  |
-| **ZK Circuits**         | 21 Noir circuits with on-chain UltraHonk verifiers                                             |
-| **Bridges**             | 11 adapters — Arbitrum, Optimism, Base, zkSync, Scroll, Linea, Aztec, L1, LayerZero, Hyperlane |
-| **Tests**               | 291 Foundry + 15 Hardhat — unit, fuzz (10k runs), invariant, fork, attack simulation           |
-| **Formal Verification** | 72 Certora CVL specs + 72 configs, K Framework, TLA+, Halmos                                   |
-| **SDK**                 | 65 TypeScript/viem modules — `npm install @zaseon/sdk`                                         |
-| **Security**            | 18 defense modules, 12-layer metadata leakage reduction                                        |
+|                         |                                                                                                       |
+| ----------------------- | ----------------------------------------------------------------------------------------------------- |
+| **Contracts**           | 256 Solidity (0.8.24) — core, bridges, privacy, security, governance, relayer                         |
+| **ZK Circuits**         | 21 Noir circuits with on-chain UltraHonk verifiers                                                    |
+| **Bridges**             | 12 adapters — Arbitrum, Optimism, Base, zkSync, Scroll, Linea, Aztec, L1, LayerZero, Hyperlane, BitVM |
+| **Tests**               | 291 Foundry + 15 Hardhat — unit, fuzz (10k runs), invariant, fork, attack simulation                  |
+| **Formal Verification** | 72 Certora CVL specs + 72 configs, K Framework, TLA+, Halmos                                          |
+| **SDK**                 | 65 TypeScript/viem modules — `npm install @zaseon/sdk`                                                |
+| **Security**            | 18 defense modules, 12-layer metadata leakage reduction                                               |
 
 ## Key Primitives
 

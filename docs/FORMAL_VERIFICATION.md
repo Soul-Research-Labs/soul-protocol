@@ -316,7 +316,7 @@ certoraRun certora/conf/verify_security.conf
 | Solana    | _(planned)_            | VAA replay, nonce, programs     |
 | StarkNet  | _(planned)_            | Message consumption, contracts  |
 | Bitcoin   | _(planned)_            | TX hash dedup, confirmations    |
-| BitVM     | _(planned)_            | Proof dedup, challenges         |
+| BitVM     | BitVMAdapter           | Proof dedup, challenges         |
 | Aztec     | _(planned)_            | Nullifier, double-spend         |
 
 ### Security Invariants Categories

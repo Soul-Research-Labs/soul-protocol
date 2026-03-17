@@ -10,6 +10,7 @@ import {ScrollBridgeAdapter} from "../../contracts/crosschain/ScrollBridgeAdapte
 import {LineaBridgeAdapter} from "../../contracts/crosschain/LineaBridgeAdapter.sol";
 import {LayerZeroAdapter} from "../../contracts/crosschain/LayerZeroAdapter.sol";
 import {HyperlaneAdapter} from "../../contracts/crosschain/HyperlaneAdapter.sol";
+import {BitVMAdapter} from "../../contracts/crosschain/BitVMAdapter.sol";
 
 /**
  * @title ZASEON L2 Bridge Deployment Script
@@ -55,6 +56,9 @@ import {HyperlaneAdapter} from "../../contracts/crosschain/HyperlaneAdapter.sol"
  *   HYP_IGP                 - Interchain Gas Paymaster address
  *   HYP_LOCAL_DOMAIN        - Local Hyperlane domain ID
  *
+ * For BitVM:
+ *   BITVM_TREASURY          - Treasury address for adapter fee collection
+ *
  * Usage:
  *   DEPLOY_TARGET=optimism   forge script scripts/deploy/DeployL2Bridges.s.sol --broadcast
  *   DEPLOY_TARGET=arbitrum   forge script scripts/deploy/DeployL2Bridges.s.sol --broadcast
@@ -64,6 +68,7 @@ import {HyperlaneAdapter} from "../../contracts/crosschain/HyperlaneAdapter.sol"
  *   DEPLOY_TARGET=linea      forge script scripts/deploy/DeployL2Bridges.s.sol --broadcast
  *   DEPLOY_TARGET=layerzero  forge script scripts/deploy/DeployL2Bridges.s.sol --broadcast
  *   DEPLOY_TARGET=hyperlane  forge script scripts/deploy/DeployL2Bridges.s.sol --broadcast
+ *   DEPLOY_TARGET=bitvm      forge script scripts/deploy/DeployL2Bridges.s.sol --broadcast
  */
 contract DeployL2Bridges is Script {
     function run() external {
@@ -97,6 +102,8 @@ contract DeployL2Bridges is Script {
             _deployLayerZero(admin, deployer);
         } else if (_strEq(target, "hyperlane")) {
             _deployHyperlane(admin, deployer);
+        } else if (_strEq(target, "bitvm")) {
+            _deployBitVM(admin, deployer);
         } else {
             revert(string.concat("Unknown deploy target: ", target));
         }
@@ -381,6 +388,33 @@ contract DeployL2Bridges is Script {
         console.log("Hyperlane bridge deployed. Admin:", admin);
         console.log(
             "  Post-deploy: call configureDomain() and configureISM() via multisig"
+        );
+    }
+
+    function _deployBitVM(address admin, address deployer) internal {
+        address treasury = vm.envAddress("BITVM_TREASURY");
+
+        BitVMAdapter adapter = new BitVMAdapter(deployer, treasury);
+        console.log("BitVMAdapter:", address(adapter));
+
+        // Transfer roles to multisig
+        adapter.grantRole(adapter.DEFAULT_ADMIN_ROLE(), admin);
+        adapter.grantRole(adapter.OPERATOR_ROLE(), admin);
+        adapter.grantRole(adapter.GUARDIAN_ROLE(), admin);
+
+        address guardian = vm.envOr("RELAYER_ADDRESS", address(0));
+        if (guardian != address(0)) {
+            adapter.grantRole(adapter.GUARDIAN_ROLE(), guardian);
+            console.log("Guardian granted:", guardian);
+        }
+
+        adapter.renounceRole(adapter.GUARDIAN_ROLE(), deployer);
+        adapter.renounceRole(adapter.OPERATOR_ROLE(), deployer);
+        adapter.renounceRole(adapter.DEFAULT_ADMIN_ROLE(), deployer);
+
+        console.log("BitVM bridge deployed. Admin:", admin);
+        console.log(
+            "  Post-deploy: setChallengeWindow()/setFeeParams() via multisig"
         );
     }
 
