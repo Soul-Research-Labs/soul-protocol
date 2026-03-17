@@ -81,14 +81,22 @@ contract BitVMAdapterHandler is Test {
             payload[payloadSize - 1] = bytes1(uint8(payloadSize));
         }
 
-        address sender = address(uint160(bound(uint256(topup), 1, type(uint160).max)));
+        address sender = address(
+            uint160(bound(uint256(topup), 1, type(uint160).max))
+        );
         vm.deal(sender, 10 ether);
 
         uint256 fee = adapter.estimateFee(address(0xD00D), payload);
 
         ghostPreviousNonce = adapter.nonce();
         vm.prank(sender);
-        try adapter.bridgeMessage{value: fee + topup}(address(0xD00D), payload, sender) returns (bytes32 messageId) {
+        try
+            adapter.bridgeMessage{value: fee + topup}(
+                address(0xD00D),
+                payload,
+                sender
+            )
+        returns (bytes32 messageId) {
             _messageIds.push(messageId);
         } catch {}
     }
@@ -104,7 +112,9 @@ contract BitVMAdapterHandler is Test {
 
         ghostPreviousNonce = adapter.nonce();
         vm.prank(admin);
-        try adapter.markVerified(messageId, keccak256(abi.encodePacked(seed))) {} catch {}
+        try
+            adapter.markVerified(messageId, keccak256(abi.encodePacked(seed)))
+        {} catch {}
     }
 
     function challenge(uint256 seed) external {
@@ -118,7 +128,12 @@ contract BitVMAdapterHandler is Test {
 
         ghostPreviousNonce = adapter.nonce();
         vm.prank(guardian);
-        try adapter.challengeMessage(messageId, keccak256(abi.encodePacked(seed, "c"))) {} catch {}
+        try
+            adapter.challengeMessage(
+                messageId,
+                keccak256(abi.encodePacked(seed, "c"))
+            )
+        {} catch {}
     }
 
     function resolve(uint256 seed, bool acceptChallenge) external {

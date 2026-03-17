@@ -97,7 +97,9 @@ contract BitVMAdapterFuzzTest is Test {
         assertEq(adapter.bridgeFeeBps(), boundedBps);
     }
 
-    function _payloadOfSize(uint256 size) internal pure returns (bytes memory p) {
+    function _payloadOfSize(
+        uint256 size
+    ) internal pure returns (bytes memory p) {
         p = new bytes(size);
         if (size > 0) {
             p[size - 1] = bytes1(uint8(size));

@@ -153,7 +153,10 @@ contract CrossChainAdapterRoutingE2E is Test {
             IMultiBridgeRouter.BridgeType.HYPERLANE,
             ARB_CHAIN
         );
-        router.addSupportedChain(IMultiBridgeRouter.BridgeType.BITVM, ARB_CHAIN);
+        router.addSupportedChain(
+            IMultiBridgeRouter.BridgeType.BITVM,
+            ARB_CHAIN
+        );
 
         router.addSupportedChain(
             IMultiBridgeRouter.BridgeType.NATIVE_L2,

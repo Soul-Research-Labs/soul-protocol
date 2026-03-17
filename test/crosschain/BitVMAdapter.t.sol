@@ -296,7 +296,11 @@ contract BitVMAdapterTest is Test {
         adapter.unpause();
 
         vm.prank(user);
-        bytes32 messageId = adapter.bridgeMessage{value: fee}(target, payload, user);
+        bytes32 messageId = adapter.bridgeMessage{value: fee}(
+            target,
+            payload,
+            user
+        );
         assertTrue(messageId != bytes32(0));
     }
 

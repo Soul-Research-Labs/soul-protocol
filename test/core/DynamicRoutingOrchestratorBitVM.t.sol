@@ -55,8 +55,8 @@ contract DynamicRoutingOrchestratorBitVMTest is Test {
     }
 
     function test_BitVMCanBeSelectedAsOptimalRoute() public view {
-        IDynamicRoutingOrchestrator.RouteRequest memory request = IDynamicRoutingOrchestrator
-            .RouteRequest({
+        IDynamicRoutingOrchestrator.RouteRequest
+            memory request = IDynamicRoutingOrchestrator.RouteRequest({
                 sourceChainId: CHAIN_ETH,
                 destChainId: CHAIN_ARB,
                 amount: 1 ether,
@@ -79,8 +79,8 @@ contract DynamicRoutingOrchestratorBitVMTest is Test {
         vm.prank(bridgeAdmin);
         orchestrator.setAdapterActive(bitvmAdapter, false);
 
-        IDynamicRoutingOrchestrator.RouteRequest memory request = IDynamicRoutingOrchestrator
-            .RouteRequest({
+        IDynamicRoutingOrchestrator.RouteRequest
+            memory request = IDynamicRoutingOrchestrator.RouteRequest({
                 sourceChainId: CHAIN_ETH,
                 destChainId: CHAIN_ARB,
                 amount: 1 ether,

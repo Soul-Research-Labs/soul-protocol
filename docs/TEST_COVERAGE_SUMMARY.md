@@ -30,10 +30,10 @@
 
 ### Core Contracts ✅
 
-| Contract            | Test File(s)                        |
-| ------------------- | ----------------------------------- |
-| `PrivacyRouter`     | `test/core/PrivacyRouter.t.sol`     |
-| `ZaseonProtocolHub` | `test/core/ZaseonProtocolHub.t.sol` |
+| Contract                             | Test File(s)                                      |
+| ------------------------------------ | ------------------------------------------------- |
+| `PrivacyRouter`                      | `test/core/PrivacyRouter.t.sol`                   |
+| `ZaseonProtocolHub`                  | `test/core/ZaseonProtocolHub.t.sol`               |
 | `DynamicRoutingOrchestrator (BitVM)` | `test/core/DynamicRoutingOrchestratorBitVM.t.sol` |
 
 ### Cross-Chain ✅
