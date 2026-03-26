@@ -112,6 +112,9 @@ contract CrossChainProofHubV3 is
     /// @notice Total proofs submitted
     uint256 public totalProofs;
 
+    /// @notice Monotonic nonce for unique proof ID generation
+    uint256 private _proofNonce;
+
     /// @notice Total batches submitted
     uint256 public totalBatches;
 
@@ -530,7 +533,8 @@ contract CrossChainProofHubV3 is
                 input.proofHash,
                 input.commitment,
                 input.sourceChainId,
-                input.destChainId
+                input.destChainId,
+                _proofNonce++
             )
         );
 
@@ -816,7 +820,8 @@ contract CrossChainProofHubV3 is
                     proofHash,
                     commitment,
                     sourceChainId,
-                    destChainId
+                    destChainId,
+                    _proofNonce++
                 )
             );
 
