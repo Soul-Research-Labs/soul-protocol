@@ -130,7 +130,9 @@ function getWalletClient(network: string): WalletClient {
     });
   }
 
-  throw new Error("No private key configured. Run `zaseon config set-key <key>`");
+  throw new Error(
+    "No private key configured. Run `zaseon config set-key <key>`",
+  );
 }
 
 function printTable(headers: string[], rows: string[][]): void {
@@ -580,19 +582,28 @@ accountCmd
 accountCmd
   .command("new")
   .description("Generate new account")
-  .action(() => {
+  .option(
+    "--show-private-key",
+    "Display the full private key (default: masked)",
+  )
+  .action((options) => {
     const privateKey = generatePrivateKey();
     const account = privateKeyToAccount(privateKey);
-    // Viem doesn't support mnemonic generation directly in the core package easily without english wordlist imports usually,
-    // but we can generate a random private key.
+
+    // SECURITY FIX C-2: Mask private key by default to prevent accidental
+    // exposure via stdout capture, shell history, or process monitoring.
+    const maskedKey = `${privateKey.slice(0, 10)}...${privateKey.slice(-6)}`;
+    const displayKey = options.showPrivateKey ? privateKey : maskedKey;
 
     console.log(`\nNew Account Generated`);
     console.log(
       `═══════════════════════════════════════════════════════════════════`,
     );
     console.log(`Address:     ${account.address}`);
-    console.log(`Private Key: ${privateKey}`);
-    console.log(`(Mnemonic generation skipped for viem migration simplicity)`);
+    console.log(`Private Key: ${displayKey}`);
+    if (!options.showPrivateKey) {
+      console.log(`(Use --show-private-key to reveal full key)`);
+    }
     console.log(
       `═══════════════════════════════════════════════════════════════════`,
     );

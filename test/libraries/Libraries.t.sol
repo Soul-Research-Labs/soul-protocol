@@ -9,12 +9,12 @@ import "forge-std/Test.sol";
  */
 contract LibrariesTest is Test {
     /*//////////////////////////////////////////////////////////////
-                     POSEIDONYUL TESTS
+                     POSEIDON TESTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Verify PoseidonYul hash determinism
+    /// @notice Verify Poseidon hash determinism
     function test_poseidonHashDeterminism() public {
-        // PoseidonYul.hash2 should be deterministic
+        // PoseidonT3.hash2 should be deterministic
         uint256 a = 1;
         uint256 b = 2;
 

@@ -8,7 +8,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {PoseidonYul} from "../libraries/PoseidonYul.sol";
+import {PoseidonT3} from "../libraries/PoseidonT3.sol";
 import {UniversalChainRegistry} from "../libraries/UniversalChainRegistry.sol";
 
 /**
@@ -761,7 +761,7 @@ contract UniversalShieldedPoolUpgradeable is
         bytes32 left,
         bytes32 right
     ) internal pure returns (bytes32) {
-        return bytes32(PoseidonYul.hash2(uint256(left), uint256(right)));
+        return bytes32(PoseidonT3.hash2(uint256(left), uint256(right)));
     }
 
     function _verifyWithdrawalProof(

@@ -13,7 +13,7 @@
   - [ZaseonUpgradeTimelock](#zaseonupgradetimelock)
   - [OperationTimelockModule](#operationtimelockmodule)
   - [ZaseonToken](#zaseontoken)
-  - [ZaseonGovernance (Deprecated)](#zaseongovernance-deprecated)
+  - [ZaseonGovernance (Removed)](#zaseongovernance-removed)
 - [Roles & Permissions](#roles--permissions)
 - [Proposal Lifecycle](#proposal-lifecycle)
 - [Timelock](#timelock)
@@ -202,11 +202,9 @@ The ZASEON governance token. See [Governance Token](#governance-token) for detai
 
 ---
 
-### ZaseonGovernance (Deprecated)
+### ZaseonGovernance (Removed)
 
-**Path:** `contracts/governance/ZaseonGovernance.sol`
-
-> **Deprecated.** Thin `TimelockController` wrapper. Use `ZaseonGovernor` instead. Will be removed in v2.0.
+> **Removed.** The deprecated `ZaseonGovernance` TimelockController wrapper was removed. Use `ZaseonGovernor` for all governance operations.
 
 ---
 
@@ -345,6 +343,8 @@ The grace period ensures stale operations automatically expire. Emergency bypass
 | Clock      | Timestamp-based (L2-compatible)        |
 
 ### Delegation
+
+> **⚠️ Important:** Tokens do **not** carry voting power by default. You **must** self-delegate (or delegate to another address) before you can vote or meet proposal thresholds.
 
 Voting power requires **self-delegation**. Holding tokens alone does not grant voting power — holders must call `delegate(address)` to activate it:
 

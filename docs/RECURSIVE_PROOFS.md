@@ -392,6 +392,8 @@ contract ZaseonRecursiveVerifier {
 
 ## Benchmarks
 
+> **Disclaimer:** These are projected estimates based on theoretical analysis and external benchmarks. Actual performance will vary based on circuit complexity, prover hardware, and L1 gas prices. Numbers will be updated once recursive proof aggregation is implemented and benchmarked.
+
 ### Expected Performance
 
 | Metric           | Single Proof | Aggregated (10) | Aggregated (100) |

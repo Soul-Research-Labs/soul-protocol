@@ -89,6 +89,9 @@ contract OptimisticRelayVerifier is AccessControl, ReentrancyGuard, Pausable {
     /// @notice Maximum challenge bond (M10 FIX: prevent irrational bond amounts)
     uint256 public constant MAX_CHALLENGE_BOND = 10 ether;
 
+    /// @notice Basis points for dynamic bond calculation (100 = 1% of transfer value)
+    uint256 public constant BOND_BASIS_POINTS = 100;
+
     /// @notice Value threshold for optimistic verification
     uint256 public optimisticThreshold = 10 ether;
 
@@ -242,8 +245,20 @@ contract OptimisticRelayVerifier is AccessControl, ReentrancyGuard, Pausable {
                 transfer.finalizeAfter
             );
         }
-        if (msg.value < MIN_CHALLENGE_BOND) {
-            revert InsufficientBond(msg.value, MIN_CHALLENGE_BOND);
+
+        // SECURITY FIX M-3: Dynamic minimum bond based on transfer value.
+        // For high-value transfers, a fixed MIN_CHALLENGE_BOND is insufficient
+        // deterrent against spurious challenges. Scale bond to transfer value.
+        uint256 dynamicMinBond = MIN_CHALLENGE_BOND;
+        uint256 valueBond = (transfer.value * BOND_BASIS_POINTS) / 10000;
+        if (valueBond > dynamicMinBond) {
+            dynamicMinBond = valueBond;
+        }
+        if (dynamicMinBond > MAX_CHALLENGE_BOND) {
+            dynamicMinBond = MAX_CHALLENGE_BOND;
+        }
+        if (msg.value < dynamicMinBond) {
+            revert InsufficientBond(msg.value, dynamicMinBond);
         }
         // M10 FIX: Cap challenge bond to prevent irrational amounts
         if (msg.value > MAX_CHALLENGE_BOND) {

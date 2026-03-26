@@ -51,6 +51,8 @@ contract MultiRelayerRouter {
     // Fallback cascade: try each relayer type in order
     RelayerType[] public relayerPriority;
 
+    // Simplified example — production contracts use relay() and registerAdapter().
+    // See contracts/relayer/ for actual signatures.
     function submitWithFallback(bytes calldata message) external {
         for (uint i = 0; i < relayerPriority.length; i++) {
             if (tryRelay(relayerPriority[i], message)) {

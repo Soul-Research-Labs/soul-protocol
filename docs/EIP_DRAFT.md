@@ -453,7 +453,7 @@ A complete reference implementation is available in the ZASEON protocol:
 - **Noir ZK Circuits**: `noir/` (21 circuits for balance proof, shielded pool, state transfer, etc.)
 - **TypeScript SDK**: `sdk/`
 
-The reference implementation supports Ethereum, Arbitrum, Optimism, Base, and Aztec with 5,700+ passing tests, Certora formal verification (62 specs), Echidna property testing, and Halmos symbolic execution.
+The reference implementation supports Ethereum, Arbitrum, Optimism, Base, and Aztec with 5,880+ passing tests, Certora formal verification (72 specs), Echidna property testing, and Halmos symbolic execution.
 
 ### Deployment
 

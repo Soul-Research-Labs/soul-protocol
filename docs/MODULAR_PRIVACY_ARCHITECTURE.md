@@ -210,6 +210,8 @@ struct ExecutionReceipt {
 
 ### Backend Types
 
+> **Implementation status:** Only `ZK_SNARK` (Groth16 via Noir/UltraHonk) is currently implemented. All TEE and MPC backend types are planned for future releases.
+
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────┐
 │                         EXECUTION BACKEND TYPES                                │

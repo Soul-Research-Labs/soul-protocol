@@ -1014,7 +1014,9 @@ export class ProofCarryingContainerClient {
           containerId = (decoded.args as DecodedEventArgs).containerId as Hex;
           break;
         }
-      } catch {}
+      } catch {
+        // Expected: non-target event logs won't match ABI
+      }
     }
 
     return { txHash: receipt.transactionHash, containerId };
@@ -1251,7 +1253,9 @@ export class PolicyBoundProofsClient {
           policyHash = eventArgs.policyHash as Hex;
           break;
         }
-      } catch {}
+      } catch {
+        // Expected: non-target event logs won't match ABI
+      }
     }
 
     return {
@@ -1290,7 +1294,9 @@ export class PolicyBoundProofsClient {
             .domainSeparator as Hex;
           break;
         }
-      } catch {}
+      } catch {
+        // Expected: non-target event logs won't match ABI
+      }
     }
     return domainSeparator;
   }
@@ -1469,7 +1475,9 @@ export class ExecutionAgnosticStateCommitmentsClient {
           backendId = (decoded.args as DecodedEventArgs).backendId as Hex;
           break;
         }
-      } catch {}
+      } catch {
+        // Expected: non-target event logs won't match ABI
+      }
     }
     return { txHash: receipt.transactionHash, backendId };
   }
@@ -1507,7 +1515,9 @@ export class ExecutionAgnosticStateCommitmentsClient {
           commitmentId = (decoded.args as DecodedEventArgs).commitmentId as Hex;
           break;
         }
-      } catch {}
+      } catch {
+        // Expected: non-target event logs won't match ABI
+      }
     }
     return { txHash: receipt.transactionHash, commitmentId };
   }
@@ -1689,7 +1699,9 @@ export class CrossDomainNullifierAlgebraClient {
           domainId = (decoded.args as DecodedEventArgs).domainId as Hex;
           break;
         }
-      } catch {}
+      } catch {
+        // Expected: non-target event logs won't match ABI
+      }
     }
     return { txHash: receipt.transactionHash, domainId };
   }
@@ -1962,7 +1974,9 @@ export class Zaseonv2OrchestratorClient {
           message = eventArgs.message as string;
           break;
         }
-      } catch {}
+      } catch {
+        // Expected: non-target event logs won't match ABI
+      }
     }
 
     return {

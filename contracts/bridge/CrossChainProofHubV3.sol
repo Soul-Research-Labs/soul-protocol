@@ -319,6 +319,10 @@ contract CrossChainProofHubV3 is
         if (!rolesSeparated) revert RolesNotSeparated();
         if (!hasRole(RELAYER_ROLE, msg.sender)) revert UnauthorizedRelayer();
 
+        // SECURITY FIX M-10: Validate proof and publicInputs length before verifier call
+        if (proof.length < 32) revert InvalidProof();
+        if (publicInputs.length < 32) revert InvalidProof();
+
         // Verify the proof immediately — uses shared verifier resolution
         IProofVerifier verifier = _resolveVerifier(proofType);
 
@@ -326,6 +330,23 @@ contract CrossChainProofHubV3 is
         if (address(verifier) == address(0)) revert VerifierNotSet(proofType);
 
         if (!verifier.verifyProof(proof, publicInputs)) revert InvalidProof();
+
+        // SECURITY FIX H-6: Bind public inputs to submission parameters.
+        // Verify that the publicInputs encode the expected commitment and chain IDs
+        // to prevent proof replay across different submissions.
+        bytes32 inputBinding = keccak256(
+            abi.encodePacked(commitment, sourceChainId, destChainId)
+        );
+        // The first 32 bytes of publicInputs must contain the binding hash
+        // This ensures the verified proof corresponds to the stated parameters
+        if (publicInputs.length >= 32) {
+            bytes32 encodedBinding;
+            bytes calldata pi = publicInputs;
+            assembly {
+                encodedBinding := calldataload(pi.offset)
+            }
+            if (encodedBinding != inputBinding) revert ProofBindingMismatch();
+        }
 
         proofId = _submitProof(
             proof,
@@ -741,10 +762,9 @@ contract CrossChainProofHubV3 is
         if (hourlyValueRelayed + value > maxValuePerHour) {
             revert ValueRateLimitExceeded();
         }
-        unchecked {
-            hourlyProofCount += count;
-            hourlyValueRelayed += value;
-        }
+        // SECURITY FIX L-5: Use checked arithmetic for rate limit counters
+        hourlyProofCount += count;
+        hourlyValueRelayed += value;
     }
 
     /// @dev Shared proof submission logic for both standard and instant submission

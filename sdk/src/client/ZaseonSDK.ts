@@ -90,6 +90,42 @@ export class ProverModule {
         }
 
         const data = await res.json();
+
+        // SECURITY FIX H-1: Validate prover response before parsing
+        if (
+          !data ||
+          typeof data.proof !== "string" ||
+          typeof data.publicInputs !== "string"
+        ) {
+          throw new ZaseonError(
+            "Prover returned malformed response: missing proof or publicInputs",
+            ZaseonErrorCode.PROOF_GENERATION_FAILED,
+            { context: { keys: data ? Object.keys(data) : [] } },
+          );
+        }
+        const hexPattern = /^[0-9a-fA-F]+$/;
+        if (
+          !hexPattern.test(data.proof) ||
+          !hexPattern.test(data.publicInputs)
+        ) {
+          throw new ZaseonError(
+            "Prover returned invalid hex encoding in proof or publicInputs",
+            ZaseonErrorCode.PROOF_GENERATION_FAILED,
+          );
+        }
+        if (data.proof.length < 64 || data.publicInputs.length < 64) {
+          throw new ZaseonError(
+            "Prover returned suspiciously short proof or publicInputs",
+            ZaseonErrorCode.PROOF_GENERATION_FAILED,
+            {
+              context: {
+                proofLen: data.proof.length,
+                inputsLen: data.publicInputs.length,
+              },
+            },
+          );
+        }
+
         return {
           proof: Buffer.from(data.proof, "hex"),
           publicInputs: Buffer.from(data.publicInputs, "hex"),

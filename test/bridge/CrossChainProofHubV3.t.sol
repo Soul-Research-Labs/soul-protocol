@@ -208,13 +208,26 @@ contract CrossChainProofHubV3Test is Test {
     function test_submitProofInstant() public {
         _stakeRelayer();
 
+        // Build publicInputs with binding hash as first 32 bytes (H-6 fix)
+        bytes32 commitment = keccak256("c1");
+        uint64 srcChain = uint64(block.chainid);
+        uint64 dstChain = 42161;
+        bytes32 binding = keccak256(
+            abi.encodePacked(commitment, srcChain, dstChain)
+        );
+        bytes memory publicInputs = abi.encodePacked(binding, bytes32(0));
+        bytes memory proof = abi.encodePacked(
+            bytes32(uint256(0xdeadbeef)),
+            bytes32(0)
+        );
+
         vm.prank(relayer);
         bytes32 proofId = hub.submitProofInstant{value: 0.003 ether}(
-            hex"deadbeef",
-            hex"cafe",
-            keccak256("c1"),
-            uint64(block.chainid),
-            42161,
+            proof,
+            publicInputs,
+            commitment,
+            srcChain,
+            dstChain,
             PROOF_TYPE
         );
 
@@ -232,14 +245,26 @@ contract CrossChainProofHubV3Test is Test {
         _stakeRelayer();
         hub.setVerifier(PROOF_TYPE, address(falseVerifier));
 
+        bytes32 commitment = keccak256("c1");
+        uint64 srcChain = uint64(block.chainid);
+        uint64 dstChain = 42161;
+        bytes32 binding = keccak256(
+            abi.encodePacked(commitment, srcChain, dstChain)
+        );
+        bytes memory publicInputs = abi.encodePacked(binding, bytes32(0));
+        bytes memory proof = abi.encodePacked(
+            bytes32(uint256(0xdeadbeef)),
+            bytes32(0)
+        );
+
         vm.prank(relayer);
         vm.expectRevert();
         hub.submitProofInstant{value: 0.003 ether}(
-            hex"deadbeef",
-            hex"cafe",
-            keccak256("c1"),
-            uint64(block.chainid),
-            42161,
+            proof,
+            publicInputs,
+            commitment,
+            srcChain,
+            dstChain,
             PROOF_TYPE
         );
     }

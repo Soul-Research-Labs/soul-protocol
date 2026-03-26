@@ -30,7 +30,8 @@
 ## Installation
 
 ```bash
-npm install @zaseon/sdk viem
+# SDK is not yet published to npm. Install from local path:
+npm install file:./sdk viem
 ```
 
 The SDK uses [viem](https://viem.sh) for all Ethereum interactions.

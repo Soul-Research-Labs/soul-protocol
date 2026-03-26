@@ -23,13 +23,13 @@ forge test -vvv
 
 |                         |                                                                                                       |
 | ----------------------- | ----------------------------------------------------------------------------------------------------- |
-| **Contracts**           | 256 Solidity (0.8.24) — core, bridges, privacy, security, governance, relayer                         |
+| **Contracts**           | ~250 production Solidity (0.8.24) — core, bridges, privacy, security, governance, relayer             |
 | **ZK Circuits**         | 21 Noir circuits with on-chain UltraHonk verifiers                                                    |
 | **Bridges**             | 12 adapters — Arbitrum, Optimism, Base, zkSync, Scroll, Linea, Aztec, L1, LayerZero, Hyperlane, BitVM |
-| **Tests**               | 291 Foundry + 15 Hardhat — unit, fuzz (10k runs), invariant, fork, attack simulation                  |
+| **Tests**               | Foundry + Hardhat — unit, fuzz (10k runs), invariant, fork, attack simulation                         |
 | **Formal Verification** | 72 Certora CVL specs + 72 configs, K Framework, TLA+, Halmos                                          |
-| **SDK**                 | 65 TypeScript/viem modules — `npm install @zaseon/sdk`                                                |
-| **Security**            | 18 defense modules, 12-layer metadata leakage reduction                                               |
+| **SDK**                 | 65 TypeScript/viem modules                                                                            |
+| **Security**            | 21 defense modules, 12-layer metadata leakage reduction                                               |
 
 ## Key Primitives
 
@@ -42,10 +42,12 @@ forge test -vvv
 
 ## SDK
 
+> **Note:** The SDK is not yet published to npm. Install locally via `npm install file:./sdk`.
+
 ```typescript
 import { ZaseonSDK } from "@zaseon/sdk";
 
-const sdk = new ZaseonSDK({ rpcUrl: "...", privateKey: "0x..." });
+const sdk = new ZaseonSDK({ rpcUrl: "..." });
 await sdk.shieldedTransfer({
   fromChain: "arbitrum",
   toChain: "optimism",
@@ -56,11 +58,11 @@ await sdk.shieldedTransfer({
 
 ## Documentation
 
-[Getting Started](docs/GETTING_STARTED.md) · [Integration Guide](docs/INTEGRATION_GUIDE.md) · [Architecture](docs/architecture.md) · [API Reference](docs/SOLIDITY_API_REFERENCE.md) · [Bridge Integration](docs/BRIDGE_INTEGRATION.md) · [Deployment](docs/DEPLOYMENT.md) · [Threat Model](docs/THREAT_MODEL.md) · [Governance](docs/GOVERNANCE.md) · [55 docs total](docs/)
+[Getting Started](docs/GETTING_STARTED.md) · [Integration Guide](docs/INTEGRATION_GUIDE.md) · [Architecture](docs/architecture.md) · [API Reference](docs/SOLIDITY_API_REFERENCE.md) · [Bridge Integration](docs/BRIDGE_INTEGRATION.md) · [Deployment](docs/DEPLOYMENT.md) · [Threat Model](docs/THREAT_MODEL.md) · [Governance](docs/GOVERNANCE.md) · [All docs](docs/)
 
 ## Deployments
 
-Live on **Ethereum Sepolia** (`11155111`) and **Base Sepolia** (`84532`). See [`deployments/`](deployments/) for addresses.
+Testnet deployments available on **Ethereum Sepolia** (`11155111`). See [`deployments/`](deployments/) for addresses.
 
 ```bash
 forge script scripts/deploy/DeployMainnet.s.sol --rpc-url $RPC_URL --broadcast

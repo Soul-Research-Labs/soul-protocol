@@ -220,6 +220,8 @@ forge inspect <Contract> storage-layout > layout.json
 
 ### With Foundry
 
+> **Note:** The `--ir-minimum` flag tells Forge to use the IR pipeline only for contracts that require it (those compiled with `via_ir = true`), while compiling the rest without IR. This avoids the excessive compile times of full-IR builds while still producing correct coverage for `via_ir` contracts.
+
 ```bash
 # Run coverage with summary output
 FOUNDRY_PROFILE=coverage forge coverage --ir-minimum --report summary
@@ -281,7 +283,7 @@ Results uploaded to Codecov (when available).
 
 ### Total Test Count
 
-> **5,800+ tests** across **220+ test suites** — 0 failures as of July 2026.
+> **5,880+ tests** across **~305 Foundry + 15 Hardhat test suites** — 0 failures (March 2026).
 
 ---
 

@@ -376,10 +376,21 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
         ) = _decodeProof(proof);
 
         // 1. Verify state root is known and matches
-        _verifyStateRoot(sourceChain, blockNumber, claimedStateRoot, oracleSignatures);
+        _verifyStateRoot(
+            sourceChain,
+            blockNumber,
+            claimedStateRoot,
+            oracleSignatures
+        );
 
         // 2. Compute message leaf and verify Merkle proof
-        _verifyMerkleInclusion(sourceChain, messageId, payload, claimedStateRoot, merkleProof);
+        _verifyMerkleInclusion(
+            sourceChain,
+            messageId,
+            payload,
+            claimedStateRoot,
+            merkleProof
+        );
 
         // 3. Verify block is not too old (prevent replay of ancient proofs)
         if (
@@ -550,6 +561,9 @@ contract L2ChainAdapter is AccessControl, ReentrancyGuard {
         }
 
         if (v < 27) v += 27;
+
+        // SECURITY FIX H-2: Reject invalid v values after adjustment
+        if (v != 27 && v != 28) return address(0);
 
         // Signature malleability protection
         if (uint256(s) > SECP256K1_N_DIV_2) {

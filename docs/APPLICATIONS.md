@@ -323,6 +323,11 @@ NFT marketplace where ownership, bid amounts, and sale prices remain confidentia
 │   │   address                      │
 │   └─ Royalties computed via       │
 │       homomorphic commitment       │
+│       (Pedersen: additively        │
+│       homomorphic, so royalty %    │
+│       can be applied to committed  │
+│       amounts without revealing    │
+│       the sale price)              │
 └────────────────────────────────────┘
 ```
 

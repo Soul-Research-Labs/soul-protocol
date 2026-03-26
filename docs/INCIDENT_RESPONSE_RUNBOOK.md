@@ -149,7 +149,7 @@ cast send $CONTRACT_ADDRESS "pause()" \
 # For multiple contracts, pause in order:
 # 1. CrossChainProofHubV3
 # 2. ZaseonAtomicSwapV2
-# 3. All bridge adapters (9 total):
+# 3. All bridge adapters (12 total):
 #    - ArbitrumBridgeAdapter
 #    - OptimismBridgeAdapter
 #    - BaseBridgeAdapter
@@ -158,7 +158,10 @@ cast send $CONTRACT_ADDRESS "pause()" \
 #    - LineaBridgeAdapter
 #    - LayerZeroAdapter
 #    - HyperlaneAdapter
-#    - (+ 4 other adapters)
+#    - AztecBridgeAdapter
+#    - EthereumL1Bridge
+#    - BitVMAdapter
+#    - NativeL2BridgeWrapper
 # 4. CrossChainEmergencyRelay (broadcast pause to L2s)
 # 5. ZKBoundStateLocks
 ```
@@ -349,7 +352,7 @@ done
 **Validation**:
 
 - Verify `sourceChainId` matches L1 for all relay messages
-- Confirm all 7 L2 adapters received the emergency signal
+- Confirm all L2 adapters received the emergency signal
 - Monitor for `InvalidSourceChain` events (indicates attack attempt)
 
 **Recovery**:

@@ -60,7 +60,7 @@ forge script scripts/deploy/DeploySecurityComponents.s.sol --broadcast
 - [ ] Deploy optimistic verification with 1-hour challenge period
 - [ ] Implement rate limits: 100 ETH/tx, 1000 ETH/hour, 5000 ETH/day
 - [ ] Set up watchtower monitoring with automated alerts
-- [ ] Create security scorecard for all 16 bridge adapters
+- [ ] Create security scorecard for all 12 bridge adapters
 - [ ] Enable circuit breaker on all bridges
 
 **Success Metrics**:

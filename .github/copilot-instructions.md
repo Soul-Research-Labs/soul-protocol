@@ -8,15 +8,15 @@ Cross-chain ZK privacy middleware for confidential state transfer across L2 netw
 - **ZK Circuits**: Noir (migrated from Circom)
 - **Testing**: Foundry fuzz (10000 runs), Echidna, Certora, Halmos
 - **Dependencies**: OpenZeppelin 5.4.0, viem ^2.30.0, forge-std
-- **L2s**: Arbitrum, Optimism, Base, zkSync, Scroll, Linea, Polygon zkEVM
+- **L2s**: Arbitrum, Optimism, Base, zkSync, Scroll, Linea (Polygon zkEVM planned)
 
 ## Project Structure
 
 ```
-contracts/           # Solidity source (~256 files)
+contracts/           # Solidity source (~250 production files)
   adapters/          # EVMUniversalAdapter, NativeL2BridgeWrapper
   core/              # ZaseonProtocolHub, Orchestrator
-  crosschain/        # Bridge adapters (11), DirectL2Messenger, IBridgeAdapter
+  crosschain/        # Bridge adapters (12), DirectL2Messenger, IBridgeAdapter
   bridge/            # MultiBridgeRouter, CrossChainProofHubV3
   privacy/           # StealthAddressRegistry, ShieldedPool, BatchAccumulator, GasNormalizer
   security/          # ExperimentalFeatureRegistry, SecurityModule, Emergency
@@ -28,12 +28,12 @@ contracts/           # Solidity source (~256 files)
   integrations/      # DeFi protocol integrations
   interfaces/        # 51 interfaces
   internal/          # Internal utilities
-  libraries/         # Shared libraries (ProofEnvelope, FixedSizeMessageWrapper)
+  libraries/        # Shared libraries (ProofEnvelope, FixedSizeMessageWrapper)
   upgradeable/       # Upgradeable variants (UUPS proxies)
 noir/                # Noir ZK circuits (21 circuits)
-test/                # Foundry tests (291 files) + 15 Hardhat tests
+test/                # Foundry tests + Hardhat tests
 sdk/                 # TypeScript SDK (ZaseonSDK, StealthAddressClient, bridges)
-scripts/deploy/      # Foundry deploy scripts (18 scripts)
+scripts/deploy/      # Foundry deploy scripts (16 .s.sol + shell/ts helpers)
 specs/               # K Framework, TLA+ formal specs
 certora/             # Certora CVL specs (72 specs, 72 configs)
 monitoring/          # Defender + Tenderly configs
@@ -53,7 +53,7 @@ examples/            # SDK quickstart examples
 - `ProtocolEmergencyCoordinator` - Multi-role emergency coordination
 - `CrossChainEmergencyRelay` - Cross-chain emergency propagation
 
-## Bridge Adapters (11)
+## Bridge Adapters (12)
 
 - `ArbitrumBridgeAdapter` - Arbitrum One/Nova native bridge (retryable tickets)
 - `OptimismBridgeAdapter` - OP Stack native messaging
@@ -65,6 +65,7 @@ examples/            # SDK quickstart examples
 - `LayerZeroAdapter` - LayerZero V2 OApp cross-chain messaging (120+ chains)
 - `HyperlaneAdapter` - Hyperlane Mailbox with modular ISM security
 - `EthereumL1Bridge` - Ethereum L1 native bridge (deposit/withdrawal)
+- `BitVMAdapter` - BitVM cross-chain relay attestation
 - `NativeL2BridgeWrapper` - Unified IBridgeAdapter wrapper for native L2 bridges
 
 All adapters implement `IBridgeAdapter` (`bridgeMessage`, `estimateFee`, `isMessageVerified`).

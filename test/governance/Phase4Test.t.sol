@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import "../../contracts/governance/ZaseonGovernance.sol";
+import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
 import "../../contracts/crosschain/ZaseonCrossChainRelay.sol";
 import "../../contracts/crosschain/MessageBatcher.sol";
 
@@ -32,7 +32,7 @@ contract MockRelayAdapter {
 }
 
 contract Phase4Test is Test {
-    ZaseonGovernance public governance;
+    TimelockController public governance;
     ZaseonCrossChainRelay public relay;
     MessageBatcher public batcher;
     MockProofHub public proofHub;
@@ -70,7 +70,7 @@ contract Phase4Test is Test {
         address[] memory executors = new address[](1);
         executors[0] = executor;
 
-        governance = new ZaseonGovernance(
+        governance = new TimelockController(
             1 days, // minDelay
             proposers,
             executors,

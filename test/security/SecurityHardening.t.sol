@@ -69,13 +69,10 @@ contract SecurityHardeningTest is Test {
             nullifier
         );
 
-        // 2. Challenge
+        // 2. Challenge (M-3: dynamic min bond = max(0.01, 11*100/10000) = 0.11 ether)
         vm.deal(challenger, 2 ether);
         vm.prank(challenger);
-        verifier.challengeTransfer{value: 0.01 ether}(
-            transferId,
-            hex"deadbeef"
-        );
+        verifier.challengeTransfer{value: 0.2 ether}(transferId, hex"deadbeef");
 
         OptimisticRelayVerifier.PendingTransfer memory t = verifier
             .getVerification(transferId);

@@ -57,6 +57,9 @@ contract DecentralizedRelayerRegistry is
     /// @notice Role for governance parameter updates
     bytes32 public constant GOVERNANCE_ROLE = keccak256("GOVERNANCE_ROLE");
 
+    /// @notice Role authorized to distribute rewards to relayers
+    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
+
     /*//////////////////////////////////////////////////////////////
                                CONSTANTS
     //////////////////////////////////////////////////////////////*/
@@ -254,13 +257,19 @@ contract DecentralizedRelayerRegistry is
 
     /**
      * @notice Add rewards to a relayer's balance
-     * @dev Anyone can fund rewards (protocol fees, tip distribution, etc.).
+     * @dev Only authorized operators can distribute rewards (protocol fees, tip distribution, etc.).
      *      The msg.value must exactly match the _amount parameter to prevent
      *      accounting mismatches. Rewards accumulate until claimed.
+     *
+     *      SECURITY FIX C-1: Added onlyRole(OPERATOR_ROLE) — unrestricted reward
+     *      distribution allowed gaming of relayer selection metrics.
      * @param _relayer Relayer to receive the reward
      * @param _amount Amount of ETH reward (must equal msg.value)
      */
-    function addReward(address _relayer, uint256 _amount) external payable {
+    function addReward(
+        address _relayer,
+        uint256 _amount
+    ) external payable onlyRole(OPERATOR_ROLE) {
         if (msg.value != _amount) revert ValueMismatch(msg.value, _amount);
         if (!relayers[_relayer].isRegistered) revert NotRegistered(_relayer);
 

@@ -66,7 +66,7 @@
 
 ZASEON uses the **UUPS (Universal Upgradeable Proxy Standard)** pattern (ERC-1822) for all upgradeable contracts. Upgrades are gated by `ZaseonUpgradeTimelock`, which enforces delay periods, multi-sig requirements, and user exit windows.
 
-The protocol is deployed across 7 L2 networks (Arbitrum, Optimism, Base, zkSync, Scroll, Linea, Polygon zkEVM). Upgrading requires careful coordination to maintain cross-chain consistency of proof verification, nullifier tracking, and state lock management.
+The protocol targets 7 L2 networks (Arbitrum, Optimism, Base, zkSync, Scroll, Linea). Polygon zkEVM support is planned. Upgrading requires careful coordination to maintain cross-chain consistency of proof verification, nullifier tracking, and state lock management.
 
 ```mermaid
 flowchart LR

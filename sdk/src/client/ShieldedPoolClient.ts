@@ -230,6 +230,11 @@ export class ShieldedPoolClient {
   ): Promise<{ leafIndex: number; txHash: Hex }> {
     this.requireWallet();
 
+    // SECURITY FIX M-6: Validate inputs at system boundary
+    if (!commitment || commitment === "0x")
+      throw new Error("Invalid commitment");
+    if (amount <= 0n) throw new Error("Amount must be positive");
+
     const txHash = await this.walletClient!.writeContract({
       chain: this.walletClient!.chain ?? null,
       account: this.walletClient!.account!,
@@ -260,6 +265,13 @@ export class ShieldedPoolClient {
     commitment: Hex,
   ): Promise<{ leafIndex: number; txHash: Hex }> {
     this.requireWallet();
+
+    // SECURITY FIX M-6: Validate inputs at system boundary
+    if (!commitment || commitment === "0x")
+      throw new Error("Invalid commitment");
+    if (!token || token === zeroAddress)
+      throw new Error("Invalid token address for ERC20 deposit");
+    if (amount <= 0n) throw new Error("Amount must be positive");
 
     const txHash = await this.walletClient!.writeContract({
       chain: this.walletClient!.chain ?? null,
@@ -299,6 +311,14 @@ export class ShieldedPoolClient {
     destChainId: Hex = "0x0000000000000000000000000000000000000000000000000000000000000000",
   ): Promise<Hex> {
     this.requireWallet();
+
+    // SECURITY FIX M-6: Validate withdrawal inputs at system boundary
+    if (!nullifierHash || nullifierHash === "0x")
+      throw new Error("Invalid nullifier hash");
+    if (!recipient || recipient === zeroAddress)
+      throw new Error("Invalid recipient address");
+    if (!root || root === "0x") throw new Error("Invalid Merkle root");
+    if (!proof || proof === "0x") throw new Error("Invalid proof");
 
     const txHash = await this.walletClient!.writeContract({
       chain: this.walletClient!.chain ?? null,

@@ -2,7 +2,7 @@
 
 > **Technical Deep-Dive into Zaseon's Modular Privacy Infrastructure**
 
-[![Status](https://img.shields.io/badge/Status-Production-green.svg)]()
+[![Status](https://img.shields.io/badge/Status-Development-yellow.svg)]()
 [![Version](https://img.shields.io/badge/Version-3.0-blue.svg)]()
 
 ---
@@ -232,7 +232,7 @@ The main verifier uses the BN254 curve with EVM precompiles (ecAdd, ecMul, ecPai
 Security Level: 128-bit (classical)
 Curve: BN254 (alt_bn128) - EVM native precompiles
 Proof Size: 3 group elements (~256 bytes)
-Verification: ~200k gas on EVM
+Verification: ~200k gas on EVM (Groth16 BN254; UltraHonk may differ)
 ```
 
 #### Verification Key Structure

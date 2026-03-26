@@ -15,8 +15,8 @@ pragma solidity ^0.8.24;
  *      using Grain LFSR over the BN254 scalar field.
  *
  * SECURITY:
- *      Unlike PoseidonYul (8 full rounds only), this implementation provides
- *      full security against algebraic attacks and is suitable for:
+ *      This implementation provides full security against algebraic attacks
+ *      and is suitable for:
  *      - Merkle tree hashing in shielded pools
  *      - Commitment generation
  *      - Nullifier derivation

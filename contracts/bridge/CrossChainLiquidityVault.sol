@@ -567,7 +567,7 @@ contract CrossChainLiquidityVault is
      */
     function unlockAfterCompletion(
         bytes32 requestId
-    ) external onlyRole(PRIVACY_HUB_ROLE) nonReentrant {
+    ) external onlyRole(PRIVACY_HUB_ROLE) nonReentrant whenNotPaused {
         LiquidityLock storage lock = locks[requestId];
         if (lock.amount == 0) revert LockNotFound(requestId);
         if (lock.released) revert LockAlreadyReleased(requestId);

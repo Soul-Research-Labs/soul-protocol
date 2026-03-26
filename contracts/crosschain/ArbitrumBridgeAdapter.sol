@@ -283,6 +283,13 @@ contract ArbitrumBridgeAdapter is
     );
 
     event WithdrawalClaimed(bytes32 indexed withdrawalId);
+    /// @notice Emitted when an operator claims a withdrawal on behalf of the original recipient
+    event OperatorClaimedWithdrawal(
+        bytes32 indexed withdrawalId,
+        address indexed operator,
+        address indexed originalRecipient,
+        uint256 amount
+    );
     event FastExitExecuted(
         bytes32 indexed withdrawalId,
         address liquidityProvider
@@ -573,6 +580,16 @@ contract ArbitrumBridgeAdapter is
                 msg.sender != withdrawal.l1Recipient &&
                 !hasRole(OPERATOR_ROLE, msg.sender)
             ) revert InvalidProof();
+
+            // SECURITY FIX H-3: Log operator-claimed withdrawals for audit trail
+            if (msg.sender != withdrawal.l1Recipient) {
+                emit OperatorClaimedWithdrawal(
+                    withdrawalId,
+                    msg.sender,
+                    withdrawal.l1Recipient,
+                    withdrawal.amount
+                );
+            }
         }
 
         processedOutputs[withdrawal.outputId] = true;

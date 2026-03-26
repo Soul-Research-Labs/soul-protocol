@@ -10,6 +10,9 @@
 - [Phase 4 Fixes (Session 9)](#phase-4-fixes-session-9)
 - [Phase 3 Fixes (Session 8)](#phase-3-fixes-session-8)
 - [Phase 1–2 Summary](#phase-12-summary)
+
+> **Note:** "Phase" numbers refer to audit phases, and "Session" numbers refer to internal security review sessions. See [SECURITY_AUDIT_REPORT.md](./SECURITY_AUDIT_REPORT.md) for the complete 79-vulnerability report.
+
 - [Verification](#verification)
 - [See Also](#see-also)
 
@@ -233,6 +236,8 @@ Phases 1 and 2 addressed 44 vulnerabilities (7 Critical, 10 High, 21 Medium, 6 L
 - **Zero-Address Validation**: All critical setters
 - **Event Emission**: All configuration changes emit events
 - **Loop Gas Optimization**: Array length caching, batch storage writes
+
+> Session 8 and Phase 4 reviews found an additional 35 issues (79 total across all reviews).
 
 See [SECURITY_AUDIT_REPORT.md](./SECURITY_AUDIT_REPORT.md) for complete details.
 

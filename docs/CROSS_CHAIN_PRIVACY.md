@@ -51,13 +51,15 @@
 
 ### Research Reference
 
-The following sections document cryptographic primitives. Some have been implemented:
+The following sections document cryptographic primitives referenced in the architecture. Status of each:
 
-- Ring Signatures (CLSAG) - **Production** (`RingSignatureVerifier.sol` + `BN254.sol` library, ~26k gas/ring member)
-- Bulletproof Range Proofs - Reference only
-- Ring Confidential Transactions (RingCT) - Uses CLSAG verifier for ring signatures
-- Privacy chain adapters (Zcash, Secret, Railgun) - **Production** (see adapter contracts)
-- Privacy chain research (Monero Seraphis) - Planned for future
+| Primitive                                       | Status            | Notes                                                           |
+| ----------------------------------------------- | ----------------- | --------------------------------------------------------------- |
+| Ring Signatures (CLSAG)                         | ✅ Production     | `RingSignatureVerifier.sol` + `BN254.sol`, ~26k gas/ring member |
+| Ring Confidential Transactions (RingCT)         | ✅ Production     | Uses CLSAG verifier for ring signatures                         |
+| Privacy chain adapters (Zcash, Secret, Railgun) | ✅ Production     | See adapter contracts                                           |
+| Bulletproof Range Proofs                        | 📖 Reference only | Documented for context; not implemented                         |
+| Monero Seraphis                                 | 🔮 Planned        | Future research track                                           |
 
 ---
 

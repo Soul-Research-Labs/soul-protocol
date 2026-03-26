@@ -124,7 +124,7 @@ Speed-tiered reward system. Faster fulfillment → higher reward percentage.
 | NORMAL     | 60s–5min    | 66.7%               |
 | SLOW       | > 5min      | 60%                 |
 
-Unclaimed portion after reward is refunded to the depositor.
+Percentages represent the share of the depositor's reward allocation paid to the solver. Unclaimed portion after reward is refunded to the depositor.
 
 ### DynamicRoutingOrchestrator
 

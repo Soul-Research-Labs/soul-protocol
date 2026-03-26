@@ -70,6 +70,8 @@ contract OptimismBridgeAdapter is
     using SafeERC20 for IERC20;
 
     error ZKProofVerifierNotConfigured();
+    error InvalidOutputRoot();
+    error InvalidTimestamp();
 
     /*//////////////////////////////////////////////////////////////
                                  ROLES
@@ -269,6 +271,11 @@ contract OptimismBridgeAdapter is
         uint256 timestamp,
         ValidatorAttestation[] calldata attestations
     ) external nonReentrant whenNotPaused onlyRole(RELAYER_ROLE) {
+        // SECURITY FIX H-4: Validate output root inputs before storing
+        if (outputRoot == bytes32(0)) revert InvalidOutputRoot();
+        if (timestamp == 0 || timestamp > block.timestamp)
+            revert InvalidTimestamp();
+
         // Verify validator attestations for this output root
         if (!_verifyValidatorAttestations(outputRoot, attestations)) {
             revert InsufficientValidatorSignatures(

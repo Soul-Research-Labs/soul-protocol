@@ -20,8 +20,8 @@
 
 | Metric                              | Count |
 | ----------------------------------- | ----- |
-| **Total Solidity source files**     | 256   |
-| **Foundry test files** (`.t.sol`)   | 291   |
+| **Total Solidity source files**     | ~280  |
+| **Foundry test files** (`.t.sol`)   | ~305  |
 | **Hardhat test files** (`.test.ts`) | 15    |
 | **Certora specs**                   | 72    |
 | **Certora conf files**              | 72    |
@@ -119,7 +119,7 @@
 | **Formal proofs**       | 11 files in `test/formal/`                                                                                                                                                                     |
 | **Stress tests**        | 3 files in `test/stress/`                                                                                                                                                                      |
 | **Gas benchmarks**      | 7 files in `test/gas/`                                                                                                                                                                         |
-| **Integration**         | 33 files in `test/integration/` + `test/integrations/`                                                                                                                                         |
+| **Integration**         | 33 files in `test/integration/`                                                                                                                                                                |
 | **Metadata protection** | 8 files in `test/privacy/` (122+ tests covering gas normalization, proof/message padding, relay jitter, multi-relayer quorum, denomination enforcement, mixnet enforcement, adaptive batching) |
 
 ## Known Gaps (Intentional)
@@ -148,7 +148,7 @@ These contracts lack dedicated test files but are either:
 
 ## Total
 
-> **5,880+ tests** across **291 Foundry + 15 Hardhat test suites** — 0 failures (March 2026)
+> **5,880+ tests** across **~305 Foundry + 15 Hardhat test suites** — 0 failures (March 2026)
 
 ## Commands
 

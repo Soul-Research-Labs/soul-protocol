@@ -126,8 +126,8 @@ jobs:
       - name: Run infrastructure tests
         run: forge test --match-path "test/infrastructure/*" --skip AggregatorHonkVerifier -vvv
 
-      - name: Run integrations tests
-        run: forge test --match-path "test/integrations/*" --skip AggregatorHonkVerifier -vvv
+      - name: Run integration tests (contract-level)
+        run: forge test --match-path "test/integration/*" --skip AggregatorHonkVerifier -vvv
 
       - name: Run internal tests
         run: forge test --match-path "test/internal/*" --skip AggregatorHonkVerifier -vvv
@@ -268,19 +268,7 @@ jobs:
         with:
           version: nightly
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install Slither
-        run: pip3 install slither-analyzer
-
-      - name: Compile
-        run: npx hardhat compile
-
-      - name: Run Slither
-        run: slither . --config-file slither.config.json
+      # Slither analysis handled by dedicated .github/workflows/slither.yml
 
       - name: NPM Audit
         run: npm audit --audit-level=critical

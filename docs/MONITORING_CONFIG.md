@@ -156,7 +156,7 @@ events:
     response: "Review slashing evidence and relayer history"
 ```
 
-### ZaseonGovernance
+### ZaseonGovernor
 
 ```yaml
 events:

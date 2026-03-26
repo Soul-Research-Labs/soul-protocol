@@ -137,6 +137,7 @@ interface ICrossChainProofHubV3 {
     error UnsupportedChain(uint256 chainId);
     error VerifierNotSet(bytes32 proofType);
     error InvalidProof();
+    error ProofBindingMismatch();
     error BatchTooLarge(uint256 size, uint256 maxSize);
     error EmptyBatch();
     error InvalidMerkleProof();

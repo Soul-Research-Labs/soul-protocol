@@ -5,7 +5,6 @@ import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
 import "../../contracts/libraries/PoseidonT3.sol";
-import "../../contracts/libraries/PoseidonYul.sol";
 
 /**
  * @title CoreGasBenchmark
@@ -15,7 +14,6 @@ import "../../contracts/libraries/PoseidonYul.sol";
  *
  * Tracks gas costs for:
  *   - PoseidonT3 full 65-round hash
- *   - PoseidonYul wrapper (delegates to PoseidonT3)
  *   - Merkle tree hashing chains (simulated depth-32 tree insertions)
  *   - Batch hashing throughput
  */
@@ -25,11 +23,9 @@ contract CoreGasBenchmark is Test {
     //////////////////////////////////////////////////////////////*/
 
     PoseidonT3GasHarness poseidonT3;
-    PoseidonYulGasHarness poseidonYul;
 
     function setUp() public {
         poseidonT3 = new PoseidonT3GasHarness();
-        poseidonYul = new PoseidonYulGasHarness();
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -60,14 +56,6 @@ contract CoreGasBenchmark is Test {
         poseidonT3.hash2(P - 1, P - 1);
         uint256 gasUsed = gasBefore - gasleft();
         console.log("PoseidonT3 large-input hash gas:", gasUsed);
-    }
-
-    /// @notice Measure PoseidonYul wrapper (should be same as T3 + DELEGATECALL overhead)
-    function test_gas_PoseidonYul_wrapper() public view {
-        uint256 gasBefore = gasleft();
-        poseidonYul.hash2(1, 2);
-        uint256 gasUsed = gasBefore - gasleft();
-        console.log("PoseidonYul wrapper hash gas:", gasUsed);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -152,11 +140,5 @@ contract PoseidonT3GasHarness {
             h = PoseidonT3.hash2(h, i);
         }
         return h;
-    }
-}
-
-contract PoseidonYulGasHarness {
-    function hash2(uint256 a, uint256 b) external pure returns (uint256) {
-        return PoseidonYul.hash2(a, b);
     }
 }

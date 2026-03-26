@@ -1,5 +1,7 @@
 # Zaseon Deployment Guide
 
+> **⚠️ Development** — ZASEON has not yet been deployed to mainnet. This guide covers testnet and local deployments.
+
 > **Deploy ZASEON to Ethereum testnets and L2 networks**
 
 ---

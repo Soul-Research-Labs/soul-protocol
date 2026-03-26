@@ -124,8 +124,16 @@ contract CrossChainProofHubGasBenchmark is Test {
 
     function test_gas_SubmitProofInstant() public {
         bytes memory proof = _mockProof(128);
-        bytes memory publicInputs = _mockInputs(64);
         bytes32 commitment = keccak256("commitment-instant");
+        // H-6: publicInputs must start with binding hash
+        bytes32 binding = keccak256(
+            abi.encodePacked(
+                commitment,
+                uint64(SOURCE_CHAIN),
+                uint64(DEST_CHAIN)
+            )
+        );
+        bytes memory publicInputs = abi.encodePacked(binding, bytes32(0));
 
         vm.prank(relayer);
         uint256 gasBefore = gasleft();

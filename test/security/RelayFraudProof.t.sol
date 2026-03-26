@@ -44,7 +44,8 @@ contract RelayFraudProofTest is Test {
         );
 
         vm.prank(challenger);
-        verifier.challengeTransfer{value: 0.1 ether}(transferId, hex"");
+        // M-3 fix: dynamic min bond = max(MIN_BOND, value * 100 / 10000) = 1 ether for 100 ether transfers
+        verifier.challengeTransfer{value: 1 ether}(transferId, hex"");
 
         return transferId;
     }

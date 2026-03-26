@@ -772,7 +772,12 @@ contract RelayCircuitBreaker is AccessControl, Pausable, ReentrancyGuard {
         uint256 len = activeAnomalies.length;
         uint256 currentTime = block.timestamp;
 
-        for (uint256 i = lastPrunedIndex; i < len; ) {
+        // SECURITY FIX H-7: Cap iterations to prevent unbounded gas consumption
+        uint256 maxIterations = 100;
+        uint256 iterations = 0;
+        uint256 startIndex = lastPrunedIndex;
+
+        for (uint256 i = startIndex; i < len && iterations < maxIterations; ) {
             AnomalyEvent storage anomaly = activeAnomalies[i];
 
             // Skip resolved or expired anomalies
@@ -782,6 +787,7 @@ contract RelayCircuitBreaker is AccessControl, Pausable, ReentrancyGuard {
             ) {
                 unchecked {
                     ++i;
+                    ++iterations;
                 }
                 continue;
             }
@@ -796,7 +802,13 @@ contract RelayCircuitBreaker is AccessControl, Pausable, ReentrancyGuard {
             unchecked {
                 ++activeCount;
                 ++i;
+                ++iterations;
             }
+        }
+
+        // Advance prune index for resolved/expired entries we've processed
+        if (iterations > 0) {
+            lastPrunedIndex = startIndex + iterations;
         }
 
         uint256 oldScore = anomalyScore;

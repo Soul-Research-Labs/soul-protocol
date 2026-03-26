@@ -35,6 +35,7 @@ jobs:
           - certora/conf/verify_aztec_bridge.conf
           - certora/conf/verify_base_bridge.conf
           - certora/conf/verify_batch_accumulator.conf
+          - certora/conf/verify_bitvm_bridge.conf
           - certora/conf/verify_cdna.conf
           - certora/conf/verify_circuit_breaker.conf
           - certora/conf/verify_cross_chain_privacy.conf

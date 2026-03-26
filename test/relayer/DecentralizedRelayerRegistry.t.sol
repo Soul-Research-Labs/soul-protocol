@@ -19,6 +19,9 @@ contract DecentralizedRelayerRegistryTest is Test {
         // Grant slasher role
         registry.grantRole(registry.SLASHER_ROLE(), slasher);
 
+        // Grant operator role to admin (this contract) for reward distribution tests
+        registry.grantRole(registry.OPERATOR_ROLE(), admin);
+
         // Fund relayers
         vm.deal(relayer, 100 ether);
         vm.deal(relayer2, 100 ether);
@@ -271,7 +274,7 @@ contract DecentralizedRelayerRegistryTest is Test {
         vm.prank(relayer);
         registry.register{value: 10 ether}();
 
-        // Anyone can add rewards
+        // Only operators can add rewards (C-1 fix)
         registry.addReward{value: 1 ether}(relayer, 1 ether);
 
         (, uint256 rewards, , ) = registry.relayers(relayer);

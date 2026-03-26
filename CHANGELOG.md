@@ -34,6 +34,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Contract count: 242 to 250 Solidity source files
 - Test files: 286 to 288 Foundry test suites
 
+### Deprecated
+
+- `ZaseonMultiSigGovernance.sol` — replaced by `ZaseonUpgradeTimelock` + OpenZeppelin `TimelockController`
+- `ZaseonPreconfirmationHandler.sol` — preconfirmation logic moved into `IntentCompletionEngine`
+- `ConfidentialDataAvailability.sol` — CDA approach replaced by on-chain proof-carrying containers
+- `MPCGateway.sol` — MPC functionality replaced by threshold signature support in `ZaseonProtocolHub`
+
 ## [0.9.0] - 2026-03-06
 
 ### Security Audit — Session 8 (21 Findings: 4 CRITICAL, 6 HIGH, 7 MEDIUM, 4 LOW)
@@ -61,7 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### LOW Fixes
 
-- **S8-20**: All 7 bridge adapters (Starknet, Mantle, Blast, Taiko, Mode, MantaPacific, PolygonZkEVM) now include `emergencyWithdrawERC20` for ERC20 token recovery
+- **S8-20**: Bridge adapters (Starknet, Mantle, Blast, Taiko, Mode, MantaPacific, PolygonZkEVM) now include `emergencyWithdrawERC20` for ERC20 token recovery
 
 #### Other Fixes
 

@@ -63,6 +63,7 @@ contract DirectL2MessengerTest is Test {
 
         // Grant roles
         messenger.grantRole(messenger.OPERATOR_ROLE(), operator);
+        messenger.grantRole(messenger.SEQUENCER_ROLE(), operator); // operator also acts as sequencer for tests
 
         // Fund accounts
         vm.deal(admin, 100 ether);
@@ -436,6 +437,7 @@ contract DirectL2MessengerTest is Test {
     function test_receiveMessage_fromOperator() public {
         bytes32 messageId = keccak256("superchain_msg");
 
+        // H-5 fix: receiveMessage now requires SEQUENCER_ROLE, not OPERATOR_ROLE
         vm.prank(operator);
         messenger.receiveMessage(
             messageId,

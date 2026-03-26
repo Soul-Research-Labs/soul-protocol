@@ -71,7 +71,7 @@ We take security seriously. If you discover a security vulnerability within ZASE
 
 ### Bug Bounty Program
 
-> Full program details, scope, and submission process: **[BUG_BOUNTY.md](BUG_BOUNTY.md)**
+> Bug bounty program is in preparation. Details will be published before mainnet launch.
 
 | Severity | Reward Range       | Examples                                        |
 | -------- | ------------------ | ----------------------------------------------- |
@@ -112,7 +112,7 @@ We take security seriously. If you discover a security vulnerability within ZASE
 
 | Tool             | Purpose                                         | Frequency    |
 | ---------------- | ----------------------------------------------- | ------------ |
-| Certora          | Formal verification (69 CVL specs)              | Per release  |
+| Certora          | Formal verification (72 CVL specs)              | Per release  |
 | Slither          | Static analysis                                 | Every commit |
 | Echidna          | Property fuzzing (6 invariant properties)       | Weekly       |
 | Halmos           | Symbolic execution (12 checks)                  | Weekly       |
@@ -218,7 +218,9 @@ We take security seriously. If you discover a security vulnerability within ZASE
 | ------------ | ----------------- | --------------------------------------- |
 | Zero-Address | ZaseonProtocolHub | Added validation to addSupportedChain() |
 
-**Total: 44 vulnerabilities fixed across both phases**
+**Total: 44 vulnerabilities fixed across Phases 1–2**
+
+> Session 8 and Phase 4 reviews found an additional 35 issues (79 total). See [SECURITY_AUDIT_REPORT.md](./docs/SECURITY_AUDIT_REPORT.md) for the full breakdown.
 
 For complete details, see [docs/SECURITY_AUDIT_REPORT.md](./docs/SECURITY_AUDIT_REPORT.md).
 
@@ -341,8 +343,8 @@ See [docs/SECURITY_AUDIT_REPORT.md](./docs/SECURITY_AUDIT_REPORT.md) for the com
 
 | Document                                                    | Description                                                                 |
 | ----------------------------------------------------------- | --------------------------------------------------------------------------- |
-| [SECURITY_AUDIT_REPORT.md](./docs/SECURITY_AUDIT_REPORT.md) | February 2026 audit findings (44 fixes across 2 phases)                     |
-| [FORMAL_VERIFICATION.md](./docs/FORMAL_VERIFICATION.md)     | Formal verification report (69 Certora specs + Halmos + K Framework + TLA+) |
+| [SECURITY_AUDIT_REPORT.md](./docs/SECURITY_AUDIT_REPORT.md) | Security audit findings (79 vulnerabilities fixed across 4 phases)          |
+| [FORMAL_VERIFICATION.md](./docs/FORMAL_VERIFICATION.md)     | Formal verification report (72 Certora specs + Halmos + K Framework + TLA+) |
 | [THREAT_MODEL.md](./docs/THREAT_MODEL.md)                   | Threat analysis                                                             |
 
 Thank you for contributing to ZASEON security!

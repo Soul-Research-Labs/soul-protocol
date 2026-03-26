@@ -396,6 +396,8 @@ contract ZaseonProtocolHub is
 
         for (uint256 i = 0; i < chainIds.length; ) {
             if (adapters[i] == address(0)) revert ZeroAddress();
+            // SECURITY FIX L-2: Prevent registration of chain ID 0
+            if (chainIds[i] == 0) revert ChainNotSupported(0);
 
             if (relayAdapters[chainIds[i]].adapter == address(0)) {
                 supportedChainIds.push(chainIds[i]);

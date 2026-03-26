@@ -172,7 +172,7 @@ contract OptimisticRelayVerifierTest is Test {
         bytes32 id = _submitDefault();
 
         vm.prank(challenger);
-        verifier.challengeTransfer{value: 0.1 ether}(id, bytes("evidence"));
+        verifier.challengeTransfer{value: 0.5 ether}(id, bytes("evidence"));
 
         OptimisticRelayVerifier.PendingTransfer memory t = verifier
             .getVerification(id);
@@ -181,7 +181,7 @@ contract OptimisticRelayVerifierTest is Test {
             uint256(OptimisticRelayVerifier.TransferStatus.CHALLENGED)
         );
         assertEq(t.challenger, challenger);
-        assertEq(t.challengeBond, 0.1 ether);
+        assertEq(t.challengeBond, 0.5 ether);
     }
 
     function test_challengeTransfer_EmitsEvent() public {
@@ -192,9 +192,9 @@ contract OptimisticRelayVerifierTest is Test {
         emit OptimisticRelayVerifier.TransferChallenged(
             id,
             challenger,
-            0.1 ether
+            0.5 ether
         );
-        verifier.challengeTransfer{value: 0.1 ether}(id, bytes("evidence"));
+        verifier.challengeTransfer{value: 0.5 ether}(id, bytes("evidence"));
     }
 
     function test_challengeTransfer_StoresChallenge() public {
@@ -232,7 +232,7 @@ contract OptimisticRelayVerifierTest is Test {
         bytes32 id = _submitDefault();
 
         vm.prank(challenger);
-        verifier.challengeTransfer{value: 0.1 ether}(id, bytes("evidence"));
+        verifier.challengeTransfer{value: 0.5 ether}(id, bytes("evidence"));
 
         // Contract checks status != PENDING and throws TransferAlreadyFinalized
         // (covers CHALLENGED, FINALIZED, REJECTED — any non-PENDING)
@@ -244,7 +244,7 @@ contract OptimisticRelayVerifierTest is Test {
                 id
             )
         );
-        verifier.challengeTransfer{value: 0.1 ether}(
+        verifier.challengeTransfer{value: 0.5 ether}(
             id,
             bytes("more_evidence")
         );
@@ -253,15 +253,16 @@ contract OptimisticRelayVerifierTest is Test {
     function test_challengeTransfer_RevertsIfInsufficientBond() public {
         bytes32 id = _submitDefault();
 
+        // M-3: Dynamic bond = max(0.01 ether, 20 ether * 100 / 10000) = 0.2 ether
         vm.prank(challenger);
         vm.expectRevert(
             abi.encodeWithSelector(
                 OptimisticRelayVerifier.InsufficientBond.selector,
-                0.001 ether,
-                0.01 ether
+                0.01 ether,
+                0.2 ether
             )
         );
-        verifier.challengeTransfer{value: 0.001 ether}(id, hex"");
+        verifier.challengeTransfer{value: 0.01 ether}(id, hex"");
     }
 
     function test_challengeTransfer_RevertsAfterChallengePeriod() public {
@@ -270,7 +271,7 @@ contract OptimisticRelayVerifierTest is Test {
 
         vm.prank(challenger);
         vm.expectRevert(); // ChallengePeriodNotExpired (name is misleading in contract)
-        verifier.challengeTransfer{value: 0.1 ether}(id, hex"");
+        verifier.challengeTransfer{value: 0.5 ether}(id, hex"");
     }
 
     // ──────────────────────────────────────────────
@@ -356,7 +357,7 @@ contract OptimisticRelayVerifierTest is Test {
         bytes32 id = _submitDefault();
 
         vm.prank(challenger);
-        verifier.challengeTransfer{value: 0.1 ether}(id, bytes("evidence"));
+        verifier.challengeTransfer{value: 0.5 ether}(id, bytes("evidence"));
 
         vm.prank(resolver);
         vm.expectRevert(
@@ -404,7 +405,7 @@ contract OptimisticRelayVerifierTest is Test {
         bytes32 id = _submitDefault();
 
         vm.prank(challenger);
-        verifier.challengeTransfer{value: 0.1 ether}(id, bytes("evidence"));
+        verifier.challengeTransfer{value: 0.5 ether}(id, bytes("evidence"));
 
         vm.prank(alice);
         vm.expectRevert(); // AccessControl revert
@@ -494,7 +495,7 @@ contract OptimisticRelayVerifierTest is Test {
     function test_canFinalize_FalseIfChallenged() public {
         bytes32 id = _submitDefault();
         vm.prank(challenger);
-        verifier.challengeTransfer{value: 0.1 ether}(id, bytes("ev"));
+        verifier.challengeTransfer{value: 0.5 ether}(id, bytes("ev"));
 
         vm.warp(block.timestamp + verifier.challengePeriod() + 1);
         assertFalse(verifier.canFinalize(id)); // CHALLENGED ≠ PENDING
@@ -634,7 +635,8 @@ contract OptimisticRelayVerifierTest is Test {
     }
 
     function testFuzz_challengeBondAboveMin(uint256 bond) public {
-        bond = bound(bond, verifier.MIN_CHALLENGE_BOND(), 10 ether);
+        // M-3: Dynamic min bond for 20 ether transfers = max(0.01, 20*100/10000) = 0.2 ether
+        bond = bound(bond, 0.2 ether, 10 ether);
         bytes32 id = _submitDefault();
 
         vm.prank(challenger);

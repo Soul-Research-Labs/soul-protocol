@@ -930,7 +930,7 @@ CrossChainLiquidityVault:
 | Root history size | 100 (ring buffer)                 |
 | Max deposit       | 10,000 ETH                        |
 | Min deposit       | 0.001 ETH                         |
-| Hash function     | PoseidonYul (BN254, T=3)          |
+| Hash function     | PoseidonT3 (BN254, T=3)           |
 
 ### Contract Interaction Map
 

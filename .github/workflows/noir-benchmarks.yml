@@ -124,7 +124,8 @@ jobs:
           for circuit in nullifier state_commitment state_transfer cross_chain_proof container \
             cross_domain_nullifier merkle_proof balance_proof private_transfer swap_proof \
             pedersen_commitment compliance_proof policy policy_bound_proof shielded_pool \
-            sanctions_check accredited_investor aggregator encrypted_transfer ring_signature; do
+            sanctions_check accredited_investor aggregator encrypted_transfer ring_signature \
+            liquidity_proof; do
 
             if [ -d "$circuit" ]; then
               cd "$circuit"

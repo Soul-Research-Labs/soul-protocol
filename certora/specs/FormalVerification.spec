@@ -12,7 +12,7 @@
  *   - EASC                     → See certora/specs/EASC.spec
  *   - CDNA                     → See certora/specs/NullifierRegistry.spec
  *   - Orchestrator             → See certora/specs/Orchestrator.spec
- *   - ZaseonUpgradeTimelock      → See certora/specs/ZaseonGovernance.spec
+ *   - ZaseonUpgradeTimelock      → See certora/specs/ZaseonGovernor.spec
  */
 
 /*//////////////////////////////////////////////////////////////

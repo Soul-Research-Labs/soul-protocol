@@ -42,18 +42,18 @@
 
 | Category             | Count         | Details                                                                                                                                                                                                                                                                                                                                               |
 | -------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Solidity contracts   | 250           | Core, bridge, privacy, compliance, governance, relayer, security, primitives, verifiers, upgradeable, integrations, libraries, metadata protection                                                                                                                                                                                                    |
+| Solidity contracts   | ~280          | Core, bridge, privacy, compliance, governance, relayer, security, primitives, verifiers, upgradeable, integrations, libraries, metadata protection                                                                                                                                                                                                    |
 | Noir ZK circuits     | 21            | balance_proof, shielded_pool, nullifier, cross_chain_proof, merkle_proof, pedersen_commitment, ring_signature, sanctions_check, compliance_proof, encrypted_transfer, liquidity_proof, private_transfer, state_commitment, state_transfer, swap_proof, aggregator, container, cross_domain_nullifier, policy, policy_bound_proof, accredited_investor |
 | Foundry tests        | 5,880 passing | All passing (GeneratedVerifiers.t.sol `vm.getCode` issue resolved via `_tryDeployContract` fallback)                                                                                                                                                                                                                                                  |
-| Test files           | 288           | .sol and .ts (Foundry + Hardhat)                                                                                                                                                                                                                                                                                                                      |
+| Test files           | ~320          | .sol and .ts (Foundry + Hardhat)                                                                                                                                                                                                                                                                                                                      |
 | Certora specs        | 72            | Formal verification properties                                                                                                                                                                                                                                                                                                                        |
 | Certora confs        | 72            | Matching verification configurations                                                                                                                                                                                                                                                                                                                  |
-| Interfaces           | 50            | Full interface coverage for components                                                                                                                                                                                                                                                                                                                |
+| Interfaces           | 51            | Full interface coverage for components                                                                                                                                                                                                                                                                                                                |
 | Upgradeable variants | 16            | UUPS proxy patterns for all core contracts                                                                                                                                                                                                                                                                                                            |
-| SDK source files     | 61            | TypeScript, package name `@zaseon/sdk` v2.0.0                                                                                                                                                                                                                                                                                                         |
+| SDK source files     | 65            | TypeScript, package name `@zaseon/sdk` v2.0.0                                                                                                                                                                                                                                                                                                         |
 | Deploy scripts       | 16            | Foundry `.s.sol` + shell scripts                                                                                                                                                                                                                                                                                                                      |
 | Supported chains     | 7+            | Ethereum L1, Arbitrum, Optimism, Base, zkSync, Scroll, Linea + LayerZero/Hyperlane cross-chain                                                                                                                                                                                                                                                        |
-| Documentation        | 52            | Architecture, integration guides, security docs, 12 ADRs                                                                                                                                                                                                                                                                                              |
+| Documentation        | 54            | Architecture, integration guides, security docs, 13 ADRs                                                                                                                                                                                                                                                                                              |
 
 ### 1.2 Key Architectural Components
 
@@ -134,12 +134,11 @@
 
 #### Governance Layer
 
-| Contract              | File                                             | Purpose                                  | Maturity                            |
-| --------------------- | ------------------------------------------------ | ---------------------------------------- | ----------------------------------- |
-| ZaseonGovernance      | `contracts/governance/ZaseonGovernance.sol`      | Thin TimelockController wrapper          | **Deprecated** — use ZaseonGovernor |
-| ZaseonGovernor        | `contracts/governance/ZaseonGovernor.sol`        | OpenZeppelin-based Governor              | Complete — tested                   |
-| ZaseonToken           | `contracts/governance/ZaseonToken.sol`           | ZAS governance/utility token (mint+burn) | Complete — tested                   |
-| ZaseonUpgradeTimelock | `contracts/governance/ZaseonUpgradeTimelock.sol` | Timelock for upgrades                    | Complete — tested                   |
+| Contract              | File                                             | Purpose                                  | Maturity          |
+| --------------------- | ------------------------------------------------ | ---------------------------------------- | ----------------- |
+| ZaseonGovernor        | `contracts/governance/ZaseonGovernor.sol`        | OpenZeppelin-based Governor              | Complete — tested |
+| ZaseonToken           | `contracts/governance/ZaseonToken.sol`           | ZAS governance/utility token (mint+burn) | Complete — tested |
+| ZaseonUpgradeTimelock | `contracts/governance/ZaseonUpgradeTimelock.sol` | Timelock for upgrades                    | Complete — tested |
 
 #### ZK Verifier Layer
 
@@ -253,7 +252,7 @@ Web App / UI                ✓ (various)       ✓ (portal)      ✓ (bridge)  
 CLI Tool                    ✓                 ✓               ✓               Partial (SDK)     ✓
 Professional Audit          ✓ (multiple)      ✓ (multiple)    ✓ (multiple)    ✗                 ✓ (2 audits)
 Bug Bounty                  ✓ (Immunefi)      ✓ (Immunefi)    ✓ (Immunefi)    ✗                 ✓ (Immunefi)
-Formal Verification         Partial           Partial         Partial         69 Certora specs  ✓ (reconciled)
+Formal Verification         Partial           Partial         Partial         72 Certora specs  ✓ (reconciled)
 Legal Entity                ✓ (LayerZero Labs)✓ (WH Fndn)     ✓ (Abacus)      ✗                 ✓ (Foundation)
 Token                       ZRO               W               HYPER           ZAS (contract)    ZAS (live)
 Governance                  ✓ (on-chain)      ✓               Partial         Contracts exist   ✓ (on-chain)
@@ -276,7 +275,7 @@ Total Funding               $263M             $225M           $43M            $0
 | 6   | **No frontend / web app**         | HIGH     | No user-facing product                                            | —                                                                                            |
 | 7   | **No block explorer**             | HIGH     | No visibility into protocol state                                 | —                                                                                            |
 | 8   | **No documentation website**      | HIGH     | Markdown in repo ≠ developer docs site                            | `docs/` directory                                                                            |
-| 9   | **No audit**                      | HIGH     | No enterprise will integrate unaudited code                       | 69 Certora specs need reconciliation first                                                   |
+| 9   | **No audit**                      | HIGH     | No enterprise will integrate unaudited code                       | 72 Certora specs need reconciliation first                                                   |
 | 10  | **No legal entity**               | HIGH     | Cannot sign enterprise contracts, hold IP, or fundraise           | —                                                                                            |
 | 11  | **Base Sepolia deployment stale** | MEDIUM   | `deployments/base-sepolia-84532.json` references removed chain    | `deployments/`                                                                               |
 | 12  | **GeneratedVerifiers.t.sol**      | RESOLVED | `_tryDeployContract` fallback handles AggregatorHonkVerifier skip | `test/verifiers/GeneratedVerifiers.t.sol`                                                    |
@@ -486,13 +485,13 @@ event ProofReceived(
 
 ### 4.1 Certora Spec Reconciliation
 
-**Current state**: 69 specs + 69 confs exist. Unknown how many pass against current contract bytecode.
+**Current state**: 72 specs + 72 confs exist. Unknown how many pass against current contract bytecode.
 
 **Tasks**:
 
 | #     | Task                                                                                                         | Details                                 | Effort  |
 | ----- | ------------------------------------------------------------------------------------------------------------ | --------------------------------------- | ------- |
-| 2.1.1 | Run all 69 specs against compiled contracts                                                                  | `certoraRun` with each conf             | 2 days  |
+| 2.1.1 | Run all 72 specs against compiled contracts                                                                  | `certoraRun` with each conf             | 2 days  |
 | 2.1.2 | Triage results: pass / counterexample / timeout                                                              | Categorize each spec                    | 1 day   |
 | 2.1.3 | Fix all counterexamples                                                                                      | Update specs or contracts               | 2 weeks |
 | 2.1.4 | Add missing specs for: RelayerStaking slashing, CrossChainLiquidityVault invariants, ZaseonToken supply caps | New `.spec` files                       | 1 week  |
@@ -534,7 +533,7 @@ invariant: total_supply_bounded
 
 **Audit preparation checklist**:
 
-- [ ] All 69 Certora specs passing (Phase 2.1)
+- [ ] All 72 Certora specs passing (Phase 2.1)
 - [ ] Full NatSpec documentation on every external/public function
 - [ ] Threat model document updated (`docs/THREAT_MODEL.md`)
 - [ ] Test coverage > 90% line coverage
@@ -1365,7 +1364,7 @@ MONTH 7-12 (Hire 5-8 → Team of 15-18):
 | #   | Risk                                                | Likelihood | Impact   | Mitigation                                                                      | Owner             |
 | --- | --------------------------------------------------- | ---------- | -------- | ------------------------------------------------------------------------------- | ----------------- |
 | T1  | ZK proof generation too slow (> 30s)                | Medium     | High     | Barretenberg optimization, recursive proofs, proof delegation service           | ZK Engineer       |
-| T2  | Smart contract exploit                              | Medium     | Critical | 2 audits, formal verification (69 Certora specs), bug bounty ($250K), insurance | Security Engineer |
+| T2  | Smart contract exploit                              | Medium     | Critical | 2 audits, formal verification (72 Certora specs), bug bounty ($250K), insurance | Security Engineer |
 | T3  | Relayer network centralization                      | High       | High     | Incentivize 10+ operators, geographic diversity, different hosting providers    | Infra Engineer    |
 | T4  | Bridge transport failure (LayerZero/Hyperlane down) | Low        | Medium   | `MultiBridgeRouter` failover, direct relay fallback                             | Solidity Engineer |
 | T5  | Gas costs prohibitive                               | Medium     | High     | Gas optimization pass, L2-first deployment (cheap gas), batch operations        | Solidity Engineer |
@@ -1426,7 +1425,7 @@ MONTH 7-12 (Hire 5-8 → Team of 15-18):
 | 30-32 | Publish `@zaseon/sdk@2.0.0-alpha.1` to npm      | `npm install @zaseon/sdk` works        | Build pipeline |
 | 32-35 | Scaffold Docusaurus site with migrated docs     | `docs.zaseon.network` skeleton         | None           |
 | 35-38 | Create Template 1 (Private Payments)            | Working template repo                  | Published SDK  |
-| 38-40 | Run all 69 Certora specs, triage results        | Spec report: X pass, Y fail, Z timeout | None           |
+| 38-40 | Run all 72 Certora specs, triage results        | Spec report: X pass, Y fail, Z timeout | None           |
 | 40-42 | Send audit RFPs to Trail of Bits + Zellic       | RFPs sent                              | Certora triage |
 
 ### Week 7-8: Testnet Go-Live
@@ -1487,7 +1486,7 @@ VALUE PROPOSITION:
 | **Compliance layer**           | SelectiveDisclosure + ComplianceReporting are unique                   | Regulatory competitive advantage — privacy + compliance is rare    |
 | **Cross-chain ZK proving**     | Proof generation + relay + verification across chains                  | Requires both ZK and cross-chain expertise                         |
 | **21 Noir circuits**           | Purpose-built for each privacy operation                               | Years of circuit development                                       |
-| **69 Certora specs**           | Formal verification coverage unmatched in privacy space                | Expensive and slow to replicate                                    |
+| **72 Certora specs**           | Formal verification coverage unmatched in privacy space                | Expensive and slow to replicate                                    |
 | **Modular composability**      | Each component (ShieldedPool, Stealth, Nullifier) usable independently | Developers integrate what they need                                |
 
 ### 14.3 Why Not Just Use Aztec?
@@ -1700,13 +1699,12 @@ Track weekly in a shared spreadsheet/Notion:
 4. `SelectiveDisclosureManager.sol`
 5. `ZaseonComplianceV2.sol`
 
-**contracts/governance/ (5 contracts + interfaces/)**
+**contracts/governance/ (4 contracts + interfaces/)**
 
 1. `OperationTimelockModule.sol`
-2. `ZaseonGovernance.sol`
-3. `ZaseonGovernor.sol`
-4. `ZaseonToken.sol`
-5. `ZaseonUpgradeTimelock.sol`
+2. `ZaseonGovernor.sol`
+3. `ZaseonToken.sol`
+4. `ZaseonUpgradeTimelock.sol`
 
 **contracts/primitives/ (10 contracts)**
 
@@ -1752,12 +1750,11 @@ Track weekly in a shared spreadsheet/Notion:
 5. `GasOptimizations.sol`
 6. `GasOptimizedBatchOps.sol`
 7. `PoseidonT3.sol`
-8. `PoseidonYul.sol`
-9. `RouteOptimizer.sol`
-10. `UniversalChainRegistry.sol`
-11. `ValidationLib.sol`
-12. `VerifierGasUtils.sol`
-13. `ZaseonConstants.sol`
+8. `RouteOptimizer.sol`
+9. `UniversalChainRegistry.sol`
+10. `ValidationLib.sol`
+11. `VerifierGasUtils.sol`
+12. `ZaseonConstants.sol`
 
 **contracts/interfaces/ (44 contracts)** — [Listed in §1.2]
 

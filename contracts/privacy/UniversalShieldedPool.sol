@@ -9,7 +9,7 @@ import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IER
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IUniversalShieldedPool} from "../interfaces/IUniversalShieldedPool.sol";
 import {UniversalChainRegistry} from "../libraries/UniversalChainRegistry.sol";
-import {PoseidonYul} from "../libraries/PoseidonYul.sol";
+import {PoseidonT3} from "../libraries/PoseidonT3.sol";
 
 /**
  * @title UniversalShieldedPool
@@ -750,12 +750,12 @@ contract UniversalShieldedPool is
     }
 
     /// @notice Hash a pair of nodes using Poseidon (BN254, T=3)
-    /// @dev Uses PoseidonYul for ZK-compatible Merkle tree hashing
+    /// @dev Uses PoseidonT3 for ZK-compatible Merkle tree hashing
     function _hashPair(
         bytes32 left,
         bytes32 right
     ) internal pure returns (bytes32) {
-        return bytes32(PoseidonYul.hash2(uint256(left), uint256(right)));
+        return bytes32(PoseidonT3.hash2(uint256(left), uint256(right)));
     }
 
     /// @notice Verify a withdrawal ZK proof

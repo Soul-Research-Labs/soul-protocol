@@ -221,6 +221,8 @@ Zaseon implements 12 independent metadata reduction layers across contracts and 
 | Mixnet routing           | ✗        | ✗          | ✅ (2-5 hops) |
 | SDK decoy traffic        | Optional | Optional   | Recommended   |
 
+> **See also:** [CROSS_CHAIN_PRIVACY.md](CROSS_CHAIN_PRIVACY.md) for cross-chain-specific metadata protection details and production status of each cryptographic primitive.
+
 ## Security Checklist
 
 Before mainnet deployment:
@@ -229,6 +231,6 @@ Before mainnet deployment:
 - [ ] Call `shieldedPool.disableTestMode()` (irreversible)
 - [ ] Configure sanctions oracle providers with real data feeds
 - [ ] Set relayer fee routes for all target L2s
-- [x] Run Certora formal verification (62 CVL specs passing)
-- [x] Complete security audit (February 2026 — 44 findings fixed)
+- [x] Run Certora formal verification (72 CVL specs passing)
+- [x] Complete security audit (79 vulnerabilities fixed across 4 phases — see [SECURITY_AUDIT_REPORT.md](SECURITY_AUDIT_REPORT.md))
 - [ ] Enable compliance screening on PrivacyRouter

@@ -475,11 +475,12 @@ contract DirectL2Messenger is
         address recipient,
         bytes calldata payload
     ) external nonReentrant whenNotPaused {
-        // Verify caller is authorized (Superchain messenger or this contract)
+        // SECURITY FIX H-5: Removed OPERATOR_ROLE from authorized callers.
+        // Only the Superchain messenger or SEQUENCER_ROLE should inject messages
+        // to prevent operator-level message injection attacks.
         if (
             msg.sender != superchainMessenger &&
-            !hasRole(SEQUENCER_ROLE, msg.sender) &&
-            !hasRole(OPERATOR_ROLE, msg.sender)
+            !hasRole(SEQUENCER_ROLE, msg.sender)
         ) {
             revert InvalidRelayer();
         }
