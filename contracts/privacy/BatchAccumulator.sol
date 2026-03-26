@@ -213,6 +213,14 @@ contract BatchAccumulator is
     ) external onlyRole(OPERATOR_ROLE) {
         bytes32 routeHash = _getRouteHash(sourceChainId, targetChainId);
         routeConfigs[routeHash].isActive = false;
+
+        // Force-release any ACCUMULATING batch so user commitments are not stranded
+        bytes32 batchId = activeBatches[routeHash];
+        if (batchId != bytes32(0) && batches[batchId].status == BatchStatus.ACCUMULATING) {
+            batches[batchId].status = BatchStatus.READY;
+            batches[batchId].readyAt = block.timestamp;
+            emit BatchReady(batchId, batches[batchId].commitments.length, "ROUTE_DEACTIVATED");
+        }
     }
 
     /**
