@@ -14,7 +14,7 @@ use poseidon::poseidon::bn254;
 /// 4. Balance conservation: Verified without revealing amounts
 
 // Circuit parameters
-global MERKLE_DEPTH: u32 = 20;
+global MERKLE_DEPTH: u32 = 32;
 global NUM_INPUTS: u32 = 2;
 global NUM_OUTPUTS: u32 = 2;
 global RANGE_BITS: u32 = 64;
@@ -30,8 +30,8 @@ struct TransferInput {
     secret: Field,
     blinding: Field,
     value: Field,
-    merkle_path: [Field; 20],
-    merkle_indices: [u1; 20],
+    merkle_path: [Field; 32],
+    merkle_indices: [u1; 32],
 }
 
 /// Output UTXO being created
@@ -85,12 +85,12 @@ fn compute_key_image(secret: Field, commitment: Field) -> Field {
 fn verify_merkle_proof(
     leaf: Field,
     root: Field,
-    path: [Field; 20],
-    indices: [u1; 20]
+    path: [Field; 32],
+    indices: [u1; 32]
 ) -> bool {
     let mut current_hash = leaf;
     
-    for i in 0..20 {
+    for i in 0..32 {
         let path_element = path[i];
         let index = indices[i];
         

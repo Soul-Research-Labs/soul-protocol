@@ -165,10 +165,14 @@ contract HyperlaneAdapter is
     uint256 public totalDelivered;
     uint256 public totalFeesCollected;
 
+    /// @notice Mapping from EVM chain ID to Hyperlane domain ID (for IBridgeAdapter compatibility)
+    mapping(uint256 => uint32) public chainIdToDomain;
+
     /*//////////////////////////////////////////////////////////////
                                EVENTS
     //////////////////////////////////////////////////////////////*/
 
+    event ChainIdMapped(uint256 indexed chainId, uint32 indexed domain);
     event DomainConfigured(uint32 indexed domain, bytes32 router, address ism);
     event ISMConfigured(
         uint32 indexed domain,
@@ -437,7 +441,7 @@ contract HyperlaneAdapter is
                 localDomain,
                 sender,
                 body,
-                block.timestamp
+                totalDelivered // H-3 FIX: deterministic nonce instead of block.timestamp
             )
         );
 
@@ -497,14 +501,40 @@ contract HyperlaneAdapter is
 
     /**
      * @notice IBridgeAdapter-compatible bridge message
+     * @dev Translates generic chainId-based call to Hyperlane-specific dispatch()
      */
     function bridgeMessage(
         address targetAddress,
         bytes calldata payload,
         address /*refundAddress*/
     ) external payable nonReentrant whenNotPaused returns (bytes32 messageId) {
-        // Requires explicit domain — use dispatch() for full Hyperlane control
-        revert("Use dispatch() with explicit dstDomain");
+        // Extract destination chain ID from payload (first 32 bytes encode chainId)
+        uint256 destChainId = abi.decode(payload[:32], (uint256));
+        uint32 dstDomain = chainIdToDomain[destChainId];
+        if (dstDomain == 0) revert DomainNotConfigured(dstDomain);
+
+        DomainConfig storage config = domains[dstDomain];
+        if (!config.active) revert DomainNotConfigured(dstDomain);
+
+        bytes32 recipient = bytes32(uint256(uint160(targetAddress)));
+
+        // Delegate to the full dispatch() implementation
+        messageId = this.dispatch{value: msg.value}(
+            dstDomain,
+            recipient,
+            payload[32:]
+        );
+    }
+
+    /**
+     * @notice Map an EVM chain ID to a Hyperlane domain ID
+     */
+    function setChainIdMapping(
+        uint256 chainId,
+        uint32 domain
+    ) external onlyRole(OPERATOR_ROLE) {
+        chainIdToDomain[chainId] = domain;
+        emit ChainIdMapped(chainId, domain);
     }
 
     /**

@@ -181,6 +181,15 @@ contract CrossChainSanctionsOracle is
         sanctions[addr].flagCount = 0;
         sanctions[addr].lastUpdated = block.timestamp;
 
+        // Reset per-provider flags so providers can re-flag in a fresh cycle
+        uint256 len = providerList.length;
+        for (uint256 i; i < len; ) {
+            providerHasFlagged[providerList[i]][addr] = false;
+            unchecked {
+                ++i;
+            }
+        }
+
         emit AddressCleared(addr);
     }
 

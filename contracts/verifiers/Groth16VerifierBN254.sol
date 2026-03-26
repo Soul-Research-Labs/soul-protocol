@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "../interfaces/IProofVerifier.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
 /**
  * @title Groth16VerifierBN254
@@ -19,7 +20,7 @@ import "../interfaces/IProofVerifier.sol";
  * - π_B: G2 point (128 bytes) [x_im, x_re, y_im, y_re]
  * - π_C: G1 point (64 bytes) [x, y]
  */
-contract Groth16VerifierBN254 is IProofVerifier {
+contract Groth16VerifierBN254 is IProofVerifier, AccessControl {
     /*//////////////////////////////////////////////////////////////
                              CONSTANTS
     //////////////////////////////////////////////////////////////*/
@@ -45,6 +46,9 @@ contract Groth16VerifierBN254 is IProofVerifier {
                          VERIFICATION KEY
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Role for VK management
+    bytes32 public constant VK_ADMIN_ROLE = keccak256("VK_ADMIN_ROLE");
+
     /// @notice Verification key - Alpha G1 point
     uint256[2] public vkAlpha;
 
@@ -63,14 +67,10 @@ contract Groth16VerifierBN254 is IProofVerifier {
     /// @notice Whether the verification key is set
     bool public initialized;
 
-    /// @notice Contract owner
-    address public owner;
-
     /*//////////////////////////////////////////////////////////////
                               ERRORS
     //////////////////////////////////////////////////////////////*/
 
-    error NotOwner();
     error NotInitialized();
     error AlreadyInitialized();
     error InvalidProofSize(uint256 size);
@@ -78,7 +78,6 @@ contract Groth16VerifierBN254 is IProofVerifier {
     error InvalidPublicInput(uint256 index, uint256 value);
     error PairingCheckFailed();
     error PrecompileFailed();
-    error InvalidOwner();
 
     /*//////////////////////////////////////////////////////////////
                               EVENTS
@@ -86,19 +85,10 @@ contract Groth16VerifierBN254 is IProofVerifier {
 
     event VerificationKeySet(uint256 icLength);
     event ProofVerified(bytes32 indexed proofHash, bool result);
-    event OwnershipTransferred(
-        address indexed previousOwner,
-        address indexed newOwner
-    );
 
     /*//////////////////////////////////////////////////////////////
                             MODIFIERS
     //////////////////////////////////////////////////////////////*/
-
-    modifier onlyOwner() {
-        if (msg.sender != owner) revert NotOwner();
-        _;
-    }
 
     modifier whenInitialized() {
         if (!initialized) revert NotInitialized();
@@ -109,8 +99,10 @@ contract Groth16VerifierBN254 is IProofVerifier {
                            CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    constructor() {
-        owner = msg.sender;
+    constructor(address admin) {
+        if (admin == address(0)) revert InvalidPublicInputCount(0, 1);
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(VK_ADMIN_ROLE, admin);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -131,7 +123,7 @@ contract Groth16VerifierBN254 is IProofVerifier {
         uint256[4] calldata gamma,
         uint256[4] calldata delta,
         uint256[2][] calldata ic
-    ) external onlyOwner {
+    ) external onlyRole(VK_ADMIN_ROLE) {
         // M-7 Fix: Allow key rotation by owner (removed AlreadyInitialized check)
 
         vkAlpha = alpha;
@@ -161,13 +153,13 @@ contract Groth16VerifierBN254 is IProofVerifier {
     /**
      * @inheritdoc IProofVerifier
      */
-        /**
+    /**
      * @notice Verifys the operation
      * @param proof The ZK proof data
      * @param publicInputs The public inputs
      * @return The result value
      */
-function verify(
+    function verify(
         bytes calldata proof,
         uint256[] calldata publicInputs
     ) external view override whenInitialized returns (bool) {
@@ -205,13 +197,13 @@ function verify(
     /**
      * @inheritdoc IProofVerifier
      */
-        /**
+    /**
      * @notice Verifys single
      * @param proof The ZK proof data
      * @param publicInput The public input
      * @return The result value
      */
-function verifySingle(
+    function verifySingle(
         bytes calldata proof,
         uint256 publicInput
     ) external view override whenInitialized returns (bool) {
@@ -238,24 +230,24 @@ function verifySingle(
     /**
      * @inheritdoc IProofVerifier
      */
-        /**
+    /**
      * @notice Returns the public input count
      * @return The result value
      */
-function getPublicInputCount() external view override returns (uint256) {
+    function getPublicInputCount() external view override returns (uint256) {
         return vkIC.length > 0 ? vkIC.length - 1 : 0;
     }
 
     /**
      * @inheritdoc IProofVerifier
      */
-        /**
+    /**
      * @notice Verifys proof
      * @param proof The ZK proof data
      * @param publicInputs The public inputs
      * @return The result value
      */
-function verifyProof(
+    function verifyProof(
         bytes calldata proof,
         bytes calldata publicInputs
     ) external view override returns (bool) {
@@ -267,11 +259,11 @@ function verifyProof(
     /**
      * @inheritdoc IProofVerifier
      */
-        /**
+    /**
      * @notice Checks if ready
      * @return The result value
      */
-function isReady() external view override returns (bool) {
+    function isReady() external view override returns (bool) {
         return initialized;
     }
 
@@ -311,7 +303,7 @@ function isReady() external view override returns (bool) {
     /**
      * @notice Verify the Groth16 pairing equation
      * @dev e(A, B) = e(α, β) · e(∑ IC_i * input_i, γ) · e(C, δ)
-          * @param piA The pi a
+     * @param piA The pi a
      * @param piB The pi b
      * @param piC The pi c
      * @param publicInputs The public inputs
@@ -442,17 +434,5 @@ function isReady() external view override returns (bool) {
                 revert(0, 0)
             }
         }
-    }
-
-    /**
-     * @notice Transfer ownership
-     * @param newOwner New owner address
-     */
-    function transferOwnership(address newOwner) external onlyOwner {
-        if (newOwner == address(0)) revert InvalidOwner();
-
-        address oldOwner = owner;
-        owner = newOwner;
-        emit OwnershipTransferred(oldOwner, newOwner);
     }
 }

@@ -681,23 +681,36 @@ contract ProtocolEmergencyCoordinator is
         IKillSwitch.EmergencyLevel level,
         string memory reason
     ) internal {
-        try killSwitch.escalateEmergency(level, reason) {} catch {}
+        try killSwitch.escalateEmergency(level, reason) {} catch {
+            emit EmergencySubcallFailed("killSwitch.escalateEmergency");
+        }
     }
 
     /// @dev Try to pause the protocol hub
     function _tryHubPause() internal {
-        try protocolHub.pause() {} catch {}
+        try protocolHub.pause() {} catch {
+            emit EmergencySubcallFailed("protocolHub.pause");
+        }
     }
 
     /// @dev Try to halt the bridge circuit breaker
     function _tryCircuitBreakerHalt() internal {
-        try circuitBreaker.emergencyHalt() {} catch {}
+        try circuitBreaker.emergencyHalt() {} catch {
+            emit EmergencySubcallFailed("circuitBreaker.emergencyHalt");
+        }
     }
 
     /// @dev Try to trigger the health aggregator's emergency pause
     function _tryHealthAggregatorPause() internal {
-        try healthAggregator.guardianEmergencyPause() {} catch {}
+        try healthAggregator.guardianEmergencyPause() {} catch {
+            emit EmergencySubcallFailed(
+                "healthAggregator.guardianEmergencyPause"
+            );
+        }
     }
+
+    /// @notice Emitted when an emergency subcall fails
+    event EmergencySubcallFailed(string target);
 
     // M-1 FIX: Reset roleSeparationConfirmed when critical roles change
     function _grantRole(

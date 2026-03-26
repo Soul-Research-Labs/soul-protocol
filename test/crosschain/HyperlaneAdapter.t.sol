@@ -335,15 +335,21 @@ contract HyperlaneAdapterTest is Test {
                    IBridgeAdapter COMPATIBILITY TESTS
     //////////////////////////////////////////////////////////////*/
 
-    function test_BridgeMessage_Reverts() public {
+    function test_BridgeMessage_RevertsUnmappedChain() public {
         vm.deal(user, 1 ether);
         vm.prank(user);
-        vm.expectRevert("Use dispatch() with explicit dstDomain");
-        adapter.bridgeMessage{value: 0.1 ether}(address(0x1), "", address(0));
+        // Payload encodes chainId=999 (unmapped) + actual message
+        bytes memory payload = abi.encodePacked(uint256(999), bytes("hello"));
+        vm.expectRevert();
+        adapter.bridgeMessage{value: 0.1 ether}(
+            address(0x1),
+            payload,
+            address(0)
+        );
     }
 
     function test_EstimateFee_IBridgeAdapter_Reverts() public {
-        vm.expectRevert("Use dispatch() with explicit dstDomain");
+        vm.expectRevert();
         adapter.estimateFee(address(0x1), "");
     }
 

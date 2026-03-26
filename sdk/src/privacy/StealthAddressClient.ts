@@ -368,8 +368,10 @@ export class StealthAddressClient {
     viewingPrivKey: Hex,
     ephemeralPubKey: Hex,
   ): Hex {
-    // Compute shared secret
-    const sharedSecret = keccak256(concat([viewingPrivKey, ephemeralPubKey]));
+    // Compute shared secret — must match deriveStealthAddressLocally's formula
+    const sharedSecret = keccak256(
+      concat([toHex("stealth-ecdh"), viewingPrivKey, ephemeralPubKey]),
+    );
 
     // Derive stealth private key: spendingPrivKey + hash(sharedSecret)
     const spendingBN = BigInt(spendingPrivKey);

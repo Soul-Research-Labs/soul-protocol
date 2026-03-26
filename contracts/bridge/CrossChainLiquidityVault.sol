@@ -337,6 +337,11 @@ contract CrossChainLiquidityVault is
         lpEthDeposited[msg.sender] -= amount;
         totalETH -= amount;
 
+        // Mark LP inactive if all ETH withdrawn (gas optimization for iterations)
+        if (lpEthDeposited[msg.sender] == 0) {
+            isActiveLP[msg.sender] = false;
+        }
+
         (bool sent, ) = msg.sender.call{value: amount}("");
         if (!sent) revert TransferFailed();
 
@@ -376,6 +381,14 @@ contract CrossChainLiquidityVault is
 
         lpTokenDeposited[msg.sender][token] -= amount;
         totalTokens[token] -= amount;
+
+        // Mark LP inactive if all tokens of this type withdrawn
+        if (
+            lpTokenDeposited[msg.sender][token] == 0 &&
+            lpEthDeposited[msg.sender] == 0
+        ) {
+            isActiveLP[msg.sender] = false;
+        }
 
         IERC20(token).safeTransfer(msg.sender, amount);
 

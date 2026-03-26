@@ -395,13 +395,7 @@ contract UniversalShieldedPool is
             }
         }
 
-        emit Withdrawal(
-            wp.nullifier,
-            wp.assetId,
-            wp.recipient,
-            wp.amount,
-            wp.relayerFee
-        );
+        emit Withdrawal(wp.nullifier, wp.assetId);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -688,7 +682,7 @@ contract UniversalShieldedPool is
             ++totalDeposits;
         }
 
-        emit Deposit(commitment, assetId, leafIndex, amount, block.timestamp);
+        emit Deposit(commitment, assetId, leafIndex, block.timestamp);
     }
 
     /// @notice Insert a leaf into the incremental Merkle tree

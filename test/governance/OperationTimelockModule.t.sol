@@ -420,12 +420,7 @@ contract OperationTimelockModuleTest is Test {
         vm.warp(block.timestamp + 48 hours + 1);
 
         vm.prank(executor);
-        (uint256 successCount, uint256 failCount) = timelock.executeBatch(
-            batchId
-        );
-
-        assertEq(successCount, 2);
-        assertEq(failCount, 0);
+        timelock.executeBatch(batchId);
         assertEq(target.value(), 11); // setValue(10) then increment() → 11
     }
 

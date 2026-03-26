@@ -123,7 +123,6 @@ contract UniversalShieldedPoolTest is Test {
             commitment,
             NATIVE_ASSET,
             0,
-            2 ether,
             block.timestamp
         );
 

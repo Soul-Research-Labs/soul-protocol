@@ -244,6 +244,7 @@ contract OperationTimelockModule is AccessControl, ReentrancyGuard {
     error NoPendingTierDelayChange(DelayTier tier);
     error TierDelayChangeNotReady(DelayTier tier, uint48 readyAt);
     error ExecutionFailed(bytes32 operationId);
+    error BatchCallFailed(bytes32 batchId, uint256 index);
 
     /*//////////////////////////////////////////////////////////////
                              CONSTRUCTOR
@@ -480,19 +481,12 @@ contract OperationTimelockModule is AccessControl, ReentrancyGuard {
     }
 
     /**
-     * @notice Execute a ready batch operation
+     * @notice Execute a ready batch operation (atomic — reverts on any call failure)
      * @param batchId The batch to execute
-     * @return successCount Number of successful calls
-     * @return failCount Number of failed calls
      */
     function executeBatch(
         bytes32 batchId
-    )
-        external
-        onlyRole(EXECUTOR_ROLE)
-        nonReentrant
-        returns (uint256 successCount, uint256 failCount)
-    {
+    ) external onlyRole(EXECUTOR_ROLE) nonReentrant {
         BatchOperation storage batch = _batchOperations[batchId];
         if (batch.status != OperationStatus.QUEUED)
             revert OperationNotQueued(batchId);
@@ -515,21 +509,15 @@ contract OperationTimelockModule is AccessControl, ReentrancyGuard {
             (bool success, ) = batch.targets[i].call{value: batch.values[i]}(
                 batch.callDatas[i]
             );
-            if (success) {
-                unchecked {
-                    ++successCount;
-                }
-            } else {
-                unchecked {
-                    ++failCount;
-                }
+            if (!success) {
+                revert BatchCallFailed(batchId, i);
             }
             unchecked {
                 ++i;
             }
         }
 
-        emit BatchExecuted(batchId, msg.sender, successCount, failCount);
+        emit BatchExecuted(batchId, msg.sender, len, 0);
     }
 
     /**

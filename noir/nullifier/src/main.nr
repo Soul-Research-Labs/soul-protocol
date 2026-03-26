@@ -33,14 +33,18 @@ fn verify_commitment(
     computed == expected_commitment
 }
 
-/// Derive a nullifier from secret and commitment
+/// Derive a nullifier from secret, commitment, domain, nonce, asset_id, and amount
 fn derive_nullifier(
     secret: Field,
     commitment: Field,
     domain_id: Field,
-    nonce: Field
+    nonce: Field,
+    asset_id: Field,
+    amount: Field
 ) -> Field {
-    bn254::hash_4([secret, commitment, domain_id, nonce])
+    // Include asset_id and amount to prevent cross-asset nullifier reuse
+    let h1 = bn254::hash_4([secret, commitment, domain_id, nonce]);
+    bn254::hash_3([h1, asset_id, amount])
 }
 
 /// Full nullifier derivation verification
@@ -48,7 +52,7 @@ fn verify_nullifier_derivation(
     nullifier_hash: Field,
     domain_id: Field,
     inputs: NullifierInputs
-) -> bool {
+) {
     // Step 1: Verify the commitment is correctly formed
     let commitment_valid = verify_commitment(
         inputs.secret,
@@ -57,18 +61,18 @@ fn verify_nullifier_derivation(
         inputs.commitment_salt,
         inputs.commitment
     );
+    assert(commitment_valid, "Invalid commitment");
 
-    // Step 2: Derive the nullifier
+    // Step 2: Derive the nullifier (includes asset_id and amount)
     let computed_nullifier = derive_nullifier(
         inputs.secret,
         inputs.commitment,
         domain_id,
-        inputs.nonce
+        inputs.nonce,
+        inputs.asset_id,
+        inputs.amount
     );
-    let nullifier_valid = computed_nullifier == nullifier_hash;
-
-    // Both conditions must be met
-    commitment_valid & nullifier_valid
+    assert(computed_nullifier == nullifier_hash, "Invalid nullifier derivation");
 }
 
 /// Verify Merkle membership of a commitment
@@ -103,9 +107,9 @@ fn verify_nullifier_with_membership<let MERKLE_DEPTH: u32>(
     inputs: NullifierInputs,
     path_indices: [Field; MERKLE_DEPTH],
     siblings: [Field; MERKLE_DEPTH]
-) -> bool {
+) {
     // Verify nullifier derivation
-    let nullifier_valid = verify_nullifier_derivation(nullifier_hash, domain_id, inputs);
+    verify_nullifier_derivation(nullifier_hash, domain_id, inputs);
     
     // Verify commitment is in Merkle tree
     let membership_valid = verify_merkle_membership(
@@ -114,8 +118,7 @@ fn verify_nullifier_with_membership<let MERKLE_DEPTH: u32>(
         path_indices,
         siblings
     );
-    
-    nullifier_valid & membership_valid
+    assert(membership_valid, "Commitment not in Merkle tree");
 }
 
 /// Main entry point
@@ -131,9 +134,9 @@ fn main(
     commitment_salt: Field,
     asset_id: Field,
     amount: Field,
-    path_indices: [Field; 20],
-    siblings: [Field; 20]
-) -> pub bool {
+    path_indices: [Field; 32],
+    siblings: [Field; 32]
+) {
     let inputs = NullifierInputs {
         secret,
         nonce,
@@ -150,7 +153,7 @@ fn main(
         inputs,
         path_indices,
         siblings
-    )
+    );
 }
 
 #[test]
@@ -159,8 +162,10 @@ fn test_nullifier_derivation() {
     let commitment = 0x5678;
     let domain_id = 1;
     let nonce = 42;
+    let asset_id = 100;
+    let amount = 500;
     
-    let nullifier = derive_nullifier(secret, commitment, domain_id, nonce);
+    let nullifier = derive_nullifier(secret, commitment, domain_id, nonce, asset_id, amount);
     
     // Nullifier should be non-zero
     assert(nullifier != 0);

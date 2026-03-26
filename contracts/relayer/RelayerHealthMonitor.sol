@@ -24,6 +24,9 @@ contract RelayerHealthMonitor is AccessControl {
     mapping(address => RelayerStats) public relayerStats;
     address[] public knownRelayers;
 
+    /// @notice Maximum number of relayers to prevent unbounded array growth
+    uint256 public constant MAX_RELAYERS = 500;
+
     event RelayerRegistered(address indexed relayer);
     event PerformanceRecorded(
         address indexed relayer,
@@ -45,12 +48,16 @@ contract RelayerHealthMonitor is AccessControl {
 
     /**
      * @notice Register a new relayer for monitoring
-          * @param _relayer The _relayer
+     * @param _relayer The _relayer
      */
     function registerRelayer(
         address _relayer
     ) external onlyRole(GOVERNANCE_ROLE) {
         if (!relayerStats[_relayer].isActive) {
+            require(
+                knownRelayers.length < MAX_RELAYERS,
+                "Max relayers reached"
+            );
             relayerStats[_relayer].isActive = true;
             knownRelayers.push(_relayer);
             emit RelayerRegistered(_relayer);
@@ -92,7 +99,7 @@ contract RelayerHealthMonitor is AccessControl {
 
     /**
      * @notice Apply penalty points to a relayer (e.g. for downtime or censorship)
-          * @param _relayer The _relayer
+     * @param _relayer The _relayer
      * @param _points The _points
      * @param _reason The _reason
      */
@@ -108,7 +115,7 @@ contract RelayerHealthMonitor is AccessControl {
     /**
      * @notice Calculate a health score (0-100) for a relayer
      * @dev Simple formula: Base 100 - FailureRate - LatencyPenalty - AdminPenalty
-          * @param _relayer The _relayer
+     * @param _relayer The _relayer
      * @return The result value
      */
     function getHealthScore(address _relayer) external view returns (uint256) {

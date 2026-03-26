@@ -394,11 +394,11 @@ contract SelectiveDisclosureManager is AccessControl, ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Authorize an auditor
-        /**
+    /**
      * @notice Authorize auditor
      * @param auditor The auditor
      */
-function authorizeAuditor(
+    function authorizeAuditor(
         address auditor
     ) external onlyRole(COMPLIANCE_ADMIN) {
         if (auditor == address(0)) revert ZeroAddress();
@@ -407,11 +407,11 @@ function authorizeAuditor(
     }
 
     /// @notice Revoke an auditor
-        /**
+    /**
      * @notice Revokes auditor
      * @param auditor The auditor
      */
-function revokeAuditor(
+    function revokeAuditor(
         address auditor
     ) external onlyRole(COMPLIANCE_ADMIN) {
         _revokeRole(AUDITOR_ROLE, auditor);
@@ -419,11 +419,11 @@ function revokeAuditor(
     }
 
     /// @notice Authorize a regulator
-        /**
+    /**
      * @notice Authorize regulator
      * @param regulator The regulator
      */
-function authorizeRegulator(
+    function authorizeRegulator(
         address regulator
     ) external onlyRole(COMPLIANCE_ADMIN) {
         if (regulator == address(0)) revert ZeroAddress();
@@ -432,11 +432,11 @@ function authorizeRegulator(
     }
 
     /// @notice Revoke a regulator
-        /**
+    /**
      * @notice Revokes regulator
      * @param regulator The regulator
      */
-function revokeRegulator(
+    function revokeRegulator(
         address regulator
     ) external onlyRole(COMPLIANCE_ADMIN) {
         _revokeRole(REGULATOR_ROLE, regulator);
@@ -444,25 +444,26 @@ function revokeRegulator(
     }
 
     /// @notice Update the compliance proof verifier
-        /**
+    /**
      * @notice Sets the compliance verifier
      * @param newVerifier The new Verifier value
      */
-function setComplianceVerifier(
+    function setComplianceVerifier(
         address newVerifier
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (newVerifier == address(0)) revert ZeroAddress();
         address old = address(complianceVerifier);
         complianceVerifier = IProofVerifier(newVerifier);
         emit ComplianceVerifierUpdated(old, newVerifier);
     }
 
     /// @notice Set default disclosure level for a user
-        /**
+    /**
      * @notice Sets the user default level
      * @param user The user
      * @param level The level value
      */
-function setUserDefaultLevel(
+    function setUserDefaultLevel(
         address user,
         DisclosureLevel level
     ) external onlyRole(COMPLIANCE_ADMIN) {
@@ -475,25 +476,25 @@ function setUserDefaultLevel(
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Get transaction metadata
-        /**
+    /**
      * @notice Returns the transaction
      * @param txId The txId identifier
      * @return The result value
      */
-function getTransaction(
+    function getTransaction(
         bytes32 txId
     ) external view returns (PrivateTransaction memory) {
         return _transactions[txId];
     }
 
     /// @notice Check if a viewer has active permission
-        /**
+    /**
      * @notice Checks if has viewing permission
      * @param txId The txId identifier
      * @param viewer The viewer
      * @return The result value
      */
-function hasViewingPermission(
+    function hasViewingPermission(
         bytes32 txId,
         address viewer
     ) external view returns (bool) {
@@ -508,13 +509,13 @@ function hasViewingPermission(
     }
 
     /// @notice Get viewing key details
-        /**
+    /**
      * @notice Returns the viewing key
      * @param txId The txId identifier
      * @param viewer The viewer
      * @return The result value
      */
-function getViewingKey(
+    function getViewingKey(
         bytes32 txId,
         address viewer
     ) external view returns (ViewingKey memory) {
@@ -522,46 +523,46 @@ function getViewingKey(
     }
 
     /// @notice Get all viewers for a transaction
-        /**
+    /**
      * @notice Returns the transaction viewers
      * @param txId The txId identifier
      * @return The result value
      */
-function getTransactionViewers(
+    function getTransactionViewers(
         bytes32 txId
     ) external view returns (address[] memory) {
         return _transactionViewers[txId];
     }
 
     /// @notice Get audit trail for a transaction
-        /**
+    /**
      * @notice Returns the audit trail
      * @param txId The txId identifier
      * @return The result value
      */
-function getAuditTrail(
+    function getAuditTrail(
         bytes32 txId
     ) external view returns (AuditEntry[] memory) {
         return _auditTrail[txId];
     }
 
     /// @notice Check if transaction has valid compliance proof
-        /**
+    /**
      * @notice Checks if compliant
      * @param txId The txId identifier
      * @return The result value
      */
-function isCompliant(bytes32 txId) external view returns (bool) {
+    function isCompliant(bytes32 txId) external view returns (bool) {
         return complianceProofs[txId] != bytes32(0);
     }
 
     /// @notice Get the number of viewers for a transaction
-        /**
+    /**
      * @notice Returns the viewer count
      * @param txId The txId identifier
      * @return The result value
      */
-function getViewerCount(bytes32 txId) external view returns (uint256) {
+    function getViewerCount(bytes32 txId) external view returns (uint256) {
         return _transactions[txId].viewerCount;
     }
 

@@ -60,7 +60,7 @@ fn compute_nullifier(commitment: Field, secret: Field, nonce: Field) -> Field {
 fn verify_state_transfer<let STATE_FIELDS: u32>(
     inputs: StateTransferInputs<STATE_FIELDS>,
     public_inputs: StateTransferPublicInputs
-) -> bool {
+) {
     // 
     // STEP 1: Verify sender owns the old state (ownership proof)
     // 
@@ -71,14 +71,14 @@ fn verify_state_transfer<let STATE_FIELDS: u32>(
         inputs.old_salt,
         inputs.sender_secret
     );
-    let old_commitment_valid = computed_old_commitment == public_inputs.old_commitment;
+    assert(computed_old_commitment == public_inputs.old_commitment, "Invalid old commitment");
     
     // 
     // STEP 2: Verify sender pubkey derivation
     // 
     
     let computed_sender_pubkey = derive_pubkey(inputs.sender_secret);
-    let sender_valid = computed_sender_pubkey == public_inputs.sender_pubkey;
+    assert(computed_sender_pubkey == public_inputs.sender_pubkey, "Invalid sender pubkey");
     
     // 
     // STEP 3: Verify nullifier is correctly computed (prevents double-spend)
@@ -89,7 +89,7 @@ fn verify_state_transfer<let STATE_FIELDS: u32>(
         inputs.sender_secret,
         inputs.transfer_nonce
     );
-    let nullifier_valid = computed_nullifier == public_inputs.old_nullifier;
+    assert(computed_nullifier == public_inputs.old_nullifier, "Invalid nullifier");
     
     // 
     // STEP 4: Verify new state commitment is valid
@@ -101,11 +101,11 @@ fn verify_state_transfer<let STATE_FIELDS: u32>(
         inputs.new_salt,
         inputs.recipient_secret
     );
-    let new_commitment_valid = computed_new_commitment == public_inputs.new_commitment;
+    assert(computed_new_commitment == public_inputs.new_commitment, "Invalid new commitment");
     
     // Verify recipient pubkey
     let computed_recipient_pubkey = derive_pubkey(inputs.recipient_secret);
-    let recipient_valid = computed_recipient_pubkey == public_inputs.recipient_pubkey;
+    assert(computed_recipient_pubkey == public_inputs.recipient_pubkey, "Invalid recipient pubkey");
     
     // 
     // STEP 5: Verify value conservation
@@ -114,17 +114,10 @@ fn verify_state_transfer<let STATE_FIELDS: u32>(
     // Assuming state_fields[0] contains the value
     let old_value = inputs.old_state_fields[0];
     let new_value = inputs.new_state_fields[0];
-    let value_conserved = old_value == new_value;
+    assert(old_value == new_value, "Value not conserved");
     
     // Constrain transfer_value public input to match actual state value
-    let transfer_value_valid = public_inputs.transfer_value == old_value;
-    
-    // 
-    // FINAL: Combine all validity checks
-    // 
-    
-    old_commitment_valid & sender_valid & nullifier_valid & 
-    new_commitment_valid & recipient_valid & value_conserved & transfer_value_valid
+    assert(public_inputs.transfer_value == old_value, "Transfer value mismatch");
 }
 
 /// Main entry point with 8 state fields
@@ -144,7 +137,7 @@ fn main(
     new_salt: Field,
     recipient_secret: Field,
     transfer_nonce: Field
-) -> pub bool {
+) {
     let inputs = StateTransferInputs {
         old_state_fields,
         old_salt,
@@ -164,7 +157,7 @@ fn main(
         transfer_value
     };
     
-    verify_state_transfer(inputs, public_inputs)
+    verify_state_transfer(inputs, public_inputs);
 }
 
 #[test]
@@ -206,7 +199,7 @@ fn test_state_transfer() {
         transfer_value: 100
     };
     
-    assert(verify_state_transfer(inputs, public_inputs));
+    verify_state_transfer(inputs, public_inputs);
 }
 
 #[test]

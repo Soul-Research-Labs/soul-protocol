@@ -15,6 +15,53 @@ import {
   RetryOptions,
 } from "../utils/errors";
 
+/**
+ * Validate that a URL is a safe external endpoint (SSRF prevention).
+ * Blocks private/internal IP ranges and non-HTTP(S) schemes.
+ */
+function validateExternalUrl(url: string, label: string): void {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new ZaseonError(
+      `Invalid ${label} URL: ${url}`,
+      ZaseonErrorCode.INVALID_INPUT,
+    );
+  }
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+    throw new ZaseonError(
+      `${label} URL must use http or https scheme`,
+      ZaseonErrorCode.INVALID_INPUT,
+    );
+  }
+  const hostname = parsed.hostname;
+  // Block private/internal IPs and localhost
+  const blockedPatterns = [
+    /^127\./,
+    /^10\./,
+    /^172\.(1[6-9]|2\d|3[01])\./,
+    /^192\.168\./,
+    /^0\./,
+    /^169\.254\./,
+    /^::1$/,
+    /^fc/i,
+    /^fd/i,
+    /^fe80/i,
+    /^localhost$/i,
+    /\.local$/i,
+    /\.internal$/i,
+  ];
+  for (const pattern of blockedPatterns) {
+    if (pattern.test(hostname)) {
+      throw new ZaseonError(
+        `${label} URL must not point to a private/internal address`,
+        ZaseonErrorCode.INVALID_INPUT,
+      );
+    }
+  }
+}
+
 /** Proof generation result */
 export interface ProofResult {
   proof: Buffer;
@@ -29,6 +76,7 @@ export interface RelayerPacket {
   proof: ProofResult;
   sourceChain: string;
   destChain: string;
+  stateRoot: string;
   timestamp: number;
 }
 
@@ -45,7 +93,9 @@ export interface ProofParams {
 }
 
 export class ProverModule {
-  constructor(public proverUrl: string) {}
+  constructor(public proverUrl: string) {
+    validateExternalUrl(proverUrl, "prover");
+  }
 
   /**
    * Generate a ZK proof for the given circuit and inputs.
@@ -198,7 +248,9 @@ export interface RelayerOptions {
 }
 
 export class RelayerClient {
-  constructor(public endpoint: string) {}
+  constructor(public endpoint: string) {
+    validateExternalUrl(endpoint, "relayer");
+  }
 
   /**
    * Send an encrypted packet through the relayer network.
@@ -245,6 +297,7 @@ export class RelayerClient {
             },
             sourceChain: packet.sourceChain,
             destChain: packet.destChain,
+            stateRoot: packet.stateRoot,
             timestamp: packet.timestamp,
             options: {
               mixnet: opts.mixnet,
@@ -319,6 +372,7 @@ export class RelayerClient {
             },
             sourceChain: raw.sourceChain,
             destChain: raw.destChain,
+            stateRoot: raw.stateRoot,
             timestamp: raw.timestamp,
           };
           callback(packet);
@@ -382,6 +436,7 @@ export class ZaseonSDK {
       proof,
       sourceChain: params.sourceChain,
       destChain: params.destChain,
+      stateRoot: params.stateRoot,
       timestamp: Date.now(),
     };
     return this.relayer.send(packet, {
@@ -416,9 +471,15 @@ export class ZaseonSDK {
         return; // Skip this packet — cannot decrypt
       }
 
+      if (!packet.stateRoot) {
+        console.error(
+          "Received packet missing stateRoot, skipping verification",
+        );
+        return;
+      }
       const isValid = await this.prover.verifyProof(
         packet.proof,
-        packet.stateRoot ?? "",
+        packet.stateRoot,
       );
       if (isValid) {
         callback(decrypted);

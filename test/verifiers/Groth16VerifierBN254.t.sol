@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import "../../contracts/verifiers/Groth16VerifierBN254.sol";
+import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 
 contract Groth16VerifierBN254Test is Test {
     Groth16VerifierBN254 verifier;
@@ -22,7 +23,7 @@ contract Groth16VerifierBN254Test is Test {
 
     function setUp() public {
         owner = address(this);
-        verifier = new Groth16VerifierBN254();
+        verifier = new Groth16VerifierBN254(owner);
     }
 
     /* ══════════════════════════════════════════════════
@@ -30,7 +31,8 @@ contract Groth16VerifierBN254Test is Test {
        ══════════════════════════════════════════════════ */
 
     function test_constructor_setsOwner() public view {
-        assertEq(verifier.owner(), owner);
+        assertTrue(verifier.hasRole(verifier.DEFAULT_ADMIN_ROLE(), owner));
+        assertTrue(verifier.hasRole(verifier.VK_ADMIN_ROLE(), owner));
     }
 
     function test_constructor_notInitialized() public view {
@@ -47,8 +49,15 @@ contract Groth16VerifierBN254Test is Test {
     }
 
     function test_setVerificationKey_revertsNotOwner() public {
+        bytes32 vkAdminRole = verifier.VK_ADMIN_ROLE();
         vm.prank(user);
-        vm.expectRevert(Groth16VerifierBN254.NotOwner.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector,
+                user,
+                vkAdminRole
+            )
+        );
 
         uint256[2] memory alpha = [uint256(1), uint256(2)];
         uint256[4] memory beta = [
@@ -222,29 +231,35 @@ contract Groth16VerifierBN254Test is Test {
     }
 
     /* ══════════════════════════════════════════════════
-               TRANSFER OWNERSHIP
+               ACCESS CONTROL
        ══════════════════════════════════════════════════ */
 
-    function test_transferOwnership() public {
-        verifier.transferOwnership(user);
-        assertEq(verifier.owner(), user);
+    function test_grantVKAdminRole() public {
+        bytes32 vkAdminRole = verifier.VK_ADMIN_ROLE();
+        verifier.grantRole(vkAdminRole, user);
+        assertTrue(verifier.hasRole(vkAdminRole, user));
     }
 
-    function test_transferOwnership_revertsNotOwner() public {
+    function test_grantRole_revertsNotAdmin() public {
+        bytes32 vkAdminRole = verifier.VK_ADMIN_ROLE();
+        bytes32 defaultAdminRole = verifier.DEFAULT_ADMIN_ROLE();
         vm.prank(user);
-        vm.expectRevert(Groth16VerifierBN254.NotOwner.selector);
-        verifier.transferOwnership(user);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector,
+                user,
+                defaultAdminRole
+            )
+        );
+        verifier.grantRole(vkAdminRole, user);
     }
 
-    function test_transferOwnership_revertsZeroAddress() public {
-        vm.expectRevert(Groth16VerifierBN254.InvalidOwner.selector);
-        verifier.transferOwnership(address(0));
-    }
-
-    function test_transferOwnership_emitsEvent() public {
-        vm.expectEmit(true, true, false, false);
-        emit Groth16VerifierBN254.OwnershipTransferred(owner, user);
-        verifier.transferOwnership(user);
+    function test_revokeVKAdminRole() public {
+        bytes32 vkAdminRole = verifier.VK_ADMIN_ROLE();
+        verifier.grantRole(vkAdminRole, user);
+        assertTrue(verifier.hasRole(vkAdminRole, user));
+        verifier.revokeRole(vkAdminRole, user);
+        assertFalse(verifier.hasRole(vkAdminRole, user));
     }
 
     /* ══════════════════════════════════════════════════

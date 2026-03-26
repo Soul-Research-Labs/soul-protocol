@@ -848,6 +848,7 @@ contract EthereumL1Bridge is
             revert WithdrawalNotFound(withdrawalId);
         if (!withdrawal.finalized) revert WithdrawalNotFinalized(withdrawalId);
         if (withdrawal.claimed) revert AlreadyClaimed();
+        if (withdrawal.recipient == address(0)) revert ZeroAddress();
 
         withdrawal.claimed = true;
 

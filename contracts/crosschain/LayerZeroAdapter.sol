@@ -174,10 +174,14 @@ contract LayerZeroAdapter is
     uint256 public totalMessagesReceived;
     uint256 public totalFeesCollected;
 
+    /// @notice Mapping from EVM chain ID to LayerZero endpoint ID (for IBridgeAdapter compatibility)
+    mapping(uint256 => uint32) public chainIdToEid;
+
     /*//////////////////////////////////////////////////////////////
                                EVENTS
     //////////////////////////////////////////////////////////////*/
 
+    event ChainIdMapped(uint256 indexed chainId, uint32 indexed eid);
     event EndpointConfigured(
         uint32 indexed eid,
         address endpoint,
@@ -520,14 +524,45 @@ contract LayerZeroAdapter is
 
     /**
      * @notice IBridgeAdapter-compatible bridge message
+     * @dev Translates generic chainId-based call to LayerZero-specific send()
      */
     function bridgeMessage(
         address targetAddress,
         bytes calldata payload,
-        address /*refundAddress*/
+        address refundAddress
     ) external payable nonReentrant whenNotPaused returns (bytes32 messageId) {
-        // Default to first configured endpoint — caller should use send() for full control
-        revert("Use send() with explicit dstEid");
+        // Extract destination chain ID from payload (first 32 bytes encode chainId)
+        uint256 destChainId = abi.decode(payload[:32], (uint256));
+        uint32 dstEid = chainIdToEid[destChainId];
+        if (dstEid == 0) revert EndpointNotConfigured(dstEid);
+
+        EndpointConfig storage config = endpoints[dstEid];
+        if (!config.active) revert EndpointNotConfigured(dstEid);
+
+        MessagingOptions memory opts = MessagingOptions({
+            dstGasLimit: config.baseGas,
+            dstNativeAmount: 0,
+            extraOptions: ""
+        });
+
+        // Delegate to the full send() implementation
+        messageId = this.send{value: msg.value}(
+            dstEid,
+            targetAddress,
+            payload[32:],
+            opts
+        );
+    }
+
+    /**
+     * @notice Map an EVM chain ID to a LayerZero endpoint ID
+     */
+    function setChainIdMapping(
+        uint256 chainId,
+        uint32 eid
+    ) external onlyRole(OPERATOR_ROLE) {
+        chainIdToEid[chainId] = eid;
+        emit ChainIdMapped(chainId, eid);
     }
 
     /**

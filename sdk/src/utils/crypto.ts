@@ -35,6 +35,7 @@ export interface SendParams {
   payload: ZaseonPayload;
   circuitId: string;
   disclosurePolicy: DisclosurePolicy;
+  stateRoot: string;
   inputs?: CircuitInputs;
   witnesses?: CircuitWitnesses;
   maxDelay?: number;

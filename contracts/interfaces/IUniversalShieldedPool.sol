@@ -56,17 +56,10 @@ interface IUniversalShieldedPool {
         bytes32 indexed commitment,
         bytes32 indexed assetId,
         uint256 leafIndex,
-        uint256 amount,
         uint256 timestamp
     );
 
-    event Withdrawal(
-        bytes32 indexed nullifier,
-        bytes32 indexed assetId,
-        address indexed recipient,
-        uint256 amount,
-        uint256 relayerFee
-    );
+    event Withdrawal(bytes32 indexed nullifier, bytes32 indexed assetId);
 
     event CrossChainCommitmentsInserted(
         bytes32 indexed sourceChainId,

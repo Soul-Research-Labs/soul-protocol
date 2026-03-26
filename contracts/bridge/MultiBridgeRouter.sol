@@ -100,6 +100,10 @@ contract MultiBridgeRouter is
     /// @dev Maps chainId → target contract on that chain (e.g., ZaseonProtocolHub L2 deployment)
     mapping(uint256 => address) public chainTargets;
 
+    /// @notice Per-bridge-type authorized operator for verification
+    /// @dev Prevents a single operator from forging multi-bridge consensus
+    mapping(BridgeType => address) public bridgeOperator;
+
     // Events and errors inherited from IMultiBridgeRouter:
     // AdapterRegistered, BridgeStatusChanged, MessageRouted, MessageVerified, MessageFinalized,
     // BridgeFallback, HealthCheckFailed, SupportedChainAdded, BridgeSuccessRecorded, ThresholdsUpdated,
@@ -194,6 +198,8 @@ contract MultiBridgeRouter is
 
     /**
      * @notice Verify a message from a bridge (for multi-bridge consensus)
+     * @dev Each bridge type must have a distinct authorized operator to prevent
+     *      a single actor from forging multi-bridge consensus.
      * @param messageHash Message to verify
      * @param bridgeType Bridge reporting verification
      * @param approved Whether bridge approves the message
@@ -202,7 +208,16 @@ contract MultiBridgeRouter is
         bytes32 messageHash,
         BridgeType bridgeType,
         bool approved
-    ) external onlyRole(OPERATOR_ROLE) {
+    ) external {
+        // C-4 FIX: Require caller is the designated operator for this bridge type
+        // Falls back to OPERATOR_ROLE if no per-bridge operator is set
+        address expectedOperator = bridgeOperator[bridgeType];
+        if (expectedOperator != address(0)) {
+            if (msg.sender != expectedOperator)
+                revert BridgeNotActive(bridgeType);
+        } else {
+            _checkRole(OPERATOR_ROLE);
+        }
         MessageVerification storage verification = _verifications[messageHash];
 
         if (verification.messageHash == bytes32(0)) {
@@ -276,6 +291,19 @@ contract MultiBridgeRouter is
         });
 
         emit AdapterRegistered(bridgeType, adapter);
+    }
+
+    /**
+     * @notice Set the authorized operator for a specific bridge type
+     * @dev Each bridge type should have a distinct operator to ensure real multi-bridge consensus
+     * @param bridgeType Bridge type to set operator for
+     * @param operator Authorized operator address (address(0) to fall back to OPERATOR_ROLE)
+     */
+    function setBridgeOperator(
+        BridgeType bridgeType,
+        address operator
+    ) external onlyRole(BRIDGE_ADMIN) {
+        bridgeOperator[bridgeType] = operator;
     }
 
     /**
@@ -594,9 +622,8 @@ contract MultiBridgeRouter is
         if (bridge.status != BridgeStatus.ACTIVE) return false;
         if (!supportedChains[bridgeType][chainId]) return false;
 
-        // SECURITY FIX S8-6: Forward available ETH balance to adapter for bridge fee payment.
-        // On revert, the ETH returns to this contract and can be used by fallback bridges.
-        uint256 bridgeFee = address(this).balance;
+        // H-5 FIX: Forward only msg.value, not entire contract balance
+        uint256 bridgeFee = msg.value;
         try
             this._callBridge{value: bridgeFee}(bridge.adapter, chainId, message)
         {

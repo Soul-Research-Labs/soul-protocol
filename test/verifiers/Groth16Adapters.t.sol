@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import "../../contracts/verifiers/Groth16VerifierBN254.sol";
+import "@openzeppelin/contracts/access/IAccessControl.sol";
 import "../../contracts/verifiers/adapters/AggregatorAdapter.sol";
 import "../../contracts/verifiers/adapters/BalanceProofAdapter.sol";
 import "../../contracts/verifiers/adapters/NullifierAdapter.sol";
@@ -26,7 +27,7 @@ contract Groth16AdapterTest is Test {
 
     function setUp() public {
         vm.startPrank(OWNER);
-        groth16 = new Groth16VerifierBN254();
+        groth16 = new Groth16VerifierBN254(OWNER);
 
         // Set up a minimal verification key so verifier is initialized
         uint256[2] memory alpha = [uint256(1), uint256(2)];
@@ -105,7 +106,7 @@ contract Groth16AdapterTest is Test {
     }
 
     function test_groth16_notReady_beforeInit() public {
-        Groth16VerifierBN254 fresh = new Groth16VerifierBN254();
+        Groth16VerifierBN254 fresh = new Groth16VerifierBN254(address(this));
         assertFalse(fresh.isReady());
     }
 
@@ -115,6 +116,7 @@ contract Groth16AdapterTest is Test {
     }
 
     function test_groth16_setVK_revertNotOwner() public {
+        bytes32 vkAdminRole = groth16.VK_ADMIN_ROLE();
         uint256[2] memory alpha = [uint256(1), uint256(2)];
         uint256[4] memory beta = [
             uint256(1),
@@ -137,7 +139,13 @@ contract Groth16AdapterTest is Test {
         uint256[2][] memory ic = new uint256[2][](2);
 
         vm.prank(address(0xBEEF));
-        vm.expectRevert(Groth16VerifierBN254.NotOwner.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector,
+                address(0xBEEF),
+                vkAdminRole
+            )
+        );
         groth16.setVerificationKey(alpha, beta, gamma, delta, ic);
     }
 
@@ -173,17 +181,26 @@ contract Groth16AdapterTest is Test {
         assertEq(groth16.getPublicInputCount(), 2);
     }
 
-    function test_groth16_transferOwnership() public {
-        address newOwner = address(0xC0C0);
+    function test_groth16_grantVKAdminRole() public {
+        address newAdmin = address(0xC0C0);
+        bytes32 vkAdminRole = groth16.VK_ADMIN_ROLE();
         vm.prank(OWNER);
-        groth16.transferOwnership(newOwner);
-        assertEq(groth16.owner(), newOwner);
+        groth16.grantRole(vkAdminRole, newAdmin);
+        assertTrue(groth16.hasRole(vkAdminRole, newAdmin));
     }
 
-    function test_groth16_transferOwnership_revertNotOwner() public {
+    function test_groth16_grantRole_revertNotAdmin() public {
+        bytes32 vkAdminRole = groth16.VK_ADMIN_ROLE();
+        bytes32 defaultAdminRole = groth16.DEFAULT_ADMIN_ROLE();
         vm.prank(address(0xBEEF));
-        vm.expectRevert(Groth16VerifierBN254.NotOwner.selector);
-        groth16.transferOwnership(address(0xC0C0));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector,
+                address(0xBEEF),
+                defaultAdminRole
+            )
+        );
+        groth16.grantRole(vkAdminRole, address(0xC0C0));
     }
 
     function test_groth16_verify_revertInvalidProofSize() public {

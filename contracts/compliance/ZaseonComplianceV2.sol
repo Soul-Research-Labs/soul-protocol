@@ -234,6 +234,14 @@ contract ZaseonComplianceV2 is AccessControl, ReentrancyGuard, Pausable {
             revert RestrictedJurisdiction();
         if (sanctionedAddresses[user]) revert AddressIsSanctioned();
 
+        // Prevent overwriting an existing approved KYC record by a different provider
+        KYCRecord storage existing = kycRecords[user];
+        if (
+            existing.status == KYCStatus.Approved &&
+            existing.expiresAt > block.timestamp &&
+            existing.provider != msg.sender
+        ) revert UserAlreadyVerified();
+
         kycRecords[user] = KYCRecord({
             status: KYCStatus.Approved,
             tier: tier,

@@ -109,6 +109,10 @@ interface ICrossChainProofHubV3 {
     event ChainRemoved(uint256 indexed chainId);
     event TrustedRemoteSet(uint256 indexed chainId, address indexed remote);
     event VerifierSet(bytes32 indexed proofType, address verifier);
+    event VerifierResolvedFromRegistry(
+        bytes32 indexed proofType,
+        address verifier
+    );
     event VerifierRegistryUpdated(
         address indexed oldRegistry,
         address indexed newRegistry

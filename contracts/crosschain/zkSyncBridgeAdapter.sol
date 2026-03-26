@@ -633,8 +633,37 @@ contract zkSyncBridgeAdapter is
         bytes calldata payload,
         address /*refundAddress*/
     ) external payable nonReentrant whenNotPaused returns (bytes32 messageId) {
-        // Use deposit() for full zkSync-specific control
-        revert("Use deposit() with explicit parameters");
+        // Extract destination chain ID from payload (first 32 bytes)
+        uint256 destChainId = abi.decode(payload[:32], (uint256));
+        BridgeConfig storage config = bridgeConfigs[destChainId];
+        if (!config.active) revert BridgeNotConfigured();
+        if (targetAddress == address(0)) revert ZeroAddress();
+
+        // Send L2 transaction via Diamond Proxy
+        bytes32 l2TxHash = _requestL2Transaction(
+            config.diamondProxy,
+            targetAddress,
+            msg.value,
+            DEFAULT_L2_GAS_LIMIT
+        );
+
+        messageId = keccak256(
+            abi.encodePacked(
+                msg.sender,
+                targetAddress,
+                destChainId,
+                transferNonce++,
+                block.timestamp
+            )
+        );
+
+        emit DepositInitiated(
+            messageId,
+            msg.sender,
+            targetAddress,
+            msg.value,
+            l2TxHash
+        );
     }
 
     /// @inheritdoc IBridgeAdapter
@@ -651,4 +680,7 @@ contract zkSyncBridgeAdapter is
         ZKWithdrawal storage w = withdrawals[messageId];
         return w.status == TransferStatus.FINALIZED;
     }
+
+    /// @notice Accept ETH from canonical bridge during L2→L1 withdrawal flow
+    receive() external payable {}
 }

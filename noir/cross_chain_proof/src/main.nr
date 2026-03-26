@@ -59,25 +59,22 @@ fn verify_cross_chain_proof(
     dest: DestinationContext,
     relayer_secret: Field,
     expected_proof_commitment: Field
-) -> (bool, Field) {
+) -> Field {
     // Step 1: Verify relayer authorization
     let computed_pubkey = derive_relayer_pubkey(relayer_secret);
-    let relayer_valid = computed_pubkey == dest.relayer_pubkey;
+    assert(computed_pubkey == dest.relayer_pubkey, "Invalid relayer authorization");
     
     // Step 2: Compute and verify proof commitment
     let computed_commitment = compute_proof_commitment(source);
-    let commitment_valid = computed_commitment == expected_proof_commitment;
+    assert(computed_commitment == expected_proof_commitment, "Invalid proof commitment");
     
     // Step 3: Verify chains are different (prevent replay)
-    let chains_different = source.chain_id != dest.chain_id;
+    assert(source.chain_id != dest.chain_id, "Source and destination chains must differ");
     
     // Step 4: Generate destination proof hash
     let dest_proof_hash = compute_dest_proof_hash(computed_commitment, dest);
     
-    // All conditions must be met
-    let valid = relayer_valid & commitment_valid & chains_different;
-    
-    (valid, dest_proof_hash)
+    dest_proof_hash
 }
 
 /// Batch verify multiple cross-chain proofs
@@ -88,21 +85,18 @@ fn verify_batch_cross_chain_proofs<let BATCH_SIZE: u32>(
     relayer_secret: Field,
     proof_commitments: [Field; BATCH_SIZE],
     timestamps: [Field; BATCH_SIZE]
-) -> (bool, Field) {
+) -> Field {
     // Verify relayer once
     let computed_pubkey = derive_relayer_pubkey(relayer_secret);
-    let relayer_valid = computed_pubkey == relayer_pubkey;
+    assert(computed_pubkey == relayer_pubkey, "Invalid relayer authorization");
     
-    let mut all_valid = relayer_valid;
     let mut proof_hashes: [Field; BATCH_SIZE] = [0; BATCH_SIZE];
     
     for i in 0..BATCH_SIZE {
         // Verify each proof
         let computed_commitment = compute_proof_commitment(sources[i]);
-        let commitment_valid = computed_commitment == proof_commitments[i];
-        let chains_different = sources[i].chain_id != dest_chain_id;
-        
-        all_valid = all_valid & commitment_valid & chains_different;
+        assert(computed_commitment == proof_commitments[i], "Invalid proof commitment in batch");
+        assert(sources[i].chain_id != dest_chain_id, "Source and destination chains must differ");
         
         // Compute individual hash
         let dest = DestinationContext {
@@ -122,7 +116,7 @@ fn verify_batch_cross_chain_proofs<let BATCH_SIZE: u32>(
         proof_hashes[3]
     ]);
     
-    (all_valid, aggregated)
+    aggregated
 }
 
 /// Main entry point
@@ -139,7 +133,7 @@ fn main(
     proof_commitment: pub Field,
     timestamp: pub Field,
     fee: pub Field
-) -> pub (bool, Field) {
+) -> pub Field {
     let source = SourceProofData {
         proof_hash: source_proof_hash,
         state_root: source_state_root,
@@ -178,11 +172,11 @@ fn test_cross_chain_proof() {
     
     let proof_commitment = compute_proof_commitment(source);
     
-    let (valid, _hash) = verify_cross_chain_proof(source, dest, relayer_secret, proof_commitment);
-    assert(valid);
+    // Should not panic — all assertions pass
+    let _hash = verify_cross_chain_proof(source, dest, relayer_secret, proof_commitment);
 }
 
-#[test]
+#[test(should_fail_with = "Source and destination chains must differ")]
 fn test_replay_prevention() {
     let source = SourceProofData {
         proof_hash: 0x1234,
@@ -204,6 +198,6 @@ fn test_replay_prevention() {
     
     let proof_commitment = compute_proof_commitment(source);
     
-    let (valid, _) = verify_cross_chain_proof(source, dest, relayer_secret, proof_commitment);
-    assert(!valid);  // Should be invalid due to same chain
+    // Should panic with assertion failure: same chain
+    let _hash = verify_cross_chain_proof(source, dest, relayer_secret, proof_commitment);
 }

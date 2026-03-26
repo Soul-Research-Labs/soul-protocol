@@ -233,6 +233,10 @@ export class ShieldedPoolClient {
     // SECURITY FIX M-6: Validate inputs at system boundary
     if (!commitment || commitment === "0x")
       throw new Error("Invalid commitment");
+    if (!commitment.match(/^0x[0-9a-fA-F]{64}$/))
+      throw new Error(
+        "Commitment must be exactly 32 bytes (0x + 64 hex chars)",
+      );
     if (amount <= 0n) throw new Error("Amount must be positive");
 
     const txHash = await this.walletClient!.writeContract({
@@ -269,6 +273,10 @@ export class ShieldedPoolClient {
     // SECURITY FIX M-6: Validate inputs at system boundary
     if (!commitment || commitment === "0x")
       throw new Error("Invalid commitment");
+    if (!commitment.match(/^0x[0-9a-fA-F]{64}$/))
+      throw new Error(
+        "Commitment must be exactly 32 bytes (0x + 64 hex chars)",
+      );
     if (!token || token === zeroAddress)
       throw new Error("Invalid token address for ERC20 deposit");
     if (amount <= 0n) throw new Error("Amount must be positive");
