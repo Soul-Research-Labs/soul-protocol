@@ -87,6 +87,7 @@ contract PrivacyPoolIntegration is
     error InvalidFee();
     /// @notice Thrown when price slippage exceeds the permitted threshold
     error SlippageExceeded();
+    error FeeOnTransferNotSupported();
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -390,8 +391,11 @@ contract PrivacyPoolIntegration is
             revert InvalidRangeProof();
         }
 
-        // Transfer tokens
+        // Transfer tokens (reject fee-on-transfer tokens)
+        uint256 balanceBefore = IERC20(token).balanceOf(address(this));
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+        uint256 actualReceived = IERC20(token).balanceOf(address(this)) - balanceBefore;
+        if (actualReceived != amount) revert FeeOnTransferNotSupported();
         poolToken.totalDeposited += amount;
 
         // Add commitment
