@@ -284,8 +284,10 @@ contract UniswapV3RebalanceAdapter is
         uint256 amountIn
     ) external view override returns (uint256 estimatedOut) {
         // NOTE: QuoterV2.quoteExactInputSingle is not a view function in practice
-        // (it simulates the swap). For on-chain view usage, we check pool existence
-        // and return 0 if unsupported — callers should use off-chain quoting.
+        // (it simulates the swap). On-chain view quoting is not possible via
+        // Uniswap V3 QuoterV2 — callers MUST use off-chain quoting for accurate
+        // pricing. This function returns 0 to signal that on-chain quoting is
+        // unavailable; callers should NOT use this for slippage calculations.
         address actualIn = tokenIn == address(0) ? address(weth) : tokenIn;
         address actualOut = tokenOut == address(0) ? address(weth) : tokenOut;
 
@@ -293,9 +295,9 @@ contract UniswapV3RebalanceAdapter is
         address pool = factory.getPool(actualIn, actualOut, fee);
         if (pool == address(0)) return 0;
 
-        // Return amountIn as rough estimate — callers should use off-chain quote
-        // for accurate pricing. On-chain quoting via QuoterV2 requires a call, not staticcall.
-        return amountIn;
+        // Return 0 to indicate on-chain quoting is unsupported.
+        // Returning amountIn would be misleading as it ignores price and decimals.
+        return 0;
     }
 
     /// @inheritdoc IRebalanceSwapAdapter

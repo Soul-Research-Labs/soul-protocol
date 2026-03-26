@@ -377,10 +377,10 @@ contract UniswapV3RebalanceAdapterTest is Test {
     // getQuote
     // ═══════════════════════════════════════════════════════════════
 
-    function test_getQuote_returnsEstimate() public view {
-        // With pool existing, returns amountIn as rough estimate
+    function test_getQuote_returnsZeroForOnChainQuoting() public view {
+        // On-chain quoting is unavailable (QuoterV2 is non-view), returns 0
         uint256 quote = adapter.getQuote(address(usdc), address(dai), 1000e18);
-        assertEq(quote, 1000e18);
+        assertEq(quote, 0);
     }
 
     function test_getQuote_returnsZeroForNoPool() public view {
