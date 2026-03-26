@@ -213,6 +213,7 @@ contract LineaBridgeAdapter is
     error TransferFailed();
     error FeeTooHigh();
     error LineaMessageFailed();
+    error TokenAlreadyMapped();
 
     /*//////////////////////////////////////////////////////////////
                             CONSTRUCTOR
@@ -256,6 +257,7 @@ contract LineaBridgeAdapter is
         uint8 decimals
     ) external onlyRole(OPERATOR_ROLE) {
         bytes32 key = keccak256(abi.encodePacked(l1Token, chainId));
+        if (tokenMappings[key].active) revert TokenAlreadyMapped();
         tokenMappings[key] = TokenMapping({
             l1Token: l1Token,
             l2Token: l2Token,
