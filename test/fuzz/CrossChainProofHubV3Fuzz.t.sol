@@ -249,7 +249,8 @@ contract CrossChainProofHubV3Fuzz is Test {
                     inputs[i].proofHash,
                     inputs[i].commitment,
                     inputs[i].sourceChainId,
-                    inputs[i].destChainId
+                    inputs[i].destChainId,
+                    i // nonce starts at 0 per fresh hub instance
                 )
             );
             ICrossChainProofHubV3.ProofSubmission memory p = hub.getProof(
