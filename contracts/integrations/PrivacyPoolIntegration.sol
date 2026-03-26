@@ -394,7 +394,8 @@ contract PrivacyPoolIntegration is
         // Transfer tokens (reject fee-on-transfer tokens)
         uint256 balanceBefore = IERC20(token).balanceOf(address(this));
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
-        uint256 actualReceived = IERC20(token).balanceOf(address(this)) - balanceBefore;
+        uint256 actualReceived = IERC20(token).balanceOf(address(this)) -
+            balanceBefore;
         if (actualReceived != amount) revert FeeOnTransferNotSupported();
         poolToken.totalDeposited += amount;
 

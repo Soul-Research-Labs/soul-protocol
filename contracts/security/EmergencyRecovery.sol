@@ -251,7 +251,7 @@ contract EmergencyRecovery is AccessControl, ReentrancyGuard, Pausable {
      * @notice Propose a stage change
      * @param newStage The target recovery stage
      * @param reason Justification for the change
-          * @return actionId The action id
+     * @return actionId The action id
      */
     function proposeStageChange(
         RecoveryStage newStage,
@@ -310,7 +310,7 @@ contract EmergencyRecovery is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Approve a pending action
-          * @param actionId The actionId identifier
+     * @param actionId The actionId identifier
      */
     function approveAction(bytes32 actionId) external onlyRole(GUARDIAN_ROLE) {
         RecoveryAction storage action = pendingActions[actionId];
@@ -340,7 +340,7 @@ contract EmergencyRecovery is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Cancel a pending action
-          * @param actionId The actionId identifier
+     * @param actionId The actionId identifier
      */
     function cancelAction(bytes32 actionId) external onlyRole(GUARDIAN_ROLE) {
         RecoveryAction storage action = pendingActions[actionId];
@@ -360,7 +360,7 @@ contract EmergencyRecovery is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Register a contract for protection
-          * @param contractAddress The contractAddress address
+     * @param contractAddress The contractAddress address
      * @param name The name
      * @param isPausable Whether isPausable
      * @param isFreezable Whether isFreezable
@@ -388,7 +388,7 @@ contract EmergencyRecovery is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Pause a protected contract
-          * @param contractAddress The contractAddress address
+     * @param contractAddress The contractAddress address
      * @param reason The reason string
      */
     function pauseContract(
@@ -419,7 +419,7 @@ contract EmergencyRecovery is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Unpause a protected contract
-          * @param contractAddress The contractAddress address
+     * @param contractAddress The contractAddress address
      */
     function unpauseContract(
         address contractAddress
@@ -446,7 +446,7 @@ contract EmergencyRecovery is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Pause all registered pausable contracts
-          * @param reason The reason string
+     * @param reason The reason string
      */
     function pauseAll(string calldata reason) external onlyRole(GUARDIAN_ROLE) {
         if (currentStage < RecoveryStage.Degraded) revert InvalidStage();
@@ -495,7 +495,7 @@ contract EmergencyRecovery is AccessControl, ReentrancyGuard, Pausable {
      * @param amount The amount frozen
      * @param commitment Associated state commitment (for Zaseon states)
      * @param reason Reason for freezing
-          * @return assetId The asset id
+     * @return assetId The asset id
      */
     function freezeAssets(
         address owner,
@@ -528,7 +528,7 @@ contract EmergencyRecovery is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Release frozen assets
-          * @param assetId The assetId identifier
+     * @param assetId The assetId identifier
      */
     function releaseAssets(bytes32 assetId) external onlyRole(GUARDIAN_ROLE) {
         FrozenAsset storage asset = frozenAssets[assetId];
@@ -544,7 +544,7 @@ contract EmergencyRecovery is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Check if assets are frozen
-          * @param owner The owner address
+     * @param owner The owner address
      * @param commitment The cryptographic commitment
      * @return frozen The frozen
      * @return assetId The asset id
@@ -577,7 +577,7 @@ contract EmergencyRecovery is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Emergency withdrawal (only in Emergency stage)
-          * @param token The token address
+     * @param token The token address
      * @param recipient The recipient address
      * @param amount The amount to process
      */
@@ -609,7 +609,7 @@ contract EmergencyRecovery is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Add address to emergency withdrawal whitelist
-          * @param recipient The recipient address
+     * @param recipient The recipient address
      */
     function addToWhitelist(
         address recipient
@@ -619,7 +619,7 @@ contract EmergencyRecovery is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Remove address from emergency withdrawal whitelist
-          * @param recipient The recipient address
+     * @param recipient The recipient address
      */
     function removeFromWhitelist(
         address recipient
@@ -633,7 +633,7 @@ contract EmergencyRecovery is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Add a new guardian
-          * @param guardian The guardian
+     * @param guardian The guardian
      */
     function addGuardian(
         address guardian
@@ -647,7 +647,7 @@ contract EmergencyRecovery is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Remove a guardian
-          * @param guardian The guardian
+     * @param guardian The guardian
      */
     function removeGuardian(
         address guardian
@@ -667,7 +667,7 @@ contract EmergencyRecovery is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Get current recovery status
-          * @return stage The stage
+     * @return stage The stage
      * @return lastChange The last change
      * @return pendingActionsCount The pending actions count
      * @return frozenAssetsCount The frozen assets count
@@ -695,7 +695,7 @@ contract EmergencyRecovery is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Get pending actions
-          * @return The result value
+     * @return The result value
      */
     function getPendingActions() external view returns (bytes32[] memory) {
         return pendingActionIds;
@@ -703,7 +703,7 @@ contract EmergencyRecovery is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Check if action can be executed
-          * @param actionId The actionId identifier
+     * @param actionId The actionId identifier
      * @return The result value
      * @return reason The reason
      */
