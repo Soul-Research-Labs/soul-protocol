@@ -187,7 +187,7 @@ contract AddedSecurityOrchestrator is AccessControl, ReentrancyGuard, Pausable {
 
     /**
      * @notice Configure RuntimeSecurityMonitor address
-          * @param _runtimeMonitor The _runtimeMonitor timestamp
+          * @param _runtimeMonitor The runtime security monitor address
      */
     function setRuntimeMonitor(
         address _runtimeMonitor
