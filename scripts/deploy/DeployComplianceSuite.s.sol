@@ -56,8 +56,8 @@ contract DeployComplianceSuite is Script {
         );
         console.log("ComplianceReportingModule:", address(crm));
 
-        // 4. Deploy ZaseonComplianceV2 (Ownable — deployer is owner, transfer later)
-        ZaseonComplianceV2 scv2 = new ZaseonComplianceV2();
+        // 4. Deploy ZaseonComplianceV2 (Ownable — admin is owner)
+        ZaseonComplianceV2 scv2 = new ZaseonComplianceV2(admin);
         console.log("ZaseonComplianceV2:", address(scv2));
 
         // 5. Deploy CrossChainSanctionsOracle
