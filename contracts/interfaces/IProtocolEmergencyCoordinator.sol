@@ -63,6 +63,11 @@ interface IProtocolEmergencyCoordinator {
         Severity indexed newLevel,
         uint256 indexed incidentId
     );
+    event SeverityDowngraded(
+        Severity indexed oldLevel,
+        Severity indexed newLevel,
+        uint256 indexed incidentId
+    );
     event EmergencyPlanExecuted(
         Severity severity,
         uint256 indexed incidentId,
@@ -77,6 +82,7 @@ interface IProtocolEmergencyCoordinator {
 
     error ZeroAddress();
     error InvalidEscalation(Severity current, Severity requested);
+    error InvalidDowngrade(Severity current, Severity requested);
     error NoActiveIncident();
     error IncidentAlreadyActive();
     error IncidentNotActive(uint256 incidentId);
@@ -96,6 +102,12 @@ interface IProtocolEmergencyCoordinator {
 
     /// @notice Escalate an existing incident to a higher severity
     function escalateIncident(
+        uint256 incidentId,
+        Severity newSeverity
+    ) external;
+
+    /// @notice Downgrade an existing incident to a lower (but non-GREEN) severity
+    function downgradeIncident(
         uint256 incidentId,
         Severity newSeverity
     ) external;

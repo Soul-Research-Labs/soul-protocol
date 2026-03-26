@@ -399,6 +399,41 @@ contract ProtocolEmergencyCoordinator is
         emit SeverityEscalated(oldSeverity, newSeverity, incidentId);
     }
 
+    /**
+     * @notice Downgrade an incident's severity without fully resolving it.
+     *         Allows gradual de-escalation (e.g., RED → ORANGE → YELLOW)
+     *         instead of requiring an all-or-nothing jump to GREEN.
+     * @param incidentId The incident to downgrade (must be active)
+     * @param newSeverity The new, lower severity (must be < current and > GREEN)
+     */
+    function downgradeIncident(
+        uint256 incidentId,
+        Severity newSeverity
+    ) external override onlyRole(RECOVERY_ROLE) {
+        if (incidentId != activeIncidentId || activeIncidentId == 0) {
+            revert IncidentNotActive(incidentId);
+        }
+
+        Incident storage incident = _incidents[incidentId];
+
+        // Must be a strictly lower severity, but not GREEN (use executeRecovery for full resolution)
+        if (newSeverity >= incident.severity || newSeverity == Severity.GREEN) {
+            revert InvalidDowngrade(incident.severity, newSeverity);
+        }
+
+        // Enforce cooldown since last escalation
+        uint48 nextAllowed = lastEscalationAt + ESCALATION_COOLDOWN;
+        if (block.timestamp < nextAllowed) {
+            revert CooldownNotElapsed(nextAllowed);
+        }
+
+        Severity oldSeverity = incident.severity;
+        incident.severity = newSeverity;
+        currentSeverity = newSeverity;
+
+        emit SeverityDowngraded(oldSeverity, newSeverity, incidentId);
+    }
+
     /*//////////////////////////////////////////////////////////////
                      EMERGENCY PLAN EXECUTION
     //////////////////////////////////////////////////////////////*/
