@@ -222,6 +222,7 @@ contract LayerZeroAdapter is
     //////////////////////////////////////////////////////////////*/
 
     error EndpointNotConfigured(uint32 eid);
+    error ChainNotMapped(uint256 chainId);
     error PeerNotSet(uint32 eid);
     error InvalidEndpoint();
     error InvalidPeer();
@@ -534,7 +535,7 @@ contract LayerZeroAdapter is
         // Extract destination chain ID from payload (first 32 bytes encode chainId)
         uint256 destChainId = abi.decode(payload[:32], (uint256));
         uint32 dstEid = chainIdToEid[destChainId];
-        if (dstEid == 0) revert EndpointNotConfigured(dstEid);
+        if (dstEid == 0) revert ChainNotMapped(destChainId);
 
         EndpointConfig storage config = endpoints[dstEid];
         if (!config.active) revert EndpointNotConfigured(dstEid);
