@@ -474,9 +474,10 @@ contract EmergencyRecovery is AccessControl, ReentrancyGuard, Pausable {
             address addr = toPause[i];
             (bool success, ) = addr.call(abi.encodeWithSignature("pause()"));
             if (!success) {
-                revert PauseCallFailed(addr);
+                emit PauseCallResult(addr, false);
+            } else {
+                emit ContractPaused(addr, reason);
             }
-            emit ContractPaused(addr, reason);
             unchecked {
                 ++i;
             }
