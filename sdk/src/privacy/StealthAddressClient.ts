@@ -339,16 +339,24 @@ export class StealthAddressClient {
   }
 
   /**
-   * Derive stealth address locally (for scanning)
+   * Derive stealth address locally (for scanning).
+   *
+   * **NOTE — Zaseon-proprietary ECDH variant.**
+   * Standard ERC-5564 derives the shared secret via secp256k1 scalar
+   * multiplication (`viewingPrivKey * ephemeralPubKey`).  This implementation
+   * uses a domain-separated Keccak hash (`keccak256("stealth-ecdh" ‖
+   * viewingPrivKey ‖ ephemeralPubKey)`) instead, which avoids an elliptic-
+   * curve multiply in the SDK but is **not interoperable** with wallets or
+   * registries that follow the ERC-5564 spec literally.  The on-chain
+   * `StealthAddressRegistry` contract uses the same hash-based derivation,
+   * so the two sides stay in sync within the Zaseon ecosystem.
    */
   private deriveStealthAddressLocally(
     viewingPrivKey: Hex,
     spendingPubKey: Hex,
     ephemeralPubKey: Hex,
   ): string {
-    // Compute shared secret via ECDH: viewingPrivKey * ephemeralPubKey
-    // We approximate ECDH by hashing the private key with the public key
-    // using a domain-separated hash (matching the on-chain derivation)
+    // Zaseon-proprietary: domain-separated hash replaces EC scalar multiply
     const sharedSecret = keccak256(
       concat([toHex("stealth-ecdh"), viewingPrivKey, ephemeralPubKey]),
     );
@@ -361,14 +369,17 @@ export class StealthAddressClient {
   }
 
   /**
-   * Derive stealth private key for spending
+   * Derive stealth private key for spending.
+   *
+   * Uses the same Zaseon-proprietary hash-based shared-secret derivation as
+   * {@link deriveStealthAddressLocally} (not standard ERC-5564 EC multiply).
    */
   static deriveStealthPrivateKey(
     spendingPrivKey: Hex,
     viewingPrivKey: Hex,
     ephemeralPubKey: Hex,
   ): Hex {
-    // Compute shared secret — must match deriveStealthAddressLocally's formula
+    // Zaseon-proprietary: must match deriveStealthAddressLocally's formula
     const sharedSecret = keccak256(
       concat([toHex("stealth-ecdh"), viewingPrivKey, ephemeralPubKey]),
     );
