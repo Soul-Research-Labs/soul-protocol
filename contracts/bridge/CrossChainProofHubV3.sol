@@ -57,6 +57,12 @@ contract CrossChainProofHubV3 is
     /// @notice Maximum number of proofs in a batch
     uint256 public constant MAX_BATCH_SIZE = 100;
 
+    /// @notice Maximum proof data size (64 KB)
+    uint256 public constant MAX_PROOF_SIZE = 65536;
+
+    /// @notice Maximum public inputs size (8 KB)
+    uint256 public constant MAX_PUBLIC_INPUTS_SIZE = 8192;
+
     /// @notice Default proof type for verification
     /// @dev Pre-computed: keccak256("DEFAULT_PROOF_TYPE")
     bytes32 public constant DEFAULT_PROOF_TYPE =
@@ -789,6 +795,12 @@ contract CrossChainProofHubV3 is
     ) internal returns (bytes32 proofId) {
         // CIRCUIT BREAKER: Check rate limits
         _checkRateLimit(1, msg.value);
+
+        // Validate proof and public inputs sizes
+        if (proof.length > MAX_PROOF_SIZE)
+            revert ProofTooLarge(proof.length, MAX_PROOF_SIZE);
+        if (publicInputs.length > MAX_PUBLIC_INPUTS_SIZE)
+            revert PublicInputsTooLarge(publicInputs.length, MAX_PUBLIC_INPUTS_SIZE);
 
         // Phase 1: Validate fee and stake (scoped to free locals)
         {
