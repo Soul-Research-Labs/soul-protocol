@@ -115,6 +115,11 @@ contract MultiBridgeRouterFailoverE2E is Test {
         // Set chain target for destination chain
         router.setChainTarget(ARBITRUM_CHAIN_ID, makeAddr("arbitrumHub"));
 
+        // Register per-bridge operators (M-2 fix requires explicit operators)
+        router.setBridgeOperator(IMultiBridgeRouter.BridgeType.NATIVE_L2, operator);
+        router.setBridgeOperator(IMultiBridgeRouter.BridgeType.LAYERZERO, operator);
+        router.setBridgeOperator(IMultiBridgeRouter.BridgeType.HYPERLANE, operator);
+
         vm.stopPrank();
     }
 

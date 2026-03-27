@@ -64,6 +64,11 @@ contract MultiBridgeRouterFuzzTest is Test {
 
         // Set chain target for message routing
         router.setChainTarget(DEST_CHAIN, address(0xBEEF));
+
+        // Register per-bridge operators (M-2 fix requires explicit operators)
+        router.setBridgeOperator(NATIVE, address(this));
+        router.setBridgeOperator(LZ, address(this));
+        router.setBridgeOperator(HYPER, address(this));
     }
 
     /*//////////////////////////////////////////////////////////////
