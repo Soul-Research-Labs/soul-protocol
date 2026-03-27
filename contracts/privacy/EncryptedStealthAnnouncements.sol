@@ -43,6 +43,9 @@ contract EncryptedStealthAnnouncements is
     /// @notice Maximum block range for range queries
     uint256 public constant MAX_BLOCK_RANGE = 10000;
 
+    /// @notice Maximum IDs in a batch lookup
+    uint256 public constant MAX_BATCH_LOOKUP = 500;
+
     /// @notice Announcement expiry time (30 days)
     uint256 public constant ANNOUNCEMENT_EXPIRY = 30 days;
 
@@ -395,6 +398,7 @@ function getAnnouncement(
 function getAnnouncements(
         uint256[] calldata ids
     ) external view returns (EncryptedAnnouncement[] memory result) {
+        if (ids.length > MAX_BATCH_LOOKUP) revert BatchTooLarge();
         result = new EncryptedAnnouncement[](ids.length);
         for (uint256 i = 0; i < ids.length; ) {
             result[i] = announcements[ids[i]];
