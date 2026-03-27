@@ -96,6 +96,9 @@ contract UnifiedNullifierManager is
     /// @notice Maximum nullifiers per batch
     uint256 public constant MAX_BATCH_SIZE = 100;
 
+    /// @notice Maximum reverse soul lookups per binding
+    uint256 public constant MAX_REVERSE_LOOKUPS = 1000;
+
     // =========================================================================
     // STATE
     // =========================================================================
@@ -301,6 +304,8 @@ contract UnifiedNullifierManager is
         // Derive Soul unified nullifier
         soulBinding = deriveSoulBinding(nullifier, domain.domainTag);
         soulBindings[nullifier] = soulBinding;
+        if (reverseSoulLookup[soulBinding].length >= MAX_REVERSE_LOOKUPS)
+            revert ReverseLookupCapReached();
         reverseSoulLookup[soulBinding].push(nullifier);
 
         unchecked {

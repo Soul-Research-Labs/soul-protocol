@@ -141,6 +141,7 @@ interface IUnifiedNullifierManager {
     error InvalidProof();
     error UnauthorizedBridge();
     error ZeroAddress();
+    error ReverseLookupCapReached();
 
     // =========================================================================
     // CHAIN DOMAIN MANAGEMENT
