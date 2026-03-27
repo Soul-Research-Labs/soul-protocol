@@ -230,13 +230,15 @@ interface IUniversalChainAdapter {
     /// @param encryptedPayload The encrypted state data
     /// @param proof The ZK proof of valid state transition
     /// @param nullifier The nullifier for this chain
+    /// @param newCommitment The new commitment for the destination chain
     /// @return transferId The unique transfer identifier
     function sendEncryptedState(
         bytes32 destChainId,
         bytes32 stateCommitment,
         bytes calldata encryptedPayload,
         bytes calldata proof,
-        bytes32 nullifier
+        bytes32 nullifier,
+        bytes32 newCommitment
     ) external returns (bytes32 transferId);
 
     /// @notice Submit a universal proof for cross-chain verification

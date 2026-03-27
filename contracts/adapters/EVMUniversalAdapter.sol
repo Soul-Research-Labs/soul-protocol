@@ -362,7 +362,8 @@ contract EVMUniversalAdapter is
         bytes32 stateCommitment,
         bytes calldata encryptedPayload,
         bytes calldata proof,
-        bytes32 nullifier
+        bytes32 nullifier,
+        bytes32 newCommitment
     )
         external
         override
@@ -384,10 +385,11 @@ contract EVMUniversalAdapter is
             address verifier = proofVerifiers[chainDescriptor.proofSystem];
             if (verifier == address(0)) revert ProofVerifierNotConfigured();
 
-            uint256[] memory publicInputs = new uint256[](3);
+            uint256[] memory publicInputs = new uint256[](4);
             publicInputs[0] = uint256(stateCommitment);
             publicInputs[1] = uint256(nullifier);
             publicInputs[2] = uint256(destChainId);
+            publicInputs[3] = uint256(newCommitment);
 
             bool proofValid = IProofVerifier(verifier).verify(
                 proof,
