@@ -382,7 +382,7 @@ contract OptimisticNullifierChallengeTest is Test {
 
         // Operator upholds
         vm.prank(operator);
-        challenge.upholdChallenge(challengeId);
+        challenge.upholdChallenge(challengeId, keccak256("invalidity-proof-1"));
 
         // Batch is REJECTED
         (
@@ -512,7 +512,7 @@ contract OptimisticNullifierChallengeTest is Test {
         assertEq(watcherBalanceAfterChallenge, watcherBalanceBefore - 1 ether);
 
         vm.prank(operator);
-        challenge.upholdChallenge(challengeId);
+        challenge.upholdChallenge(challengeId, keccak256("invalidity-proof-2"));
 
         // Watcher gets full bond back on valid challenge
         assertEq(watcher.balance, watcherBalanceBefore);

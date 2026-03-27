@@ -104,6 +104,7 @@ contract OptimisticNullifierChallenge is
         uint256 bondAmount;
         string reason;
         ChallengeStatus status;
+        bytes32 invalidityProofHash; // Hash of proof that nullifier is invalid (set on upheld)
     }
 
     // =========================================================================
@@ -187,6 +188,7 @@ contract OptimisticNullifierChallenge is
     error BatchTooLarge(uint256 size, uint256 maxSize);
     error InvalidChallengePeriod(uint256 period);
     error RewardTransferFailed();
+    error InvalidityProofRequired();
     error RegistryForwardingFailed();
     error FeeWithdrawalFailed();
 
@@ -348,19 +350,28 @@ contract OptimisticNullifierChallenge is
 
     /**
      * @notice Uphold a challenge — the nullifier is invalid
-     * @dev Only OPERATOR_ROLE can resolve. In production, this should be replaced with
-     *      on-chain proof verification (e.g., merkle non-inclusion proof on source chain).
+     * @dev Only OPERATOR_ROLE can resolve. Requires an invalidity proof hash to create
+     *      an auditable record. In production, this should be replaced with on-chain
+     *      proof verification (e.g., merkle non-inclusion proof on source chain).
+     * @custom:security CENTRALIZATION RISK — batch rejection relies on OPERATOR_ROLE providing
+     *      an off-chain proof hash rather than on-chain cryptographic verification.
+     *      This is a known design trade-off for the optimistic model.
      * @param challengeId The challenge to uphold
+     * @param invalidityProofHash Hash of the off-chain proof demonstrating nullifier invalidity
      */
     function upholdChallenge(
-        bytes32 challengeId
+        bytes32 challengeId,
+        bytes32 invalidityProofHash
     ) external onlyRole(OPERATOR_ROLE) nonReentrant {
+        if (invalidityProofHash == bytes32(0)) revert InvalidityProofRequired();
+
         Challenge storage c = challenges[challengeId];
         if (c.challenger == address(0)) revert ChallengeNotFound(challengeId);
         if (c.status != ChallengeStatus.ACTIVE)
             revert ChallengeNotActive(challengeId);
 
         c.status = ChallengeStatus.UPHELD;
+        c.invalidityProofHash = invalidityProofHash;
 
         PendingBatch storage batch = _batches[c.batchId];
         batch.status = BatchStatus.REJECTED;
