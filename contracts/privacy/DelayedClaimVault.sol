@@ -172,6 +172,8 @@ contract DelayedClaimVault is
         uint256 amount
     );
 
+    event VrfSeedRotated(address indexed rotatedBy);
+
     // =========================================================================
     // ERRORS
     // =========================================================================
@@ -495,6 +497,18 @@ contract DelayedClaimVault is
         if (!success) revert TransferFailed();
 
         emit ClaimRefunded(claimId, treasury, pendingClaim.amount);
+    }
+
+    /**
+     * @notice Rotate the VRF seed to incorporate fresh entropy
+     * @dev Mixes the existing seed with block.timestamp and block.prevrandao
+     *      to prevent long-term seed prediction.
+     */
+    function rotateVrfSeed() external onlyRole(OPERATOR_ROLE) {
+        vrfSeed = keccak256(
+            abi.encodePacked(vrfSeed, block.timestamp, block.prevrandao)
+        );
+        emit VrfSeedRotated(msg.sender);
     }
 
     // =========================================================================
