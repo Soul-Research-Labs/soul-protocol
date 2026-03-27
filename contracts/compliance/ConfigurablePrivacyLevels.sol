@@ -77,6 +77,9 @@ contract ConfigurablePrivacyLevels is AccessControl, ReentrancyGuard {
     /// @notice Per-commitment privacy config
     mapping(bytes32 => PrivacyConfig) public commitmentPrivacy;
 
+    /// @notice Commitment config owner (first setter)
+    mapping(bytes32 => address) public commitmentOwner;
+
     /// @notice User default privacy levels
     mapping(address => PrivacyLevel) public userDefaultLevel;
 
@@ -194,6 +197,10 @@ contract ConfigurablePrivacyLevels is AccessControl, ReentrancyGuard {
         bytes32 metadataHash,
         uint256 retentionPeriod
     ) external nonReentrant {
+        address owner = commitmentOwner[commitment];
+        if (owner != address(0) && owner != msg.sender)
+            revert ConfigAlreadySet();
+
         if (
             commitmentPrivacy[commitment].retentionUntil != 0 ||
             commitmentPrivacy[commitment].level != PrivacyLevel.MAXIMUM
@@ -224,6 +231,10 @@ contract ConfigurablePrivacyLevels is AccessControl, ReentrancyGuard {
             retentionUntil: retentionUntil,
             auditorAccessRequired: auditorRequired
         });
+
+        if (owner == address(0)) {
+            commitmentOwner[commitment] = msg.sender;
+        }
 
         unchecked {
             ++totalConfigs;
