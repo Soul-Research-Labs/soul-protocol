@@ -185,6 +185,10 @@ contract UniversalShieldedPool is
     /// @notice Emitted when test mode is permanently disabled
     event TestModeDisabled(address indexed disabledBy);
 
+    /// @notice Emitted when a withdrawal proof verification is bypassed in test mode
+    /// @custom:security This event MUST trigger alerts in monitoring. If seen on mainnet, testMode was not disabled.
+    event TestModeWithdrawalBypassed(bytes32 indexed nullifier, address indexed recipient);
+
     /// @notice Emitted when production readiness is confirmed on-chain
     event ProductionReadinessConfirmed(
         address indexed confirmedBy,
@@ -766,6 +770,7 @@ contract UniversalShieldedPool is
             // SECURITY FIX M-8: Require minimum proof length even in test mode
             // to prevent trivially bypassing with empty proof data.
             if (wp.proof.length < 32) revert TestModeProofTooShort();
+            emit TestModeWithdrawalBypassed(wp.nullifier, wp.recipient);
             return true;
         }
 
