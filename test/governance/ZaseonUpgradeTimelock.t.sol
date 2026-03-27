@@ -304,7 +304,7 @@ contract ZaseonUpgradeTimelockTest is Test {
 
         // 4. Execute (target is EOA, so call will succeed with empty return)
         vm.prank(admin);
-        timelock.executeUpgrade(target, upgradeData, bytes32(0), salt);
+        timelock.executeUpgrade(target, upgradeData, salt);
 
         // After execution, operation should be done
         assertTrue(timelock.isOperationDone(opId));
@@ -325,7 +325,7 @@ contract ZaseonUpgradeTimelockTest is Test {
                 2
             )
         );
-        timelock.executeUpgrade(target, upgradeData, bytes32(0), salt);
+        timelock.executeUpgrade(target, upgradeData, salt);
     }
 
     function test_RevertExecuteExitWindowNotEnded() public {
@@ -341,7 +341,7 @@ contract ZaseonUpgradeTimelockTest is Test {
 
         vm.prank(admin);
         vm.expectRevert(); // ExitWindowNotEnded
-        timelock.executeUpgrade(target, upgradeData, bytes32(0), salt);
+        timelock.executeUpgrade(target, upgradeData, salt);
     }
 
     function test_EmergencyUpgradeBypassesExitWindow() public {
@@ -363,7 +363,7 @@ contract ZaseonUpgradeTimelockTest is Test {
         vm.warp(block.timestamp + 6 hours + 1);
 
         vm.prank(admin);
-        timelock.executeUpgrade(target, upgradeData, bytes32(0), salt);
+        timelock.executeUpgrade(target, upgradeData, salt);
     }
 
     // ───────────────── Emergency Mode ──────────────────
@@ -604,7 +604,7 @@ contract ZaseonUpgradeTimelockTest is Test {
     function test_RevertExecuteByNonUpgradeRole() public {
         vm.prank(nonAuthorized);
         vm.expectRevert();
-        timelock.executeUpgrade(target, upgradeData, bytes32(0), salt);
+        timelock.executeUpgrade(target, upgradeData, salt);
     }
 
     // ───────────────── Full Lifecycle ──────────────────
@@ -636,7 +636,7 @@ contract ZaseonUpgradeTimelockTest is Test {
 
         // Execute
         vm.prank(admin);
-        timelock.executeUpgrade(target, upgradeData, bytes32(0), salt);
+        timelock.executeUpgrade(target, upgradeData, salt);
         assertTrue(timelock.isOperationDone(opId));
     }
 
@@ -663,7 +663,7 @@ contract ZaseonUpgradeTimelockTest is Test {
 
         // Execute
         vm.prank(admin);
-        timelock.executeUpgrade(target, upgradeData, bytes32(0), salt);
+        timelock.executeUpgrade(target, upgradeData, salt);
         assertTrue(timelock.isOperationDone(opId));
 
         // Disable emergency mode

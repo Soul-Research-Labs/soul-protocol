@@ -186,13 +186,11 @@ interface IZaseonUpgradeTimelock {
      * @notice Executes a ready upgrade through the timelock
      * @param target      Target contract
      * @param data        Upgrade calldata
-     * @param predecessor Predecessor operation (0 for none)
      * @param salt        Salt used when proposing
      */
     function executeUpgrade(
         address target,
         bytes calldata data,
-        bytes32 predecessor,
         bytes32 salt
     ) external;
 

@@ -351,16 +351,14 @@ contract ZaseonUpgradeTimelock is TimelockController, IZaseonUpgradeTimelock {
      * @notice Execute an upgrade after timelock and signatures
      * @param target Target contract address
      * @param data Calldata for the upgrade
-     * @param predecessor Required predecessor operation (0 if none)
      * @param salt Unique salt for the operation
      */
     function executeUpgrade(
         address target,
         bytes calldata data,
-        bytes32 predecessor,
         bytes32 salt
     ) external onlyRole(UPGRADE_ROLE) {
-        bytes32 operationId = hashOperation(target, 0, data, predecessor, salt);
+        bytes32 operationId = hashOperation(target, 0, data, bytes32(0), salt);
 
         // Check signatures
         if (signatureCount[operationId] < minSignatures) {
@@ -382,7 +380,7 @@ contract ZaseonUpgradeTimelock is TimelockController, IZaseonUpgradeTimelock {
 
         // Execute through parent
         _internalCallAllowed = true;
-        execute(target, 0, data, predecessor, salt);
+        execute(target, 0, data, bytes32(0), salt);
         _internalCallAllowed = false;
     }
 
