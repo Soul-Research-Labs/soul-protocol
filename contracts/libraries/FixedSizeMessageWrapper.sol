@@ -41,6 +41,7 @@ library FixedSizeMessageWrapper {
     error PayloadTooLarge(uint256 payloadSize, uint256 maxSize);
     error InvalidMessageEnvelope(uint256 envelopeSize);
     error CorruptLengthPrefix(uint256 declaredLength, uint256 maxAllowed);
+    error NonZeroPadding();
 
     /**
      * @notice Wrap a cross-chain message payload in a fixed-size envelope
@@ -127,6 +128,15 @@ library FixedSizeMessageWrapper {
         payload = new bytes(payloadLen);
         for (uint256 i; i < payloadLen; ) {
             payload[i] = envelope[i + LENGTH_PREFIX];
+            unchecked {
+                ++i;
+            }
+        }
+
+        // Validate padding bytes are zero to prevent covert channels
+        uint256 paddingStart = LENGTH_PREFIX + payloadLen;
+        for (uint256 i = paddingStart; i < MESSAGE_ENVELOPE_SIZE; ) {
+            if (envelope[i] != 0) revert NonZeroPadding();
             unchecked {
                 ++i;
             }

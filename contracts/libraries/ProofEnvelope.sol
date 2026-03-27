@@ -42,6 +42,7 @@ library ProofEnvelope {
 
     /// @notice Error when envelope is malformed (too small or corrupt length)
     error InvalidEnvelope(uint256 envelopeSize);
+    error NonZeroPadding();
 
     /**
      * @notice Wrap a proof in a fixed-size envelope
@@ -96,6 +97,15 @@ library ProofEnvelope {
         proof = new bytes(proofLen);
         for (uint256 i; i < proofLen; ) {
             proof[i] = envelope[i + LENGTH_PREFIX];
+            unchecked {
+                ++i;
+            }
+        }
+
+        // Validate padding bytes are zero to prevent covert channels
+        uint256 paddingStart = LENGTH_PREFIX + proofLen;
+        for (uint256 i = paddingStart; i < ENVELOPE_SIZE; ) {
+            if (envelope[i] != 0) revert NonZeroPadding();
             unchecked {
                 ++i;
             }
