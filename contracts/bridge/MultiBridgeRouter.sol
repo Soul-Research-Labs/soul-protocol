@@ -114,6 +114,7 @@ contract MultiBridgeRouter is
     error InternalOnly();
     error NoETHToWithdraw();
     error TransferFailed();
+    error BridgeOperatorNotSet(BridgeType bridgeType);
 
     /// @dev M-3 FIX: Nonce to prevent message hash collisions within the same block
     uint256 private _messageNonce;
@@ -210,14 +211,12 @@ contract MultiBridgeRouter is
         bool approved
     ) external {
         // C-4 FIX: Require caller is the designated operator for this bridge type
-        // Falls back to OPERATOR_ROLE if no per-bridge operator is set
+        // Revert if no per-bridge operator is configured to prevent single-actor consensus
         address expectedOperator = bridgeOperator[bridgeType];
-        if (expectedOperator != address(0)) {
-            if (msg.sender != expectedOperator)
-                revert BridgeNotActive(bridgeType);
-        } else {
-            _checkRole(OPERATOR_ROLE);
-        }
+        if (expectedOperator == address(0))
+            revert BridgeOperatorNotSet(bridgeType);
+        if (msg.sender != expectedOperator)
+            revert BridgeNotActive(bridgeType);
         MessageVerification storage verification = _verifications[messageHash];
 
         if (verification.messageHash == bytes32(0)) {
