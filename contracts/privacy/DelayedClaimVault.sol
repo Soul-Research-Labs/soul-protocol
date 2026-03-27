@@ -517,6 +517,11 @@ contract DelayedClaimVault is
 
     /**
      * @dev Calculate random delay using VRF-like mechanism
+     * @custom:security The randomness source (block.prevrandao + vrfSeed) is NOT
+     *      cryptographically secure against validators who can influence block.prevrandao
+     *      by ~1 bit. This is an inherent EVM limitation. The delay serves as a
+     *      timing-correlation deterrent, not as a cryptographic guarantee.
+     *      For high-value use cases, consider integrating Chainlink VRF.
      */
     function _calculateRandomDelay(
         bytes32 claimId
