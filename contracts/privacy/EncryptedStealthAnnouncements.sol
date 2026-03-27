@@ -40,6 +40,9 @@ contract EncryptedStealthAnnouncements is
     /// @notice Maximum announcement data size
     uint256 public constant MAX_ANNOUNCEMENT_SIZE = 1024;
 
+    /// @notice Maximum block range for range queries
+    uint256 public constant MAX_BLOCK_RANGE = 10000;
+
     /// @notice Announcement expiry time (30 days)
     uint256 public constant ANNOUNCEMENT_EXPIRY = 30 days;
 
@@ -137,6 +140,7 @@ contract EncryptedStealthAnnouncements is
     error AnnouncementExpired();
     error TransferFailed();
     error InvalidRecipient();
+    error BlockRangeTooLarge();
 
     // =========================================================================
     // CONSTRUCTOR
@@ -343,6 +347,9 @@ function getAnnouncementsInRange(
         uint256 startBlock,
         uint256 endBlock
     ) external view returns (EncryptedAnnouncement[] memory result) {
+        if (endBlock < startBlock || endBlock - startBlock > MAX_BLOCK_RANGE)
+            revert BlockRangeTooLarge();
+
         // Count total announcements in range
         uint256 count = 0;
         for (uint256 b = startBlock; b <= endBlock; b++) {
