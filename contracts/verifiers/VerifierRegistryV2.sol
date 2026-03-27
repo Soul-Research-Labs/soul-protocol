@@ -177,6 +177,7 @@ contract VerifierRegistryV2 is AccessControl {
     error RegistryPausedError();
     error InvalidCircuitType(uint256 typeId);
     error LengthMismatch(uint256 a, uint256 b);
+    error BatchTooLarge(uint256 size, uint256 max);
 
     /*//////////////////////////////////////////////////////////////
                             MODIFIERS
@@ -408,6 +409,9 @@ contract VerifierRegistryV2 is AccessControl {
         if (proofs.length != publicInputsArray.length)
             revert LengthMismatch(proofs.length, publicInputsArray.length);
 
+        uint256 len = proofs.length;
+        if (len > 50) revert BatchTooLarge(len, 50);
+
         VerifierEntry storage entry = verifiers[circuitType];
         if (entry.adapter == address(0)) {
             revert VerifierNotRegistered(circuitType);
@@ -417,11 +421,11 @@ contract VerifierRegistryV2 is AccessControl {
         }
 
         IProofVerifier adapter = IProofVerifier(entry.adapter);
-        uint256 len = proofs.length;
         results = new bool[](len);
 
-        // Dedup: track seen proof hashes to avoid re-verifying identical pairs
+        // Dedup: track seen proof hashes and their results
         bytes32[] memory seenHashes = new bytes32[](len);
+        bool[] memory seenResults = new bool[](len);
         uint256 uniqueCount;
 
         for (uint256 i = 0; i < len; ) {
@@ -429,29 +433,10 @@ contract VerifierRegistryV2 is AccessControl {
                 abi.encodePacked(proofs[i], publicInputsArray[i])
             );
 
-            // Check if we already verified this exact (proof, inputs) pair
             bool duplicate = false;
             for (uint256 j = 0; j < uniqueCount; ) {
                 if (seenHashes[j] == h) {
-                    // Find the original index by scanning results
-                    // The first occurrence was already verified at some earlier index
-                    // Re-scan to find its result
-                    for (uint256 k = 0; k < i; ) {
-                        if (
-                            keccak256(
-                                abi.encodePacked(
-                                    proofs[k],
-                                    publicInputsArray[k]
-                                )
-                            ) == h
-                        ) {
-                            results[i] = results[k];
-                            break;
-                        }
-                        unchecked {
-                            ++k;
-                        }
-                    }
+                    results[i] = seenResults[j];
                     duplicate = true;
                     break;
                 }
@@ -461,14 +446,16 @@ contract VerifierRegistryV2 is AccessControl {
             }
 
             if (!duplicate) {
-                seenHashes[uniqueCount] = h;
-                unchecked {
-                    ++uniqueCount;
-                }
-                results[i] = adapter.verifyProof(
+                bool result = adapter.verifyProof(
                     proofs[i],
                     publicInputsArray[i]
                 );
+                seenHashes[uniqueCount] = h;
+                seenResults[uniqueCount] = result;
+                results[i] = result;
+                unchecked {
+                    ++uniqueCount;
+                }
             }
 
             unchecked {
