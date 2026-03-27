@@ -113,6 +113,7 @@ interface IIntentCompletionLayer {
     error IntentAlreadyClaimed();
     error DeadlinePassed();
     error ChallengePeriodActive();
+    error ChallengePeriodExpired();
     error NotIntentUser();
     error NotAssignedSolver();
     error SolverNotActive();

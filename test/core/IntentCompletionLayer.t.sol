@@ -556,7 +556,7 @@ contract IntentCompletionLayerTest is Test {
         vm.warp(block.timestamp + 1 hours + 1);
 
         vm.prank(challenger);
-        vm.expectRevert(IIntentCompletionLayer.ChallengePeriodActive.selector);
+        vm.expectRevert(IIntentCompletionLayer.ChallengePeriodExpired.selector);
         layer.disputeIntent(
             intentId,
             bytes("disputeproof"),

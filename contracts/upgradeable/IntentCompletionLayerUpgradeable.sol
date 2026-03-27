@@ -414,7 +414,7 @@ contract IntentCompletionLayerUpgradeable is
         if (intent.status != IntentStatus.FULFILLED)
             revert IntentNotFulfilled();
         if (block.timestamp > intent.fulfilledAt + CHALLENGE_PERIOD)
-            revert ChallengePeriodActive();
+            revert ChallengePeriodExpired();
 
         if (address(intentVerifier) != address(0)) {
             bool valid = intentVerifier.verifyProof(

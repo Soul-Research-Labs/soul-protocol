@@ -448,7 +448,7 @@ contract IntentCompletionLayer is
         if (intent.status != IntentStatus.FULFILLED)
             revert IntentNotFulfilled();
         if (block.timestamp > intent.fulfilledAt + CHALLENGE_PERIOD)
-            revert ChallengePeriodActive();
+            revert ChallengePeriodExpired();
 
         // Verify dispute proof if verifier is set
         if (address(intentVerifier) != address(0)) {
