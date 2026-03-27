@@ -215,8 +215,7 @@ contract MultiBridgeRouter is
         address expectedOperator = bridgeOperator[bridgeType];
         if (expectedOperator == address(0))
             revert BridgeOperatorNotSet(bridgeType);
-        if (msg.sender != expectedOperator)
-            revert BridgeNotActive(bridgeType);
+        if (msg.sender != expectedOperator) revert BridgeNotActive(bridgeType);
         MessageVerification storage verification = _verifications[messageHash];
 
         if (verification.messageHash == bytes32(0)) {

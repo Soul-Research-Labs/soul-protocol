@@ -453,10 +453,7 @@ contract IntentCompletionLayer is
 
         // Verify dispute proof — verifier must be set to prevent unverified disputes
         if (address(intentVerifier) == address(0)) revert VerifierNotSet();
-        bool valid = intentVerifier.verifyProof(
-            disputeProof,
-            disputeInputs
-        );
+        bool valid = intentVerifier.verifyProof(disputeProof, disputeInputs);
         if (!valid) revert InvalidProof();
 
         // Dispute successful — slash solver and refund user

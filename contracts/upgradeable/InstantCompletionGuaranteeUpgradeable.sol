@@ -207,7 +207,13 @@ contract InstantCompletionGuaranteeUpgradeable is
         address beneficiary,
         uint256 amount,
         uint256 duration
-    ) external payable nonReentrant whenNotPaused returns (bytes32 guaranteeId) {
+    )
+        external
+        payable
+        nonReentrant
+        whenNotPaused
+        returns (bytes32 guaranteeId)
+    {
         if (beneficiary == address(0)) revert ZeroAddress();
         if (amount < MIN_GUARANTEE_AMOUNT) revert InvalidAmount();
         if (duration < MIN_DURATION || duration > MAX_DURATION)
@@ -265,7 +271,9 @@ contract InstantCompletionGuaranteeUpgradeable is
      * @notice Settle guarantee
      * @param guaranteeId The guaranteeId identifier
      */
-    function settleGuarantee(bytes32 guaranteeId) external nonReentrant whenNotPaused {
+    function settleGuarantee(
+        bytes32 guaranteeId
+    ) external nonReentrant whenNotPaused {
         Guarantee storage g = _guarantees[guaranteeId];
         if (g.guarantor == address(0)) revert GuaranteeNotFound();
         if (g.status != GuaranteeStatus.ACTIVE) revert GuaranteeNotActive();
@@ -294,7 +302,9 @@ contract InstantCompletionGuaranteeUpgradeable is
      * @notice Claims guarantee
      * @param guaranteeId The guaranteeId identifier
      */
-    function claimGuarantee(bytes32 guaranteeId) external nonReentrant whenNotPaused {
+    function claimGuarantee(
+        bytes32 guaranteeId
+    ) external nonReentrant whenNotPaused {
         Guarantee storage g = _guarantees[guaranteeId];
         if (g.beneficiary == address(0)) revert GuaranteeNotFound();
         if (g.status != GuaranteeStatus.ACTIVE) revert GuaranteeNotActive();
