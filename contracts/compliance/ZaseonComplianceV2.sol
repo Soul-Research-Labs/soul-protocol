@@ -136,6 +136,7 @@ contract ZaseonComplianceV2 is AccessControl, ReentrancyGuard, Pausable {
     error ZeroAddress();
     error DurationTooShort();
     error DurationTooLong();
+    error NotOriginalProvider();
 
     /// @notice Modifier for authorized providers
     modifier onlyProvider() {
@@ -267,7 +268,15 @@ contract ZaseonComplianceV2 is AccessControl, ReentrancyGuard, Pausable {
         address user,
         string calldata reason
     ) external onlyProvider {
-        kycRecords[user].status = KYCStatus.Rejected;
+        KYCRecord storage record = kycRecords[user];
+        // Only the original provider or compliance admin can revoke
+        if (
+            record.provider != msg.sender &&
+            !hasRole(COMPLIANCE_ADMIN_ROLE, msg.sender)
+        ) {
+            revert NotOriginalProvider();
+        }
+        record.status = KYCStatus.Rejected;
         emit KYCRevoked(user, reason);
     }
 
