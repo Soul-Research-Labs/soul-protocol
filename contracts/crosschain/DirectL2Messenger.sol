@@ -308,7 +308,8 @@ contract DirectL2Messenger is
                 recipient,
                 payload,
                 ++globalNonce,
-                block.timestamp
+                block.timestamp,
+                actualPath
             )
         );
 
