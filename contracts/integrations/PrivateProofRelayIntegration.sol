@@ -332,14 +332,14 @@ contract PrivateProofRelayIntegration is
         // Reset daily limit if needed
         _resetDailyLimitIfNeeded(destConfig);
 
-        // Generate transfer ID
+        // Generate transfer ID deterministically from message fields
+        // Nullifier uniqueness guarantees requestId uniqueness
         bytes32 requestId = keccak256(
             abi.encodePacked(
                 message.commitment,
                 message.nullifierHash,
                 message.sourceChain,
-                message.destChain,
-                block.timestamp
+                message.destChain
             )
         );
 
@@ -417,14 +417,13 @@ contract PrivateProofRelayIntegration is
             revert MessageNotRelayed();
         }
 
-        // Generate transfer ID (same derivation as source)
+        // Derive requestId deterministically from message fields (no block.timestamp)
         bytes32 requestId = keccak256(
             abi.encodePacked(
                 message.commitment,
                 message.nullifierHash,
                 message.sourceChain,
-                message.destChain,
-                block.timestamp
+                message.destChain
             )
         );
 
