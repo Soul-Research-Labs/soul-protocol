@@ -40,6 +40,7 @@ contract IntentCompletionLayer is
     IIntentCompletionLayer
 {
     error ETHTransferFailed();
+    error VerifierNotSet();
 
     /*//////////////////////////////////////////////////////////////
                                  ROLES
@@ -450,14 +451,13 @@ contract IntentCompletionLayer is
         if (block.timestamp > intent.fulfilledAt + CHALLENGE_PERIOD)
             revert ChallengePeriodExpired();
 
-        // Verify dispute proof if verifier is set
-        if (address(intentVerifier) != address(0)) {
-            bool valid = intentVerifier.verifyProof(
-                disputeProof,
-                disputeInputs
-            );
-            if (!valid) revert InvalidProof();
-        }
+        // Verify dispute proof — verifier must be set to prevent unverified disputes
+        if (address(intentVerifier) == address(0)) revert VerifierNotSet();
+        bool valid = intentVerifier.verifyProof(
+            disputeProof,
+            disputeInputs
+        );
+        if (!valid) revert InvalidProof();
 
         // Dispute successful — slash solver and refund user
         intent.status = IntentStatus.DISPUTED;
