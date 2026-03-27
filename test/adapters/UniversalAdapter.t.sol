@@ -171,7 +171,8 @@ contract EVMUniversalAdapterTest is Test {
             commitment,
             payload,
             proof,
-            nullifier
+            nullifier,
+            keccak256("new_state")
         );
 
         assertTrue(transferId != bytes32(0));
@@ -420,7 +421,8 @@ contract EVMUniversalAdapterTest is Test {
             keccak256("state"),
             abi.encodePacked("data"),
             new bytes(128),
-            keccak256("null")
+            keccak256("null"),
+            keccak256("new")
         );
 
         vm.prank(admin);
@@ -433,7 +435,8 @@ contract EVMUniversalAdapterTest is Test {
             keccak256("state"),
             abi.encodePacked("data"),
             new bytes(128),
-            keccak256("null")
+            keccak256("null"),
+            keccak256("new")
         );
     }
 
@@ -546,7 +549,8 @@ contract EVMUniversalAdapterTest is Test {
             keccak256(abi.encodePacked("state", nonce1)),
             abi.encodePacked("data"),
             new bytes(128),
-            keccak256(abi.encodePacked("null", nonce1))
+            keccak256(abi.encodePacked("null", nonce1)),
+            keccak256(abi.encodePacked("new", nonce1))
         );
 
         bytes32 id2 = adapter.sendEncryptedState(
@@ -554,7 +558,8 @@ contract EVMUniversalAdapterTest is Test {
             keccak256(abi.encodePacked("state", nonce2)),
             abi.encodePacked("data"),
             new bytes(128),
-            keccak256(abi.encodePacked("null", nonce2))
+            keccak256(abi.encodePacked("null", nonce2)),
+            keccak256(abi.encodePacked("new", nonce2))
         );
         vm.stopPrank();
 
