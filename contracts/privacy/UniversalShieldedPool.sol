@@ -187,7 +187,10 @@ contract UniversalShieldedPool is
 
     /// @notice Emitted when a withdrawal proof verification is bypassed in test mode
     /// @custom:security This event MUST trigger alerts in monitoring. If seen on mainnet, testMode was not disabled.
-    event TestModeWithdrawalBypassed(bytes32 indexed nullifier, address indexed recipient);
+    event TestModeWithdrawalBypassed(
+        bytes32 indexed nullifier,
+        address indexed recipient
+    );
 
     /// @notice Emitted when production readiness is confirmed on-chain
     event ProductionReadinessConfirmed(

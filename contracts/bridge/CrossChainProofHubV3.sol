@@ -800,7 +800,10 @@ contract CrossChainProofHubV3 is
         if (proof.length > MAX_PROOF_SIZE)
             revert ProofTooLarge(proof.length, MAX_PROOF_SIZE);
         if (publicInputs.length > MAX_PUBLIC_INPUTS_SIZE)
-            revert PublicInputsTooLarge(publicInputs.length, MAX_PUBLIC_INPUTS_SIZE);
+            revert PublicInputsTooLarge(
+                publicInputs.length,
+                MAX_PUBLIC_INPUTS_SIZE
+            );
 
         // Phase 1: Validate fee and stake (scoped to free locals)
         {
