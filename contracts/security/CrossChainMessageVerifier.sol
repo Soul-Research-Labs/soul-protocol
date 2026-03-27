@@ -40,6 +40,7 @@ contract CrossChainMessageVerifier is ReentrancyGuard, AccessControl, Pausable {
     error VerifierNotRegistered();
     error ChallengeNotFound();
     error InsufficientBond();
+    error ZeroAddress();
     error BondReturnFailed();
 
     /*//////////////////////////////////////////////////////////////
@@ -153,6 +154,9 @@ contract CrossChainMessageVerifier is ReentrancyGuard, AccessControl, Pausable {
 
     /// @notice Active verifier list
     address[] public activeVerifiers;
+
+    /// @notice Accumulated forfeited challenge bonds available for withdrawal
+    uint256 public totalForfeitedBonds;
 
     /// @notice Current chain ID
     uint256 public immutable chainId;
@@ -364,6 +368,7 @@ contract CrossChainMessageVerifier is ReentrancyGuard, AccessControl, Pausable {
             // Challenge failed - forfeit bond, allow execution
             message.challenged = false;
             message.challengePeriodEnd = block.timestamp + CHALLENGE_PERIOD;
+            totalForfeitedBonds += challenge.bondAmount;
         }
 
         emit ChallengeResolved(messageId, upheld);
@@ -561,5 +566,19 @@ contract CrossChainMessageVerifier is ReentrancyGuard, AccessControl, Pausable {
      */
     function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
+    }
+
+    /// @notice Withdraw accumulated forfeited challenge bonds
+    /// @param to Recipient address
+    /// @param amount Amount to withdraw
+    function withdrawForfeitedBonds(
+        address to,
+        uint256 amount
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
+        if (to == address(0)) revert ZeroAddress();
+        if (amount > totalForfeitedBonds) revert InsufficientBond();
+        totalForfeitedBonds -= amount;
+        (bool success, ) = to.call{value: amount}("");
+        if (!success) revert BondReturnFailed();
     }
 }
