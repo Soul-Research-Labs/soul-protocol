@@ -340,7 +340,7 @@ contract CrossChainMessageVerifier is ReentrancyGuard, AccessControl, Pausable {
     function resolveChallenge(
         bytes32 messageId,
         bool upheld
-    ) external onlyRole(RESOLVER_ROLE) {
+    ) external onlyRole(RESOLVER_ROLE) nonReentrant {
         Challenge storage challenge = challenges[messageId];
         Message storage message = messages[messageId];
 
