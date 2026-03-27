@@ -328,7 +328,8 @@ contract OptimisticNullifierChallenge is
             challenger: msg.sender,
             bondAmount: msg.value,
             reason: reason,
-            status: ChallengeStatus.ACTIVE
+            status: ChallengeStatus.ACTIVE,
+            invalidityProofHash: bytes32(0)
         });
 
         nullifierChallenged[batchId][nullifierIndex] = true;

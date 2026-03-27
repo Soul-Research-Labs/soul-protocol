@@ -761,7 +761,7 @@ contract UniversalShieldedPool is
     ///      Test mode allows bypass with length-checked proofs (irreversibly disableable).
     function _verifyWithdrawalProof(
         WithdrawalProof calldata wp
-    ) internal view returns (bool) {
+    ) internal returns (bool) {
         if (withdrawalVerifier == address(0)) {
             // No verifier set — only allow in explicit test mode (irreversibly disableable)
             if (!testMode) revert NoVerifierConfigured();

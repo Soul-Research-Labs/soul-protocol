@@ -212,7 +212,8 @@ contract OptimisticNullifierChallengeTest is Test {
             address challenger,
             uint256 bond,
             ,
-            OptimisticNullifierChallenge.ChallengeStatus cStatus
+            OptimisticNullifierChallenge.ChallengeStatus cStatus,
+
         ) = challenge.challenges(challengeId);
         assertEq(storedBatchId, batchId);
         assertEq(idx, 1);
