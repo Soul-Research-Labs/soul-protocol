@@ -497,12 +497,6 @@ contract OperationTimelockModule is AccessControl, ReentrancyGuard {
             revert OperationExpired(batchId);
         }
 
-        batch.status = OperationStatus.EXECUTED;
-        batch.executedAt = uint48(block.timestamp);
-        unchecked {
-            ++totalExecuted;
-        }
-
         uint256 len = batch.targets.length;
         for (uint256 i; i < len; ) {
             // solhint-disable-next-line avoid-low-level-calls
@@ -515,6 +509,13 @@ contract OperationTimelockModule is AccessControl, ReentrancyGuard {
             unchecked {
                 ++i;
             }
+        }
+
+        // CEI: Set status AFTER all external calls succeed
+        batch.status = OperationStatus.EXECUTED;
+        batch.executedAt = uint48(block.timestamp);
+        unchecked {
+            ++totalExecuted;
         }
 
         emit BatchExecuted(batchId, msg.sender, len, 0);
