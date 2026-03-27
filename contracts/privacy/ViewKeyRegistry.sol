@@ -47,6 +47,7 @@ contract ViewKeyRegistry is
     // =========================================================================
 
     uint256 public constant MAX_GRANTS_PER_ACCOUNT = 100;
+    uint256 public constant MAX_RECEIVED_GRANTS_PER_ACCOUNT = 500;
     uint256 public constant MIN_GRANT_DURATION = 1 hours;
     uint256 public constant MAX_GRANT_DURATION = 365 days;
     uint256 public constant REVOCATION_DELAY = 1 hours;
@@ -233,6 +234,8 @@ contract ViewKeyRegistry is
         });
 
         issuedGrants[msg.sender].push(grantId);
+        if (receivedGrants[grantee].length >= MAX_RECEIVED_GRANTS_PER_ACCOUNT)
+            revert MaxReceivedGrantsReached();
         receivedGrants[grantee].push(grantId);
 
         unchecked {
@@ -286,6 +289,8 @@ contract ViewKeyRegistry is
         });
 
         issuedGrants[msg.sender].push(grantId);
+        if (receivedGrants[auditor].length >= MAX_RECEIVED_GRANTS_PER_ACCOUNT)
+            revert MaxReceivedGrantsReached();
         receivedGrants[auditor].push(grantId);
 
         unchecked {

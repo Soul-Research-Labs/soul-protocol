@@ -562,7 +562,6 @@ contract EthereumL1Bridge is
         }
 
         totalCommitments++;
-        hourlyCommitmentCount++;
 
         emit StateCommitmentSubmitted(
             commitmentId,
@@ -910,6 +909,8 @@ contract EthereumL1Bridge is
         if (hourlyCommitmentCount >= maxCommitmentsPerHour) {
             revert RateLimitExceeded();
         }
+
+        hourlyCommitmentCount++;
     }
 
     /**

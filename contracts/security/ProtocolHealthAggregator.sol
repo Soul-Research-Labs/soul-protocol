@@ -911,6 +911,13 @@ contract ProtocolHealthAggregator is AccessControl, ReentrancyGuard, Pausable {
             PausableTarget storage pt = pausableTargets[target];
 
             if (pt.isRegistered && !pt.wasPausedByUs) {
+                // Skip destroyed contracts — low-level call to empty address returns success
+                if (target.code.length == 0) {
+                    unchecked {
+                        ++i;
+                    }
+                    continue;
+                }
                 // Try to call pause() — we don't require specific interface
                 // solhint-disable-next-line avoid-low-level-calls
                 (bool success, ) = target.call(

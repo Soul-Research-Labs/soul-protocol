@@ -1,0 +1,13 @@
+Fix medium/low severity findings: V-1, M-1, M-5, L-2, L-4
+
+V-1: ViewKeyRegistry - cap receivedGrants with MAX_RECEIVED_GRANTS_PER_ACCOUNT (500)
+M-1: RelayProofValidator - atomic check-and-update withdrawal cap at finalization
+M-5: ProtocolHealthAggregator - code-size check before pause() on destroyed contracts
+L-2: NativeL2BridgeWrapper - validate gasLimit <= uint32.max in constructor for OP Stack
+L-4: EthereumL1Bridge - atomic rate limit check-and-increment inside _checkRateLimit()
+
+False positives: M-2 (inline verify always false), M-3 (LZ reverts propagate),
+M-4 (EVM sequential + nonReentrant), M-6 (checked math + cap), M-7 (IGP event handled),
+L-1 (correct epoch behavior), L-3 (caller-pays model)
+
+6192 tests passed, 0 failed, 10 skipped

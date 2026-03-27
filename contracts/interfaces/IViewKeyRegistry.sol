@@ -98,6 +98,7 @@ interface IViewKeyRegistry {
     error InvalidKeyType();
     error InvalidDuration();
     error MaxGrantsReached();
+    error MaxReceivedGrantsReached();
     error GrantNotFound();
     error GrantNotActive();
     error GrantExpired();

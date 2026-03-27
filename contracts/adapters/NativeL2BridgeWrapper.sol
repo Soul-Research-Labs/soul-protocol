@@ -86,6 +86,12 @@ contract NativeL2BridgeWrapper is
         uint256 _gasLimit
     ) {
         if (_nativeBridge == address(0)) revert InvalidBridge();
+        if (
+            _bridgeType == BridgeType.OP_CROSS_DOMAIN_MESSENGER &&
+            _gasLimit > type(uint32).max
+        ) {
+            revert GasLimitExceedsUint32();
+        }
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(ADMIN_ROLE, _admin);
         nativeBridge = _nativeBridge;

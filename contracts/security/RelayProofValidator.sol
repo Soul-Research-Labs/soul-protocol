@@ -385,9 +385,9 @@ contract RelayProofValidator is AccessControl, Pausable, ReentrancyGuard {
 
         proof.status = ProofStatus.FINALIZED;
 
-        // Update epoch stats
+        // Update epoch stats — atomic cap enforcement at finalization
         _advanceEpochIfNeeded();
-        epochStats[currentEpoch].totalWithdrawn += proof.value;
+        _enforceAndUpdateWithdrawalCap(proof.value);
 
         emit ProofFinalized(proofHash, block.timestamp);
     }
@@ -692,6 +692,25 @@ contract RelayProofValidator is AccessControl, Pausable, ReentrancyGuard {
         if (value > remaining) {
             revert ExceedsWithdrawalCap(value, remaining);
         }
+    }
+
+    function _enforceAndUpdateWithdrawalCap(uint256 value) internal {
+        if (!withdrawalCaps.enabled) {
+            epochStats[currentEpoch].totalWithdrawn += value;
+            return;
+        }
+
+        if (value > withdrawalCaps.perTxCap) {
+            revert ExceedsWithdrawalCap(value, withdrawalCaps.perTxCap);
+        }
+
+        uint256 remaining = withdrawalCaps.perEpochCap -
+            epochStats[currentEpoch].totalWithdrawn;
+        if (value > remaining) {
+            revert ExceedsWithdrawalCap(value, remaining);
+        }
+
+        epochStats[currentEpoch].totalWithdrawn += value;
     }
 
     function _advanceEpochIfNeeded() internal {
