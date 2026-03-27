@@ -105,6 +105,7 @@ contract DirectL2Messenger is
     error WithdrawalFailed();
     /// @notice Thrown when the low-level call to execute a message's payload reverts
     error MessageExecutionFailed();
+    error InsufficientGasForExecution();
     /// @notice Thrown when a zero address is provided for a critical parameter
     error ZeroAddress();
     /// @notice Thrown when the specified confirmation count is zero or exceeds the relayer set size
@@ -657,9 +658,8 @@ contract DirectL2Messenger is
 
         // Execute call - SECURITY FIX: Forward the value stored in the message
         // SECURITY FIX H-6: Add gas limit to prevent gas griefing from malicious recipients
-        uint256 executionGasLimit = gasleft() > 100_000
-            ? gasleft() - 50_000
-            : gasleft();
+        if (gasleft() <= 110_000) revert InsufficientGasForExecution();
+        uint256 executionGasLimit = gasleft() - 50_000;
         (bool success, bytes memory returnData) = msg_.recipient.call{
             value: msg_.value,
             gas: executionGasLimit
