@@ -650,6 +650,7 @@ contract PrivacyZoneManager is
     function setMigrationVerifier(
         address _verifier
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_verifier == address(0)) revert VerifierNotConfigured();
         migrationVerifier = _verifier;
     }
 
@@ -661,6 +662,7 @@ contract PrivacyZoneManager is
     function setWithdrawalVerifier(
         address _verifier
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_verifier == address(0)) revert VerifierNotConfigured();
         withdrawalVerifier = _verifier;
     }
 
