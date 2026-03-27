@@ -151,6 +151,8 @@ library VerifierGasUtils {
                 mul(publicInputs.length, 0x20)
             )
             proofHash := keccak256(ptr, totalLen)
+            // Update free memory pointer to preserve memory-safe guarantee
+            mstore(0x40, add(ptr, totalLen))
         }
     }
 
@@ -179,6 +181,8 @@ library VerifierGasUtils {
                 mul(publicInputs.length, 0x20)
             )
             proofHash := keccak256(ptr, totalLen)
+            // Update free memory pointer to preserve memory-safe guarantee
+            mstore(0x40, add(ptr, totalLen))
         }
     }
 
