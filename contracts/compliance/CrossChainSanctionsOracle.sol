@@ -66,6 +66,9 @@ contract CrossChainSanctionsOracle is
     /// @notice Whether to fail-open (false = fail-closed: treat unknown as sanctioned)
     bool public failOpen = true;
 
+    /// @notice Maximum number of addresses in a batch screen
+    uint256 public constant MAX_BATCH_SIZE = 200;
+
     /// @notice Per-provider per-address dedup to prevent quorum gaming
     /// provider => address => hasFlagged
     mapping(address => mapping(address => bool)) public providerHasFlagged;
@@ -202,6 +205,7 @@ contract CrossChainSanctionsOracle is
     function batchScreen(
         address[] calldata addrs
     ) external view returns (bool[] memory results) {
+        require(addrs.length <= MAX_BATCH_SIZE, "Batch too large");
         results = new bool[](addrs.length);
         for (uint256 i = 0; i < addrs.length; ) {
             SanctionsEntry storage entry = sanctions[addrs[i]];
