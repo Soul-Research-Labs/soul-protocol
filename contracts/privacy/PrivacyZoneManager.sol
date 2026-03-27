@@ -49,6 +49,7 @@ contract PrivacyZoneManager is
 {
     error TransferFailed();
     error VerifierNotConfigured();
+    error InsufficientZoneBalance();
 
     // ============================================
     // ROLES (pre-computed for gas optimization)
@@ -435,13 +436,9 @@ contract PrivacyZoneManager is
 
         unchecked {
             ++zone.totalWithdrawals;
-            if (zone.totalValueLocked >= amount) {
-                zone.totalValueLocked -= amount;
-            } else {
-                // Should not happen if accounting is correct, but safety clamp
-                zone.totalValueLocked = 0;
-            }
         }
+        if (zone.totalValueLocked < amount) revert InsufficientZoneBalance();
+        zone.totalValueLocked -= amount;
 
         emit WithdrawalFromZone(zoneId, nullifier);
     }
