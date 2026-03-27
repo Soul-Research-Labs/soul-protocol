@@ -39,6 +39,12 @@ contract NativeL2BridgeWrapper is
     /// @notice Gas limit for cross-chain execution
     uint256 public gasLimit;
 
+    /// @notice Arbitrum max submission cost for retryable tickets
+    uint256 public maxSubmissionCost;
+
+    /// @notice Arbitrum max fee per gas for L2 execution
+    uint256 public maxFeePerGas;
+
     /// @notice Message verification tracking
     mapping(bytes32 => bool) public verifiedMessages;
 
@@ -64,6 +70,9 @@ contract NativeL2BridgeWrapper is
 
     /// @notice Thrown when the native bridge send call fails
     error BridgeSendFailed();
+
+    /// @notice Thrown when gasLimit exceeds uint32 max for OP Stack bridges
+    error GasLimitExceedsUint32();
 
     /// @notice Initializes the native L2 bridge wrapper
     /// @param _admin Address granted admin and default admin roles
@@ -105,16 +114,19 @@ contract NativeL2BridgeWrapper is
 
         if (bridgeType == BridgeType.ARBITRUM_INBOX) {
             // Arbitrum Inbox.createRetryableTicket pattern
+            uint256 submissionCost = maxSubmissionCost > 0
+                ? maxSubmissionCost
+                : 0.01 ether;
             (success, ) = nativeBridge.call{value: msg.value}(
                 abi.encodeWithSignature(
                     "createRetryableTicket(address,uint256,uint256,address,address,uint256,uint256,bytes)",
                     targetAddress, // to
                     0, // l2CallValue
-                    0, // maxSubmissionCost (calculated)
+                    submissionCost, // maxSubmissionCost
                     refundAddress != address(0) ? refundAddress : msg.sender,
                     refundAddress != address(0) ? refundAddress : msg.sender,
                     gasLimit, // gasLimit
-                    0, // maxFeePerGas
+                    maxFeePerGas, // maxFeePerGas
                     payload // data
                 )
             );
@@ -206,6 +218,23 @@ contract NativeL2BridgeWrapper is
      * @param _gasLimit The _gas limit
      */
     function setGasLimit(uint256 _gasLimit) external onlyRole(ADMIN_ROLE) {
+        if (
+            bridgeType == BridgeType.OP_CROSS_DOMAIN_MESSENGER &&
+            _gasLimit > type(uint32).max
+        ) {
+            revert GasLimitExceedsUint32();
+        }
         gasLimit = _gasLimit;
+    }
+
+    /// @notice Set Arbitrum-specific retryable ticket parameters
+    /// @param _maxSubmissionCost Max submission cost for retryable tickets
+    /// @param _maxFeePerGas Max fee per gas for L2 execution
+    function setArbitrumParams(
+        uint256 _maxSubmissionCost,
+        uint256 _maxFeePerGas
+    ) external onlyRole(ADMIN_ROLE) {
+        maxSubmissionCost = _maxSubmissionCost;
+        maxFeePerGas = _maxFeePerGas;
     }
 }
