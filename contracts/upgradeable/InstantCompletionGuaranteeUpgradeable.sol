@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {IInstantCompletionGuarantee} from "../interfaces/IInstantCompletionGuarantee.sol";
 import {IIntentCompletionLayer} from "../interfaces/IIntentCompletionLayer.sol";
@@ -26,6 +27,7 @@ contract InstantCompletionGuaranteeUpgradeable is
     Initializable,
     AccessControlUpgradeable,
     ReentrancyGuardUpgradeable,
+    PausableUpgradeable,
     UUPSUpgradeable,
     IInstantCompletionGuarantee
 {
@@ -98,6 +100,7 @@ contract InstantCompletionGuaranteeUpgradeable is
 
         __AccessControl_init();
         __ReentrancyGuard_init();
+        __Pausable_init();
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(OPERATOR_ROLE, admin);
@@ -118,6 +121,14 @@ contract InstantCompletionGuaranteeUpgradeable is
     function _authorizeUpgrade(
         address newImplementation
     ) internal override onlyRole(UPGRADER_ROLE) {}
+
+    function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _pause();
+    }
+
+    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _unpause();
+    }
 
     /*//////////////////////////////////////////////////////////////
                          ADMIN FUNCTIONS
@@ -196,7 +207,7 @@ contract InstantCompletionGuaranteeUpgradeable is
         address beneficiary,
         uint256 amount,
         uint256 duration
-    ) external payable nonReentrant returns (bytes32 guaranteeId) {
+    ) external payable nonReentrant whenNotPaused returns (bytes32 guaranteeId) {
         if (beneficiary == address(0)) revert ZeroAddress();
         if (amount < MIN_GUARANTEE_AMOUNT) revert InvalidAmount();
         if (duration < MIN_DURATION || duration > MAX_DURATION)
@@ -254,7 +265,7 @@ contract InstantCompletionGuaranteeUpgradeable is
      * @notice Settle guarantee
      * @param guaranteeId The guaranteeId identifier
      */
-    function settleGuarantee(bytes32 guaranteeId) external nonReentrant {
+    function settleGuarantee(bytes32 guaranteeId) external nonReentrant whenNotPaused {
         Guarantee storage g = _guarantees[guaranteeId];
         if (g.guarantor == address(0)) revert GuaranteeNotFound();
         if (g.status != GuaranteeStatus.ACTIVE) revert GuaranteeNotActive();
@@ -283,7 +294,7 @@ contract InstantCompletionGuaranteeUpgradeable is
      * @notice Claims guarantee
      * @param guaranteeId The guaranteeId identifier
      */
-    function claimGuarantee(bytes32 guaranteeId) external nonReentrant {
+    function claimGuarantee(bytes32 guaranteeId) external nonReentrant whenNotPaused {
         Guarantee storage g = _guarantees[guaranteeId];
         if (g.beneficiary == address(0)) revert GuaranteeNotFound();
         if (g.status != GuaranteeStatus.ACTIVE) revert GuaranteeNotActive();
