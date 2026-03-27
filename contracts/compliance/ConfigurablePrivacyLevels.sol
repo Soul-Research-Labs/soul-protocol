@@ -205,9 +205,8 @@ contract ConfigurablePrivacyLevels is AccessControl, ReentrancyGuard {
             commitmentPrivacy[commitment].retentionUntil != 0 ||
             commitmentPrivacy[commitment].level != PrivacyLevel.MAXIMUM
         ) {
-            // Allow re-set only if currently default (MAXIMUM with 0 retention)
-            if (commitmentPrivacy[commitment].retentionUntil != 0)
-                revert ConfigAlreadySet();
+            // Non-default config already exists — block re-set
+            revert ConfigAlreadySet();
         }
 
         // Enforce global minimum

@@ -229,6 +229,15 @@ contract InstantCompletionGuarantee is
             revert InvalidDuration();
         if (intentId == bytes32(0)) revert IntentNotLinked();
 
+        // Verify intent belongs to this chain (prevent cross-chain replay)
+        if (address(intentLayer) != address(0)) {
+            IIntentCompletionLayer.Intent memory intent = intentLayer.getIntent(
+                intentId
+            );
+            if (intent.sourceChainId != block.chainid)
+                revert IntentChainMismatch();
+        }
+
         // Check collateral
         uint256 bondRequired = (amount * collateralRatioBps) / BPS;
         if (msg.value < bondRequired) revert InsufficientBond();

@@ -66,7 +66,7 @@ export interface PreprocessedData {
   id: string;
   /** Circuit this was preprocessed for */
   circuit: PreprocessableCircuit;
-  /** Poseidon hash commitment of the witness inputs */
+  /** keccak256 hash commitment of the witness inputs */
   witnessCommitment: Hex;
   /** Serialized intermediate computation state */
   intermediateState: Uint8Array;
@@ -231,7 +231,7 @@ export class ProofPreprocessor {
     circuit: PreprocessableCircuit,
     inputs: WitnessInputs,
   ): Promise<PreprocessedData> {
-    // Compute witness commitment (Poseidon hash over serialized inputs)
+    // Compute witness commitment (keccak256 hash over serialized inputs)
     const serialized = this._serializeInputs(inputs);
     const witnessCommitment = keccak256(
       encodePacked(["bytes"], [toHex(serialized)]),

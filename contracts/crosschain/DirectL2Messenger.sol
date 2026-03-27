@@ -297,7 +297,11 @@ contract DirectL2Messenger is
         MessagePath actualPath = path;
         if (route.active && route.preferredPath != path) {
             actualPath = route.preferredPath;
-            // Emit event so user is aware of path override
+        }
+
+        // Validate the actual path (after override) is supported for this route
+        if (!route.active && actualPath != MessagePath.SLOW_L1) {
+            revert UnsupportedRoute();
         }
 
         // Generate message ID (use abi.encode for collision safety with variable-length payload)

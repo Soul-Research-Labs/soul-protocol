@@ -58,6 +58,9 @@ contract IntentCompletionE2E is Test {
     // =========================================================================
 
     function setUp() public {
+        // Set chain ID to match SOURCE_CHAIN for guarantee chain validation
+        vm.chainId(SOURCE_CHAIN);
+
         // Fund actors
         vm.deal(admin, 100 ether);
         vm.deal(user, 100 ether);

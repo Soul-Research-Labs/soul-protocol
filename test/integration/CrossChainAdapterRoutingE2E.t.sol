@@ -195,9 +195,18 @@ contract CrossChainAdapterRoutingE2E is Test {
         router.setChainTarget(BASE_CHAIN, makeAddr("baseHub"));
 
         // Register per-bridge operators (M-2 fix requires explicit operators)
-        router.setBridgeOperator(IMultiBridgeRouter.BridgeType.NATIVE_L2, operator);
-        router.setBridgeOperator(IMultiBridgeRouter.BridgeType.LAYERZERO, operator);
-        router.setBridgeOperator(IMultiBridgeRouter.BridgeType.HYPERLANE, operator);
+        router.setBridgeOperator(
+            IMultiBridgeRouter.BridgeType.NATIVE_L2,
+            operator
+        );
+        router.setBridgeOperator(
+            IMultiBridgeRouter.BridgeType.LAYERZERO,
+            operator
+        );
+        router.setBridgeOperator(
+            IMultiBridgeRouter.BridgeType.HYPERLANE,
+            operator
+        );
         router.setBridgeOperator(IMultiBridgeRouter.BridgeType.BITVM, operator);
 
         vm.stopPrank();

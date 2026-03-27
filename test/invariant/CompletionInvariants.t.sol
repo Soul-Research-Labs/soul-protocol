@@ -30,6 +30,9 @@ contract CompletionInvariantsTest is Test {
     uint256 constant DEST_CHAIN = 42161;
 
     function setUp() public {
+        // Set chain ID to match SOURCE_CHAIN for guarantee chain validation
+        vm.chainId(SOURCE_CHAIN);
+
         vm.deal(admin, 1000 ether);
         vm.deal(solver, 1000 ether);
         vm.deal(user, 1000 ether);

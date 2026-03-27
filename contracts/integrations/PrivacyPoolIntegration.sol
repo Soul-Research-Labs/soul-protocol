@@ -63,6 +63,8 @@ contract PrivacyPoolIntegration is
     error InvalidCommitment();
     /// @notice Thrown when a deposit range proof fails verification
     error InvalidRangeProof();
+    /// @notice Thrown when the deposited amount does not match the commitment
+    error CommitmentAmountMismatch();
     /// @notice Thrown when a withdrawal ZK proof fails verification
     error InvalidWithdrawProof();
     /// @notice Thrown when a private swap ZK proof fails verification
@@ -333,14 +335,10 @@ contract PrivacyPoolIntegration is
         PoolToken storage poolToken = poolTokens[token];
         if (!poolToken.isActive) revert PoolNotActive();
 
-        // Verify range proof
-        if (!_verifyRangeProof(commitment, rangeProof)) {
+        // Verify range proof with amount binding
+        if (!_verifyRangeProof(commitment, rangeProof, msg.value)) {
             revert InvalidRangeProof();
         }
-
-        // Handle token transfer (amount is hidden in commitment)
-        // For real implementation, amount would be extracted from ZK proof
-        // Here we accept ETH value directly for simplicity
         if (token == NATIVE_TOKEN) {
             if (msg.value == 0) revert ZeroAmount();
             if (msg.value > poolToken.maxDeposit) revert DepositExceedsLimit();
@@ -387,7 +385,7 @@ contract PrivacyPoolIntegration is
         if (amount > poolToken.maxDeposit) revert DepositExceedsLimit();
 
         // Verify commitment matches amount (via range proof public inputs)
-        if (!_verifyRangeProof(commitment, rangeProof)) {
+        if (!_verifyRangeProof(commitment, rangeProof, amount)) {
             revert InvalidRangeProof();
         }
 
@@ -590,20 +588,25 @@ contract PrivacyPoolIntegration is
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Verify range proof
+     * @notice Verify range proof with amount binding
      * @param commitment The Pedersen commitment
      * @param proof The Bulletproofs+ range proof
-     * @return valid Whether the proof is valid
+     * @param amount The claimed deposit amount (must match the committed value)
+     * @return valid Whether the proof is valid and the committed amount matches
      */
     function _verifyRangeProof(
         bytes32 commitment,
-        bytes calldata proof
+        bytes calldata proof,
+        uint256 amount
     ) internal view returns (bool valid) {
-        // Call external range proof verifier
+        // Call external range proof verifier with amount binding
+        // The verifier checks: 1) commitment is well-formed, 2) committed value == amount,
+        // 3) committed value is in valid range [0, 2^64)
         (bool success, bytes memory result) = rangeProofVerifier.staticcall(
             abi.encodeWithSignature(
-                "verifyRangeProof(bytes32,bytes)",
+                "verifyRangeProof(bytes32,uint256,bytes)",
                 commitment,
+                amount,
                 proof
             )
         );

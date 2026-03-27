@@ -96,9 +96,18 @@ contract MultiBridgeRouterGasBenchmark is Test {
         router.setChainTarget(ARBITRUM, makeAddr("arbitrumHub"));
 
         // Register per-bridge operators (M-2 fix requires explicit operators)
-        router.setBridgeOperator(IMultiBridgeRouter.BridgeType.NATIVE_L2, admin);
-        router.setBridgeOperator(IMultiBridgeRouter.BridgeType.LAYERZERO, admin);
-        router.setBridgeOperator(IMultiBridgeRouter.BridgeType.HYPERLANE, admin);
+        router.setBridgeOperator(
+            IMultiBridgeRouter.BridgeType.NATIVE_L2,
+            admin
+        );
+        router.setBridgeOperator(
+            IMultiBridgeRouter.BridgeType.LAYERZERO,
+            admin
+        );
+        router.setBridgeOperator(
+            IMultiBridgeRouter.BridgeType.HYPERLANE,
+            admin
+        );
 
         vm.stopPrank();
     }

@@ -431,6 +431,15 @@ contract EnhancedKillSwitch is
         isGuardian[guardian] = false;
         _revokeRole(GUARDIAN_ROLE, guardian);
 
+        // Clear any stale escalation confirmation from the removed guardian
+        if (
+            pendingLevel != EmergencyLevel.NONE &&
+            escalationConfirmations[pendingLevel][guardian]
+        ) {
+            escalationConfirmations[pendingLevel][guardian] = false;
+            confirmationCount[pendingLevel]--;
+        }
+
         // Remove from array
         for (uint256 i = 0; i < guardians.length; ) {
             if (guardians[i] == guardian) {

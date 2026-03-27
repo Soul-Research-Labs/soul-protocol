@@ -21,7 +21,8 @@ contract MockIntentLayer {
     // Minimal stubs for IIntentCompletionLayer
     function getIntent(
         bytes32
-    ) external pure returns (IIntentCompletionLayer.Intent memory intent) {
+    ) external view returns (IIntentCompletionLayer.Intent memory intent) {
+        intent.sourceChainId = block.chainid;
         return intent;
     }
 

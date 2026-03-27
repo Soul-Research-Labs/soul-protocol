@@ -58,6 +58,8 @@ contract RingSignatureVerifier is IRingSignatureVerifier {
     error ZeroMessage();
     /// @dev All keyImages entries must be identical for CLSAG (single key image)
     error KeyImageMismatch();
+    /// @dev Ring members must be distinct to prevent signature forgery
+    error DuplicateRingMember(uint256 index1, uint256 index2);
 
     /*//////////////////////////////////////////////////////////////
                               CONSTANTS
@@ -110,9 +112,15 @@ contract RingSignatureVerifier is IRingSignatureVerifier {
 
         if (message == bytes32(0)) revert ZeroMessage();
 
-        // Validate ring members are non-zero
+        // Validate ring members are non-zero and distinct
         for (uint256 i; i < ringSize; ) {
             if (ring[i] == bytes32(0)) revert ZeroRingMember();
+            for (uint256 j = i + 1; j < ringSize; ) {
+                if (ring[i] == ring[j]) revert DuplicateRingMember(i, j);
+                unchecked {
+                    ++j;
+                }
+            }
             unchecked {
                 ++i;
             }

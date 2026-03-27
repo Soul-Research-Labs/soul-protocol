@@ -98,6 +98,7 @@ interface IInstantCompletionGuarantee {
     error TransferNotFinalized();
     error TransferAlreadyFinalized();
     error IntentNotLinked();
+    error IntentChainMismatch();
     error InvalidCollateralRatio();
     error InvalidDuration();
 
