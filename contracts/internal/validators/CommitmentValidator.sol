@@ -75,7 +75,7 @@ library CommitmentValidator {
         bytes32 metadata,
         address owner
     ) internal pure returns (bytes32 commitment) {
-        return keccak256(abi.encodePacked(encryptedState, metadata, owner));
+        return keccak256(abi.encode(encryptedState, metadata, owner));
     }
 
     /**

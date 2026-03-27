@@ -808,7 +808,7 @@ contract OperationTimelockModule is AccessControl, ReentrancyGuard {
     ) internal view returns (bytes32) {
         return
             keccak256(
-                abi.encodePacked(target, callData, value, _nonce, block.chainid)
+                abi.encode(target, callData, value, _nonce, block.chainid)
             );
     }
 
