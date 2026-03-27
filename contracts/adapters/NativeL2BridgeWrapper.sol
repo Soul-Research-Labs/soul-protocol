@@ -98,7 +98,7 @@ function bridgeMessage(
         address refundAddress
     ) external payable override nonReentrant returns (bytes32 messageId) {
         messageId = keccak256(
-            abi.encodePacked(targetAddress, payload, nonce++, block.chainid)
+            abi.encode(targetAddress, payload, nonce++, block.chainid)
         );
 
         bool success;
