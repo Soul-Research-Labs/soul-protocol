@@ -36,6 +36,8 @@ contract ZaseonCrossChainRelay is AccessControl, ReentrancyGuard, Pausable {
     uint8 public constant MSG_PROOF_RELAY = 1;
     uint8 public constant MSG_NULLIFIER_SYNC = 2;
     uint8 public constant MSG_LOCK_NOTIFICATION = 3;
+    bytes32 public constant NULLIFIER_SYNC_PROOF_TYPE =
+        keccak256("NULLIFIER_SYNC");
 
     // ──────────────────────────────────────────────
     //  Structs
@@ -68,6 +70,7 @@ contract ZaseonCrossChainRelay is AccessControl, ReentrancyGuard, Pausable {
     //  State
     // ──────────────────────────────────────────────
     address public proofHub; // Local CrossChainProofHubV3
+    address public nullifierSync; // Local CrossChainNullifierSync
     BridgeType public bridgeType;
 
     /// @notice Chain configs keyed by EVM chain ID
@@ -116,6 +119,8 @@ contract ZaseonCrossChainRelay is AccessControl, ReentrancyGuard, Pausable {
         uint32 bridgeChainId
     );
 
+    event NullifierSyncUpdated(address indexed nullifierSync);
+
     event ProofRelayFailed(
         bytes32 indexed proofId,
         uint64 destChainId,
@@ -131,9 +136,13 @@ contract ZaseonCrossChainRelay is AccessControl, ReentrancyGuard, Pausable {
     error AlreadyProcessed(bytes32 messageId);
     error InvalidProofHub();
     error InvalidRelayAdapter();
+    error InvalidNullifierSync();
     error InvalidMessage();
     error ZeroAddress();
+    error UnauthorizedNullifierSync();
     error BridgeCallFailed(string reason);
+    error ProofHubSubmitFailed(bytes32 messageId);
+    error NullifierSyncSubmitFailed(bytes32 messageId);
 
     // ──────────────────────────────────────────────
     //  Constructor
@@ -209,14 +218,22 @@ contract ZaseonCrossChainRelay is AccessControl, ReentrancyGuard, Pausable {
         whenNotPaused
         returns (bytes32 messageId)
     {
-        return _relayProof(proofId, proof, publicInputs, commitment, destChainId, proofType);
+        return
+            _relayProof(
+                proofId,
+                proof,
+                publicInputs,
+                commitment,
+                destChainId,
+                proofType
+            );
     }
 
     /**
      * @notice Permissionless self-relay for users.
      *         Allows anyone to relay a proof by paying the bridge fee directly.
      *         Bypasses RELAYER_ROLE check to prevent censorship/downtime.
-          * @param proofId The proofId identifier
+     * @param proofId The proofId identifier
      * @param proof The ZK proof data
      * @param publicInputs The public inputs
      * @param commitment The cryptographic commitment
@@ -231,17 +248,19 @@ contract ZaseonCrossChainRelay is AccessControl, ReentrancyGuard, Pausable {
         bytes32 commitment,
         uint64 destChainId,
         bytes32 proofType
-    )
-        external
-        payable
-        nonReentrant
-        whenNotPaused
-        returns (bytes32 messageId)
-    {
-        return _relayProof(proofId, proof, publicInputs, commitment, destChainId, proofType);
+    ) external payable nonReentrant whenNotPaused returns (bytes32 messageId) {
+        return
+            _relayProof(
+                proofId,
+                proof,
+                publicInputs,
+                commitment,
+                destChainId,
+                proofType
+            );
     }
 
-        /**
+    /**
      * @notice _relay proof
      * @param proofId The proofId identifier
      * @param proof The ZK proof data
@@ -251,7 +270,7 @@ contract ZaseonCrossChainRelay is AccessControl, ReentrancyGuard, Pausable {
      * @param proofType The proof type
      * @return messageId The message id
      */
-function _relayProof(
+    function _relayProof(
         bytes32 proofId,
         bytes calldata proof,
         bytes calldata publicInputs,
@@ -259,6 +278,11 @@ function _relayProof(
         uint64 destChainId,
         bytes32 proofType
     ) internal returns (bytes32 messageId) {
+        if (proofType == NULLIFIER_SYNC_PROOF_TYPE) {
+            if (nullifierSync == address(0)) revert InvalidNullifierSync();
+            if (msg.sender != nullifierSync) revert UnauthorizedNullifierSync();
+        }
+
         // Validate sizes
         if (proof.length > MAX_PROOF_SIZE) revert ProofTooLarge(proof.length);
         if (publicInputs.length > MAX_PUBLIC_INPUTS_SIZE)
@@ -323,7 +347,7 @@ function _relayProof(
     ) external onlyRole(RELAY_ROLE) nonReentrant whenNotPaused {
         // Decode message type
         uint8 msgType = abi.decode(payload, (uint8));
-        
+
         if (msgType == MSG_BATCH_RELAY) {
             _processBatch(payload);
             return;
@@ -331,6 +355,14 @@ function _relayProof(
 
         if (msgType != MSG_PROOF_RELAY) revert InvalidMessage();
 
+        _processProofRelayPayload(payload, false, 0);
+    }
+
+    function _processProofRelayPayload(
+        bytes memory payload,
+        bool skipIfProcessed,
+        uint64 expectedSourceChainId
+    ) internal {
         (
             ,
             bytes32 proofId,
@@ -344,23 +376,74 @@ function _relayProof(
                 (uint8, bytes32, bytes, bytes, bytes32, uint64, bytes32)
             );
 
-        // Dedup check
-        bytes32 msgId = keccak256(
-            abi.encodePacked(proofId, srcChainId, block.chainid)
-        );
-        if (processedMessages[msgId]) revert AlreadyProcessed(msgId);
+        if (expectedSourceChainId != 0 && srcChainId != expectedSourceChainId) {
+            revert InvalidMessage();
+        }
+
+        bytes32 msgId = _messageId(proofId, srcChainId, proofType);
+        if (processedMessages[msgId]) {
+            if (skipIfProcessed) return;
+            revert AlreadyProcessed(msgId);
+        }
+
+        if (proofType == NULLIFIER_SYNC_PROOF_TYPE) {
+            _submitNullifierSyncPayload(msgId, proof, srcChainId);
+            return;
+        }
+
+        if (
+            !_submitToProofHub(
+                proof,
+                publicInputs,
+                commitment,
+                srcChainId,
+                proofType
+            )
+        ) {
+            revert ProofHubSubmitFailed(msgId);
+        }
+
         processedMessages[msgId] = true;
+        emit ProofReceived(proofId, srcChainId, commitment, true);
+    }
 
-        // Submit to local ProofHub
-        bool submitted = _submitToProofHub(
-            proof,
-            publicInputs,
-            commitment,
-            srcChainId,
-            proofType
-        );
+    function _submitNullifierSyncPayload(
+        bytes32 msgId,
+        bytes memory payload,
+        uint64 outerSourceChainId
+    ) internal {
+        (
+            uint8 msgType,
+            bytes32[] memory nullifiers,
+            bytes32[] memory commitments,
+            bytes32 sourceMerkleRoot,
+            uint64 sourceChainId,
+            uint256 sequence
+        ) = abi.decode(
+                payload,
+                (uint8, bytes32[], bytes32[], bytes32, uint64, uint256)
+            );
 
-        emit ProofReceived(proofId, srcChainId, commitment, submitted);
+        sequence;
+
+        if (
+            msgType != MSG_NULLIFIER_SYNC || sourceChainId != outerSourceChainId
+        ) {
+            revert InvalidMessage();
+        }
+        if (nullifierSync == address(0)) revert InvalidNullifierSync();
+        if (
+            !_submitToNullifierSync(
+                sourceChainId,
+                nullifiers,
+                commitments,
+                sourceMerkleRoot
+            )
+        ) {
+            revert NullifierSyncSubmitFailed(msgId);
+        }
+
+        processedMessages[msgId] = true;
     }
 
     // ──────────────────────────────────────────────
@@ -423,8 +506,11 @@ function _relayProof(
         uint64 sourceChainId,
         bytes32 proofType
     ) internal returns (bool) {
+        uint256 submitValue = _proofSubmissionFee();
+        if (address(this).balance < submitValue) return false;
+
         // Call CrossChainProofHubV3.submitProofInstant() for immediate verification
-        (bool success, ) = proofHub.call(
+        (bool success, ) = proofHub.call{value: submitValue}(
             abi.encodeWithSignature(
                 "submitProofInstant(bytes,bytes,bytes32,uint64,uint64,bytes32)",
                 proof,
@@ -438,29 +524,72 @@ function _relayProof(
         return success;
     }
 
+    function _submitToNullifierSync(
+        uint256 sourceChainId,
+        bytes32[] memory nullifiers,
+        bytes32[] memory commitments,
+        bytes32 sourceMerkleRoot
+    ) internal returns (bool) {
+        (bool success, ) = nullifierSync.call(
+            abi.encodeWithSignature(
+                "receiveNullifierBatch(uint256,bytes32[],bytes32[],bytes32)",
+                sourceChainId,
+                nullifiers,
+                commitments,
+                sourceMerkleRoot
+            )
+        );
+        return success;
+    }
+
+    function _proofSubmissionFee() internal view returns (uint256 fee) {
+        (bool success, bytes memory data) = proofHub.staticcall(
+            abi.encodeWithSignature("proofSubmissionFee()")
+        );
+        if (success && data.length >= 32) {
+            fee = abi.decode(data, (uint256));
+        }
+    }
+
+    function _messageId(
+        bytes32 proofId,
+        uint64 sourceChainId,
+        bytes32 proofType
+    ) internal view returns (bytes32) {
+        return
+            keccak256(
+                abi.encodePacked(
+                    proofId,
+                    sourceChainId,
+                    block.chainid,
+                    proofType
+                )
+            );
+    }
+
     // ──────────────────────────────────────────────
     //  View functions
     // ──────────────────────────────────────────────
 
     /// @notice Get all chain IDs supported by this relay
     /// @return Array of supported chain IDs
-        /**
+    /**
      * @notice Returns the supported chains
      * @return The result value
      */
-function getSupportedChains() external view returns (uint256[] memory) {
+    function getSupportedChains() external view returns (uint256[] memory) {
         return supportedChains;
     }
 
     /// @notice Check whether a chain ID is supported and active
     /// @param chainId The chain ID to query
     /// @return True if the chain is supported and active
-        /**
+    /**
      * @notice Checks if chain supported
      * @param chainId The chain identifier
      * @return The result value
      */
-function isChainSupported(uint256 chainId) external view returns (bool) {
+    function isChainSupported(uint256 chainId) external view returns (bool) {
         return chainConfigs[chainId].active;
     }
 
@@ -469,21 +598,20 @@ function isChainSupported(uint256 chainId) external view returns (bool) {
     // ──────────────────────────────────────────────
 
     /// @notice Pause cross-chain relay operations
-        /**
+    /**
      * @notice Pauses the operation
      */
-function pause() external onlyRole(OPERATOR_ROLE) {
+    function pause() external onlyRole(OPERATOR_ROLE) {
         _pause();
     }
 
     /// @notice Unpause cross-chain relay operations
-        /**
+    /**
      * @notice Unpauses the operation
      */
-function unpause() external onlyRole(OPERATOR_ROLE) {
+    function unpause() external onlyRole(OPERATOR_ROLE) {
         _unpause();
     }
-
 
     // ──────────────────────────────────────────────
     //  Batch Relay
@@ -500,13 +628,7 @@ function unpause() external onlyRole(OPERATOR_ROLE) {
     function relayBatch(
         uint64 destChainId,
         bytes[] calldata payloads
-    )
-        external
-        payable
-        nonReentrant
-        whenNotPaused
-        returns (bytes32 messageId)
-    {
+    ) external payable nonReentrant whenNotPaused returns (bytes32 messageId) {
         ChainConfig storage config = chainConfigs[destChainId];
         if (!config.active) revert ChainNotSupported(destChainId);
 
@@ -536,49 +658,37 @@ function unpause() external onlyRole(OPERATOR_ROLE) {
      * @dev Process batch message in receiveRelayedProof
      */
     function _processBatch(bytes calldata payload) internal returns (bool) {
-        (
-            ,
-            bytes[] memory payloads,
-            uint64 srcChainId
-        ) = abi.decode(payload, (uint8, bytes[], uint64));
+        (, bytes[] memory payloads, uint64 srcChainId) = abi.decode(
+            payload,
+            (uint8, bytes[], uint64)
+        );
 
         for (uint256 i = 0; i < payloads.length; i++) {
-            (
-                ,
-                bytes32 proofId,
-                bytes memory proof,
-                bytes memory publicInputs,
-                bytes32 commitment,
-                ,
-                bytes32 proofType
-            ) = abi.decode(
-                payloads[i],
-                (uint8, bytes32, bytes, bytes, bytes32, uint64, bytes32)
-            );
-
-            // Deduplicate individual messages inside batch?
-            // Yes, reusing processedMessages check
-            bytes32 msgId = keccak256(
-                abi.encodePacked(proofId, srcChainId, block.chainid)
-            );
-            if (!processedMessages[msgId]) {
-                processedMessages[msgId] = true;
-                _submitToProofHub(proof, publicInputs, commitment, srcChainId, proofType);
-            }
+            _processProofRelayPayload(payloads[i], true, srcChainId);
         }
         return true;
     }
 
     /// @notice Update the proof hub contract address
     /// @param _proofHub The new proof hub address (must be non-zero)
-        /**
+    /**
      * @notice Updates proof hub
      * @param _proofHub The _proof hub
      */
-function updateProofHub(
+    function updateProofHub(
         address _proofHub
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_proofHub == address(0)) revert ZeroAddress();
         proofHub = _proofHub;
     }
+
+    function updateNullifierSync(
+        address _nullifierSync
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_nullifierSync == address(0)) revert InvalidNullifierSync();
+        nullifierSync = _nullifierSync;
+        emit NullifierSyncUpdated(_nullifierSync);
+    }
+
+    receive() external payable {}
 }

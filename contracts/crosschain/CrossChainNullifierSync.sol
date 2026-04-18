@@ -38,6 +38,8 @@ contract CrossChainNullifierSync is
     //  Constants
     // ──────────────────────────────────────────────
     uint8 public constant MSG_NULLIFIER_SYNC = 2;
+    bytes32 public constant NULLIFIER_SYNC_PROOF_TYPE =
+        keccak256("NULLIFIER_SYNC");
     uint256 public constant MAX_BATCH_SIZE = 20;
     uint256 public constant MIN_SYNC_INTERVAL = 5 minutes;
 
@@ -202,8 +204,17 @@ contract CrossChainNullifierSync is
         // SECURITY FIX M-3: O(1) head pointer advance instead of O(n) array shift
         pendingHead += batchSize;
 
-        // Encode the sync message with sequence number for replay protection
         uint256 seq = ++syncSequence[targetChainId];
+        bytes32 batchId = keccak256(
+            abi.encodePacked(
+                "nullifier_sync",
+                block.chainid,
+                targetChainId,
+                seq
+            )
+        );
+
+        // Encode the sync message with sequence number for replay protection
         bytes memory payload = abi.encode(
             MSG_NULLIFIER_SYNC,
             batchNullifiers,
@@ -225,22 +236,18 @@ contract CrossChainNullifierSync is
             })
         );
 
-        // Send via relay
+        // Send via the relay's permissionless path so the sync contract does
+        // not need RELAYER_ROLE. The relay itself restricts NULLIFIER_SYNC
+        // payloads to the configured nullifierSync contract.
         (bool success, ) = target.relay.call{value: msg.value}(
             abi.encodeWithSignature(
-                "relayProof(bytes32,bytes,bytes,bytes32,uint64,bytes32)",
-                keccak256(
-                    abi.encodePacked(
-                        "nullifier_sync",
-                        block.timestamp,
-                        batchSize
-                    )
-                ),
+                "selfRelayProof(bytes32,bytes,bytes,bytes32,uint64,bytes32)",
+                batchId,
                 payload,
                 "",
                 currentRoot,
                 targetChainId.toUint64(),
-                keccak256("NULLIFIER_SYNC")
+                NULLIFIER_SYNC_PROOF_TYPE
             )
         );
         if (!success) revert RelayCallFailed();

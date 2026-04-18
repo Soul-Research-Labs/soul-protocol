@@ -54,6 +54,46 @@ contract MockProofHub {
     }
 }
 
+contract ToggleProofHub {
+    bool public shouldSucceed = true;
+    bool public submitted;
+
+    function setShouldSucceed(bool value) external {
+        shouldSucceed = value;
+    }
+
+    function submitProofInstant(
+        bytes calldata,
+        bytes calldata,
+        bytes32,
+        uint64,
+        uint64,
+        bytes32
+    ) external {
+        if (!shouldSucceed) revert("submit failed");
+        submitted = true;
+    }
+}
+
+contract MockNullifierSync {
+    bool public received;
+    uint256 public lastSourceChainId;
+    uint256 public lastCount;
+    bytes32 public lastMerkleRoot;
+
+    function receiveNullifierBatch(
+        uint256 sourceChainId,
+        bytes32[] calldata nullifiers,
+        bytes32[] calldata,
+        bytes32 sourceMerkleRoot
+    ) external {
+        received = true;
+        lastSourceChainId = sourceChainId;
+        lastCount = nullifiers.length;
+        lastMerkleRoot = sourceMerkleRoot;
+    }
+}
+
 /// @dev Bridge adapter that always fails
 contract FailingRelayAdapter {
     fallback() external payable {
@@ -65,6 +105,7 @@ contract ZaseonCrossChainRelayTest is Test {
     ZaseonCrossChainRelay public relay;
     MockRelayAdapter public relayAdapter;
     MockProofHub public proofHub;
+    MockNullifierSync public mockNullifierSync;
 
     address admin;
     address relayer = makeAddr("relayer");
@@ -81,11 +122,13 @@ contract ZaseonCrossChainRelayTest is Test {
         admin = address(this);
         proofHub = new MockProofHub();
         relayAdapter = new MockRelayAdapter();
+        mockNullifierSync = new MockNullifierSync();
 
         relay = new ZaseonCrossChainRelay(
             address(proofHub),
             ZaseonCrossChainRelay.BridgeType.LAYERZERO
         );
+        relay.updateNullifierSync(address(mockNullifierSync));
 
         relay.grantRole(RELAYER_ROLE, relayer);
         relay.grantRole(RELAY_ROLE, bridgeRole);
@@ -449,7 +492,7 @@ contract ZaseonCrossChainRelayTest is Test {
 
         vm.deal(randomUser, 1 ether);
         vm.prank(randomUser);
-        
+
         // Should succeed WITHOUT RELAYER_ROLE
         bytes32 messageId = relay.selfRelayProof{value: 0.01 ether}(
             bytes32(uint256(100)),
@@ -520,6 +563,94 @@ contract ZaseonCrossChainRelayTest is Test {
 
         assertTrue(proofHub.submitted());
         assertEq(proofHub.lastCommitment(), bytes32(uint256(99)));
+    }
+
+    function test_receiveRelayedProof_failedSubmissionRemainsRetryable()
+        public
+    {
+        ToggleProofHub toggleProofHub = new ToggleProofHub();
+        ZaseonCrossChainRelay localRelay = new ZaseonCrossChainRelay(
+            address(toggleProofHub),
+            ZaseonCrossChainRelay.BridgeType.LAYERZERO
+        );
+        localRelay.updateNullifierSync(address(mockNullifierSync));
+        localRelay.grantRole(RELAY_ROLE, bridgeRole);
+
+        bytes32 proofId = keccak256("retryable-proof");
+        bytes32 proofType = bytes32("groth16");
+        bytes memory payload = abi.encode(
+            uint8(1),
+            proofId,
+            hex"aa",
+            hex"bb",
+            bytes32(uint256(77)),
+            uint64(10),
+            proofType
+        );
+
+        toggleProofHub.setShouldSucceed(false);
+        vm.prank(bridgeRole);
+        vm.expectRevert();
+        localRelay.receiveRelayedProof(10, payload);
+
+        bytes32 msgId = keccak256(
+            abi.encodePacked(proofId, uint64(10), block.chainid, proofType)
+        );
+        assertFalse(localRelay.processedMessages(msgId));
+
+        toggleProofHub.setShouldSucceed(true);
+        vm.prank(bridgeRole);
+        localRelay.receiveRelayedProof(10, payload);
+
+        assertTrue(localRelay.processedMessages(msgId));
+        assertTrue(toggleProofHub.submitted());
+    }
+
+    function test_receiveRelayedProof_routesWrappedNullifierSync() public {
+        bytes32[] memory nullifiers = new bytes32[](2);
+        bytes32[] memory commitments = new bytes32[](2);
+        nullifiers[0] = keccak256("nullifier-1");
+        nullifiers[1] = keccak256("nullifier-2");
+        commitments[0] = keccak256("commitment-1");
+        commitments[1] = keccak256("commitment-2");
+
+        bytes32 proofId = keccak256("nullifier-batch");
+        bytes32 merkleRoot = keccak256("nullifier-root");
+        bytes memory innerPayload = abi.encode(
+            uint8(2),
+            nullifiers,
+            commitments,
+            merkleRoot,
+            uint64(10),
+            uint256(1)
+        );
+        bytes memory payload = abi.encode(
+            uint8(1),
+            proofId,
+            innerPayload,
+            hex"",
+            merkleRoot,
+            uint64(10),
+            relay.NULLIFIER_SYNC_PROOF_TYPE()
+        );
+
+        vm.prank(bridgeRole);
+        relay.receiveRelayedProof(10, payload);
+
+        bytes32 msgId = keccak256(
+            abi.encodePacked(
+                proofId,
+                uint64(10),
+                block.chainid,
+                relay.NULLIFIER_SYNC_PROOF_TYPE()
+            )
+        );
+
+        assertTrue(mockNullifierSync.received());
+        assertTrue(relay.processedMessages(msgId));
+        assertEq(mockNullifierSync.lastSourceChainId(), 10);
+        assertEq(mockNullifierSync.lastCount(), 2);
+        assertEq(mockNullifierSync.lastMerkleRoot(), merkleRoot);
     }
 
     function test_receiveRelayedProof_emitsEvent() public {
