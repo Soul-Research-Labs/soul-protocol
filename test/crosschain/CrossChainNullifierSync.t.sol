@@ -123,37 +123,35 @@ contract CrossChainNullifierSyncTest is Test {
 
         sync.configureSyncTarget(42161, target);
 
-        function test_FlushToChain_Success() public {
-            MockNullifierRelay relay = new MockNullifierRelay();
-            ICrossChainNullifierSync.SyncTarget
-                memory target = ICrossChainNullifierSync.SyncTarget({
-                    nullifierRegistry: address(0x1),
-                    relay: address(relay),
-                    chainId: 42161,
-                    active: true
-                });
-            sync.configureSyncTarget(42161, target);
-
-            vm.startPrank(syncer);
-            sync.queueNullifier(bytes32(uint256(1)), bytes32(uint256(100)));
-            sync.queueNullifier(bytes32(uint256(2)), bytes32(uint256(200)));
-            sync.flushToChain(42161);
-            vm.stopPrank();
-
-            assertEq(sync.getPendingCount(), 0);
-            assertEq(sync.outboundSyncCount(42161), 2);
-            assertEq(sync.syncSequence(42161), 1);
-            assertEq(relay.calls(), 1);
-            assertEq(relay.lastDestChainId(), 42161);
-            assertEq(
-                relay.lastProofType(),
-                sync.NULLIFIER_SYNC_PROOF_TYPE()
-            );
-            assertTrue(relay.lastProofId() != bytes32(0));
-        }
         uint256[] memory chains = sync.getTargetChains();
         assertEq(chains.length, 1);
         assertEq(chains[0], 42161);
+    }
+
+    function test_FlushToChain_Success() public {
+        MockNullifierRelay relay = new MockNullifierRelay();
+        ICrossChainNullifierSync.SyncTarget
+            memory target = ICrossChainNullifierSync.SyncTarget({
+                nullifierRegistry: address(0x1),
+                relay: address(relay),
+                chainId: 42161,
+                active: true
+            });
+        sync.configureSyncTarget(42161, target);
+
+        vm.startPrank(syncer);
+        sync.queueNullifier(bytes32(uint256(1)), bytes32(uint256(100)));
+        sync.queueNullifier(bytes32(uint256(2)), bytes32(uint256(200)));
+        sync.flushToChain(42161);
+        vm.stopPrank();
+
+        assertEq(sync.getPendingCount(), 0);
+        assertEq(sync.outboundSyncCount(42161), 2);
+        assertEq(sync.syncSequence(42161), 1);
+        assertEq(relay.calls(), 1);
+        assertEq(relay.lastDestChainId(), 42161);
+        assertEq(relay.lastProofType(), sync.NULLIFIER_SYNC_PROOF_TYPE());
+        assertTrue(relay.lastProofId() != bytes32(0));
     }
 
     function test_ConfigureSyncTarget_RevertNonOperator() public {

@@ -296,11 +296,14 @@ contract CrossChainPrivacyHub is
     // PRIVACY: Per-user relay scheduling jitter
     // =========================================================================
 
-    /// @notice Minimum jitter delay before a transfer becomes relayable (default 5 min)
-    uint256 public minRelayJitter = 5 minutes;
+    /// @notice Minimum jitter delay before a transfer becomes relayable (default 1 hour)
+    /// @dev Widened from 5 minutes to match competitive-privacy anonymity sets. In proxy
+    ///      deployments this initializer does NOT run; jitter is set explicitly in
+    ///      {initialize} for new deployments and can be reconfigured via {setRelayJitter}.
+    uint256 public minRelayJitter = 1 hours;
 
-    /// @notice Maximum additional jitter on top of min (default 25 min, so total 5-30 min)
-    uint256 public maxRelayJitter = 25 minutes;
+    /// @notice Maximum additional jitter on top of min (default 23 hours, so total 1-24h)
+    uint256 public maxRelayJitter = 23 hours;
 
     /// @notice Whether relay jitter is enabled
     bool public relayJitterEnabled;
@@ -395,6 +398,9 @@ contract CrossChainPrivacyHub is
         uint8 required
     );
 
+    event RelayJitterToggled(bool enabled);
+    event RelayJitterConfigured(uint256 minJitter, uint256 maxJitter);
+
     // =========================================================================
     // ERRORS
     // =========================================================================
@@ -473,6 +479,12 @@ contract CrossChainPrivacyHub is
         protocolFeeBps = 30; // 0.3% default
         defaultRingSize = 8;
         defaultPrivacyLevel = uint256(PrivacyLevel.MEDIUM);
+
+        // PRIVACY: enable relay jitter by default with a 1–24h window. State-variable
+        // initializers do not run behind a UUPS proxy, so we must set these explicitly.
+        minRelayJitter = 1 hours;
+        maxRelayJitter = 23 hours;
+        relayJitterEnabled = true;
     }
 
     // =========================================================================
@@ -622,12 +634,16 @@ contract CrossChainPrivacyHub is
         bool _enabled
     ) external onlyRole(OPERATOR_ROLE) {
         relayJitterEnabled = _enabled;
+        emit RelayJitterToggled(_enabled);
     }
 
     /**
      * @notice Configure relay jitter parameters
      * @param _minJitter Minimum delay before transfer is relayable (seconds)
      * @param _maxJitter Maximum additional random delay on top of min (seconds)
+     * @dev Total delay is uniform in [min, min+max). `min > max` is therefore permitted and
+     *      meaningful (narrow jitter window at high floor). This function validates bounds
+     *      and emits an event so misconfigurations are observable off-chain.
      */
     function configureRelayJitter(
         uint256 _minJitter,
@@ -635,8 +651,13 @@ contract CrossChainPrivacyHub is
     ) external onlyRole(OPERATOR_ROLE) {
         if (_minJitter > 1 hours) revert InvalidAmount(_minJitter);
         if (_maxJitter > 6 hours) revert InvalidAmount(_maxJitter);
+        // Reject misleading "jitter disabled but enabled flag true" foot-guns: when jitter is
+        // enabled, maxJitter must be > 0 so the mod-divisor in _scheduleRelay is valid.
+        if (relayJitterEnabled && _maxJitter == 0)
+            revert InvalidAmount(_maxJitter);
         minRelayJitter = _minJitter;
         maxRelayJitter = _maxJitter;
+        emit RelayJitterConfigured(_minJitter, _maxJitter);
     }
 
     /**
@@ -959,6 +980,12 @@ contract CrossChainPrivacyHub is
 
         transfer.status = TransferStatus.COMPLETED;
 
+        // PRIVACY: clear ephemeral per-request metadata on terminal transition so that
+        // stale jitter timestamps and quorum counters cannot linger and correlate future
+        // activity. Nullifier binding itself is intentionally retained (double-spend guard).
+        delete transferRelayableAt[requestId];
+        delete relayConfirmationCount[requestId];
+
         emit TransferCompleted(requestId, transfer.recipient, transfer.amount);
         emit NullifierConsumed(
             transfer.nullifier,
@@ -993,6 +1020,10 @@ contract CrossChainPrivacyHub is
         }
 
         transfer.status = TransferStatus.REFUNDED;
+
+        // PRIVACY: clear ephemeral per-request metadata alongside refund.
+        delete transferRelayableAt[requestId];
+        delete relayConfirmationCount[requestId];
 
         // Refund
         if (transfer.token == address(0)) {

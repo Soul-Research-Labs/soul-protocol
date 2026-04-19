@@ -7,9 +7,11 @@ import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {PoseidonT3} from "../libraries/PoseidonT3.sol";
 import {UniversalChainRegistry} from "../libraries/UniversalChainRegistry.sol";
+import {DenominationLadder} from "../libraries/DenominationLadder.sol";
 
 /**
  * @title UniversalShieldedPoolUpgradeable
@@ -156,12 +158,18 @@ contract UniversalShieldedPoolUpgradeable is
     // ─── Upgrade Tracking ───────────────────────────────────────
     uint256 public contractVersion;
 
+    // ─── Privacy: denomination tiers ────────────────────────────
+    /// @notice When true, all deposits MUST match a {DenominationLadder} tier.
+    /// @dev Disabled by default for backward compatibility with existing test fixtures.
+    ///      Production mainnet deployments MUST enable this via {setDenominationTiersEnabled}.
+    bool public denominationTiersEnabled;
+
     /*//////////////////////////////////////////////////////////////
                             STORAGE GAP
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Reserved storage for future upgrades  (50 slots)
-    uint256[50] private __gap;
+    /// @dev Reserved storage for future upgrades  (49 slots — 1 consumed by denominationTiersEnabled)
+    uint256[49] private __gap;
 
     /*//////////////////////////////////////////////////////////////
                                EVENTS
@@ -199,6 +207,13 @@ contract UniversalShieldedPoolUpgradeable is
     /// @notice Emitted when test mode is permanently disabled
     event TestModeDisabled(address indexed disabledBy);
 
+    /// @notice Emitted when a withdrawal proof verification is bypassed in test mode
+    /// @custom:security This event MUST trigger alerts in monitoring. If seen on mainnet, testMode was not disabled.
+    event TestModeWithdrawalBypassed(
+        bytes32 indexed nullifier,
+        address indexed recipient
+    );
+
     /// @notice Emitted when production readiness is confirmed on-chain
     event ProductionReadinessConfirmed(
         address indexed confirmedBy,
@@ -231,11 +246,13 @@ contract UniversalShieldedPoolUpgradeable is
     error ZeroAddress();
     error DepositTooLarge();
     error DepositTooSmall();
+    error DepositsDisabledInTestMode();
     error DepositRateLimitExceeded();
     error CircuitBreakerActive();
     error TestModeStillEnabled();
     error VerifierNotSet();
     error NoVerifierConfigured();
+    error TestModeProofTooShort();
     error ETHTransferFailed();
 
     /*//////////////////////////////////////////////////////////////
@@ -330,6 +347,11 @@ contract UniversalShieldedPoolUpgradeable is
             revert InvalidCommitment();
         if (msg.value < MIN_DEPOSIT) revert DepositTooSmall();
         if (msg.value > MAX_DEPOSIT) revert DepositTooLarge();
+        if (testMode) revert DepositsDisabledInTestMode();
+        // PRIVACY: enforce fixed denomination tiers to defeat amount-correlation attacks
+        if (denominationTiersEnabled) {
+            DenominationLadder.requireNativeTier(msg.value);
+        }
         _checkSanctions(msg.sender);
         _enforceDepositRateLimit();
 
@@ -352,11 +374,18 @@ contract UniversalShieldedPoolUpgradeable is
             revert InvalidCommitment();
         if (amount < MIN_DEPOSIT) revert DepositTooSmall();
         if (amount > MAX_DEPOSIT) revert DepositTooLarge();
+        if (testMode) revert DepositsDisabledInTestMode();
 
         AssetConfig storage asset = assets[assetId];
         if (!asset.active) revert AssetNotActive(assetId);
         if (asset.tokenAddress == address(0))
             revert AssetNotRegistered(assetId);
+
+        // PRIVACY: enforce fixed denomination tiers to defeat amount-correlation attacks
+        if (denominationTiersEnabled) {
+            uint8 tokenDecimals = IERC20Metadata(asset.tokenAddress).decimals();
+            DenominationLadder.requireErc20Tier(amount, tokenDecimals);
+        }
 
         _checkSanctions(msg.sender);
         _enforceDepositRateLimit();
@@ -519,6 +548,19 @@ contract UniversalShieldedPoolUpgradeable is
         if (_verifier == address(0)) revert ZeroAddress();
         withdrawalVerifier = _verifier;
         emit VerifierUpdated(_verifier, "withdrawal");
+    }
+
+    /// @notice Emitted when denomination-tier enforcement is toggled.
+    event DenominationTiersToggled(bool enabled);
+
+    /// @notice Enable or disable denomination-tier enforcement for all deposits.
+    /// @dev When true, {depositETH} / {depositERC20} only accept amounts on the
+    ///      {DenominationLadder}. Production mainnet deployments MUST enable this.
+    function setDenominationTiersEnabled(
+        bool enabled
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        denominationTiersEnabled = enabled;
+        emit DenominationTiersToggled(enabled);
     }
 
     /**
@@ -766,12 +808,14 @@ contract UniversalShieldedPoolUpgradeable is
 
     function _verifyWithdrawalProof(
         WithdrawalProof calldata wp
-    ) internal view returns (bool) {
+    ) internal returns (bool) {
         if (withdrawalVerifier == address(0)) {
             // No verifier set — only allow in explicit test mode (irreversibly disableable)
             if (!testMode) revert NoVerifierConfigured();
             /// @custom:security TEST-ONLY bypass — testMode must be disabled before production.
             /// disableTestMode() is irreversible and enforced by deployment scripts.
+            if (wp.proof.length < 32) revert TestModeProofTooShort();
+            emit TestModeWithdrawalBypassed(wp.nullifier, wp.recipient);
             return true;
         }
 
