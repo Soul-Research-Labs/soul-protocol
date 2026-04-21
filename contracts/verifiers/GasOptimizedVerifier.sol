@@ -274,13 +274,17 @@ library GasOptimizedVerifier {
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Batch verify multiple proofs with random linear combination
-     * @dev Reduces n pairing checks to 1 using random linear combination
+     * @notice Batch verify multiple proofs with random linear combination (SHARED-B variant)
+     * @dev WARNING: This function assumes all proofs share the same B point (proofs[0][2..5]).
+     *      This is ONLY valid for recursive/aggregated proof schemes where B is common.
+     *      For independent Groth16 proofs with distinct B's, use
+     *      {batchVerifyIndependent} instead — otherwise this returns a value that is
+     *      unsound as a batch check.
      * @param proofs Array of proofs (A, B, C points)
      * @param publicInputs Array of public inputs for each proof
      * @param vk Verification key
      * @param randomness Random seed for linear combination
-          * @return The result value
+     * @return The result value
      */
     function batchVerify(
         uint256[8][] memory proofs,
@@ -409,7 +413,7 @@ library GasOptimizedVerifier {
 
     /**
      * @notice Verify a single proof
-          * @param proof The ZK proof data
+     * @param proof The ZK proof data
      * @param publicInputs The public inputs
      * @param vk The vk
      * @return The result value
@@ -524,6 +528,189 @@ library GasOptimizedVerifier {
 
         revert HashToCurveFailed();
     }
+
+    /*//////////////////////////////////////////////////////////////
+                    BATCH VERIFICATION (INDEPENDENT B)
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Batch verify n independent Groth16 proofs using a single pairing product
+     * @dev Reduces 4n pairings (naive) to n+3 pairings via random linear combination.
+     *
+     *      The Groth16 check is:
+     *         e(A_i, B_i) = e(alpha, beta) · e(vkX_i, gamma) · e(C_i, delta)
+     *
+     *      Raising to coefficient c_i (c_0 = 1, c_i random mod r) and multiplying:
+     *         Π e(c_i·A_i, B_i) =
+     *             e((Σ c_i)·alpha, beta)
+     *           · e(Σ c_i·vkX_i,   gamma)
+     *           · e(Σ c_i·C_i,     delta)
+     *
+     *      Rearranged as a pairing-product-equals-one check using G1 negation.
+     *
+     *      Forgery probability per batch is bounded by n / r ≈ n · 2^{-254}, negligible
+     *      provided `randomness` is unpredictable to the prover (use a Fiat–Shamir
+     *      transcript of all proof/pi/vk bytes, or a commit-reveal seed).
+     *
+     * @param proofs       Array of proofs, each laid out as [Ax, Ay, Bx0, Bx1, By0, By1, Cx, Cy]
+     * @param publicInputs publicInputs[i] is the public-input vector for proof i
+     * @param vk           Flat verification key [alphaX, alphaY, betaX0, betaX1, betaY0, betaY1,
+     *                                             gammaX0, gammaX1, gammaY0, gammaY1,
+     *                                             deltaX0, deltaX1, deltaY0, deltaY1,
+     *                                             icX, icY, ic1X, ic1Y]
+     * @param randomness   Fiat–Shamir seed for the linear combination
+     * @return success     True iff all n proofs are individually valid w.r.t. `vk`
+     */
+    function batchVerifyIndependent(
+        uint256[8][] memory proofs,
+        uint256[][] memory publicInputs,
+        uint256[18] memory vk,
+        uint256 randomness
+    ) internal view returns (bool) {
+        uint256 n = proofs.length;
+        if (n != publicInputs.length) revert LengthMismatch();
+        if (n == 0) revert EmptyBatchBatch();
+
+        if (n == 1) {
+            return verifySingle(proofs[0], publicInputs[0], vk);
+        }
+
+        // --- 1. Derive coefficients c_i, with c_0 = 1 -----------------------
+        uint256[] memory coeffs = new uint256[](n);
+        coeffs[0] = 1;
+        uint256 sumC = 1;
+        for (uint256 i = 1; i < n; ) {
+            uint256 ci = uint256(keccak256(abi.encodePacked(randomness, i))) %
+                PRIME_R;
+            // Avoid zero coefficients (would drop a proof from the batch).
+            if (ci == 0) ci = 1;
+            coeffs[i] = ci;
+            sumC = addmod(sumC, ci, PRIME_R);
+            unchecked {
+                ++i;
+            }
+        }
+
+        // --- 2. Accumulate scaled vkX and scaled C -------------------------
+        uint256 accVkXx;
+        uint256 accVkXy;
+        uint256 accCx;
+        uint256 accCy;
+
+        for (uint256 i = 0; i < n; ) {
+            (uint256 vkXx, uint256 vkXy) = computeVkX(publicInputs[i], vk);
+
+            // scaled C = c_i · C_i
+            (uint256 sCx, uint256 sCy) = ecMul(
+                proofs[i][6],
+                proofs[i][7],
+                coeffs[i]
+            );
+
+            // scaled vkX = c_i · vkX_i
+            (uint256 sXx, uint256 sXy) = ecMul(vkXx, vkXy, coeffs[i]);
+
+            if (i == 0) {
+                accCx = sCx;
+                accCy = sCy;
+                accVkXx = sXx;
+                accVkXy = sXy;
+            } else {
+                (accCx, accCy) = ecAdd(accCx, accCy, sCx, sCy);
+                (accVkXx, accVkXy) = ecAdd(accVkXx, accVkXy, sXx, sXy);
+            }
+            unchecked {
+                ++i;
+            }
+        }
+
+        // --- 3. Build pairing product -------------------------------------
+        // Terms: for each i, e(c_i · A_i, B_i)       → n pairings
+        //        e(-(Σ c_i) · alpha, beta)           → 1
+        //        e(-acc(vkX), gamma)                 → 1
+        //        e(-acc(C),    delta)                → 1
+        // Total: n + 3 pairings.
+
+        uint256 pairs = n + 3;
+        uint256[] memory input = new uint256[](pairs * 6);
+
+        for (uint256 i = 0; i < n; ) {
+            (uint256 sAx, uint256 sAy) = ecMul(
+                proofs[i][0],
+                proofs[i][1],
+                coeffs[i]
+            );
+            uint256 o = i * 6;
+            input[o] = sAx;
+            input[o + 1] = sAy;
+            // Note: solc lays out G2 as (x1, x0, y1, y0) for the precompile.
+            input[o + 2] = proofs[i][3];
+            input[o + 3] = proofs[i][2];
+            input[o + 4] = proofs[i][5];
+            input[o + 5] = proofs[i][4];
+            unchecked {
+                ++i;
+            }
+        }
+
+        // e(-(Σ c_i) · alpha, beta)
+        {
+            (uint256 sAlphaX, uint256 sAlphaY) = ecMul(vk[0], vk[1], sumC);
+            (uint256 negAlphaX, uint256 negAlphaY) = ecNegate(sAlphaX, sAlphaY);
+            uint256 o = n * 6;
+            input[o] = negAlphaX;
+            input[o + 1] = negAlphaY;
+            input[o + 2] = vk[3];
+            input[o + 3] = vk[2];
+            input[o + 4] = vk[5];
+            input[o + 5] = vk[4];
+        }
+
+        // e(-acc(vkX), gamma)
+        {
+            (uint256 negX, uint256 negY) = ecNegate(accVkXx, accVkXy);
+            uint256 o = (n + 1) * 6;
+            input[o] = negX;
+            input[o + 1] = negY;
+            input[o + 2] = vk[7];
+            input[o + 3] = vk[6];
+            input[o + 4] = vk[9];
+            input[o + 5] = vk[8];
+        }
+
+        // e(-acc(C), delta)
+        {
+            (uint256 negX, uint256 negY) = ecNegate(accCx, accCy);
+            uint256 o = (n + 2) * 6;
+            input[o] = negX;
+            input[o + 1] = negY;
+            input[o + 2] = vk[11];
+            input[o + 3] = vk[10];
+            input[o + 4] = vk[13];
+            input[o + 5] = vk[12];
+        }
+
+        // --- 4. Call the pairing precompile -------------------------------
+        uint256 inputBytes = pairs * 192;
+        uint256[1] memory result;
+        assembly {
+            // input is a dynamic array: skip the 32-byte length header.
+            let inPtr := add(input, 0x20)
+            let success := staticcall(
+                gas(),
+                ECPAIRING_PRECOMPILE,
+                inPtr,
+                inputBytes,
+                result,
+                32
+            )
+            if iszero(success) {
+                revert(0, 0)
+            }
+        }
+
+        return result[0] == 1;
+    }
 }
 
 /**
@@ -550,7 +737,7 @@ contract BatchProofVerifier {
 
     /**
      * @notice Get verification key alpha component
-          * @param vkId The vkId identifier
+     * @param vkId The vkId identifier
      * @return The result value
      */
     function getVkAlpha(
@@ -561,7 +748,7 @@ contract BatchProofVerifier {
 
     /**
      * @notice Register a verification key
-          * @param vkId The vkId identifier
+     * @param vkId The vkId identifier
      * @param vk The vk
      */
     function registerVk(bytes32 vkId, VerificationKey calldata vk) external {
@@ -570,7 +757,7 @@ contract BatchProofVerifier {
 
     /**
      * @notice Verify a single proof
-          * @param vkId The vkId identifier
+     * @param vkId The vkId identifier
      * @param proof The ZK proof data
      * @param publicInputs The public inputs
      * @return The result value
@@ -620,7 +807,7 @@ contract BatchProofVerifier {
 
     /**
      * @notice Batch verify multiple proofs
-          * @param vkId The vkId identifier
+     * @param vkId The vkId identifier
      * @param proofs The proofs
      * @param publicInputs The public inputs
      * @return The result value

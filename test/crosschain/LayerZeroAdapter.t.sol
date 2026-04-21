@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
+import {BridgeAdapterBase} from "../../contracts/crosschain/base/BridgeAdapterBase.sol";
 import "../../contracts/crosschain/LayerZeroAdapter.sol";
 
 contract LayerZeroAdapterTest is Test {
@@ -41,12 +42,12 @@ contract LayerZeroAdapterTest is Test {
     }
 
     function test_Constructor_RevertZeroAdmin() public {
-        vm.expectRevert(LayerZeroAdapter.ZeroAddress.selector);
+        vm.expectRevert(BridgeAdapterBase.ZeroAddress.selector);
         new LayerZeroAdapter(address(0), lzEndpoint, localEid);
     }
 
     function test_Constructor_RevertZeroEndpoint() public {
-        vm.expectRevert(LayerZeroAdapter.ZeroAddress.selector);
+        vm.expectRevert(BridgeAdapterBase.ZeroAddress.selector);
         new LayerZeroAdapter(admin, address(0), localEid);
     }
 
@@ -179,7 +180,7 @@ contract LayerZeroAdapterTest is Test {
         vm.prank(user);
         vm.expectRevert(
             abi.encodeWithSelector(
-                LayerZeroAdapter.PayloadTooLarge.selector,
+                BridgeAdapterBase.PayloadTooLarge.selector,
                 uint256(10241),
                 uint256(10240)
             )
@@ -332,7 +333,7 @@ contract LayerZeroAdapterTest is Test {
 
     function test_SetTreasury_RevertZeroAddress() public {
         vm.prank(operator);
-        vm.expectRevert(LayerZeroAdapter.ZeroAddress.selector);
+        vm.expectRevert(BridgeAdapterBase.ZeroAddress.selector);
         adapter.setTreasury(address(0));
     }
 

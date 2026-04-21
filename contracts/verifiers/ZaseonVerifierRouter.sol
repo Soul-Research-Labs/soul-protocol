@@ -178,6 +178,15 @@ contract ZaseonVerifierRouter is
         uint256[] calldata publicInputs,
         bytes32 callerCtx
     ) external nonReentrant returns (bool ok) {
+        // SECURITY (H-11): Refuse to verify circuits that the registry flags
+        // as requiring recursion via this entry point. Callers that need to
+        // satisfy a MAXIMUM-tier recursive-proof policy must use
+        // {verifyWithRecursion}; the plain {verify} path stays available for
+        // non-recursive circuits but cannot be used to downgrade a circuit
+        // whose operator declared recursion mandatory.
+        if (REGISTRY.isRecursiveCircuit(circuitId)) {
+            revert RecursiveProofRequired(circuitId);
+        }
         ok = _verifyOne(circuitId, proof, publicInputs, callerCtx);
     }
 

@@ -442,6 +442,38 @@ export {
   isZaseonError,
 } from "./utils/errors";
 
+// Codified error recovery table + withRecovery() wrapper.
+export {
+  RECOVERY_TABLE,
+  recoveryFor,
+  withRecovery,
+  type RecoveryStrategy,
+  type RecoverySpec,
+  type WithRecoveryOptions,
+} from "./utils/recovery";
+
+// Centralised nonce management for concurrent SDK calls.
+export { NonceManager } from "./nonce/NonceManager";
+export type { NonceClient, NonceKey } from "./nonce/NonceManager";
+
+// Unified high-level facade + proof-gen worker pool.
+export { execute } from "./client/execute";
+export type {
+  ZaseonAction,
+  ExecuteParams,
+  DepositParams as ExecuteDepositParams,
+  TransferParams as ExecuteTransferParams,
+  WithdrawParams as ExecuteWithdrawParams,
+  ExecutionResult,
+  ExecuteRouter,
+} from "./client/execute";
+export { WorkerPool } from "./zkprover/WorkerPool";
+export type {
+  WorkerHandle,
+  WorkerFactory,
+  WorkerPoolOptions,
+} from "./zkprover/WorkerPool";
+
 export {
   retry,
   retryable,

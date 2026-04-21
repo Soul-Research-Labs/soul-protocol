@@ -1,0 +1,73 @@
+name: Signed Release (cosign + SBOM)
+
+# Runs after the main Release workflow completes, to attach cosign signatures,
+# SBOM, and SLSA provenance to the existing release.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to sign"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  id-token: write # keyless cosign
+  attestations: write
+
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          ref: ${{ inputs.tag || github.event.release.tag_name }}
+
+      - uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Reproducible contract build
+        run: |
+          forge build --sizes
+          TAG="${{ inputs.tag || github.event.release.tag_name }}"
+          cd out && tar --sort=name --owner=0 --group=0 --numeric-owner \
+            -czf "../zaseon-contracts-${TAG}.tar.gz" .
+
+      - name: Generate SBOM (Syft)
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: spdx-json
+          output-file: zaseon-sbom-${{ inputs.tag || github.event.release.tag_name }}.spdx.json
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign artifact bundle (keyless)
+        run: |
+          TAG="${{ inputs.tag || github.event.release.tag_name }}"
+          cosign sign-blob --yes \
+            --output-signature "zaseon-contracts-${TAG}.tar.gz.sig" \
+            --output-certificate "zaseon-contracts-${TAG}.tar.gz.pem" \
+            "zaseon-contracts-${TAG}.tar.gz"
+
+      - name: Attest build provenance (SLSA)
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: |
+            zaseon-contracts-*.tar.gz
+
+      - name: Upload to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ inputs.tag || github.event.release.tag_name }}"
+          gh release upload "$TAG" \
+            zaseon-contracts-${TAG}.tar.gz \
+            zaseon-contracts-${TAG}.tar.gz.sig \
+            zaseon-contracts-${TAG}.tar.gz.pem \
+            zaseon-sbom-${TAG}.spdx.json \
+            --clobber

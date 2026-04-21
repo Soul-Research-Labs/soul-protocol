@@ -1,0 +1,45 @@
+name: Storage Layout Snapshots
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    paths:
+      - "contracts/**"
+      - "scripts/storage-layout-snapshot.sh"
+      - ".github/workflows/storage-layout.yml"
+
+concurrency:
+  group: storage-layout-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  snapshot:
+    name: Detect storage-layout drift
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Forge build
+        env:
+          FOUNDRY_PROFILE: ci
+        run: forge build
+
+      - name: Generate current storage layout snapshots
+        run: bash scripts/storage-layout-snapshot.sh current
+
+      - name: Compare with committed snapshots
+        run: |
+          if ! diff -ruN snapshots/storage-layout snapshots/storage-layout.current; then
+            echo "::error::Storage layout drift detected. Run 'bash scripts/storage-layout-snapshot.sh update' locally and commit the result."
+            exit 1
+          fi

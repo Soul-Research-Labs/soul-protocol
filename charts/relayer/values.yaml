@@ -1,0 +1,61 @@
+# Default values for zaseon-relayer.
+image:
+  repository: ghcr.io/manish0907/zaseon-relayer
+  tag: "" # defaults to chart appVersion
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+# Secret containing RELAYER_PRIVATE_KEY (create out-of-band or via external-secrets)
+privateKeySecret:
+  name: zaseon-relayer-keys
+  key: privateKey
+
+hub:
+  address: "" # REQUIRED: deployed ZaseonProtocolHub
+
+chains:
+  l1RpcUrl: "" # REQUIRED
+  l2RpcUrls: "" # comma-separated, e.g. arbitrum=https://...,optimism=https://...
+
+redis:
+  enabled: true
+  url: "redis://zaseon-relayer-redis:6379"
+
+metrics:
+  enabled: true
+  port: 9100
+  serviceMonitor:
+    enabled: false # set true if using kube-prometheus-stack
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    cpu: 2000m
+    memory: 2Gi
+
+livenessProbe:
+  httpGet: { path: /healthz, port: 9100 }
+  initialDelaySeconds: 30
+  periodSeconds: 20
+
+readinessProbe:
+  httpGet: { path: /readyz, port: 9100 }
+  initialDelaySeconds: 10
+  periodSeconds: 5
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  fsGroup: 10001
+
+securityContext:
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  capabilities: { drop: ["ALL"] }
+
+serviceAccount:
+  create: true
+  name: ""

@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "relayer.fullname" . }}
+  labels: {{- include "relayer.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "relayer.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels: {{- include "relayer.labels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "relayer.serviceAccountName" . }}
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: relayer
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext: {{- toYaml .Values.securityContext | nindent 12 }}
+          env:
+            - name: RELAYER_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.privateKeySecret.name }}
+                  key:  {{ .Values.privateKeySecret.key }}
+            - name: HUB_ADDRESS
+              value: {{ .Values.hub.address | quote }}
+            - name: L1_RPC_URL
+              value: {{ .Values.chains.l1RpcUrl | quote }}
+            - name: L2_RPC_URLS
+              value: {{ .Values.chains.l2RpcUrls | quote }}
+            {{- if .Values.redis.enabled }}
+            - name: PROOF_QUEUE_REDIS_URL
+              value: {{ .Values.redis.url | quote }}
+            {{- end }}
+            - name: METRICS_PORT
+              value: {{ .Values.metrics.port | quote }}
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.metrics.port }}
+              protocol: TCP
+          livenessProbe:  {{- toYaml .Values.livenessProbe  | nindent 12 }}
+          readinessProbe: {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}

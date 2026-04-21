@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
+import {BridgeAdapterBase} from "./base/BridgeAdapterBase.sol";
 import {IBridgeAdapter} from "./IBridgeAdapter.sol";
 
 /**
@@ -35,20 +33,7 @@ import {IBridgeAdapter} from "./IBridgeAdapter.sol";
  * │  - L1MessageService.sendMessage() + claimMessage()                     │
  * └─────────────────────────────────────────────────────────────────────────┘
  */
-contract LineaBridgeAdapter is
-    IBridgeAdapter,
-    AccessControl,
-    ReentrancyGuard,
-    Pausable
-{
-    /*//////////////////////////////////////////////////////////////
-                                 ROLES
-    //////////////////////////////////////////////////////////////*/
-
-    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
-    bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE");
-    bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
-
+contract LineaBridgeAdapter is BridgeAdapterBase {
     /*//////////////////////////////////////////////////////////////
                               CONSTANTS
     //////////////////////////////////////////////////////////////*/
@@ -208,9 +193,6 @@ contract LineaBridgeAdapter is
     error WithdrawalNotProven();
     error InvalidProof();
     error MessageAlreadyClaimed();
-    error InsufficientFee();
-    error ZeroAddress();
-    error TransferFailed();
     error FeeTooHigh();
     error LineaMessageFailed();
     error TokenAlreadyMapped();
@@ -219,13 +201,7 @@ contract LineaBridgeAdapter is
                             CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    constructor(address _admin) {
-        if (_admin == address(0)) revert ZeroAddress();
-
-        _grantRole(DEFAULT_ADMIN_ROLE, _admin);
-        _grantRole(OPERATOR_ROLE, _admin);
-        _grantRole(GUARDIAN_ROLE, _admin);
-
+    constructor(address _admin) BridgeAdapterBase(_admin, _admin) {
         bridgeFeeBps = 10; // 0.10%
     }
 
@@ -296,7 +272,9 @@ contract LineaBridgeAdapter is
 
         uint256 fee = (amount * bridgeFeeBps) / 10000;
         uint256 depositAmount = amount - fee;
-        if (msg.value < amount + messageFee) revert InsufficientFee();
+        if (msg.value < amount + messageFee) {
+            revert InsufficientFee(msg.value, amount + messageFee);
+        }
 
         depositId = keccak256(
             abi.encodePacked(
@@ -457,11 +435,7 @@ contract LineaBridgeAdapter is
         treasury = _treasury;
     }
 
-    function pause() external onlyRole(GUARDIAN_ROLE) {
-        _pause();
-    }
-
-    function unpause() external onlyRole(GUARDIAN_ROLE) {
+    function unpause() external override onlyRole(GUARDIAN_ROLE) {
         _unpause();
     }
 
@@ -551,40 +525,92 @@ contract LineaBridgeAdapter is
         return false;
     }
 
+    function _destinationChainFromPayload(
+        bytes calldata payload
+    ) internal pure returns (uint256 destChainId) {
+        if (payload.length < 32) revert EmptyPayload();
+        return abi.decode(payload[:32], (uint256));
+    }
+
     /*//////////////////////////////////////////////////////////////
                      IBridgeAdapter COMPATIBILITY
     //////////////////////////////////////////////////////////////*/
+
+    function _deliver(
+        bytes32 /*messageId*/,
+        address target,
+        bytes calldata payload,
+        uint256 nativeFee
+    ) internal override {
+        uint256 destChainId = _destinationChainFromPayload(payload);
+        LineaConfig storage config = lineaConfigs[destChainId];
+        if (!config.active) revert BridgeNotConfigured();
+        if (nativeFee < DEFAULT_MESSAGE_FEE) {
+            revert InsufficientFee(nativeFee, DEFAULT_MESSAGE_FEE);
+        }
+
+        _sendLineaMessage(
+            config.messageService,
+            target,
+            nativeFee - DEFAULT_MESSAGE_FEE,
+            DEFAULT_MESSAGE_FEE
+        );
+    }
+
+    function _estimateFee(
+        address /*target*/,
+        bytes calldata payload
+    ) internal view override returns (uint256) {
+        uint256 destChainId = _destinationChainFromPayload(payload);
+        LineaConfig storage config = lineaConfigs[destChainId];
+        if (!config.active) revert BridgeNotConfigured();
+
+        return DEFAULT_MESSAGE_FEE;
+    }
+
+    function _verifyMessage(
+        bytes32 messageId
+    ) internal view override returns (bool) {
+        LineaWithdrawal storage w = withdrawals[messageId];
+        return w.status == TransferStatus.CLAIMED;
+    }
 
     /// @inheritdoc IBridgeAdapter
     function bridgeMessage(
         address targetAddress,
         bytes calldata payload,
         address /*refundAddress*/
-    ) external payable nonReentrant whenNotPaused returns (bytes32 messageId) {
-        // Extract destination chain ID from payload (first 32 bytes)
-        uint256 destChainId = abi.decode(payload[:32], (uint256));
-        LineaConfig storage config = lineaConfigs[destChainId];
-        if (!config.active) revert BridgeNotConfigured();
+    )
+        external
+        payable
+        override
+        nonReentrant
+        whenNotPaused
+        returns (bytes32 messageId)
+    {
         if (targetAddress == address(0)) revert ZeroAddress();
 
-        // Send message via Linea MessageService
-        _sendLineaMessage(
-            config.messageService,
+        uint256 currentNonce;
+        unchecked {
+            currentNonce = ++nonce;
+        }
+        messageId = _deriveMessageId(
+            SELF_CHAIN_ID,
+            currentNonce,
+            msg.sender,
+            targetAddress,
+            payload
+        );
+
+        _deliver(messageId, targetAddress, payload, msg.value);
+
+        emit MessageBridged(
+            messageId,
+            msg.sender,
             targetAddress,
             msg.value,
-            DEFAULT_MESSAGE_FEE
+            keccak256(payload)
         );
-
-        messageId = keccak256(
-            abi.encodePacked(
-                msg.sender,
-                targetAddress,
-                destChainId,
-                transferNonce++,
-                block.timestamp
-            )
-        );
-
         emit DepositInitiated(messageId, msg.sender, targetAddress, msg.value);
     }
 
@@ -592,15 +618,9 @@ contract LineaBridgeAdapter is
     function estimateFee(
         address /*targetAddress*/,
         bytes calldata /*payload*/
-    ) external pure returns (uint256 nativeFee) {
+    ) external pure override returns (uint256) {
         // Linea fees depend on L1MessageService.minimumFeeInWei()
         revert("Use Linea-specific fee estimation");
-    }
-
-    /// @inheritdoc IBridgeAdapter
-    function isMessageVerified(bytes32 messageId) external view returns (bool) {
-        LineaWithdrawal storage w = withdrawals[messageId];
-        return w.status == TransferStatus.CLAIMED;
     }
 
     /// @notice Accept ETH from canonical bridge during L2→L1 withdrawal flow

@@ -467,6 +467,18 @@ export class ShieldedPoolClient {
   private randomBytes32(): Hex {
     const bytes = new Uint8Array(32);
     crypto.getRandomValues(bytes);
+    // SECURITY (L-11): On sandboxed runtimes (e.g. some hardened test
+    // harnesses or older JS contexts) `getRandomValues` can throw or return
+    // fewer bytes than requested; silently downgrading to a short/zero
+    // buffer would produce predictable secrets and nullifiers. Fail loudly.
+    if (bytes.length !== 32) {
+      throw new Error("randomBytes32: RNG did not return 32 bytes");
+    }
+    let nonZero = 0;
+    for (let i = 0; i < bytes.length; i++) nonZero |= bytes[i];
+    if (nonZero === 0) {
+      throw new Error("randomBytes32: RNG returned all-zero buffer");
+    }
     return `0x${Array.from(bytes)
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("")}` as Hex;

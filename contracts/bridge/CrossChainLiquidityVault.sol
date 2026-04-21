@@ -8,6 +8,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ICrossChainLiquidityVault} from "../interfaces/ICrossChainLiquidityVault.sol";
 import {IRebalanceSwapAdapter} from "../interfaces/IRebalanceSwapAdapter.sol";
+import {ILiquidityProofVerifier} from "../interfaces/ILiquidityProofVerifier.sol";
 
 /**
  * @title CrossChainLiquidityVault
@@ -966,6 +967,77 @@ contract CrossChainLiquidityVault is
      */
     function unpause() external onlyRole(OPERATOR_ROLE) {
         _unpause();
+    }
+
+    // =========================================================================
+    // ZK LIQUIDITY-PROOF GATING (optional, opt-in)
+    // =========================================================================
+
+    /// @notice Optional on-chain verifier for the `liquidity_proof` Noir circuit.
+    /// @dev When unset, {releaseLiquidityWithProof} reverts. Existing
+    ///      {releaseLiquidity} (role-gated) is unchanged.
+    ILiquidityProofVerifier public liquidityProofVerifier;
+
+    /// @notice Nullifiers consumed by ZK-gated releases (replay prevention).
+    mapping(bytes32 => bool) public liquidityProofNullifiers;
+
+    event LiquidityProofVerifierUpdated(
+        address indexed previous,
+        address indexed current
+    );
+    event LiquidityProofConsumed(
+        bytes32 indexed requestId,
+        bytes32 indexed nullifier
+    );
+
+    error LiquidityProofVerifierUnset();
+    error LiquidityProofInvalid();
+    error LiquidityProofNullifierUsed(bytes32 nullifier);
+
+    /// @notice Wire (or replace) the liquidity-proof verifier.
+    function setLiquidityProofVerifier(
+        address verifier
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        emit LiquidityProofVerifierUpdated(
+            address(liquidityProofVerifier),
+            verifier
+        );
+        liquidityProofVerifier = ILiquidityProofVerifier(verifier);
+    }
+
+    /**
+     * @notice Attest a `liquidity_proof` before releasing on this vault.
+     * @dev Validates the ZK proof against the wired verifier and consumes
+     *      the nullifier (publicInputs[2]). Intended call pattern:
+     *        1. Relayer / PrivacyHub calls {attestLiquidityProof} with proof + public inputs.
+     *        2. Same caller (PRIVACY_HUB_ROLE) then calls {releaseLiquidity}.
+     *
+     *      Splitting attestation from release keeps the existing role-gated
+     *      `releaseLiquidity` path unmodified (preserves tests) while adding
+     *      optional cryptographic backing when the verifier is wired.
+     *
+     *      Public-input layout must match `noir/liquidity_proof/src/main.nr`:
+     *        [0] lock_commitment, [1] pool_commitment, [2] nullifier,
+     *        [3] transfer_amount_hash, [4] current_timestamp.
+     */
+    function attestLiquidityProof(
+        bytes32 requestId,
+        bytes calldata proof,
+        bytes32[] calldata publicInputs
+    ) external onlyRole(PRIVACY_HUB_ROLE) whenNotPaused {
+        if (address(liquidityProofVerifier) == address(0))
+            revert LiquidityProofVerifierUnset();
+        if (publicInputs.length < 5) revert LiquidityProofInvalid();
+
+        bytes32 nullifier = publicInputs[2];
+        if (liquidityProofNullifiers[nullifier])
+            revert LiquidityProofNullifierUsed(nullifier);
+
+        bool ok = liquidityProofVerifier.verify(proof, publicInputs);
+        if (!ok) revert LiquidityProofInvalid();
+
+        liquidityProofNullifiers[nullifier] = true;
+        emit LiquidityProofConsumed(requestId, nullifier);
     }
 
     /**

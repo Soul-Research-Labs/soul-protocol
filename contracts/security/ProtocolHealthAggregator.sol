@@ -166,8 +166,19 @@ contract ProtocolHealthAggregator is AccessControl, ReentrancyGuard, Pausable {
     /// @notice Whether auto-pause is enabled
     bool public autoPauseEnabled;
 
+    /// @notice When true, MONITOR-driven CRITICAL transition does NOT immediately pause;
+    ///         a GUARDIAN_ROLE must confirm via {confirmAutoPause} within the confirmation window.
+    ///         Recommended for production mainnet deployments.
+    bool public autoPauseRequiresGuardianConfirmation;
+
     /// @notice Last time auto-pause was triggered
     uint48 public lastAutoPauseAt;
+
+    /// @notice Timestamp of a pending, not-yet-confirmed critical auto-pause signal
+    uint48 public pendingAutoPauseAt;
+
+    /// @notice Window within which a guardian must confirm a pending auto-pause (default 30m)
+    uint48 public autoPauseConfirmationWindow;
 
     /// @notice Guardian override: when non-zero, this score overrides aggregation
     uint16 public overrideScore;
@@ -224,6 +235,22 @@ contract ProtocolHealthAggregator is AccessControl, ReentrancyGuard, Pausable {
 
     event AutoPauseRecovered(uint8 contractsUnpaused);
 
+    /// @notice Emitted when a target's pause()/unpause() call fails so operators can observe silent failures.
+    event AutoPauseTargetCallFailed(
+        address indexed target,
+        bytes4 indexed selector,
+        bytes returndata
+    );
+
+    /// @notice Emitted when CRITICAL is reached but guardian confirmation is required before pausing.
+    event AutoPausePending(uint16 compositeScore, uint48 deadline);
+
+    /// @notice Emitted when the pending auto-pause was cancelled because the window expired or status recovered.
+    event AutoPausePendingCleared(uint16 compositeScore);
+
+    event AutoPauseGuardianRequirementUpdated(bool required);
+    event AutoPauseConfirmationWindowUpdated(uint48 windowSeconds);
+
     event GuardianOverrideSet(uint16 score, address indexed guardian);
     event GuardianOverrideCleared(address indexed guardian);
 
@@ -250,6 +277,9 @@ contract ProtocolHealthAggregator is AccessControl, ReentrancyGuard, Pausable {
     error NoOverrideActive();
     error LengthMismatch(uint256 idsLen, uint256 scoresLen);
     error EmptyBatch();
+    error NoPendingAutoPause();
+    error PendingAutoPauseExpired();
+    error InvalidConfirmationWindow(uint48 windowSeconds);
 
     /*//////////////////////////////////////////////////////////////
                              CONSTRUCTOR
@@ -282,6 +312,9 @@ contract ProtocolHealthAggregator is AccessControl, ReentrancyGuard, Pausable {
         currentStatus = HealthStatus.HEALTHY;
         compositeScore = MAX_SCORE;
         autoPauseEnabled = true;
+        autoPauseConfirmationWindow = 30 minutes;
+        // autoPauseRequiresGuardianConfirmation stays false by default (legacy behavior);
+        // operators should enable it for production via {setAutoPauseRequiresGuardianConfirmation}
 
         // Default category weights (total = 10000 bps)
         categoryWeights[SubsystemCategory.BRIDGE] = 3000; // 30%
@@ -603,6 +636,56 @@ contract ProtocolHealthAggregator is AccessControl, ReentrancyGuard, Pausable {
         autoPauseEnabled = enabled;
     }
 
+    /**
+     * @notice Require an explicit GUARDIAN_ROLE confirmation before monitor-driven auto-pause executes.
+     * @dev When enabled, a CRITICAL transition only emits {AutoPausePending}; GUARDIAN must call
+     *      {confirmAutoPause} within {autoPauseConfirmationWindow}. This mitigates a compromised or
+     *      mis-configured single MONITOR_ROLE account from pausing the protocol.
+     */
+    function setAutoPauseRequiresGuardianConfirmation(
+        bool required
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        autoPauseRequiresGuardianConfirmation = required;
+        emit AutoPauseGuardianRequirementUpdated(required);
+    }
+
+    /// @notice Adjust how long a pending auto-pause remains confirmable.
+    function setAutoPauseConfirmationWindow(
+        uint48 windowSeconds
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (windowSeconds < 1 minutes || windowSeconds > 24 hours) {
+            revert InvalidConfirmationWindow(windowSeconds);
+        }
+        autoPauseConfirmationWindow = windowSeconds;
+        emit AutoPauseConfirmationWindowUpdated(windowSeconds);
+    }
+
+    /**
+     * @notice GUARDIAN confirms a monitor-signalled auto-pause.
+     * @dev Reverts if no pending signal exists or the confirmation window has passed.
+     */
+    function confirmAutoPause() external onlyRole(GUARDIAN_ROLE) nonReentrant {
+        uint48 pending = pendingAutoPauseAt;
+        if (pending == 0) revert NoPendingAutoPause();
+        if (
+            block.timestamp >
+            uint256(pending) + uint256(autoPauseConfirmationWindow)
+        ) {
+            pendingAutoPauseAt = 0;
+            emit AutoPausePendingCleared(compositeScore);
+            revert PendingAutoPauseExpired();
+        }
+        pendingAutoPauseAt = 0;
+        _autoPauseTargets();
+    }
+
+    /// @notice GUARDIAN can cancel a pending auto-pause signal without executing it.
+    function cancelPendingAutoPause() external onlyRole(GUARDIAN_ROLE) {
+        if (pendingAutoPauseAt == 0) revert NoPendingAutoPause();
+        pendingAutoPauseAt = 0;
+        emit AutoPausePendingCleared(compositeScore);
+    }
+
     /// @notice Emergency pause this aggregator itself
     /**
      * @notice Pauses the operation
@@ -778,12 +861,29 @@ contract ProtocolHealthAggregator is AccessControl, ReentrancyGuard, Pausable {
                     lastAutoPauseAt == 0 ||
                     block.timestamp >= lastAutoPauseAt + AUTO_PAUSE_COOLDOWN
                 ) {
-                    _autoPauseTargets();
+                    if (autoPauseRequiresGuardianConfirmation) {
+                        // Do not pause immediately; queue a pending signal for guardian confirmation.
+                        if (pendingAutoPauseAt == 0) {
+                            pendingAutoPauseAt = uint48(block.timestamp);
+                            emit AutoPausePending(
+                                newScore,
+                                uint48(block.timestamp) +
+                                    autoPauseConfirmationWindow
+                            );
+                        }
+                    } else {
+                        _autoPauseTargets();
+                    }
                 }
             } else if (
                 newStatus == HealthStatus.HEALTHY &&
                 oldStatus == HealthStatus.CRITICAL
             ) {
+                // Status recovered before confirmation: clear any pending pause.
+                if (pendingAutoPauseAt != 0) {
+                    pendingAutoPauseAt = 0;
+                    emit AutoPausePendingCleared(newScore);
+                }
                 _autoRecoverTargets();
             }
         }
@@ -920,7 +1020,7 @@ contract ProtocolHealthAggregator is AccessControl, ReentrancyGuard, Pausable {
                 }
                 // Try to call pause() — we don't require specific interface
                 // solhint-disable-next-line avoid-low-level-calls
-                (bool success, ) = target.call(
+                (bool success, bytes memory returndata) = target.call(
                     abi.encodeWithSignature("pause()")
                 );
                 if (success) {
@@ -928,6 +1028,12 @@ contract ProtocolHealthAggregator is AccessControl, ReentrancyGuard, Pausable {
                     unchecked {
                         ++paused;
                     }
+                } else {
+                    emit AutoPauseTargetCallFailed(
+                        target,
+                        bytes4(keccak256("pause()")),
+                        returndata
+                    );
                 }
             }
 
@@ -954,8 +1060,14 @@ contract ProtocolHealthAggregator is AccessControl, ReentrancyGuard, Pausable {
             PausableTarget storage pt = pausableTargets[target];
 
             if (pt.isRegistered && pt.wasPausedByUs) {
+                if (target.code.length == 0) {
+                    unchecked {
+                        ++i;
+                    }
+                    continue;
+                }
                 // solhint-disable-next-line avoid-low-level-calls
-                (bool success, ) = target.call(
+                (bool success, bytes memory returndata) = target.call(
                     abi.encodeWithSignature("unpause()")
                 );
                 if (success) {
@@ -963,6 +1075,12 @@ contract ProtocolHealthAggregator is AccessControl, ReentrancyGuard, Pausable {
                     unchecked {
                         ++unpaused;
                     }
+                } else {
+                    emit AutoPauseTargetCallFailed(
+                        target,
+                        bytes4(keccak256("unpause()")),
+                        returndata
+                    );
                 }
             }
 

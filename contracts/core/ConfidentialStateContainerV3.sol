@@ -20,6 +20,7 @@ import {IProofVerifier} from "../interfaces/IProofVerifier.sol";
 /// - Immutable chain ID and domain separator (saves ~2100 gas per access)
 /// - Assembly for hash operations (saves ~500 gas)
 /// - Unchecked arithmetic in safe contexts (saves ~40 gas per operation)
+/// @custom:deprecated Use ConfidentialStateContainerV3Upgradeable (contracts/upgradeable/ConfidentialStateContainerV3Upgradeable.sol) for new deployments. This non-upgradeable variant will be removed in a future release.
 contract ConfidentialStateContainerV3 is
     IConfidentialStateContainerV3,
     AccessControl,

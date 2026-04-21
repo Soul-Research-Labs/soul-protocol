@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
-import {IBridgeAdapter} from "./IBridgeAdapter.sol";
+import {BridgeAdapterBase} from "./base/BridgeAdapterBase.sol";
 import {FixedSizeMessageWrapper} from "../libraries/FixedSizeMessageWrapper.sol";
 
 /**
@@ -36,26 +33,13 @@ import {FixedSizeMessageWrapper} from "../libraries/FixedSizeMessageWrapper.sol"
  * │  - Executor handles destination gas payment                            │
  * └─────────────────────────────────────────────────────────────────────────┘
  */
-contract LayerZeroAdapter is
-    IBridgeAdapter,
-    AccessControl,
-    ReentrancyGuard,
-    Pausable
-{
-    /*//////////////////////////////////////////////////////////////
-                                 ROLES
-    //////////////////////////////////////////////////////////////*/
-
-    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
-    bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE");
-    bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
-
+contract LayerZeroAdapter is BridgeAdapterBase {
     /*//////////////////////////////////////////////////////////////
                               CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Maximum message size (10 KB)
-    uint256 public constant MAX_PAYLOAD_SIZE = 10240;
+    uint256 public constant MAX_LZ_PAYLOAD_SIZE = 10240;
 
     /// @notice Maximum gas limit for destination execution
     uint256 public constant MAX_DST_GAS = 5_000_000;
@@ -226,17 +210,13 @@ contract LayerZeroAdapter is
     error PeerNotSet(uint32 eid);
     error InvalidEndpoint();
     error InvalidPeer();
-    error PayloadTooLarge(uint256 size, uint256 max);
     error GasLimitExceeded(uint128 requested, uint256 max);
-    error InsufficientFee(uint256 required, uint256 provided);
     error MessageNotFound(bytes32 messageId);
     error MessageAlreadyProcessed(bytes32 messageId);
     error MessageExpired(bytes32 messageId);
     error InvalidNonce(uint64 expected, uint64 received);
     error UnauthorizedCaller();
     error FeeTooHigh(uint256 bps);
-    error ZeroAddress();
-    error TransferFailed();
     error LZEndpointSendFailed();
     error ZeroReceiver();
 
@@ -249,13 +229,12 @@ contract LayerZeroAdapter is
      * @param _lzEndpoint LayerZero V2 endpoint address on this chain
      * @param _localEid This chain's LayerZero endpoint ID
      */
-    constructor(address _admin, address _lzEndpoint, uint32 _localEid) {
-        if (_admin == address(0) || _lzEndpoint == address(0))
-            revert ZeroAddress();
-
-        _grantRole(DEFAULT_ADMIN_ROLE, _admin);
-        _grantRole(OPERATOR_ROLE, _admin);
-        _grantRole(GUARDIAN_ROLE, _admin);
+    constructor(
+        address _admin,
+        address _lzEndpoint,
+        uint32 _localEid
+    ) BridgeAdapterBase(_admin, _admin) {
+        if (_lzEndpoint == address(0)) revert ZeroAddress();
 
         lzEndpoint = _lzEndpoint;
         localEid = _localEid;
@@ -355,23 +334,12 @@ contract LayerZeroAdapter is
     ) external payable nonReentrant whenNotPaused returns (bytes32 messageId) {
         EndpointConfig storage config = endpoints[dstEid];
         if (!config.active) revert EndpointNotConfigured(dstEid);
-        if (peers[dstEid] == bytes32(0)) revert PeerNotSet(dstEid);
-        if (receiver == address(0)) revert ZeroReceiver();
-        if (payload.length > MAX_PAYLOAD_SIZE)
-            revert PayloadTooLarge(payload.length, MAX_PAYLOAD_SIZE);
-
         uint128 dstGas = options.dstGasLimit > 0
             ? options.dstGasLimit
             : config.baseGas;
-        if (dstGas > MAX_DST_GAS) revert GasLimitExceeded(dstGas, MAX_DST_GAS);
-
-        // Calculate fee
-        uint256 protocolFee = (msg.value * bridgeFeeBps) / 10000;
-        uint256 lzFee = msg.value - protocolFee;
-        if (lzFee == 0) revert InsufficientFee(1, 0);
 
         // Generate message ID
-        uint64 nonce = outboundNonce[dstEid]++;
+        uint64 nonce = outboundNonce[dstEid];
         messageId = keccak256(
             abi.encodePacked(
                 localEid,
@@ -383,55 +351,17 @@ contract LayerZeroAdapter is
             )
         );
 
-        // Store message
-        messages[messageId] = LZMessage({
-            messageId: messageId,
-            srcEid: localEid,
-            dstEid: dstEid,
-            sender: msg.sender,
-            receiver: receiver,
-            payload: payload,
-            nativeFee: msg.value,
-            dstGasLimit: dstGas,
-            status: MessageStatus.SENT,
-            sentAt: block.timestamp,
-            verifiedAt: 0,
-            payloadHash: keccak256(payload)
-        });
-
-        userMessages[msg.sender].push(messageId);
-
-        // Collect protocol fee
-        if (protocolFee > 0 && treasury != address(0)) {
-            totalFeesCollected += protocolFee;
-            (bool sent, ) = treasury.call{value: protocolFee}("");
-            if (!sent) revert TransferFailed();
-        }
-
-        // Wrap payload to fixed size for privacy (prevent size-based inference)
-        bytes memory wrappedPayload = FixedSizeMessageWrapper.wrap(payload);
-
-        // Forward to LZ endpoint
-        (bool success, ) = lzEndpoint.call{value: lzFee}(
-            abi.encodeWithSignature(
-                "send((uint32,bytes32,bytes,bytes,bytes),address)",
-                _buildMessagingParams(
-                    dstEid,
-                    receiver,
-                    wrappedPayload,
-                    dstGas,
-                    options.extraOptions
-                ),
-                msg.sender // refund address
-            )
+        _sendMessage(
+            messageId,
+            dstEid,
+            msg.sender,
+            receiver,
+            payload,
+            dstGas,
+            options.extraOptions,
+            msg.sender,
+            msg.value
         );
-        if (!success) {
-            revert LZEndpointSendFailed();
-        }
-
-        totalMessagesSent++;
-
-        emit MessageSent(messageId, dstEid, msg.sender, receiver, msg.value);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -451,7 +381,7 @@ contract LayerZeroAdapter is
         bytes32 sender,
         uint64 nonce,
         bytes calldata payload
-    ) external {
+    ) external nonReentrant whenNotPaused {
         if (msg.sender != lzEndpoint) revert UnauthorizedCaller();
         if (sender != peers[srcEid]) revert InvalidPeer();
         if (inboundNonces[srcEid][nonce])
@@ -512,7 +442,7 @@ contract LayerZeroAdapter is
 
         // Base fee estimation: gas * gas price estimation + overhead
         // In production, this delegates to the LZ endpoint's quote function
-        uint256 baseFee = uint256(gas) * 20 gwei; // conservative estimate
+        uint256 baseFee = (uint256(gas) + payload.length * 16) * 20 gwei;
         uint256 protocolFee = (baseFee * bridgeFeeBps) / (10000 - bridgeFeeBps);
 
         fee.nativeFee = baseFee + protocolFee;
@@ -531,8 +461,26 @@ contract LayerZeroAdapter is
         address targetAddress,
         bytes calldata payload,
         address refundAddress
-    ) external payable nonReentrant whenNotPaused returns (bytes32 messageId) {
-        // Extract destination chain ID from payload (first 32 bytes encode chainId)
+    )
+        external
+        payable
+        override
+        nonReentrant
+        whenNotPaused
+        returns (bytes32 messageId)
+    {
+        address refundRecipient = refundAddress == address(0)
+            ? msg.sender
+            : refundAddress;
+        messageId = _bridgeMessage(targetAddress, payload, refundRecipient);
+    }
+
+    function _deliver(
+        bytes32 messageId,
+        address target,
+        bytes calldata payload,
+        uint256 nativeFee
+    ) internal override {
         uint256 destChainId = abi.decode(payload[:32], (uint256));
         uint32 dstEid = chainIdToEid[destChainId];
         if (dstEid == 0) revert ChainNotMapped(destChainId);
@@ -540,19 +488,48 @@ contract LayerZeroAdapter is
         EndpointConfig storage config = endpoints[dstEid];
         if (!config.active) revert EndpointNotConfigured(dstEid);
 
-        MessagingOptions memory opts = MessagingOptions({
-            dstGasLimit: config.baseGas,
-            dstNativeAmount: 0,
-            extraOptions: ""
-        });
-
-        // Delegate to the full send() implementation
-        messageId = this.send{value: msg.value}(
+        _sendMessage(
+            messageId,
             dstEid,
-            targetAddress,
+            msg.sender,
+            target,
             payload[32:],
-            opts
+            config.baseGas,
+            bytes(""),
+            msg.sender,
+            nativeFee
         );
+    }
+
+    function _estimateFee(
+        address /* target */,
+        bytes calldata payload
+    ) internal view override returns (uint256 nativeFee) {
+        uint256 destChainId = abi.decode(payload[:32], (uint256));
+        uint32 dstEid = chainIdToEid[destChainId];
+        if (dstEid == 0) revert ChainNotMapped(destChainId);
+
+        EndpointConfig storage config = endpoints[dstEid];
+        if (!config.active) revert EndpointNotConfigured(dstEid);
+
+        bytes calldata body = payload[32:];
+        if (body.length > MAX_LZ_PAYLOAD_SIZE) {
+            revert PayloadTooLarge(body.length, MAX_LZ_PAYLOAD_SIZE);
+        }
+
+        uint256 baseFee = uint256(config.baseGas) * 20 gwei;
+        uint256 protocolFee = (baseFee * bridgeFeeBps) / (10000 - bridgeFeeBps);
+
+        return baseFee + protocolFee;
+    }
+
+    function _verifyMessage(
+        bytes32 messageId
+    ) internal view override returns (bool) {
+        MessageStatus status = messages[messageId].status;
+        return
+            status == MessageStatus.VERIFIED ||
+            status == MessageStatus.EXECUTED;
     }
 
     /**
@@ -569,7 +546,9 @@ contract LayerZeroAdapter is
     /**
      * @notice Check if a message has been verified
      */
-    function isMessageVerified(bytes32 messageId) external view returns (bool) {
+    function isMessageVerified(
+        bytes32 messageId
+    ) external view override returns (bool) {
         MessageStatus status = messages[messageId].status;
         return
             status == MessageStatus.VERIFIED ||
@@ -582,7 +561,7 @@ contract LayerZeroAdapter is
     function estimateFee(
         address /*targetAddress*/,
         bytes calldata /*payload*/
-    ) external pure returns (uint256 nativeFee) {
+    ) external pure override returns (uint256) {
         // Use estimateFee(uint32,bytes,uint128) for accurate per-endpoint quotes
         revert("Use estimateFee(uint32,bytes,uint128)");
     }
@@ -622,14 +601,10 @@ contract LayerZeroAdapter is
     /**
      * @notice Pause bridge operations
      */
-    function pause() external onlyRole(GUARDIAN_ROLE) {
-        _pause();
-    }
-
     /**
      * @notice Unpause bridge operations
      */
-    function unpause() external onlyRole(GUARDIAN_ROLE) {
+    function unpause() external override onlyRole(GUARDIAN_ROLE) {
         _unpause();
     }
 
@@ -674,10 +649,10 @@ contract LayerZeroAdapter is
      */
     function _buildMessagingParams(
         uint32 dstEid,
-        address receiver,
+        address /*receiver*/,
         bytes memory payload,
         uint128 dstGas,
-        bytes calldata extraOptions
+        bytes memory extraOptions
     ) internal view returns (bytes memory) {
         bytes32 peerBytes = peers[dstEid];
         return
@@ -688,5 +663,78 @@ contract LayerZeroAdapter is
                 abi.encodePacked(uint16(3), uint8(1), dstGas), // options: type 3 + gas
                 extraOptions
             );
+    }
+
+    function _sendMessage(
+        bytes32 messageId,
+        uint32 dstEid,
+        address sender,
+        address receiver,
+        bytes calldata payload,
+        uint128 dstGas,
+        bytes memory extraOptions,
+        address endpointRefundAddress,
+        uint256 totalNativeFee
+    ) internal {
+        if (peers[dstEid] == bytes32(0)) revert PeerNotSet(dstEid);
+        if (receiver == address(0)) revert ZeroReceiver();
+        if (payload.length > MAX_LZ_PAYLOAD_SIZE) {
+            revert PayloadTooLarge(payload.length, MAX_LZ_PAYLOAD_SIZE);
+        }
+        if (dstGas > MAX_DST_GAS) revert GasLimitExceeded(dstGas, MAX_DST_GAS);
+
+        outboundNonce[dstEid]++;
+
+        uint256 protocolFee = (totalNativeFee * bridgeFeeBps) / 10000;
+        uint256 lzFee = totalNativeFee - protocolFee;
+        if (lzFee == 0) revert InsufficientFee(totalNativeFee, 1);
+
+        messages[messageId] = LZMessage({
+            messageId: messageId,
+            srcEid: localEid,
+            dstEid: dstEid,
+            sender: sender,
+            receiver: receiver,
+            payload: payload,
+            nativeFee: totalNativeFee,
+            dstGasLimit: dstGas,
+            status: MessageStatus.SENT,
+            sentAt: block.timestamp,
+            verifiedAt: 0,
+            payloadHash: keccak256(payload)
+        });
+
+        userMessages[sender].push(messageId);
+
+        if (protocolFee > 0 && treasury != address(0)) {
+            totalFeesCollected += protocolFee;
+            (bool sent, ) = treasury.call{value: protocolFee}("");
+            if (!sent) revert TransferFailed();
+        }
+
+        bytes memory wrappedPayload = FixedSizeMessageWrapper.wrapCalldata(
+            payload
+        );
+
+        (bool success, ) = lzEndpoint.call{value: lzFee}(
+            abi.encodeWithSignature(
+                "send((uint32,bytes32,bytes,bytes,bytes),address)",
+                _buildMessagingParams(
+                    dstEid,
+                    receiver,
+                    wrappedPayload,
+                    dstGas,
+                    extraOptions
+                ),
+                endpointRefundAddress
+            )
+        );
+        if (!success) {
+            revert LZEndpointSendFailed();
+        }
+
+        totalMessagesSent++;
+
+        emit MessageSent(messageId, dstEid, sender, receiver, totalNativeFee);
     }
 }

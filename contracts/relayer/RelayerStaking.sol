@@ -89,6 +89,12 @@ contract RelayerStaking is AccessControl, ReentrancyGuard {
     /// @param amount The amount of tokens slashed
     /// @param reason The reason for the slashing
     event Slashed(address indexed relayer, uint256 amount, string reason);
+
+    /// @notice Emitted when the minimum stake requirement changes.
+    event MinStakeUpdated(uint256 oldMinStake, uint256 newMinStake);
+
+    /// @notice Emitted when the slashing percentage (bps) changes.
+    event SlashingPercentageUpdated(uint256 oldBps, uint256 newBps);
     /// @notice Emitted when a relayer becomes active (meets minimum stake)
     /// @param relayer The activated relayer address
     event RelayerActivated(address indexed relayer);
@@ -378,7 +384,9 @@ contract RelayerStaking is AccessControl, ReentrancyGuard {
      * @param _minStake The new minimum stake amount in wei
      */
     function setMinStake(uint256 _minStake) external onlyRole(ADMIN_ROLE) {
+        uint256 oldMin = minStake;
         minStake = _minStake;
+        emit MinStakeUpdated(oldMin, _minStake);
     }
 
     /**
@@ -389,7 +397,9 @@ contract RelayerStaking is AccessControl, ReentrancyGuard {
         uint256 _slashingPercentage
     ) external onlyRole(ADMIN_ROLE) {
         if (_slashingPercentage > 5000) revert InvalidSlashingPercentage();
+        uint256 oldPct = slashingPercentage;
         slashingPercentage = _slashingPercentage;
+        emit SlashingPercentageUpdated(oldPct, _slashingPercentage);
     }
 
     /**

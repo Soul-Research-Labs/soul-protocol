@@ -1,0 +1,114 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.24;
+
+import {IBridgeAdapter} from "../../contracts/crosschain/IBridgeAdapter.sol";
+
+/**
+ * @title  __ADAPTER_NAME__BridgeAdapter
+ * @notice Template for a new `IBridgeAdapter` implementation. Replace
+ *         `__ADAPTER_NAME__` and `__NATIVE_BRIDGE__` before using.
+ *
+ * Checklist:
+ *   1. Set CHAIN_ID_L2 to your L2 chain id.
+ *   2. Wire `nativeBridge` in constructor to the real bridge contract.
+ *   3. Implement `_sendNative` to dispatch to the native bridge.
+ *   4. Implement `_verifyIncoming` callback handler (if applicable).
+ *   5. Copy the companion .t.sol.template into test/crosschain/.
+ */
+contract __ADAPTER_NAME__BridgeAdapter is IBridgeAdapter {
+    // --- Config ---
+    uint64 public constant CHAIN_ID_L2 = 0; // TODO: fill in
+    address public immutable nativeBridge;
+    address public immutable hub;
+
+    // --- State ---
+    mapping(bytes32 => bool) private _verifiedMessages;
+    mapping(bytes32 => bool) private _seenOutgoing; // replay protection
+
+    // --- Events ---
+    event MessageSent(bytes32 indexed messageId, uint64 destChainId, bytes32 recipient);
+    event MessageVerified(bytes32 indexed messageId);
+
+    // --- Errors ---
+    error ZeroAddress();
+    error UnsupportedChain(uint64 chainId);
+    error DuplicateMessage(bytes32 messageId);
+    error InsufficientFee(uint256 provided, uint256 required);
+    error NotNativeBridge(address caller);
+
+    constructor(address _nativeBridge, address _hub) {
+        if (_nativeBridge == address(0) || _hub == address(0)) revert ZeroAddress();
+        nativeBridge = _nativeBridge;
+        hub = _hub;
+    }
+
+    // --------------------------------------------------------------
+    // IBridgeAdapter
+    // --------------------------------------------------------------
+
+    function bridgeMessage(
+        uint64 destChainId,
+        bytes32 recipient,
+        bytes calldata payload
+    ) external payable override returns (bytes32 messageId) {
+        if (destChainId != CHAIN_ID_L2) revert UnsupportedChain(destChainId);
+
+        uint256 required = estimateFee(destChainId, payload);
+        if (msg.value < required) revert InsufficientFee(msg.value, required);
+
+        messageId = keccak256(
+            abi.encode(block.chainid, destChainId, msg.sender, recipient, payload, block.number)
+        );
+        if (_seenOutgoing[messageId]) revert DuplicateMessage(messageId);
+        _seenOutgoing[messageId] = true;
+
+        _sendNative(destChainId, recipient, payload, required);
+
+        // refund overpayment
+        if (msg.value > required) {
+            (bool ok, ) = msg.sender.call{value: msg.value - required}("");
+            require(ok, "refund failed");
+        }
+        emit MessageSent(messageId, destChainId, recipient);
+    }
+
+    function estimateFee(uint64 destChainId, bytes calldata payload)
+        public
+        view
+        override
+        returns (uint256)
+    {
+        // TODO: delegate to nativeBridge quoter
+        destChainId;
+        payload;
+        return 0.0001 ether;
+    }
+
+    function isMessageVerified(bytes32 messageId) external view override returns (bool) {
+        return _verifiedMessages[messageId];
+    }
+
+    // --------------------------------------------------------------
+    // Inbound (callback from native bridge)
+    // --------------------------------------------------------------
+
+    function receiveMessage(bytes32 messageId, bytes calldata /*payload*/) external {
+        if (msg.sender != nativeBridge) revert NotNativeBridge(msg.sender);
+        _verifiedMessages[messageId] = true;
+        emit MessageVerified(messageId);
+    }
+
+    // --------------------------------------------------------------
+    // Internal
+    // --------------------------------------------------------------
+
+    function _sendNative(
+        uint64 /*destChainId*/,
+        bytes32 /*recipient*/,
+        bytes calldata /*payload*/,
+        uint256 /*fee*/
+    ) internal virtual {
+        // TODO: call nativeBridge.sendMessage{value: fee}(...)
+        revert("_sendNative: not implemented");
+    }
+}

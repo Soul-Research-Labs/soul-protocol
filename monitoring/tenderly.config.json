@@ -63,6 +63,67 @@
           "address": "0x583E650c0385FEd1E427dF68fa91b2d8E56Df20f"
         }
       ]
+    },
+    "sepolia": {
+      "chainId": 11155111,
+      "contracts": [
+        {
+          "name": "UltraHonkVerifier",
+          "address": "0x1f830a178020d9d9b968b9f4d13e6e4cdbc9fa57"
+        },
+        {
+          "name": "Groth16Verifier",
+          "address": "0x09cf3f57c213218446aa49d89236247fbe1d08bd"
+        },
+        {
+          "name": "StateContainer",
+          "address": "0x5d79991daabf7cd198860a55f3a1f16548687798"
+        },
+        {
+          "name": "NullifierRegistryV3",
+          "address": "0x3e21d559f19c76a0bcec378b10dae2cc0e4c2191"
+        },
+        {
+          "name": "CrossChainProofHubV3",
+          "address": "0x40eaa5de0c6497c8943c967b42799cb092c26adc"
+        },
+        {
+          "name": "AtomicSwap",
+          "address": "0xdefb9a66dc14a6d247b282555b69da7745b0ab57"
+        },
+        {
+          "name": "Compliance",
+          "address": "0x5d41f63f35babed689a63f7e5c9e2943e1f72067"
+        },
+        {
+          "name": "ProofCarryingContainer",
+          "address": "0x52f8a660ff436c450b5190a84bc2c1a86f1032cc"
+        },
+        {
+          "name": "PolicyBoundProofs",
+          "address": "0x75e86ee654eae62a93c247e4ab9facf63bc4f328"
+        },
+        {
+          "name": "EASC",
+          "address": "0x77d22cb55253fea1ccc14ffc86a22e4a5a4592c6"
+        },
+        {
+          "name": "CDNA",
+          "address": "0x674d0cbfb5bf33981b1656abf6a47cff46430b0c"
+        },
+        {
+          "name": "EmergencyRecovery",
+          "address": "0x1995dbb199c26afd73a817aaafbccbf28f070ffc"
+        },
+        {
+          "name": "ZKBoundStateLocks",
+          "address": "0xf390ae12c9ce8f546ef7c7adaa6a1ab7768a2c78"
+        },
+        {
+          "name": "ZKSLockIntegration",
+          "address": "0x668c1a8197d59b5cf4d3802e209d3784c6f69b29"
+        }
+      ]
     }
   },
   "alerts": {

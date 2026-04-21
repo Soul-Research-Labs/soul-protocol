@@ -223,11 +223,28 @@ poolCmd
         ),
       );
 
-      // Save note locally
-      const noteFile = path.join(CONFIG_DIR, "notes", `${commitment}.json`);
-      if (!fs.existsSync(path.dirname(noteFile))) {
-        fs.mkdirSync(path.dirname(noteFile), { recursive: true });
+      // Save note locally.
+      //
+      // SECURITY FIX H-20: The note contains the deposit `secret` which is
+      // required for a future withdrawal proof. Previously the file was written
+      // world-readable and named by the on-chain commitment, letting any local
+      // user enumerate deposits by listing the directory. We now:
+      //   1. derive a random filename so the directory listing does not leak
+      //      the set of commitments, and
+      //   2. restrict the file to mode 0600 so only the owning OS user can
+      //      read the plaintext secret.
+      // Full at-rest encryption (password / OS keychain) is the follow-up.
+      const notesDir = path.join(CONFIG_DIR, "notes");
+      if (!fs.existsSync(notesDir)) {
+        fs.mkdirSync(notesDir, { recursive: true, mode: 0o700 });
       }
+      try {
+        fs.chmodSync(notesDir, 0o700);
+      } catch {
+        /* best-effort */
+      }
+      const noteHandle = crypto.randomBytes(16).toString("hex");
+      const noteFile = path.join(notesDir, `${noteHandle}.json`);
 
       fs.writeFileSync(
         noteFile,
@@ -237,7 +254,13 @@ poolCmd
           amount,
           timestamp: Date.now(),
         }),
+        { mode: 0o600 },
       );
+      try {
+        fs.chmodSync(noteFile, 0o600);
+      } catch {
+        /* best-effort */
+      }
 
       console.log(`\n✓ Deposit prepared!`);
       console.log(`  Commitment: ${commitment}`);
@@ -585,31 +608,66 @@ accountCmd
   .command("new")
   .description("Generate new account")
   .option(
-    "--show-private-key",
-    "Display the full private key (default: masked)",
+    "--reveal-via-env",
+    "Write the private key to $ZASEON_NEW_KEY_OUT (file path) instead of stdout. stdout never displays the key.",
   )
   .action((options) => {
     const privateKey = generatePrivateKey();
     const account = privateKeyToAccount(privateKey);
 
-    // SECURITY FIX C-2: Mask private key by default to prevent accidental
-    // exposure via stdout capture, shell history, or process monitoring.
-    const maskedKey = `${privateKey.slice(0, 10)}...${privateKey.slice(-6)}`;
-    const displayKey = options.showPrivateKey ? privateKey : maskedKey;
+    // SECURITY FIX C-2/C-6: Never print any portion of the private key to stdout.
+    // Partial masks (e.g. "0xabc...def") leak material and pollute shell history,
+    // CI logs, and process-capture tools. Instead we display an opaque key
+    // fingerprint (domain-separated hash) for identification and require users
+    // to opt-in to file-based reveal through an environment variable that does
+    // not appear on argv.
+    const fingerprint = keccak256(
+      encodeAbiParameters(
+        [{ type: "string" }, { type: "bytes32" }],
+        ["zaseon.cli.keyFingerprint", privateKey as Hex],
+      ),
+    ).slice(0, 18); // 8-byte fingerprint
 
     console.log(`\nNew Account Generated`);
     console.log(
       `═══════════════════════════════════════════════════════════════════`,
     );
-    console.log(`Address:     ${account.address}`);
-    console.log(`Private Key: ${displayKey}`);
-    if (!options.showPrivateKey) {
-      console.log(`(Use --show-private-key to reveal full key)`);
+    console.log(`Address:         ${account.address}`);
+    console.log(`Key Fingerprint: ${fingerprint}`);
+
+    if (options.revealViaEnv) {
+      const outPath = process.env.ZASEON_NEW_KEY_OUT;
+      if (!outPath) {
+        console.error(
+          `\nRefusing to reveal: set ZASEON_NEW_KEY_OUT=<path> in your environment before using --reveal-via-env.`,
+        );
+        process.exit(1);
+      }
+      try {
+        // chmod 600: owner read/write only — prevents other local users from
+        // reading the key file if it lands in a shared home directory.
+        fs.writeFileSync(outPath, privateKey, { mode: 0o600 });
+        try {
+          fs.chmodSync(outPath, 0o600);
+        } catch {
+          /* best-effort on platforms without POSIX chmod */
+        }
+        console.log(`Private key written to: ${outPath} (mode 0600)`);
+      } catch (err: unknown) {
+        console.error(`Error writing key file: ${getErrorMessage(err)}`);
+        process.exit(1);
+      }
+    } else {
+      console.log(
+        `(Use ZASEON_NEW_KEY_OUT=<path> zaseon account new --reveal-via-env to export the key)`,
+      );
     }
     console.log(
       `═══════════════════════════════════════════════════════════════════`,
     );
-    console.log(`\n⚠️  IMPORTANT: Save your private key securely!`);
+    console.log(
+      `\n⚠️  IMPORTANT: Store your private key in a secrets manager.`,
+    );
   });
 
 // Network commands

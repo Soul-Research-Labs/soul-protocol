@@ -1,0 +1,27 @@
+{
+  "//": "Noir circuit constraint-count baseline. Regenerate with scripts/noir_constraint_baseline.sh. CI fails if any circuit exceeds (baseline * 1.05) constraints (5% regression tolerance).",
+  "tolerance_pct": 5,
+  "circuits": {
+    "merkle_proof": 4800,
+    "nullifier": 5200,
+    "state_commitment": 1500,
+    "pedersen_commitment": 3000,
+    "cross_chain_proof": 5000,
+    "cross_domain_nullifier": 4500,
+    "container": 2500,
+    "state_transfer": 3500,
+    "policy_bound_proof": 5500,
+    "aggregator": 45000,
+    "compliance_proof": 8000,
+    "policy": 6000,
+    "balance_proof": 3200,
+    "private_transfer": 5500,
+    "swap_proof": 4000,
+    "shielded_pool": 6500,
+    "sanctions_check": 4000,
+    "accredited_investor": 3800,
+    "encrypted_transfer": 5800,
+    "ring_signature": 5000,
+    "liquidity_proof": 4200
+  }
+}

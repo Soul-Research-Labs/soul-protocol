@@ -42,7 +42,11 @@ import {IZaseonL2Messenger} from "../interfaces/IZaseonL2Messenger.sol";
  * @author ZASEON Team
  * @notice Zaseon L2 Messenger contract
  */
-contract ZaseonL2Messenger is ReentrancyGuard, AccessControl, IZaseonL2Messenger {
+contract ZaseonL2Messenger is
+    ReentrancyGuard,
+    AccessControl,
+    IZaseonL2Messenger
+{
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
@@ -164,7 +168,7 @@ contract ZaseonL2Messenger is ReentrancyGuard, AccessControl, IZaseonL2Messenger
     /// @param nullifier Unique nullifier
     /// @param gasLimit Gas limit for execution
     /// @return messageId Unique message identifier
-        /**
+    /**
      * @notice Send privacy message
      * @param destChainId The destination chain identifier
      * @param target The target
@@ -174,7 +178,7 @@ contract ZaseonL2Messenger is ReentrancyGuard, AccessControl, IZaseonL2Messenger
      * @param gasLimit The gas limit
      * @return messageId The message id
      */
-function sendPrivacyMessage(
+    function sendPrivacyMessage(
         uint256 destChainId,
         address target,
         bytes calldata encryptedCalldata,
@@ -248,12 +252,12 @@ function sendPrivacyMessage(
     /// @notice RIP-7755 compatible: Request cross-L2 call execution
     /// @param request The cross-L2 request
     /// @return requestId The request identifier
-        /**
+    /**
      * @notice Requests l2 call
      * @param request The request
      * @return requestId The request id
      */
-function requestL2Call(
+    function requestL2Call(
         CrossL2Request calldata request
     ) external payable nonReentrant returns (bytes32 requestId) {
         if (request.calls.length == 0) revert ExecutionFailed();
@@ -291,13 +295,13 @@ function requestL2Call(
     /// @param messageId The message to fulfill
     /// @param decryptedCalldata The decrypted call data
     /// @param zkProof Proof that decryption is correct
-        /**
+    /**
      * @notice Fulfill message
      * @param messageId The message identifier
      * @param decryptedCalldata The decrypted calldata
      * @param zkProof The zk proof
      */
-function fulfillMessage(
+    function fulfillMessage(
         bytes32 messageId,
         bytes calldata decryptedCalldata,
         bytes calldata zkProof
@@ -360,7 +364,7 @@ function fulfillMessage(
     /// @param target Target contract
     /// @param decryptedCalldata Decrypted call data
     /// @param value ETH value
-        /**
+    /**
      * @notice Receive message
      * @param sourceChainId The source chain identifier
      * @param messageId The message identifier
@@ -368,7 +372,7 @@ function fulfillMessage(
      * @param decryptedCalldata The decrypted calldata
      * @param value The value to set
      */
-function receiveMessage(
+    function receiveMessage(
         uint256 sourceChainId,
         bytes32 messageId,
         address target,
@@ -409,13 +413,13 @@ function receiveMessage(
     /// @param l1Contract L1 contract address
     /// @param slot Storage slot to read
     /// @return value The storage value
-        /**
+    /**
      * @notice Read l1 state
      * @param l1Contract The l1 contract
      * @param slot The slot
      * @return value The value
      */
-function readL1State(
+    function readL1State(
         address l1Contract,
         bytes32 slot
     ) external view returns (bytes32 value) {
@@ -431,7 +435,11 @@ function readL1State(
                 abi.encode(l1Contract, slot)
             );
 
-            if (success && result.length == 32) {
+            // SECURITY: surface precompile failures instead of silently returning
+            // zero — a zero value is indistinguishable from "slot not set" and
+            // can mask infrastructure regressions.
+            require(success, "ZaseonL2Messenger: L1SLOAD failed");
+            if (result.length == 32) {
                 value = abi.decode(result, (bytes32));
             }
         }
@@ -444,13 +452,13 @@ function readL1State(
     /// @param wallet The wallet address
     /// @param expectedKeyHash Expected key hash
     /// @return valid Whether the key matches
-        /**
+    /**
      * @notice Verifys keystore wallet
      * @param wallet The wallet
      * @param expectedKeyHash The expectedKeyHash hash value
      * @return valid The valid
      */
-function verifyKeystoreWallet(
+    function verifyKeystoreWallet(
         address wallet,
         bytes32 expectedKeyHash
     ) external view returns (bool valid) {
@@ -466,10 +474,10 @@ function verifyKeystoreWallet(
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Register as a fulfiller
-        /**
+    /**
      * @notice Registers fulfiller
      */
-function registerFulfiller() external payable {
+    function registerFulfiller() external payable {
         if (msg.value < minFulfillerBond) revert InsufficientBond();
         fulfillerBonds[msg.sender] += msg.value;
         _grantRole(FULFILLER_ROLE, msg.sender);
@@ -479,11 +487,11 @@ function registerFulfiller() external payable {
 
     /// @notice Withdraw fulfiller bond
     /// @param amount The amount of bond to withdraw (in wei)
-        /**
+    /**
      * @notice Withdraws bond
      * @param amount The amount to process
      */
-function withdrawBond(uint256 amount) external nonReentrant {
+    function withdrawBond(uint256 amount) external nonReentrant {
         if (fulfillerBonds[msg.sender] < amount) revert InsufficientBond();
         fulfillerBonds[msg.sender] -= amount;
 
@@ -502,12 +510,12 @@ function withdrawBond(uint256 amount) external nonReentrant {
     /// @notice Set counterpart messenger for a chain
     /// @param chainId The chain ID of the counterpart network
     /// @param messenger The address of the messenger contract on the counterpart chain
-        /**
+    /**
      * @notice Sets the counterpart
      * @param chainId The chain identifier
      * @param messenger The messenger
      */
-function setCounterpart(
+    function setCounterpart(
         uint256 chainId,
         address messenger
     ) external onlyRole(OPERATOR_ROLE) {
@@ -517,11 +525,11 @@ function setCounterpart(
 
     /// @notice Set proof hub address
     /// @param _proofHub The address of the CrossChainProofHubV3 contract
-        /**
+    /**
      * @notice Sets the proof hub
      * @param _proofHub The _proof hub
      */
-function setProofHub(address _proofHub) external onlyRole(OPERATOR_ROLE) {
+    function setProofHub(address _proofHub) external onlyRole(OPERATOR_ROLE) {
         if (_proofHub == address(0)) revert ZeroAddress();
         address oldHub = proofHub;
         proofHub = _proofHub;
@@ -564,11 +572,11 @@ function setProofHub(address _proofHub) external onlyRole(OPERATOR_ROLE) {
 
     /// @notice Set the ZK decryption proof verifier
     /// @param _verifier The IProofVerifier address (address(0) to disable)
-        /**
+    /**
      * @notice Sets the decryption verifier
      * @param _verifier The _verifier
      */
-function setDecryptionVerifier(
+    function setDecryptionVerifier(
         address _verifier
     ) external onlyRole(OPERATOR_ROLE) {
         address oldVerifier = decryptionVerifier;

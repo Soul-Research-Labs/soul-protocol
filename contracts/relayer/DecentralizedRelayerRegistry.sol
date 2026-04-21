@@ -87,6 +87,12 @@ contract DecentralizedRelayerRegistry is
     /// @dev Used for O(1) removal via swap-and-pop pattern
     mapping(address => uint256) private relayerIndex;
 
+    /// @notice Escrowed refunds for recipients whose synchronous refund
+    ///         transfer failed during {register}.
+    /// @dev Pull-pattern (H-17 FIX) to prevent registration griefing by
+    ///      contract accounts that revert on receive().
+    mapping(address => uint256) public pendingRefunds;
+
     /*//////////////////////////////////////////////////////////////
                             CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
@@ -132,11 +138,34 @@ contract DecentralizedRelayerRegistry is
         activeRelayers.push(msg.sender);
         emit RelayerRegistered(msg.sender, MIN_STAKE);
 
-        // Refund any overpayment
+        // Refund any overpayment.
+        //
+        // SECURITY (H-17): Try a synchronous push with a capped gas stipend;
+        // if the caller is a contract that reverts on receive(), escrow the
+        // excess into {pendingRefunds} so registration still succeeds and the
+        // funds are recoverable via {claimRefund} instead of being trapped
+        // by a revert.
         if (excess > 0) {
-            (bool sent, ) = msg.sender.call{value: excess}("");
-            if (!sent) revert TransferFailed(msg.sender, excess);
+            (bool sent, ) = msg.sender.call{value: excess, gas: 30_000}("");
+            if (!sent) {
+                pendingRefunds[msg.sender] += excess;
+                emit RefundEscrowed(msg.sender, excess);
+            }
         }
+    }
+
+    /// @notice Recipient claims a refund that previously failed to deliver
+    ///         synchronously during {register}.
+    function claimRefund() external nonReentrant {
+        uint256 amount = pendingRefunds[msg.sender];
+        if (amount == 0) revert NoPendingRefund();
+        pendingRefunds[msg.sender] = 0;
+        (bool sent, ) = msg.sender.call{value: amount}("");
+        if (!sent) {
+            pendingRefunds[msg.sender] = amount;
+            revert TransferFailed(msg.sender, amount);
+        }
+        emit RefundClaimed(msg.sender, amount);
     }
 
     /**

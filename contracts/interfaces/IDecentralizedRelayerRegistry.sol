@@ -44,6 +44,14 @@ interface IDecentralizedRelayerRegistry {
         address recipient
     );
 
+    /// @notice Emitted when a refund escrows to pendingRefunds because the
+    ///         synchronous push transfer failed (e.g., contract receiver
+    ///         reverted on receive()).
+    event RefundEscrowed(address indexed recipient, uint256 amount);
+
+    /// @notice Emitted when a recipient successfully pulls their escrowed refund.
+    event RefundClaimed(address indexed recipient, uint256 amount);
+
     /*//////////////////////////////////////////////////////////////
                                 ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -58,6 +66,7 @@ interface IDecentralizedRelayerRegistry {
     error ValueMismatch(uint256 msgValue, uint256 amount);
     error NoRewards(address relayer);
     error TransferFailed(address recipient, uint256 amount);
+    error NoPendingRefund();
 
     /*//////////////////////////////////////////////////////////////
                           CONSTANTS / STATE

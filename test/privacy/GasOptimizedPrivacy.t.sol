@@ -210,6 +210,27 @@ contract GasOptimizedNullifierManagerTest is Test {
     }
 }
 
+contract MockRingSignatureVerifier {
+    bool public result;
+
+    constructor(bool initialResult) {
+        result = initialResult;
+    }
+
+    function verify(
+        bytes32[] calldata,
+        bytes32[] calldata,
+        bytes calldata,
+        bytes32
+    ) external view returns (bool) {
+        return result;
+    }
+
+    function setResult(bool newResult) external {
+        result = newResult;
+    }
+}
+
 contract GasOptimizedRingCTTest is Test {
     GasOptimizedRingCT public ringCT;
     address public owner = address(this);
@@ -229,6 +250,11 @@ contract GasOptimizedRingCTTest is Test {
         ringCT.setRingSignatureVerifier(makeAddr("verifier"));
     }
 
+    function test_setRingSignatureVerifier_revert_zeroAddress() public {
+        vm.expectRevert(GasOptimizedRingCT.ZeroAddress.selector);
+        ringCT.setRingSignatureVerifier(address(0));
+    }
+
     function test_processRingCT_revert_invalidRingSize() public {
         bytes32[] memory inputs = new bytes32[](1);
         inputs[0] = keccak256("i1");
@@ -244,6 +270,85 @@ contract GasOptimizedRingCTTest is Test {
             outputs,
             keyImages,
             "",
+            keccak256("pseudo")
+        );
+    }
+
+    function test_processRingCT_revert_noVerifierConfigured() public {
+        bytes32[] memory inputs = new bytes32[](2);
+        inputs[0] = keccak256("i1");
+        inputs[1] = keccak256("i2");
+        bytes32[] memory outputs = new bytes32[](2);
+        outputs[0] = keccak256("o1");
+        outputs[1] = keccak256("o2");
+        bytes32[] memory keyImages = new bytes32[](2);
+        keyImages[0] = keccak256("ki1");
+        keyImages[1] = keccak256("ki2");
+
+        vm.expectRevert(
+            GasOptimizedRingCT.RingSignatureVerificationNotImplemented.selector
+        );
+        ringCT.processRingCT(
+            inputs,
+            outputs,
+            keyImages,
+            hex"1234",
+            keccak256("pseudo")
+        );
+    }
+
+    function test_processRingCT_withConfiguredVerifier() public {
+        MockRingSignatureVerifier verifier = new MockRingSignatureVerifier(
+            true
+        );
+        ringCT.setRingSignatureVerifier(address(verifier));
+
+        bytes32[] memory inputs = new bytes32[](2);
+        inputs[0] = keccak256("i1");
+        inputs[1] = keccak256("i2");
+        bytes32[] memory outputs = new bytes32[](2);
+        outputs[0] = keccak256("o1");
+        outputs[1] = keccak256("o2");
+        bytes32[] memory keyImages = new bytes32[](2);
+        keyImages[0] = keccak256("ki1");
+        keyImages[1] = keccak256("ki2");
+
+        ringCT.processRingCT(
+            inputs,
+            outputs,
+            keyImages,
+            hex"1234",
+            keccak256("pseudo")
+        );
+
+        assertTrue(ringCT.usedKeyImages(keyImages[0]));
+        assertTrue(ringCT.usedKeyImages(keyImages[1]));
+        assertTrue(ringCT.commitmentSet(outputs[0]));
+        assertTrue(ringCT.commitmentSet(outputs[1]));
+    }
+
+    function test_processRingCT_revert_invalidSignature() public {
+        MockRingSignatureVerifier verifier = new MockRingSignatureVerifier(
+            false
+        );
+        ringCT.setRingSignatureVerifier(address(verifier));
+
+        bytes32[] memory inputs = new bytes32[](2);
+        inputs[0] = keccak256("i1");
+        inputs[1] = keccak256("i2");
+        bytes32[] memory outputs = new bytes32[](2);
+        outputs[0] = keccak256("o1");
+        outputs[1] = keccak256("o2");
+        bytes32[] memory keyImages = new bytes32[](2);
+        keyImages[0] = keccak256("ki1");
+        keyImages[1] = keccak256("ki2");
+
+        vm.expectRevert(GasOptimizedRingCT.InvalidSignature.selector);
+        ringCT.processRingCT(
+            inputs,
+            outputs,
+            keyImages,
+            hex"1234",
             keccak256("pseudo")
         );
     }

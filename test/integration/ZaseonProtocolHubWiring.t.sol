@@ -3,6 +3,8 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import {ZaseonProtocolHub} from "../../contracts/core/ZaseonProtocolHub.sol";
+import {ComponentRegistry} from "../../contracts/core/registries/ComponentRegistry.sol";
+import {HubWiringKeyedLib} from "../../contracts/internal/HubWiringKeyedLib.sol";
 import "../../contracts/interfaces/IZaseonProtocolHub.sol";
 
 /// @title ZaseonProtocolHubWiringTest
@@ -468,6 +470,47 @@ contract ZaseonProtocolHubWiringTest is Test {
         // WireAll with 17 non-zero addresses should emit ProtocolWired(admin, 17)
         emit IZaseonProtocolHub.ProtocolWired(admin, 17);
         hub.wireAll(params);
+    }
+
+    /// @notice wireAllKeyed updates typed hub state even without a registry mirror.
+    function test_WireAllKeyedWithoutRegistry() public {
+        IZaseonProtocolHub.WireAllParams
+            memory params = _buildFullRequiredParams();
+        (bytes32[] memory keys, address[] memory addrs) = HubWiringKeyedLib
+            .fromWireAllParams(params);
+
+        hub.wireAllKeyed(keys, addrs);
+
+        assertEq(hub.verifierRegistry(), VERIFIER_REG);
+        assertEq(hub.universalVerifier(), UNIVERSAL_VER);
+        assertEq(hub.crossChainMessageRelay(), MSG_RELAY);
+        assertEq(hub.privacyRouter(), PRIVACY_ROUTER);
+        assertEq(hub.multiProver(), MULTI_PROVER);
+        assertEq(hub.relayWatchtower(), BRIDGE_WATCH);
+        assertEq(hub.crossChainLiquidityVault(), LIQ_VAULT);
+        assertTrue(hub.isFullyConfigured());
+    }
+
+    /// @notice wireAllKeyed mirrors to ComponentRegistry when configured.
+    function test_WireAllKeyedMirrorsRegistry() public {
+        ComponentRegistry registry = new ComponentRegistry(admin);
+        registry.grantRole(registry.REGISTRY_ADMIN_ROLE(), address(hub));
+        hub.setComponentRegistry(address(registry));
+
+        IZaseonProtocolHub.WireAllParams
+            memory params = _buildFullRequiredParams();
+        (bytes32[] memory keys, address[] memory addrs) = HubWiringKeyedLib
+            .fromWireAllParams(params);
+
+        hub.wireAllKeyed(keys, addrs);
+
+        assertEq(registry.get(keccak256("verifierRegistry")), VERIFIER_REG);
+        assertEq(registry.get(keccak256("privacyRouter")), PRIVACY_ROUTER);
+        assertEq(
+            registry.get(keccak256("crossChainLiquidityVault")),
+            LIQ_VAULT
+        );
+        assertEq(hub.privacyRouter(), PRIVACY_ROUTER);
     }
 
     /// @notice getComponentStatus consistency check after full wireAll

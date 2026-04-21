@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "forge-std/Test.sol";
 import {OptimismBridgeAdapter} from "../../contracts/crosschain/OptimismBridgeAdapter.sol";
 import {IOptimismBridgeAdapter} from "../../contracts/interfaces/IOptimismBridgeAdapter.sol";
+import {BridgeAdapterBase} from "../../contracts/crosschain/base/BridgeAdapterBase.sol";
 import {MockWrappedOP} from "../../contracts/mocks/MockWrappedOP.sol";
 import {MockOptimismOutputOracle} from "../../contracts/mocks/MockOptimismOutputOracle.sol";
 
@@ -234,7 +235,7 @@ contract OptimismBridgeFuzz is Test {
     }
 
     function test_constructorRejectsZeroAdmin() public {
-        vm.expectRevert(IOptimismBridgeAdapter.ZeroAddress.selector);
+        vm.expectRevert(BridgeAdapterBase.ZeroAddress.selector);
         new OptimismBridgeAdapter(address(0));
     }
 
@@ -992,11 +993,11 @@ contract OptimismBridgeFuzz is Test {
         uint256 sigs
     ) public {
         vm.prank(admin);
-        vm.expectRevert(IOptimismBridgeAdapter.ZeroAddress.selector);
+        vm.expectRevert(BridgeAdapterBase.ZeroAddress.selector);
         bridge.configure(address(0), b, c, sigs, 1);
 
         vm.prank(admin);
-        vm.expectRevert(IOptimismBridgeAdapter.ZeroAddress.selector);
+        vm.expectRevert(BridgeAdapterBase.ZeroAddress.selector);
         bridge.configure(
             a == address(0) ? address(1) : a,
             address(0),
@@ -1015,7 +1016,7 @@ contract OptimismBridgeFuzz is Test {
 
     function test_treasuryRejectsZeroAddress() public {
         vm.prank(admin);
-        vm.expectRevert(IOptimismBridgeAdapter.ZeroAddress.selector);
+        vm.expectRevert(BridgeAdapterBase.ZeroAddress.selector);
         bridge.setTreasury(address(0));
     }
 

@@ -125,6 +125,8 @@ contract EVMUniversalAdapter is
     //////////////////////////////////////////////////////////////*/
 
     event RemoteAdapterRegistered(bytes32 indexed chainId, bytes adapter);
+    /// @notice Emitted when the adapter active flag changes.
+    event ActiveUpdated(bool oldActive, bool newActive);
     event ProofVerifierSet(
         ProofSystem indexed proofSystem,
         address indexed verifier
@@ -655,7 +657,9 @@ contract EVMUniversalAdapter is
      * @param active Whether the feature is active
      */
     function setActive(bool active) external onlyRole(OPERATOR_ROLE) {
+        bool old = chainDescriptor.active;
         chainDescriptor.active = active;
+        emit ActiveUpdated(old, active);
     }
 
     /// @notice Set the proof translator contract

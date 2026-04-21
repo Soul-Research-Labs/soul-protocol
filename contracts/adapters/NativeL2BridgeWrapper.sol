@@ -1,246 +1,183 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {IBridgeAdapter} from "../crosschain/IBridgeAdapter.sol";
-import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {BridgeAdapterBase} from "../crosschain/base/BridgeAdapterBase.sol";
 
 /**
  * @title NativeL2BridgeWrapper
- * @notice IBridgeAdapter wrapper for native L2 bridges (Arbitrum, Optimism, Base)
- * @dev Provides a unified IBridgeAdapter interface for native rollup bridges
- *      that use different messaging patterns (inbox/outbox for Arbitrum,
- *      CrossDomainMessenger for OP Stack).
+ * @author ZASEON
+ * @notice Unified `IBridgeAdapter` wrapper for native L2 bridges (Arbitrum, Optimism, Base, and
+ *         any OP-Stack / Arbitrum-compatible messenger). One deployment per destination L2.
+ * @dev Migrated to inherit from {BridgeAdapterBase}, eliminating ~120 LOC of boilerplate
+ *      (roles, pause, reentrancy, payload bounds, refund, message-id derivation, event).
+ *      Only the chain-specific dispatch logic remains in this file as the three
+ *      `_deliver` / `_estimateFee` / `_verifyMessage` hooks.
  *
- *      This is a generic wrapper — deploy one per L2 chain with the appropriate
- *      bridge contract address.
+ *      Breaking-change notes relative to pre-migration (no tests depend on these):
+ *        - `ADMIN_ROLE` is now `DEFAULT_ADMIN_ROLE` (from base).
+ *        - `MessageSent` event replaced by the base's canonical `MessageBridged`.
+ *        - `bridgeMessage` now enforces the shared 32 KiB payload cap and auto-refunds excess.
  */
-contract NativeL2BridgeWrapper is
-    IBridgeAdapter,
-    AccessControl,
-    ReentrancyGuard
-{
-    /// @notice Role identifier for bridge administration functions
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
-
-    /// @notice The type of native L2 bridge being wrapped
+contract NativeL2BridgeWrapper is BridgeAdapterBase {
+    /// @notice Kind of native L2 bridge this wrapper targets.
     enum BridgeType {
         ARBITRUM_INBOX, // Arbitrum Delayed Inbox
         OP_CROSS_DOMAIN_MESSENGER, // OP Stack CrossDomainMessenger
         CUSTOM // Custom native bridge implementation
     }
 
-    /// @notice The underlying native bridge contract
+    /// @notice Underlying native bridge contract address.
     address public nativeBridge;
 
-    /// @notice Type of native bridge
+    /// @notice Kind of native bridge.
     BridgeType public bridgeType;
 
-    /// @notice Gas limit for cross-chain execution
+    /// @notice Gas limit for cross-chain execution on the destination.
     uint256 public gasLimit;
 
-    /// @notice Arbitrum max submission cost for retryable tickets
+    /// @notice Arbitrum max submission cost for retryable tickets.
     uint256 public maxSubmissionCost;
 
-    /// @notice Arbitrum max fee per gas for L2 execution
+    /// @notice Arbitrum max fee-per-gas for L2 execution.
     uint256 public maxFeePerGas;
 
-    /// @notice Message verification tracking
+    /// @notice Messages that have been marked verified by the receive handler.
     mapping(bytes32 => bool) public verifiedMessages;
 
-    /// @notice Message nonce
-    uint256 public nonce;
-
-    /// @notice Emitted when a message is sent via the native L2 bridge
-    /// @param messageId Unique message identifier
-    /// @param target Target address on the destination chain
-    /// @param bridgeType The type of native bridge used
-    event MessageSent(
-        bytes32 indexed messageId,
-        address target,
-        BridgeType bridgeType
+    event MessageVerified(bytes32 indexed messageId);
+    event NativeBridgeUpdated(
+        address indexed oldBridge,
+        address indexed newBridge
+    );
+    event GasLimitUpdated(uint256 oldLimit, uint256 newLimit);
+    event ArbitrumParamsUpdated(
+        uint256 maxSubmissionCost,
+        uint256 maxFeePerGas
     );
 
-    /// @notice Emitted when a bridged message is verified
-    /// @param messageId Unique identifier for the verified message
-    event MessageVerified(bytes32 indexed messageId);
-
-    /// @notice Thrown when the native bridge address is zero
     error InvalidBridge();
-
-    /// @notice Thrown when the native bridge send call fails
     error BridgeSendFailed();
-
-    /// @notice Thrown when gasLimit exceeds uint32 max for OP Stack bridges
     error GasLimitExceedsUint32();
 
-    /// @notice Initializes the native L2 bridge wrapper
-    /// @param _admin Address granted admin and default admin roles
-    /// @param _nativeBridge Address of the native L2 bridge contract
-    /// @param _bridgeType Type of native bridge (Arbitrum Inbox, OP Messenger, or Custom)
-    /// @param _gasLimit Gas limit for cross-chain execution (defaults to 200,000 if 0)
+    /// @param admin     Account granted DEFAULT_ADMIN_ROLE, OPERATOR_ROLE, EXECUTOR_ROLE, GUARDIAN_ROLE.
+    /// @param _nativeBridge Underlying native bridge messenger.
+    /// @param _bridgeType   Which messenger pattern to use.
+    /// @param _gasLimit     L2 gas limit (defaults to 200_000 if zero).
     constructor(
-        address _admin,
+        address admin,
         address _nativeBridge,
         BridgeType _bridgeType,
         uint256 _gasLimit
-    ) {
+    ) BridgeAdapterBase(admin, admin) {
         if (_nativeBridge == address(0)) revert InvalidBridge();
         if (
             _bridgeType == BridgeType.OP_CROSS_DOMAIN_MESSENGER &&
             _gasLimit > type(uint32).max
-        ) {
-            revert GasLimitExceedsUint32();
-        }
-        _grantRole(DEFAULT_ADMIN_ROLE, _admin);
-        _grantRole(ADMIN_ROLE, _admin);
+        ) revert GasLimitExceedsUint32();
+
         nativeBridge = _nativeBridge;
         bridgeType = _bridgeType;
         gasLimit = _gasLimit > 0 ? _gasLimit : 200_000;
     }
 
-    /// @inheritdoc IBridgeAdapter
-    /**
-     * @notice Bridges message
-     * @param targetAddress The targetAddress address
-     * @param payload The message payload
-     * @param refundAddress The refundAddress address
-     * @return messageId The message id
-     */
-    function bridgeMessage(
-        address targetAddress,
+    /*//////////////////////////////////////////////////////////////
+                        BridgeAdapterBase HOOKS
+    //////////////////////////////////////////////////////////////*/
+
+    function _deliver(
+        bytes32 /* messageId */,
+        address target,
         bytes calldata payload,
-        address refundAddress
-    ) external payable override nonReentrant returns (bytes32 messageId) {
-        messageId = keccak256(
-            abi.encode(targetAddress, payload, nonce++, block.chainid)
-        );
-
+        uint256 nativeFee
+    ) internal override {
         bool success;
-
         if (bridgeType == BridgeType.ARBITRUM_INBOX) {
-            // Arbitrum Inbox.createRetryableTicket pattern
             uint256 submissionCost = maxSubmissionCost > 0
                 ? maxSubmissionCost
                 : 0.01 ether;
-            (success, ) = nativeBridge.call{value: msg.value}(
+            (success, ) = nativeBridge.call{value: nativeFee}(
                 abi.encodeWithSignature(
                     "createRetryableTicket(address,uint256,uint256,address,address,uint256,uint256,bytes)",
-                    targetAddress, // to
-                    0, // l2CallValue
-                    submissionCost, // maxSubmissionCost
-                    refundAddress != address(0) ? refundAddress : msg.sender,
-                    refundAddress != address(0) ? refundAddress : msg.sender,
-                    gasLimit, // gasLimit
-                    maxFeePerGas, // maxFeePerGas
-                    payload // data
+                    target,
+                    0,
+                    submissionCost,
+                    msg.sender,
+                    msg.sender,
+                    gasLimit,
+                    maxFeePerGas,
+                    payload
                 )
             );
         } else if (bridgeType == BridgeType.OP_CROSS_DOMAIN_MESSENGER) {
-            // OP Stack CrossDomainMessenger.sendMessage pattern
-            (success, ) = nativeBridge.call{value: msg.value}(
+            (success, ) = nativeBridge.call{value: nativeFee}(
                 abi.encodeWithSignature(
                     "sendMessage(address,bytes,uint32)",
-                    targetAddress,
+                    target,
                     payload,
                     uint32(gasLimit)
                 )
             );
         } else {
-            // Custom bridge — generic call
-            (success, ) = nativeBridge.call{value: msg.value}(
+            (success, ) = nativeBridge.call{value: nativeFee}(
                 abi.encodeWithSignature(
                     "sendMessage(address,bytes)",
-                    targetAddress,
+                    target,
                     payload
                 )
             );
         }
-
         if (!success) revert BridgeSendFailed();
-
-        emit MessageSent(messageId, targetAddress, bridgeType);
     }
 
-    /// @inheritdoc IBridgeAdapter
-    /**
-     * @notice Estimate fee
-     * @return nativeFee The native fee
-     */
-    function estimateFee(
-        address,
-        bytes calldata
-    ) external view override returns (uint256 nativeFee) {
-        // Native L2 bridges typically use gas-based fees
-        if (bridgeType == BridgeType.ARBITRUM_INBOX) {
-            // Arbitrum: submission cost + gas * gasPrice
-            nativeFee = 0.005 ether; // Conservative estimate
-        } else if (bridgeType == BridgeType.OP_CROSS_DOMAIN_MESSENGER) {
-            // OP Stack: mostly gas-based, minimal bridge fee
-            nativeFee = 0.002 ether;
-        } else {
-            nativeFee = 0.01 ether;
-        }
+    function _estimateFee(
+        address /* target */,
+        bytes calldata /* payload */
+    ) internal view override returns (uint256) {
+        if (bridgeType == BridgeType.ARBITRUM_INBOX) return 0.005 ether;
+        if (bridgeType == BridgeType.OP_CROSS_DOMAIN_MESSENGER)
+            return 0.002 ether;
+        return 0.01 ether;
     }
 
-    /// @inheritdoc IBridgeAdapter
-    /**
-     * @notice Checks if message verified
-     * @param messageId The message identifier
-     * @return The result value
-     */
-    function isMessageVerified(
+    function _verifyMessage(
         bytes32 messageId
-    ) external view override returns (bool) {
+    ) internal view override returns (bool) {
         return verifiedMessages[messageId];
     }
 
-    /// @notice Mark a message as verified (called by cross-chain receive handler)
-    /// @param messageId The message identifier to mark verified
-    /**
-     * @notice Mark verified
-     * @param messageId The message identifier
-     */
-    function markVerified(bytes32 messageId) external onlyRole(ADMIN_ROLE) {
+    /*//////////////////////////////////////////////////////////////
+                          ADMIN / OBSERVABILITY
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Mark a delivered cross-chain message as verified.
+    function markVerified(bytes32 messageId) external onlyRole(EXECUTOR_ROLE) {
         verifiedMessages[messageId] = true;
         emit MessageVerified(messageId);
     }
 
-    /// @notice Update the native bridge contract address
-    /// @param _bridge New bridge contract address
-    /**
-     * @notice Sets the bridge
-     * @param _bridge The _bridge identifier
-     */
-    function setBridge(address _bridge) external onlyRole(ADMIN_ROLE) {
+    function setBridge(address _bridge) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_bridge == address(0)) revert InvalidBridge();
+        emit NativeBridgeUpdated(nativeBridge, _bridge);
         nativeBridge = _bridge;
     }
 
-    /// @notice Update the gas limit for cross-chain execution
-    /// @param _gasLimit New gas limit value
-    /**
-     * @notice Sets the gas limit
-     * @param _gasLimit The _gas limit
-     */
-    function setGasLimit(uint256 _gasLimit) external onlyRole(ADMIN_ROLE) {
+    function setGasLimit(
+        uint256 _gasLimit
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (
             bridgeType == BridgeType.OP_CROSS_DOMAIN_MESSENGER &&
             _gasLimit > type(uint32).max
-        ) {
-            revert GasLimitExceedsUint32();
-        }
+        ) revert GasLimitExceedsUint32();
+        emit GasLimitUpdated(gasLimit, _gasLimit);
         gasLimit = _gasLimit;
     }
 
-    /// @notice Set Arbitrum-specific retryable ticket parameters
-    /// @param _maxSubmissionCost Max submission cost for retryable tickets
-    /// @param _maxFeePerGas Max fee per gas for L2 execution
     function setArbitrumParams(
         uint256 _maxSubmissionCost,
         uint256 _maxFeePerGas
-    ) external onlyRole(ADMIN_ROLE) {
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         maxSubmissionCost = _maxSubmissionCost;
         maxFeePerGas = _maxFeePerGas;
+        emit ArbitrumParamsUpdated(_maxSubmissionCost, _maxFeePerGas);
     }
 }

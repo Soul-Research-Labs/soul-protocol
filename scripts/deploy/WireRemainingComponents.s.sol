@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import {Script, console} from "forge-std/Script.sol";
 import {ZaseonProtocolHub} from "../../contracts/core/ZaseonProtocolHub.sol";
 import {CrossChainLiquidityVault} from "../../contracts/bridge/CrossChainLiquidityVault.sol";
+import {HubWiringKeyedLib} from "../../contracts/internal/HubWiringKeyedLib.sol";
 import "../../contracts/interfaces/IZaseonProtocolHub.sol";
 
 /**
@@ -11,7 +12,7 @@ import "../../contracts/interfaces/IZaseonProtocolHub.sol";
  * @notice Post-deploy script to wire components that were deployed separately
  *         after the initial Hub deployment (Phase 6 of DeployMainnet).
  *
- * @dev The initial mainnet deploy sets 8/17 wireAll params. This script fills
+ * @dev The initial mainnet deploy sets 8/17 keyed wiring params. This script fills
  *      the remaining 9 that are deployed per-L2 or as upgradeable proxies:
  *        - crossChainMessageRelay   (per-L2 ZaseonCrossChainRelay)
  *        - crossChainPrivacyHub     (per-L2 privacy coordination)
@@ -24,7 +25,7 @@ import "../../contracts/interfaces/IZaseonProtocolHub.sol";
  *        - privacyRouter            (required for isFullyConfigured)
  *        - multiProver              (required for isFullyConfigured)
  *        - relayWatchtower          (required for isFullyConfigured)
- *        - relayCircuitBreaker      (not in wireAll, wired via setter)
+ *        - relayCircuitBreaker      (not in the keyed payload, wired via setter)
  *
  * Usage:
  *   ZASEON_HUB=0x...         \
@@ -89,9 +90,9 @@ contract WireRemainingComponents is Script {
 
         vm.startBroadcast();
 
-        // wireAll with zero-address for already-wired components (Hub skips them)
-        hub.wireAll(
-            IZaseonProtocolHub.WireAllParams({
+        // wireAllKeyed with zero-address for already-wired components (Hub skips them)
+        IZaseonProtocolHub.WireAllParams memory wireParams = IZaseonProtocolHub
+            .WireAllParams({
                 _verifierRegistry: address(0), // already set
                 _universalVerifier: address(0), // already set
                 _crossChainMessageRelay: relay,
@@ -115,10 +116,12 @@ contract WireRemainingComponents is Script {
                 _instantCompletionGuarantee: address(0),
                 _dynamicRoutingOrchestrator: address(0),
                 _crossChainLiquidityVault: address(0)
-            })
-        );
+            });
+        (bytes32[] memory keys, address[] memory addrs) = HubWiringKeyedLib
+            .fromWireAllParams(wireParams);
+        hub.wireAllKeyed(keys, addrs);
 
-        // Wire relay circuit breaker (not in wireAll struct)
+        // Wire relay circuit breaker (not in the keyed payload)
         if (relayCircuitBreaker != address(0)) {
             hub.setRelayCircuitBreaker(relayCircuitBreaker);
             console.log("RelayCircuitBreaker wired to Hub");

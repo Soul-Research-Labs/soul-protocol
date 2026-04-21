@@ -419,7 +419,9 @@ contract RelayerFeeMarket is AccessControl, ReentrancyGuard, IRelayerFeeMarket {
      */
     function setProtocolFeeBps(uint256 _bps) external onlyRole(OPERATOR_ROLE) {
         if (_bps > 1000) revert InvalidFee();
+        uint256 oldBps = protocolFeeBps;
         protocolFeeBps = _bps;
+        emit ProtocolFeeBpsUpdated(oldBps, _bps);
     }
 
     /// @notice Withdraw accumulated protocol fees
@@ -435,7 +437,7 @@ contract RelayerFeeMarket is AccessControl, ReentrancyGuard, IRelayerFeeMarket {
         uint256 amount = protocolFees;
         protocolFees = 0;
         feeToken.safeTransfer(to, amount);
-        emit ProtocolFeeWithdrawn(amount);
+        emit ProtocolFeeWithdrawn(to, amount);
     }
 
     /*//////////////////////////////////////////////////////////////

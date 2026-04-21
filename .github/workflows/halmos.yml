@@ -1,0 +1,70 @@
+name: Halmos Symbolic
+
+permissions:
+  contents: read
+
+on:
+  schedule:
+    # Nightly at 07:00 UTC
+    - cron: "0 7 * * *"
+  workflow_dispatch:
+    inputs:
+      match_test:
+        description: "Optional --match-test regex passed to halmos"
+        required: false
+        default: ""
+  pull_request:
+    paths:
+      - "test/formal/**"
+      - "contracts/primitives/**"
+      - "contracts/privacy/UniversalShieldedPool.sol"
+      - "contracts/privacy/BatchAccumulator.sol"
+      - "contracts/core/NullifierRegistry*.sol"
+      - ".github/workflows/halmos.yml"
+
+concurrency:
+  group: halmos-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  halmos:
+    name: Symbolic (halmos)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install halmos
+        run: pip install halmos
+
+      - name: Build (forge)
+        env:
+          FOUNDRY_PROFILE: ci
+        run: forge build
+
+      - name: Run halmos over test/formal
+        env:
+          HALMOS_MATCH: ${{ github.event.inputs.match_test }}
+        run: |
+          EXTRA=""
+          if [ -n "${HALMOS_MATCH}" ]; then
+            EXTRA="--match-test ${HALMOS_MATCH}"
+          fi
+          halmos \
+            --contract 'Halmos.*' \
+            --solver-timeout-assertion 60000 \
+            --solver-timeout-branching 30000 \
+            --loop 2 \
+            ${EXTRA}

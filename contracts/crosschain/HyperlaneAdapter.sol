@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
-import {IBridgeAdapter} from "./IBridgeAdapter.sol";
+import {BridgeAdapterBase} from "./base/BridgeAdapterBase.sol";
 import {FixedSizeMessageWrapper} from "../libraries/FixedSizeMessageWrapper.sol";
 
 /**
@@ -34,19 +31,18 @@ import {FixedSizeMessageWrapper} from "../libraries/FixedSizeMessageWrapper.sol"
  * │  - RoutingISM: Per-origin route selection                              │
  * │  - AggregationISM: Combine multiple ISMs                               │
  * └─────────────────────────────────────────────────────────────────────────┘
+ *
+ * Migrated note:
+ *   The generic `IBridgeAdapter` compatibility path now inherits the shared
+ *   `BridgeAdapterBase` implementation. Hyperlane's native `dispatch()` /
+ *   `handle()` flow remains unchanged; only the generic bridge wrapper,
+ *   fee quoting hook, and verification hook are centralized.
  */
-contract HyperlaneAdapter is
-    IBridgeAdapter,
-    AccessControl,
-    ReentrancyGuard,
-    Pausable
-{
+contract HyperlaneAdapter is BridgeAdapterBase {
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
 
-    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
-    bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE");
     bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
 
     /*//////////////////////////////////////////////////////////////
@@ -139,9 +135,6 @@ contract HyperlaneAdapter is
     /// @notice Treasury for fee collection
     address public treasury;
 
-    /// @notice Message nonce
-    uint256 public nonce;
-
     /// @notice Domain configurations
     mapping(uint32 => DomainConfig) public domains;
 
@@ -212,17 +205,22 @@ contract HyperlaneAdapter is
     error InvalidMailbox();
     error InvalidRouter();
     error MessageBodyTooLarge(uint256 size, uint256 max);
-    error InsufficientFee(uint256 required, uint256 provided);
     error MessageNotFound(bytes32 messageId);
     error MessageAlreadyProcessed(bytes32 messageId);
     error MessageExpired(bytes32 messageId);
     error UnauthorizedMailbox();
     error UnauthorizedSender(uint32 domain, bytes32 sender);
     error FeeTooHigh(uint256 bps);
-    error ZeroAddress();
-    error TransferFailed();
     error MailboxDispatchFailed();
     error ZeroRecipient();
+    /// @dev C2: IGP payForGas call failed; message was dispatched but off-chain relaying
+    ///      will not be paid — revert to force the caller to retry with correct fee.
+    error IGPPaymentRevertedError(bytes32 messageId, uint32 dstDomain);
+    /// @dev C2: msg.value is less than (protocolFee + mailboxFee + IGP quote).
+    ///      Note: `InsufficientFee` is inherited from {BridgeAdapterBase}; we reuse it.
+    /// @dev C2: IGP quote call reverted or returned malformed data — caller must
+    ///      supply an IGP-quoted fee out-of-band or the adapter must be re-configured.
+    error IGPQuoteUnavailable(uint32 dstDomain);
 
     /*//////////////////////////////////////////////////////////////
                             CONSTRUCTOR
@@ -239,13 +237,11 @@ contract HyperlaneAdapter is
         address _mailbox,
         address _igp,
         uint32 _localDomain
-    ) {
+    ) BridgeAdapterBase(_admin, _admin) {
         if (_admin == address(0) || _mailbox == address(0))
             revert ZeroAddress();
 
-        _grantRole(DEFAULT_ADMIN_ROLE, _admin);
-        _grantRole(OPERATOR_ROLE, _admin);
-        _grantRole(GUARDIAN_ROLE, _admin);
+        _grantRole(RELAYER_ROLE, _admin);
 
         mailbox = _mailbox;
         igp = _igp;
@@ -320,6 +316,16 @@ contract HyperlaneAdapter is
         bytes32 recipient,
         bytes calldata body
     ) external payable nonReentrant whenNotPaused returns (bytes32 messageId) {
+        return _dispatch(bytes32(0), dstDomain, recipient, body, msg.value);
+    }
+
+    function _dispatch(
+        bytes32 forcedMessageId,
+        uint32 dstDomain,
+        bytes32 recipient,
+        bytes calldata body,
+        uint256 feeValue
+    ) internal returns (bytes32 messageId) {
         DomainConfig storage config = domains[dstDomain];
         if (!config.active) revert DomainNotConfigured(dstDomain);
         if (config.router == bytes32(0)) revert RouterNotSet(dstDomain);
@@ -328,21 +334,52 @@ contract HyperlaneAdapter is
             revert MessageBodyTooLarge(body.length, MAX_MESSAGE_BODY);
 
         // Calculate protocol fee
-        uint256 protocolFee = (msg.value * bridgeFeeBps) / 10000;
-        uint256 mailboxFee = msg.value - protocolFee;
+        uint256 protocolFee = (feeValue * bridgeFeeBps) / 10000;
 
-        // Generate message ID
-        messageId = keccak256(
-            abi.encodePacked(
-                HYPERLANE_VERSION,
-                localDomain,
-                dstDomain,
-                msg.sender,
-                recipient,
-                nonce++,
-                block.timestamp
-            )
-        );
+        // SECURITY (C2 FIX): Quote IGP gas payment up-front and split feeValue
+        // into (protocolFee, mailboxFee, igpFee). Previously, the IGP call was
+        // made with zero value — message would dispatch but never be relayed,
+        // silently bricking the cross-chain send. Now we:
+        //   - query quoteGasPayment(dstDomain, gasOverhead) from the IGP,
+        //   - revert InsufficientFee if feeValue cannot cover all three slices,
+        //   - pass igpFee as msg.value to payForGas so relaying is actually paid,
+        //   - revert IGPPaymentRevertedError on failure (not silent emit).
+        uint256 igpFee;
+        if (igp != address(0) && config.gasOverhead > 0) {
+            (bool qok, bytes memory qdata) = igp.staticcall(
+                abi.encodeWithSignature(
+                    "quoteGasPayment(uint32,uint256)",
+                    dstDomain,
+                    config.gasOverhead
+                )
+            );
+            if (!qok || qdata.length < 32)
+                revert IGPQuoteUnavailable(dstDomain);
+            igpFee = abi.decode(qdata, (uint256));
+        }
+
+        if (feeValue < protocolFee + igpFee) {
+            revert InsufficientFee(feeValue, protocolFee + igpFee);
+        }
+        uint256 mailboxFee = feeValue - protocolFee - igpFee;
+
+        if (forcedMessageId != bytes32(0)) {
+            messageId = forcedMessageId;
+        } else {
+            // Keep the native Hyperlane dispatch path deterministic for callers
+            // that use `dispatch()` directly instead of the generic adapter API.
+            messageId = keccak256(
+                abi.encodePacked(
+                    HYPERLANE_VERSION,
+                    localDomain,
+                    dstDomain,
+                    msg.sender,
+                    recipient,
+                    nonce++,
+                    block.timestamp
+                )
+            );
+        }
 
         // Store message
         messages[messageId] = HyperlaneMessage({
@@ -352,7 +389,7 @@ contract HyperlaneAdapter is
             sender: msg.sender,
             recipient: recipient,
             body: body,
-            fee: msg.value,
+            fee: feeValue,
             status: MessageStatus.DISPATCHED,
             dispatchedAt: block.timestamp,
             deliveredAt: 0
@@ -386,8 +423,12 @@ contract HyperlaneAdapter is
 
         // Pay interchain gas if IGP is configured
         if (igp != address(0) && config.gasOverhead > 0) {
-            // M9 FIX: Check IGP payment success and emit on failure
-            (bool igpSuccess, ) = igp.call(
+            // C2 FIX: Forward igpFee as msg.value so payForGas actually funds
+            // the off-chain relayer. Previously the call carried zero value,
+            // which caused the IGP to silently skip relaying. We also revert
+            // on failure (rather than emit-only) so the caller's transaction
+            // atomically rolls back — no half-committed state.
+            (bool igpSuccess, ) = igp.call{value: igpFee}(
                 abi.encodeWithSignature(
                     "payForGas(bytes32,uint32,uint256,address)",
                     messageId,
@@ -398,6 +439,7 @@ contract HyperlaneAdapter is
             );
             if (!igpSuccess) {
                 emit IGPPaymentFailed(messageId, dstDomain);
+                revert IGPPaymentRevertedError(messageId, dstDomain);
             }
         }
 
@@ -408,7 +450,7 @@ contract HyperlaneAdapter is
             dstDomain,
             msg.sender,
             recipient,
-            msg.value
+            feeValue
         );
     }
 
@@ -499,31 +541,43 @@ contract HyperlaneAdapter is
                      IBridgeAdapter COMPATIBILITY
     //////////////////////////////////////////////////////////////*/
 
-    /**
-     * @notice IBridgeAdapter-compatible bridge message
-     * @dev Translates generic chainId-based call to Hyperlane-specific dispatch()
-     */
-    function bridgeMessage(
-        address targetAddress,
+    function _deliver(
+        bytes32 messageId,
+        address target,
         bytes calldata payload,
-        address /*refundAddress*/
-    ) external payable nonReentrant whenNotPaused returns (bytes32 messageId) {
-        // Extract destination chain ID from payload (first 32 bytes encode chainId)
+        uint256 nativeFee
+    ) internal override {
         uint256 destChainId = abi.decode(payload[:32], (uint256));
         uint32 dstDomain = chainIdToDomain[destChainId];
-        if (dstDomain == 0) revert DomainNotConfigured(dstDomain);
+        bytes32 recipient = bytes32(uint256(uint160(target)));
+
+        _dispatch(messageId, dstDomain, recipient, payload[32:], nativeFee);
+    }
+
+    function _estimateFee(
+        address /* target */,
+        bytes calldata payload
+    ) internal view override returns (uint256 nativeFee) {
+        uint256 destChainId = abi.decode(payload[:32], (uint256));
+        uint32 dstDomain = chainIdToDomain[destChainId];
+        bytes calldata body = payload[32:];
 
         DomainConfig storage config = domains[dstDomain];
         if (!config.active) revert DomainNotConfigured(dstDomain);
 
-        bytes32 recipient = bytes32(uint256(uint160(targetAddress)));
+        uint256 baseFee = (body.length * 16 + config.gasOverhead) * 20 gwei;
+        uint256 protocolFee = (baseFee * bridgeFeeBps) / (10000 - bridgeFeeBps);
 
-        // Delegate to the full dispatch() implementation
-        messageId = this.dispatch{value: msg.value}(
-            dstDomain,
-            recipient,
-            payload[32:]
-        );
+        return baseFee + protocolFee;
+    }
+
+    function _verifyMessage(
+        bytes32 messageId
+    ) internal view override returns (bool) {
+        MessageStatus status = messages[messageId].status;
+        return
+            status == MessageStatus.DELIVERED ||
+            status == MessageStatus.PROCESSED;
     }
 
     /**
@@ -538,22 +592,12 @@ contract HyperlaneAdapter is
     }
 
     /**
-     * @notice Check if a message has been delivered/processed
-     */
-    function isMessageVerified(bytes32 messageId) external view returns (bool) {
-        MessageStatus status = messages[messageId].status;
-        return
-            status == MessageStatus.DELIVERED ||
-            status == MessageStatus.PROCESSED;
-    }
-
-    /**
      * @notice IBridgeAdapter-compatible fee estimation
      */
     function estimateFee(
         address /*targetAddress*/,
         bytes calldata /*payload*/
-    ) external pure returns (uint256 nativeFee) {
+    ) external pure override returns (uint256) {
         // Use dispatch() with explicit dstDomain for accurate quotes
         revert("Use dispatch() with explicit dstDomain");
     }
@@ -596,11 +640,7 @@ contract HyperlaneAdapter is
         domains[domain].active = false;
     }
 
-    function pause() external onlyRole(GUARDIAN_ROLE) {
-        _pause();
-    }
-
-    function unpause() external onlyRole(GUARDIAN_ROLE) {
+    function unpause() external override onlyRole(GUARDIAN_ROLE) {
         _unpause();
     }
 

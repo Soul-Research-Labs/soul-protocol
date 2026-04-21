@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import "../../contracts/crosschain/HyperlaneAdapter.sol";
+import {BridgeAdapterBase} from "../../contracts/crosschain/base/BridgeAdapterBase.sol";
 
 contract HyperlaneAdapterTest is Test {
     HyperlaneAdapter adapter;
@@ -43,12 +44,12 @@ contract HyperlaneAdapterTest is Test {
     }
 
     function test_Constructor_RevertZeroAdmin() public {
-        vm.expectRevert(HyperlaneAdapter.ZeroAddress.selector);
+        vm.expectRevert(BridgeAdapterBase.ZeroAddress.selector);
         new HyperlaneAdapter(address(0), mailbox, igp, localDomain);
     }
 
     function test_Constructor_RevertZeroMailbox() public {
-        vm.expectRevert(HyperlaneAdapter.ZeroAddress.selector);
+        vm.expectRevert(BridgeAdapterBase.ZeroAddress.selector);
         new HyperlaneAdapter(admin, address(0), igp, localDomain);
     }
 
@@ -271,7 +272,7 @@ contract HyperlaneAdapterTest is Test {
 
     function test_SetTreasury_RevertZeroAddress() public {
         vm.prank(operator);
-        vm.expectRevert(HyperlaneAdapter.ZeroAddress.selector);
+        vm.expectRevert(BridgeAdapterBase.ZeroAddress.selector);
         adapter.setTreasury(address(0));
     }
 

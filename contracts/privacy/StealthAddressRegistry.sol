@@ -145,6 +145,15 @@ contract StealthAddressRegistry is
     /// @notice View tag index for efficient scanning: viewTag => announcements
     mapping(bytes1 => address[]) public viewTagIndex;
 
+    /// @notice Wider 16-bit view tag index.
+    /// @dev H7 FIX: The legacy 8-bit view tag yields only 256 buckets and,
+    ///      combined with MAX_ANNOUNCEMENTS_PER_TAG = 10,000, narrows the
+    ///      anonymity set to ~10k candidates per scan — defeating the
+    ///      privacy goal. This 16-bit tag (65,536 buckets) lowers the
+    ///      false-positive rate from ~0.39% to ~0.0015%. Writers populate
+    ///      both indexes; new scanners SHOULD prefer the 16-bit index.
+    mapping(bytes2 => address[]) public viewTagIndex16;
+
     /// @notice Total announcements
     uint256 public totalAnnouncements;
 
@@ -314,6 +323,28 @@ contract StealthAddressRegistry is
         viewTag = bytes1(sharedSecretHash);
 
         return (stealthAddress, viewTag);
+    }
+
+    /// @notice Derive stealth address with a wider 16-bit view tag.
+    /// @dev H7 FIX: Returns a `bytes2` tag (65,536 buckets) in addition to
+    ///      the legacy `bytes1`. Scanners SHOULD use this over
+    ///      {deriveStealthAddress} to reduce the per-scan false-positive
+    ///      rate from ~0.39% to ~0.0015%.
+    function deriveStealthAddress16(
+        address recipient,
+        bytes calldata /* ephemeralPubKey */,
+        bytes32 sharedSecretHash
+    ) external view returns (address stealthAddress, bytes2 viewTag16) {
+        StealthMetaAddress storage meta = metaAddresses[recipient];
+        if (meta.status != KeyStatus.ACTIVE) revert MetaAddressNotFound();
+
+        bytes32 stealthKeyHash = keccak256(
+            abi.encode(STEALTH_DOMAIN, meta.spendingPubKey, sharedSecretHash)
+        );
+        stealthAddress = address(uint160(uint256(stealthKeyHash)));
+
+        // First two bytes of shared secret = 16-bit view tag.
+        viewTag16 = bytes2(sharedSecretHash);
     }
 
     /**

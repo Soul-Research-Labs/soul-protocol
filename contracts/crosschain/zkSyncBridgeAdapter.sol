@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
-import {IBridgeAdapter} from "./IBridgeAdapter.sol";
+import {BridgeAdapterBase} from "./base/BridgeAdapterBase.sol";
 
 /**
  * @title zkSyncBridgeAdapter
@@ -32,20 +29,7 @@ import {IBridgeAdapter} from "./IBridgeAdapter.sol";
  * │  - L2→L1 messages proven via L2 log inclusion proofs                   │
  * └─────────────────────────────────────────────────────────────────────────┘
  */
-contract zkSyncBridgeAdapter is
-    IBridgeAdapter,
-    AccessControl,
-    ReentrancyGuard,
-    Pausable
-{
-    /*//////////////////////////////////////////////////////////////
-                                 ROLES
-    //////////////////////////////////////////////////////////////*/
-
-    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
-    bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE");
-    bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
-
+contract zkSyncBridgeAdapter is BridgeAdapterBase {
     /*//////////////////////////////////////////////////////////////
                               CONSTANTS
     //////////////////////////////////////////////////////////////*/
@@ -237,9 +221,6 @@ contract zkSyncBridgeAdapter is
     error WithdrawalNotProven();
     error InvalidProof();
     error ProofAlreadyProcessed();
-    error InsufficientFee();
-    error ZeroAddress();
-    error TransferFailed();
     error FeeTooHigh();
     error L2TransactionFailed();
 
@@ -247,13 +228,7 @@ contract zkSyncBridgeAdapter is
                             CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    constructor(address _admin) {
-        if (_admin == address(0)) revert ZeroAddress();
-
-        _grantRole(DEFAULT_ADMIN_ROLE, _admin);
-        _grantRole(OPERATOR_ROLE, _admin);
-        _grantRole(GUARDIAN_ROLE, _admin);
-
+    constructor(address _admin) BridgeAdapterBase(_admin, _admin) {
         bridgeFeeBps = 10; // 0.10%
     }
 
@@ -343,7 +318,7 @@ contract zkSyncBridgeAdapter is
         // Calculate fee
         uint256 fee = (amount * bridgeFeeBps) / 10000;
         uint256 l2Value = amount - fee;
-        if (msg.value < amount) revert InsufficientFee();
+        if (msg.value < amount) revert InsufficientFee(msg.value, amount);
 
         depositId = keccak256(
             abi.encodePacked(
@@ -531,11 +506,7 @@ contract zkSyncBridgeAdapter is
         treasury = _treasury;
     }
 
-    function pause() external onlyRole(GUARDIAN_ROLE) {
-        _pause();
-    }
-
-    function unpause() external onlyRole(GUARDIAN_ROLE) {
+    function unpause() external override onlyRole(GUARDIAN_ROLE) {
         _unpause();
     }
 
@@ -629,56 +600,90 @@ contract zkSyncBridgeAdapter is
                      IBridgeAdapter COMPATIBILITY
     //////////////////////////////////////////////////////////////*/
 
-    /// @inheritdoc IBridgeAdapter
+    /// @notice IBridgeAdapter-compatible generic bridge entrypoint.
     function bridgeMessage(
         address targetAddress,
         bytes calldata payload,
         address /*refundAddress*/
-    ) external payable nonReentrant whenNotPaused returns (bytes32 messageId) {
+    )
+        external
+        payable
+        override
+        nonReentrant
+        whenNotPaused
+        returns (bytes32 messageId)
+    {
         // Extract destination chain ID from payload (first 32 bytes)
         uint256 destChainId = abi.decode(payload[:32], (uint256));
         BridgeConfig storage config = bridgeConfigs[destChainId];
         if (!config.active) revert BridgeNotConfigured();
         if (targetAddress == address(0)) revert ZeroAddress();
 
-        // Send L2 transaction via Diamond Proxy
+        uint256 currentNonce = transferNonce++;
+        messageId = _deriveMessageId(
+            SELF_CHAIN_ID,
+            currentNonce,
+            msg.sender,
+            targetAddress,
+            payload
+        );
+
+        _deliver(messageId, targetAddress, payload, msg.value);
+    }
+
+    /// @notice Generic IBridgeAdapter fee quoting is not supported for zkSync.
+    function estimateFee(
+        address /*targetAddress*/,
+        bytes calldata /*payload*/
+    ) external pure override returns (uint256) {
+        // zkSync fees depend on L2 gas price and ergsLimit
+        revert("Use zkSync-specific fee estimation");
+    }
+
+    /// @notice Return whether a zkSync withdrawal associated with `messageId` finalized.
+    function isMessageVerified(
+        bytes32 messageId
+    ) external view override returns (bool) {
+        ZKWithdrawal storage w = withdrawals[messageId];
+        return w.status == TransferStatus.FINALIZED;
+    }
+
+    function _deliver(
+        bytes32 messageId,
+        address targetAddress,
+        bytes calldata payload,
+        uint256 nativeFee
+    ) internal override {
+        uint256 destChainId = abi.decode(payload[:32], (uint256));
+        BridgeConfig storage config = bridgeConfigs[destChainId];
+        if (!config.active) revert BridgeNotConfigured();
+
         bytes32 l2TxHash = _requestL2Transaction(
             config.diamondProxy,
             targetAddress,
-            msg.value,
+            nativeFee,
             DEFAULT_L2_GAS_LIMIT
-        );
-
-        messageId = keccak256(
-            abi.encodePacked(
-                msg.sender,
-                targetAddress,
-                destChainId,
-                transferNonce++,
-                block.timestamp
-            )
         );
 
         emit DepositInitiated(
             messageId,
             msg.sender,
             targetAddress,
-            msg.value,
+            nativeFee,
             l2TxHash
         );
     }
 
-    /// @inheritdoc IBridgeAdapter
-    function estimateFee(
+    function _estimateFee(
         address /*targetAddress*/,
         bytes calldata /*payload*/
-    ) external pure returns (uint256 nativeFee) {
-        // zkSync fees depend on L2 gas price and ergsLimit
-        revert("Use zkSync-specific fee estimation");
+    ) internal pure override returns (uint256 nativeFee) {
+        return 0;
     }
 
-    /// @inheritdoc IBridgeAdapter
-    function isMessageVerified(bytes32 messageId) external view returns (bool) {
+    function _verifyMessage(
+        bytes32 messageId
+    ) internal view override returns (bool) {
         ZKWithdrawal storage w = withdrawals[messageId];
         return w.status == TransferStatus.FINALIZED;
     }

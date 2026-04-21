@@ -486,4 +486,62 @@ export class ZaseonSDK {
       }
     });
   }
+
+  /**
+   * High-level one-shot cross-chain private transfer.
+   *
+   * Thin façade over {@link sendPrivateState} that supplies sensible
+   * defaults for amount-denominated transfers. For advanced routing
+   * (bridge selection, intent settlement, tiered denominations), use
+   * the dedicated clients (`DynamicRoutingClient`, `PrivacyRouterClient`,
+   * `IntentCompletionClient`) directly.
+   *
+   * @param params.amount            Amount in wei (BigInt).
+   * @param params.to                Recipient address on destination chain.
+   * @param params.recipientPubKey   Recipient ECIES public key (for encryption).
+   * @param params.sourceChain       Source chain id.
+   * @param params.dstChainId        Destination chain id.
+   * @param params.tier              Privacy tier — "standard" | "enhanced" | "maximum".
+   * @param params.circuitId         ZK circuit identifier (default: "cross_chain_transfer").
+   * @param params.stateRoot         Source-chain state root to prove against.
+   * @param params.inputs            Optional public inputs for the circuit.
+   * @param params.witnesses         Optional witness values for the circuit.
+   */
+  async sendCrossChain(params: {
+    amount: bigint;
+    to: string;
+    recipientPubKey: string;
+    sourceChain: string;
+    dstChainId: string;
+    tier?: "standard" | "enhanced" | "maximum";
+    circuitId?: string;
+    stateRoot: string;
+    inputs?: CircuitInputs;
+    witnesses?: CircuitWitnesses;
+  }): Promise<Receipt> {
+    const tier = params.tier ?? "enhanced";
+    // Higher tiers add more jitter and route through the mixnet longer.
+    const maxDelay =
+      tier === "maximum" ? 120_000 : tier === "enhanced" ? 45_000 : 15_000;
+
+    return this.sendPrivateState({
+      payload: {
+        kind: "crossChainTransfer",
+        amount: params.amount.toString(),
+        to: params.to,
+        tier,
+      },
+      recipientPublicKey: params.recipientPubKey,
+      circuitId: params.circuitId ?? "cross_chain_transfer",
+      disclosurePolicy: {
+        complianceLevel: tier === "maximum" ? "none" : "basic",
+      },
+      sourceChain: params.sourceChain,
+      destChain: params.dstChainId,
+      stateRoot: params.stateRoot,
+      inputs: params.inputs,
+      witnesses: params.witnesses,
+      maxDelay,
+    });
+  }
 }

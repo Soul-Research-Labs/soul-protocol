@@ -297,7 +297,7 @@ contract DeployPrivacyComponents is Script {
         console.log("");
         console.log("POST-DEPLOY REQUIRED:");
         console.log(
-            "  1. Wire these into ZaseonProtocolHub via wireAll() or individual setters"
+            "  1. Wire these into ZaseonProtocolHub via wireAllKeyed() or individual setters"
         );
         console.log("  2. Register bridge adapters on CrossChainPrivacyHub");
         console.log("  3. Set derivation verifier on StealthAddressRegistry");

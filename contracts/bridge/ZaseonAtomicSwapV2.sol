@@ -22,6 +22,7 @@ import {SecurityModule} from "../security/SecurityModule.sol";
  * @title ZaseonAtomicSwapV2
  * @author ZASEON Team
  * @notice Zaseon Atomic Swap V2 contract
+ * @custom:deprecated Use ZaseonAtomicSwapV2Upgradeable (contracts/upgradeable/ZaseonAtomicSwapV2Upgradeable.sol) for new deployments. This non-upgradeable variant will be removed in a future release.
  */
 contract ZaseonAtomicSwapV2 is
     Ownable,

@@ -110,6 +110,9 @@ contract CrossL2Atomicity is ReentrancyGuard, AccessControl, Pausable {
         uint256 value
     );
 
+    /// @notice Emitted when the Arbitrum inbox address changes.
+    event ArbitrumInboxUpdated(address oldInbox, address newInbox);
+
     /*//////////////////////////////////////////////////////////////
                                  ENUMS
     //////////////////////////////////////////////////////////////*/
@@ -297,7 +300,15 @@ contract CrossL2Atomicity is ReentrancyGuard, AccessControl, Pausable {
         if (_bundles[bundleId].createdAt != 0) revert BundleAlreadyExists();
 
         // Initialize and populate bundle — extracted to reduce stack depth
-        _initializeBundle(bundleId, chainIds, chainTypes, targets, datas, values, timeout);
+        _initializeBundle(
+            bundleId,
+            chainIds,
+            chainTypes,
+            targets,
+            datas,
+            values,
+            timeout
+        );
 
         bundleIds.push(bundleId);
 
@@ -337,7 +348,14 @@ contract CrossL2Atomicity is ReentrancyGuard, AccessControl, Pausable {
         }
 
         // Phase 2: Add operations (with duplicate chainId check)
-        _populateBundleOperations(bundleId, chainIds, chainTypes, targets, datas, values);
+        _populateBundleOperations(
+            bundleId,
+            chainIds,
+            chainTypes,
+            targets,
+            datas,
+            values
+        );
     }
 
     /// @dev Populates operations for a bundle. Extracted to reduce stack depth in _initializeBundle.
@@ -720,7 +738,10 @@ contract CrossL2Atomicity is ReentrancyGuard, AccessControl, Pausable {
      * @param inbox Inbox address
      */
     function setArbitrumInbox(address inbox) external onlyRole(OPERATOR_ROLE) {
+        require(inbox != address(0), "CrossL2Atomicity: zero inbox");
+        address old = arbitrumInbox;
         arbitrumInbox = inbox;
+        emit ArbitrumInboxUpdated(old, inbox);
     }
 
     /**

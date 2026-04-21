@@ -1,5 +1,7 @@
 [workspace]
 members = [
+    # Shared library (consolidates logic duplicated across circuits)
+    "lib/primitives",
     # Core circuits — mapped to deployed Solidity contracts
     "nullifier",                # NullifierRegistryV3 — CDNA nullifier derivation
     "state_commitment",         # ConfidentialStateContainerV3 — state preimage proof

@@ -38,6 +38,7 @@ import {RouteOptimizer} from "../libraries/RouteOptimizer.sol";
  *      - Maximum single relay limit
  *      - Stale route detection (routes expire after 5 minutes)
  *      - Zero-address validation
+ * @custom:deprecated Use CapacityAwareRouterUpgradeable (contracts/upgradeable/CapacityAwareRouterUpgradeable.sol) for new deployments. This non-upgradeable variant will be removed in a future release.
  */
 contract CapacityAwareRouter is
     AccessControl,

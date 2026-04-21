@@ -39,7 +39,7 @@ contract MessageBatcher is AccessControl, ReentrancyGuard {
     /// @param _relay Address of the ZaseonCrossChainRelay contract
     /// @param _admin Address to receive the default admin role
     constructor(address _relay, address _admin) {
-        relay = ZaseonCrossChainRelay(_relay);
+        relay = ZaseonCrossChainRelay(payable(_relay));
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
     }
 

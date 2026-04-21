@@ -32,6 +32,7 @@ import {IIntentCompletionLayer} from "../interfaces/IIntentCompletionLayer.sol";
  * - Zero-address validation on all critical params
  *
  * @custom:security-contact security@zaseonprotocol.io
+ * @custom:deprecated Use IntentCompletionLayerUpgradeable (contracts/upgradeable/IntentCompletionLayerUpgradeable.sol) for new deployments. This non-upgradeable variant will be removed in a future release.
  */
 contract IntentCompletionLayer is
     AccessControl,

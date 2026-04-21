@@ -133,6 +133,13 @@ contract ZaseonUpgradeTimelock is TimelockController, IZaseonUpgradeTimelock {
     error NoPendingMinSignaturesChange();
     error MinSignaturesChangeNotReady(uint256 readyAt);
 
+    /// @dev H-16: Reject TimelockController deployment with empty proposers/executors
+    ///      or zero-address admin/proposer — these configurations permanently
+    ///      brick the timelock (no one can schedule/execute anything).
+    error NoProposers();
+    error NoExecutors();
+    error ZeroAddress();
+
     /*//////////////////////////////////////////////////////////////
                             CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
@@ -149,11 +156,20 @@ contract ZaseonUpgradeTimelock is TimelockController, IZaseonUpgradeTimelock {
         address[] memory executors,
         address admin
     ) TimelockController(minDelay, proposers, executors, admin) {
+        // SECURITY (H-16): A TimelockController deployed with empty
+        // proposer/executor arrays is permanently bricked — no role can
+        // schedule or execute an upgrade afterwards. Fail loudly at
+        // construction rather than silently shipping a dead timelock.
+        if (proposers.length == 0) revert NoProposers();
+        if (executors.length == 0) revert NoExecutors();
+        if (admin == address(0)) revert ZeroAddress();
+
         _grantRole(GUARDIAN_ROLE, admin);
         _grantRole(UPGRADE_ROLE, admin);
 
         // Grant proposer role to all proposers
         for (uint256 i = 0; i < proposers.length; ) {
+            if (proposers[i] == address(0)) revert ZeroAddress();
             _grantRole(UPGRADE_ROLE, proposers[i]);
             unchecked {
                 ++i;

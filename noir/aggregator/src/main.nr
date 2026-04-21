@@ -41,6 +41,29 @@ fn commit_fields(fields: [Field; 7]) -> Field {
     bn254::hash_2([h1, h2])
 }
 
+/// SECURITY (H-21): Constrain an unused proof slot to the canonical all-zero
+/// witness. Without this, a malicious prover can stuff arbitrary field data
+/// into inactive `vk_N`/`proof_N`/`pub_inputs_N`/`key_hash_N` inputs (those
+/// inputs are still part of the aggregator witness even when not verified),
+/// degrading batch_root determinism and potentially enabling proof malleability.
+fn assert_slot_zero(
+    vk: [Field; HONK_VK_SIZE],
+    proof: [Field; HONK_PROOF_SIZE],
+    pub_inputs: [Field; 7],
+    key_hash: Field
+) {
+    for i in 0..HONK_VK_SIZE {
+        assert(vk[i] == 0);
+    }
+    for i in 0..HONK_PROOF_SIZE {
+        assert(proof[i] == 0);
+    }
+    for i in 0..7 {
+        assert(pub_inputs[i] == 0);
+    }
+    assert(key_hash == 0);
+}
+
 fn main(
     // -- Batch metadata (public) --
     batch_size: pub Field,           // Number of proofs in this batch (1..4)
@@ -80,19 +103,32 @@ fn main(
     // -- Always verify proof 0 (batch_size >= 1) --
     verify_proof_with_type(vk_0, proof_0, pub_inputs_0, key_hash_0, PROOF_TYPE_HONK);
 
+    // SECURITY (H-21): Conditional verification left unused proof slots
+    // unconstrained — a malicious prover could stuff arbitrary data into
+    // the inactive `vk_N`/`proof_N`/`pub_inputs_N`/`key_hash_N` fields and
+    // still produce a valid aggregator proof. Constrain unused slots to
+    // zero (or an equality-with-slot-0 canonicalization) so the witness
+    // layout is fully determined by `batch_size`.
+
     // -- Conditionally verify proof 1 --
     if batch_size as u32 >= 2 {
         verify_proof_with_type(vk_1, proof_1, pub_inputs_1, key_hash_1, PROOF_TYPE_HONK);
+    } else {
+        assert_slot_zero(vk_1, proof_1, pub_inputs_1, key_hash_1);
     }
 
     // -- Conditionally verify proof 2 --
     if batch_size as u32 >= 3 {
         verify_proof_with_type(vk_2, proof_2, pub_inputs_2, key_hash_2, PROOF_TYPE_HONK);
+    } else {
+        assert_slot_zero(vk_2, proof_2, pub_inputs_2, key_hash_2);
     }
 
     // -- Conditionally verify proof 3 --
     if batch_size as u32 >= 4 {
         verify_proof_with_type(vk_3, proof_3, pub_inputs_3, key_hash_3, PROOF_TYPE_HONK);
+    } else {
+        assert_slot_zero(vk_3, proof_3, pub_inputs_3, key_hash_3);
     }
 
     // Return the aggregation object for chaining

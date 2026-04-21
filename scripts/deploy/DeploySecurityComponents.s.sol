@@ -7,6 +7,7 @@ import {EmergencyRecovery} from "../../contracts/security/EmergencyRecovery.sol"
 import {ProtocolEmergencyCoordinator} from "../../contracts/security/ProtocolEmergencyCoordinator.sol";
 import {CrossChainEmergencyRelay} from "../../contracts/crosschain/CrossChainEmergencyRelay.sol";
 import {ZaseonProtocolHub} from "../../contracts/core/ZaseonProtocolHub.sol";
+import {HubWiringKeyedLib} from "../../contracts/internal/HubWiringKeyedLib.sol";
 import {IZaseonProtocolHub} from "../../contracts/interfaces/IZaseonProtocolHub.sol";
 
 /**
@@ -90,10 +91,10 @@ contract DeploySecurityComponents is Script {
         );
         console.log("CrossChainEmergencyRelay:", address(emergencyRelay));
 
-        // 5. Wire watchtower + multiProver into Hub (via wireAll for the two missing fields)
+        // 5. Wire watchtower + multiProver into Hub via wireAllKeyed
         if (relayWatchtower != address(0) || multiProver != address(0)) {
-            hub.wireAll(
-                IZaseonProtocolHub.WireAllParams({
+            IZaseonProtocolHub.WireAllParams
+                memory wireParams = IZaseonProtocolHub.WireAllParams({
                     _verifierRegistry: address(0),
                     _universalVerifier: address(0),
                     _crossChainMessageRelay: address(0),
@@ -117,8 +118,10 @@ contract DeploySecurityComponents is Script {
                     _instantCompletionGuarantee: address(0),
                     _dynamicRoutingOrchestrator: address(0),
                     _crossChainLiquidityVault: address(0)
-                })
-            );
+                });
+            (bytes32[] memory keys, address[] memory addrs) = HubWiringKeyedLib
+                .fromWireAllParams(wireParams);
+            hub.wireAllKeyed(keys, addrs);
             console.log("Hub wired: multiProver + relayWatchtower");
         }
 

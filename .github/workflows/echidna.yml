@@ -1,0 +1,84 @@
+name: Echidna Property Fuzzing
+
+permissions:
+  contents: read
+
+on:
+  schedule:
+    # Weekly on Sundays at 08:00 UTC
+    - cron: "0 8 * * 0"
+  workflow_dispatch:
+    inputs:
+      test_limit:
+        description: "Echidna --test-limit per harness"
+        required: false
+        default: "50000"
+  pull_request:
+    types: [labeled]
+    # Trigger only when the PR is labeled with 'run-echidna'
+    # (prevents burning minutes on every PR)
+
+concurrency:
+  group: echidna-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  should-run:
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.decide.outputs.run }}
+    steps:
+      - id: decide
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            if [ "${{ github.event.label.name }}" = "run-echidna" ]; then
+              echo "run=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "run=false" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  echidna:
+    needs: should-run
+    if: needs.should-run.outputs.run == 'true'
+    name: Echidna ${{ matrix.harness }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        harness:
+          - EchidnaHarness
+          - EchidnaCrossChainHarness
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Install Echidna
+        uses: crytic/echidna-action@v2
+        with:
+          solc-version: 0.8.24
+          echidna-version: v2.2.3
+          files: test/fuzz/${{ matrix.harness }}.sol
+          contract: ${{ matrix.harness }}
+          test-mode: assertion
+          test-limit: ${{ github.event.inputs.test_limit || '50000' }}
+          seq-len: 100
+          crytic-args: "--hardhat-ignore-compile"

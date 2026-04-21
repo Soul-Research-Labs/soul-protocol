@@ -166,6 +166,14 @@ contract BatchAccumulator is
 
         proofVerifier = _proofVerifier;
         crossChainHub = _crossChainHub;
+
+        // SECURITY (H9 FIX): Dummy-padding must be ON by default. When a batch
+        // releases because of `maxWaitTime` with fewer than `minBatchSize`
+        // real commitments, padding with dummies preserves the configured
+        // anonymity set; otherwise the on-chain batch size directly reveals
+        // how many users participated in that window.
+        dummyPaddingEnabled = true;
+        emit AdaptiveBatchingConfigured(0, true);
     }
 
     // =========================================================================
@@ -633,11 +641,16 @@ contract BatchAccumulator is
             block.timestamp >= batch.createdAt + minDelayFloor;
 
         if ((sizeReached && delayFloorMet) || timeElapsed) {
-            // If batch is under-sized and dummy padding is enabled, inject dummies
-            if (
-                dummyPaddingEnabled &&
-                batch.commitments.length < config.minBatchSize
-            ) {
+            // If batch is under-sized, pad to minBatchSize regardless of the
+            // `dummyPaddingEnabled` flag.
+            //
+            // SECURITY (H9 FIX): A time-expired under-sized batch that skips
+            // padding leaks the actual participant count to any observer of
+            // the emitted commitment array length. Pad unconditionally to
+            // restore the configured anonymity-set floor. The flag now only
+            // gates the emission of the informational `DummyCommitmentsInjected`
+            // event but no longer disables the privacy guarantee.
+            if (batch.commitments.length < config.minBatchSize) {
                 _injectDummyCommitments(batchId, batch, config.minBatchSize);
             }
 

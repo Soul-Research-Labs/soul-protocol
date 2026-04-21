@@ -10,6 +10,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {IUniversalShieldedPool} from "../interfaces/IUniversalShieldedPool.sol";
 import {UniversalChainRegistry} from "../libraries/UniversalChainRegistry.sol";
 import {PoseidonT3} from "../libraries/PoseidonT3.sol";
+import {DenominationLadder} from "../libraries/DenominationLadder.sol";
 
 /**
  * @title UniversalShieldedPool
@@ -48,6 +49,7 @@ import {PoseidonT3} from "../libraries/PoseidonT3.sol";
  * - Cross-chain: commitment trees are synced; nullifier sets are unified via CDNA
  *
  * @custom:security-contact security@zaseon.network
+ * @custom:deprecated Use UniversalShieldedPoolUpgradeable (contracts/upgradeable/UniversalShieldedPoolUpgradeable.sol) for new deployments. This non-upgradeable variant will be removed in a future release.
  */
 contract UniversalShieldedPool is
     AccessControl,
@@ -155,6 +157,14 @@ contract UniversalShieldedPool is
     /// @dev MUST be false in production. Cannot be re-enabled once disabled.
     bool public testMode;
 
+    /// @notice When true, all deposits MUST match a {DenominationLadder} tier.
+    /// @dev Defeats amount-based de-anonymization by collapsing the deposit amount distribution
+    ///      to a small discrete set {0.01, 0.1, 1, 10, 100}. Opt-in so legacy tests keep passing;
+    ///      production mainnet deployments MUST enable this via {setDenominationTiersEnabled}.
+    bool public denominationTiersEnabled;
+
+    event DenominationTiersToggled(bool enabled);
+
     /// @notice ZK verifier for cross-chain batch proofs
     address public batchVerifier;
 
@@ -256,10 +266,6 @@ contract UniversalShieldedPool is
 
     /// @notice Deposit native ETH into the shielded pool
     /// @param commitment The Pedersen commitment: H(assetId || amount || secret || nullifierPreimage)
-    /**
-     * @notice Deposits e t h
-     * @param commitment The cryptographic commitment
-     */
     function depositETH(
         bytes32 commitment
     ) external payable nonReentrant whenNotPaused {
@@ -271,6 +277,9 @@ contract UniversalShieldedPool is
         }
         if (msg.value < MIN_DEPOSIT) revert DepositTooSmall();
         if (msg.value > MAX_DEPOSIT) revert DepositTooLarge();
+        if (denominationTiersEnabled) {
+            DenominationLadder.requireNativeTier(msg.value);
+        }
         _checkSanctions(msg.sender);
 
         _insertCommitment(commitment, NATIVE_ASSET, msg.value);
@@ -280,12 +289,6 @@ contract UniversalShieldedPool is
     /// @param assetId The universal asset identifier
     /// @param amount The deposit amount
     /// @param commitment The Pedersen commitment
-    /**
-     * @notice Deposits e r c20
-     * @param assetId The assetId identifier
-     * @param amount The amount to process
-     * @param commitment The cryptographic commitment
-     */
     function depositERC20(
         bytes32 assetId,
         uint256 amount,
@@ -311,6 +314,9 @@ contract UniversalShieldedPool is
         }
         if (amount < scaledMin) revert DepositTooSmall();
         if (amount > scaledMax) revert DepositTooLarge();
+        if (denominationTiersEnabled) {
+            DenominationLadder.requireErc20Tier(amount, tokenDecimals);
+        }
 
         AssetConfig storage asset = assets[assetId];
         if (!asset.active) revert AssetNotActive(assetId);
@@ -335,10 +341,6 @@ contract UniversalShieldedPool is
 
     /// @notice Withdraw from the shielded pool using a ZK proof
     /// @param wp The withdrawal proof data
-    /**
-     * @notice Withdraws the operation
-     * @param wp The wp
-     */
     function withdraw(
         WithdrawalProof calldata wp
     ) external nonReentrant whenNotPaused {
@@ -411,10 +413,6 @@ contract UniversalShieldedPool is
 
     /// @notice Insert commitments from a remote chain (bridged by relayer)
     /// @param batch The cross-chain commitment batch
-    /**
-     * @notice Insert cross chain commitments
-     * @param batch The batch
-     */
     function insertCrossChainCommitments(
         CrossChainCommitmentBatch calldata batch
     ) external nonReentrant whenNotPaused onlyRole(RELAYER_ROLE) {
@@ -475,11 +473,8 @@ contract UniversalShieldedPool is
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Register a new ERC20 asset
-    /**
-     * @notice Registers asset
-     * @param assetId The assetId identifier
-     * @param tokenAddress The tokenAddress address
-     */
+    /// @param assetId The universal asset identifier
+    /// @param tokenAddress The ERC20 token address
     function registerAsset(
         bytes32 assetId,
         address tokenAddress
@@ -509,10 +504,7 @@ contract UniversalShieldedPool is
     }
 
     /// @notice Set the withdrawal proof verifier
-    /**
-     * @notice Sets the withdrawal verifier
-     * @param _verifier The _verifier
-     */
+    /// @param _verifier Address of the IProofVerifier adapter for withdrawal proofs
     function setWithdrawalVerifier(
         address _verifier
     ) external onlyRole(OPERATOR_ROLE) {
@@ -523,20 +515,24 @@ contract UniversalShieldedPool is
 
     /// @notice Permanently disable test mode (one-way, irreversible)
     /// @dev Once disabled, withdrawals require a real verifier contract
-    /**
-     * @notice Disables test mode
-     */
     function disableTestMode() external onlyRole(DEFAULT_ADMIN_ROLE) {
         testMode = false;
         emit TestModeDisabled(msg.sender);
     }
 
+    /// @notice Enable or disable denomination-tier enforcement for all deposits.
+    /// @dev When true, {depositETH} / {depositERC20} only accept amounts on the {DenominationLadder}.
+    ///      Recommended for mainnet to defeat amount-based de-anonymization.
+    function setDenominationTiersEnabled(
+        bool enabled
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        denominationTiersEnabled = enabled;
+        emit DenominationTiersToggled(enabled);
+    }
+
     /// @notice Assert production readiness on-chain (reverts if not ready)
     /// @dev Call after deployment to confirm verifier is set and testMode is off.
     ///      Emits ProductionReadinessConfirmed for off-chain monitoring.
-    /**
-     * @notice Confirm production ready
-     */
     function confirmProductionReady() external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (testMode) revert TestModeStillEnabled();
         if (withdrawalVerifier == address(0)) revert NoWithdrawalVerifierSet();
@@ -544,10 +540,7 @@ contract UniversalShieldedPool is
     }
 
     /// @notice Set the cross-chain batch verifier
-    /**
-     * @notice Sets the batch verifier
-     * @param _verifier The _verifier
-     */
+    /// @param _verifier Address of the batch-proof verifier contract
     function setBatchVerifier(
         address _verifier
     ) external onlyRole(OPERATOR_ROLE) {
@@ -557,10 +550,7 @@ contract UniversalShieldedPool is
     }
 
     /// @notice Set the sanctions screening oracle
-    /**
-     * @notice Sets the sanctions oracle
-     * @param _oracle The _oracle
-     */
+    /// @param _oracle Address of the oracle implementing isSanctioned(address)
     function setSanctionsOracle(
         address _oracle
     ) external onlyRole(COMPLIANCE_ROLE) {
@@ -570,27 +560,18 @@ contract UniversalShieldedPool is
     }
 
     /// @notice Deactivate an asset (no new deposits)
-    /**
-     * @notice Deactivate asset
-     * @param assetId The assetId identifier
-     */
+    /// @param assetId The universal asset identifier to deactivate
     function deactivateAsset(bytes32 assetId) external onlyRole(OPERATOR_ROLE) {
         assets[assetId].active = false;
         emit AssetDeactivated(assetId);
     }
 
     /// @notice Emergency pause
-    /**
-     * @notice Pauses the operation
-     */
     function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
 
     /// @notice Unpause
-    /**
-     * @notice Unpauses the operation
-     */
     function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
@@ -600,43 +581,31 @@ contract UniversalShieldedPool is
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Get the current Merkle root
-    /**
-     * @notice Returns the last root
-     * @return The result value
-     */
+    /// @return The most recently inserted root
     function getLastRoot() external view returns (bytes32) {
         return currentRoot;
     }
 
     /// @notice Check if a Merkle root is in the history
-    /**
-     * @notice Checks if known root
-     * @param root The Merkle root
-     * @return The result value
-     */
+    /// @param root The Merkle root to check
+    /// @return True if the root is recognized (present in rolling history)
     function isKnownRoot(bytes32 root) external view returns (bool) {
         return _isKnownRoot(root);
     }
 
     /// @notice Check if a nullifier has been spent
-    /**
-     * @notice Checks if spent
-     * @param nullifier The nullifier hash
-     * @return The result value
-     */
+    /// @param nullifier The nullifier hash
+    /// @return True if the nullifier has been recorded as spent
     function isSpent(bytes32 nullifier) external view returns (bool) {
         return nullifiers[nullifier];
     }
 
     /// @notice Get pool statistics
-    /**
-     * @notice Returns the pool stats
-     * @return deposits The deposits
-     * @return withdrawalsCount The withdrawals count
-     * @return crossChainDeposits The cross chain deposits
-     * @return treeSize The tree size
-     * @return root The root
-     */
+    /// @return deposits Total local deposits ever processed
+    /// @return withdrawalsCount Total withdrawals ever processed
+    /// @return crossChainDeposits Total cross-chain commitment insertions
+    /// @return treeSize Current number of leaves in the commitment tree
+    /// @return root Current Merkle root
     function getPoolStats()
         external
         view
@@ -658,10 +627,7 @@ contract UniversalShieldedPool is
     }
 
     /// @notice Get all registered asset IDs
-    /**
-     * @notice Returns the registered assets
-     * @return The result value
-     */
+    /// @return Array of every asset ID that has been registered (including deactivated ones)
     function getRegisteredAssets() external view returns (bytes32[] memory) {
         return assetIds;
     }
@@ -778,7 +744,15 @@ contract UniversalShieldedPool is
         }
 
         // Encode public inputs as uint256[] for IProofVerifier compatibility
-        uint256[] memory inputs = new uint256[](7);
+        //
+        // SECURITY (H6 FIX): Bind the pool contract address into the public
+        // inputs so a proof generated against this pool's verifier cannot be
+        // replayed against a sibling UniversalShieldedPool that happens to
+        // share the same verifier contract. The ZK circuit MUST include
+        // `poolId = address(this)` in its public signal at slot `poolId`;
+        // verifiers that do not expose a matching input will reject the
+        // proof, forcing pool-scoped proving keys.
+        uint256[] memory inputs = new uint256[](8);
         inputs[0] = uint256(wp.merkleRoot);
         inputs[1] = uint256(wp.nullifier);
         inputs[2] = uint256(uint160(wp.recipient));
@@ -786,6 +760,7 @@ contract UniversalShieldedPool is
         inputs[4] = uint256(wp.assetId);
         inputs[5] = uint256(uint160(wp.relayerAddress));
         inputs[6] = wp.relayerFee;
+        inputs[7] = uint256(uint160(address(this))); // H6: pool binding
 
         bytes memory publicInputs = abi.encode(inputs);
 
@@ -802,11 +777,8 @@ contract UniversalShieldedPool is
     }
 
     /// @notice Verify a cross-chain batch proof
-    /**
-     * @notice _verify batch proof
-     * @param batch The batch
-     * @return The result value
-     */
+    /// @param batch The cross-chain commitment batch (root, source tree size, proof, commitments)
+    /// @return True if the batch proof verifies against the configured batchVerifier
     function _verifyBatchProof(
         CrossChainCommitmentBatch calldata batch
     ) internal view returns (bool) {
@@ -841,11 +813,8 @@ contract UniversalShieldedPool is
     }
 
     /// @notice Safe ETH transfer
-    /**
-     * @notice _safe transfer e t h
-     * @param to The destination address
-     * @param amount The amount to process
-     */
+    /// @param to Recipient address
+    /// @param amount Wei to forward
     function _safeTransferETH(address to, uint256 amount) internal {
         (bool success, ) = to.call{value: amount}("");
         if (!success) revert TransferFailed();

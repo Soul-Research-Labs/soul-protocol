@@ -82,16 +82,24 @@ function cryptoRandomDelay(
 ): number {
   const randomBytes = new Uint32Array(1);
   crypto.getRandomValues(randomBytes);
-  // Normalize to [0, 1)
-  const rand = randomBytes[0] / 0x100000000;
+  // Normalize to (0, 1) — strictly positive to avoid log(0) = -Infinity.
+  const rand = (randomBytes[0] + 1) / (0x100000000 + 1);
 
-  // Exponential distribution for natural-looking intervals
-  // Mean = avgIntervalMs, with jitter scaling
-  const minInterval = avgIntervalMs * (1 - jitterFactor);
-  const maxInterval = avgIntervalMs * (1 + jitterFactor);
-  const interval = minInterval + rand * (maxInterval - minInterval);
+  // SECURITY (M-16): The previous implementation sampled uniformly from a
+  // narrow `[avg*(1-j), avg*(1+j)]` window despite the "exponential
+  // distribution" comment. A bounded uniform inter-arrival time has a
+  // distinctive statistical signature (sharp histogram edges, bounded
+  // variance) that lets an observer filter decoys from real traffic.
+  // Sample from a true exponential with mean `avgIntervalMs` using
+  // inverse-CDF: `x = -ln(U) * mean`. `jitterFactor` now only sets the
+  // min/max clamp so decoys stay within a broadcaster-safe envelope.
+  const mean = avgIntervalMs;
+  const rawInterval = -Math.log(rand) * mean;
+  const minClamp = avgIntervalMs * Math.max(0, 1 - jitterFactor);
+  const maxClamp = avgIntervalMs * (1 + jitterFactor * 4);
+  const clamped = Math.min(maxClamp, Math.max(minClamp, rawInterval));
 
-  return Math.max(1000, Math.floor(interval)); // At least 1 second
+  return Math.max(1000, Math.floor(clamped)); // At least 1 second
 }
 
 /**

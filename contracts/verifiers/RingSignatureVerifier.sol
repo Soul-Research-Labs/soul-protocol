@@ -203,11 +203,24 @@ contract RingSignatureVerifier is IRingSignatureVerifier {
             }
 
             // c_{i+1} = H(domain, message, L_i, R_i) mod n
+            //
+            // SECURITY (M18 PIN): The canonical CLSAG challenge hash for this
+            // verifier is Keccak256 over (DOMAIN, message, L.x, L.y, R.x, R.y)
+            // via `abi.encodePacked`. Off-chain signers (Monero-compatible
+            // CLSAG signer, Rust reference impl) MUST use an identical
+            // transcript layout; Noir circuits producing the signature MUST
+            // implement Keccak256 in-circuit (not Poseidon) or the ring
+            // closure check below will reject. This comment codifies the
+            // interop contract.
             challenge =
                 uint256(
                     keccak256(abi.encodePacked(DOMAIN, message, Lx, Ly, Rx, Ry))
                 ) %
                 BN254.N;
+
+            // Reject a zero challenge: degenerates verification and enables
+            // trivial forgery when combined with s_i = 0.
+            if (challenge == 0) return false;
 
             unchecked {
                 ++i;

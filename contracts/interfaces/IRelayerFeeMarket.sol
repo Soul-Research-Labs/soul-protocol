@@ -92,6 +92,9 @@ interface IRelayerFeeMarket {
     /// @notice Emitted when a requester cancels their relay request
     /// @param requestId The cancelled request identifier
     event RelayRequestCancelled(bytes32 indexed requestId);
+
+    /// @notice Emitted when the protocol fee basis-points setting changes.
+    event ProtocolFeeBpsUpdated(uint256 oldBps, uint256 newBps);
     /// @notice Emitted when the base fee for a chain pair is updated via EIP-1559 mechanism
     /// @param sourceChainId The source chain identifier
     /// @param destChainId The destination chain identifier
@@ -103,7 +106,7 @@ interface IRelayerFeeMarket {
     );
     /// @notice Emitted when accumulated protocol fees are withdrawn by the admin
     /// @param amount The amount of fees withdrawn
-    event ProtocolFeeWithdrawn(uint256 amount);
+    event ProtocolFeeWithdrawn(address indexed to, uint256 amount);
 
     /*//////////////////////////////////////////////////////////////
                             CUSTOM ERRORS

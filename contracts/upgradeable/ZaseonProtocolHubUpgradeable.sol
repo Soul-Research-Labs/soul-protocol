@@ -743,6 +743,10 @@ contract ZaseonProtocolHubUpgradeable is
                         BATCH WIRING
     //////////////////////////////////////////////////////////////*/
 
+    event ProtocolWiredKeyed(address indexed operator, uint256 count);
+    error RegistryWiringMismatch(uint256 keysLen, uint256 addrsLen);
+    error RegistryWiringBatchTooLarge(uint256 n, uint256 max);
+
     /// @notice Wire all core protocol components in a single transaction
     /**
      * @notice Wire all
@@ -1009,6 +1013,167 @@ contract ZaseonProtocolHubUpgradeable is
         }
 
         emit ProtocolWired(msg.sender, updated);
+    }
+
+    /// @notice Wire all supported hub components by `(key, address)` pairs.
+    /// @dev Upgradeable variant has no registry mirror yet, so unknown keys revert.
+    function wireAllKeyed(
+        bytes32[] calldata keys,
+        address[] calldata addrs
+    ) external onlyRole(OPERATOR_ROLE) nonReentrant {
+        uint256 n = keys.length;
+        if (n != addrs.length) revert RegistryWiringMismatch(n, addrs.length);
+        if (n == 0) revert RegistryWiringMismatch(0, 0);
+        if (n > MAX_BATCH_SIZE)
+            revert RegistryWiringBatchTooLarge(n, MAX_BATCH_SIZE);
+
+        uint256 nonZero;
+        for (uint256 i; i < n; ) {
+            if (addrs[i] != address(0)) {
+                if (!_wireKnownKey(keys[i], addrs[i]))
+                    revert InvalidConfiguration();
+                unchecked {
+                    ++nonZero;
+                }
+            }
+            unchecked {
+                ++i;
+            }
+        }
+
+        emit ProtocolWiredKeyed(msg.sender, nonZero);
+    }
+
+    function _wireKnownKey(
+        bytes32 key,
+        address addr
+    ) internal returns (bool handled) {
+        if (key == keccak256("verifierRegistry")) {
+            verifierRegistry = addr;
+            emit ComponentRegistered(key, ComponentCategory.CORE, addr, 1);
+            return true;
+        }
+        if (key == keccak256("universalVerifier")) {
+            universalVerifier = addr;
+            emit ComponentRegistered(key, ComponentCategory.VERIFIER, addr, 1);
+            return true;
+        }
+        if (key == keccak256("crossChainMessageRelay")) {
+            crossChainMessageRelay = addr;
+            emit ComponentRegistered(key, ComponentCategory.RELAY, addr, 1);
+            return true;
+        }
+        if (key == keccak256("crossChainPrivacyHub")) {
+            crossChainPrivacyHub = addr;
+            emit PrivacyModuleRegistered("CROSS_CHAIN_PRIVACY_HUB", addr);
+            return true;
+        }
+        if (key == keccak256("stealthAddressRegistry")) {
+            stealthAddressRegistry = addr;
+            emit PrivacyModuleRegistered("STEALTH_REGISTRY", addr);
+            return true;
+        }
+        if (key == keccak256("privateRelayerNetwork")) {
+            privateRelayerNetwork = addr;
+            emit PrivacyModuleRegistered("PRIVATE_RELAYER", addr);
+            return true;
+        }
+        if (key == keccak256("viewKeyRegistry")) {
+            viewKeyRegistry = addr;
+            emit PrivacyModuleRegistered("VIEW_KEY_REGISTRY", addr);
+            return true;
+        }
+        if (key == keccak256("shieldedPool")) {
+            shieldedPool = addr;
+            emit PrivacyModuleRegistered("SHIELDED_POOL", addr);
+            return true;
+        }
+        if (key == keccak256("nullifierManager")) {
+            nullifierManager = addr;
+            emit PrivacyModuleRegistered("NULLIFIER_MANAGER", addr);
+            return true;
+        }
+        if (key == keccak256("complianceOracle")) {
+            complianceOracle = addr;
+            emit SecurityModuleRegistered("COMPLIANCE_ORACLE", addr);
+            return true;
+        }
+        if (key == keccak256("proofTranslator")) {
+            proofTranslator = addr;
+            emit ComponentRegistered(key, ComponentCategory.VERIFIER, addr, 1);
+            return true;
+        }
+        if (key == keccak256("privacyRouter")) {
+            privacyRouter = addr;
+            emit ComponentRegistered(key, ComponentCategory.CORE, addr, 1);
+            return true;
+        }
+        if (key == keccak256("relayProofValidator")) {
+            relayProofValidator = addr;
+            emit SecurityModuleRegistered("RELAY_PROOF_VALIDATOR", addr);
+            return true;
+        }
+        if (key == keccak256("zkBoundStateLocks")) {
+            zkBoundStateLocks = addr;
+            emit ComponentRegistered(key, ComponentCategory.CORE, addr, 1);
+            return true;
+        }
+        if (key == keccak256("proofCarryingContainer")) {
+            proofCarryingContainer = addr;
+            emit ComponentRegistered(key, ComponentCategory.CORE, addr, 1);
+            return true;
+        }
+        if (key == keccak256("crossDomainNullifierAlgebra")) {
+            crossDomainNullifierAlgebra = addr;
+            emit ComponentRegistered(key, ComponentCategory.CORE, addr, 1);
+            return true;
+        }
+        if (key == keccak256("policyBoundProofs")) {
+            policyBoundProofs = addr;
+            emit ComponentRegistered(key, ComponentCategory.CORE, addr, 1);
+            return true;
+        }
+        if (key == keccak256("multiProver")) {
+            multiProver = addr;
+            emit ComponentRegistered(key, ComponentCategory.VERIFIER, addr, 1);
+            return true;
+        }
+        if (key == keccak256("relayWatchtower")) {
+            relayWatchtower = addr;
+            emit SecurityModuleRegistered("RELAY_WATCHTOWER", addr);
+            return true;
+        }
+        if (key == keccak256("intentCompletionLayer")) {
+            intentCompletionLayer = addr;
+            emit ComponentRegistered(key, ComponentCategory.CORE, addr, 1);
+            return true;
+        }
+        if (key == keccak256("instantCompletionGuarantee")) {
+            instantCompletionGuarantee = addr;
+            emit ComponentRegistered(key, ComponentCategory.CORE, addr, 1);
+            return true;
+        }
+        if (key == keccak256("dynamicRoutingOrchestrator")) {
+            dynamicRoutingOrchestrator = addr;
+            emit ComponentRegistered(
+                key,
+                ComponentCategory.INFRASTRUCTURE,
+                addr,
+                1
+            );
+            return true;
+        }
+        if (key == keccak256("crossChainLiquidityVault")) {
+            crossChainLiquidityVault = addr;
+            emit ComponentRegistered(
+                key,
+                ComponentCategory.INFRASTRUCTURE,
+                addr,
+                1
+            );
+            return true;
+        }
+        return false;
     }
 
     /// @notice Check if all critical protocol components are configured

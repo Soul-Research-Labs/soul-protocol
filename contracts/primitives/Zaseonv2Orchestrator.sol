@@ -135,6 +135,7 @@ interface ICrossDomainNullifierAlgebra {
      * @notice Nullifier exists
      * @param nullifier The nullifier hash
      * @return The result value
+ * @custom:deprecated Use Zaseonv2OrchestratorUpgradeable (contracts/upgradeable/Zaseonv2OrchestratorUpgradeable.sol) for new deployments. This non-upgradeable variant will be removed in a future release.
      */
     function nullifierExists(bytes32 nullifier) external view returns (bool);
 }

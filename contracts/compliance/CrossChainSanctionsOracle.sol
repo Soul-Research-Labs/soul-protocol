@@ -25,6 +25,10 @@ contract CrossChainSanctionsOracle is
     AccessControl,
     ICrossChainSanctionsOracle
 {
+    /// @notice Emitted when the failOpen policy toggle changes.
+    event FailOpenUpdated(bool oldFailOpen, bool newFailOpen);
+    /// @notice Emitted when the sanctions expiry period changes.
+    event SanctionsExpiryUpdated(uint256 oldExpiry, uint256 newExpiry);
     /*//////////////////////////////////////////////////////////////
                                  ROLES
     //////////////////////////////////////////////////////////////*/
@@ -297,7 +301,9 @@ contract CrossChainSanctionsOracle is
      * @param _failOpen The _fail open
      */
     function setFailOpen(bool _failOpen) external onlyRole(OPERATOR_ROLE) {
+        bool old = failOpen;
         failOpen = _failOpen;
+        emit FailOpenUpdated(old, _failOpen);
     }
 
     /// @notice Set sanctions expiry period
@@ -310,7 +316,9 @@ contract CrossChainSanctionsOracle is
     ) external onlyRole(OPERATOR_ROLE) {
         // SECURITY FIX M-5: Enforce minimum expiry to prevent accidental sanctions bypass
         if (_expiry < 1 days) revert ExpiryTooShort(_expiry, 1 days);
+        uint256 old = sanctionsExpiry;
         sanctionsExpiry = _expiry;
+        emit SanctionsExpiryUpdated(old, _expiry);
     }
 
     /*//////////////////////////////////////////////////////////////

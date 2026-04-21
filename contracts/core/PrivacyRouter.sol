@@ -140,6 +140,7 @@ function meetsKYCTier(
  *                └──────────────┘                        └──────────────┘
  *
  * @custom:security-contact security@zaseon.network
+ * @custom:deprecated Use PrivacyRouterUpgradeable (contracts/upgradeable/PrivacyRouterUpgradeable.sol) for new deployments. This non-upgradeable variant will be removed in a future release.
  */
 contract PrivacyRouter is
     AccessControl,

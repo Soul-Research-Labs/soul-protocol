@@ -1,0 +1,17 @@
+apiVersion: v2
+name: zaseon-relayer
+description: ZASEON decentralized relayer node (cross-chain proof relay)
+type: application
+version: 0.1.0
+appVersion: "2.0.0"
+home: https://github.com/manish0907/ZASEON
+sources:
+  - https://github.com/manish0907/ZASEON
+maintainers:
+  - name: ZASEON
+keywords:
+  - zaseon
+  - zk
+  - cross-chain
+  - privacy
+  - relayer

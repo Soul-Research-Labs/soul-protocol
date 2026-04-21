@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IBridgeAdapter} from "./IBridgeAdapter.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {BridgeAdapterBase} from "./base/BridgeAdapterBase.sol";
 
 /**
  * @title BitVMAdapter
@@ -14,16 +12,9 @@ import {IBridgeAdapter} from "./IBridgeAdapter.sol";
  * @dev This adapter tracks message lifecycle for off-chain BitVM verification and challenge
  *      resolution while exposing the standard IBridgeAdapter interface used by routers.
  */
-contract BitVMAdapter is
-    IBridgeAdapter,
-    AccessControl,
-    ReentrancyGuard,
-    Pausable
-{
-    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
-    bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE");
+contract BitVMAdapter is BridgeAdapterBase {
+    using SafeERC20 for IERC20;
 
-    uint256 public constant MAX_PAYLOAD_SIZE = 32_768;
     uint256 public constant MAX_FEE_BPS = 100;
     uint256 public constant MIN_CHALLENGE_WINDOW = 1 hours;
     uint256 public constant MAX_CHALLENGE_WINDOW = 30 days;
@@ -51,7 +42,6 @@ contract BitVMAdapter is
         MessageStatus status;
     }
 
-    uint256 public nonce;
     uint256 public baseFee;
     uint256 public perByteFee;
     uint256 public bridgeFeeBps;
@@ -93,9 +83,6 @@ contract BitVMAdapter is
         uint256 amount
     );
 
-    error ZeroAddress();
-    error PayloadTooLarge(uint256 size, uint256 maxSize);
-    error InsufficientFee(uint256 required, uint256 provided);
     error UnknownMessage(bytes32 messageId);
     error InvalidStatus(
         bytes32 messageId,
@@ -107,15 +94,12 @@ contract BitVMAdapter is
     error PerByteFeeTooHigh(uint256 perByteFee);
     error ChallengeWindowActive(uint256 remaining);
     error InvalidChallengeWindow(uint256 challengeWindow);
-    error TransferFailed();
 
-    constructor(address admin, address _treasury) {
-        if (admin == address(0) || _treasury == address(0))
-            revert ZeroAddress();
-
-        _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        _grantRole(OPERATOR_ROLE, admin);
-        _grantRole(GUARDIAN_ROLE, admin);
+    constructor(
+        address admin,
+        address _treasury
+    ) BridgeAdapterBase(admin, admin) {
+        if (_treasury == address(0)) revert ZeroAddress();
 
         treasury = _treasury;
         baseFee = 0.0001 ether;
@@ -136,48 +120,16 @@ contract BitVMAdapter is
         whenNotPaused
         returns (bytes32 messageId)
     {
-        if (targetAddress == address(0)) revert ZeroAddress();
-        if (payload.length > MAX_PAYLOAD_SIZE) {
-            revert PayloadTooLarge(payload.length, MAX_PAYLOAD_SIZE);
-        }
+        uint256 requiredFee = _estimateFee(targetAddress, payload);
+        uint256 refund = msg.value > requiredFee ? msg.value - requiredFee : 0;
+        address refundRecipient = refundAddress == address(0)
+            ? msg.sender
+            : refundAddress;
 
-        uint256 requiredFee = estimateFee(targetAddress, payload);
-        if (msg.value < requiredFee)
-            revert InsufficientFee(requiredFee, msg.value);
+        messageId = _bridgeMessage(targetAddress, payload, refundRecipient);
 
-        messageId = keccak256(
-            abi.encodePacked(
-                block.chainid,
-                address(this),
-                msg.sender,
-                targetAddress,
-                keccak256(payload),
-                nonce++
-            )
-        );
-
-        messages[messageId] = BridgeMessage({
-            sender: msg.sender,
-            target: targetAddress,
-            payloadHash: keccak256(payload),
-            feePaid: requiredFee,
-            sentAt: block.timestamp,
-            verifiedAt: 0,
-            finalizedAt: 0,
-            proofCommitment: bytes32(0),
-            status: MessageStatus.SENT
-        });
-
-        _forwardFee(requiredFee);
-
-        uint256 refund = msg.value - requiredFee;
         if (refund > 0) {
-            address recipient = refundAddress == address(0)
-                ? msg.sender
-                : refundAddress;
-            (bool ok, ) = recipient.call{value: refund}("");
-            if (!ok) revert TransferFailed();
-            emit RefundIssued(messageId, recipient, refund);
+            emit RefundIssued(messageId, refundRecipient, refund);
         }
 
         emit MessageBridged(
@@ -189,18 +141,41 @@ contract BitVMAdapter is
         );
     }
 
-    function estimateFee(
+    function _deliver(
+        bytes32 messageId,
+        address targetAddress,
+        bytes calldata payload,
+        uint256 nativeFee
+    ) internal override {
+        bytes32 payloadHash = keccak256(payload);
+
+        messages[messageId] = BridgeMessage({
+            sender: msg.sender,
+            target: targetAddress,
+            payloadHash: payloadHash,
+            feePaid: nativeFee,
+            sentAt: block.timestamp,
+            verifiedAt: 0,
+            finalizedAt: 0,
+            proofCommitment: bytes32(0),
+            status: MessageStatus.SENT
+        });
+
+        _forwardFee(nativeFee);
+    }
+
+    function _estimateFee(
         address,
         bytes calldata payload
-    ) public view override returns (uint256 nativeFee) {
+    ) internal view override returns (uint256 nativeFee) {
         uint256 rawFee = baseFee + (payload.length * perByteFee);
         uint256 protocolFee = (rawFee * bridgeFeeBps) / 10_000;
         return rawFee + protocolFee;
     }
 
-    function isMessageVerified(
+    function _verifyMessage(
         bytes32 messageId
-    ) external view override returns (bool verified) {
+    ) internal view override returns (bool verified) {
         MessageStatus status = messages[messageId].status;
         return
             status == MessageStatus.VERIFIED ||
@@ -334,14 +309,6 @@ contract BitVMAdapter is
         emit ChallengeWindowUpdated(oldWindow, newWindow);
     }
 
-    function pause() external onlyRole(GUARDIAN_ROLE) {
-        _pause();
-    }
-
-    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
-        _unpause();
-    }
-
     function _forwardFee(uint256 amount) internal {
         (bool ok, ) = treasury.call{value: amount}("");
         if (!ok) revert TransferFailed();
@@ -367,8 +334,7 @@ contract BitVMAdapter is
         if (token == address(0) || to == address(0)) revert ZeroAddress();
 
         uint256 amount = IERC20(token).balanceOf(address(this));
-        bool ok = IERC20(token).transfer(to, amount);
-        if (!ok) revert TransferFailed();
+        IERC20(token).safeTransfer(to, amount);
 
         emit EmergencyERC20Withdrawn(token, to, amount);
     }

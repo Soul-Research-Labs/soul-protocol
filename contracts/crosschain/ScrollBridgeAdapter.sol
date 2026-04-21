@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
+import {BridgeAdapterBase} from "./base/BridgeAdapterBase.sol";
 import {IBridgeAdapter} from "./IBridgeAdapter.sol";
 
 /**
@@ -36,20 +34,7 @@ import {IBridgeAdapter} from "./IBridgeAdapter.sol";
  * │  - L1ScrollMessenger for L2→L1 claim with Merkle proof                 │
  * └─────────────────────────────────────────────────────────────────────────┘
  */
-contract ScrollBridgeAdapter is
-    IBridgeAdapter,
-    AccessControl,
-    ReentrancyGuard,
-    Pausable
-{
-    /*//////////////////////////////////////////////////////////////
-                                 ROLES
-    //////////////////////////////////////////////////////////////*/
-
-    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
-    bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE");
-    bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
-
+contract ScrollBridgeAdapter is BridgeAdapterBase {
     /*//////////////////////////////////////////////////////////////
                               CONSTANTS
     //////////////////////////////////////////////////////////////*/
@@ -217,9 +202,6 @@ contract ScrollBridgeAdapter is
     error WithdrawalNotProven();
     error InvalidProof();
     error ProofAlreadyProcessed();
-    error InsufficientFee();
-    error ZeroAddress();
-    error TransferFailed();
     error FeeTooHigh();
     error ScrollMessageFailed();
 
@@ -227,13 +209,7 @@ contract ScrollBridgeAdapter is
                             CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    constructor(address _admin) {
-        if (_admin == address(0)) revert ZeroAddress();
-
-        _grantRole(DEFAULT_ADMIN_ROLE, _admin);
-        _grantRole(OPERATOR_ROLE, _admin);
-        _grantRole(GUARDIAN_ROLE, _admin);
-
+    constructor(address _admin) BridgeAdapterBase(_admin, _admin) {
         bridgeFeeBps = 10; // 0.10%
     }
 
@@ -315,7 +291,7 @@ contract ScrollBridgeAdapter is
 
         uint256 fee = (amount * bridgeFeeBps) / 10000;
         uint256 depositAmount = amount - fee;
-        if (msg.value < amount) revert InsufficientFee();
+        if (msg.value < amount) revert InsufficientFee(msg.value, amount);
 
         depositId = keccak256(
             abi.encodePacked(
@@ -470,11 +446,7 @@ contract ScrollBridgeAdapter is
         treasury = _treasury;
     }
 
-    function pause() external onlyRole(GUARDIAN_ROLE) {
-        _pause();
-    }
-
-    function unpause() external onlyRole(GUARDIAN_ROLE) {
+    function unpause() external override onlyRole(GUARDIAN_ROLE) {
         _unpause();
     }
 
@@ -550,40 +522,90 @@ contract ScrollBridgeAdapter is
         return false;
     }
 
+    function _destinationChainFromPayload(
+        bytes calldata payload
+    ) internal pure returns (uint256 destChainId) {
+        if (payload.length < 32) revert EmptyPayload();
+        return abi.decode(payload[:32], (uint256));
+    }
+
     /*//////////////////////////////////////////////////////////////
                      IBridgeAdapter COMPATIBILITY
     //////////////////////////////////////////////////////////////*/
+
+    function _deliver(
+        bytes32 /*messageId*/,
+        address target,
+        bytes calldata payload,
+        uint256 nativeFee
+    ) internal override {
+        uint256 destChainId = _destinationChainFromPayload(payload);
+        ScrollConfig storage config = scrollConfigs[destChainId];
+        if (!config.active) revert BridgeNotConfigured();
+
+        _sendScrollMessage(
+            config.l1Messenger,
+            target,
+            nativeFee,
+            DEFAULT_L2_GAS_LIMIT
+        );
+    }
+
+    function _estimateFee(
+        address /*target*/,
+        bytes calldata payload
+    ) internal view override returns (uint256) {
+        uint256 destChainId = _destinationChainFromPayload(payload);
+        ScrollConfig storage config = scrollConfigs[destChainId];
+        if (!config.active) revert BridgeNotConfigured();
+
+        // The generic adapter wrapper forwards the full msg.value as the bridged value.
+        return 0;
+    }
+
+    function _verifyMessage(
+        bytes32 messageId
+    ) internal view override returns (bool) {
+        ScrollWithdrawal storage w = withdrawals[messageId];
+        return w.status == TransferStatus.CLAIMED;
+    }
 
     /// @inheritdoc IBridgeAdapter
     function bridgeMessage(
         address targetAddress,
         bytes calldata payload,
         address /*refundAddress*/
-    ) external payable nonReentrant whenNotPaused returns (bytes32 messageId) {
-        // Extract destination chain ID from payload (first 32 bytes)
-        uint256 destChainId = abi.decode(payload[:32], (uint256));
-        ScrollConfig storage config = scrollConfigs[destChainId];
-        if (!config.active) revert BridgeNotConfigured();
+    )
+        external
+        payable
+        override
+        nonReentrant
+        whenNotPaused
+        returns (bytes32 messageId)
+    {
         if (targetAddress == address(0)) revert ZeroAddress();
 
-        // Send message via L1ScrollMessenger
-        _sendScrollMessage(
-            config.l1Messenger,
+        uint256 currentNonce;
+        unchecked {
+            currentNonce = ++nonce;
+        }
+        messageId = _deriveMessageId(
+            SELF_CHAIN_ID,
+            currentNonce,
+            msg.sender,
+            targetAddress,
+            payload
+        );
+
+        _deliver(messageId, targetAddress, payload, msg.value);
+
+        emit MessageBridged(
+            messageId,
+            msg.sender,
             targetAddress,
             msg.value,
-            DEFAULT_L2_GAS_LIMIT
+            keccak256(payload)
         );
-
-        messageId = keccak256(
-            abi.encodePacked(
-                msg.sender,
-                targetAddress,
-                destChainId,
-                transferNonce++,
-                block.timestamp
-            )
-        );
-
         emit DepositInitiated(messageId, msg.sender, targetAddress, msg.value);
     }
 
@@ -591,15 +613,9 @@ contract ScrollBridgeAdapter is
     function estimateFee(
         address /*targetAddress*/,
         bytes calldata /*payload*/
-    ) external pure returns (uint256 nativeFee) {
+    ) external pure override returns (uint256) {
         // Scroll fees depend on L1 message queue gas estimation
         revert("Use Scroll-specific fee estimation");
-    }
-
-    /// @inheritdoc IBridgeAdapter
-    function isMessageVerified(bytes32 messageId) external view returns (bool) {
-        ScrollWithdrawal storage w = withdrawals[messageId];
-        return w.status == TransferStatus.CLAIMED;
     }
 
     /// @notice Accept ETH from canonical bridge during L2→L1 withdrawal flow

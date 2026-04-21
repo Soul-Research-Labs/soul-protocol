@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
+import {BridgeAdapterBase} from "../../contracts/crosschain/base/BridgeAdapterBase.sol";
 import "../../contracts/crosschain/BitVMAdapter.sol";
 
 contract MockERC20 {
@@ -148,9 +149,9 @@ contract BitVMAdapterTest is Test {
         vm.prank(user);
         vm.expectRevert(
             abi.encodeWithSelector(
-                BitVMAdapter.InsufficientFee.selector,
-                fee,
-                fee - 1
+                BridgeAdapterBase.InsufficientFee.selector,
+                fee - 1,
+                fee
             )
         );
         adapter.bridgeMessage{value: fee - 1}(target, payload, user);
@@ -308,7 +309,7 @@ contract BitVMAdapterTest is Test {
         vm.deal(address(adapter), 1 ether);
 
         vm.prank(admin);
-        vm.expectRevert(BitVMAdapter.ZeroAddress.selector);
+        vm.expectRevert(BridgeAdapterBase.ZeroAddress.selector);
         adapter.emergencyWithdrawETH(payable(address(0)), 1 ether);
     }
 

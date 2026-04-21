@@ -1,0 +1,99 @@
+{
+  "title": "ZASEON Relayer",
+  "uid": "zaseon-relayer",
+  "timezone": "utc",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "10s",
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "instance",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prom" },
+        "query": "label_values(zaseon_relayer_tasks_total, instance)",
+        "multi": true,
+        "includeAll": true
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Tasks submitted (1h)",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+      "targets": [
+        {
+          "expr": "sum(increase(zaseon_relayer_tasks_total{instance=~\"$instance\"}[1h]))"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Success rate (1h)",
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+      "fieldConfig": {
+        "defaults": { "unit": "percentunit", "min": 0, "max": 1 }
+      },
+      "targets": [
+        {
+          "expr": "sum(increase(zaseon_relayer_tasks_succeeded{instance=~\"$instance\"}[1h])) / clamp_min(sum(increase(zaseon_relayer_tasks_total{instance=~\"$instance\"}[1h])),1)"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Throughput (tasks/sec)",
+      "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "rate(zaseon_relayer_tasks_succeeded{instance=~\"$instance\"}[5m])",
+          "legendFormat": "success"
+        },
+        {
+          "expr": "rate(zaseon_relayer_tasks_failed{instance=~\"$instance\"}[5m])",
+          "legendFormat": "failed"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Latency (avg ms)",
+      "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+      "fieldConfig": { "defaults": { "unit": "ms" } },
+      "targets": [
+        {
+          "expr": "rate(zaseon_relayer_total_latency_ms{instance=~\"$instance\"}[5m]) / clamp_min(rate(zaseon_relayer_tasks_succeeded{instance=~\"$instance\"}[5m]),1)"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Retries",
+      "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "rate(zaseon_relayer_total_retries{instance=~\"$instance\"}[5m])"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Per-chain failures",
+      "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "rate(zaseon_relayer_chain_failures{instance=~\"$instance\"}[5m])",
+          "legendFormat": "{{chain}}"
+        }
+      ]
+    }
+  ]
+}

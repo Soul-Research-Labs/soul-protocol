@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
+import {BridgeAdapterBase} from "../../contracts/crosschain/base/BridgeAdapterBase.sol";
 import "../../contracts/crosschain/BitVMAdapter.sol";
 
 contract BitVMAdapterFuzzTest is Test {
@@ -72,7 +73,7 @@ contract BitVMAdapterFuzzTest is Test {
         vm.prank(user);
         vm.expectRevert(
             abi.encodeWithSelector(
-                BitVMAdapter.PayloadTooLarge.selector,
+                BridgeAdapterBase.PayloadTooLarge.selector,
                 uint256(size),
                 uint256(32_768)
             )

@@ -27,6 +27,7 @@ import "../verifiers/VerifierRegistryV2.sol";
  * @title ProofCarryingContainer
  * @author ZASEON Team
  * @notice Proof Carrying Container contract
+ * @custom:deprecated Use ProofCarryingContainerUpgradeable (contracts/upgradeable/ProofCarryingContainerUpgradeable.sol) for new deployments. This non-upgradeable variant will be removed in a future release.
  */
 contract ProofCarryingContainer is AccessControl, ReentrancyGuard, Pausable {
     using SafeCast for uint256;

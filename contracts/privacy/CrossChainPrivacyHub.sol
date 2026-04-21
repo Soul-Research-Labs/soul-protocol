@@ -83,6 +83,13 @@ contract CrossChainPrivacyHub is
     uint256 public constant MAX_RING_SIZE = 16;
     uint256 public constant MIN_RING_SIZE = 4;
     uint256 public constant NULLIFIER_EXPIRY = 365 days;
+    /// @notice Default ceiling for a single cross-chain private transfer.
+    /// @dev Kept as a constant for legacy call sites; the live enforced cap is
+    ///      {maxTransferAmount}, which can be updated by governance via
+    ///      {setMaxTransferAmount}. The default at deployment is this value.
+    uint256 public constant DEFAULT_MAX_TRANSFER_AMOUNT = 10000 ether;
+    /// @dev Backward-compatible alias — downstream readers that previously referenced
+    ///      `MAX_TRANSFER_AMOUNT` should migrate to {maxTransferAmount} (mutable).
     uint256 public constant MAX_TRANSFER_AMOUNT = 10000 ether;
     uint256 public constant MIN_TRANSFER_AMOUNT = 0.001 ether;
     uint256 public constant QUORUM_BPS = 6667; // 66.67%
@@ -571,6 +578,37 @@ contract CrossChainPrivacyHub is
         soulProtocolHub = _hub;
     }
 
+    /// @notice Governance-settable override for the hub-wide max transfer amount.
+    /// @dev When zero, the effective cap falls back to {DEFAULT_MAX_TRANSFER_AMOUNT}.
+    ///      Governance can raise or lower the cap without redeploying. Per-chain
+    ///      caps (`AdapterConfig.maxTransfer`) still apply on top and are
+    ///      min()-composed with this hub-wide cap.
+    uint256 public maxTransferAmountOverride;
+
+    /// @notice Emitted when the hub-wide max transfer amount changes.
+    event MaxTransferAmountUpdated(uint256 oldMax, uint256 newMax);
+
+    /// @notice Update the hub-wide max transfer ceiling.
+    /// @dev Set to zero to restore the compile-time default. Must not exceed a
+    ///      hard safety ceiling of 10x the default to prevent accidental
+    ///      billion-ether configurations via fat-finger.
+    function setMaxTransferAmount(
+        uint256 newMax
+    ) external onlyRole(OPERATOR_ROLE) {
+        if (newMax != 0 && newMax > DEFAULT_MAX_TRANSFER_AMOUNT * 10) {
+            revert InvalidAmount(newMax);
+        }
+        uint256 old = maxTransferAmountOverride;
+        maxTransferAmountOverride = newMax;
+        emit MaxTransferAmountUpdated(old, newMax);
+    }
+
+    /// @dev Internal: resolve the live cap \u2014 override when set, else default.
+    function _effectiveMaxTransfer() internal view returns (uint256) {
+        uint256 o = maxTransferAmountOverride;
+        return o == 0 ? DEFAULT_MAX_TRANSFER_AMOUNT : o;
+    }
+
     /**
      * @notice Set MLSAG signatures module
      * @param _module The MLSAGSignatures contract address
@@ -740,8 +778,8 @@ contract CrossChainPrivacyHub is
 
         // Validate amount
         if (amount < MIN_TRANSFER_AMOUNT) revert InvalidAmount(amount);
-        if (amount > MAX_TRANSFER_AMOUNT)
-            revert ExceedsMaxTransfer(amount, MAX_TRANSFER_AMOUNT);
+        if (amount > _effectiveMaxTransfer())
+            revert ExceedsMaxTransfer(amount, _effectiveMaxTransfer());
 
         AdapterConfig storage destAdapter = adapters[destChainId];
         if (amount > destAdapter.maxTransfer) {

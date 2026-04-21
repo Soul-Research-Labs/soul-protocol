@@ -162,21 +162,20 @@ contract GasNormalizer is IGasNormalizer, AccessControl, ReentrancyGuard {
         uint256 gasUsed = gasAtStart - gasleft();
         uint256 target = ceiling.targetGas;
 
-        if (gasUsed >= target) {
-            // Operation already exceeded ceiling — emit warning but don't revert
-            emit GasNormalized(opType, gasUsed, gasUsed);
-            return;
+        // SECURITY (H-10): Do NOT take an early-return branch when
+        // `gasUsed >= target` or `toBurn <= OVERHEAD_MARGIN`. Those early
+        // returns produce a distinguishable total-gas fingerprint which
+        // leaks the branch — exactly the bit of information this
+        // normalizer is supposed to hide. Instead, always execute the
+        // assembly burn loop below with `iterations = 0` when there is no
+        // budget left to burn, so the caller observes a uniform path.
+        uint256 toBurn;
+        unchecked {
+            toBurn = gasUsed >= target ? 0 : target - gasUsed;
+            toBurn = toBurn > BURN_OVERHEAD_MARGIN
+                ? toBurn - BURN_OVERHEAD_MARGIN
+                : 0;
         }
-
-        uint256 toBurn = target - gasUsed;
-
-        // Subtract overhead margin for the burn loop setup
-        if (toBurn <= BURN_OVERHEAD_MARGIN) {
-            emit GasNormalized(opType, gasUsed, gasUsed);
-            return;
-        }
-
-        toBurn -= BURN_OVERHEAD_MARGIN;
         uint256 iterations = toBurn / GAS_PER_BURN_ITERATION;
         // M11 FIX: Burn remainder gas to prevent fingerprinting
         uint256 remainder = toBurn % GAS_PER_BURN_ITERATION;
@@ -201,7 +200,10 @@ contract GasNormalizer is IGasNormalizer, AccessControl, ReentrancyGuard {
             }
         }
 
-        emit GasNormalized(opType, gasUsed, target);
+        // Reported `normalizedGas` is capped at target so the event value
+        // does not itself leak whether the real op exceeded the ceiling.
+        uint256 reported = gasUsed < target ? target : gasUsed;
+        emit GasNormalized(opType, gasUsed, reported);
     }
 
     /**

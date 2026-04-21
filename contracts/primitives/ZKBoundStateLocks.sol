@@ -40,6 +40,7 @@ import {IProofVerifier} from "../interfaces/IProofVerifier.sol";
  * - Integrates with PC³ for self-authenticating containers
  * - Leverages EASC for execution-agnostic commitments
  * - Compatible with PBP policy enforcement
+ * @custom:deprecated Use ZKBoundStateLocksUpgradeable (contracts/upgradeable/ZKBoundStateLocksUpgradeable.sol) for new deployments. This non-upgradeable variant will be removed in a future release.
  */
 contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
     using SafeCast for uint256;

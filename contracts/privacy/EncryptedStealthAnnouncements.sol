@@ -113,7 +113,7 @@ contract EncryptedStealthAnnouncements is
 
     event AnnouncementCreated(
         uint256 indexed announcementId,
-        bytes32 indexed viewTagCommitment,
+        bytes32 viewTagCommitment,
         bytes32 ephemeralPubKey,
         uint256 blockNumber,
         address announcer

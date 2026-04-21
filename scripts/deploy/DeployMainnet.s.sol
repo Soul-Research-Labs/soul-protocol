@@ -32,6 +32,7 @@ import {CrossChainLiquidityVault} from "../../contracts/bridge/CrossChainLiquidi
 
 // ── Phase 4: Hub ──
 import {ZaseonProtocolHub} from "../../contracts/core/ZaseonProtocolHub.sol";
+import {HubWiringKeyedLib} from "../../contracts/internal/HubWiringKeyedLib.sol";
 import "../../contracts/interfaces/IZaseonProtocolHub.sol";
 
 // ── Phase 5: Governance ──
@@ -309,8 +310,8 @@ contract DeployMainnet is Script {
         proofHub.setRateLimits(MAX_PROOFS_PER_HOUR, MAX_VALUE_PER_HOUR);
 
         // Wire the Hub with all component addresses
-        hub.wireAll(
-            IZaseonProtocolHub.WireAllParams({
+        IZaseonProtocolHub.WireAllParams memory wireParams = IZaseonProtocolHub
+            .WireAllParams({
                 _verifierRegistry: address(verifierRegistry),
                 _universalVerifier: address(universalVerifier),
                 _crossChainMessageRelay: address(0), // deployed separately per L2
@@ -334,8 +335,10 @@ contract DeployMainnet is Script {
                 _instantCompletionGuarantee: address(0),
                 _dynamicRoutingOrchestrator: address(0),
                 _crossChainLiquidityVault: address(liquidityVault)
-            })
-        );
+            });
+        (bytes32[] memory keys, address[] memory addrs) = HubWiringKeyedLib
+            .fromWireAllParams(wireParams);
+        hub.wireAllKeyed(keys, addrs);
         console.log("Hub wired with core components");
 
         // Set Hub governance pointers

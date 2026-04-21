@@ -1,13 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IBaseBridgeAdapter} from "../interfaces/IBaseBridgeAdapter.sol";
-import {IBridgeAdapter} from "./IBridgeAdapter.sol";
+import {BridgeAdapterBase} from "./base/BridgeAdapterBase.sol";
 
 /**
  * @title BaseBridgeAdapter
@@ -59,13 +56,7 @@ import {IBridgeAdapter} from "./IBridgeAdapter.sol";
  * - Pausable emergency circuit breaker
  * - Nullifier-based double-spend prevention for privacy deposits
  */
-contract BaseBridgeAdapter is
-    IBaseBridgeAdapter,
-    IBridgeAdapter,
-    AccessControl,
-    ReentrancyGuard,
-    Pausable
-{
+contract BaseBridgeAdapter is IBaseBridgeAdapter, BridgeAdapterBase {
     using SafeERC20 for IERC20;
 
     error ZKProofVerifierNotConfigured();
@@ -74,9 +65,7 @@ contract BaseBridgeAdapter is
                                  ROLES
     //////////////////////////////////////////////////////////////*/
 
-    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
     bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
-    bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE");
     bytes32 public constant TREASURY_ROLE = keccak256("TREASURY_ROLE");
 
     /*//////////////////////////////////////////////////////////////
@@ -200,13 +189,8 @@ contract BaseBridgeAdapter is
 
     /// @notice Initialize the Base bridge adapter
     /// @param _admin Admin address granted all roles
-    constructor(address _admin) {
-        if (_admin == address(0)) revert ZeroAddress();
-
-        _grantRole(DEFAULT_ADMIN_ROLE, _admin);
-        _grantRole(OPERATOR_ROLE, _admin);
+    constructor(address _admin) BridgeAdapterBase(_admin, _admin) {
         _grantRole(RELAYER_ROLE, _admin);
-        _grantRole(GUARDIAN_ROLE, _admin);
         _grantRole(TREASURY_ROLE, _admin);
 
         treasury = _admin;
@@ -697,12 +681,12 @@ contract BaseBridgeAdapter is
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Pause all bridge operations
-    function pause() external onlyRole(GUARDIAN_ROLE) {
+    function pause() external override onlyRole(GUARDIAN_ROLE) {
         _pause();
     }
 
     /// @notice Resume bridge operations after pause
-    function unpause() external onlyRole(GUARDIAN_ROLE) {
+    function unpause() external override onlyRole(GUARDIAN_ROLE) {
         _unpause();
     }
 
@@ -916,26 +900,34 @@ contract BaseBridgeAdapter is
                         IBRIDGEADAPTER COMPATIBILITY
     //////////////////////////////////////////////////////////////*/
 
-    /// @inheritdoc IBridgeAdapter
     function bridgeMessage(
         address,
         bytes calldata,
         address
-    ) external payable returns (bytes32) {
+    ) external payable override returns (bytes32) {
         revert("Use initiateBaseDeposit() or initiateWithdrawal()");
     }
 
-    /// @inheritdoc IBridgeAdapter
-    function estimateFee(
+    function _deliver(
+        bytes32,
+        address,
+        bytes calldata,
+        uint256
+    ) internal pure override {
+        revert("Use initiateBaseDeposit() or initiateWithdrawal()");
+    }
+
+    function _estimateFee(
         address,
         bytes calldata
-    ) external pure returns (uint256) {
+    ) internal pure override returns (uint256) {
         // Return protocol fee per ETH unit (3 BPS)
         return BRIDGE_FEE_BPS;
     }
 
-    /// @inheritdoc IBridgeAdapter
-    function isMessageVerified(bytes32 messageId) external view returns (bool) {
+    function _verifyMessage(
+        bytes32 messageId
+    ) internal view override returns (bool) {
         return deposits[messageId].status == DepositStatus.COMPLETED;
     }
 }

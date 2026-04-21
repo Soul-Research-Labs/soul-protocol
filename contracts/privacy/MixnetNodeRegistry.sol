@@ -82,6 +82,12 @@ contract MixnetNodeRegistry is
     /// @notice Withdrawal timestamps (nodeId => timestamp when withdrawal is allowed)
     mapping(bytes32 => uint256) public withdrawalTimestamps;
 
+    /// @notice Per-sender monotonic counter folded into path-selection entropy.
+    ///         Combined with `prevrandao` and a recent blockhash this limits a
+    ///         proposer's ability to replay the same (caller, chain-pair) tuple
+    ///         across different paths within the same block.
+    mapping(address => uint256) public senderPathNonce;
+
     /// @notice Total active nodes
     uint256 public totalActiveNodes;
 
@@ -199,17 +205,35 @@ contract MixnetNodeRegistry is
 
         path = new bytes32[](hopCount);
 
-        // Fisher-Yates-style selection using on-chain randomness
-        // Note: predictable by validators, but sufficient for traffic analysis resistance
+        // Fisher-Yates-style selection using on-chain randomness.
+        //
+        // SECURITY HARDENING (C-3): Fold a per-sender monotonic nonce into the
+        // seed so that a single proposer cannot produce two identical paths
+        // for the same caller within a block by resubmitting the tx, and
+        // extend the blockhash window to 2..3 blocks so that the proposer
+        // must commit an ordering at block build time rather than adaptively
+        // choose across a wider window. This is still NOT a VRF — a motivated
+        // proposer can grind a single block's `prevrandao` — but it raises
+        // the attack cost meaningfully for the traffic-analysis threat model.
+        // For financial-critical selection, callers should prefer
+        // {RelayerVRFSelector} or an external VRF coordinator.
+        uint256 sNonce = ++senderPathNonce[msg.sender];
+        bytes32 anchorHash = blockhash(block.number - 1);
+        bytes32 olderAnchor = block.number >= 3
+            ? blockhash(block.number - 3)
+            : bytes32(0);
         uint256 seed = uint256(
             keccak256(
                 abi.encode(
                     block.prevrandao,
-                    blockhash(block.number - 1),
+                    anchorHash,
+                    olderAnchor,
                     sourceChainId,
                     destChainId,
                     msg.sender,
-                    block.timestamp
+                    sNonce,
+                    block.timestamp,
+                    block.chainid
                 )
             )
         );

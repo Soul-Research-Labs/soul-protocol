@@ -115,6 +115,14 @@ contract MultiBridgeRouter is
     error NoETHToWithdraw();
     error TransferFailed();
     error BridgeOperatorNotSet(BridgeType bridgeType);
+    error OperatorAlreadyAssigned(
+        address operator,
+        BridgeType conflictingBridge
+    );
+    event BridgeOperatorSet(
+        BridgeType indexed bridgeType,
+        address indexed operator
+    );
 
     /// @dev M-3 FIX: Nonce to prevent message hash collisions within the same block
     uint256 private _messageNonce;
@@ -296,12 +304,30 @@ contract MultiBridgeRouter is
      * @dev Each bridge type should have a distinct operator to ensure real multi-bridge consensus
      * @param bridgeType Bridge type to set operator for
      * @param operator Authorized operator address (address(0) to fall back to OPERATOR_ROLE)
+     *
+     * SECURITY (H-5): Rejects assigning the same non-zero operator to two
+     * different bridges. Multi-bridge consensus relies on independent
+     * operators per bridge; collapsing them to a single address lets one key
+     * produce the N-of-N attestations that should otherwise require N
+     * colluding parties.
      */
     function setBridgeOperator(
         BridgeType bridgeType,
         address operator
     ) external onlyRole(BRIDGE_ADMIN) {
+        if (operator != address(0)) {
+            for (uint256 i = 0; i < uint256(type(BridgeType).max) + 1; ) {
+                BridgeType b = BridgeType(i);
+                if (b != bridgeType && bridgeOperator[b] == operator) {
+                    revert OperatorAlreadyAssigned(operator, b);
+                }
+                unchecked {
+                    ++i;
+                }
+            }
+        }
         bridgeOperator[bridgeType] = operator;
+        emit BridgeOperatorSet(bridgeType, operator);
     }
 
     /**

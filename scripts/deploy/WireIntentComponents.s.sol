@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import {Script, console} from "forge-std/Script.sol";
 import {ZaseonProtocolHub} from "../../contracts/core/ZaseonProtocolHub.sol";
+import {HubWiringKeyedLib} from "../../contracts/internal/HubWiringKeyedLib.sol";
 import "../../contracts/interfaces/IZaseonProtocolHub.sol";
 import {IntentCompletionLayer} from "../../contracts/core/IntentCompletionLayer.sol";
 import {InstantCompletionGuarantee} from "../../contracts/core/InstantCompletionGuarantee.sol";
@@ -17,7 +18,7 @@ import {DynamicRoutingOrchestrator} from "../../contracts/core/DynamicRoutingOrc
  *      2. InstantCompletionGuarantee — bonded proof delivery guarantees
  *      3. DynamicRoutingOrchestrator — multi-bridge routing with ML-style scoring
  *
- *      Then wires all three into the Hub via wireAll (zero-address for existing components).
+ *      Then wires all three into the Hub via wireAllKeyed (zero-address for existing components).
  *
  * Required env vars:
  *   ZASEON_HUB           — Existing Hub address
@@ -89,8 +90,8 @@ contract WireIntentComponents is Script {
         console.log("DynamicRoutingOrchestrator deployed at:", address(router));
 
         // 4. Wire all three into the Hub (zero-address for pre-existing components)
-        hub.wireAll(
-            IZaseonProtocolHub.WireAllParams({
+        IZaseonProtocolHub.WireAllParams memory wireParams = IZaseonProtocolHub
+            .WireAllParams({
                 _verifierRegistry: address(0),
                 _universalVerifier: address(0),
                 _crossChainMessageRelay: address(0),
@@ -114,8 +115,10 @@ contract WireIntentComponents is Script {
                 _instantCompletionGuarantee: address(guarantee),
                 _dynamicRoutingOrchestrator: address(router),
                 _crossChainLiquidityVault: address(0)
-            })
-        );
+            });
+        (bytes32[] memory keys, address[] memory addrs) = HubWiringKeyedLib
+            .fromWireAllParams(wireParams);
+        hub.wireAllKeyed(keys, addrs);
 
         vm.stopBroadcast();
 

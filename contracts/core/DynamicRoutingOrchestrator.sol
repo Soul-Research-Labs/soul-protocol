@@ -37,6 +37,7 @@ import {RouteOptimizer} from "../libraries/RouteOptimizer.sol";
  *      - Stale oracle data detection (configurable staleness threshold)
  *      - Zero-address validation on all address parameters
  *      - Route expiry to prevent stale execution
+ * @custom:deprecated Use DynamicRoutingOrchestratorUpgradeable (contracts/upgradeable/DynamicRoutingOrchestratorUpgradeable.sol) for new deployments. This non-upgradeable variant will be removed in a future release.
  */
 contract DynamicRoutingOrchestrator is
     IDynamicRoutingOrchestrator,
@@ -59,6 +60,14 @@ contract DynamicRoutingOrchestrator is
     /// @notice Role for bridge/pool administration
     bytes32 public constant ADAPTER_ADMIN_ROLE =
         keccak256("ADAPTER_ADMIN_ROLE");
+
+    /// @notice Role authorized to pause the orchestrator in emergencies
+    /// @dev SECURITY (C3b FIX): Pause authority is split from DEFAULT_ADMIN_ROLE
+    ///      so a narrowly-scoped guardian (security council / pager-duty hot
+    ///      key) can halt routing without holding broad admin privileges. Only
+    ///      DEFAULT_ADMIN_ROLE can unpause, preventing a compromised guardian
+    ///      from indefinitely bricking the protocol.
+    bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE");
 
     /// @notice Maximum number of hops in a route
     uint8 public constant MAX_HOPS = 4;
@@ -243,6 +252,7 @@ contract DynamicRoutingOrchestrator is
         _grantRole(ORACLE_ROLE, oracle);
         _grantRole(ADAPTER_ADMIN_ROLE, bridgeAdmin);
         _grantRole(ROUTER_ROLE, admin); // Admin can also record outcomes
+        _grantRole(GUARDIAN_ROLE, admin); // C3b: admin is guardian by default; can be delegated
 
         // Default scoring weights (balanced)
         scoringWeights = RouteOptimizer.ScoringWeights({
@@ -869,8 +879,10 @@ contract DynamicRoutingOrchestrator is
     /// @notice Pause the orchestrator
     /**
      * @notice Pauses the operation
+     * @dev C3b: Gated by GUARDIAN_ROLE so emergency halting does not require
+     *      broad DEFAULT_ADMIN_ROLE access. Unpause still requires admin.
      */
-    function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function pause() external onlyRole(GUARDIAN_ROLE) {
         _pause();
     }
 

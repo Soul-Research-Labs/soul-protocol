@@ -36,6 +36,7 @@ import {IIntentCompletionLayer} from "../interfaces/IIntentCompletionLayer.sol";
  * - Zero-address validation on all critical params
  *
  * @custom:security-contact security@zaseonprotocol.io
+ * @custom:deprecated Use InstantCompletionGuaranteeUpgradeable (contracts/upgradeable/InstantCompletionGuaranteeUpgradeable.sol) for new deployments. This non-upgradeable variant will be removed in a future release.
  */
 contract InstantCompletionGuarantee is
     AccessControl,

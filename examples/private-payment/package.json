@@ -1,0 +1,20 @@
+{
+  "name": "@zaseon/private-payment-example",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "End-to-end private cross-chain payment example using the ZASEON SDK",
+  "scripts": {
+    "start": "tsx index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@zaseon/sdk": "file:../../sdk",
+    "viem": "^2.30.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.0",
+    "dotenv": "^17.2.0"
+  }
+}

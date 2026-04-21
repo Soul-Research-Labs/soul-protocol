@@ -1,0 +1,8 @@
+[package]
+name = "zaseon_primitives"
+type = "lib"
+authors = ["Zaseon Team"]
+description = "Shared Noir primitives for Zaseon circuits: Poseidon wrappers, Merkle membership, range proofs, policy evaluation, domain separation. Consolidates duplicated logic across 21 circuits."
+
+[dependencies]
+poseidon = { tag = "v0.2.6", git = "https://github.com/noir-lang/poseidon" }

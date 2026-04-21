@@ -123,6 +123,9 @@ contract ZaseonMultiProver is
         uint256 required
     );
 
+    /// @notice Emitted when the proof timeout window changes.
+    event ProofTimeoutUpdated(uint256 oldTimeout, uint256 newTimeout);
+
     /*//////////////////////////////////////////////////////////////
                                 ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -599,6 +602,13 @@ contract ZaseonMultiProver is
      * @param timeout The timeout duration
      */
     function setProofTimeout(uint256 timeout) external onlyRole(OPERATOR_ROLE) {
+        // Bound timeout: [60s, 7d] — prevents both stall-forever and instant-cancel misconfig.
+        require(
+            timeout >= 60 && timeout <= 7 days,
+            "ZaseonMultiProver: bad timeout"
+        );
+        uint256 oldTimeout = proofTimeout;
         proofTimeout = timeout;
+        emit ProofTimeoutUpdated(oldTimeout, timeout);
     }
 }

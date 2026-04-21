@@ -105,7 +105,7 @@ contract UniversalShieldedPoolUpgradeableTest is Test {
         impl = new UniversalShieldedPoolUpgradeable();
         bytes memory initData = abi.encodeCall(
             UniversalShieldedPoolUpgradeable.initialize,
-            (admin, address(withdrawVerifier), true)
+            (admin, address(withdrawVerifier), false)
         );
         proxy = new ERC1967Proxy(address(impl), initData);
         pool = UniversalShieldedPoolUpgradeable(payable(address(proxy)));
@@ -139,7 +139,7 @@ contract UniversalShieldedPoolUpgradeableTest is Test {
     }
 
     function test_init_testMode() public view {
-        assertTrue(pool.testMode());
+        assertFalse(pool.testMode());
     }
 
     function test_init_merkleRoot() public view {
@@ -180,6 +180,24 @@ contract UniversalShieldedPoolUpgradeableTest is Test {
         uint256 v = uint256(c) % pool.FIELD_SIZE();
         if (v == 0) v = 1;
         return bytes32(v);
+    }
+
+    function _deployPool(
+        address verifier,
+        bool enableTestMode
+    ) internal returns (UniversalShieldedPoolUpgradeable localPool) {
+        UniversalShieldedPoolUpgradeable localImpl = new UniversalShieldedPoolUpgradeable();
+        bytes memory initData = abi.encodeCall(
+            UniversalShieldedPoolUpgradeable.initialize,
+            (admin, verifier, enableTestMode)
+        );
+        ERC1967Proxy localProxy = new ERC1967Proxy(
+            address(localImpl),
+            initData
+        );
+        localPool = UniversalShieldedPoolUpgradeable(
+            payable(address(localProxy))
+        );
     }
 
     function test_depositETH_success() public {
@@ -256,6 +274,20 @@ contract UniversalShieldedPoolUpgradeableTest is Test {
         pool.depositETH{value: 1 ether}(commitment);
     }
 
+    function test_depositETH_testModeReverts() public {
+        UniversalShieldedPoolUpgradeable localPool = _deployPool(
+            address(withdrawVerifier),
+            true
+        );
+        bytes32 commitment = _validCommitment(7);
+
+        vm.prank(user);
+        vm.expectRevert(
+            UniversalShieldedPoolUpgradeable.DepositsDisabledInTestMode.selector
+        );
+        localPool.depositETH{value: 1 ether}(commitment);
+    }
+
     function test_depositETH_multipleUpdatesRoot() public {
         bytes32 root0 = pool.currentRoot();
 
@@ -299,34 +331,86 @@ contract UniversalShieldedPoolUpgradeableTest is Test {
         pool.depositERC20(assetId, 1 ether, commitment);
     }
 
+    function test_depositERC20_testModeReverts() public {
+        UniversalShieldedPoolUpgradeable localPool = _deployPool(
+            address(withdrawVerifier),
+            true
+        );
+        bytes32 assetId = keccak256("TST_TESTMODE");
+        bytes32 commitment = _validCommitment(22);
+
+        vm.prank(admin);
+        localPool.registerAsset(assetId, address(token));
+
+        vm.startPrank(user);
+        token.approve(address(localPool), 1 ether);
+        vm.expectRevert(
+            UniversalShieldedPoolUpgradeable.DepositsDisabledInTestMode.selector
+        );
+        localPool.depositERC20(assetId, 1 ether, commitment);
+        vm.stopPrank();
+    }
+
     // ──────── Withdrawal (test mode) ────────
 
     function test_withdraw_testMode() public {
-        // Deposit first
-        bytes32 commitment = _validCommitment(30);
-        vm.prank(user);
-        pool.depositETH{value: 1 ether}(commitment);
-
-        bytes32 root = pool.currentRoot();
+        UniversalShieldedPoolUpgradeable localPool = _deployPool(
+            address(0),
+            true
+        );
         bytes32 nullifier = keccak256("nullifier_1");
+        vm.deal(address(localPool), 1 ether);
 
         UniversalShieldedPoolUpgradeable.WithdrawalProof
             memory wp = UniversalShieldedPoolUpgradeable.WithdrawalProof({
-                proof: bytes("fake"),
-                merkleRoot: root,
+                proof: new bytes(32),
+                merkleRoot: localPool.currentRoot(),
                 nullifier: nullifier,
                 recipient: user,
                 relayerAddress: address(0),
                 amount: 0.5 ether,
                 relayerFee: 0,
-                assetId: pool.NATIVE_ASSET(),
+                assetId: localPool.NATIVE_ASSET(),
                 destChainId: bytes32(0)
             });
 
         uint256 balBefore = user.balance;
-        pool.withdraw(wp);
+
+        vm.expectEmit(true, true, false, false);
+        emit UniversalShieldedPoolUpgradeable.TestModeWithdrawalBypassed(
+            nullifier,
+            user
+        );
+        localPool.withdraw(wp);
+
         assertEq(user.balance - balBefore, 0.5 ether);
-        assertTrue(pool.isSpent(nullifier));
+        assertTrue(localPool.isSpent(nullifier));
+    }
+
+    function test_withdraw_testMode_shortProofReverts() public {
+        UniversalShieldedPoolUpgradeable localPool = _deployPool(
+            address(0),
+            true
+        );
+        vm.deal(address(localPool), 1 ether);
+
+        UniversalShieldedPoolUpgradeable.WithdrawalProof
+            memory wp = UniversalShieldedPoolUpgradeable.WithdrawalProof({
+                proof: new bytes(31),
+                merkleRoot: localPool.currentRoot(),
+                nullifier: keccak256("nullifier_short"),
+                recipient: user,
+                relayerAddress: address(0),
+                amount: 0.5 ether,
+                relayerFee: 0,
+                assetId: localPool.NATIVE_ASSET(),
+                destChainId: bytes32(0)
+            });
+
+        vm.expectRevert(
+            UniversalShieldedPoolUpgradeable.TestModeProofTooShort.selector
+        );
+        localPool.withdraw(wp);
     }
 
     function test_withdraw_doubleSpendReverts() public {
@@ -572,23 +656,29 @@ contract UniversalShieldedPoolUpgradeableTest is Test {
     }
 
     function test_disableTestMode() public {
-        assertTrue(pool.testMode());
+        UniversalShieldedPoolUpgradeable localPool = _deployPool(
+            address(withdrawVerifier),
+            true
+        );
+        assertTrue(localPool.testMode());
         vm.prank(admin);
-        pool.disableTestMode();
-        assertFalse(pool.testMode());
+        localPool.disableTestMode();
+        assertFalse(localPool.testMode());
     }
 
     function test_confirmProductionReady() public {
-        vm.startPrank(admin);
-        pool.disableTestMode();
+        vm.prank(admin);
         pool.confirmProductionReady();
-        vm.stopPrank();
     }
 
     function test_confirmProductionReady_testModeReverts() public {
+        UniversalShieldedPoolUpgradeable localPool = _deployPool(
+            address(withdrawVerifier),
+            true
+        );
         vm.prank(admin);
         vm.expectRevert(abi.encodeWithSignature("TestModeStillEnabled()"));
-        pool.confirmProductionReady();
+        localPool.confirmProductionReady();
     }
 
     function test_setDepositRateLimit() public {

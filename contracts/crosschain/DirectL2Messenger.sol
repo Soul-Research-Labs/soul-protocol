@@ -57,6 +57,7 @@ import {IL2DirectMessenger} from "../interfaces/IL2DirectMessenger.sol";
  * - Shared sequencer: BFT consensus with 2/3+1 threshold
  * - Superchain: OP Stack native security model
  * - Fallback: L1 completion for disputed messages
+ * @custom:deprecated Use DirectL2MessengerUpgradeable (contracts/upgradeable/DirectL2MessengerUpgradeable.sol) for new deployments. This non-upgradeable variant will be removed in a future release.
  */
 contract DirectL2Messenger is
     ReentrancyGuard,

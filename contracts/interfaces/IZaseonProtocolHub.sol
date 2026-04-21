@@ -337,6 +337,11 @@ interface IZaseonProtocolHub {
 
     function wireAll(WireAllParams calldata p) external;
 
+    function wireAllKeyed(
+        bytes32[] calldata keys,
+        address[] calldata addrs
+    ) external;
+
     /*//////////////////////////////////////////////////////////////
                          VIEW FUNCTIONS
     //////////////////////////////////////////////////////////////*/

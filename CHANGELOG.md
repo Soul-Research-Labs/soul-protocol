@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deprecated
 
+- **Non-upgradeable variants of 15 core contracts** — the 15 contracts in `contracts/upgradeable/*Upgradeable.sol` are now the canonical implementations. Their non-upgradeable counterparts (`ZaseonProtocolHub.sol`, `CrossChainProofHubV3.sol`, `NullifierRegistryV3.sol`, `UniversalShieldedPool.sol`, `ZKBoundStateLocks.sol`, `DirectL2Messenger.sol`, `ProofCarryingContainer.sol`, `ConfidentialStateContainerV3.sol`, `PrivacyRouter.sol`, `CapacityAwareRouter.sol`, `DynamicRoutingOrchestrator.sol`, `IntentCompletionLayer.sol`, `InstantCompletionGuarantee.sol`, `ZaseonAtomicSwapV2.sol`, `Zaseonv2Orchestrator.sol`) are marked `@custom:deprecated` and will be removed in a future release. New deployments should use the upgradeable variants behind UUPS proxies.
 - `ZaseonMultiSigGovernance.sol` — replaced by `ZaseonUpgradeTimelock` + OpenZeppelin `TimelockController`
 - `ZaseonPreconfirmationHandler.sol` — preconfirmation logic moved into `IntentCompletionEngine`
 - `ConfidentialDataAvailability.sol` — CDA approach replaced by on-chain proof-carrying containers

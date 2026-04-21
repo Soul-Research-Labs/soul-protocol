@@ -1,0 +1,66 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.24;
+
+import {Test} from "forge-std/Test.sol";
+import {__ADAPTER_NAME__BridgeAdapter} from "../../contracts/crosschain/__ADAPTER_NAME__BridgeAdapter.sol";
+
+contract MockNativeBridge {
+    event Sent(bytes32 recipient, bytes payload);
+    function sendMessage(bytes32 recipient, bytes calldata payload) external payable {
+        emit Sent(recipient, payload);
+    }
+}
+
+contract __ADAPTER_NAME__BridgeAdapterTest is Test {
+    __ADAPTER_NAME__BridgeAdapter internal adapter;
+    MockNativeBridge          internal nativeBridge;
+    address internal hub = address(0xABCD);
+    address internal user = address(0xBEEF);
+
+    function setUp() public {
+        nativeBridge = new MockNativeBridge();
+        adapter = new __ADAPTER_NAME__BridgeAdapter(address(nativeBridge), hub);
+        vm.deal(user, 10 ether);
+    }
+
+    function test_bridgeMessage_emitsEvent() public {
+        vm.prank(user);
+        bytes32 id = adapter.bridgeMessage{value: 0.001 ether}(
+            adapter.CHAIN_ID_L2(), bytes32(uint256(1)), hex"deadbeef"
+        );
+        assertTrue(id != bytes32(0));
+    }
+
+    function test_bridgeMessage_refundsExcess() public {
+        uint256 before = user.balance;
+        vm.prank(user);
+        adapter.bridgeMessage{value: 1 ether}(
+            adapter.CHAIN_ID_L2(), bytes32(uint256(1)), hex"01"
+        );
+        assertGt(user.balance, before - 0.01 ether);
+    }
+
+    function test_bridgeMessage_rejectsUnknownChain() public {
+        vm.prank(user);
+        vm.expectRevert();
+        adapter.bridgeMessage{value: 0.1 ether}(9999, bytes32(uint256(1)), hex"01");
+    }
+
+    function testFuzz_bridgeMessage_payload(uint16 len) public {
+        len = uint16(bound(len, 1, 2048));
+        bytes memory p = new bytes(len);
+        vm.prank(user);
+        adapter.bridgeMessage{value: 0.1 ether}(
+            adapter.CHAIN_ID_L2(), bytes32(uint256(1)), p
+        );
+    }
+
+    function test_receiveMessage_onlyFromNativeBridge() public {
+        bytes32 id = keccak256("x");
+        vm.expectRevert();
+        adapter.receiveMessage(id, hex"");
+        vm.prank(address(nativeBridge));
+        adapter.receiveMessage(id, hex"");
+        assertTrue(adapter.isMessageVerified(id));
+    }
+}

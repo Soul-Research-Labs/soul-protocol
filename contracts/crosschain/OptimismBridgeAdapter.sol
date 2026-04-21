@@ -1,13 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IOptimismBridgeAdapter} from "../interfaces/IOptimismBridgeAdapter.sol";
-import {IBridgeAdapter} from "./IBridgeAdapter.sol";
+import {BridgeAdapterBase} from "./base/BridgeAdapterBase.sol";
 
 /**
  * @title OptimismBridgeAdapter
@@ -60,13 +57,7 @@ import {IBridgeAdapter} from "./IBridgeAdapter.sol";
  * - Pausable emergency circuit breaker
  * - Nullifier-based double-spend prevention for privacy deposits
  */
-contract OptimismBridgeAdapter is
-    IOptimismBridgeAdapter,
-    IBridgeAdapter,
-    AccessControl,
-    ReentrancyGuard,
-    Pausable
-{
+contract OptimismBridgeAdapter is IOptimismBridgeAdapter, BridgeAdapterBase {
     using SafeERC20 for IERC20;
 
     error ZKProofVerifierNotConfigured();
@@ -77,9 +68,7 @@ contract OptimismBridgeAdapter is
                                  ROLES
     //////////////////////////////////////////////////////////////*/
 
-    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
     bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
-    bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE");
     bytes32 public constant TREASURY_ROLE = keccak256("TREASURY_ROLE");
 
     /*//////////////////////////////////////////////////////////////
@@ -203,13 +192,8 @@ contract OptimismBridgeAdapter is
 
     /// @notice Initialize the Optimism bridge adapter
     /// @param _admin Admin address granted all roles
-    constructor(address _admin) {
-        if (_admin == address(0)) revert ZeroAddress();
-
-        _grantRole(DEFAULT_ADMIN_ROLE, _admin);
-        _grantRole(OPERATOR_ROLE, _admin);
+    constructor(address _admin) BridgeAdapterBase(_admin, _admin) {
         _grantRole(RELAYER_ROLE, _admin);
-        _grantRole(GUARDIAN_ROLE, _admin);
         _grantRole(TREASURY_ROLE, _admin);
 
         treasury = _admin;
@@ -732,13 +716,13 @@ contract OptimismBridgeAdapter is
 
     /// @notice Pause all bridge operations
     /// @dev Callable only by GUARDIAN_ROLE. Affects deposits, withdrawals, and escrows.
-    function pause() external onlyRole(GUARDIAN_ROLE) {
+    function pause() external override onlyRole(GUARDIAN_ROLE) {
         _pause();
     }
 
     /// @notice Resume bridge operations after pause
     /// @dev Callable only by GUARDIAN_ROLE.
-    function unpause() external onlyRole(GUARDIAN_ROLE) {
+    function unpause() external override onlyRole(GUARDIAN_ROLE) {
         _unpause();
     }
 
@@ -1019,26 +1003,34 @@ contract OptimismBridgeAdapter is
                         IBRIDGEADAPTER COMPATIBILITY
     //////////////////////////////////////////////////////////////*/
 
-    /// @inheritdoc IBridgeAdapter
     function bridgeMessage(
         address,
         bytes calldata,
         address
-    ) external payable returns (bytes32) {
+    ) external payable override returns (bytes32) {
         revert("Use initiateOPDeposit() or initiateWithdrawal()");
     }
 
-    /// @inheritdoc IBridgeAdapter
-    function estimateFee(
+    function _deliver(
+        bytes32,
+        address,
+        bytes calldata,
+        uint256
+    ) internal pure override {
+        revert("Use initiateOPDeposit() or initiateWithdrawal()");
+    }
+
+    function _estimateFee(
         address,
         bytes calldata
-    ) external pure returns (uint256) {
+    ) internal pure override returns (uint256) {
         // OP Stack native bridge has no extra fee beyond gas costs
         return 0;
     }
 
-    /// @inheritdoc IBridgeAdapter
-    function isMessageVerified(bytes32 messageId) external view returns (bool) {
+    function _verifyMessage(
+        bytes32 messageId
+    ) internal view override returns (bool) {
         return deposits[messageId].status == DepositStatus.COMPLETED;
     }
 }

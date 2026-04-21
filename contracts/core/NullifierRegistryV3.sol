@@ -15,6 +15,7 @@ import {INullifierRegistryV3} from "../interfaces/INullifierRegistryV3.sol";
 /// - Pre-computed role hashes (saves ~200 gas per access)
 /// - Unchecked arithmetic in safe contexts (saves ~40 gas per operation)
 /// - Packed NullifierData struct (saves ~20k gas on writes)
+/// @custom:deprecated Use NullifierRegistryV3Upgradeable (contracts/upgradeable/NullifierRegistryV3Upgradeable.sol) for new deployments. This non-upgradeable variant will be removed in a future release.
 contract NullifierRegistryV3 is INullifierRegistryV3, AccessControl, Pausable {
     /*//////////////////////////////////////////////////////////////
                                  ROLES
@@ -57,6 +58,16 @@ contract NullifierRegistryV3 is INullifierRegistryV3, AccessControl, Pausable {
 
     /// @notice Mapping for quick existence check
     mapping(bytes32 => bool) public isNullifierUsed;
+
+    /// @notice Domain-separated (scoped) nullifier existence check.
+    /// @dev SECURITY (C4 FIX): The legacy flat `isNullifierUsed[nullifier]` mapping
+    ///      lets a raw nullifier from *any* source chain collide with a raw
+    ///      nullifier from another. Callers that care about domain separation
+    ///      MUST consult {isScopedNullifierUsed} with the key returned by
+    ///      {scopeKey} so replays across (sourceChainId, nullifier) tuples are
+    ///      impossible even if the raw nullifier collides. The legacy mapping
+    ///      is retained for backward compatibility of existing views.
+    mapping(bytes32 => bool) public isScopedNullifierUsed;
 
     /// @notice Current merkle root
     bytes32 public merkleRoot;
@@ -233,6 +244,12 @@ contract NullifierRegistryV3 is INullifierRegistryV3, AccessControl, Pausable {
             });
 
             isNullifierUsed[nullifier] = true;
+            // C4 FIX: Additionally record the (sourceChainId, nullifier) tuple
+            // so downstream consumers can guard against cross-chain replay
+            // even if two chains produce identical raw nullifiers.
+            isScopedNullifierUsed[
+                keccak256(abi.encode(sourceChainId, nullifier))
+            ] = true;
             _insertIntoTree(nullifier);
         }
 
@@ -277,6 +294,13 @@ contract NullifierRegistryV3 is INullifierRegistryV3, AccessControl, Pausable {
             });
 
             isNullifierUsed[nullifier] = true;
+
+            // C4 FIX: Also record the local-chain scoped key so that a single
+            // `isNullifierUsedFor(chainId, n)` view works uniformly for both
+            // locally-registered and cross-chain-relayed nullifiers.
+            isScopedNullifierUsed[
+                keccak256(abi.encode(CHAIN_ID, nullifier))
+            ] = true;
 
             // Insert into merkle tree and update root
             _insertIntoTree(nullifier);
@@ -372,6 +396,27 @@ contract NullifierRegistryV3 is INullifierRegistryV3, AccessControl, Pausable {
     /// @return exists True if the nullifier exists
     function exists(bytes32 nullifier) external view returns (bool) {
         return isNullifierUsed[nullifier];
+    }
+
+    /// @notice Compute the domain-separated scope key for a (chainId, nullifier) tuple.
+    /// @dev C4 FIX: Use this helper at *every* cross-chain ingestion point to key
+    ///      nullifier checks by (sourceChainId, rawNullifier) rather than the raw
+    ///      nullifier alone. Prevents cross-chain replay when two chains happen to
+    ///      produce identical raw nullifiers.
+    function scopeKey(
+        uint256 sourceChainId,
+        bytes32 nullifier
+    ) public pure returns (bytes32) {
+        return keccak256(abi.encode(sourceChainId, nullifier));
+    }
+
+    /// @notice Check whether a nullifier was registered with a specific source chain.
+    /// @dev Preferred over {isNullifierUsed} for cross-chain-aware consumers.
+    function isNullifierUsedFor(
+        uint256 sourceChainId,
+        bytes32 nullifier
+    ) external view returns (bool) {
+        return isScopedNullifierUsed[scopeKey(sourceChainId, nullifier)];
     }
 
     /// @notice Batch checks if nullifiers exist

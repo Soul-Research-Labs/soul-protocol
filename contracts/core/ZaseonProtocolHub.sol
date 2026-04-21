@@ -40,6 +40,7 @@ import {IZaseonProtocolHub} from "../interfaces/IZaseonProtocolHub.sol";
  * 2. Components can query the hub for addresses of other components
  * 3. Supports versioning for upgradeable components
  * 4. Emits events for all registrations for off-chain indexing
+ * @custom:deprecated Use ZaseonProtocolHubUpgradeable (contracts/upgradeable/ZaseonProtocolHubUpgradeable.sol) for new deployments. This non-upgradeable variant will be removed in a future release.
  */
 contract ZaseonProtocolHub is
     IZaseonProtocolHub,
@@ -179,6 +180,85 @@ contract ZaseonProtocolHub is
         _grantRole(OPERATOR_ROLE, msg.sender);
         _grantRole(GUARDIAN_ROLE, msg.sender);
         _grantRole(UPGRADER_ROLE, msg.sender);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                       ROLE SEPARATION (H15 FIX)
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice One-shot flag: once set, `separateRoles` can never be called again
+    ///         and the deployer can no longer use god-mode via concentrated roles.
+    bool public roleSeparationLocked;
+
+    /// @notice Emitted when deployer-owned roles are atomically redistributed
+    ///         to dedicated principals and the one-shot lock is engaged.
+    event RoleSeparationExecuted(
+        address indexed executedBy,
+        address newDefaultAdmin,
+        address operator,
+        address guardian,
+        address upgrader
+    );
+
+    error RoleSeparationAlreadyLocked();
+
+    /// @notice Atomically split the four initial roles held by the deployer
+    ///         across four distinct principals and lock the operation so it
+    ///         cannot be replayed.
+    /// @dev H15 FIX: The constructor grants DEFAULT_ADMIN_ROLE, OPERATOR_ROLE,
+    ///      GUARDIAN_ROLE, and UPGRADER_ROLE all to msg.sender. Leaving
+    ///      those concentrated is god-mode and invalidates the Hub's
+    ///      separation-of-duty model. This function MUST be invoked as part
+    ///      of the deploy script immediately after wireAll(...). Any of
+    ///      the four target addresses may be the same (e.g., a multisig for
+    ///      admin + guardian) but all four MUST be supplied explicitly so
+    ///      the choice is auditable on-chain.
+    ///
+    ///      NOTE: execution revokes the caller's roles after granting the
+    ///      new ones. The lock prevents the function from being re-run to
+    ///      reinstate the deployer.
+    function separateRoles(
+        address newDefaultAdmin,
+        address operator,
+        address guardian,
+        address upgrader
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (roleSeparationLocked) revert RoleSeparationAlreadyLocked();
+        if (
+            newDefaultAdmin == address(0) ||
+            operator == address(0) ||
+            guardian == address(0) ||
+            upgrader == address(0)
+        ) revert ZeroAddress();
+
+        // Grant first so we never pass through a zero-admin state.
+        _grantRole(DEFAULT_ADMIN_ROLE, newDefaultAdmin);
+        _grantRole(OPERATOR_ROLE, operator);
+        _grantRole(GUARDIAN_ROLE, guardian);
+        _grantRole(UPGRADER_ROLE, upgrader);
+
+        // Revoke from deployer unless they happen to also be a target.
+        if (msg.sender != newDefaultAdmin) {
+            _revokeRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        }
+        if (msg.sender != operator) {
+            _revokeRole(OPERATOR_ROLE, msg.sender);
+        }
+        if (msg.sender != guardian) {
+            _revokeRole(GUARDIAN_ROLE, msg.sender);
+        }
+        if (msg.sender != upgrader) {
+            _revokeRole(UPGRADER_ROLE, msg.sender);
+        }
+
+        roleSeparationLocked = true;
+        emit RoleSeparationExecuted(
+            msg.sender,
+            newDefaultAdmin,
+            operator,
+            guardian,
+            upgrader
+        );
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -1150,6 +1230,272 @@ contract ZaseonProtocolHub is
     }
 
     /*//////////////////////////////////////////////////////////////
+                       COMPONENT REGISTRY MIRROR
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Optional unified registry that mirrors hub state as generic (key → address)
+    ///         lookups. Decouples consumers from the hub's hard-coded typed getters and
+    ///         is the landing target for full hub decomposition (see
+    ///         contracts/core/registries/ComponentRegistry.sol).
+    /// @dev Storage is appended at the end of the layout to preserve upgrade safety.
+    address public componentRegistry;
+
+    event ComponentRegistryUpdated(
+        address indexed previous,
+        address indexed current
+    );
+    event ComponentRegistryMirrored(uint256 keysMirrored);
+
+    /// @notice Set the mirror target. Must be a deployed `ComponentRegistry` whose
+    ///         `REGISTRY_ADMIN_ROLE` is granted to this hub.
+    function setComponentRegistry(
+        address registry
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (registry == address(0)) revert ZeroAddress();
+        emit ComponentRegistryUpdated(componentRegistry, registry);
+        componentRegistry = registry;
+    }
+
+    /// @notice Push the hub's current typed state into the `ComponentRegistry`.
+    /// @dev Idempotent: safe to call repeatedly. Skips zero-address slots to preserve
+    ///      existing values in the mirror (matches wireAll semantics).
+    function mirrorToComponentRegistry() external onlyRole(OPERATOR_ROLE) {
+        address registry = componentRegistry;
+        if (registry == address(0)) revert ZeroAddress();
+
+        bytes32[] memory k = new bytes32[](20);
+        address[] memory v = new address[](20);
+        uint256 i;
+
+        k[i] = keccak256("verifierRegistry");
+        v[i++] = verifierRegistry;
+        k[i] = keccak256("universalVerifier");
+        v[i++] = universalVerifier;
+        k[i] = keccak256("multiProver");
+        v[i++] = multiProver;
+        k[i] = keccak256("stealthAddressRegistry");
+        v[i++] = stealthAddressRegistry;
+        k[i] = keccak256("privateRelayerNetwork");
+        v[i++] = privateRelayerNetwork;
+        k[i] = keccak256("viewKeyRegistry");
+        v[i++] = viewKeyRegistry;
+        k[i] = keccak256("shieldedPool");
+        v[i++] = shieldedPool;
+        k[i] = keccak256("nullifierManager");
+        v[i++] = nullifierManager;
+        k[i] = keccak256("complianceOracle");
+        v[i++] = complianceOracle;
+        k[i] = keccak256("proofTranslator");
+        v[i++] = proofTranslator;
+        k[i] = keccak256("privacyRouter");
+        v[i++] = privacyRouter;
+        k[i] = keccak256("relayProofValidator");
+        v[i++] = relayProofValidator;
+        k[i] = keccak256("relayWatchtower");
+        v[i++] = relayWatchtower;
+        k[i] = keccak256("relayCircuitBreaker");
+        v[i++] = relayCircuitBreaker;
+        k[i] = keccak256("zkBoundStateLocks");
+        v[i++] = zkBoundStateLocks;
+        k[i] = keccak256("proofCarryingContainer");
+        v[i++] = proofCarryingContainer;
+        k[i] = keccak256("crossDomainNullifierAlgebra");
+        v[i++] = crossDomainNullifierAlgebra;
+        k[i] = keccak256("policyBoundProofs");
+        v[i++] = policyBoundProofs;
+        k[i] = keccak256("timelock");
+        v[i++] = timelock;
+        k[i] = keccak256("upgradeTimelock");
+        v[i++] = upgradeTimelock;
+
+        IComponentRegistryMirror(registry).setBatch(k, v);
+        emit ComponentRegistryMirrored(i);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                  REGISTRY-NATIVE WIRING (successor to wireAll)
+    //////////////////////////////////////////////////////////////*/
+
+    event ProtocolWiredKeyed(address indexed operator, uint256 count);
+    error RegistryWiringMismatch(uint256 keysLen, uint256 addrsLen);
+    error RegistryWiringUnset();
+    error RegistryWiringBatchTooLarge(uint256 n, uint256 max);
+
+    /// @notice Batch-wire components by (key, address) pairs.
+    /// @dev Transitional successor to {wireAll}. Known hub keys are still written into the
+    ///      hub's typed storage so existing getters and `isFullyConfigured()` remain valid,
+    ///      while the optional {ComponentRegistry} mirror is updated when configured.
+    ///      Unknown keys require `componentRegistry` to be configured so they have a durable
+    ///      storage destination.
+    /// @param keys Component keys (typically `keccak256("name")`; use `ComponentRegistry.KEY_*` constants).
+    /// @param addrs Parallel array of component addresses (zero values are skipped).
+    function wireAllKeyed(
+        bytes32[] calldata keys,
+        address[] calldata addrs
+    ) external onlyRole(OPERATOR_ROLE) nonReentrant {
+        uint256 n = keys.length;
+        if (n != addrs.length) revert RegistryWiringMismatch(n, addrs.length);
+        if (n == 0) revert RegistryWiringMismatch(0, 0);
+        if (n > MAX_BATCH_SIZE)
+            revert RegistryWiringBatchTooLarge(n, MAX_BATCH_SIZE);
+
+        address registry = componentRegistry;
+        if (registry != address(0)) {
+            IComponentRegistryMirror(registry).setBatch(keys, addrs);
+        }
+
+        uint256 nonZero;
+        for (uint256 i; i < n; ) {
+            if (addrs[i] != address(0)) {
+                if (
+                    !_wireKnownKey(keys[i], addrs[i]) && registry == address(0)
+                ) {
+                    revert RegistryWiringUnset();
+                }
+                unchecked {
+                    ++nonZero;
+                }
+            }
+            unchecked {
+                ++i;
+            }
+        }
+        emit ProtocolWiredKeyed(msg.sender, nonZero);
+    }
+
+    function _wireKnownKey(
+        bytes32 key,
+        address addr
+    ) internal returns (bool handled) {
+        if (key == keccak256("verifierRegistry")) {
+            verifierRegistry = addr;
+            emit ComponentRegistered(key, ComponentCategory.CORE, addr, 1);
+            return true;
+        }
+        if (key == keccak256("universalVerifier")) {
+            universalVerifier = addr;
+            emit ComponentRegistered(key, ComponentCategory.VERIFIER, addr, 1);
+            return true;
+        }
+        if (key == keccak256("crossChainMessageRelay")) {
+            crossChainMessageRelay = addr;
+            emit ComponentRegistered(key, ComponentCategory.RELAY, addr, 1);
+            return true;
+        }
+        if (key == keccak256("crossChainPrivacyHub")) {
+            crossChainPrivacyHub = addr;
+            emit PrivacyModuleRegistered("CROSS_CHAIN_PRIVACY_HUB", addr);
+            return true;
+        }
+        if (key == keccak256("stealthAddressRegistry")) {
+            stealthAddressRegistry = addr;
+            emit PrivacyModuleRegistered("STEALTH_REGISTRY", addr);
+            return true;
+        }
+        if (key == keccak256("privateRelayerNetwork")) {
+            privateRelayerNetwork = addr;
+            emit PrivacyModuleRegistered("PRIVATE_RELAYER", addr);
+            return true;
+        }
+        if (key == keccak256("viewKeyRegistry")) {
+            viewKeyRegistry = addr;
+            emit PrivacyModuleRegistered("VIEW_KEY_REGISTRY", addr);
+            return true;
+        }
+        if (key == keccak256("shieldedPool")) {
+            shieldedPool = addr;
+            emit PrivacyModuleRegistered("SHIELDED_POOL", addr);
+            return true;
+        }
+        if (key == keccak256("nullifierManager")) {
+            nullifierManager = addr;
+            emit PrivacyModuleRegistered("NULLIFIER_MANAGER", addr);
+            return true;
+        }
+        if (key == keccak256("complianceOracle")) {
+            complianceOracle = addr;
+            emit SecurityModuleRegistered("COMPLIANCE_ORACLE", addr);
+            return true;
+        }
+        if (key == keccak256("proofTranslator")) {
+            proofTranslator = addr;
+            emit ComponentRegistered(key, ComponentCategory.VERIFIER, addr, 1);
+            return true;
+        }
+        if (key == keccak256("privacyRouter")) {
+            privacyRouter = addr;
+            emit ComponentRegistered(key, ComponentCategory.CORE, addr, 1);
+            return true;
+        }
+        if (key == keccak256("relayProofValidator")) {
+            relayProofValidator = addr;
+            emit SecurityModuleRegistered("RELAY_PROOF_VALIDATOR", addr);
+            return true;
+        }
+        if (key == keccak256("zkBoundStateLocks")) {
+            zkBoundStateLocks = addr;
+            emit ComponentRegistered(key, ComponentCategory.CORE, addr, 1);
+            return true;
+        }
+        if (key == keccak256("proofCarryingContainer")) {
+            proofCarryingContainer = addr;
+            emit ComponentRegistered(key, ComponentCategory.CORE, addr, 1);
+            return true;
+        }
+        if (key == keccak256("crossDomainNullifierAlgebra")) {
+            crossDomainNullifierAlgebra = addr;
+            emit ComponentRegistered(key, ComponentCategory.CORE, addr, 1);
+            return true;
+        }
+        if (key == keccak256("policyBoundProofs")) {
+            policyBoundProofs = addr;
+            emit ComponentRegistered(key, ComponentCategory.CORE, addr, 1);
+            return true;
+        }
+        if (key == keccak256("multiProver")) {
+            multiProver = addr;
+            emit ComponentRegistered(key, ComponentCategory.VERIFIER, addr, 1);
+            return true;
+        }
+        if (key == keccak256("relayWatchtower")) {
+            relayWatchtower = addr;
+            emit SecurityModuleRegistered("RELAY_WATCHTOWER", addr);
+            return true;
+        }
+        if (key == keccak256("intentCompletionLayer")) {
+            intentCompletionLayer = addr;
+            emit ComponentRegistered(key, ComponentCategory.CORE, addr, 1);
+            return true;
+        }
+        if (key == keccak256("instantCompletionGuarantee")) {
+            instantCompletionGuarantee = addr;
+            emit ComponentRegistered(key, ComponentCategory.CORE, addr, 1);
+            return true;
+        }
+        if (key == keccak256("dynamicRoutingOrchestrator")) {
+            dynamicRoutingOrchestrator = addr;
+            emit ComponentRegistered(
+                key,
+                ComponentCategory.INFRASTRUCTURE,
+                addr,
+                1
+            );
+            return true;
+        }
+        if (key == keccak256("crossChainLiquidityVault")) {
+            crossChainLiquidityVault = addr;
+            emit ComponentRegistered(
+                key,
+                ComponentCategory.INFRASTRUCTURE,
+                addr,
+                1
+            );
+            return true;
+        }
+        return false;
+    }
+
+    /*//////////////////////////////////////////////////////////////
                           ERC-165
     //////////////////////////////////////////////////////////////*/
 
@@ -1163,4 +1509,12 @@ contract ZaseonProtocolHub is
             interfaceId == type(IZaseonProtocolHub).interfaceId ||
             super.supportsInterface(interfaceId);
     }
+}
+
+/// @dev Minimal mirror interface used by {ZaseonProtocolHub.mirrorToComponentRegistry}.
+interface IComponentRegistryMirror {
+    function setBatch(
+        bytes32[] calldata keys,
+        address[] calldata addrs
+    ) external;
 }

@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
-import {IBridgeAdapter} from "./IBridgeAdapter.sol";
+import {BridgeAdapterBase} from "./base/BridgeAdapterBase.sol";
 
 /**
  * @title ArbitrumBridgeAdapter
@@ -49,22 +46,9 @@ import {IBridgeAdapter} from "./IBridgeAdapter.sol";
  * - Challenge Period: ~7 day dispute window
  * - ArbOS: Arbitrum's operating system layer
  */
-contract ArbitrumBridgeAdapter is
-    IBridgeAdapter,
-    AccessControl,
-    ReentrancyGuard,
-    Pausable
-{
+contract ArbitrumBridgeAdapter is BridgeAdapterBase {
     /*//////////////////////////////////////////////////////////////
                                  ROLES
-    //////////////////////////////////////////////////////////////*/
-
-    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
-    bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE");
-    bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
-
-    /*//////////////////////////////////////////////////////////////
-                              CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Arbitrum One chain ID
@@ -318,21 +302,15 @@ contract ArbitrumBridgeAdapter is
     error ChallengeNotExpired();
     error InvalidProof();
     error OutputAlreadyProcessed();
-    error InsufficientFee();
     error InsufficientLiquidity();
     error FastExitDisabled();
-    error TransferFailed();
     error FeeTooHigh();
 
     /*//////////////////////////////////////////////////////////////
                             CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    constructor(address _admin) {
-        _grantRole(DEFAULT_ADMIN_ROLE, _admin);
-        _grantRole(OPERATOR_ROLE, _admin);
-        _grantRole(GUARDIAN_ROLE, _admin);
-
+    constructor(address _admin) BridgeAdapterBase(_admin, _admin) {
         bridgeFee = 15; // 0.15%
         minDepositAmount = 1e15;
         maxDepositAmount = 1e24;
@@ -411,7 +389,9 @@ contract ArbitrumBridgeAdapter is
             uint256 totalRequired = submissionCost +
                 (l2GasLimit * l2GasPrice) +
                 fee;
-            if (msg.value < totalRequired) revert InsufficientFee();
+            if (msg.value < totalRequired) {
+                revert InsufficientFee(msg.value, totalRequired);
+            }
             totalFeesCollected += fee;
         }
 
@@ -751,11 +731,11 @@ contract ArbitrumBridgeAdapter is
                            PAUSABLE
     //////////////////////////////////////////////////////////////*/
 
-    function pause() external onlyRole(GUARDIAN_ROLE) {
+    function pause() external override onlyRole(GUARDIAN_ROLE) {
         _pause();
     }
 
-    function unpause() external onlyRole(GUARDIAN_ROLE) {
+    function unpause() external override onlyRole(GUARDIAN_ROLE) {
         _unpause();
     }
 
@@ -899,12 +879,18 @@ contract ArbitrumBridgeAdapter is
                      IBridgeAdapter COMPATIBILITY
     //////////////////////////////////////////////////////////////*/
 
-    /// @inheritdoc IBridgeAdapter
     function bridgeMessage(
         address targetAddress,
         bytes calldata payload,
         address refundAddress
-    ) external payable nonReentrant whenNotPaused returns (bytes32 messageId) {
+    )
+        external
+        payable
+        override
+        nonReentrant
+        whenNotPaused
+        returns (bytes32 messageId)
+    {
         // H23 FIX: Implement bridgeMessage via retryable ticket with defaults
         RollupConfig storage config = rollupConfigs[ARB_ONE_CHAIN_ID];
         if (!config.active) revert RollupNotConfigured();
@@ -933,19 +919,62 @@ contract ArbitrumBridgeAdapter is
             0, // maxFeePerGas (auto)
             payload
         );
+
+        emit MessageBridged(
+            messageId,
+            msg.sender,
+            targetAddress,
+            msg.value,
+            keccak256(payload)
+        );
     }
 
-    /// @inheritdoc IBridgeAdapter
     function estimateFee(
         address /*targetAddress*/,
         bytes calldata /*payload*/
-    ) external pure returns (uint256 nativeFee) {
+    ) external pure override returns (uint256 nativeFee) {
         // Return default submission cost as baseline estimate
         nativeFee = DEFAULT_MAX_SUBMISSION_COST;
     }
 
-    /// @inheritdoc IBridgeAdapter
-    function isMessageVerified(bytes32 messageId) external view returns (bool) {
+    function isMessageVerified(
+        bytes32 messageId
+    ) external view override returns (bool) {
+        L2ToL1Withdrawal storage w = withdrawals[messageId];
+        return w.status == TransferStatus.FINALIZED;
+    }
+
+    function _deliver(
+        bytes32,
+        address targetAddress,
+        bytes calldata payload,
+        uint256 nativeFee
+    ) internal override {
+        RollupConfig storage config = rollupConfigs[ARB_ONE_CHAIN_ID];
+        if (!config.active) revert RollupNotConfigured();
+
+        IInbox(config.inbox).createRetryableTicket{value: nativeFee}(
+            targetAddress,
+            0,
+            DEFAULT_MAX_SUBMISSION_COST,
+            msg.sender,
+            msg.sender,
+            DEFAULT_L2_GAS_LIMIT,
+            0,
+            payload
+        );
+    }
+
+    function _estimateFee(
+        address,
+        bytes calldata
+    ) internal pure override returns (uint256 nativeFee) {
+        nativeFee = DEFAULT_MAX_SUBMISSION_COST;
+    }
+
+    function _verifyMessage(
+        bytes32 messageId
+    ) internal view override returns (bool) {
         L2ToL1Withdrawal storage w = withdrawals[messageId];
         return w.status == TransferStatus.FINALIZED;
     }

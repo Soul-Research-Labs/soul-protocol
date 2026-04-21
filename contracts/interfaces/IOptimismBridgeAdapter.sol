@@ -113,7 +113,6 @@ interface IOptimismBridgeAdapter {
         bytes32 latestBlockhash;
     }
 
-    error ZeroAddress();
     error AmountBelowMinimum(uint256 amount, uint256 minimum);
     error AmountAboveMaximum(uint256 amount, uint256 maximum);
     error DepositNotFound(bytes32 depositId);

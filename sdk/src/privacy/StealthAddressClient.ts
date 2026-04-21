@@ -188,6 +188,20 @@ export class StealthAddressClient {
     if (!this.walletClient)
       throw new Error("Wallet client required for registration");
 
+    // SECURITY (L-15): Validate `scheme` is a known enum value before it
+    // leaves the SDK — the on-chain registry rejects unknown schemes with
+    // an opaque revert, but catching the misuse locally produces a clearer
+    // error and prevents the caller from signing a tx that is guaranteed
+    // to fail and waste gas.
+    if (
+      scheme !== StealthScheme.SECP256K1 &&
+      scheme !== StealthScheme.ED25519 &&
+      scheme !== StealthScheme.BLS12_381 &&
+      scheme !== StealthScheme.BABYJUBJUB
+    ) {
+      throw new Error(`Invalid StealthScheme: ${scheme}`);
+    }
+
     const stealthId = StealthAddressClient.computeStealthId(
       spendingPubKey,
       viewingPubKey,
@@ -228,12 +242,18 @@ export class StealthAddressClient {
   }
 
   /**
-   * Generate ephemeral keypair and compute stealth address
+   * Generate ephemeral keypair and compute stealth address.
+   *
+   * SECURITY FIX C-7: This method used to return the ephemeral *private* key
+   * alongside the stealth address. That was unnecessary — the sender only
+   * needs the ephemeral *public* key (to announce on-chain) and the stealth
+   * address (to send funds to). Returning the private key let callers log,
+   * cache, or serialize it, which breaks the unlinkability guarantee if an
+   * observer obtains it later. The private key is now generated and burned
+   * inside this function's scope.
    */
-  async computeStealthAddress(
-    stealthId: Hex,
-  ): Promise<StealthAddressResult & { ephemeralPrivKey: Hex }> {
-    // Generate ephemeral keypair
+  async computeStealthAddress(stealthId: Hex): Promise<StealthAddressResult> {
+    // Generate ephemeral keypair. `ephemeralPrivKey` never leaves this scope.
     const ephemeralPrivKey = toHex(crypto.getRandomValues(new Uint8Array(32)));
     const ephemeralAccount = privateKeyToAccount(ephemeralPrivKey);
     const ephemeralPubKey = ephemeralAccount.publicKey;
@@ -249,7 +269,6 @@ export class StealthAddressClient {
       stealthAddress,
       ephemeralPubKey,
       viewTag,
-      ephemeralPrivKey,
     };
   }
 

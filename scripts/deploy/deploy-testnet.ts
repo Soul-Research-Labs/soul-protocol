@@ -18,9 +18,91 @@
 import hre from "hardhat";
 import { writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
+import { keccak256, stringToBytes } from "viem";
 
 interface DeployedContracts {
   [name: string]: string;
+}
+
+function buildWireAllKeyedArgs(params: {
+  _verifierRegistry: string;
+  _universalVerifier: string;
+  _crossChainMessageRelay: string;
+  _crossChainPrivacyHub: string;
+  _stealthAddressRegistry: string;
+  _privateRelayerNetwork: string;
+  _viewKeyRegistry: string;
+  _shieldedPool: string;
+  _nullifierManager: string;
+  _complianceOracle: string;
+  _proofTranslator: string;
+  _privacyRouter: string;
+  _relayProofValidator: string;
+  _zkBoundStateLocks: string;
+  _proofCarryingContainer: string;
+  _crossDomainNullifierAlgebra: string;
+  _policyBoundProofs: string;
+  _multiProver: string;
+  _relayWatchtower: string;
+  _intentCompletionLayer: string;
+  _instantCompletionGuarantee: string;
+  _dynamicRoutingOrchestrator: string;
+  _crossChainLiquidityVault: string;
+}) {
+  const names = [
+    "verifierRegistry",
+    "universalVerifier",
+    "crossChainMessageRelay",
+    "crossChainPrivacyHub",
+    "stealthAddressRegistry",
+    "privateRelayerNetwork",
+    "viewKeyRegistry",
+    "shieldedPool",
+    "nullifierManager",
+    "complianceOracle",
+    "proofTranslator",
+    "privacyRouter",
+    "relayProofValidator",
+    "zkBoundStateLocks",
+    "proofCarryingContainer",
+    "crossDomainNullifierAlgebra",
+    "policyBoundProofs",
+    "multiProver",
+    "relayWatchtower",
+    "intentCompletionLayer",
+    "instantCompletionGuarantee",
+    "dynamicRoutingOrchestrator",
+    "crossChainLiquidityVault",
+  ] as const;
+
+  const addrs = [
+    params._verifierRegistry,
+    params._universalVerifier,
+    params._crossChainMessageRelay,
+    params._crossChainPrivacyHub,
+    params._stealthAddressRegistry,
+    params._privateRelayerNetwork,
+    params._viewKeyRegistry,
+    params._shieldedPool,
+    params._nullifierManager,
+    params._complianceOracle,
+    params._proofTranslator,
+    params._privacyRouter,
+    params._relayProofValidator,
+    params._zkBoundStateLocks,
+    params._proofCarryingContainer,
+    params._crossDomainNullifierAlgebra,
+    params._policyBoundProofs,
+    params._multiProver,
+    params._relayWatchtower,
+    params._intentCompletionLayer,
+    params._instantCompletionGuarantee,
+    params._dynamicRoutingOrchestrator,
+    params._crossChainLiquidityVault,
+  ] as const;
+
+  const keys = names.map((name) => keccak256(stringToBytes(name)));
+  return [keys, [...addrs]] as const;
 }
 
 async function main() {
@@ -147,34 +229,33 @@ async function main() {
 
   // Wire Hub with available components (zero-address fields are skipped)
   const zeroAddr = "0x0000000000000000000000000000000000000000" as const;
-  await hub.write.wireAll([
-    {
-      _verifierRegistry: verifierRegistry.address,
-      _universalVerifier: zeroAddr,
-      _crossChainMessageRelay: relay.address,
-      _crossChainPrivacyHub: zeroAddr,
-      _stealthAddressRegistry: zeroAddr,
-      _privateRelayerNetwork: relayerRegistry.address,
-      _viewKeyRegistry: zeroAddr,
-      _shieldedPool: zeroAddr,
-      _nullifierManager: nullifierRegistry.address,
-      _complianceOracle: zeroAddr,
-      _proofTranslator: zeroAddr,
-      _privacyRouter: zeroAddr,
-      _relayProofValidator: zeroAddr,
-      _zkBoundStateLocks: zeroAddr,
-      _proofCarryingContainer: pcc.address,
-      _crossDomainNullifierAlgebra: zeroAddr,
-      _policyBoundProofs: zeroAddr,
-      _multiProver: zeroAddr,
-      _relayWatchtower: watchtower.address,
-      _intentCompletionLayer: zeroAddr,
-      _instantCompletionGuarantee: zeroAddr,
-      _dynamicRoutingOrchestrator: zeroAddr,
-      _crossChainLiquidityVault: zeroAddr,
-    },
-  ]);
-  console.log("  Hub wireAll() completed");
+  const [wireKeys, wireAddrs] = buildWireAllKeyedArgs({
+    _verifierRegistry: verifierRegistry.address,
+    _universalVerifier: zeroAddr,
+    _crossChainMessageRelay: relay.address,
+    _crossChainPrivacyHub: zeroAddr,
+    _stealthAddressRegistry: zeroAddr,
+    _privateRelayerNetwork: relayerRegistry.address,
+    _viewKeyRegistry: zeroAddr,
+    _shieldedPool: zeroAddr,
+    _nullifierManager: nullifierRegistry.address,
+    _complianceOracle: zeroAddr,
+    _proofTranslator: zeroAddr,
+    _privacyRouter: zeroAddr,
+    _relayProofValidator: zeroAddr,
+    _zkBoundStateLocks: zeroAddr,
+    _proofCarryingContainer: pcc.address,
+    _crossDomainNullifierAlgebra: zeroAddr,
+    _policyBoundProofs: zeroAddr,
+    _multiProver: zeroAddr,
+    _relayWatchtower: watchtower.address,
+    _intentCompletionLayer: zeroAddr,
+    _instantCompletionGuarantee: zeroAddr,
+    _dynamicRoutingOrchestrator: zeroAddr,
+    _crossChainLiquidityVault: zeroAddr,
+  });
+  await hub.write.wireAllKeyed([wireKeys, wireAddrs]);
+  console.log("  Hub wireAllKeyed() completed");
 
   // Save deployment
   const deploymentDir = join(__dirname, "..", "..", "deployments");

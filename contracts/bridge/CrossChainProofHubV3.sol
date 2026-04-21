@@ -18,6 +18,7 @@ import {IProofVerifier} from "../interfaces/IProofVerifier.sol";
 /// - SecurityModule integration (rate limiting, flash loan guard)
 /// - TOCTOU protection via relayerPendingProofs
 /// - Challenge period for optimistic verification
+/// @custom:deprecated Use CrossChainProofHubV3Upgradeable (contracts/upgradeable/CrossChainProofHubV3Upgradeable.sol) for new deployments. This non-upgradeable variant will be removed in a future release.
 contract CrossChainProofHubV3 is
     ICrossChainProofHubV3,
     AccessControl,
@@ -239,20 +240,25 @@ contract CrossChainProofHubV3 is
 
     /// @notice Withdraws relayer stake
     /// @param amount Amount to withdraw
-    /// @dev Includes TOCTOU protection: cannot withdraw while proofs are pending
+    /// @dev Includes TOCTOU protection: cannot withdraw while proofs are pending.
+    ///      Caches `relayerStakes[msg.sender]` and `relayerPendingProofs[msg.sender]`
+    ///      in locals to avoid redundant SLOADs (~400 gas saved on the happy path).
     function withdrawStake(uint256 amount) external nonReentrant {
-        if (relayerStakes[msg.sender] < amount)
-            revert InsufficientStake(relayerStakes[msg.sender], amount);
+        uint256 currentStake = relayerStakes[msg.sender];
+        if (currentStake < amount)
+            revert InsufficientStake(currentStake, amount);
 
         // TOCTOU protection: ensure relayer has no pending proofs
         // that could be challenged after stake is withdrawn
-        uint256 pendingCount = relayerPendingProofs[msg.sender];
-        uint256 remainingStake = relayerStakes[msg.sender] - amount;
-        if (pendingCount > 0 && remainingStake < minRelayerStake) {
+        uint256 remainingStake = currentStake - amount;
+        if (
+            relayerPendingProofs[msg.sender] > 0 &&
+            remainingStake < minRelayerStake
+        ) {
             revert InsufficientStake(remainingStake, minRelayerStake);
         }
 
-        relayerStakes[msg.sender] -= amount;
+        relayerStakes[msg.sender] = remainingStake;
 
         (bool success, ) = msg.sender.call{value: amount}("");
         if (!success) revert WithdrawFailed();
@@ -263,10 +269,11 @@ contract CrossChainProofHubV3 is
     /// @notice Withdraws claimable rewards (for challengers who won disputes)
     /// @param amount Amount to withdraw
     function withdrawRewards(uint256 amount) external nonReentrant {
-        if (claimableRewards[msg.sender] < amount)
-            revert InsufficientStake(claimableRewards[msg.sender], amount);
+        uint256 currentRewards = claimableRewards[msg.sender];
+        if (currentRewards < amount)
+            revert InsufficientStake(currentRewards, amount);
 
-        claimableRewards[msg.sender] -= amount;
+        claimableRewards[msg.sender] = currentRewards - amount;
 
         (bool success, ) = msg.sender.call{value: amount}("");
         if (!success) revert WithdrawFailed();
