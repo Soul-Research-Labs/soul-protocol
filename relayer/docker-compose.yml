@@ -9,7 +9,9 @@ services:
       - .env
     environment:
       - NODE_ENV=production
-      - REDIS_URL=redis://redis:6379
+      # REDIS_PASSWORD must be set in .env; no default — operators who forget
+      # will see an immediate auth failure rather than a silently-open cache.
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
       - LOG_LEVEL=info
       - CHAINS=ethereum,arbitrum,optimism,base,aztec
     depends_on:
@@ -19,15 +21,26 @@ services:
 
   redis:
     image: redis:7-alpine
+    # Bind to loopback only. The relayer container reaches redis via the
+    # compose network alias; exposing 6379 on all interfaces would leak
+    # nonce/replay-protection state to any co-tenant on the host.
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
+    command:
+      - "redis-server"
+      - "--requirepass"
+      - "${REDIS_PASSWORD:?REDIS_PASSWORD must be set}"
+      - "--protected-mode"
+      - "yes"
     volumes:
       - redis-data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "sh", "-c", "redis-cli -a \"$$REDIS_PASSWORD\" ping"]
       interval: 10s
       timeout: 5s
       retries: 3
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
     restart: unless-stopped
 
 volumes:

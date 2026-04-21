@@ -798,7 +798,11 @@ contract ZKBoundStateLocksUpgradeable is
                 )
             );
 
-            if (!success) return false;
+            // SECURITY: A successful staticcall to a non-existent / self-destructed
+            // contract returns empty returndata. Treat that as verification failure
+            // rather than reverting inside `abi.decode` so the fallback path (or
+            // caller) sees a clean `false` and can react gracefully.
+            if (!success || returnData.length < 32) return false;
 
             return abi.decode(returnData, (bool));
         } else if (address(proofVerifier) != address(0)) {

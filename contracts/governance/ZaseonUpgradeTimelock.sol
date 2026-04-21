@@ -121,6 +121,9 @@ contract ZaseonUpgradeTimelock is TimelockController, IZaseonUpgradeTimelock {
     );
     event MinSignaturesChangeCancelled(uint256 cancelledValue);
 
+    /// @notice Emitted when the governor address wired into the timelock is rotated.
+    event GovernorUpdated(address indexed oldGovernor, address indexed newGovernor);
+
     /*//////////////////////////////////////////////////////////////
                               ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -181,7 +184,10 @@ contract ZaseonUpgradeTimelock is TimelockController, IZaseonUpgradeTimelock {
     function setGovernor(
         address _governor
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_governor == address(0)) revert ZeroAddress();
+        address oldGovernor = governor;
         governor = _governor;
+        emit GovernorUpdated(oldGovernor, _governor);
     }
 
     /*//////////////////////////////////////////////////////////////

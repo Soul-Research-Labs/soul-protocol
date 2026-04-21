@@ -502,7 +502,7 @@ contract CrossChainProofHubV3 is
         bytes calldata proof,
         bytes calldata publicInputs,
         bytes32 proofType
-    ) external nonReentrant {
+    ) external nonReentrant whenNotPaused {
         Challenge storage challenge = challenges[proofId];
         if (challenge.challenger == address(0))
             revert ChallengeNotFound(proofId);

@@ -133,6 +133,12 @@ contract DirectL2Messenger is
     event RequiredConfirmationsUpdated(uint256 newCount);
     /// @notice Emitted when the challenger reward amount is updated
     event ChallengerRewardUpdated(uint256 newReward);
+    /// @notice Emitted when the Superchain messenger address is rotated.
+    event SuperchainMessengerUpdated(address indexed oldMessenger, address indexed newMessenger);
+    /// @notice Emitted when the Espresso sequencer address is rotated.
+    event EspressoSequencerUpdated(address indexed oldSequencer, address indexed newSequencer);
+    /// @notice Emitted when the Astria sequencer address is rotated.
+    event AstriaSequencerUpdated(address indexed oldSequencer, address indexed newSequencer);
     /// @notice Emitted when a message's delivery path is overridden from the requested path
     event PathOverridden(
         bytes32 indexed messageId,
@@ -201,6 +207,14 @@ contract DirectL2Messenger is
 
     /// @notice Message expiry
     uint256 public constant MESSAGE_EXPIRY = 24 hours;
+
+    /// @notice Domain tag for the fast-relayer messageId derivation.
+    /// @dev Binds the (sourceChainId, currentChainId, sender, recipient,
+    ///      payload) tuple on this chain so the receive-side hash cannot
+    ///      collide with the send-side one (which includes nonce, timestamp
+    ///      and path).
+    bytes32 public constant FAST_RELAYER_DOMAIN =
+        keccak256("zaseon.directL2.fastRelayer.v1");
 
     /// @notice Challenger reward for successful fraud proofs
     uint256 public challengerReward = 0.1 ether;
@@ -554,7 +568,33 @@ contract DirectL2Messenger is
             revert InsufficientConfirmations();
         }
 
-        // Verify signatures (use abi.encode for collision safety with variable-length payload)
+        // SECURITY (C-1): Bind the caller-supplied `messageId` to the content
+        // it claims to represent and reject any mismatch. Without this, a
+        // relayer quorum's signatures over (sourceChainId, currentChainId,
+        // sender, recipient, payload) could be attached to an arbitrary
+        // `messageId`, allowing the same signed payload to be registered
+        // under multiple ids (replay) or used to spoof ids that the hub is
+        // expected to see. `FAST_RELAYER_DOMAIN` domain-separates this hash
+        // from the send-side messageId (which also includes nonce/timestamp)
+        // so the two hashes cannot collide. Scoped in its own block to
+        // keep the binding check off the main stack frame (viaIR).
+        {
+            bytes32 expectedMessageId = keccak256(
+                abi.encode(
+                    FAST_RELAYER_DOMAIN,
+                    sourceChainId,
+                    currentChainId,
+                    sender,
+                    recipient,
+                    payload
+                )
+            );
+            if (messageId != expectedMessageId) revert InvalidMessage();
+        }
+
+        // Verify signatures. `messageId` is included so a given set of
+        // signatures is only valid for the single (sourceChainId,
+        // currentChainId, sender, recipient, payload) tuple it attests to.
         bytes32 messageHash = keccak256(
             abi.encode(
                 messageId,
@@ -924,7 +964,9 @@ contract DirectL2Messenger is
         address messenger
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (messenger == address(0)) revert ZeroAddress();
+        address oldMessenger = superchainMessenger;
         superchainMessenger = messenger;
+        emit SuperchainMessengerUpdated(oldMessenger, messenger);
     }
 
     /**
@@ -935,7 +977,9 @@ contract DirectL2Messenger is
         address sequencer
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (sequencer == address(0)) revert ZeroAddress();
+        address oldSequencer = espressoSequencer;
         espressoSequencer = sequencer;
+        emit EspressoSequencerUpdated(oldSequencer, sequencer);
     }
 
     /**
@@ -946,7 +990,9 @@ contract DirectL2Messenger is
         address sequencer
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (sequencer == address(0)) revert ZeroAddress();
+        address oldSequencer = astriaSequencer;
         astriaSequencer = sequencer;
+        emit AstriaSequencerUpdated(oldSequencer, sequencer);
     }
 
     /**

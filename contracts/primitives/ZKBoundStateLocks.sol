@@ -996,7 +996,11 @@ contract ZKBoundStateLocks is AccessControl, ReentrancyGuard, Pausable {
                 )
             );
 
-            if (!success) return false;
+            // SECURITY: Guard against self-destructed / non-deployed verifiers
+            // which return success=true with empty returndata. Without this
+            // check `abi.decode` would revert the transaction instead of
+            // cleanly returning `false` and letting the fallback path run.
+            if (!success || returnData.length < 32) return false;
 
             return abi.decode(returnData, (bool));
         } else if (address(proofVerifier) != address(0)) {

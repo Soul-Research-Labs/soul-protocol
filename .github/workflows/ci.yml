@@ -190,6 +190,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
       - name: Install Noir (nargo)
         run: |
           curl -L https://raw.githubusercontent.com/noir-lang/noirup/main/install | bash
@@ -244,6 +250,21 @@ jobs:
             nargo test 2>&1 || { echo "❌ $circuit test failed"; exit 1; }
             cd ..
           done
+
+      # Drift guard: regenerate Solidity verifiers from the freshly-compiled
+      # circuits and fail if the committed output in contracts/verifiers/generated/
+      # does not match. This prevents a circuit change from being merged
+      # without the corresponding verifier update (a silent prover/verifier
+      # mismatch would bypass all on-chain ZK checks).
+      - name: Verify generated verifiers are up-to-date
+        run: |
+          npm ci --prefer-offline --no-audit
+          npm run noir:codegen
+          if ! git diff --exit-code -- contracts/verifiers/generated/; then
+            echo "❌ contracts/verifiers/generated/ is stale."
+            echo "   Run 'npm run noir:generate' locally and commit the result."
+            exit 1
+          fi
 
   security:
     name: Security Analysis
